@@ -1,0 +1,1 @@
+export { RotatingTagline } from "./RotatingTagline";

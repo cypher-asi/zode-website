@@ -1,26 +1,73 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Theme tokens. Token names intentionally mirror the aura-os public
+ * shell (--color-bg, --color-text-primary, etc.) so the ported shell,
+ * tick rail, and taskbar CSS modules track the active theme with no
+ * per-theme overrides.
+ */
+:root,
+[data-theme="dark"] {
+  --color-bg: #090909;
+  --color-bg-elevated: #161618;
+  --color-text-primary: #f4f4f5;
+  --color-text-secondary: #8a8a92;
+  --color-border: rgba(255, 255, 255, 0.12);
+  --color-border-strong: rgba(255, 255, 255, 0.18);
+  --color-surface-tint: rgba(255, 255, 255, 0.06);
+  --color-surface-hover: rgba(255, 255, 255, 0.08);
+  --color-overlay-focus: rgba(255, 255, 255, 0.4);
+  --color-focus-ring: #6aa6ff;
+
+  --shell-outer-bg: #e9e9ea;
+  --shell-stroke-top: rgba(255, 255, 255, 0.18);
+  --shell-stroke-side: rgba(255, 255, 255, 0.1);
+  --shell-stroke-bottom: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="light"] {
+  --color-bg: #ffffff;
+  --color-bg-elevated: #ffffff;
+  --color-text-primary: #0a0a0a;
+  --color-text-secondary: #6b6b72;
+  --color-border: rgba(0, 0, 0, 0.12);
+  --color-border-strong: rgba(0, 0, 0, 0.16);
+  --color-surface-tint: rgba(0, 0, 0, 0.05);
+  --color-surface-hover: rgba(0, 0, 0, 0.06);
+  --color-overlay-focus: rgba(0, 0, 0, 0.35);
+  --color-focus-ring: #2563eb;
+
+  --shell-outer-bg: #f4f4f5;
+  --shell-stroke-top: rgba(0, 0, 0, 0.1);
+  --shell-stroke-side: rgba(0, 0, 0, 0.06);
+  --shell-stroke-bottom: rgba(0, 0, 0, 0.03);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  min-height: 100%;
+  background: var(--shell-outer-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }

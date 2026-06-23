@@ -1,0 +1,12 @@
+.topBar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  height: 48px;
+  padding: 0 18px;
+}
+
+.leading {
+  display: inline-flex;
+  align-items: center;
+}
