@@ -118,7 +118,7 @@
 
 .media {
   position: relative;
-  flex: 1 1 auto;
+  flex: 0 0 50%;
   min-height: 0;
   width: 100%;
 }
@@ -129,7 +129,11 @@
 }
 
 .band {
-  flex: 0 0 auto;
+  flex: 0 0 50%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   padding: 5vmin 7vw;
 }
 
@@ -148,4 +152,94 @@
   font-size: clamp(1rem, 1.6vw, 1.25rem);
   line-height: 1.45;
   color: var(--color-text-secondary);
+}
+
+/*
+ * "Deploy" variant: a centered header at the top, the rendering centered
+ * behind the middle, and a row of stat cards across the bottom. Snap
+ * behavior matches the standard slide so deck navigation is unaffected.
+ */
+.deploy {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 6vmin 7vw;
+  overflow: hidden;
+}
+
+.deployHeader {
+  flex: 0 0 auto;
+  margin: 0;
+  text-align: center;
+  font-size: clamp(1.75rem, 3.6vw, 2.75rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.deployStage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+/*
+ * `cover` overscans the render so the faint baked-in header/labels at the
+ * top and bottom edges of the source PNG are cropped, leaving the building
+ * centered behind the live header and cards.
+ */
+.deployImage {
+  object-fit: cover;
+  object-position: center;
+}
+
+.deployCards {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4vw;
+  max-width: 980px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.card {
+  min-width: 0;
+}
+
+.cardLabel {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.cardStat {
+  margin: 0 0 12px;
+  font-size: clamp(1.6rem, 3vw, 2.25rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.cardDescription {
+  margin: 0;
+  max-width: 26ch;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 900px) {
+  .deployCards {
+    grid-template-columns: 1fr;
+    gap: 3vh;
+  }
 }

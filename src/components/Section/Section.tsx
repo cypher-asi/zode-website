@@ -33,6 +33,40 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
     );
   }
 
+  if (section.cards) {
+    return (
+      <section
+        id={section.id}
+        className={styles.deploy}
+        aria-label={section.label}
+      >
+        <h2 className={styles.deployHeader}>{section.title}</h2>
+        <div className={styles.deployStage}>
+          {section.media && (
+            <Image
+              src={section.media.src}
+              alt={section.media.alt}
+              fill
+              sizes="100vw"
+              priority
+              unoptimized
+              className={styles.deployImage}
+            />
+          )}
+        </div>
+        <div className={styles.deployCards}>
+          {section.cards.map((card) => (
+            <div key={card.label} className={styles.card}>
+              <p className={styles.cardLabel}>{card.label}</p>
+              <p className={styles.cardStat}>{card.stat}</p>
+              <p className={styles.cardDescription}>{card.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
   if (section.media) {
     return (
       <section

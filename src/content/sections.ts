@@ -10,6 +10,15 @@ export interface Citation {
   readonly href: string;
 }
 
+export interface SolutionCard {
+  /** Short uppercase category, e.g. "Modular". */
+  readonly label: string;
+  /** Headline metric, e.g. "4 months". */
+  readonly stat: string;
+  /** One-line supporting copy. */
+  readonly description: string;
+}
+
 export interface SectionContent {
   readonly id: string;
   readonly label: string;
@@ -28,6 +37,12 @@ export interface SectionContent {
   readonly chart?: string;
   /** Optional small print rendered beneath the split-layout copy. */
   readonly footnote?: string;
+  /**
+   * When set, the section renders the "deploy" layout: a centered header at
+   * the top, the `media` rendering centered behind the middle, and these
+   * stat cards across the bottom.
+   */
+  readonly cards?: readonly SolutionCard[];
   /** Optional source citations rendered at the bottom of the section. */
   readonly citations?: readonly Citation[];
 }
@@ -74,11 +89,29 @@ export const SECTIONS: readonly SectionContent[] = [
   {
     id: "solution",
     label: "The Solution",
-    title: "The Solution",
-    lede: "A decentralized network with verifiable trust built in.",
-    body: [
-      "THE GRID distributes compute and storage across an open network, with cryptographic guarantees instead of blind trust.",
-      "Workloads run where they are most efficient, while users retain ownership and control of their data end to end.",
+    title: "Deploy in months not years.",
+    lede: "",
+    body: [],
+    media: {
+      src: "/images/zode-deploy.png",
+      alt: "Zode modular data center wireframe rendering",
+    },
+    cards: [
+      {
+        label: "Modular",
+        stat: "4 months",
+        description: "Rapidly deploy a ZODE anywhere in the world.",
+      },
+      {
+        label: "Resilient",
+        stat: "1 MW",
+        description: "Harness existing clean energy sources with ease.",
+      },
+      {
+        label: "Sustainable",
+        stat: "0 carbon",
+        description: "Contribute to people, communities, and the planet.",
+      },
     ],
   },
   {
