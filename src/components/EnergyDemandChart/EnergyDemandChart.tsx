@@ -109,21 +109,6 @@ export function EnergyDemandChart(): ReactElement {
         Global data-center electricity demand, 2024-2035
       </figcaption>
 
-      <div className={styles.toggle} role="group" aria-label="Display unit">
-        {UNITS.map((u) => (
-          <button
-            key={u.id}
-            type="button"
-            className={styles.toggleButton}
-            data-active={u.id === unit ? "true" : "false"}
-            aria-pressed={u.id === unit}
-            onClick={() => setUnit(u.id)}
-          >
-            {u.label}
-          </button>
-        ))}
-      </div>
-
       <div className={styles.chart}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
@@ -177,24 +162,41 @@ export function EnergyDemandChart(): ReactElement {
         </ResponsiveContainer>
       </div>
 
-      <ul className={styles.legend} aria-label="Chart series (click to toggle)">
-        <li>
-          <button
-            type="button"
-            className={styles.legendItem}
-            data-hidden={hidden ? "true" : "false"}
-            aria-pressed={!hidden}
-            onClick={() => setHidden((prev) => !prev)}
-          >
-            <span
-              className={styles.legendSwatch}
-              style={{ background: config.accent }}
-              aria-hidden="true"
-            />
-            {config.seriesName}
-          </button>
-        </li>
-      </ul>
+      <div className={styles.footer}>
+        <ul className={styles.legend} aria-label="Chart series (click to toggle)">
+          <li>
+            <button
+              type="button"
+              className={styles.legendItem}
+              data-hidden={hidden ? "true" : "false"}
+              aria-pressed={!hidden}
+              onClick={() => setHidden((prev) => !prev)}
+            >
+              <span
+                className={styles.legendSwatch}
+                style={{ background: config.accent }}
+                aria-hidden="true"
+              />
+              {config.seriesName}
+            </button>
+          </li>
+        </ul>
+
+        <div className={styles.toggle} role="group" aria-label="Display unit">
+          {UNITS.map((u) => (
+            <button
+              key={u.id}
+              type="button"
+              className={styles.toggleButton}
+              data-active={u.id === unit ? "true" : "false"}
+              aria-pressed={u.id === unit}
+              onClick={() => setUnit(u.id)}
+            >
+              {u.label}
+            </button>
+          ))}
+        </div>
+      </div>
     </figure>
   );
 }
