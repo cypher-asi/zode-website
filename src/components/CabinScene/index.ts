@@ -1,0 +1,1 @@
+export { CabinScene } from "./CabinScene";

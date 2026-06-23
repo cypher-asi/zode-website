@@ -31,6 +31,12 @@ export interface SectionContent {
    */
   readonly media?: SectionMedia;
   /**
+   * When set, the section renders an interactive 3D model in the upper 3/4 of
+   * the card with the title and lede in a band below. Currently only
+   * "a-frame-cabin".
+   */
+  readonly model?: string;
+  /**
    * When set, the section renders a split layout: copy on the left and the
    * named interactive chart on the right. Currently only "energy-demand".
    */
@@ -62,10 +68,7 @@ export const SECTIONS: readonly SectionContent[] = [
     title: "Introducing Zode One.",
     lede: "The first rapidly deployable data center to respond to the AI energy crisis.",
     body: [],
-    media: {
-      src: "/images/zode-one.jpg",
-      alt: "Zode One data center rendering",
-    },
+    model: "a-frame-cabin",
   },
   {
     id: "problem",

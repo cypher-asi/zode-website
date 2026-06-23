@@ -155,6 +155,26 @@
 }
 
 /*
+ * Model variant: an interactive 3D scene fills the upper 3/4 of the card and
+ * the title + lede sit in a band below. Reuses the `.feature` column flow.
+ */
+.sceneMedia {
+  position: relative;
+  flex: 0 0 75%;
+  min-height: 0;
+  width: 100%;
+}
+
+.sceneBand {
+  flex: 0 0 25%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4vmin 7vw;
+}
+
+/*
  * "Deploy" variant: a centered header at the top, the rendering centered
  * behind the middle, and a row of stat cards across the bottom. Snap
  * behavior matches the standard slide so deck navigation is unaffected.

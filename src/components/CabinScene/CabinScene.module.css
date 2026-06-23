@@ -1,0 +1,21 @@
+/*
+ * The scene fills its container and keeps a fixed dark backdrop in both
+ * themes so it always reads like the reference cabin photo.
+ */
+.scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #14130f;
+  cursor: grab;
+  touch-action: none;
+  overflow: hidden;
+}
+
+.scene:active {
+  cursor: grabbing;
+}
+
+.scene canvas {
+  display: block;
+}

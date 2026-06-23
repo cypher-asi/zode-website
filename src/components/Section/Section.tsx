@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import Image from "next/image";
 import type { SectionContent } from "@/content/sections";
 import { EnergyDemandChart } from "@/components/EnergyDemandChart";
+import { CabinScene } from "@/components/CabinScene";
 import { Citations } from "@/components/Citations";
 import styles from "./Section.module.css";
 
@@ -62,6 +63,25 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
               <p className={styles.cardDescription}>{card.description}</p>
             </div>
           ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (section.model === "a-frame-cabin") {
+    return (
+      <section
+        id={section.id}
+        className={styles.feature}
+        aria-label={section.label}
+      >
+        <div className={styles.sceneMedia}>
+          <CabinScene />
+        </div>
+        <div className={styles.sceneBand}>
+          <h2 className={styles.featureTitle}>{section.title}</h2>
+          <p className={styles.featureLede}>{section.lede}</p>
+          <Citations items={section.citations} />
         </div>
       </section>
     );
