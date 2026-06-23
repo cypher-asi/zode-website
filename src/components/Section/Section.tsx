@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import Image from "next/image";
 import type { SectionContent } from "@/content/sections";
 import { EnergyDemandChart } from "@/components/EnergyDemandChart";
+import { Citations } from "@/components/Citations";
 import styles from "./Section.module.css";
 
 export function Section({ section }: { section: SectionContent }): ReactElement {
@@ -23,6 +24,7 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
           {section.footnote && (
             <p className={styles.footnote}>{section.footnote}</p>
           )}
+          <Citations items={section.citations} />
         </div>
         <div className={styles.splitChart}>
           <EnergyDemandChart />
@@ -52,6 +54,7 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
         <div className={styles.band}>
           <h2 className={styles.featureTitle}>{section.title}</h2>
           <p className={styles.featureLede}>{section.lede}</p>
+          <Citations items={section.citations} />
         </div>
       </section>
     );
@@ -68,6 +71,7 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
             <p key={index}>{paragraph}</p>
           ))}
         </div>
+        <Citations items={section.citations} />
       </div>
     </section>
   );

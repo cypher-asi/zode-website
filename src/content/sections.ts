@@ -3,6 +3,13 @@ export interface SectionMedia {
   readonly alt: string;
 }
 
+export interface Citation {
+  /** Human-readable source label shown as the link text. */
+  readonly label: string;
+  /** Destination URL; opened in a new tab. */
+  readonly href: string;
+}
+
 export interface SectionContent {
   readonly id: string;
   readonly label: string;
@@ -21,6 +28,8 @@ export interface SectionContent {
   readonly chart?: string;
   /** Optional small print rendered beneath the split-layout copy. */
   readonly footnote?: string;
+  /** Optional source citations rendered at the bottom of the section. */
+  readonly citations?: readonly Citation[];
 }
 
 /**
@@ -55,6 +64,12 @@ export const SECTIONS: readonly SectionContent[] = [
     ],
     chart: "energy-demand",
     footnote: "Total global energy supply: ~160,000 - 170,000 TWh/year",
+    citations: [
+      {
+        label: "IEA, Energy demand from AI (Energy and AI report)",
+        href: "https://www.iea.org/reports/energy-and-ai/energy-demand-from-ai",
+      },
+    ],
   },
   {
     id: "solution",
