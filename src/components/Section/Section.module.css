@@ -56,3 +56,51 @@
 .body p {
   margin: 0;
 }
+
+/*
+ * Image-led "feature" variant: the rendering fills the upper region and the
+ * title + lede sit in a band below, matching the Zode One template. Snap
+ * behavior matches the standard slide so deck navigation is unaffected.
+ */
+.feature {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.media {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.mediaImage {
+  object-fit: cover;
+  object-position: center;
+}
+
+.band {
+  flex: 0 0 auto;
+  padding: 5vmin 7vw;
+}
+
+.featureTitle {
+  margin: 0 0 16px;
+  font-size: clamp(1.75rem, 3.4vw, 2.75rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.featureLede {
+  margin: 0;
+  max-width: 40ch;
+  font-size: clamp(1rem, 1.6vw, 1.25rem);
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}

@@ -1,37 +1,40 @@
+export interface SectionMedia {
+  readonly src: string;
+  readonly alt: string;
+}
+
 export interface SectionContent {
   readonly id: string;
   readonly label: string;
   readonly title: string;
   readonly lede: string;
   readonly body: readonly string[];
+  /**
+   * When set, the section renders an image-led layout (media on top, title
+   * and lede in a band below) instead of the centered text layout.
+   */
+  readonly media?: SectionMedia;
 }
 
 /**
- * The ten pitch sections rendered as one continuous scrolling page.
- * `id` is used as the scroll anchor and the tick-rail navigation key;
- * `label` is the short name shown in the rail's expanded menu. Copy is
- * placeholder and meant to be replaced.
+ * The numbered pitch sections rendered as full-panel slides after the
+ * cover. `id` is used as the scroll anchor and the tick-rail navigation
+ * key; `label` is the short name shown in the rail's expanded menu. The
+ * cover slide precedes these and is not numbered, so "The Problem" is the
+ * first numbered item in the rail. Copy is placeholder and meant to be
+ * replaced.
  */
 export const SECTIONS: readonly SectionContent[] = [
   {
-    id: "overview",
-    label: "Overview",
-    title: "Overview",
-    lede: "THE GRID is the connective layer for a decentralized, secure compute network.",
-    body: [
-      "THE GRID unifies fragmented infrastructure into a single, programmable fabric where data and compute flow freely and securely.",
-      "This overview frames the opportunity, the thesis, and how the pieces fit together across the rest of this deck.",
-    ],
-  },
-  {
     id: "problem",
     label: "The Problem",
-    title: "The Problem",
-    lede: "Today's infrastructure is centralized, opaque, and brittle.",
-    body: [
-      "Builders depend on a handful of providers, accepting lock-in, rising costs, and single points of failure.",
-      "Sensitive data is concentrated, trust is assumed rather than verified, and resilience is an afterthought.",
-    ],
+    title: "Introducing Zode One.",
+    lede: "The first rapidly deployable data center to respond to the AI energy crisis.",
+    body: [],
+    media: {
+      src: "/images/zode-one.png",
+      alt: "Zode One data center rendering",
+    },
   },
   {
     id: "solution",
