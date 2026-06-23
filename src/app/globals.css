@@ -8,7 +8,7 @@
  */
 :root,
 [data-theme="dark"] {
-  --color-bg: #090909;
+  --color-bg: #0d0d0f;
   --color-bg-elevated: #161618;
   --color-text-primary: #f4f4f5;
   --color-text-secondary: #8a8a92;
@@ -19,7 +19,14 @@
   --color-overlay-focus: rgba(255, 255, 255, 0.4);
   --color-focus-ring: #6aa6ff;
 
-  --shell-outer-bg: #e9e9ea;
+  /*
+   * Outer shell is theme-aware: a near-black frame in dark mode so the
+   * top-bar logo and bottom-taskbar chrome (which sit on the outer
+   * shell, not the inner panel) read in the theme's foreground colour.
+   * The inner panel (`--color-bg`) is a touch lighter than the frame so
+   * the rounded "screen in a bezel" framing still reads.
+   */
+  --shell-outer-bg: #000000;
   --shell-stroke-top: rgba(255, 255, 255, 0.18);
   --shell-stroke-side: rgba(255, 255, 255, 0.1);
   --shell-stroke-bottom: rgba(255, 255, 255, 0.04);
