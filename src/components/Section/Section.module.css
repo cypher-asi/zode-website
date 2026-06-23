@@ -1,10 +1,15 @@
+/*
+ * Each section is a full-panel slide: it fills the scroll container's
+ * height and snaps into view, so scrolling advances one card at a time.
+ */
 .section {
-  scroll-margin-top: 24px;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  height: 100%;
   display: flex;
   align-items: center;
-  min-height: 72vh;
-  padding: 64px 7vw;
-  border-bottom: 1px solid var(--color-border);
+  padding: 6vmin 7vw;
+  overflow: hidden;
 }
 
 .inner {

@@ -27,6 +27,8 @@
   overflow-y: auto;
   overflow-x: hidden;
   scroll-behavior: smooth;
+  /* Treat each section as a full-panel slide that snaps into view. */
+  scroll-snap-type: y mandatory;
 }
 
 @media (prefers-reduced-motion: reduce) {
