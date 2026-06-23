@@ -188,12 +188,11 @@
 }
 
 /*
- * `cover` overscans the render so the faint baked-in header/labels at the
- * top and bottom edges of the source PNG are cropped, leaving the building
- * centered behind the live header and cards.
+ * `contain` keeps the render fully visible at its natural aspect ratio,
+ * centered within the stage between the header and the cards.
  */
 .deployImage {
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
 }
 
