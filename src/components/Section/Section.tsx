@@ -1,9 +1,36 @@
 import type { ReactElement } from "react";
 import Image from "next/image";
 import type { SectionContent } from "@/content/sections";
+import { EnergyDemandChart } from "@/components/EnergyDemandChart";
 import styles from "./Section.module.css";
 
 export function Section({ section }: { section: SectionContent }): ReactElement {
+  if (section.chart === "energy-demand") {
+    return (
+      <section
+        id={section.id}
+        className={styles.split}
+        aria-label={section.label}
+      >
+        <div className={styles.splitText}>
+          <p className={styles.kicker}>{section.label}</p>
+          <h2 className={styles.title}>{section.title}</h2>
+          <div className={styles.body}>
+            {section.body.map((paragraph, index) => (
+              <p key={index}>{paragraph}</p>
+            ))}
+          </div>
+          {section.footnote && (
+            <p className={styles.footnote}>{section.footnote}</p>
+          )}
+        </div>
+        <div className={styles.splitChart}>
+          <EnergyDemandChart />
+        </div>
+      </section>
+    );
+  }
+
   if (section.media) {
     return (
       <section
@@ -18,6 +45,7 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
             fill
             sizes="100vw"
             priority
+            unoptimized
             className={styles.mediaImage}
           />
         </div>

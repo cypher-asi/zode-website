@@ -14,6 +14,13 @@ export interface SectionContent {
    * and lede in a band below) instead of the centered text layout.
    */
   readonly media?: SectionMedia;
+  /**
+   * When set, the section renders a split layout: copy on the left and the
+   * named interactive chart on the right. Currently only "energy-demand".
+   */
+  readonly chart?: string;
+  /** Optional small print rendered beneath the split-layout copy. */
+  readonly footnote?: string;
 }
 
 /**
@@ -26,15 +33,28 @@ export interface SectionContent {
  */
 export const SECTIONS: readonly SectionContent[] = [
   {
-    id: "problem",
-    label: "The Problem",
+    id: "summary",
+    label: "Summary",
     title: "Introducing Zode One.",
     lede: "The first rapidly deployable data center to respond to the AI energy crisis.",
     body: [],
     media: {
-      src: "/images/zode-one.png",
+      src: "/images/zode-one.jpg",
       alt: "Zode One data center rendering",
     },
+  },
+  {
+    id: "problem",
+    label: "The Problem",
+    title: "The AI energy crisis is here.",
+    lede: "",
+    body: [
+      "The demand for AI energy is expected to ~3x over the next decade from 415 TWh to 1,200 TWh.",
+      "Existing energy infrastructure requires multi-year upgrades and significant policy hurdles.",
+      "Local communities are revolting against monolithic build outs and risk being left behind.",
+    ],
+    chart: "energy-demand",
+    footnote: "Total global energy supply: ~160,000 - 170,000 TWh/year",
   },
   {
     id: "solution",
