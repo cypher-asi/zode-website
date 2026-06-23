@@ -11,12 +11,19 @@
 .leading {
   display: inline-flex;
   align-items: center;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--color-text-primary);
   text-decoration: none;
   cursor: pointer;
   user-select: none;
+}
+
+/*
+ * The wordmark ships as white lines on transparency (the white-master
+ * convention shared with the loop glyph). The top bar sits on the constant
+ * white shell where `--logo-invert` is 1, so the mark inverts to black.
+ */
+.wordmark {
+  display: block;
+  height: 16px;
+  width: auto;
+  filter: invert(var(--logo-invert, 0));
 }

@@ -6,7 +6,8 @@ export function TopBar(): ReactElement {
   return (
     <header className={styles.topBar}>
       <a className={styles.leading} href={`#${COVER_ID}`} aria-label="ZODE — back to cover">
-        ZODE
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className={styles.wordmark} src="/wordmark.png" alt="" aria-hidden="true" />
       </a>
     </header>
   );
