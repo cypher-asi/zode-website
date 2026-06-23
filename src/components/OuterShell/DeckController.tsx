@@ -64,6 +64,9 @@ export function DeckController({ scrollRootId, slideCount }: DeckControllerProps
     };
 
     const onWheel = (event: WheelEvent): void => {
+      // Ctrl + wheel is reserved for zooming interactive scenes (e.g. the
+      // cabin model), so let that gesture through instead of navigating.
+      if (event.ctrlKey) return;
       event.preventDefault();
       if (locked || Math.abs(event.deltaY) < WHEEL_THRESHOLD) return;
       step(event.deltaY > 0 ? 1 : -1);
