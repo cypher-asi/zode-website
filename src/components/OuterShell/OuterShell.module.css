@@ -27,8 +27,14 @@
   overflow-y: auto;
   overflow-x: hidden;
   scroll-behavior: smooth;
-  /* Treat each section as a full-panel slide that snaps into view. */
+  /*
+   * Each section is a full-panel slide. DeckController drives one-slide-per-
+   * gesture movement; snap keeps slides aligned and contain stops wheel/touch
+   * from bubbling to the page.
+   */
   scroll-snap-type: y mandatory;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -38,10 +44,6 @@
 }
 
 .scroll::-webkit-scrollbar {
-  width: 10px;
-}
-
-.scroll::-webkit-scrollbar-thumb {
-  background: var(--color-border-strong);
-  border-radius: 999px;
+  width: 0;
+  height: 0;
 }

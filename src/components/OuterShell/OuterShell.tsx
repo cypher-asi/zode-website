@@ -2,6 +2,7 @@ import type { ReactElement, ReactNode } from "react";
 import { TopBar } from "@/components/TopBar";
 import { BottomTaskbar } from "@/components/BottomTaskbar";
 import { SectionTickRail, type RailSection } from "@/components/SectionTickRail";
+import { DeckController } from "./DeckController";
 import styles from "./OuterShell.module.css";
 
 export const SCROLL_ROOT_ID = "grid-scroll";
@@ -9,6 +10,8 @@ export const SCROLL_ROOT_ID = "grid-scroll";
 interface OuterShellProps {
   readonly children: ReactNode;
   readonly sections: readonly RailSection[];
+  /** Anchor id of the cover slide the rail's logo button returns to. */
+  readonly coverId: string;
 }
 
 /**
@@ -17,7 +20,7 @@ interface OuterShellProps {
  * bar and bottom taskbar frame the inner panel; the right-edge tick rail
  * floats over the panel.
  */
-export function OuterShell({ children, sections }: OuterShellProps): ReactElement {
+export function OuterShell({ children, sections, coverId }: OuterShellProps): ReactElement {
   return (
     <div className={styles.shell}>
       <TopBar />
@@ -25,7 +28,12 @@ export function OuterShell({ children, sections }: OuterShellProps): ReactElemen
         <div id={SCROLL_ROOT_ID} className={styles.scroll}>
           {children}
         </div>
-        <SectionTickRail sections={sections} scrollRootId={SCROLL_ROOT_ID} />
+        <DeckController scrollRootId={SCROLL_ROOT_ID} slideCount={sections.length + 1} />
+        <SectionTickRail
+          sections={sections}
+          scrollRootId={SCROLL_ROOT_ID}
+          coverId={coverId}
+        />
       </div>
       <BottomTaskbar />
     </div>
