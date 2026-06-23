@@ -388,15 +388,29 @@ export function CabinScene(): ReactElement {
     }
 
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableZoom = false;
+    controls.enableZoom = false; // toggled on only while Ctrl is held
     controls.enablePan = false;
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
     controls.rotateSpeed = 0.7;
+    controls.zoomSpeed = 0.9;
+    controls.minDistance = 30;
+    controls.maxDistance = 120;
     controls.minPolarAngle = 0.3;
     controls.maxPolarAngle = Math.PI * 0.5 - 0.04;
     controls.target.set(0, 8, 4);
     controls.update();
+
+    // Ctrl + wheel zooms the scene; a plain wheel falls through to the page so
+    // deck navigation still works. The capture-phase listener runs before
+    // OrbitControls' own handler, so the flag is correct when it reads it.
+    const onWheelCapture = (event: WheelEvent) => {
+      controls.enableZoom = event.ctrlKey;
+    };
+    container.addEventListener("wheel", onWheelCapture, {
+      capture: true,
+      passive: true,
+    });
 
     const resize = () => {
       const { clientWidth: w, clientHeight: h } = container;
@@ -421,6 +435,7 @@ export function CabinScene(): ReactElement {
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
+      container.removeEventListener("wheel", onWheelCapture, { capture: true });
       controls.dispose();
       for (const g of geometries) g.dispose();
       for (const m of materials) m.dispose();
@@ -436,7 +451,7 @@ export function CabinScene(): ReactElement {
       ref={containerRef}
       className={styles.scene}
       role="img"
-      aria-label="Interactive 3D model of the black gabled cabin: 60 feet long, 20 feet wide, 24 feet tall, with a glazed front gable end and warm-lit windows at dusk. Drag to rotate."
+      aria-label="Interactive 3D model of the black gabled cabin: 60 feet long, 20 feet wide, 24 feet tall, with a glazed front gable end and warm-lit windows at dusk. Drag to rotate; hold Ctrl and scroll to zoom."
     />
   );
 }
