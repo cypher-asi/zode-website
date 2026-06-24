@@ -1,0 +1,172 @@
+/*
+ * "Opportunity" slide: a TAM/SAM/SOM triangle infographic. Three ascending
+ * tiers share a baseline and narrow from TAM (widest market) to SOM (the
+ * obtainable beachhead), with a label card above each triangle. Fills the
+ * full-panel slide supplied by Section's `.feature` wrapper.
+ */
+.scene {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 5vmin 6vw;
+  overflow: hidden;
+}
+
+.header {
+  flex: 0 0 auto;
+  text-align: center;
+  margin-bottom: clamp(16px, 3vh, 32px);
+}
+
+.kicker {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.title {
+  margin: 0 0 12px;
+  font-size: clamp(1.75rem, 3.6vw, 2.75rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.lede {
+  margin: 0 auto;
+  max-width: 56ch;
+  font-size: clamp(1rem, 1.6vw, 1.2rem);
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+
+.tiers {
+  flex: 1 1 auto;
+  min-height: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: clamp(12px, 2.5vw, 36px);
+}
+
+.tier {
+  --accent: #4f6fc4;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: clamp(12px, 2vh, 24px);
+}
+
+.tier[data-tier="1"] {
+  --accent: #3f93b8;
+}
+
+.tier[data-tier="2"] {
+  --accent: #25bcb0;
+}
+
+.card {
+  border: 1px solid var(--color-border);
+  border-top: 3px solid var(--accent);
+  border-radius: 14px;
+  background: var(--color-surface-tint);
+  padding: clamp(12px, 1.6vw, 20px);
+}
+
+.cardName {
+  margin: 0 0 8px;
+  font-size: clamp(0.75rem, 1.1vw, 0.85rem);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-primary);
+}
+
+.cardHeadline {
+  margin: 0;
+  font-size: clamp(0.95rem, 1.5vw, 1.25rem);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--accent);
+}
+
+.cardMeta {
+  margin: 4px 0 0;
+  font-size: clamp(0.7rem, 1vw, 0.8rem);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.cardDescription {
+  margin: 10px 0 0;
+  font-size: clamp(0.78rem, 1.05vw, 0.92rem);
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+
+/*
+ * Triangles share a baseline (align-items: end on the grid). Heights ramp
+ * down from TAM to SOM so the silhouette reads as a narrowing funnel, while
+ * the cards above naturally stagger to match.
+ */
+.triangle {
+  position: relative;
+  width: 100%;
+  height: clamp(120px, calc(30vh - var(--tier-index, 0) * 4vh), 280px);
+  clip-path: polygon(50% 0, 0 100%, 100% 100%);
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--accent) 88%, white) 0%,
+    var(--accent) 100%
+  );
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.acronym {
+  margin-bottom: clamp(8px, 1.4vh, 18px);
+  font-size: clamp(1.1rem, 2.4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+}
+
+@media (max-width: 760px) {
+  .tiers {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 16px;
+    overflow-y: auto;
+  }
+
+  .tier {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    height: auto;
+  }
+
+  .card {
+    flex: 1 1 auto;
+    order: 2;
+  }
+
+  .triangle {
+    order: 1;
+    flex: 0 0 96px;
+    width: 96px;
+    height: 84px;
+  }
+}

@@ -26,6 +26,19 @@ export interface NetworkCompany {
   readonly monogram: string;
 }
 
+export interface MarketTier {
+  /** Short acronym shown inside the triangle, e.g. "TAM". */
+  readonly acronym: string;
+  /** Full tier name, e.g. "Total Addressable Market". */
+  readonly name: string;
+  /** Headline market-size metric, e.g. "~$106B \u2192 ~$255B by 2030". */
+  readonly headline: string;
+  /** Optional secondary metric, e.g. "CAGR ~19%". */
+  readonly meta?: string;
+  /** Supporting copy describing the tier. */
+  readonly description: string;
+}
+
 export interface SiteFact {
   /** Row label, e.g. "Location". */
   readonly label: string;
@@ -90,6 +103,11 @@ export interface SectionContent {
   /** ZODE node labels routed across in the "ecosystem-network" scene. */
   readonly zodes?: readonly string[];
   /**
+   * When set, the section renders the "opportunity" layout: a TAM/SAM/SOM
+   * triangle infographic, one ascending triangle per tier.
+   */
+  readonly market?: readonly MarketTier[];
+  /**
    * When set, the section renders the "site" layout: cleaned terrain artwork
    * as a full-bleed background, a centered header, a Key Facts card on the
    * right, and a segmented green progress bar centered near the bottom.
@@ -137,7 +155,7 @@ export const SECTIONS: readonly SectionContent[] = [
   {
     id: "solution",
     label: "The Solution",
-    title: "Deploy in months not years.",
+    title: "Deploy compute in months not years.",
     lede: "",
     body: [],
     media: {
@@ -151,9 +169,9 @@ export const SECTIONS: readonly SectionContent[] = [
         description: "Rapidly deploy a ZODE anywhere in the world.",
       },
       {
-        label: "Resilient",
+        label: "ELASTIC",
         stat: "1 MW",
-        description: "Harness existing clean energy sources with ease.",
+        description: "Tap into latent energy availability with ease.",
       },
       {
         label: "Sustainable",
@@ -164,7 +182,7 @@ export const SECTIONS: readonly SectionContent[] = [
   },
   {
     id: "ecosystem",
-    label: "The Network",
+    label: "Network",
     title: "A constellation of compute.",
     lede: "Demand meets capacity — jobs route across ZODEs and settle in real time.",
     body: [],
@@ -180,13 +198,36 @@ export const SECTIONS: readonly SectionContent[] = [
     zodes: ["ZODE-01", "ZODE-02", "ZODE-03", "ZODE-04", "ZODE-05", "ZODE-06"],
   },
   {
-    id: "business-model",
-    label: "Business Model",
-    title: "Business Model",
-    lede: "Usage-based economics that scale with the network.",
-    body: [
-      "Revenue is generated from network usage, premium services, and value-added tooling layered on the core protocol.",
-      "Costs fall as the network scales, expanding margins while keeping pricing competitive for builders.",
+    id: "opportunity",
+    label: "Opportunity",
+    title: "Opportunity",
+    lede: "Sizing the shift from hyperscale to distributed, power-advantaged compute.",
+    body: [],
+    market: [
+      {
+        acronym: "TAM",
+        name: "Total Addressable Market",
+        headline: "~$106B \u2192 ~$255B by 2030",
+        meta: "CAGR ~19%",
+        description:
+          "Global AI inference + edge AI infrastructure market. Broader framing: global data center / AI infrastructure spend of ~$450B+ in 2025 growing 15\u201320% CAGR to >$1T by 2030.",
+      },
+      {
+        acronym: "SAM",
+        name: "Serviceable Addressable Market",
+        headline: "~$15\u201320B \u2192 $60\u2013100B+ by 2030\u201334",
+        meta: "CAGR 20\u201330%",
+        description:
+          "Modular, micro, and edge data centers, including sustainable and secondary-market facilities \u2014 capturing the shift from hyperscale to distributed, faster-deploy builds and power-constrained alternatives.",
+      },
+      {
+        acronym: "SOM",
+        name: "Serviceable Obtainable Market",
+        headline: "$10\u201350M+ annual run-rate",
+        meta: "5\u201350+ MW phased over 3\u20135 yrs",
+        description:
+          "Power-advantaged micro data centers in renewable-rich secondary markets (e.g. hydro-powered BC Interior). Our differentiated slice: privacy/edge AI inference, agent workloads, and sovereign compute \u2014 low-cost dedicated power, cool climate (low PUE), and grid-bypass via micro hydro at 70\u201385% utilization.",
+      },
     ],
   },
   {
@@ -252,16 +293,6 @@ export const SECTIONS: readonly SectionContent[] = [
     body: [
       "A team spanning distributed systems, cryptography, and product, with a track record of shipping at scale.",
       "Replace this section with founder and team bios.",
-    ],
-  },
-  {
-    id: "opportunity",
-    label: "Opportunity",
-    title: "Opportunity",
-    lede: "A foundational layer for the next era of compute.",
-    body: [
-      "The shift toward decentralized, verifiable infrastructure is early and large. THE GRID is positioned at its center.",
-      "Join us in building the connective tissue for a more open and secure network.",
     ],
   },
 ];

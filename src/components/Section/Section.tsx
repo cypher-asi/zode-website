@@ -4,6 +4,7 @@ import type { SectionContent } from "@/content/sections";
 import { EnergyDemandChart } from "@/components/EnergyDemandChart";
 import { CabinScene } from "@/components/CabinScene";
 import { EcosystemScene } from "@/components/EcosystemScene";
+import { MarketScene } from "@/components/MarketScene";
 import { Citations } from "@/components/Citations";
 import styles from "./Section.module.css";
 
@@ -85,6 +86,18 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
         aria-label={section.label}
       >
         <EcosystemScene section={section} />
+      </section>
+    );
+  }
+
+  if (section.market) {
+    return (
+      <section
+        id={section.id}
+        className={styles.feature}
+        aria-label={section.label}
+      >
+        <MarketScene section={section} />
       </section>
     );
   }
