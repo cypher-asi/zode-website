@@ -14,11 +14,22 @@ import styles from "./EcosystemScene.module.css";
 
 interface Transaction {
   readonly id: string;
+  readonly address: string;
   readonly company: string;
   readonly units: number;
   readonly zode: string;
-  readonly peer: string;
   readonly status: "finalizing" | "finalized";
+}
+
+const HEX = "0123456789abcdef";
+
+/** Builds a truncated, explorer-style address (e.g. "227622a...4ab0037"). */
+function randomAddress(): string {
+  let body = "";
+  for (let i = 0; i < 40; i += 1) {
+    body += HEX[Math.floor(Math.random() * HEX.length)];
+  }
+  return `${body.slice(0, 7)}...${body.slice(-7)}`;
 }
 
 const DEFAULT_COMPANIES = [
@@ -46,27 +57,27 @@ const FINALIZE_MS = 900;
 /** Fixed seed so the first paint matches the server render (no hydration drift). */
 const SEED_FEED: readonly Transaction[] = [
   {
-    id: "0x8f1a",
+    id: "seed-1",
+    address: "8f1a3c2...d04e7b1",
     company: "Helix AI",
     units: 248,
     zode: "ZODE-02",
-    peer: "ZODE-05",
     status: "finalized",
   },
   {
-    id: "0x3c40",
+    id: "seed-2",
+    address: "3c40a91...e2f5c80",
     company: "Northwind",
     units: 96,
     zode: "ZODE-04",
-    peer: "ZODE-01",
     status: "finalized",
   },
   {
-    id: "0xd7e2",
+    id: "seed-3",
+    address: "227622a...4ab0037",
     company: "Vector Labs",
     units: 512,
     zode: "ZODE-03",
-    peer: "ZODE-06",
     status: "finalized",
   },
 ];
@@ -114,22 +125,17 @@ export function EcosystemScene({
     const emit = () => {
       const companyIndex = Math.floor(Math.random() * companies.length);
       const zodeIndex = Math.floor(Math.random() * zodes.length);
-      let peerIndex = Math.floor(Math.random() * zodes.length);
-      if (peerIndex === zodeIndex) {
-        peerIndex = (peerIndex + 1) % zodes.length;
-      }
       counter.current += 1;
-      const id = `0x${(0x1000 + counter.current * 1597).toString(16).slice(-4)}`;
       const units = [64, 96, 128, 256, 384, 512][
         Math.floor(Math.random() * 6)
       ];
 
       const tx: Transaction = {
-        id,
+        id: `tx-${counter.current}`,
+        address: randomAddress(),
         company: companies[companyIndex].name,
         units,
         zode: zodes[zodeIndex],
-        peer: zodes[peerIndex],
         status: "finalizing",
       };
 
@@ -238,24 +244,20 @@ export function EcosystemScene({
             {feed.map((tx) => (
               <li key={tx.id} className={styles.tx}>
                 <div className={styles.txTop}>
-                  <span className={styles.txId}>{tx.id}</span>
-                  <span
-                    className={styles.txStatus}
-                    data-status={tx.status}
-                  >
+                  <span className={styles.txAddress}>{tx.address}</span>
+                  <span className={styles.txStatus} data-status={tx.status}>
                     {tx.status === "finalizing" ? "finalizing" : "finalized"}
                   </span>
                 </div>
                 <div className={styles.txMeta}>
-                  <span className={styles.txCompany}>{tx.company}</span>
-                  <span className={styles.txUnits}>{tx.units} CU</span>
-                </div>
-                <div className={styles.txRoute}>
-                  <span className={styles.txNode}>{tx.zode}</span>
-                  <span className={styles.txArrow} aria-hidden="true">
-                    farmed to
+                  <span className={styles.txRoute}>
+                    <span className={styles.txCompany}>{tx.company}</span>
+                    <span className={styles.txArrow} aria-hidden="true">
+                      →
+                    </span>
+                    <span className={styles.txNode}>{tx.zode}</span>
                   </span>
-                  <span className={styles.txNode}>{tx.peer}</span>
+                  <span className={styles.txUnits}>{tx.units} CU</span>
                 </div>
               </li>
             ))}

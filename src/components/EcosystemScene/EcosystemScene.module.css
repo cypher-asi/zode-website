@@ -245,10 +245,13 @@
   gap: 10px;
 }
 
-.txId {
+.txAddress {
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 0.85rem;
   color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .txStatus {
@@ -277,12 +280,33 @@
   gap: 10px;
 }
 
+.txRoute {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  overflow: hidden;
+}
+
 .txCompany {
-  font-size: 0.85rem;
   color: var(--color-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.txArrow {
+  flex: 0 0 auto;
+  color: var(--color-text-secondary);
+  opacity: 0.7;
+}
+
+.txNode {
+  flex: 0 0 auto;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  color: var(--color-text-primary);
 }
 
 .txUnits {
@@ -290,24 +314,6 @@
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 0.8rem;
   color: var(--color-text-secondary);
-}
-
-.txRoute {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.78rem;
-  color: var(--color-text-secondary);
-}
-
-.txNode {
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  color: var(--color-text-primary);
-}
-
-.txArrow {
-  font-style: italic;
-  opacity: 0.8;
 }
 
 @keyframes nodePulse {
