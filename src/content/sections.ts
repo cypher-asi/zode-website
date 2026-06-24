@@ -220,6 +220,16 @@ export const SECTIONS: readonly SectionContent[] = [
     ],
   },
   {
+    id: "product",
+    label: "Product",
+    title: "The Product",
+    lede: "The tools and primitives developers build on.",
+    body: [
+      "A coherent platform of SDKs, APIs, and managed primitives makes the network easy to adopt and hard to leave.",
+      "Everything is composable, observable, and secure by default.",
+    ],
+  },
+  {
     id: "ecosystem",
     label: "Network",
     title: "A constellation of compute.",
@@ -270,16 +280,6 @@ export const SECTIONS: readonly SectionContent[] = [
         completed: 7,
       },
     },
-  },
-  {
-    id: "platform",
-    label: "Platform",
-    title: "Platform",
-    lede: "The tools and primitives developers build on.",
-    body: [
-      "A coherent platform of SDKs, APIs, and managed primitives makes the network easy to adopt and hard to leave.",
-      "Everything is composable, observable, and secure by default.",
-    ],
   },
   {
     id: "roadmap",
