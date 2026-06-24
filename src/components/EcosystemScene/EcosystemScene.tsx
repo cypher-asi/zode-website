@@ -50,8 +50,11 @@ const DEFAULT_ZODES = [
 ] as const;
 
 const FEED_LIMIT = 6;
-const TICK_MS = 1500;
-const FINALIZE_MS = 800;
+/** Transactions stream in quickly... */
+const TX_TICK_MS = 650;
+const TX_FINALIZE_MS = 420;
+/** ...while compute demand on the left shifts at a slower, steadier pace. */
+const DEMAND_TICK_MS = 2200;
 
 /** Fixed seed so the first paint matches the server render (no hydration drift). */
 const SEED_FEED: readonly Transaction[] = [
@@ -122,6 +125,7 @@ export function EcosystemScene({
   const [activeNode, setActiveNode] = useState<number | null>(null);
   const counter = useRef(0);
 
+  // Fast loop: stream transactions in, lighting the node each one settles on.
   useEffect(() => {
     let finalizeTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -142,7 +146,6 @@ export function EcosystemScene({
         status: "finalizing",
       };
 
-      setActiveCompany(companyIndex);
       setActiveNode(zodeIndex);
       setFeed((prev) => [tx, ...prev].slice(0, FEED_LIMIT));
 
@@ -152,13 +155,12 @@ export function EcosystemScene({
             row.id === tx.id ? { ...row, status: "finalized" } : row,
           ),
         );
-        setActiveCompany(null);
         setActiveNode(null);
-      }, FINALIZE_MS);
+      }, TX_FINALIZE_MS);
     };
 
     emit();
-    const interval = setInterval(emit, TICK_MS);
+    const interval = setInterval(emit, TX_TICK_MS);
     return () => {
       clearInterval(interval);
       if (finalizeTimer) {
@@ -166,6 +168,29 @@ export function EcosystemScene({
       }
     };
   }, [companies, zodes]);
+
+  // Slow loop: shift which company is actively drawing compute.
+  useEffect(() => {
+    let clearTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const pulse = () => {
+      const companyIndex = Math.floor(Math.random() * companies.length);
+      setActiveCompany(companyIndex);
+      clearTimer = setTimeout(
+        () => setActiveCompany(null),
+        DEMAND_TICK_MS * 0.6,
+      );
+    };
+
+    pulse();
+    const interval = setInterval(pulse, DEMAND_TICK_MS);
+    return () => {
+      clearInterval(interval);
+      if (clearTimer) {
+        clearTimeout(clearTimer);
+      }
+    };
+  }, [companies]);
 
   // Pulsing node markers laid over the constellation image (percent coords).
   const nodeMarkers = useMemo(
