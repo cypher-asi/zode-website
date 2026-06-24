@@ -187,6 +187,39 @@ export const SECTIONS: readonly SectionContent[] = [
     ],
   },
   {
+    id: "opportunity",
+    label: "Opportunity",
+    title: "Deploy 1 GW of compute by 2030.",
+    lede: "",
+    body: [],
+    market: [
+      {
+        acronym: "TAM",
+        name: "Total Addressable Market",
+        headline: "$255B",
+        description:
+          "Global AI inference and edge AI infrastructure \u2014 the full AI compute build-out.",
+        weight: 1,
+      },
+      {
+        acronym: "SAM",
+        name: "Serviceable Addressable Market",
+        headline: "$60B",
+        description:
+          "Modular, micro, and edge data centers shifting compute from hyperscale to distributed.",
+        weight: 0.62,
+      },
+      {
+        acronym: "SOM",
+        name: "Serviceable Obtainable Market",
+        headline: "1 GW of power + estimated value",
+        description:
+          "Power-advantaged micro data centers in renewable-rich secondary markets \u2014 privacy and edge AI inference, agent workloads, and sovereign compute.",
+        weight: 0.32,
+      },
+    ],
+  },
+  {
     id: "ecosystem",
     label: "Network",
     title: "A constellation of compute.",
@@ -202,42 +235,6 @@ export const SECTIONS: readonly SectionContent[] = [
       { name: "Orbital", monogram: "O" },
     ],
     zodes: ["ZODE-01", "ZODE-02", "ZODE-03", "ZODE-04", "ZODE-05", "ZODE-06"],
-  },
-  {
-    id: "opportunity",
-    label: "Opportunity",
-    title: "Deploy 1 GW of compute by 2030.",
-    lede: "Sizing the shift from hyperscale to distributed, power-advantaged compute.",
-    body: [],
-    market: [
-      {
-        acronym: "TAM",
-        name: "Total Addressable Market",
-        headline: "~$106B \u2192 ~$255B by 2030",
-        meta: "CAGR ~19%",
-        description:
-          "Global AI inference + edge AI infrastructure market. Broader framing: global data center / AI infrastructure spend of ~$450B+ in 2025 growing 15\u201320% CAGR to >$1T by 2030.",
-        weight: 1,
-      },
-      {
-        acronym: "SAM",
-        name: "Serviceable Addressable Market",
-        headline: "~$15\u201320B \u2192 $60\u2013100B+ by 2030\u201334",
-        meta: "CAGR 20\u201330%",
-        description:
-          "Modular, micro, and edge data centers, including sustainable and secondary-market facilities \u2014 capturing the shift from hyperscale to distributed, faster-deploy builds and power-constrained alternatives.",
-        weight: 0.62,
-      },
-      {
-        acronym: "SOM",
-        name: "Serviceable Obtainable Market",
-        headline: "$10\u201350M+ annual run-rate",
-        meta: "5\u201350+ MW phased over 3\u20135 yrs",
-        description:
-          "Power-advantaged micro data centers in renewable-rich secondary markets (e.g. hydro-powered BC Interior). Our differentiated slice: privacy/edge AI inference, agent workloads, and sovereign compute \u2014 low-cost dedicated power, cool climate (low PUE), and grid-bypass via micro hydro at 70\u201385% utilization.",
-        weight: 0.32,
-      },
-    ],
   },
   {
     id: "traction",
