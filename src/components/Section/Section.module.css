@@ -201,23 +201,30 @@
 
 /*
  * "Deploy" variant: a centered header at the top, the rendering centered
- * behind the middle, and a row of stat cards across the bottom. Snap
- * behavior matches the standard slide so deck navigation is unaffected.
+ * behind the middle, and a row of stat cards across the bottom. Three rows
+ * (1fr / auto / 1fr) keep the stage centered, with the header centered in
+ * the top band and the cards anchored to the bottom band — matching the
+ * Product slide. Snap behavior matches the standard slide so deck
+ * navigation is unaffected.
  */
 .deploy {
   scroll-snap-align: start;
   scroll-snap-stop: always;
   height: 100%;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
   padding: 6vmin 7vw;
   overflow: hidden;
 }
 
-.deployKicker {
-  flex: 0 0 auto;
-  margin: 0 0 14px;
+.deployHeaderBand {
+  min-height: 0;
+  align-self: center;
   text-align: center;
+}
+
+.deployKicker {
+  margin: 0 0 14px;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.22em;
@@ -226,9 +233,7 @@
 }
 
 .deployHeader {
-  flex: 0 0 auto;
   margin: 0;
-  text-align: center;
   font-size: clamp(1.75rem, 3.6vw, 2.75rem);
   font-weight: 600;
   line-height: 1.1;
@@ -238,9 +243,9 @@
 
 .deployStage {
   position: relative;
-  flex: 1 1 auto;
   min-height: 0;
   width: 100%;
+  height: clamp(280px, 46vh, 520px);
 }
 
 /*
@@ -253,7 +258,7 @@
 }
 
 .deployCards {
-  flex: 0 0 auto;
+  align-self: end;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 4vw;
@@ -294,6 +299,19 @@
 }
 
 @media (max-width: 900px) {
+  .deploy {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4vh;
+    overflow-y: auto;
+  }
+
+  .deployStage {
+    flex: 0 0 auto;
+    height: clamp(220px, 36vh, 420px);
+  }
+
   .deployCards {
     grid-template-columns: 1fr;
     gap: 3vh;

@@ -1,22 +1,21 @@
 /*
- * "Opportunity" slide: a centered TAM/SAM/SOM pyramid. Three triangles share
- * a baseline and are stacked concentrically — TAM the widest, SOM the small
- * tip — each sized by its market weight, with the detail cards in a row
- * below. Fills the full-panel slide supplied by Section's `.feature` wrapper.
+ * "Opportunity" slide: a centered TAM/SAM/SOM diagram of three concentric
+ * circles — TAM outermost, SOM the innermost core — with the detail cards
+ * flanking the rings and diamond connectors pointing back to each band.
+ * Fills the full-panel slide supplied by Section's `.feature` wrapper.
  */
 .scene {
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
+  justify-items: center;
   padding: 5vmin 6vw;
   overflow: hidden;
 }
 
 .header {
-  flex: 0 0 auto;
+  align-self: center;
   text-align: center;
-  margin-bottom: clamp(12px, 2vh, 24px);
 }
 
 .kicker {
@@ -45,62 +44,91 @@
   color: var(--color-text-secondary);
 }
 
-/*
- * Pyramid stage. Triangles are absolutely positioned, bottom-aligned and
- * horizontally centered, so smaller tiers nest inside the larger ones. The
- * stage height equals the largest triangle's height.
- */
-.pyramid {
+.bottomBand {
+  align-self: end;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.horizon {
   flex: 0 0 auto;
-  position: relative;
-  width: min(78vw, 460px);
-  height: var(--pyramid-h);
-  margin: auto;
-  --pyramid-h: clamp(140px, 30vh, 300px);
-}
-
-.triangle {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  transform: translateX(-50%);
-  width: calc(var(--w, 1) * 100%);
-  height: calc(var(--w, 1) * var(--pyramid-h));
-  clip-path: polygon(50% 0, 0 100%, 100% 100%);
-  background: linear-gradient(
-    160deg,
-    color-mix(in srgb, var(--accent) 84%, white) 0%,
-    var(--accent) 100%
-  );
-  --accent: #4f6fc4;
-}
-
-.triangle[data-tier="1"] {
-  --accent: #3f93b8;
-}
-
-.triangle[data-tier="2"] {
-  --accent: #25bcb0;
+  margin: clamp(8px, 1.5vh, 16px) 0 clamp(8px, 1.5vh, 16px);
+  font-size: clamp(0.7rem, 1vw, 0.82rem);
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
 }
 
 /*
- * Acronyms sit just below each triangle's apex (apex height = weight * stage
- * height), so they stack down the central axis without being clipped.
+ * Concentric-circle stage, centered in the available space. TAM is the
+ * outermost ring and SOM the innermost core; the detail cards sit in a row
+ * beneath, modeled on the nested TAM/SAM/SOM template.
  */
-.acronym {
-  position: absolute;
-  left: 50%;
-  bottom: calc(var(--w, 1) * var(--pyramid-h));
-  transform: translate(-50%, 4px);
-  z-index: 10;
-  font-size: clamp(0.85rem, 1.6vw, 1.15rem);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: #ffffff;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
-  pointer-events: none;
+.rings {
+  position: relative;
+  width: min(50vh, 480px);
+  aspect-ratio: 1 / 1;
 }
 
+.ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid var(--color-border-strong);
+  background: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
+}
+
+/* TAM (outer) -> SOM (inner): nested, narrowing, neutral tints. */
+.ring[data-tier="0"] {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.ring[data-tier="1"] {
+  width: 67%;
+  height: 67%;
+  z-index: 2;
+  background: color-mix(in srgb, var(--color-text-primary) 11%, transparent);
+}
+
+.ring[data-tier="2"] {
+  width: 36%;
+  height: 36%;
+  z-index: 3;
+  background: color-mix(in srgb, var(--color-text-primary) 17%, transparent);
+}
+
+/* Acronym labels stack down the vertical centerline within each ring's band. */
+.ringLabel {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: clamp(0.8rem, 1.5vw, 1.1rem);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--color-text-primary);
+}
+
+.ring[data-tier="0"] .ringLabel {
+  top: 8%;
+}
+
+.ring[data-tier="1"] .ringLabel {
+  top: 8%;
+}
+
+.ring[data-tier="2"] .ringLabel {
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Detail cards in a row beneath the diagram. */
 .cards {
   flex: 0 0 auto;
   list-style: none;
@@ -114,68 +142,53 @@
 }
 
 .card {
-  --accent: #4f6fc4;
   min-width: 0;
-  border: 1px solid var(--color-border);
-  border-top: 3px solid var(--accent);
-  border-radius: 14px;
-  background: var(--color-surface-tint);
-  padding: clamp(12px, 1.5vw, 18px);
-}
-
-.card[data-tier="1"] {
-  --accent: #3f93b8;
-}
-
-.card[data-tier="2"] {
-  --accent: #25bcb0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
 .cardName {
-  margin: 0 0 8px;
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-size: clamp(0.72rem, 1vw, 0.82rem);
+  margin: 0 0 12px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--color-text-primary);
-}
-
-.cardAcronym {
-  font-size: 1em;
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.cardHeadline {
-  margin: 0;
-  font-size: clamp(0.9rem, 1.4vw, 1.15rem);
-  font-weight: 600;
-  line-height: 1.2;
-  color: var(--accent);
-}
-
-.cardMeta {
-  margin: 4px 0 0;
-  font-size: clamp(0.68rem, 0.95vw, 0.78rem);
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.22em;
+  line-height: 1.4;
   text-transform: uppercase;
   color: var(--color-text-secondary);
 }
 
+.cardHeadline {
+  margin: 0 0 12px;
+  font-size: clamp(1.4rem, 2.6vw, 2rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
 .cardDescription {
-  margin: 10px 0 0;
-  font-size: clamp(0.74rem, 1vw, 0.88rem);
-  line-height: 1.4;
+  margin: 0;
+  max-width: 28ch;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-wrap: balance;
   color: var(--color-text-secondary);
 }
 
 @media (max-width: 760px) {
   .scene {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(12px, 2.5vh, 24px);
     overflow-y: auto;
+  }
+
+  .rings {
+    width: min(70vw, 340px);
   }
 
   .cards {

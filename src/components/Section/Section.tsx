@@ -51,8 +51,10 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
         className={styles.deploy}
         aria-label={section.label}
       >
-        <p className={styles.deployKicker}>{section.label}</p>
-        <h2 className={styles.deployHeader}>{section.title}</h2>
+        <div className={styles.deployHeaderBand}>
+          <p className={styles.deployKicker}>{section.label}</p>
+          <h2 className={styles.deployHeader}>{section.title}</h2>
+        </div>
         <div className={styles.deployStage}>
           {section.media && (
             <Image
