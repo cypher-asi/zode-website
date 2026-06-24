@@ -26,6 +26,29 @@ export interface NetworkCompany {
   readonly monogram: string;
 }
 
+export interface SiteFact {
+  /** Row label, e.g. "Location". */
+  readonly label: string;
+  /** Row value, e.g. "British Columbia". */
+  readonly value: string;
+}
+
+export interface SiteProgress {
+  /** Ordered build phases shown beneath the bar. */
+  readonly stages: readonly string[];
+  /** How many stages are complete (fills the green bar). */
+  readonly completed: number;
+}
+
+export interface SiteContent {
+  /** Full-bleed terrain artwork behind the overlay. */
+  readonly background: SectionMedia;
+  /** Key Facts rows rendered in the right-hand card. */
+  readonly facts: readonly SiteFact[];
+  /** Segmented progress bar + phase labels. */
+  readonly progress: SiteProgress;
+}
+
 export interface SectionContent {
   readonly id: string;
   readonly label: string;
@@ -66,6 +89,12 @@ export interface SectionContent {
   readonly companies?: readonly NetworkCompany[];
   /** ZODE node labels routed across in the "ecosystem-network" scene. */
   readonly zodes?: readonly string[];
+  /**
+   * When set, the section renders the "site" layout: cleaned terrain artwork
+   * as a full-bleed background, a centered header, a Key Facts card on the
+   * right, and a segmented green progress bar centered near the bottom.
+   */
+  readonly site?: SiteContent;
   /** Optional source citations rendered at the bottom of the section. */
   readonly citations?: readonly Citation[];
 }
@@ -163,12 +192,37 @@ export const SECTIONS: readonly SectionContent[] = [
   {
     id: "traction",
     label: "Traction",
-    title: "Traction",
-    lede: "Early signal across operators, developers, and usage.",
-    body: [
-      "Growing operator capacity, an expanding developer base, and increasing on-network activity demonstrate momentum.",
-      "Replace this section with concrete metrics: active nodes, throughput, retention, and pipeline.",
-    ],
+    title: "First site ready to deploy.",
+    lede: "",
+    body: [],
+    site: {
+      background: {
+        src: "/images/first-site.png",
+        alt: "Contour map of the British Columbia site with deployment markers",
+      },
+      facts: [
+        { label: "First deployment", value: "Dec. 2026" },
+        { label: "Location", value: "British Columbia" },
+        { label: "Acres", value: "200+" },
+        { label: "GPUs", value: "720" },
+        { label: "2027 Revenue (est.)", value: "$33 million" },
+        { label: "Power Source", value: "Hydro-power" },
+        { label: "Power", value: "1 MW" },
+      ],
+      progress: {
+        stages: [
+          "Land",
+          "Zoning",
+          "Bandwidth",
+          "Power",
+          "Equipment",
+          "Fabrication",
+          "Deployment",
+          "Monetization",
+        ],
+        completed: 7,
+      },
+    },
   },
   {
     id: "platform",

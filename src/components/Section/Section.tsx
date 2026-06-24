@@ -108,6 +108,74 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
     );
   }
 
+  if (section.site) {
+    const { background, facts, progress } = section.site;
+    const SEGMENTS = 36;
+    const filled = Math.round(
+      (Math.min(progress.completed, progress.stages.length) /
+        progress.stages.length) *
+        SEGMENTS,
+    );
+    return (
+      <section
+        id={section.id}
+        className={styles.site}
+        aria-label={section.label}
+      >
+        <Image
+          src={background.src}
+          alt={background.alt}
+          fill
+          sizes="100vw"
+          priority
+          unoptimized
+          className={styles.siteBg}
+        />
+        <header className={styles.siteHeader}>
+          <p className={styles.kicker}>{section.label}</p>
+          <h2 className={styles.siteTitle}>{section.title}</h2>
+        </header>
+        <div className={styles.siteFacts}>
+          <p className={styles.siteFactsLabel}>Key Facts</p>
+          <dl className={styles.siteFactsList}>
+            {facts.map((fact) => (
+              <div key={fact.label} className={styles.siteFactRow}>
+                <dt className={styles.siteFactKey}>{fact.label}</dt>
+                <dd className={styles.siteFactValue}>{fact.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+        <div className={styles.siteProgress}>
+          <p className={styles.siteProgressLabel}>Progress</p>
+          <div
+            className={styles.siteProgressBar}
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={progress.stages.length}
+            aria-valuenow={progress.completed}
+          >
+            {Array.from({ length: SEGMENTS }, (_, i) => (
+              <span
+                key={i}
+                className={`${styles.siteSegment} ${
+                  i < filled ? styles.siteSegmentOn : ""
+                }`}
+              />
+            ))}
+          </div>
+          <div className={styles.siteStages}>
+            {progress.stages.map((stage) => (
+              <span key={stage} className={styles.siteStage}>
+                {stage}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   if (section.media) {
     return (
       <section
