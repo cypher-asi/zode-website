@@ -3,46 +3,72 @@
  * and four spec cards across the bottom. Fills the full-panel slide
  * supplied by Section's `.feature` wrapper.
  */
+/*
+ * Three equal-fr rows around the explorer: the top and bottom rows are the
+ * same height, so the explorer is centered on the page. The header is
+ * centered within the top row; the spec cards sit at the bottom of the
+ * lower row. minmax(0, 1fr) keeps the rows equal even when card content
+ * can't shrink.
+ */
 .scene {
   height: 100%;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
+  padding: 0 6vw;
+  overflow: hidden;
+}
+
+.headerBand {
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bottomBand {
+  min-height: 0;
+  padding-bottom: 5vmin;
   display: flex;
   flex-direction: column;
-  padding: 4vmin 5vw;
-  overflow: hidden;
-  --product-accent: #e8b84b;
+  justify-content: flex-end;
 }
 
 .header {
   flex: 0 0 auto;
   text-align: center;
-  margin-bottom: clamp(12px, 2vh, 20px);
 }
 
 .kicker {
-  margin: 0 0 8px;
+  margin: 0 0 12px;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--product-accent);
+  color: var(--color-text-secondary);
 }
 
-.lede {
+.title {
   margin: 0;
-  font-size: clamp(1.1rem, 2vw, 1.5rem);
+  font-size: clamp(1.75rem, 3.6vw, 2.75rem);
   font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
   color: var(--color-text-primary);
 }
 
+.lede {
+  margin: 12px auto 0;
+  max-width: 56ch;
+  font-size: clamp(0.95rem, 1.5vw, 1.15rem);
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+
 .explorer {
-  flex: 1 1 auto;
-  min-height: 0;
+  height: clamp(440px, 64vh, 640px);
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
+  grid-template-columns: 2.25fr 1fr;
   border: 1px solid var(--color-border);
-  margin-bottom: clamp(12px, 2vh, 20px);
 }
 
 .sceneViewport {
@@ -50,6 +76,7 @@
   min-height: 0;
   min-width: 0;
   border-right: 1px solid var(--color-border);
+  background: var(--color-bg);
 }
 
 .moduleNav {
@@ -90,7 +117,7 @@
 }
 
 .moduleButton[data-active] {
-  color: var(--product-accent);
+  color: var(--color-text-primary);
 }
 
 .moduleRow {
@@ -121,7 +148,7 @@
 }
 
 .moduleButton[data-active] .moduleCode {
-  color: var(--product-accent);
+  color: var(--color-text-primary);
 }
 
 .moduleDescription {
@@ -175,13 +202,15 @@
 @media (max-width: 900px) {
   .explorer {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(200px, 1fr) auto;
+    grid-template-rows: minmax(360px, auto) auto;
+    height: auto;
+    max-height: min(72vh, 720px);
   }
 
   .sceneViewport {
     border-right: none;
     border-bottom: 1px solid var(--color-border);
-    min-height: 200px;
+    height: clamp(360px, 56vh, 520px);
   }
 
   .moduleNav {

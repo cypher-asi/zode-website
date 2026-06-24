@@ -19,3 +19,16 @@
 .scene canvas {
   display: block;
 }
+
+.matchPageBg {
+  background: var(--color-bg);
+}
+
+/* Static (non-interactive) scenes: no grab affordance. */
+.static {
+  cursor: default;
+}
+
+.static:active {
+  cursor: default;
+}

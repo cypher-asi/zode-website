@@ -16,14 +16,17 @@ export function ProductScene({
 
   return (
     <div className={styles.scene}>
-      <header className={styles.header}>
-        <p className={styles.kicker}>{section.title}</p>
-        <p className={styles.lede}>{section.lede}</p>
-      </header>
+      <div className={styles.headerBand}>
+        <header className={styles.header}>
+          <p className={styles.kicker}>{section.label}</p>
+          <h2 className={styles.title}>{section.title}</h2>
+          {section.lede && <p className={styles.lede}>{section.lede}</p>}
+        </header>
+      </div>
 
       <div className={styles.explorer}>
         <div className={styles.sceneViewport}>
-          <CabinScene />
+          <CabinScene matchPageBackground interactive={false} isometric />
         </div>
         <nav className={styles.moduleNav} aria-label="ZODE modules">
           <ol className={styles.moduleList}>
@@ -56,17 +59,19 @@ export function ProductScene({
         </nav>
       </div>
 
-      <div className={styles.specCards}>
-        {specs.map((spec) => (
-          <article key={spec.title} className={styles.specCard}>
-            <h3 className={styles.specTitle}>{spec.title}</h3>
-            <ul className={styles.specList}>
-              {spec.bullets.map((bullet) => (
-                <li key={bullet}>{bullet}</li>
-              ))}
-            </ul>
-          </article>
-        ))}
+      <div className={styles.bottomBand}>
+        <div className={styles.specCards}>
+          {specs.map((spec) => (
+            <article key={spec.title} className={styles.specCard}>
+              <h3 className={styles.specTitle}>{spec.title}</h3>
+              <ul className={styles.specList}>
+                {spec.bullets.map((bullet) => (
+                  <li key={bullet}>{bullet}</li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -252,8 +252,8 @@ export const SECTIONS: readonly SectionContent[] = [
   {
     id: "product",
     label: "Product",
-    title: "The Product",
-    lede: "ZODE is a rapidly deployable micro-data center.",
+    title: "A rapidly deployable micro-data center.",
+    lede: "",
     body: [],
     product: {
       modules: [
