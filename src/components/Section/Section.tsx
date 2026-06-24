@@ -116,21 +116,37 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
         progress.stages.length) *
         SEGMENTS,
     );
+    // Deployment markers, positioned as percentages within the terrain band so
+    // they track the artwork rather than the full panel.
+    const markers = [
+      { left: "31%", top: "34%" },
+      { left: "39%", top: "22%" },
+      { left: "27%", top: "52%" },
+    ];
     return (
       <section
         id={section.id}
         className={styles.site}
         aria-label={section.label}
       >
-        <Image
-          src={background.src}
-          alt={background.alt}
-          fill
-          sizes="100vw"
-          priority
-          unoptimized
-          className={styles.siteBg}
-        />
+        <div className={styles.siteMedia}>
+          <Image
+            src={background.src}
+            alt={background.alt}
+            fill
+            sizes="100vw"
+            priority
+            unoptimized
+            className={styles.siteBg}
+          />
+          {markers.map((m, i) => (
+            <span
+              key={i}
+              className={styles.siteMarker}
+              style={{ left: m.left, top: m.top }}
+            />
+          ))}
+        </div>
         <header className={styles.siteHeader}>
           <p className={styles.kicker}>{section.label}</p>
           <h2 className={styles.siteTitle}>{section.title}</h2>

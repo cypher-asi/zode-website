@@ -314,10 +314,33 @@
   overflow: hidden;
 }
 
+/*
+ * The terrain sits in a wide band anchored to the bottom of the panel: this
+ * keeps it clear of the header above and, because the band's aspect ratio is
+ * close to the artwork's, `cover` crops far less (less "zoom").
+ */
+.siteMedia {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 66%;
+  z-index: 0;
+}
+
 .siteBg {
   object-fit: cover;
-  object-position: center;
-  z-index: 0;
+  object-position: center top;
+}
+
+.siteMarker {
+  position: absolute;
+  width: clamp(16px, 1.6vw, 22px);
+  aspect-ratio: 1;
+  border: 2px solid #22c55e;
+  background: rgba(34, 197, 94, 0.18);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
 }
 
 .siteHeader {
@@ -346,6 +369,10 @@
   transform: translateY(-50%);
   z-index: 2;
   min-width: 280px;
+  padding: 22px 26px;
+  border-radius: 6px;
+  background: rgba(12, 12, 14, 0.55);
+  backdrop-filter: blur(3px);
 }
 
 .siteFactsLabel {
