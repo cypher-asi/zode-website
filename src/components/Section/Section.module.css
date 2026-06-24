@@ -323,7 +323,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: 10%;
   height: 66%;
   z-index: 0;
 }
@@ -364,7 +364,7 @@
 
 .siteFacts {
   position: absolute;
-  top: 50%;
+  top: 62%;
   right: 7vw;
   transform: translateY(-50%);
   z-index: 2;
