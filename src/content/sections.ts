@@ -68,6 +68,31 @@ export interface SiteContent {
   readonly progress: SiteProgress;
 }
 
+export interface ProductModule {
+  /** Two-digit index shown in the nav, e.g. "01". */
+  readonly number: string;
+  /** Display name, e.g. "Compute Pod". */
+  readonly name: string;
+  /** Right-aligned code, e.g. "AI-01". */
+  readonly code: string;
+  /** Expanded description shown when the module is active. */
+  readonly description: string;
+}
+
+export interface ProductSpec {
+  /** Card title, e.g. "Compute". */
+  readonly title: string;
+  /** Bullet points rendered beneath the title. */
+  readonly bullets: readonly string[];
+}
+
+export interface ProductContent {
+  /** Expandable module list beside the 3D scene. */
+  readonly modules: readonly ProductModule[];
+  /** Spec cards across the bottom of the slide. */
+  readonly specs: readonly ProductSpec[];
+}
+
 export interface SectionContent {
   readonly id: string;
   readonly label: string;
@@ -119,6 +144,11 @@ export interface SectionContent {
    * right, and a segmented green progress bar centered near the bottom.
    */
   readonly site?: SiteContent;
+  /**
+   * When set, the section renders the "product" layout: centered header,
+   * CabinScene + module nav, and spec cards across the bottom.
+   */
+  readonly product?: ProductContent;
   /** Optional source citations rendered at the bottom of the section. */
   readonly citations?: readonly Citation[];
 }
@@ -223,11 +253,92 @@ export const SECTIONS: readonly SectionContent[] = [
     id: "product",
     label: "Product",
     title: "The Product",
-    lede: "The tools and primitives developers build on.",
-    body: [
-      "A coherent platform of SDKs, APIs, and managed primitives makes the network easy to adopt and hard to leave.",
-      "Everything is composable, observable, and secure by default.",
-    ],
+    lede: "ZODE is a rapidly deployable micro-data center.",
+    body: [],
+    product: {
+      modules: [
+        {
+          number: "01",
+          name: "Compute Pod",
+          code: "AI-01",
+          description:
+            "High-density GPU racks with liquid cooling and hot-swappable trays, sized for inference and training workloads at the edge.",
+        },
+        {
+          number: "02",
+          name: "Power Module",
+          code: "PW-01",
+          description:
+            "Modular 1 MW power distribution with grid tie-in, on-site battery buffer, and automatic failover between sources.",
+        },
+        {
+          number: "03",
+          name: "Cooling System",
+          code: "CL-01",
+          description:
+            "Closed-loop liquid cooling with heat rejection and optional heat-recovery interface for adjacent facilities.",
+        },
+        {
+          number: "04",
+          name: "Network Interface",
+          code: "NW-01",
+          description:
+            "Multi-gigabit uplink with redundant paths, low-latency intra-pod switching, and secure tenant isolation.",
+        },
+        {
+          number: "05",
+          name: "Control Panel",
+          code: "CT-01",
+          description:
+            "Unified telemetry, remote orchestration, and carbon-aware scheduling from a single operations dashboard.",
+        },
+        {
+          number: "06",
+          name: "Enclosure Shell",
+          code: "SH-01",
+          description:
+            "Road-transportable container shell with weatherproof cladding, 26 ft clear span, and rapid on-site assembly.",
+        },
+      ],
+      specs: [
+        {
+          title: "Compute",
+          bullets: [
+            "720 GPU capacity",
+            "Liquid-cooled racks",
+            "Sub-10ms intra-pod latency",
+            "Hot-swappable compute trays",
+          ],
+        },
+        {
+          title: "Energy",
+          bullets: [
+            "1 MW modular power draw",
+            "Grid + backup hybrid",
+            "PUE target under 1.2",
+            "On-site battery buffer",
+          ],
+        },
+        {
+          title: "Dimensions",
+          bullets: [
+            "40 ft container footprint",
+            "26 ft clear span",
+            "4-month deploy timeline",
+            "Road-transportable modules",
+          ],
+        },
+        {
+          title: "Sustainability",
+          bullets: [
+            "100% hydro-powered site",
+            "Closed-loop cooling",
+            "Heat recovery ready",
+            "Carbon-aware scheduling",
+          ],
+        },
+      ],
+    },
   },
   {
     id: "ecosystem",
