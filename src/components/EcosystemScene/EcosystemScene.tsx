@@ -5,7 +5,6 @@ import {
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
   type ReactElement,
 } from "react";
 import Image from "next/image";
@@ -51,8 +50,8 @@ const DEFAULT_ZODES = [
 ] as const;
 
 const FEED_LIMIT = 6;
-const TICK_MS = 1900;
-const FINALIZE_MS = 900;
+const TICK_MS = 1500;
+const FINALIZE_MS = 800;
 
 /** Fixed seed so the first paint matches the server render (no hydration drift). */
 const SEED_FEED: readonly Transaction[] = [
@@ -106,20 +105,6 @@ const SEED_FEED: readonly Transaction[] = [
   },
 ];
 
-const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
-
-function usePrefersReducedMotion(): boolean {
-  return useSyncExternalStore(
-    (callback) => {
-      const query = window.matchMedia(REDUCED_MOTION_QUERY);
-      query.addEventListener("change", callback);
-      return () => query.removeEventListener("change", callback);
-    },
-    () => window.matchMedia(REDUCED_MOTION_QUERY).matches,
-    () => false,
-  );
-}
-
 export function EcosystemScene({
   section,
 }: {
@@ -132,18 +117,12 @@ export function EcosystemScene({
   const zodes =
     section.zodes && section.zodes.length > 0 ? section.zodes : DEFAULT_ZODES;
 
-  const reducedMotion = usePrefersReducedMotion();
-
   const [feed, setFeed] = useState<readonly Transaction[]>(SEED_FEED);
   const [activeCompany, setActiveCompany] = useState<number | null>(null);
   const [activeNode, setActiveNode] = useState<number | null>(null);
   const counter = useRef(0);
 
   useEffect(() => {
-    if (reducedMotion) {
-      return;
-    }
-
     let finalizeTimer: ReturnType<typeof setTimeout> | undefined;
 
     const emit = () => {
@@ -186,7 +165,7 @@ export function EcosystemScene({
         clearTimeout(finalizeTimer);
       }
     };
-  }, [companies, zodes, reducedMotion]);
+  }, [companies, zodes]);
 
   // Pulsing node markers laid over the constellation image (percent coords).
   const nodeMarkers = useMemo(
