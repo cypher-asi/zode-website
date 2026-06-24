@@ -80,6 +80,30 @@ const SEED_FEED: readonly Transaction[] = [
     zode: "ZODE-03",
     status: "finalized",
   },
+  {
+    id: "seed-4",
+    address: "b9044e1...7c1da26",
+    company: "Cortex",
+    units: 128,
+    zode: "ZODE-06",
+    status: "finalized",
+  },
+  {
+    id: "seed-5",
+    address: "5e7720c...a31f9b4",
+    company: "Meridian",
+    units: 384,
+    zode: "ZODE-01",
+    status: "finalized",
+  },
+  {
+    id: "seed-6",
+    address: "1d3f8a0...6042ec5",
+    company: "Orbital",
+    units: 64,
+    zode: "ZODE-05",
+    status: "finalized",
+  },
 ];
 
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
