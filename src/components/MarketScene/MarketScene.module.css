@@ -1,13 +1,14 @@
 /*
- * "Opportunity" slide: a TAM/SAM/SOM triangle infographic. Three ascending
- * tiers share a baseline and narrow from TAM (widest market) to SOM (the
- * obtainable beachhead), with a label card above each triangle. Fills the
- * full-panel slide supplied by Section's `.feature` wrapper.
+ * "Opportunity" slide: a centered TAM/SAM/SOM pyramid. Three triangles share
+ * a baseline and are stacked concentrically — TAM the widest, SOM the small
+ * tip — each sized by its market weight, with the detail cards in a row
+ * below. Fills the full-panel slide supplied by Section's `.feature` wrapper.
  */
 .scene {
   height: 100%;
   display: flex;
   flex-direction: column;
+  align-items: center;
   padding: 5vmin 6vw;
   overflow: hidden;
 }
@@ -15,7 +16,7 @@
 .header {
   flex: 0 0 auto;
   text-align: center;
-  margin-bottom: clamp(16px, 3vh, 32px);
+  margin-bottom: clamp(12px, 2vh, 24px);
 }
 
 .kicker {
@@ -39,61 +40,118 @@
 .lede {
   margin: 0 auto;
   max-width: 56ch;
-  font-size: clamp(1rem, 1.6vw, 1.2rem);
+  font-size: clamp(0.95rem, 1.5vw, 1.15rem);
   line-height: 1.45;
   color: var(--color-text-secondary);
 }
 
-.tiers {
-  flex: 1 1 auto;
-  min-height: 0;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-items: end;
-  gap: clamp(12px, 2.5vw, 36px);
+/*
+ * Pyramid stage. Triangles are absolutely positioned, bottom-aligned and
+ * horizontally centered, so smaller tiers nest inside the larger ones. The
+ * stage height equals the largest triangle's height.
+ */
+.pyramid {
+  flex: 0 0 auto;
+  position: relative;
+  width: min(78vw, 460px);
+  height: var(--pyramid-h);
+  margin: auto;
+  --pyramid-h: clamp(140px, 30vh, 300px);
 }
 
-.tier {
+.triangle {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: calc(var(--w, 1) * 100%);
+  height: calc(var(--w, 1) * var(--pyramid-h));
+  clip-path: polygon(50% 0, 0 100%, 100% 100%);
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--accent) 84%, white) 0%,
+    var(--accent) 100%
+  );
   --accent: #4f6fc4;
-  min-width: 0;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: clamp(12px, 2vh, 24px);
 }
 
-.tier[data-tier="1"] {
+.triangle[data-tier="1"] {
   --accent: #3f93b8;
 }
 
-.tier[data-tier="2"] {
+.triangle[data-tier="2"] {
   --accent: #25bcb0;
 }
 
+/*
+ * Acronyms sit just below each triangle's apex (apex height = weight * stage
+ * height), so they stack down the central axis without being clipped.
+ */
+.acronym {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--w, 1) * var(--pyramid-h));
+  transform: translate(-50%, 4px);
+  z-index: 10;
+  font-size: clamp(0.85rem, 1.6vw, 1.15rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.cards {
+  flex: 0 0 auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 1080px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(12px, 2vw, 28px);
+}
+
 .card {
+  --accent: #4f6fc4;
+  min-width: 0;
   border: 1px solid var(--color-border);
   border-top: 3px solid var(--accent);
   border-radius: 14px;
   background: var(--color-surface-tint);
-  padding: clamp(12px, 1.6vw, 20px);
+  padding: clamp(12px, 1.5vw, 18px);
+}
+
+.card[data-tier="1"] {
+  --accent: #3f93b8;
+}
+
+.card[data-tier="2"] {
+  --accent: #25bcb0;
 }
 
 .cardName {
   margin: 0 0 8px;
-  font-size: clamp(0.75rem, 1.1vw, 0.85rem);
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: clamp(0.72rem, 1vw, 0.82rem);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--color-text-primary);
 }
 
+.cardAcronym {
+  font-size: 1em;
+  font-weight: 700;
+  color: var(--accent);
+}
+
 .cardHeadline {
   margin: 0;
-  font-size: clamp(0.95rem, 1.5vw, 1.25rem);
+  font-size: clamp(0.9rem, 1.4vw, 1.15rem);
   font-weight: 600;
   line-height: 1.2;
   color: var(--accent);
@@ -101,7 +159,7 @@
 
 .cardMeta {
   margin: 4px 0 0;
-  font-size: clamp(0.7rem, 1vw, 0.8rem);
+  font-size: clamp(0.68rem, 0.95vw, 0.78rem);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -110,63 +168,18 @@
 
 .cardDescription {
   margin: 10px 0 0;
-  font-size: clamp(0.78rem, 1.05vw, 0.92rem);
-  line-height: 1.45;
+  font-size: clamp(0.74rem, 1vw, 0.88rem);
+  line-height: 1.4;
   color: var(--color-text-secondary);
 }
 
-/*
- * Triangles share a baseline (align-items: end on the grid). Heights ramp
- * down from TAM to SOM so the silhouette reads as a narrowing funnel, while
- * the cards above naturally stagger to match.
- */
-.triangle {
-  position: relative;
-  width: 100%;
-  height: clamp(120px, calc(30vh - var(--tier-index, 0) * 4vh), 280px);
-  clip-path: polygon(50% 0, 0 100%, 100% 100%);
-  background: linear-gradient(
-    160deg,
-    color-mix(in srgb, var(--accent) 88%, white) 0%,
-    var(--accent) 100%
-  );
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.acronym {
-  margin-bottom: clamp(8px, 1.4vh, 18px);
-  font-size: clamp(1.1rem, 2.4vw, 2rem);
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: #ffffff;
-}
-
 @media (max-width: 760px) {
-  .tiers {
-    grid-template-columns: 1fr;
-    align-items: stretch;
-    gap: 16px;
+  .scene {
     overflow-y: auto;
   }
 
-  .tier {
-    flex-direction: row;
-    align-items: center;
-    gap: 16px;
-    height: auto;
-  }
-
-  .card {
-    flex: 1 1 auto;
-    order: 2;
-  }
-
-  .triangle {
-    order: 1;
-    flex: 0 0 96px;
-    width: 96px;
-    height: 84px;
+  .cards {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 }

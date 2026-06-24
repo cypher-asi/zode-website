@@ -37,6 +37,12 @@ export interface MarketTier {
   readonly meta?: string;
   /** Supporting copy describing the tier. */
   readonly description: string;
+  /**
+   * Relative linear size of this tier's triangle (0-1, where the largest
+   * tier is 1). Driven by the tier's market size so bigger markets render
+   * as bigger triangles; falls back to an index ramp when omitted.
+   */
+  readonly weight?: number;
 }
 
 export interface SiteFact {
@@ -200,7 +206,7 @@ export const SECTIONS: readonly SectionContent[] = [
   {
     id: "opportunity",
     label: "Opportunity",
-    title: "Opportunity",
+    title: "Deploy 1 GW of compute by 2030.",
     lede: "Sizing the shift from hyperscale to distributed, power-advantaged compute.",
     body: [],
     market: [
@@ -211,6 +217,7 @@ export const SECTIONS: readonly SectionContent[] = [
         meta: "CAGR ~19%",
         description:
           "Global AI inference + edge AI infrastructure market. Broader framing: global data center / AI infrastructure spend of ~$450B+ in 2025 growing 15\u201320% CAGR to >$1T by 2030.",
+        weight: 1,
       },
       {
         acronym: "SAM",
@@ -219,6 +226,7 @@ export const SECTIONS: readonly SectionContent[] = [
         meta: "CAGR 20\u201330%",
         description:
           "Modular, micro, and edge data centers, including sustainable and secondary-market facilities \u2014 capturing the shift from hyperscale to distributed, faster-deploy builds and power-constrained alternatives.",
+        weight: 0.62,
       },
       {
         acronym: "SOM",
@@ -227,6 +235,7 @@ export const SECTIONS: readonly SectionContent[] = [
         meta: "5\u201350+ MW phased over 3\u20135 yrs",
         description:
           "Power-advantaged micro data centers in renewable-rich secondary markets (e.g. hydro-powered BC Interior). Our differentiated slice: privacy/edge AI inference, agent workloads, and sovereign compute \u2014 low-cost dedicated power, cool climate (low PUE), and grid-bypass via micro hydro at 70\u201385% utilization.",
+        weight: 0.32,
       },
     ],
   },
