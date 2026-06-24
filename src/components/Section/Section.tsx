@@ -3,6 +3,7 @@ import Image from "next/image";
 import type { SectionContent } from "@/content/sections";
 import { EnergyDemandChart } from "@/components/EnergyDemandChart";
 import { CabinScene } from "@/components/CabinScene";
+import { EcosystemScene } from "@/components/EcosystemScene";
 import { Citations } from "@/components/Citations";
 import styles from "./Section.module.css";
 
@@ -17,11 +18,18 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
         <div className={styles.splitText}>
           <p className={styles.kicker}>{section.label}</p>
           <h2 className={styles.title}>{section.title}</h2>
-          <div className={styles.body}>
+          <ol className={styles.numberedBody}>
             {section.body.map((paragraph, index) => (
-              <p key={index}>{paragraph}</p>
+              <li key={index}>
+                {paragraph}
+                {index === 0 &&
+                  section.citations &&
+                  section.citations.length > 0 && (
+                    <sup className={styles.refMarker}>a</sup>
+                  )}
+              </li>
             ))}
-          </div>
+          </ol>
           {section.footnote && (
             <p className={styles.footnote}>{section.footnote}</p>
           )}
@@ -41,6 +49,7 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
         className={styles.deploy}
         aria-label={section.label}
       >
+        <p className={styles.deployKicker}>{section.label}</p>
         <h2 className={styles.deployHeader}>{section.title}</h2>
         <div className={styles.deployStage}>
           {section.media && (
@@ -64,6 +73,18 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
             </div>
           ))}
         </div>
+      </section>
+    );
+  }
+
+  if (section.scene === "ecosystem-network") {
+    return (
+      <section
+        id={section.id}
+        className={styles.feature}
+        aria-label={section.label}
+      >
+        <EcosystemScene section={section} />
       </section>
     );
   }

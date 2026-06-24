@@ -19,6 +19,13 @@ export interface SolutionCard {
   readonly description: string;
 }
 
+export interface NetworkCompany {
+  /** Display name shown in the demand rail. */
+  readonly name: string;
+  /** Single-letter monogram used as a placeholder badge. */
+  readonly monogram: string;
+}
+
 export interface SectionContent {
   readonly id: string;
   readonly label: string;
@@ -49,6 +56,16 @@ export interface SectionContent {
    * stat cards across the bottom.
    */
   readonly cards?: readonly SolutionCard[];
+  /**
+   * When set, the section renders a custom interactive scene instead of the
+   * standard layouts. Currently only "ecosystem-network": a three-panel view
+   * of compute demand, the ZODE network, and a live transaction feed.
+   */
+  readonly scene?: string;
+  /** Placeholder companies for the "ecosystem-network" demand rail. */
+  readonly companies?: readonly NetworkCompany[];
+  /** ZODE node labels routed across in the "ecosystem-network" scene. */
+  readonly zodes?: readonly string[];
   /** Optional source citations rendered at the bottom of the section. */
   readonly citations?: readonly Citation[];
 }
@@ -81,7 +98,6 @@ export const SECTIONS: readonly SectionContent[] = [
       "Local communities are revolting against monolithic build outs and risk being left behind.",
     ],
     chart: "energy-demand",
-    footnote: "Total global energy supply: ~160,000 - 170,000 TWh/year",
     citations: [
       {
         label: "IEA, Energy demand from AI (Energy and AI report)",
@@ -119,13 +135,20 @@ export const SECTIONS: readonly SectionContent[] = [
   },
   {
     id: "ecosystem",
-    label: "The Ecosystem",
-    title: "The Ecosystem",
-    lede: "An open ecosystem of operators, builders, and users.",
-    body: [
-      "Operators contribute capacity, builders ship applications, and users access services — all coordinated by the protocol.",
-      "Aligned incentives keep the network growing, decentralized, and durable over time.",
+    label: "The Network",
+    title: "A constellation of compute.",
+    lede: "Demand meets capacity — jobs route across ZODEs and settle in real time.",
+    body: [],
+    scene: "ecosystem-network",
+    companies: [
+      { name: "Vector Labs", monogram: "V" },
+      { name: "Helix AI", monogram: "H" },
+      { name: "Northwind", monogram: "N" },
+      { name: "Cortex", monogram: "C" },
+      { name: "Meridian", monogram: "M" },
+      { name: "Orbital", monogram: "O" },
     ],
+    zodes: ["ZODE-01", "ZODE-02", "ZODE-03", "ZODE-04", "ZODE-05", "ZODE-06"],
   },
   {
     id: "business-model",
