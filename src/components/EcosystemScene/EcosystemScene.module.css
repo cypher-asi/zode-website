@@ -247,8 +247,8 @@
 
 .txAddress {
   font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 0.85rem;
-  color: var(--color-text-primary);
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

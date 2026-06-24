@@ -268,12 +268,6 @@ export function EcosystemScene({
             {feed.map((tx) => (
               <li key={tx.id} className={styles.tx}>
                 <div className={styles.txTop}>
-                  <span className={styles.txAddress}>{tx.address}</span>
-                  <span className={styles.txStatus} data-status={tx.status}>
-                    {tx.status === "finalizing" ? "finalizing" : "finalized"}
-                  </span>
-                </div>
-                <div className={styles.txMeta}>
                   <span className={styles.txRoute}>
                     <span className={styles.txCompany}>{tx.company}</span>
                     <span className={styles.txArrow} aria-hidden="true">
@@ -281,7 +275,13 @@ export function EcosystemScene({
                     </span>
                     <span className={styles.txNode}>{tx.zode}</span>
                   </span>
-                  <span className={styles.txUnits}>{tx.units} CU</span>
+                  <span className={styles.txStatus} data-status={tx.status}>
+                    {tx.status === "finalizing" ? "finalizing" : "finalized"}
+                  </span>
+                </div>
+                <div className={styles.txMeta}>
+                  <span className={styles.txAddress}>{tx.address}</span>
+                  <span className={styles.txUnits}>{tx.units} NRG</span>
                 </div>
               </li>
             ))}
