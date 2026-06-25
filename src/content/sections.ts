@@ -669,8 +669,8 @@ export const SECTIONS: readonly SectionContent[] = [
         {
           title: "Capital Raise",
           bullets: [
-            "Raising $25 million in Reg CF + S/CF offering for SITE 1",
-            "$5 million initial close",
+            "Tokenizing ZODE 1",
+            "Raising $5 million in Reg CF offering",
             "Structured as a tokenized security revenue share offering",
             "12 month lock-up before trading",
           ],
@@ -678,15 +678,16 @@ export const SECTIONS: readonly SectionContent[] = [
         {
           title: "Deal Terms",
           bullets: [
-            "30% profit share for SITE 1",
+            "30% profit participation units for SITE 1",
+            "3 year capital payback",
             "Dividends paid monthly",
-            "All expenses are directly related to site (not R&D, marketing, etc.)",
+            "All expenses are directly related to unit operation: does not include corporate admin, R&D, marketing, etc.",
           ],
         },
         {
           title: "Key Dates",
           bullets: [
-            "Begins on August 1, 2026 for 90 days",
+            "Target start on August 1, 2026 for 90 days",
             "Ends on October 30, 2026",
             "First ZODE planned to launch on December 1, 2026",
           ],
