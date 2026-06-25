@@ -1,0 +1,1 @@
+export { InvestmentPanel } from "./InvestmentPanel";

@@ -166,6 +166,29 @@ export interface FinancialsContent {
   readonly chartSeries: readonly FinancialsChartPoint[];
 }
 
+export interface InvestmentBulletGroup {
+  /** Group heading, e.g. "Capital Raise". */
+  readonly title: string;
+  /** Bullet points rendered beneath the title. */
+  readonly bullets: readonly string[];
+}
+
+export interface UseOfProceedsSlice {
+  /** Expense category label shown in the legend / tooltip. */
+  readonly label: string;
+  /** Relative weight; rendered as a percentage of the whole. */
+  readonly value: number;
+}
+
+export interface InvestmentContent {
+  /** Left-column stacked groups: Capital Raise, Deal Terms, Key Dates. */
+  readonly bulletGroups: readonly InvestmentBulletGroup[];
+  /** Mock pie-chart slices for the Use of Proceeds card. */
+  readonly useOfProceeds: readonly UseOfProceedsSlice[];
+  /** Bottom-right card: reasons to invest now. */
+  readonly whyInvestNow: InvestmentBulletGroup;
+}
+
 export interface SectionContent {
   readonly id: string;
   readonly label: string;
@@ -228,6 +251,13 @@ export interface SectionContent {
    * and the build-out table plus a revenue line chart on the right.
    */
   readonly financials?: FinancialsContent;
+  /**
+   * When set, the section renders the "investment" layout: a centered header
+   * with the Capital Raise / Deal Terms / Key Dates groups stacked on the
+   * left, and a Use of Proceeds pie chart above a "Why invest now?" card on
+   * the right.
+   */
+  readonly investment?: InvestmentContent;
   /** Optional source citations rendered at the bottom of the section. */
   readonly citations?: readonly Citation[];
 }
@@ -631,13 +661,54 @@ export const SECTIONS: readonly SectionContent[] = [
   {
     id: "investment",
     label: "Investment",
-    title: "Investment",
-    lede: "The round and use of funds.",
-    body: [
-      "Raising to fund the first deployments, equipment, and team.",
-      "Use of funds: SITE development, GPU and power infrastructure, and operations.",
-      "Milestones: first SITE live Dec. 2026, with expansion through 2027.",
-      "Replace this section with the specific ask, terms, and use of funds.",
-    ],
+    title: "Participate in building sustainable infrastructure for the AI revolution.",
+    lede: "",
+    body: [],
+    investment: {
+      bulletGroups: [
+        {
+          title: "Capital Raise",
+          bullets: [
+            "Raising $25 million in Reg CF + S/CF offering for SITE 1",
+            "$5 million initial close",
+            "Structured as a tokenized security revenue share offering",
+            "12 month lock-up before trading",
+          ],
+        },
+        {
+          title: "Deal Terms",
+          bullets: [
+            "30% profit share for SITE 1",
+            "Dividends paid monthly",
+            "All expenses are directly related to site (not R&D, marketing, etc.)",
+          ],
+        },
+        {
+          title: "Key Dates",
+          bullets: [
+            "Begins on August 1, 2026 for 90 days",
+            "Ends on October 30, 2026",
+            "First ZODE planned to launch on December 1, 2026",
+          ],
+        },
+      ],
+      useOfProceeds: [
+        { label: "Equipment", value: 45 },
+        { label: "Power Infrastructure", value: 20 },
+        { label: "Site Development", value: 15 },
+        { label: "Operations", value: 10 },
+        { label: "Network & Cooling", value: 6 },
+        { label: "Contingency", value: 4 },
+      ],
+      whyInvestNow: {
+        title: "Why invest now?",
+        bullets: [
+          "Still early but heavily de-risked (land, permitting, power, water, etc.)",
+          "Fast to revenue and dividends",
+          "Positive societal impact at scale",
+          "Proven team and track-record",
+        ],
+      },
+    },
   },
 ];

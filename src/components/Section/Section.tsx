@@ -7,6 +7,7 @@ import { EcosystemScene } from "@/components/EcosystemScene";
 import { MarketScene } from "@/components/MarketScene";
 import { ProductScene } from "@/components/ProductScene";
 import { FinancialsPanel } from "@/components/FinancialsPanel";
+import { InvestmentPanel } from "@/components/InvestmentPanel";
 import { Citations } from "@/components/Citations";
 import styles from "./Section.module.css";
 
@@ -145,6 +146,18 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
         aria-label={section.label}
       >
         <FinancialsPanel section={section} />
+      </section>
+    );
+  }
+
+  if (section.investment) {
+    return (
+      <section
+        id={section.id}
+        className={styles.financials}
+        aria-label={section.label}
+      >
+        <InvestmentPanel section={section} />
       </section>
     );
   }
