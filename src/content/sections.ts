@@ -527,10 +527,10 @@ export const SECTIONS: readonly SectionContent[] = [
         ],
         rows: [
           { label: "Sites", cells: [1, 1, 12, 24, 36, 60] },
-          { label: "Zodes / site", cells: [3, 6, 6, 8, 10, 10] },
-          { label: "Zodes", cells: [3, 6, 72, 192, 360, 600] },
+          { label: "ZODES / site", cells: [3, 6, 6, 8, 10, 10] },
+          { label: "ZODES", cells: [3, 6, 72, 192, 360, 600] },
           {
-            label: "MW / zode",
+            label: "MW / ZODE",
             format: "decimal",
             cells: [1.5, 1.5, 1.5, 1.5, 1.5, 1.5],
           },
