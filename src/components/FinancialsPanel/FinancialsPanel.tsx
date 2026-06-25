@@ -27,7 +27,7 @@ const NOI_RATIO = GROSS_PROFIT_RATIO - OPERATING_COST_RATIO;
 
 interface ChartLine {
   /** Key into the chart data point. */
-  readonly dataKey: "revenue" | "parentEquity" | "spvCapital";
+  readonly dataKey: "revenue" | "noi" | "parentEquity" | "spvCapital";
   /** Legend / tooltip label. */
   readonly name: string;
   /** Line color. */
@@ -45,7 +45,10 @@ const METRICS: readonly MetricConfig[] = [
   {
     id: "revenue",
     label: "Revenue",
-    lines: [{ dataKey: "revenue", name: "Revenue", accent: "#48c79a" }],
+    lines: [
+      { dataKey: "revenue", name: "Revenue", accent: "#48c79a" },
+      { dataKey: "noi", name: "NOI", accent: "#5b9dff" },
+    ],
   },
   {
     id: "capital",
@@ -162,6 +165,12 @@ export function FinancialsPanel({
       : [];
   const buildOutRows = [...buildOut.rows, ...derivedRows];
 
+  // Augment the chart series with NOI so it can plot alongside Revenue.
+  const chartData = chartSeries.map((point) => ({
+    ...point,
+    noi: point.revenue * NOI_RATIO,
+  }));
+
   return (
     <div className={styles.panel}>
       <header className={styles.header}>
@@ -257,7 +266,7 @@ export function FinancialsPanel({
             <div className={styles.chart}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                  data={chartSeries as unknown as Record<string, number>[]}
+                  data={chartData as unknown as Record<string, number>[]}
                   margin={{ top: 8, right: 16, bottom: 4, left: 8 }}
                 >
                   <CartesianGrid
