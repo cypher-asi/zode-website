@@ -328,16 +328,12 @@
   scroll-snap-stop: always;
   height: 100%;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   padding: 5vmin 6vw;
-  overflow: hidden;
-}
-
-@media (max-width: 900px) {
-  .financials {
-    overflow-y: auto;
-  }
+  /* Scrolls only when the content is taller than the slide; otherwise the
+   * panel's auto margins keep it vertically centered. */
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /*

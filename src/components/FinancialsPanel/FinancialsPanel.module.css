@@ -1,16 +1,15 @@
 /*
- * Center the whole block (header + tables + chart) vertically as a group,
- * matching the standard slides rather than floating the header in a
- * separate top band.
+ * Center the whole block (header + tables + chart) vertically as a group.
+ * `margin: auto` centers it when it fits and collapses to 0 when the
+ * content is taller than the slide, so the parent can scroll without
+ * clipping the top (which `justify-content: center` would do).
  */
 .panel {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 3vmin;
+  gap: 2.4vmin;
   width: 100%;
-  height: 100%;
-  min-height: 0;
+  margin: auto 0;
 }
 
 .header {
@@ -36,6 +35,9 @@
 }
 
 .grid {
+  /* Keep the grid at its natural height so the stacked left-hand tables
+   * never get squeezed into each other when the slide is short. */
+  flex: 0 0 auto;
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
@@ -47,7 +49,7 @@
   min-height: 0;
   display: grid;
   grid-template-rows: auto auto;
-  gap: 2.5vh;
+  gap: 1.8vh;
   align-content: start;
 }
 
@@ -56,14 +58,14 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 16px 18px;
+  padding: 13px 16px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-surface-tint);
 }
 
 .cardTitle {
-  margin: 0 0 12px;
+  margin: 0 0 9px;
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -75,7 +77,7 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .row {
@@ -83,7 +85,7 @@
   grid-template-columns: 1fr auto;
   gap: 16px;
   align-items: baseline;
-  padding: 2px 0;
+  padding: 1px 0;
   font-size: 0.82rem;
   color: var(--color-text-secondary);
 }
