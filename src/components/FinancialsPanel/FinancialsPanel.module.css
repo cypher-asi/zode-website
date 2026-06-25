@@ -115,8 +115,15 @@
 
 /* Build-out grid table */
 .buildOutWrap {
+  flex: 1 1 auto;
   min-width: 0;
   overflow-x: auto;
+  /* Center the table vertically in the space left below the title when the
+   * card is stretched taller than the table (to match the Unit Economics
+   * card height). */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .buildOut {
