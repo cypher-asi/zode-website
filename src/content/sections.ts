@@ -410,7 +410,7 @@ export const SECTIONS: readonly SectionContent[] = [
         {
           title: "Sustainability",
           bullets: [
-            "100% hydro-powered site",
+            "100% hydro-powered SITE",
             "Closed-loop cooling",
             "Heat recovery ready",
             "Carbon-aware scheduling",
@@ -443,7 +443,7 @@ export const SECTIONS: readonly SectionContent[] = [
   {
     id: "traction",
     label: "Traction",
-    title: "First site ready to deploy.",
+    title: "First SITE ready to deploy.",
     lede: "",
     body: [],
     site: {
@@ -453,7 +453,7 @@ export const SECTIONS: readonly SectionContent[] = [
       },
       cards: [
         {
-          title: "Site",
+          title: "SITE",
           bullets: [
             "British Columbia",
             "200+ acres",
@@ -474,9 +474,9 @@ export const SECTIONS: readonly SectionContent[] = [
           title: "Revenue",
           bullets: [
             "$25M per year for ZODE 1",
-            "$150M per year for Site 1",
-            "1 MW hydro-powered site",
-            "Scales site by site",
+            "$150M per year for SITE 1",
+            "6 ZODES for SITE 1",
+            "Scales SITE by SITE",
           ],
         },
       ],
@@ -553,8 +553,8 @@ export const SECTIONS: readonly SectionContent[] = [
           { year: "2029", halves: ["H1", "H2"] },
         ],
         rows: [
-          { label: "Sites", cells: [1, 1, 12, 24, 36, 60] },
-          { label: "ZODES / site", cells: [3, 6, 6, 8, 10, 10] },
+          { label: "SITES", cells: [1, 1, 12, 24, 36, 60] },
+          { label: "ZODES / SITE", cells: [3, 6, 6, 8, 10, 10] },
           { label: "ZODES", cells: [3, 6, 72, 192, 360, 600] },
           {
             label: "MW / ZODE",
@@ -635,8 +635,8 @@ export const SECTIONS: readonly SectionContent[] = [
     lede: "The round and use of funds.",
     body: [
       "Raising to fund the first deployments, equipment, and team.",
-      "Use of funds: site development, GPU and power infrastructure, and operations.",
-      "Milestones: first site live Dec. 2026, with expansion through 2027.",
+      "Use of funds: SITE development, GPU and power infrastructure, and operations.",
+      "Milestones: first SITE live Dec. 2026, with expansion through 2027.",
       "Replace this section with the specific ask, terms, and use of funds.",
     ],
   },
