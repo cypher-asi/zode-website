@@ -170,13 +170,9 @@ export function FinancialsPanel({
       </header>
 
       <div className={styles.grid}>
-        <div className={styles.col}>
-          <Table table={unitEconomics} />
-          <Table table={capitalStructure} />
-        </div>
+        <Table table={unitEconomics} />
 
-        <div className={styles.col}>
-          <div className={styles.card}>
+        <div className={styles.card}>
             <p className={styles.cardTitle}>{buildOut.title}</p>
             <div className={styles.buildOutWrap}>
               <table className={styles.buildOut}>
@@ -236,7 +232,9 @@ export function FinancialsPanel({
             </div>
           </div>
 
-          <div className={styles.card}>
+        <Table table={capitalStructure} />
+
+        <div className={styles.card}>
             <div className={styles.chartHeader}>
               <p className={styles.cardTitle}>
                 3 Year Build Out — {activeMetric.label}
@@ -322,7 +320,6 @@ export function FinancialsPanel({
               </ResponsiveContainer>
             </div>
           </div>
-        </div>
       </div>
     </div>
   );
