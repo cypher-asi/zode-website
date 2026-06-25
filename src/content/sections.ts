@@ -423,7 +423,7 @@ export const SECTIONS: readonly SectionContent[] = [
     id: "ecosystem",
     label: "Network",
     title: "A constellation of compute.",
-    lede: "Demand meets capacity — jobs route across ZODEs and settle in real time.",
+    lede: "",
     body: [],
     scene: "ecosystem-network",
     companies: [

@@ -472,9 +472,6 @@ export function EcosystemScene({
               aria-hidden="true"
             />
           </div>
-          <p className={styles.networkCaption}>
-            {zodes.length} ZODEs online · routing in real time
-          </p>
         </section>
 
         {/* Right: live, finalizing transactions */}

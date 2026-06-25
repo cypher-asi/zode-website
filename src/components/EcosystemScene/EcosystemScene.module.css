@@ -260,14 +260,6 @@
     0 0 16px rgba(232, 184, 75, 0.5);
 }
 
-.networkCaption {
-  margin: 0;
-  font-size: 0.85rem;
-  letter-spacing: 0.04em;
-  color: var(--color-text-secondary);
-  text-align: center;
-}
-
 /* Right: live transaction feed */
 .feed {
   list-style: none;
