@@ -6,10 +6,42 @@ import {
   useRef,
   useState,
   type ReactElement,
+  type ReactNode,
 } from "react";
 import Image from "next/image";
+import {
+  Anthropic,
+  ByteDance,
+  DeepSeek,
+  Gemini,
+  Minimax,
+  Moonshot,
+  OpenAI,
+  Qwen,
+  Tripo,
+  ZAI,
+} from "@lobehub/icons";
 import type { SectionContent } from "@/content/sections";
 import styles from "./EcosystemScene.module.css";
+
+const LOGO_SIZE = 20;
+
+/**
+ * Provider key (from section content) -> brand mark. Marks render as the
+ * mono variant so they inherit `currentColor` and read in both themes.
+ */
+const PROVIDER_LOGOS: Record<string, ReactNode> = {
+  Anthropic: <Anthropic size={LOGO_SIZE} />,
+  OpenAI: <OpenAI size={LOGO_SIZE} />,
+  "DeepSeek AI": <DeepSeek size={LOGO_SIZE} />,
+  "Moonshot AI": <Moonshot size={LOGO_SIZE} />,
+  MiniMax: <Minimax size={LOGO_SIZE} />,
+  "Z.ai": <ZAI size={LOGO_SIZE} />,
+  "Alibaba Cloud": <Qwen size={LOGO_SIZE} />,
+  Google: <Gemini size={LOGO_SIZE} />,
+  "Tripo AI": <Tripo size={LOGO_SIZE} />,
+  ByteDance: <ByteDance size={LOGO_SIZE} />,
+};
 
 interface Transaction {
   readonly id: string;
@@ -32,12 +64,16 @@ function randomAddress(): string {
 }
 
 const DEFAULT_COMPANIES = [
-  { name: "Vector Labs", monogram: "V" },
-  { name: "Helix AI", monogram: "H" },
-  { name: "Northwind", monogram: "N" },
-  { name: "Cortex", monogram: "C" },
-  { name: "Meridian", monogram: "M" },
-  { name: "Orbital", monogram: "O" },
+  { name: "Anthropic", provider: "Anthropic" },
+  { name: "OpenAI", provider: "OpenAI" },
+  { name: "Gemini", provider: "Google" },
+  { name: "DeepSeek", provider: "DeepSeek AI" },
+  { name: "Kimi", provider: "Moonshot AI" },
+  { name: "MiniMax", provider: "MiniMax" },
+  { name: "GLM", provider: "Z.ai" },
+  { name: "Qwen", provider: "Alibaba Cloud" },
+  { name: "Doubao", provider: "ByteDance" },
+  { name: "Tripo", provider: "Tripo AI" },
 ] as const;
 
 const DEFAULT_ZODES = [
@@ -225,7 +261,7 @@ export function EcosystemScene({
                 data-active={activeCompany === index ? "true" : undefined}
               >
                 <span className={styles.companyBadge} aria-hidden="true">
-                  {company.monogram}
+                  {PROVIDER_LOGOS[company.provider] ?? null}
                 </span>
                 <span className={styles.companyName}>{company.name}</span>
                 <span className={styles.companyPing} aria-hidden="true" />

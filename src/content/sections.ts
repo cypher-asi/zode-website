@@ -22,8 +22,8 @@ export interface SolutionCard {
 export interface NetworkCompany {
   /** Display name shown in the demand rail. */
   readonly name: string;
-  /** Single-letter monogram used as a placeholder badge. */
-  readonly monogram: string;
+  /** Provider key that maps to a brand mark in the demand rail. */
+  readonly provider: string;
 }
 
 export interface MarketTier {
@@ -93,6 +93,64 @@ export interface ProductContent {
   readonly specs: readonly ProductSpec[];
 }
 
+export interface FinancialsRow {
+  /** Row label, e.g. "Annual Revenue". */
+  readonly label: string;
+  /** Pre-formatted value, e.g. "$25,297,920" or "37.13%". Omit for group headers. */
+  readonly value?: string;
+  /** Bold the row (totals, profit, headline metrics). */
+  readonly emphasis?: boolean;
+  /** Indent the label (children of a group header). */
+  readonly indent?: boolean;
+  /** Render the label in italics (e.g. derived ratios). */
+  readonly muted?: boolean;
+}
+
+export interface FinancialsTable {
+  /** Card heading, e.g. "ZODE Unit Economics". */
+  readonly title: string;
+  /** Ordered rows rendered as a label / value list. */
+  readonly rows: readonly FinancialsRow[];
+}
+
+export interface BuildOutColumn {
+  /** Period year, e.g. "2027". Spans the two halves below it. */
+  readonly year: string;
+  /** Half-year sub-columns under the year, e.g. ["H1", "H2"]. */
+  readonly halves: readonly string[];
+}
+
+export interface BuildOutRow {
+  /** Row label, e.g. "Zodes". */
+  readonly label: string;
+  /** One pre-formatted cell per half-year column, left-to-right. */
+  readonly cells: readonly string[];
+  /** Bold the row (e.g. Revenue). */
+  readonly emphasis?: boolean;
+}
+
+export interface RevenuePoint {
+  /** Period label, e.g. "2027 H1". */
+  readonly period: string;
+  /** Revenue in USD for that half-year. */
+  readonly revenue: number;
+}
+
+export interface FinancialsContent {
+  /** Top-left table: per-ZODE unit economics. */
+  readonly unitEconomics: FinancialsTable;
+  /** Bottom-left table: SPV capital structure. */
+  readonly capitalStructure: FinancialsTable;
+  /** Right-top table: the three-year build-out grid. */
+  readonly buildOut: {
+    readonly title: string;
+    readonly columns: readonly BuildOutColumn[];
+    readonly rows: readonly BuildOutRow[];
+  };
+  /** Right-bottom chart: revenue across the six half-year periods. */
+  readonly revenueSeries: readonly RevenuePoint[];
+}
+
 export interface SectionContent {
   readonly id: string;
   readonly label: string;
@@ -149,6 +207,12 @@ export interface SectionContent {
    * CabinScene + module nav, and spec cards across the bottom.
    */
   readonly product?: ProductContent;
+  /**
+   * When set, the section renders the "financials" layout: a centered header
+   * with two stacked tables on the left (unit economics + capital structure)
+   * and the build-out table plus a revenue line chart on the right.
+   */
+  readonly financials?: FinancialsContent;
   /** Optional source citations rendered at the bottom of the section. */
   readonly citations?: readonly Citation[];
 }
@@ -348,12 +412,16 @@ export const SECTIONS: readonly SectionContent[] = [
     body: [],
     scene: "ecosystem-network",
     companies: [
-      { name: "Vector Labs", monogram: "V" },
-      { name: "Helix AI", monogram: "H" },
-      { name: "Northwind", monogram: "N" },
-      { name: "Cortex", monogram: "C" },
-      { name: "Meridian", monogram: "M" },
-      { name: "Orbital", monogram: "O" },
+      { name: "Anthropic", provider: "Anthropic" },
+      { name: "OpenAI", provider: "OpenAI" },
+      { name: "Gemini", provider: "Google" },
+      { name: "DeepSeek", provider: "DeepSeek AI" },
+      { name: "Kimi", provider: "Moonshot AI" },
+      { name: "MiniMax", provider: "MiniMax" },
+      { name: "GLM", provider: "Z.ai" },
+      { name: "Qwen", provider: "Alibaba Cloud" },
+      { name: "Doubao", provider: "ByteDance" },
+      { name: "Tripo", provider: "Tripo AI" },
     ],
     zodes: ["ZODE-01", "ZODE-02", "ZODE-03", "ZODE-04", "ZODE-05", "ZODE-06"],
   },
@@ -393,14 +461,105 @@ export const SECTIONS: readonly SectionContent[] = [
     },
   },
   {
-    id: "roadmap",
-    label: "Roadmap",
-    title: "Roadmap",
-    lede: "From foundation to fully decentralized scale.",
-    body: [
-      "Near term: harden the core, expand operator onboarding, and grow the developer toolkit.",
-      "Long term: progressive decentralization, broader interoperability, and ecosystem self-sustainability.",
-    ],
+    id: "financials",
+    label: "Financials",
+    title: "600 ZODES by 2030.",
+    lede: "",
+    body: [],
+    financials: {
+      unitEconomics: {
+        title: "ZODE Unit Economics",
+        rows: [
+          { label: "Nodes", value: "90" },
+          { label: "GPUs", value: "720" },
+          { label: "Racks", value: "11" },
+          { label: "Power density / rack (Kv)", value: "125" },
+          { label: "PUE", value: "1.1" },
+          { label: "Total power (kW)", value: "1,406" },
+          { label: "Revenue / GPU hour ($)", value: "$4.00" },
+          { label: "Annual Revenue", value: "$25,297,920", emphasis: true },
+          { label: "Expenses" },
+          { label: "Power", value: "1,161,135", indent: true },
+          { label: "Financing", value: "13,770,361", indent: true },
+          { label: "Operations", value: "974,040", indent: true },
+          { label: "Total", value: "15,905,536", emphasis: true },
+          { label: "Profit", value: "9,392,384", emphasis: true },
+          { label: "Gross Margins", value: "37.13%", muted: true },
+        ],
+      },
+      capitalStructure: {
+        title: "ZODE I SPV Capital Structure",
+        rows: [
+          { label: "Equity", emphasis: true },
+          { label: "Project", value: "$5,000,000.00", indent: true },
+          { label: "Investors", value: "$5,000,000.00", indent: true },
+          { label: "Total Equity", value: "$10,000,000.00", emphasis: true },
+          { label: "Financing", emphasis: true },
+          {
+            label: "Equipment Financing",
+            value: "$55,404,000.00",
+            indent: true,
+          },
+          {
+            label: "Construction Financing",
+            value: "$4,900,000.00",
+            indent: true,
+          },
+          { label: "Total Financing", value: "$60,304,000.00", emphasis: true },
+          { label: "Investor profit", value: "$2,348,096.09", emphasis: true },
+          { label: "Annual ROE", value: "46.96%", muted: true },
+        ],
+      },
+      buildOut: {
+        title: "3 Year Build Out",
+        columns: [
+          { year: "2027", halves: ["H1", "H2"] },
+          { year: "2028", halves: ["H1", "H2"] },
+          { year: "2029", halves: ["H1", "H2"] },
+        ],
+        rows: [
+          { label: "Sites", cells: ["1", "1", "12", "24", "36", "60"] },
+          { label: "Zodes / site", cells: ["3", "6", "6", "8", "10", "10"] },
+          { label: "Zodes", cells: ["3", "6", "72", "192", "360", "600"] },
+          {
+            label: "MW / zode",
+            cells: ["1.50", "1.50", "1.50", "1.50", "1.50", "1.50"],
+          },
+          { label: "MW", cells: ["5", "9", "108", "288", "540", "900"] },
+          {
+            label: "GPUs",
+            cells: [
+              "3,240",
+              "6,480",
+              "77,760",
+              "207,360",
+              "388,800",
+              "648,000",
+            ],
+          },
+          {
+            label: "Revenue",
+            emphasis: true,
+            cells: [
+              "75,893,760",
+              "151,787,520",
+              "1,821,450,240",
+              "4,857,200,640",
+              "9,107,251,200",
+              "15,178,752,000",
+            ],
+          },
+        ],
+      },
+      revenueSeries: [
+        { period: "2027 H1", revenue: 75_893_760 },
+        { period: "2027 H2", revenue: 151_787_520 },
+        { period: "2028 H1", revenue: 1_821_450_240 },
+        { period: "2028 H2", revenue: 4_857_200_640 },
+        { period: "2029 H1", revenue: 9_107_251_200 },
+        { period: "2029 H2", revenue: 15_178_752_000 },
+      ],
+    },
   },
   {
     id: "team",
@@ -410,6 +569,18 @@ export const SECTIONS: readonly SectionContent[] = [
     body: [
       "A team spanning distributed systems, cryptography, and product, with a track record of shipping at scale.",
       "Replace this section with founder and team bios.",
+    ],
+  },
+  {
+    id: "investment",
+    label: "Investment",
+    title: "Investment",
+    lede: "The round and use of funds.",
+    body: [
+      "Raising to fund the first deployments, equipment, and team.",
+      "Use of funds: site development, GPU and power infrastructure, and operations.",
+      "Milestones: first site live Dec. 2026, with expansion through 2027.",
+      "Replace this section with the specific ask, terms, and use of funds.",
     ],
   },
 ];
