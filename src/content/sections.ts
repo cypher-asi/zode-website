@@ -166,11 +166,19 @@ export interface FinancialsContent {
   readonly chartSeries: readonly FinancialsChartPoint[];
 }
 
+/**
+ * A bullet is either a plain string or a parent line with indented
+ * sub-bullets rendered beneath it.
+ */
+export type InvestmentBullet =
+  | string
+  | { readonly text: string; readonly subBullets: readonly string[] };
+
 export interface InvestmentBulletGroup {
   /** Group heading, e.g. "Capital Raise". */
   readonly title: string;
   /** Bullet points rendered beneath the title. */
-  readonly bullets: readonly string[];
+  readonly bullets: readonly InvestmentBullet[];
 }
 
 export interface UseOfProceedsSlice {
@@ -681,7 +689,12 @@ export const SECTIONS: readonly SectionContent[] = [
             "30% profit participation units for SITE 1",
             "3 year capital payback",
             "Dividends paid monthly",
-            "All expenses are directly related to unit operation: does not include corporate admin, R&D, marketing, etc.",
+            {
+              text: "All expenses are directly related to unit operation:",
+              subBullets: [
+                "Does not include corporate admin, R&D, marketing, etc.",
+              ],
+            },
           ],
         },
         {

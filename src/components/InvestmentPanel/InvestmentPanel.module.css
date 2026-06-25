@@ -85,6 +85,21 @@
   margin-bottom: 0;
 }
 
+.subBullets {
+  margin: 6px 0 0;
+  padding: 0 0 0 1.2em;
+  list-style: circle;
+  color: var(--color-text-secondary);
+}
+
+.subBullets li {
+  margin-bottom: 4px;
+}
+
+.subBullets li:last-child {
+  margin-bottom: 0;
+}
+
 .card {
   min-width: 0;
   min-height: 0;

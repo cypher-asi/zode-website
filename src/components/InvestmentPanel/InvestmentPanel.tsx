@@ -30,9 +30,21 @@ function BulletGroup({ group }: { group: InvestmentBulletGroup }): ReactElement 
     <div className={styles.group}>
       <p className={styles.groupTitle}>{group.title}</p>
       <ul className={styles.bullets}>
-        {group.bullets.map((bullet) => (
-          <li key={bullet}>{bullet}</li>
-        ))}
+        {group.bullets.map((bullet) => {
+          if (typeof bullet === "string") {
+            return <li key={bullet}>{bullet}</li>;
+          }
+          return (
+            <li key={bullet.text}>
+              {bullet.text}
+              <ul className={styles.subBullets}>
+                {bullet.subBullets.map((sub) => (
+                  <li key={sub}>{sub}</li>
+                ))}
+              </ul>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
