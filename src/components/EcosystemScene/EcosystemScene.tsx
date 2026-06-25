@@ -27,8 +27,8 @@ import {
 import type { SectionContent } from "@/content/sections";
 import styles from "./EcosystemScene.module.css";
 
-/** Matches the provider mark size used on the aura-os public-mode marquee. */
-const LOGO_SIZE = 18;
+/** Provider brand-mark size in the demand rail. */
+const LOGO_SIZE = 32;
 
 /**
  * Provider key (from section content) -> brand mark. Marks render as the

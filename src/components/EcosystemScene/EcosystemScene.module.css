@@ -120,15 +120,18 @@
   color: var(--color-text-secondary);
 }
 
-/* Left: provider demand rail — flat brand marks, no labels */
+/* Left: provider demand rail — flat brand marks, no labels, spread to fill */
 .companyList {
   list-style: none;
   margin: 0;
   padding: 0;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: clamp(10px, 1.6vh, 18px);
+  justify-content: space-between;
+  gap: clamp(12px, 2vh, 28px);
 }
 
 .company {
@@ -148,8 +151,8 @@
 }
 
 .companyIcon svg {
-  width: 18px;
-  height: 18px;
+  width: clamp(28px, 3vw, 40px);
+  height: clamp(28px, 3vw, 40px);
 }
 
 .company[data-active="true"] .companyIcon {
