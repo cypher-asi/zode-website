@@ -464,8 +464,8 @@ export const SECTIONS: readonly SectionContent[] = [
         {
           title: "Compute",
           bullets: [
-            "720 GPUs",
-            "1 MW power draw",
+            "720 scaling to 4,320 GPUs",
+            "1.5 MW scaling to 9 MW",
             "Liquid-cooled racks",
             "Sub-10ms intra-pod latency",
           ],

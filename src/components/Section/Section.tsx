@@ -157,6 +157,9 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
       { left: "31%", top: "34%" },
       { left: "39%", top: "22%" },
       { left: "27%", top: "52%" },
+      { left: "20%", top: "62%" },
+      { left: "33%", top: "68%" },
+      { left: "43%", top: "60%" },
     ];
     return (
       <section
