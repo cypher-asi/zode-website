@@ -273,8 +273,8 @@
   gap: 6px;
   padding: 12px 14px;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-bg-elevated);
+  border-radius: 0;
+  background: none;
   animation: txIn 360ms ease both;
 }
 
