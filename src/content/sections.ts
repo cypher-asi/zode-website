@@ -473,7 +473,8 @@ export const SECTIONS: readonly SectionContent[] = [
         {
           title: "Revenue",
           bullets: [
-            "$33M in 2027 (est.)",
+            "$25M per year for ZODE 1",
+            "$150M per year for Site 1",
             "1 MW hydro-powered site",
             "Scales site by site",
           ],

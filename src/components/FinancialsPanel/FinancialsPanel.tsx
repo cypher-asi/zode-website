@@ -39,8 +39,6 @@ interface MetricConfig {
   readonly label: string;
   /** One or more lines drawn when this metric is active. */
   readonly lines: readonly ChartLine[];
-  /** Optional annotation lines shown beneath the chart. */
-  readonly notes?: readonly string[];
 }
 
 const METRICS: readonly MetricConfig[] = [
@@ -48,7 +46,6 @@ const METRICS: readonly MetricConfig[] = [
     id: "revenue",
     label: "Revenue",
     lines: [{ dataKey: "revenue", name: "Revenue", accent: "#48c79a" }],
-    notes: ["$25M per year for ZODE 1", "$150M per year for Site 1"],
   },
   {
     id: "capital",
@@ -324,13 +321,6 @@ export function FinancialsPanel({
                 </LineChart>
               </ResponsiveContainer>
             </div>
-            {activeMetric.notes && activeMetric.notes.length > 0 && (
-              <ul className={styles.chartNote}>
-                {activeMetric.notes.map((note) => (
-                  <li key={note}>{note}</li>
-                ))}
-              </ul>
-            )}
           </div>
         </div>
       </div>

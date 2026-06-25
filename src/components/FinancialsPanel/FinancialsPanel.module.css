@@ -232,22 +232,6 @@
   height: clamp(140px, 22vh, 240px);
 }
 
-.chartNote {
-  margin: 10px 0 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 0.78rem;
-  line-height: 1.4;
-  color: var(--color-text-secondary);
-}
-
-.chartNote li {
-  font-variant-numeric: tabular-nums;
-}
-
 @media (max-width: 900px) {
   .panel {
     display: flex;
