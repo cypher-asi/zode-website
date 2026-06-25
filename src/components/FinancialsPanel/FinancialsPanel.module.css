@@ -140,17 +140,24 @@
   white-space: nowrap;
 }
 
+/* Full-width rules under the year row and the H1/H2 row. */
+.buildOut thead tr:first-child {
+  border-bottom: 1px solid var(--color-border-strong);
+}
+
+.buildOut thead tr:last-child {
+  border-bottom: 1px solid var(--color-border);
+}
+
 .yearHead {
   text-align: center;
   font-weight: 700;
   color: var(--color-text-primary);
-  border-bottom: 1px solid var(--color-border-strong);
 }
 
 .halfHead {
   font-weight: 600;
   color: var(--color-text-secondary);
-  border-bottom: 1px solid var(--color-border);
 }
 
 .buildOutLabel {
