@@ -4,14 +4,12 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
   type ReactElement,
   type ReactNode,
   type RefObject,
 } from "react";
-import Image from "next/image";
 import {
   Anthropic,
   ByteDance,
@@ -202,6 +200,138 @@ function ConnectionField({
   );
 }
 
+/**
+ * Main constellation nodes, in viewBox percent coords (0..100). Positions are
+ * kept inside a ~42-unit radius of centre so they sit within the circular disk.
+ */
+const STARS: readonly Point[] = [
+  { x: 50, y: 18 },
+  { x: 30, y: 30 },
+  { x: 70, y: 28 },
+  { x: 22, y: 50 },
+  { x: 50, y: 44 },
+  { x: 78, y: 50 },
+  { x: 36, y: 62 },
+  { x: 64, y: 60 },
+  { x: 50, y: 74 },
+  { x: 28, y: 78 },
+  { x: 72, y: 78 },
+  { x: 50, y: 88 },
+];
+
+/**
+ * Faint background star dots. Hardcoded (not random) so the server and client
+ * first paint agree — no hydration drift.
+ */
+const DOTS: readonly (Point & { r: number })[] = [
+  { x: 18, y: 22, r: 0.7 },
+  { x: 40, y: 16, r: 0.5 },
+  { x: 62, y: 14, r: 0.8 },
+  { x: 82, y: 24, r: 0.6 },
+  { x: 14, y: 38, r: 0.5 },
+  { x: 33, y: 40, r: 0.6 },
+  { x: 58, y: 36, r: 0.5 },
+  { x: 88, y: 40, r: 0.7 },
+  { x: 24, y: 60, r: 0.6 },
+  { x: 44, y: 54, r: 0.5 },
+  { x: 60, y: 52, r: 0.7 },
+  { x: 84, y: 62, r: 0.5 },
+  { x: 16, y: 70, r: 0.6 },
+  { x: 40, y: 70, r: 0.5 },
+  { x: 56, y: 70, r: 0.6 },
+  { x: 80, y: 72, r: 0.7 },
+  { x: 30, y: 88, r: 0.5 },
+  { x: 64, y: 86, r: 0.6 },
+  { x: 46, y: 30, r: 0.5 },
+  { x: 70, y: 44, r: 0.6 },
+  { x: 26, y: 44, r: 0.5 },
+  { x: 50, y: 60, r: 0.6 },
+  { x: 36, y: 24, r: 0.5 },
+  { x: 74, y: 64, r: 0.5 },
+  { x: 20, y: 82, r: 0.6 },
+  { x: 86, y: 52, r: 0.5 },
+  { x: 12, y: 54, r: 0.5 },
+  { x: 52, y: 80, r: 0.6 },
+  { x: 66, y: 74, r: 0.5 },
+  { x: 42, y: 84, r: 0.5 },
+];
+
+/**
+ * Zodiac wirings — each is an ordered list of {@link STARS} indices joined into
+ * a polyline. On every constellation tick the active pattern advances, so the
+ * lines reconfigure into a different shape, like a new zodiac sign.
+ */
+const ZODIAC_PATTERNS: readonly (readonly number[])[] = [
+  [0, 2, 5, 7, 8],
+  [1, 4, 5, 10, 8, 6, 3],
+  [0, 1, 3, 6, 9, 11],
+  [2, 5, 7, 4, 1, 0],
+  [3, 4, 7, 10, 11, 8, 6],
+  [0, 4, 8, 7, 5, 2],
+];
+
+/** How long one zodiac stays lit before the wiring reconfigures. */
+const CONSTELLATION_TICK_MS = 2000;
+
+/**
+ * Pure CSS/SVG star map that fills the central disk. A field of faint dots sits
+ * behind a set of main nodes; the `patternIndex` selects one zodiac wiring whose
+ * edges draw in the green accent and whose nodes glow. The fast transaction tick
+ * flashes whichever node (`activeStar`) a transaction is currently settling on.
+ */
+function Constellation({
+  patternIndex,
+  activeStar,
+}: {
+  readonly patternIndex: number;
+  readonly activeStar: number | null;
+}): ReactElement {
+  const pattern = ZODIAC_PATTERNS[patternIndex % ZODIAC_PATTERNS.length];
+  const activeSet = new Set(pattern);
+  const points = pattern
+    .map((i) => `${STARS[i].x},${STARS[i].y}`)
+    .join(" ");
+
+  return (
+    <svg
+      className={styles.starMap}
+      viewBox="0 0 100 100"
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {DOTS.map((dot, i) => (
+        <circle
+          key={`dot-${i}`}
+          className={styles.dot}
+          cx={dot.x}
+          cy={dot.y}
+          r={dot.r}
+        />
+      ))}
+
+      {/* Re-mount on pattern change so the draw-in animation replays. */}
+      <polyline
+        key={patternIndex}
+        className={styles.edge}
+        points={points}
+      />
+
+      {STARS.map((star, i) => (
+        <circle
+          key={`star-${i}`}
+          className={styles.starNode}
+          cx={star.x}
+          cy={star.y}
+          r={1.7}
+          data-on={activeSet.has(i) ? "true" : undefined}
+          data-flash={activeStar === i ? "true" : undefined}
+        />
+      ))}
+    </svg>
+  );
+}
+
 interface Transaction {
   readonly id: string;
   readonly address: string;
@@ -318,6 +448,7 @@ export function EcosystemScene({
   const [feed, setFeed] = useState<readonly Transaction[]>(SEED_FEED);
   const [activeCompany, setActiveCompany] = useState<number | null>(null);
   const [activeNode, setActiveNode] = useState<number | null>(null);
+  const [patternIndex, setPatternIndex] = useState(0);
   const counter = useRef(0);
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -388,18 +519,13 @@ export function EcosystemScene({
     };
   }, [companies]);
 
-  // Pulsing node markers laid over the constellation image (percent coords).
-  const nodeMarkers = useMemo(
-    () => [
-      { left: "50%", top: "30%" },
-      { left: "32%", top: "44%" },
-      { left: "66%", top: "40%" },
-      { left: "44%", top: "62%" },
-      { left: "60%", top: "66%" },
-      { left: "38%", top: "76%" },
-    ],
-    [],
-  );
+  // Constellation loop: reconfigure the zodiac wiring on a steady tick.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPatternIndex((prev) => (prev + 1) % ZODIAC_PATTERNS.length);
+    }, CONSTELLATION_TICK_MS);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className={styles.scene}>
@@ -448,25 +574,10 @@ export function EcosystemScene({
             className={styles.constellation}
             data-active={activeNode !== null ? "true" : undefined}
           >
-            <Image
-              src="/images/constellation.png"
-              alt="Constellation of ZODE compute nodes"
-              fill
-              sizes="(max-width: 900px) 80vw, 36vw"
-              priority
-              unoptimized
-              className={styles.constellationImage}
+            <Constellation
+              patternIndex={patternIndex}
+              activeStar={activeNode === null ? null : activeNode % STARS.length}
             />
-            <div className={styles.orbit} aria-hidden="true" />
-            {nodeMarkers.map((marker, index) => (
-              <span
-                key={index}
-                className={styles.node}
-                style={marker}
-                data-active={activeNode === index ? "true" : undefined}
-                aria-hidden="true"
-              />
-            ))}
             <span
               className={styles.port}
               data-device-port
