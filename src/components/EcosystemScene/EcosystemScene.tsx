@@ -1,12 +1,15 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type ReactElement,
   type ReactNode,
+  type RefObject,
 } from "react";
 import Image from "next/image";
 import {
@@ -24,7 +27,8 @@ import {
 import type { SectionContent } from "@/content/sections";
 import styles from "./EcosystemScene.module.css";
 
-const LOGO_SIZE = 20;
+/** Matches the provider mark size used on the aura-os public-mode marquee. */
+const LOGO_SIZE = 18;
 
 /**
  * Provider key (from section content) -> brand mark. Marks render as the
@@ -42,6 +46,161 @@ const PROVIDER_LOGOS: Record<string, ReactNode> = {
   "Tripo AI": <Tripo size={LOGO_SIZE} />,
   ByteDance: <ByteDance size={LOGO_SIZE} />,
 };
+
+interface Point {
+  readonly x: number;
+  readonly y: number;
+}
+
+/** How long one light dot takes to travel a line, icon to port. */
+const PULSE_DUR_S = 2.6;
+/** Per-line offset so the dots don't travel in lockstep. */
+const LINE_STAGGER_S = 0.5;
+/** Head + trailing ghosts that form each line's travelling comet. */
+const PULSE_GHOSTS = 4;
+/** Lag between successive ghosts in the trail, in seconds. */
+const GHOST_GAP_S = 0.18;
+
+function readNozzlePoints(stage: HTMLElement, count: number): Point[] {
+  const stageRect = stage.getBoundingClientRect();
+  const points = new Array<Point | undefined>(count);
+  stage.querySelectorAll<HTMLElement>("[data-rail-nozzle]").forEach((el) => {
+    const index = Number(el.dataset.railNozzle);
+    if (Number.isNaN(index)) {
+      return;
+    }
+    const rect = el.getBoundingClientRect();
+    points[index] = {
+      x: rect.left + rect.width / 2 - stageRect.left,
+      y: rect.top + rect.height / 2 - stageRect.top,
+    };
+  });
+  return points.filter((p): p is Point => p !== undefined);
+}
+
+function readPortPoint(stage: HTMLElement): Point | null {
+  const el = stage.querySelector<HTMLElement>("[data-device-port]");
+  if (!el) {
+    return null;
+  }
+  const stageRect = stage.getBoundingClientRect();
+  const rect = el.getBoundingClientRect();
+  return {
+    x: rect.left + rect.width / 2 - stageRect.left,
+    y: rect.top + rect.height / 2 - stageRect.top,
+  };
+}
+
+function curve(from: Point, to: Point): string {
+  const dx = (to.x - from.x) * 0.5;
+  return `M ${from.x.toFixed(1)} ${from.y.toFixed(1)} C ${(from.x + dx).toFixed(1)} ${from.y.toFixed(1)}, ${(to.x - dx).toFixed(1)} ${to.y.toFixed(1)}, ${to.x.toFixed(1)} ${to.y.toFixed(1)}`;
+}
+
+/**
+ * SVG overlay that routes every provider icon into a single converging port on
+ * the left edge of the central constellation. Each line carries a continuous
+ * light pulse so it reads as compute flowing into the network; when a provider
+ * is active its line surges gold. Endpoints are measured from the live DOM
+ * (icons tagged `data-rail-nozzle`, the circle a single `data-device-port`),
+ * so the lines stay glued across resizes without hard-coded geometry.
+ */
+function ConnectionField({
+  stageRef,
+  count,
+  activeIndex,
+}: {
+  readonly stageRef: RefObject<HTMLDivElement | null>;
+  readonly count: number;
+  readonly activeIndex: number | null;
+}): ReactElement {
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  const [nozzles, setNozzles] = useState<Point[]>([]);
+  const [port, setPort] = useState<Point | null>(null);
+
+  const measure = useCallback(() => {
+    const stage = stageRef.current;
+    if (!stage) {
+      return;
+    }
+    const rect = stage.getBoundingClientRect();
+    setSize({ width: rect.width, height: rect.height });
+    setNozzles(readNozzlePoints(stage, count));
+    setPort(readPortPoint(stage));
+  }, [stageRef, count]);
+
+  useLayoutEffect(() => {
+    measure();
+    const raf = requestAnimationFrame(measure);
+    return () => cancelAnimationFrame(raf);
+  }, [measure]);
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage || typeof ResizeObserver === "undefined") {
+      return;
+    }
+    const observer = new ResizeObserver(measure);
+    observer.observe(stage);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [stageRef, measure]);
+
+  if (nozzles.length === 0 || port === null || size.width === 0) {
+    return (
+      <svg className={styles.connectionField} aria-hidden="true" focusable="false" />
+    );
+  }
+
+  const lines = nozzles.map((from, i) => ({
+    key: i,
+    d: curve(from, port),
+    active: activeIndex === i,
+  }));
+
+  return (
+    <svg
+      className={styles.connectionField}
+      width={size.width}
+      height={size.height}
+      viewBox={`0 0 ${size.width} ${size.height}`}
+      aria-hidden="true"
+      focusable="false"
+    >
+      {lines.map((line) => {
+        const pathId = `gridFlowPath-${line.key}`;
+        return (
+          <g
+            key={line.key}
+            className={styles.flowLine}
+            data-active={line.active ? "true" : undefined}
+          >
+            <path id={pathId} className={styles.flowBase} d={line.d} />
+            {Array.from({ length: PULSE_GHOSTS }, (_, g) => (
+              <circle
+                key={g}
+                className={styles.flowDot}
+                r={2.6 - g * 0.45}
+                style={{ opacity: 1 - g * (0.7 / PULSE_GHOSTS) }}
+              >
+                <animateMotion
+                  dur={`${PULSE_DUR_S}s`}
+                  begin={`${-line.key * LINE_STAGGER_S + g * GHOST_GAP_S}s`}
+                  repeatCount="indefinite"
+                  calcMode="linear"
+                >
+                  <mpath href={`#${pathId}`} />
+                </animateMotion>
+              </circle>
+            ))}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
 
 interface Transaction {
   readonly id: string;
@@ -160,6 +319,7 @@ export function EcosystemScene({
   const [activeCompany, setActiveCompany] = useState<number | null>(null);
   const [activeNode, setActiveNode] = useState<number | null>(null);
   const counter = useRef(0);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   // Fast loop: stream transactions in, lighting the node each one settles on.
   useEffect(() => {
@@ -249,8 +409,14 @@ export function EcosystemScene({
         {section.lede && <p className={styles.lede}>{section.lede}</p>}
       </header>
 
-      <div className={styles.grid}>
-        {/* Left: companies that need compute */}
+      <div className={styles.grid} ref={gridRef}>
+        <ConnectionField
+          stageRef={gridRef}
+          count={companies.length}
+          activeIndex={activeCompany}
+        />
+
+        {/* Left: providers that need compute */}
         <section className={styles.panel} aria-label="Compute demand">
           <p className={styles.panelLabel}>Compute demand</p>
           <ul className={styles.companyList}>
@@ -260,11 +426,15 @@ export function EcosystemScene({
                 className={styles.company}
                 data-active={activeCompany === index ? "true" : undefined}
               >
-                <span className={styles.companyBadge} aria-hidden="true">
+                <span
+                  className={styles.companyIcon}
+                  data-rail-nozzle={index}
+                  role="img"
+                  aria-label={company.name}
+                  title={company.name}
+                >
                   {PROVIDER_LOGOS[company.provider] ?? null}
                 </span>
-                <span className={styles.companyName}>{company.name}</span>
-                <span className={styles.companyPing} aria-hidden="true" />
               </li>
             ))}
           </ul>
@@ -295,6 +465,12 @@ export function EcosystemScene({
                 aria-hidden="true"
               />
             ))}
+            <span
+              className={styles.port}
+              data-device-port
+              data-active={activeCompany !== null ? "true" : undefined}
+              aria-hidden="true"
+            />
           </div>
           <p className={styles.networkCaption}>
             {zodes.length} ZODEs online · routing in real time
