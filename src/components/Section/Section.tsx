@@ -6,6 +6,7 @@ import { CabinScene } from "@/components/CabinScene";
 import { EcosystemScene } from "@/components/EcosystemScene";
 import { MarketScene } from "@/components/MarketScene";
 import { ProductScene } from "@/components/ProductScene";
+import { FinancialsPanel } from "@/components/FinancialsPanel";
 import { Citations } from "@/components/Citations";
 import styles from "./Section.module.css";
 
@@ -125,13 +126,25 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
         aria-label={section.label}
       >
         <div className={styles.sceneMedia}>
-          <CabinScene />
+          <CabinScene matchPageBackground />
         </div>
         <div className={styles.sceneBand}>
           <h2 className={styles.featureTitle}>{section.title}</h2>
           <p className={styles.featureLede}>{section.lede}</p>
           <Citations items={section.citations} />
         </div>
+      </section>
+    );
+  }
+
+  if (section.financials) {
+    return (
+      <section
+        id={section.id}
+        className={styles.financials}
+        aria-label={section.label}
+      >
+        <FinancialsPanel section={section} />
       </section>
     );
   }
@@ -144,8 +157,8 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
         progress.stages.length) *
         SEGMENTS,
     );
-    // Deployment markers, positioned as percentages within the terrain band so
-    // they track the artwork rather than the full panel.
+    // Deployment markers, positioned as percentages within the framed
+    // container so they track the artwork rather than the full panel.
     const markers = [
       { left: "31%", top: "34%" },
       { left: "39%", top: "22%" },
@@ -157,7 +170,14 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
         className={styles.site}
         aria-label={section.label}
       >
-        <div className={styles.siteMedia}>
+        <div className={styles.siteHeaderBand}>
+          <header className={styles.siteHeader}>
+            <p className={styles.kicker}>{section.label}</p>
+            <h2 className={styles.siteTitle}>{section.title}</h2>
+          </header>
+        </div>
+
+        <div className={styles.siteFrame}>
           <Image
             src={background.src}
             alt={background.alt}
@@ -175,45 +195,44 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
             />
           ))}
         </div>
-        <header className={styles.siteHeader}>
-          <p className={styles.kicker}>{section.label}</p>
-          <h2 className={styles.siteTitle}>{section.title}</h2>
-        </header>
-        <div className={styles.siteFacts}>
-          <p className={styles.siteFactsLabel}>Key Facts</p>
-          <dl className={styles.siteFactsList}>
-            {facts.map((fact) => (
-              <div key={fact.label} className={styles.siteFactRow}>
-                <dt className={styles.siteFactKey}>{fact.label}</dt>
-                <dd className={styles.siteFactValue}>{fact.value}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-        <div className={styles.siteProgress}>
-          <p className={styles.siteProgressLabel}>Progress</p>
-          <div
-            className={styles.siteProgressBar}
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={progress.stages.length}
-            aria-valuenow={progress.completed}
-          >
-            {Array.from({ length: SEGMENTS }, (_, i) => (
-              <span
-                key={i}
-                className={`${styles.siteSegment} ${
-                  i < filled ? styles.siteSegmentOn : ""
-                }`}
-              />
-            ))}
+
+        <div className={styles.siteBottom}>
+          <div className={styles.siteFacts}>
+            <p className={styles.siteFactsLabel}>Key Facts</p>
+            <dl className={styles.siteFactsList}>
+              {facts.map((fact) => (
+                <div key={fact.label} className={styles.siteFactRow}>
+                  <dt className={styles.siteFactKey}>{fact.label}</dt>
+                  <dd className={styles.siteFactValue}>{fact.value}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
-          <div className={styles.siteStages}>
-            {progress.stages.map((stage) => (
-              <span key={stage} className={styles.siteStage}>
-                {stage}
-              </span>
-            ))}
+          <div className={styles.siteProgress}>
+            <p className={styles.siteProgressLabel}>Progress</p>
+            <div
+              className={styles.siteProgressBar}
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={progress.stages.length}
+              aria-valuenow={progress.completed}
+            >
+              {Array.from({ length: SEGMENTS }, (_, i) => (
+                <span
+                  key={i}
+                  className={`${styles.siteSegment} ${
+                    i < filled ? styles.siteSegmentOn : ""
+                  }`}
+                />
+              ))}
+            </div>
+            <div className={styles.siteStages}>
+              {progress.stages.map((stage) => (
+                <span key={stage} className={styles.siteStage}>
+                  {stage}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </section>
