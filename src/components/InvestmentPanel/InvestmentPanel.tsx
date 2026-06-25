@@ -17,7 +17,7 @@ import styles from "./InvestmentPanel.module.css";
 
 /** Slice colors for the Use of Proceeds pie, reusing the deck accent palette. */
 const SLICE_COLORS = [
-  "#48c79a",
+  "#01d892",
   "#5b9dff",
   "#e0a93b",
   "#d4658f",

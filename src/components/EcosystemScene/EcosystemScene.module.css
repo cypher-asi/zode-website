@@ -316,8 +316,8 @@
 }
 
 .txStatus[data-status="finalized"] {
-  color: #3fb37f;
-  background: rgba(63, 179, 127, 0.14);
+  color: #01d892;
+  background: rgba(1, 216, 146, 0.14);
 }
 
 .txMeta {

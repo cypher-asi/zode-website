@@ -1,38 +1,15 @@
 @import "tailwindcss";
 
 /*
- * Theme tokens. Token names intentionally mirror the aura-os public
- * shell (--color-bg, --color-text-primary, etc.) so the ported shell,
- * tick rail, and taskbar CSS modules track the active theme with no
- * per-theme overrides.
+ * Theme tokens. The outer shell (frame + top bar + bottom taskbar) is a
+ * constant WHITE surface with dark chrome in both themes — so `:root` holds
+ * the light/white-surface palette. Only the inner content panel
+ * (`[data-shell-body]`) re-themes: a dark "screen" by default (dark mode is
+ * the default) and a light panel in light mode. `--logo-invert` keeps the
+ * mark legible: black on the white shell, white inside the dark panel, black
+ * inside a light panel.
  */
-:root,
-[data-theme="dark"] {
-  --color-bg: #0d0d0f;
-  --color-bg-elevated: #161618;
-  --color-text-primary: #f4f4f5;
-  --color-text-secondary: #8a8a92;
-  --color-border: rgba(255, 255, 255, 0.12);
-  --color-border-strong: rgba(255, 255, 255, 0.18);
-  --color-surface-tint: rgba(255, 255, 255, 0.06);
-  --color-surface-hover: rgba(255, 255, 255, 0.08);
-  --color-overlay-focus: rgba(255, 255, 255, 0.4);
-  --color-focus-ring: #6aa6ff;
-
-  /*
-   * Outer shell is theme-aware: a near-black frame in dark mode so the
-   * top-bar logo and bottom-taskbar chrome (which sit on the outer
-   * shell, not the inner panel) read in the theme's foreground colour.
-   * The inner panel (`--color-bg`) is a touch lighter than the frame so
-   * the rounded "screen in a bezel" framing still reads.
-   */
-  --shell-outer-bg: #000000;
-  --shell-stroke-top: rgba(255, 255, 255, 0.18);
-  --shell-stroke-side: rgba(255, 255, 255, 0.1);
-  --shell-stroke-bottom: rgba(255, 255, 255, 0.04);
-}
-
-[data-theme="light"] {
+:root {
   --color-bg: #ffffff;
   --color-bg-elevated: #ffffff;
   --color-text-primary: #0a0a0a;
@@ -43,11 +20,43 @@
   --color-surface-hover: rgba(0, 0, 0, 0.06);
   --color-overlay-focus: rgba(0, 0, 0, 0.35);
   --color-focus-ring: #2563eb;
+  --logo-invert: 1;
 
-  --shell-outer-bg: #f4f4f5;
-  --shell-stroke-top: rgba(0, 0, 0, 0.1);
-  --shell-stroke-side: rgba(0, 0, 0, 0.06);
-  --shell-stroke-bottom: rgba(0, 0, 0, 0.03);
+  /* Brand accent — inherited across both themes. */
+  --color-accent: #01d892;
+
+  /* Constant white frame around the inner content "screen". */
+  --shell-outer-bg: #ffffff;
+}
+
+/* Inner content panel — dark "screen" by default (dark mode). */
+[data-shell-body] {
+  --color-bg: #161616;
+  --color-bg-elevated: #1e1e1e;
+  --color-text-primary: #f4f4f5;
+  --color-text-secondary: #8a8a92;
+  --color-border: rgba(255, 255, 255, 0.12);
+  --color-border-strong: rgba(255, 255, 255, 0.18);
+  --color-surface-tint: rgba(255, 255, 255, 0.06);
+  --color-surface-hover: rgba(255, 255, 255, 0.08);
+  --color-overlay-focus: rgba(255, 255, 255, 0.4);
+  --color-focus-ring: #6aa6ff;
+  --logo-invert: 0;
+}
+
+/* Inner content panel in light mode — light panel on the same white shell. */
+[data-theme="light"] [data-shell-body] {
+  --color-bg: #ffffff;
+  --color-bg-elevated: #ffffff;
+  --color-text-primary: #0a0a0a;
+  --color-text-secondary: #6b6b72;
+  --color-border: rgba(0, 0, 0, 0.12);
+  --color-border-strong: rgba(0, 0, 0, 0.16);
+  --color-surface-tint: rgba(0, 0, 0, 0.05);
+  --color-surface-hover: rgba(0, 0, 0, 0.06);
+  --color-overlay-focus: rgba(0, 0, 0, 0.35);
+  --color-focus-ring: #2563eb;
+  --logo-invert: 1;
 }
 
 @theme inline {

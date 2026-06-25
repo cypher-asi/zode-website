@@ -46,7 +46,7 @@ const METRICS: readonly MetricConfig[] = [
     id: "revenue",
     label: "Revenue",
     lines: [
-      { dataKey: "revenue", name: "Revenue", accent: "#48c79a" },
+      { dataKey: "revenue", name: "Revenue", accent: "#01d892" },
       { dataKey: "noi", name: "NOI", accent: "#5b9dff" },
     ],
   },

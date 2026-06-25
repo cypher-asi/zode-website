@@ -57,7 +57,7 @@ const UNITS: readonly UnitConfig[] = [
     id: "twh",
     label: "TWh",
     seriesName: "Electricity demand (TWh/yr)",
-    accent: "#5b9dff",
+    accent: "#01d892",
     toValue: (twh) => twh,
     formatAxis: (value) => `${Math.round(value)}`,
     formatTooltip: (value) => `${value.toLocaleString()} TWh`,
@@ -66,7 +66,7 @@ const UNITS: readonly UnitConfig[] = [
     id: "homes",
     label: "Homes",
     seriesName: "Homes powered (proxy)",
-    accent: "#48c79a",
+    accent: "#5b9dff",
     toValue: (twh) => twh * HOMES_PER_TWH,
     formatAxis: (value) => `${(value / 1e6).toFixed(0)}M`,
     formatTooltip: (value) =>

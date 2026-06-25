@@ -2,6 +2,12 @@
  * The scene fills its container and keeps a fixed dark backdrop in both
  * themes so it always reads like the reference cabin photo.
  */
+.wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
 .scene {
   position: relative;
   width: 100%;
@@ -31,4 +37,146 @@
 
 .static:active {
   cursor: default;
+}
+
+/* Centered overlay used while the model downloads / parses or on failure. */
+.status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary, #c6c6cc);
+  pointer-events: none;
+}
+
+/* Layer / style control panel, floated over the canvas. */
+.panel {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 148px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border-strong, rgba(255, 255, 255, 0.18));
+  border-radius: 10px;
+  background: var(--color-bg-elevated, rgba(24, 24, 27, 0.82));
+  backdrop-filter: blur(8px);
+  color: var(--color-text-primary, #eaeaea);
+  font-size: 0.8rem;
+}
+
+.panelTitle {
+  margin: 4px 0 2px;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary, #9b9ba3);
+}
+
+.styleToggle {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+}
+
+.styleButton {
+  flex: 1;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-secondary, #9b9ba3);
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.styleButton:hover {
+  color: var(--color-text-primary, #eaeaea);
+}
+
+.styleButton[data-active] {
+  background: var(--color-accent, #01d892);
+  color: var(--color-bg, #161618);
+}
+
+.layerList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 52vh;
+  overflow-y: auto;
+}
+
+.category {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.categoryHead {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.caret {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary, #9b9ba3);
+  font-size: 0.7rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.caret:hover {
+  color: var(--color-text-primary, #eaeaea);
+}
+
+.categoryLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+}
+
+.subList {
+  list-style: none;
+  margin: 0 0 0 22px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.layerRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  color: var(--color-text-secondary, #c6c6cc);
+}
+
+.categoryLabel input,
+.layerRow input {
+  accent-color: var(--color-accent, #01d892);
+  cursor: pointer;
 }
