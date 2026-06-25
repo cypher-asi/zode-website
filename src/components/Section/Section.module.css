@@ -406,14 +406,12 @@
 .siteBottom {
   min-height: 0;
   align-self: end;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: clamp(20px, 4vw, 48px);
-  align-items: end;
+  display: flex;
+  justify-content: center;
 }
 
 .siteFacts {
-  min-width: 0;
+  width: min(560px, 100%);
   padding: 22px 26px;
   border: 1px solid var(--color-border);
   border-radius: 6px;
@@ -456,61 +454,6 @@
   color: var(--color-text-primary);
 }
 
-.siteProgress {
-  min-width: 0;
-}
-
-.siteProgressLabel {
-  margin: 0 0 12px;
-  text-align: center;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--color-text-primary);
-}
-
-.siteProgressBar {
-  display: flex;
-  gap: 4px;
-  padding: 6px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 4px;
-}
-
-.siteSegment {
-  flex: 1 1 0;
-  height: 12px;
-  border-radius: 1px;
-  background: transparent;
-  box-shadow: inset 0 0 0 1px var(--color-border-strong);
-}
-
-.siteSegmentOn {
-  background: #22c55e;
-  box-shadow: none;
-}
-
-.siteStages {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
-  font-size: 0.75rem;
-  color: var(--color-text-secondary);
-}
-
-.siteStage {
-  flex: 1 1 0;
-  text-align: center;
-}
-
-.siteStage:first-child {
-  text-align: left;
-}
-
-.siteStage:last-child {
-  text-align: right;
-}
-
 @media (max-width: 900px) {
   .site {
     display: flex;
@@ -523,14 +466,5 @@
   .siteFrame {
     flex: 0 0 auto;
     height: clamp(220px, 36vh, 420px);
-  }
-
-  .siteBottom {
-    grid-template-columns: 1fr;
-    gap: 3vh;
-  }
-
-  .siteStages {
-    font-size: 0.65rem;
   }
 }

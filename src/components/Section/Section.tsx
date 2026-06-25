@@ -150,13 +150,7 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
   }
 
   if (section.site) {
-    const { background, facts, progress } = section.site;
-    const SEGMENTS = 36;
-    const filled = Math.round(
-      (Math.min(progress.completed, progress.stages.length) /
-        progress.stages.length) *
-        SEGMENTS,
-    );
+    const { background, facts } = section.site;
     // Deployment markers, positioned as percentages within the framed
     // container so they track the artwork rather than the full panel.
     const markers = [
@@ -207,32 +201,6 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
                 </div>
               ))}
             </dl>
-          </div>
-          <div className={styles.siteProgress}>
-            <p className={styles.siteProgressLabel}>Progress</p>
-            <div
-              className={styles.siteProgressBar}
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={progress.stages.length}
-              aria-valuenow={progress.completed}
-            >
-              {Array.from({ length: SEGMENTS }, (_, i) => (
-                <span
-                  key={i}
-                  className={`${styles.siteSegment} ${
-                    i < filled ? styles.siteSegmentOn : ""
-                  }`}
-                />
-              ))}
-            </div>
-            <div className={styles.siteStages}>
-              {progress.stages.map((stage) => (
-                <span key={stage} className={styles.siteStage}>
-                  {stage}
-                </span>
-              ))}
-            </div>
           </div>
         </div>
       </section>
