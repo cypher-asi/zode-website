@@ -403,55 +403,49 @@
   z-index: 1;
 }
 
-.siteBottom {
+/*
+ * Three floating cards across the bottom, matching the product slide's spec
+ * cards (same padding, border, radius, and type scale).
+ */
+.siteCards {
   min-height: 0;
   align-self: end;
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(10px, 1.5vw, 16px);
 }
 
-.siteFacts {
-  width: min(560px, 100%);
-  padding: 22px 26px;
+.siteCard {
+  min-width: 0;
+  padding: clamp(12px, 1.6vh, 16px) clamp(14px, 1.4vw, 18px);
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--color-bg-elevated);
 }
 
-.siteFactsLabel {
-  margin: 0 0 18px;
-  font-size: 12px;
+.siteCardTitle {
+  margin: 0 0 10px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--color-text-secondary);
 }
 
-.siteFactsList {
+.siteCardList {
   margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.siteFactRow {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 24px;
-  align-items: baseline;
-}
-
-.siteFactKey {
-  margin: 0;
-  font-size: 0.95rem;
-  color: var(--color-text-secondary);
-}
-
-.siteFactValue {
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 600;
+  padding: 0 0 0 1.1em;
+  font-size: clamp(0.78rem, 1.05vw, 0.85rem);
+  line-height: 1.5;
   color: var(--color-text-primary);
+}
+
+.siteCardList li {
+  margin-bottom: 4px;
+}
+
+.siteCardList li:last-child {
+  margin-bottom: 0;
 }
 
 @media (max-width: 900px) {
@@ -466,5 +460,9 @@
   .siteFrame {
     flex: 0 0 auto;
     height: clamp(220px, 36vh, 420px);
+  }
+
+  .siteCards {
+    grid-template-columns: 1fr;
   }
 }

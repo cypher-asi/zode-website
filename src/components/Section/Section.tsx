@@ -150,7 +150,7 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
   }
 
   if (section.site) {
-    const { background, facts } = section.site;
+    const { background, cards } = section.site;
     // Deployment markers, positioned as percentages within the framed
     // container so they track the artwork rather than the full panel.
     const markers = [
@@ -190,18 +190,17 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
           ))}
         </div>
 
-        <div className={styles.siteBottom}>
-          <div className={styles.siteFacts}>
-            <p className={styles.siteFactsLabel}>Key Facts</p>
-            <dl className={styles.siteFactsList}>
-              {facts.map((fact) => (
-                <div key={fact.label} className={styles.siteFactRow}>
-                  <dt className={styles.siteFactKey}>{fact.label}</dt>
-                  <dd className={styles.siteFactValue}>{fact.value}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
+        <div className={styles.siteCards}>
+          {cards.map((card) => (
+            <article key={card.title} className={styles.siteCard}>
+              <h3 className={styles.siteCardTitle}>{card.title}</h3>
+              <ul className={styles.siteCardList}>
+                {card.bullets.map((bullet) => (
+                  <li key={bullet}>{bullet}</li>
+                ))}
+              </ul>
+            </article>
+          ))}
         </div>
       </section>
     );

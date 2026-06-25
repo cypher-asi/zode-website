@@ -45,11 +45,11 @@ export interface MarketTier {
   readonly weight?: number;
 }
 
-export interface SiteFact {
-  /** Row label, e.g. "Location". */
-  readonly label: string;
-  /** Row value, e.g. "British Columbia". */
-  readonly value: string;
+export interface SiteCard {
+  /** Card title, e.g. "Site". */
+  readonly title: string;
+  /** Bullet points rendered beneath the title. */
+  readonly bullets: readonly string[];
 }
 
 export interface SiteProgress {
@@ -62,8 +62,8 @@ export interface SiteProgress {
 export interface SiteContent {
   /** Full-bleed terrain artwork behind the overlay. */
   readonly background: SectionMedia;
-  /** Key Facts rows rendered in the right-hand card. */
-  readonly facts: readonly SiteFact[];
+  /** Floating cards across the bottom of the slide. */
+  readonly cards: readonly SiteCard[];
   /** Segmented progress bar + phase labels. */
   readonly progress: SiteProgress;
 }
@@ -451,14 +451,33 @@ export const SECTIONS: readonly SectionContent[] = [
         src: "/images/first-site.png",
         alt: "Contour map of the British Columbia site with deployment markers",
       },
-      facts: [
-        { label: "First deployment", value: "Dec. 2026" },
-        { label: "Location", value: "British Columbia" },
-        { label: "Acres", value: "200+" },
-        { label: "GPUs", value: "720" },
-        { label: "2027 Revenue (est.)", value: "$33 million" },
-        { label: "Power Source", value: "Hydro-power" },
-        { label: "Power", value: "1 MW" },
+      cards: [
+        {
+          title: "Site",
+          bullets: [
+            "British Columbia",
+            "200+ acres",
+            "100% hydro-powered",
+            "First deployment Dec. 2026",
+          ],
+        },
+        {
+          title: "Compute",
+          bullets: [
+            "720 GPUs",
+            "1 MW power draw",
+            "Liquid-cooled racks",
+            "Sub-10ms intra-pod latency",
+          ],
+        },
+        {
+          title: "Revenue",
+          bullets: [
+            "$33M in 2027 (est.)",
+            "1 MW hydro-powered site",
+            "Scales site by site",
+          ],
+        },
       ],
       progress: {
         stages: [
