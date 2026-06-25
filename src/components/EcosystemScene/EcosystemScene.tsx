@@ -28,7 +28,7 @@ import type { SectionContent } from "@/content/sections";
 import styles from "./EcosystemScene.module.css";
 
 /** Provider brand-mark size in the demand rail. */
-const LOGO_SIZE = 32;
+const LOGO_SIZE = 27;
 
 /**
  * Provider key (from section content) -> brand mark. Marks render as the
