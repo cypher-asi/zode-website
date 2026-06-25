@@ -328,6 +328,8 @@
   scroll-snap-stop: always;
   height: 100%;
   display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 5vmin 6vw;
   overflow: hidden;
 }
