@@ -105,7 +105,9 @@
 }
 
 .panelItem {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
   text-align: left;
   font: inherit;
@@ -120,6 +122,16 @@
   cursor: pointer;
   white-space: nowrap;
   transition: color 160ms ease, background 160ms ease;
+}
+
+.panelIndex {
+  min-width: 16px;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.panelItem[data-active="true"] .panelIndex {
+  color: var(--color-text-primary);
 }
 
 .panelItem:hover,

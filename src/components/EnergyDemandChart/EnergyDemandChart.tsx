@@ -2,14 +2,15 @@
 
 import { useMemo, useState, type ReactElement } from "react";
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+import { GREEN_SERIES } from "@/lib/theme/chartPalette";
 import styles from "./EnergyDemandChart.module.css";
 
 /** Base-case data-center electricity demand, in TWh per year. */
@@ -57,7 +58,7 @@ const UNITS: readonly UnitConfig[] = [
     id: "twh",
     label: "TWh",
     seriesName: "Electricity demand (TWh/yr)",
-    accent: "#01d892",
+    accent: GREEN_SERIES[0],
     toValue: (twh) => twh,
     formatAxis: (value) => `${Math.round(value)}`,
     formatTooltip: (value) => `${value.toLocaleString()} TWh`,
@@ -66,7 +67,7 @@ const UNITS: readonly UnitConfig[] = [
     id: "homes",
     label: "Homes",
     seriesName: "Homes powered (proxy)",
-    accent: "#5b9dff",
+    accent: GREEN_SERIES[2],
     toValue: (twh) => twh * HOMES_PER_TWH,
     formatAxis: (value) => `${(value / 1e6).toFixed(0)}M`,
     formatTooltip: (value) =>
@@ -78,7 +79,7 @@ const UNITS: readonly UnitConfig[] = [
     id: "usd",
     label: "$",
     seriesName: "Approx. energy value (USD/yr)",
-    accent: "#e0a93b",
+    accent: GREEN_SERIES[3],
     toValue: (twh) => twh * USD_PER_TWH,
     formatAxis: (value) => `$${(value / 1e9).toFixed(0)}B`,
     formatTooltip: (value) =>
@@ -111,7 +112,7 @@ export function EnergyDemandChart(): ReactElement {
 
       <div className={styles.chart}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart
+          <BarChart
             data={data}
             margin={{ top: 8, right: 16, bottom: 4, left: 8 }}
           >
@@ -125,6 +126,7 @@ export function EnergyDemandChart(): ReactElement {
               tick={{ fill: "var(--color-text-secondary)", fontSize: 12 }}
               stroke="var(--color-border-strong)"
               tickLine={false}
+              tickFormatter={(year) => `'${String(year).slice(-2)}`}
             />
             <YAxis
               width={52}
@@ -134,7 +136,7 @@ export function EnergyDemandChart(): ReactElement {
               tickFormatter={config.formatAxis}
             />
             <Tooltip
-              cursor={{ stroke: "var(--color-border-strong)" }}
+              cursor={{ fill: "var(--color-border)", opacity: 0.3 }}
               contentStyle={{
                 background: "var(--color-bg-elevated)",
                 border: "1px solid var(--color-border-strong)",
@@ -147,18 +149,16 @@ export function EnergyDemandChart(): ReactElement {
                 config.seriesName,
               ]}
             />
-            <Line
-              type="monotone"
+            <Bar
               dataKey="value"
               name={config.seriesName}
-              stroke={config.accent}
-              strokeWidth={2.5}
-              dot={{ r: 3, fill: config.accent, strokeWidth: 0 }}
-              activeDot={{ r: 5 }}
+              fill={config.accent}
+              radius={[0, 0, 0, 0]}
+              maxBarSize={12}
               hide={hidden}
               isAnimationActive
             />
-          </LineChart>
+          </BarChart>
         </ResponsiveContainer>
       </div>
 

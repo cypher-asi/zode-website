@@ -20,6 +20,8 @@ export interface SectionTickRailProps {
   readonly sections: readonly RailSection[];
   /** Id of the scrollable container the sections live in. */
   readonly scrollRootId: string;
+  /** Anchor id of the cover slide; the rail's logo button returns here. */
+  readonly coverId: string;
 }
 
 /**
@@ -37,15 +39,17 @@ export interface SectionTickRailProps {
 export function SectionTickRail({
   sections,
   scrollRootId,
+  coverId,
 }: SectionTickRailProps): ReactElement {
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [activeId, setActiveId] = useState<string>(sections[0]?.id ?? "");
+  const [activeId, setActiveId] = useState<string>(coverId);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const root = document.getElementById(scrollRootId);
-    const elements = sections
-      .map((section) => document.getElementById(section.id))
+    const observedIds = [coverId, ...sections.map((section) => section.id)];
+    const elements = observedIds
+      .map((id) => document.getElementById(id))
       .filter((el): el is HTMLElement => el !== null);
     if (elements.length === 0) return;
 
@@ -76,7 +80,7 @@ export function SectionTickRail({
     return () => observer.disconnect();
     // `activeId` is intentionally excluded; it is seeded inside the callback.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sections, scrollRootId]);
+  }, [sections, scrollRootId, coverId]);
 
   const cancelScheduledClose = (): void => {
     if (closeTimerRef.current !== null) {
@@ -123,14 +127,14 @@ export function SectionTickRail({
       onMouseLeave={handleMouseLeave}
     >
       <ul className={styles.list} aria-label="Section navigation">
-        {sections.map((section) => {
+        {sections.map((section, index) => {
           const isActive = section.id === activeId;
           return (
             <li key={section.id} className={styles.row}>
               <button
                 type="button"
                 className={styles.tickButton}
-                aria-label={section.label}
+                aria-label={`${index + 1}. ${section.label}`}
                 aria-current={isActive ? "true" : undefined}
                 data-active={isActive ? "true" : "false"}
                 onFocus={open}
@@ -150,7 +154,7 @@ export function SectionTickRail({
         onMouseLeave={handleMouseLeave}
       >
         <ul className={styles.panelList}>
-          {sections.map((section) => (
+          {sections.map((section, index) => (
             <li key={section.id} className={styles.panelRow}>
               <button
                 type="button"
@@ -159,6 +163,7 @@ export function SectionTickRail({
                 tabIndex={isOpen ? 0 : -1}
                 onClick={() => goToSection(section.id)}
               >
+                <span className={styles.panelIndex}>{index + 1}.</span>
                 {section.label}
               </button>
             </li>

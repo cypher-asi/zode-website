@@ -726,7 +726,7 @@ export const SECTIONS: readonly SectionContent[] = [
   {
     id: "team",
     label: "Team",
-    title: "Over a decade building sovereign technology",
+    title: "A decade building sovereign systems.",
     lede: "",
     body: [],
     team: {
@@ -835,7 +835,7 @@ export const SECTIONS: readonly SectionContent[] = [
   {
     id: "investment",
     label: "Investment",
-    title: "Participate in building sustainable infrastructure for the AI revolution.",
+    title: "Sustainable infrastructure for the AI revolution.",
     lede: "",
     body: [],
     investment: {

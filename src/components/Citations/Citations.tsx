@@ -20,7 +20,7 @@ export function Citations({
         {items.map((citation, index) => (
           <li key={citation.href} className={styles.item}>
             <span className={styles.marker} aria-hidden="true">
-              {index + 1}.
+              {String.fromCharCode(97 + index)}.
             </span>
             <a
               className={styles.link}

@@ -4,9 +4,8 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
   type ReactElement,
   type ReactNode,
 } from "react";
@@ -21,26 +20,44 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-function readInitialTheme(): Theme {
-  if (typeof document === "undefined") return "dark";
-  const attr = document.documentElement.getAttribute("data-theme");
-  return attr === "light" ? "light" : "dark";
+/**
+ * The active theme lives on `<html data-theme>`, applied before hydration by
+ * the inline init script. We read it via `useSyncExternalStore` so the server
+ * snapshot ("dark", the default) is used during SSR and hydration — keeping
+ * the server and first client render in agreement — then React swaps to the
+ * live DOM value after hydration. This avoids a hydration mismatch without any
+ * setState-in-effect.
+ */
+function subscribe(onChange: () => void): () => void {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-theme"],
+  });
+  return () => observer.disconnect();
+}
+
+function getSnapshot(): Theme {
+  return document.documentElement.getAttribute("data-theme") === "light"
+    ? "light"
+    : "dark";
+}
+
+function getServerSnapshot(): Theme {
+  return "dark";
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }): ReactElement {
-  const [theme, setTheme] = useState<Theme>(readInitialTheme);
+  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
+  const toggleTheme = useCallback(() => {
+    const next = getSnapshot() === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
     try {
-      localStorage.setItem(THEME_STORAGE_KEY, theme);
+      localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {
       // Ignore storage failures (private mode, blocked cookies, etc.).
     }
-  }, [theme]);
-
-  const toggleTheme = useCallback(() => {
-    setTheme((current) => (current === "dark" ? "light" : "dark"));
   }, []);
 
   const value = useMemo<ThemeContextValue>(

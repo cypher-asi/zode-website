@@ -10,7 +10,18 @@
   display: block;
   width: 46px;
   height: auto;
-  opacity: 0.92;
+  /*
+   * The PNG ships as white lines on transparency for dark surfaces. The
+   * mark inverts to black only where it sits on a light panel: `--logo-invert`
+   * is 0 on the constant dark chrome (top bar) and 1 inside a light content
+   * panel, so the top-bar mark stays white while the inner marks flip.
+   */
+  filter: invert(var(--logo-invert, 0));
+}
+
+/* Cover mark: large and centered on the opening slide. */
+.glyphCover {
+  width: min(72vw, 560px);
 }
 
 .wordmark {

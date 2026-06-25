@@ -251,7 +251,8 @@
   width: clamp(16px, 1.6vw, 22px);
   aspect-ratio: 1;
   border: 2px solid #01d892;
-  background: rgba(1, 216, 146, 0.18);
+  border-radius: 50%;
+  background: #0d1110;
   transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 1;

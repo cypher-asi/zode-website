@@ -12,16 +12,20 @@ import {
 import type { SectionContent } from "@/content/sections";
 import { ListCard, CardBulletList } from "@/components/Card";
 import { SlideLayout } from "@/components/SlideLayout";
+import { GREEN_SERIES } from "@/lib/theme/chartPalette";
 import styles from "./InvestmentPanel.module.css";
 
-/** Slice colors for the Use of Proceeds pie, reusing the deck accent palette. */
+/**
+ * Slice colors for the Use of Proceeds pie. Ordered for maximum contrast
+ * between adjacent slices while staying within the shared green palette.
+ */
 const SLICE_COLORS = [
-  "#01d892",
-  "#5b9dff",
-  "#e0a93b",
-  "#d4658f",
-  "#7b6ff0",
-  "#5fb0c9",
+  GREEN_SERIES[0],
+  GREEN_SERIES[4],
+  GREEN_SERIES[1],
+  GREEN_SERIES[2],
+  GREEN_SERIES[3],
+  GREEN_SERIES[5],
 ] as const;
 
 export function InvestmentPanel({

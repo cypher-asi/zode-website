@@ -9,9 +9,13 @@ interface DeckControllerProps {
   readonly slideCount: number;
 }
 
-const WHEEL_THRESHOLD = 8;
+const WHEEL_THRESHOLD = 16;
 const TOUCH_THRESHOLD = 40;
 const LOCK_FALLBACK_MS = 700;
+// A single flick on a trackpad or high-resolution mouse emits a long tail of
+// momentum `wheel` events. We only re-arm once the wheel has been quiet for
+// this long, so one continuous gesture advances exactly one slide.
+const WHEEL_IDLE_MS = 140;
 
 /**
  * Turns the native scroll-snap deck into a controlled, one-gesture-equals-
@@ -32,6 +36,11 @@ export function DeckController({ scrollRootId, slideCount }: DeckControllerProps
 
     let locked = false;
     let lockTimer: ReturnType<typeof setTimeout> | null = null;
+    // `armed` gates whether a fresh gesture may trigger a slide. It is consumed
+    // on each step and only restored once the wheel goes idle, which absorbs
+    // the momentum tail that otherwise skips past slides.
+    let armed = true;
+    let idleTimer: ReturnType<typeof setTimeout> | null = null;
 
     const currentIndex = (): number => Math.round(root.scrollTop / root.clientHeight);
 
@@ -68,7 +77,17 @@ export function DeckController({ scrollRootId, slideCount }: DeckControllerProps
       // cabin model), so let that gesture through instead of navigating.
       if (event.ctrlKey) return;
       event.preventDefault();
-      if (locked || Math.abs(event.deltaY) < WHEEL_THRESHOLD) return;
+
+      // Every wheel event — including momentum/inertia — pushes back the
+      // re-arm point, so the deck only accepts a new gesture once scrolling
+      // has fully stopped for WHEEL_IDLE_MS.
+      if (idleTimer !== null) clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        armed = true;
+      }, WHEEL_IDLE_MS);
+
+      if (locked || !armed || Math.abs(event.deltaY) < WHEEL_THRESHOLD) return;
+      armed = false;
       step(event.deltaY > 0 ? 1 : -1);
     };
 
@@ -145,6 +164,7 @@ export function DeckController({ scrollRootId, slideCount }: DeckControllerProps
       root.removeEventListener("touchend", onTouchEnd);
       root.removeEventListener("scrollend", onScrollEnd);
       if (lockTimer !== null) clearTimeout(lockTimer);
+      if (idleTimer !== null) clearTimeout(idleTimer);
     };
   }, [scrollRootId, slideCount]);
 

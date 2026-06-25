@@ -17,6 +17,7 @@ import type {
   SectionContent,
 } from "@/content/sections";
 import { SlideLayout } from "@/components/SlideLayout";
+import { GREEN_SERIES } from "@/lib/theme/chartPalette";
 import styles from "./FinancialsPanel.module.css";
 
 type Metric = "revenue" | "capital";
@@ -47,16 +48,16 @@ const METRICS: readonly MetricConfig[] = [
     id: "revenue",
     label: "Revenue",
     lines: [
-      { dataKey: "revenue", name: "Revenue", accent: "#01d892" },
-      { dataKey: "noi", name: "NOI", accent: "#5b9dff" },
+      { dataKey: "revenue", name: "Revenue", accent: GREEN_SERIES[0] },
+      { dataKey: "noi", name: "NOI", accent: GREEN_SERIES[2] },
     ],
   },
   {
     id: "capital",
     label: "Capital",
     lines: [
-      { dataKey: "parentEquity", name: "Parent Equity", accent: "#5b9dff" },
-      { dataKey: "spvCapital", name: "SPV Capital", accent: "#e0a93b" },
+      { dataKey: "parentEquity", name: "Parent Equity", accent: GREEN_SERIES[0] },
+      { dataKey: "spvCapital", name: "SPV Capital", accent: GREEN_SERIES[3] },
     ],
   },
 ];

@@ -1,4 +1,6 @@
-import type { ReactElement } from "react";
+"use client";
+
+import { useState, type ReactElement } from "react";
 import type { MarketTier, SectionContent } from "@/content/sections";
 import { Citations } from "@/components/Citations";
 import { FeatureCard } from "@/components/Card";
@@ -39,6 +41,8 @@ export function MarketScene({
       ? section.market
       : FALLBACK_TIERS;
 
+  const [hovered, setHovered] = useState<number | null>(null);
+
   return (
     <SlideLayout
       id={section.id}
@@ -54,7 +58,15 @@ export function MarketScene({
       middle={
         <div className={styles.rings} aria-hidden="true">
           {tiers.map((tier, index) => (
-            <div key={tier.acronym} className={styles.ring} data-tier={index}>
+            <div
+              key={tier.acronym}
+              className={styles.ring}
+              data-tier={index}
+              onMouseEnter={() => setHovered(index)}
+              onMouseLeave={() =>
+                setHovered((prev) => (prev === index ? null : prev))
+              }
+            >
               <span className={styles.ringLabel}>{tier.acronym}</span>
             </div>
           ))}
@@ -72,6 +84,7 @@ export function MarketScene({
                   label={tier.name}
                   value={tier.headline}
                   description={tier.description}
+                  highlight={hovered === index}
                 />
               </li>
             ))}

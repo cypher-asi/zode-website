@@ -25,6 +25,18 @@
   /* Brand accent — inherited across both themes. */
   --color-accent: #01d892;
 
+  /*
+   * Categorical chart palette — a ramp of greens harmonized with the accent.
+   * Kept in sync with `src/lib/theme/chartPalette.ts` (the source of truth used
+   * by Recharts); these tokens let CSS-based graphs/tables match the same set.
+   */
+  --chart-1: #01d892; /* brand spring green */
+  --chart-2: #7cf0bd; /* pale mint */
+  --chart-3: #16b8a6; /* teal-green */
+  --chart-4: #a3e635; /* lime / chartreuse */
+  --chart-5: #1f8f63; /* deep emerald */
+  --chart-6: #5fbf4c; /* grass green */
+
   /* Constant white frame around the inner content "screen". */
   --shell-outer-bg: #ffffff;
 }

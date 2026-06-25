@@ -11,15 +11,22 @@ export function FeatureCard({
   value,
   description,
   align = "start",
+  highlight = false,
 }: {
   label: string;
   value: string;
   description?: string;
   /** Text/box alignment. `center` is used by the Market tier cards. */
   align?: "start" | "center";
+  /** When true, the value is tinted with the accent color (e.g. on hover). */
+  highlight?: boolean;
 }): ReactElement {
   return (
-    <div className={styles.feature} data-align={align}>
+    <div
+      className={styles.feature}
+      data-align={align}
+      data-highlight={highlight ? "true" : undefined}
+    >
       <p className={styles.featureLabel}>{label}</p>
       <p className={styles.featureValue}>{value}</p>
       {description && <p className={styles.featureDescription}>{description}</p>}

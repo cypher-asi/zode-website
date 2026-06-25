@@ -24,7 +24,8 @@ export function OuterShell({ children, sections, coverId }: OuterShellProps): Re
   return (
     <div className={styles.shell}>
       <TopBar />
-      <div className={styles.body}>
+      <div className={styles.body} data-shell-body="">
+
         <div id={SCROLL_ROOT_ID} className={styles.scroll}>
           {children}
         </div>

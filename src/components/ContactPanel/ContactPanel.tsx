@@ -21,12 +21,15 @@ export function ContactPanel({
               black on the light content panel via the shared --logo-invert. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className={styles.wordmark} src="/wordmark.png" alt="ZODE" />
-          {email && (
-            <a className={styles.email} href={`mailto:${email}`}>
-              {email}
-            </a>
-          )}
         </div>
+      }
+      bottomClassName={styles.contact}
+      bottom={
+        email ? (
+          <a className={styles.email} href={`mailto:${email}`}>
+            {email}
+          </a>
+        ) : undefined
       }
     />
   );
