@@ -1,18 +1,18 @@
 /*
- * Center the whole block (header + columns) vertically as a group, matching
- * the financials slide rather than floating the header in a separate band.
+ * Three-row grid: the content grid sits in the centered `auto` row (so it is
+ * vertically centered on the page between two equal `1fr` bands), and the
+ * header is centered within the top band that fills the remaining space.
  */
 .panel {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 3vmin;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
   width: 100%;
   height: 100%;
   min-height: 0;
 }
 
 .header {
+  align-self: center;
   text-align: center;
 }
 
@@ -113,6 +113,10 @@
 
 @media (max-width: 900px) {
   .panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3vh;
     overflow-y: auto;
   }
 
