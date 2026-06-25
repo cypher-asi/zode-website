@@ -56,8 +56,8 @@
   flex-direction: column;
   padding: 13px 16px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-surface-tint);
+  border-radius: 0;
+  background: none;
 }
 
 .cardTitle {
@@ -204,8 +204,8 @@
   gap: 2px;
   padding: 3px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-surface-tint);
+  border-radius: 0;
+  background: none;
 }
 
 .toggleButton {
@@ -213,7 +213,7 @@
   border: 0;
   cursor: pointer;
   padding: 4px 12px;
-  border-radius: 6px;
+  border-radius: 0;
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--color-text-secondary);
