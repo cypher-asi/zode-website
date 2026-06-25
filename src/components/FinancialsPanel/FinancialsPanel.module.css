@@ -65,7 +65,7 @@
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
 }
 
 /* Label / value tables (unit economics, capital structure) */
