@@ -137,11 +137,16 @@ export interface BuildOutRow {
   readonly emphasis?: boolean;
 }
 
-export interface RevenuePoint {
+export interface FinancialsChartPoint {
   /** Period label, e.g. "2027 H1". */
   readonly period: string;
   /** Revenue in USD for that half-year. */
   readonly revenue: number;
+  /**
+   * Cumulative capital deployed by that period in USD: ~$7.5M equity plus
+   * ~$5M SPV capital per site, scaled by the number of operating sites.
+   */
+  readonly capital: number;
 }
 
 export interface FinancialsContent {
@@ -155,8 +160,11 @@ export interface FinancialsContent {
     readonly columns: readonly BuildOutColumn[];
     readonly rows: readonly BuildOutRow[];
   };
-  /** Right-bottom chart: revenue across the six half-year periods. */
-  readonly revenueSeries: readonly RevenuePoint[];
+  /**
+   * Right-bottom chart: revenue and capital across the six half-year
+   * periods, toggled by a selector.
+   */
+  readonly chartSeries: readonly FinancialsChartPoint[];
 }
 
 export interface SectionContent {
@@ -551,13 +559,13 @@ export const SECTIONS: readonly SectionContent[] = [
           },
         ],
       },
-      revenueSeries: [
-        { period: "2027 H1", revenue: 75_893_760 },
-        { period: "2027 H2", revenue: 151_787_520 },
-        { period: "2028 H1", revenue: 1_821_450_240 },
-        { period: "2028 H2", revenue: 4_857_200_640 },
-        { period: "2029 H1", revenue: 9_107_251_200 },
-        { period: "2029 H2", revenue: 15_178_752_000 },
+      chartSeries: [
+        { period: "2027 H1", revenue: 75_893_760, capital: 12_500_000 },
+        { period: "2027 H2", revenue: 151_787_520, capital: 12_500_000 },
+        { period: "2028 H1", revenue: 1_821_450_240, capital: 150_000_000 },
+        { period: "2028 H2", revenue: 4_857_200_640, capital: 300_000_000 },
+        { period: "2029 H1", revenue: 9_107_251_200, capital: 450_000_000 },
+        { period: "2029 H2", revenue: 15_178_752_000, capital: 750_000_000 },
       ],
     },
   },

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 import {
   CartesianGrid,
   Line,
@@ -17,7 +17,18 @@ import type {
 } from "@/content/sections";
 import styles from "./FinancialsPanel.module.css";
 
-const REVENUE_ACCENT = "#48c79a";
+type Metric = "revenue" | "capital";
+
+interface MetricConfig {
+  readonly id: Metric;
+  readonly label: string;
+  readonly accent: string;
+}
+
+const METRICS: readonly MetricConfig[] = [
+  { id: "revenue", label: "Revenue", accent: "#48c79a" },
+  { id: "capital", label: "Capital", accent: "#5b9dff" },
+];
 
 const compactNumber = new Intl.NumberFormat("en-US", {
   notation: "compact",
@@ -88,10 +99,13 @@ export function FinancialsPanel({
 }: {
   section: SectionContent;
 }): ReactElement | null {
+  const [metric, setMetric] = useState<Metric>("revenue");
   const data = section.financials;
   if (!data) return null;
 
-  const { unitEconomics, capitalStructure, buildOut, revenueSeries } = data;
+  const { unitEconomics, capitalStructure, buildOut, chartSeries } = data;
+  const activeMetric =
+    METRICS.find((m) => m.id === metric) ?? METRICS[0];
 
   return (
     <div className={styles.panel}>
@@ -162,11 +176,29 @@ export function FinancialsPanel({
           </div>
 
           <div className={styles.card}>
-            <p className={styles.cardTitle}>3 Year Build Out — Revenue</p>
+            <div className={styles.chartHeader}>
+              <p className={styles.cardTitle}>
+                3 Year Build Out — {activeMetric.label}
+              </p>
+              <div className={styles.toggle} role="group" aria-label="Chart metric">
+                {METRICS.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className={styles.toggleButton}
+                    data-active={m.id === metric ? "true" : "false"}
+                    aria-pressed={m.id === metric}
+                    onClick={() => setMetric(m.id)}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className={styles.chart}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                  data={revenueSeries as { period: string; revenue: number }[]}
+                  data={chartSeries as { period: string; revenue: number; capital: number }[]}
                   margin={{ top: 8, right: 16, bottom: 4, left: 8 }}
                 >
                   <CartesianGrid
@@ -202,15 +234,18 @@ export function FinancialsPanel({
                       color: "var(--color-text-primary)",
                     }}
                     labelStyle={{ color: "var(--color-text-secondary)" }}
-                    formatter={(value) => [formatFull(Number(value)), "Revenue"]}
+                    formatter={(value) => [
+                      formatFull(Number(value)),
+                      activeMetric.label,
+                    ]}
                   />
                   <Line
                     type="monotone"
-                    dataKey="revenue"
-                    name="Revenue"
-                    stroke={REVENUE_ACCENT}
+                    dataKey={metric}
+                    name={activeMetric.label}
+                    stroke={activeMetric.accent}
                     strokeWidth={2.5}
-                    dot={{ r: 3, fill: REVENUE_ACCENT, strokeWidth: 0 }}
+                    dot={{ r: 3, fill: activeMetric.accent, strokeWidth: 0 }}
                     activeDot={{ r: 5 }}
                     isAnimationActive
                   />
