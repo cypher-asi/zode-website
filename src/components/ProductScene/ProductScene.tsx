@@ -3,6 +3,7 @@
 import { useState, type ReactElement } from "react";
 import type { SectionContent } from "@/content/sections";
 import { CabinScene } from "@/components/CabinScene";
+import { ListCard, CardBulletList } from "@/components/Card";
 import styles from "./ProductScene.module.css";
 
 export function ProductScene({
@@ -62,14 +63,9 @@ export function ProductScene({
       <div className={styles.bottomBand}>
         <div className={styles.specCards}>
           {specs.map((spec) => (
-            <article key={spec.title} className={styles.specCard}>
-              <h3 className={styles.specTitle}>{spec.title}</h3>
-              <ul className={styles.specList}>
-                {spec.bullets.map((bullet) => (
-                  <li key={bullet}>{bullet}</li>
-                ))}
-              </ul>
-            </article>
+            <ListCard key={spec.title} title={spec.title}>
+              <CardBulletList items={spec.bullets} />
+            </ListCard>
           ))}
         </div>
       </div>

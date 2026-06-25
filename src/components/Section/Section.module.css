@@ -267,37 +267,6 @@
   margin: 0 auto;
 }
 
-.card {
-  min-width: 0;
-}
-
-.cardLabel {
-  margin: 0 0 12px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--color-text-secondary);
-}
-
-.cardStat {
-  margin: 0 0 12px;
-  font-size: clamp(1.6rem, 3vw, 2.25rem);
-  font-weight: 600;
-  line-height: 1.05;
-  letter-spacing: -0.02em;
-  color: var(--color-text-primary);
-}
-
-.cardDescription {
-  margin: 0;
-  max-width: 26ch;
-  font-size: 0.95rem;
-  line-height: 1.5;
-  text-wrap: balance;
-  color: var(--color-text-secondary);
-}
-
 @media (max-width: 900px) {
   .deploy {
     display: flex;
@@ -429,39 +398,6 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: clamp(10px, 1.5vw, 16px);
-}
-
-.siteCard {
-  min-width: 0;
-  padding: clamp(12px, 1.6vh, 16px) clamp(14px, 1.4vw, 18px);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-bg-elevated);
-}
-
-.siteCardTitle {
-  margin: 0 0 10px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--color-text-secondary);
-}
-
-.siteCardList {
-  margin: 0;
-  padding: 0 0 0 1.1em;
-  font-size: clamp(0.78rem, 1.05vw, 0.85rem);
-  line-height: 1.5;
-  color: var(--color-text-primary);
-}
-
-.siteCardList li {
-  margin-bottom: 4px;
-}
-
-.siteCardList li:last-child {
-  margin-bottom: 0;
 }
 
 @media (max-width: 900px) {

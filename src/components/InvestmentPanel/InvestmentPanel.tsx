@@ -9,10 +9,8 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import type {
-  InvestmentBulletGroup,
-  SectionContent,
-} from "@/content/sections";
+import type { SectionContent } from "@/content/sections";
+import { ListCard, CardBulletList } from "@/components/Card";
 import styles from "./InvestmentPanel.module.css";
 
 /** Slice colors for the Use of Proceeds pie, reusing the deck accent palette. */
@@ -24,31 +22,6 @@ const SLICE_COLORS = [
   "#7b6ff0",
   "#5fb0c9",
 ] as const;
-
-function BulletGroup({ group }: { group: InvestmentBulletGroup }): ReactElement {
-  return (
-    <div className={styles.group}>
-      <p className={styles.groupTitle}>{group.title}</p>
-      <ul className={styles.bullets}>
-        {group.bullets.map((bullet) => {
-          if (typeof bullet === "string") {
-            return <li key={bullet}>{bullet}</li>;
-          }
-          return (
-            <li key={bullet.text}>
-              {bullet.text}
-              <ul className={styles.subBullets}>
-                {bullet.subBullets.map((sub) => (
-                  <li key={sub}>{sub}</li>
-                ))}
-              </ul>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
 
 export function InvestmentPanel({
   section,
@@ -71,13 +44,14 @@ export function InvestmentPanel({
       <div className={styles.grid}>
         <div className={styles.left}>
           {bulletGroups.map((group) => (
-            <BulletGroup key={group.title} group={group} />
+            <ListCard key={group.title} title={group.title}>
+              <CardBulletList items={group.bullets} />
+            </ListCard>
           ))}
         </div>
 
         <div className={styles.right}>
-          <div className={styles.card}>
-            <p className={styles.cardTitle}>Use of Proceeds</p>
+          <ListCard title="Use of Proceeds">
             <div className={styles.chart}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -123,11 +97,11 @@ export function InvestmentPanel({
                 </PieChart>
               </ResponsiveContainer>
             </div>
-          </div>
+          </ListCard>
 
-          <div className={styles.card}>
-            <BulletGroup group={whyInvestNow} />
-          </div>
+          <ListCard title={whyInvestNow.title}>
+            <CardBulletList items={whyInvestNow.bullets} />
+          </ListCard>
         </div>
       </div>
     </div>

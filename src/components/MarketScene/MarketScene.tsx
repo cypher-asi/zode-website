@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import type { MarketTier, SectionContent } from "@/content/sections";
 import { Citations } from "@/components/Citations";
+import { FeatureCard } from "@/components/Card";
 import styles from "./MarketScene.module.css";
 
 const FALLBACK_TIERS: readonly MarketTier[] = [
@@ -58,10 +59,13 @@ export function MarketScene({
 
         <ol className={styles.cards}>
           {tiers.map((tier, index) => (
-            <li key={tier.acronym} className={styles.card} data-tier={index}>
-              <p className={styles.cardName}>{tier.name}</p>
-              <p className={styles.cardHeadline}>{tier.headline}</p>
-              <p className={styles.cardDescription}>{tier.description}</p>
+            <li key={tier.acronym} data-tier={index}>
+              <FeatureCard
+                align="center"
+                label={tier.name}
+                value={tier.headline}
+                description={tier.description}
+              />
             </li>
           ))}
         </ol>

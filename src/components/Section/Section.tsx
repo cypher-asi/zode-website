@@ -9,6 +9,7 @@ import { ProductScene } from "@/components/ProductScene";
 import { FinancialsPanel } from "@/components/FinancialsPanel";
 import { InvestmentPanel } from "@/components/InvestmentPanel";
 import { Citations } from "@/components/Citations";
+import { FeatureCard, ListCard, CardBulletList } from "@/components/Card";
 import styles from "./Section.module.css";
 
 export function Section({ section }: { section: SectionContent }): ReactElement {
@@ -72,11 +73,12 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
         </div>
         <div className={styles.deployCards}>
           {section.cards.map((card) => (
-            <div key={card.label} className={styles.card}>
-              <p className={styles.cardLabel}>{card.label}</p>
-              <p className={styles.cardStat}>{card.stat}</p>
-              <p className={styles.cardDescription}>{card.description}</p>
-            </div>
+            <FeatureCard
+              key={card.label}
+              label={card.label}
+              value={card.stat}
+              description={card.description}
+            />
           ))}
         </div>
       </section>
@@ -208,14 +210,9 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
 
         <div className={styles.siteCards}>
           {cards.map((card) => (
-            <article key={card.title} className={styles.siteCard}>
-              <h3 className={styles.siteCardTitle}>{card.title}</h3>
-              <ul className={styles.siteCardList}>
-                {card.bullets.map((bullet) => (
-                  <li key={bullet}>{bullet}</li>
-                ))}
-              </ul>
-            </article>
+            <ListCard key={card.title} title={card.title}>
+              <CardBulletList items={card.bullets} />
+            </ListCard>
           ))}
         </div>
       </section>

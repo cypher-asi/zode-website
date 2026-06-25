@@ -1,0 +1,99 @@
+/*
+ * Shared card styling. All cards are square-cornered (radius 0) with no
+ * background fill; titles read gray (secondary) and the main/body text reads
+ * lighter (primary). Feature cards are borderless typographic blocks; list
+ * cards add a single squared 1px border.
+ */
+
+/* --- Feature card: header label + large value + description --- */
+.feature {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.feature[data-align="center"] {
+  align-items: center;
+  text-align: center;
+}
+
+.featureLabel {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.featureValue {
+  margin: 0 0 12px;
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.featureDescription {
+  margin: 0;
+  max-width: 28ch;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-wrap: balance;
+  color: var(--color-text-secondary);
+}
+
+/* --- List card: squared bordered box with a title + content --- */
+.list {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(12px, 1.6vh, 16px) clamp(14px, 1.4vw, 18px);
+  border: 1px solid var(--color-border);
+  border-radius: 0;
+  background: none;
+}
+
+.listTitle {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+/* --- Bullet list shared by product / traction / investment cards --- */
+.bullets {
+  margin: 0;
+  padding: 0 0 0 1.2em;
+  font-size: clamp(0.78rem, 1.05vw, 0.9rem);
+  line-height: 1.55;
+  color: var(--color-text-primary);
+}
+
+.bullets li {
+  margin-bottom: 5px;
+}
+
+.bullets li:last-child {
+  margin-bottom: 0;
+}
+
+.subBullets {
+  margin: 5px 0 0;
+  padding: 0 0 0 1.2em;
+  list-style: circle;
+  color: var(--color-text-secondary);
+}
+
+.subBullets li {
+  margin-bottom: 4px;
+}
+
+.subBullets li:last-child {
+  margin-bottom: 0;
+}
