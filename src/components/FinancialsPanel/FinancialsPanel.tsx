@@ -20,9 +20,20 @@ import styles from "./FinancialsPanel.module.css";
 
 type Metric = "revenue" | "capital";
 
+/** Share of revenue used to derive the secondary Revenue-view lines. */
+const GROSS_PROFIT_RATIO = 0.37;
+const OPERATING_COST_RATIO = 0.15;
+const NOI_RATIO = GROSS_PROFIT_RATIO - OPERATING_COST_RATIO;
+
 interface ChartLine {
-  /** Key into FinancialsChartPoint. */
-  readonly dataKey: "revenue" | "parentEquity" | "spvCapital";
+  /** Key into the chart data point. */
+  readonly dataKey:
+    | "revenue"
+    | "grossProfit"
+    | "operatingCosts"
+    | "noi"
+    | "parentEquity"
+    | "spvCapital";
   /** Legend / tooltip label. */
   readonly name: string;
   /** Line color. */
@@ -42,7 +53,16 @@ const METRICS: readonly MetricConfig[] = [
   {
     id: "revenue",
     label: "Revenue",
-    lines: [{ dataKey: "revenue", name: "Revenue", accent: "#48c79a" }],
+    lines: [
+      { dataKey: "revenue", name: "Revenue", accent: "#48c79a" },
+      { dataKey: "grossProfit", name: "Gross Profit (37%)", accent: "#5b9dff" },
+      {
+        dataKey: "operatingCosts",
+        name: "Operating Costs (15%)",
+        accent: "#e0a93b",
+      },
+      { dataKey: "noi", name: "NOI (22%)", accent: "#c879d6" },
+    ],
     notes: ["$25M per year for ZODE 1", "$150M per year for Site 1"],
   },
   {
@@ -131,6 +151,12 @@ export function FinancialsPanel({
   const { unitEconomics, capitalStructure, buildOut, chartSeries } = data;
   const activeMetric =
     METRICS.find((m) => m.id === metric) ?? METRICS[0];
+  const chartData = chartSeries.map((point) => ({
+    ...point,
+    grossProfit: point.revenue * GROSS_PROFIT_RATIO,
+    operatingCosts: point.revenue * OPERATING_COST_RATIO,
+    noi: point.revenue * NOI_RATIO,
+  }));
 
   return (
     <div className={styles.panel}>
@@ -223,7 +249,7 @@ export function FinancialsPanel({
             <div className={styles.chart}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                  data={chartSeries as unknown as Record<string, number>[]}
+                  data={chartData}
                   margin={{ top: 8, right: 16, bottom: 4, left: 8 }}
                 >
                   <CartesianGrid
