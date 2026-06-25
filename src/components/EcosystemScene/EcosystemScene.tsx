@@ -403,11 +403,13 @@ export function EcosystemScene({
 
   return (
     <div className={styles.scene}>
-      <header className={styles.header}>
-        <p className={styles.kicker}>{section.label}</p>
-        <h2 className={styles.title}>{section.title}</h2>
-        {section.lede && <p className={styles.lede}>{section.lede}</p>}
-      </header>
+      <div className={styles.headerBand}>
+        <header className={styles.header}>
+          <p className={styles.kicker}>{section.label}</p>
+          <h2 className={styles.title}>{section.title}</h2>
+          {section.lede && <p className={styles.lede}>{section.lede}</p>}
+        </header>
+      </div>
 
       <div className={styles.grid} ref={gridRef}>
         <ConnectionField
