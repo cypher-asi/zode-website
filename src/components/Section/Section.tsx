@@ -154,7 +154,7 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
     return (
       <section
         id={section.id}
-        className={styles.financials}
+        className={styles.investment}
         aria-label={section.label}
       >
         <InvestmentPanel section={section} />

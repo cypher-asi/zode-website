@@ -334,6 +334,27 @@
 }
 
 /*
+ * "Investment" variant: like financials, but with no vertical padding so the
+ * panel's three-row grid spans the full slide height. This lets the content
+ * grid center on the page while the header centers within the entire
+ * remaining space above it (no padding offset skewing the header down).
+ */
+.investment {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  height: 100%;
+  padding: 0 6vw;
+  overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  .investment {
+    padding: 4vh 6vw;
+    overflow-y: auto;
+  }
+}
+
+/*
  * "Site" variant: mirrors the product slide's structure -- a centered header
  * on top, a bordered framed container in the middle holding the cleaned
  * terrain artwork, and a bottom band with the Key Facts card and progress
