@@ -3,6 +3,7 @@
 import { useState, type ReactElement } from "react";
 import {
   CartesianGrid,
+  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -19,15 +20,36 @@ import styles from "./FinancialsPanel.module.css";
 
 type Metric = "revenue" | "capital";
 
-interface MetricConfig {
-  readonly id: Metric;
-  readonly label: string;
+interface ChartLine {
+  /** Key into FinancialsChartPoint. */
+  readonly dataKey: "revenue" | "parentEquity" | "spvCapital";
+  /** Legend / tooltip label. */
+  readonly name: string;
+  /** Line color. */
   readonly accent: string;
 }
 
+interface MetricConfig {
+  readonly id: Metric;
+  readonly label: string;
+  /** One or more lines drawn when this metric is active. */
+  readonly lines: readonly ChartLine[];
+}
+
 const METRICS: readonly MetricConfig[] = [
-  { id: "revenue", label: "Revenue", accent: "#48c79a" },
-  { id: "capital", label: "Capital", accent: "#5b9dff" },
+  {
+    id: "revenue",
+    label: "Revenue",
+    lines: [{ dataKey: "revenue", name: "Revenue", accent: "#48c79a" }],
+  },
+  {
+    id: "capital",
+    label: "Capital",
+    lines: [
+      { dataKey: "parentEquity", name: "Parent Equity", accent: "#5b9dff" },
+      { dataKey: "spvCapital", name: "SPV Capital", accent: "#e0a93b" },
+    ],
+  },
 ];
 
 const compactNumber = new Intl.NumberFormat("en-US", {
@@ -198,7 +220,7 @@ export function FinancialsPanel({
             <div className={styles.chart}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                  data={chartSeries as { period: string; revenue: number; capital: number }[]}
+                  data={chartSeries as unknown as Record<string, number>[]}
                   margin={{ top: 8, right: 16, bottom: 4, left: 8 }}
                 >
                   <CartesianGrid
@@ -234,21 +256,29 @@ export function FinancialsPanel({
                       color: "var(--color-text-primary)",
                     }}
                     labelStyle={{ color: "var(--color-text-secondary)" }}
-                    formatter={(value) => [
-                      formatFull(Number(value)),
-                      activeMetric.label,
-                    ]}
+                    formatter={(value, name) => [formatFull(Number(value)), name]}
                   />
-                  <Line
-                    type="monotone"
-                    dataKey={metric}
-                    name={activeMetric.label}
-                    stroke={activeMetric.accent}
-                    strokeWidth={2.5}
-                    dot={{ r: 3, fill: activeMetric.accent, strokeWidth: 0 }}
-                    activeDot={{ r: 5 }}
-                    isAnimationActive
-                  />
+                  {activeMetric.lines.length > 1 && (
+                    <Legend
+                      wrapperStyle={{
+                        fontSize: 12,
+                        color: "var(--color-text-secondary)",
+                      }}
+                    />
+                  )}
+                  {activeMetric.lines.map((line) => (
+                    <Line
+                      key={line.dataKey}
+                      type="monotone"
+                      dataKey={line.dataKey}
+                      name={line.name}
+                      stroke={line.accent}
+                      strokeWidth={2.5}
+                      dot={{ r: 3, fill: line.accent, strokeWidth: 0 }}
+                      activeDot={{ r: 5 }}
+                      isAnimationActive
+                    />
+                  ))}
                 </LineChart>
               </ResponsiveContainer>
             </div>

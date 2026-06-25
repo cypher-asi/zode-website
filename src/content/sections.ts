@@ -142,11 +142,10 @@ export interface FinancialsChartPoint {
   readonly period: string;
   /** Revenue in USD for that half-year. */
   readonly revenue: number;
-  /**
-   * Cumulative capital deployed by that period in USD: ~$7.5M equity plus
-   * ~$5M SPV capital per site, scaled by the number of operating sites.
-   */
-  readonly capital: number;
+  /** Cumulative parent equity in USD: ~$7.5M per operating site. */
+  readonly parentEquity: number;
+  /** Cumulative SPV capital in USD: ~$5M per operating site. */
+  readonly spvCapital: number;
 }
 
 export interface FinancialsContent {
@@ -560,12 +559,42 @@ export const SECTIONS: readonly SectionContent[] = [
         ],
       },
       chartSeries: [
-        { period: "2027 H1", revenue: 75_893_760, capital: 12_500_000 },
-        { period: "2027 H2", revenue: 151_787_520, capital: 12_500_000 },
-        { period: "2028 H1", revenue: 1_821_450_240, capital: 150_000_000 },
-        { period: "2028 H2", revenue: 4_857_200_640, capital: 300_000_000 },
-        { period: "2029 H1", revenue: 9_107_251_200, capital: 450_000_000 },
-        { period: "2029 H2", revenue: 15_178_752_000, capital: 750_000_000 },
+        {
+          period: "2027 H1",
+          revenue: 75_893_760,
+          parentEquity: 7_500_000,
+          spvCapital: 5_000_000,
+        },
+        {
+          period: "2027 H2",
+          revenue: 151_787_520,
+          parentEquity: 7_500_000,
+          spvCapital: 5_000_000,
+        },
+        {
+          period: "2028 H1",
+          revenue: 1_821_450_240,
+          parentEquity: 90_000_000,
+          spvCapital: 60_000_000,
+        },
+        {
+          period: "2028 H2",
+          revenue: 4_857_200_640,
+          parentEquity: 180_000_000,
+          spvCapital: 120_000_000,
+        },
+        {
+          period: "2029 H1",
+          revenue: 9_107_251_200,
+          parentEquity: 270_000_000,
+          spvCapital: 180_000_000,
+        },
+        {
+          period: "2029 H2",
+          revenue: 15_178_752_000,
+          parentEquity: 450_000_000,
+          spvCapital: 300_000_000,
+        },
       ],
     },
   },
