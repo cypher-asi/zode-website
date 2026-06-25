@@ -26,7 +26,7 @@ export function ProductScene({
 
       <div className={styles.explorer}>
         <div className={styles.sceneViewport}>
-          <CabinScene matchPageBackground interactive={false} isometric />
+          <CabinScene matchPageBackground interactive={false} isometric twin />
         </div>
         <nav className={styles.moduleNav} aria-label="ZODE modules">
           <ol className={styles.moduleList}>
