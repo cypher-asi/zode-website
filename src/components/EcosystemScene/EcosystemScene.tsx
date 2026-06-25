@@ -417,8 +417,8 @@ export function EcosystemScene({
         />
 
         {/* Left: providers that need compute */}
-        <section className={styles.panel} aria-label="Compute demand">
-          <p className={styles.panelLabel}>Compute demand</p>
+        <section className={styles.panel} aria-label="Demand">
+          <p className={styles.panelLabel}>Demand</p>
           <ul className={styles.companyList}>
             {companies.map((company, index) => (
               <li
