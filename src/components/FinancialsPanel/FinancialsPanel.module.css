@@ -154,6 +154,11 @@
   color: var(--color-text-secondary);
 }
 
+.buildOutLabel[data-indent="true"] {
+  padding-left: 18px;
+  font-style: italic;
+}
+
 .buildOutCell {
   color: var(--color-text-primary);
 }

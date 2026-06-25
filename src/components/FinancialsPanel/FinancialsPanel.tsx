@@ -20,20 +20,14 @@ import styles from "./FinancialsPanel.module.css";
 
 type Metric = "revenue" | "capital";
 
-/** Share of revenue used to derive the secondary Revenue-view lines. */
+/** Shares of revenue used to derive the rows shown beneath Revenue. */
 const GROSS_PROFIT_RATIO = 0.37;
 const OPERATING_COST_RATIO = 0.15;
 const NOI_RATIO = GROSS_PROFIT_RATIO - OPERATING_COST_RATIO;
 
 interface ChartLine {
   /** Key into the chart data point. */
-  readonly dataKey:
-    | "revenue"
-    | "grossProfit"
-    | "operatingCosts"
-    | "noi"
-    | "parentEquity"
-    | "spvCapital";
+  readonly dataKey: "revenue" | "parentEquity" | "spvCapital";
   /** Legend / tooltip label. */
   readonly name: string;
   /** Line color. */
@@ -53,16 +47,7 @@ const METRICS: readonly MetricConfig[] = [
   {
     id: "revenue",
     label: "Revenue",
-    lines: [
-      { dataKey: "revenue", name: "Revenue", accent: "#48c79a" },
-      { dataKey: "grossProfit", name: "Gross Profit (37%)", accent: "#5b9dff" },
-      {
-        dataKey: "operatingCosts",
-        name: "Operating Costs (15%)",
-        accent: "#e0a93b",
-      },
-      { dataKey: "noi", name: "NOI (22%)", accent: "#c879d6" },
-    ],
+    lines: [{ dataKey: "revenue", name: "Revenue", accent: "#48c79a" }],
     notes: ["$25M per year for ZODE 1", "$150M per year for Site 1"],
   },
   {
@@ -151,12 +136,34 @@ export function FinancialsPanel({
   const { unitEconomics, capitalStructure, buildOut, chartSeries } = data;
   const activeMetric =
     METRICS.find((m) => m.id === metric) ?? METRICS[0];
-  const chartData = chartSeries.map((point) => ({
-    ...point,
-    grossProfit: point.revenue * GROSS_PROFIT_RATIO,
-    operatingCosts: point.revenue * OPERATING_COST_RATIO,
-    noi: point.revenue * NOI_RATIO,
-  }));
+
+  // Rows derived from the build-out Revenue row and shown indented beneath it.
+  const revenueRow = buildOut.rows.find((row) => row.label === "Revenue");
+  const derivedRows: ReadonlyArray<BuildOutRow & { indent?: boolean }> =
+    revenueRow
+      ? [
+          {
+            label: "Gross Profit",
+            format: "currency",
+            indent: true,
+            cells: revenueRow.cells.map((c) => c * GROSS_PROFIT_RATIO),
+          },
+          {
+            label: "Operating Costs",
+            format: "currency",
+            indent: true,
+            cells: revenueRow.cells.map((c) => c * OPERATING_COST_RATIO),
+          },
+          {
+            label: "NOI",
+            format: "currency",
+            indent: true,
+            emphasis: true,
+            cells: revenueRow.cells.map((c) => c * NOI_RATIO),
+          },
+        ]
+      : [];
+  const buildOutRows = [...buildOut.rows, ...derivedRows];
 
   return (
     <div className={styles.panel}>
@@ -206,12 +213,18 @@ export function FinancialsPanel({
                   </tr>
                 </thead>
                 <tbody>
-                  {buildOut.rows.map((row) => (
+                  {buildOutRows.map((row) => (
                     <tr
                       key={row.label}
                       data-emphasis={row.emphasis ? "true" : undefined}
                     >
-                      <th scope="row" className={styles.buildOutLabel}>
+                      <th
+                        scope="row"
+                        className={styles.buildOutLabel}
+                        data-indent={
+                          "indent" in row && row.indent ? "true" : undefined
+                        }
+                      >
                         {row.label}
                       </th>
                       {row.cells.map((cell, index) => (
@@ -249,7 +262,7 @@ export function FinancialsPanel({
             <div className={styles.chart}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                  data={chartData}
+                  data={chartSeries as unknown as Record<string, number>[]}
                   margin={{ top: 8, right: 16, bottom: 4, left: 8 }}
                 >
                   <CartesianGrid
