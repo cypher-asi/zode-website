@@ -1,0 +1,32 @@
+.contact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  text-align: center;
+}
+
+.wordmark {
+  display: block;
+  width: min(72vw, 560px);
+  height: auto;
+  filter: invert(var(--logo-invert, 0));
+}
+
+.email {
+  font-size: clamp(18px, 2.4vw, 28px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+.email:hover {
+  text-decoration: underline;
+}

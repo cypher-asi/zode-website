@@ -9,6 +9,7 @@ import { ProductScene } from "@/components/ProductScene";
 import { FinancialsPanel } from "@/components/FinancialsPanel";
 import { InvestmentPanel } from "@/components/InvestmentPanel";
 import { TeamPanel } from "@/components/TeamPanel";
+import { ContactPanel } from "@/components/ContactPanel";
 import { Citations } from "@/components/Citations";
 import { FeatureCard, ListCard, CardBulletList } from "@/components/Card";
 import { SlideLayout } from "@/components/SlideLayout";
@@ -137,6 +138,10 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
 
   if (section.team) {
     return <TeamPanel section={section} />;
+  }
+
+  if (section.contact) {
+    return <ContactPanel section={section} />;
   }
 
   if (section.site) {

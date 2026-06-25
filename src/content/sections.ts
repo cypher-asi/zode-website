@@ -199,6 +199,11 @@ export interface InvestmentContent {
   readonly whyInvestNow: InvestmentBulletGroup;
 }
 
+export interface ContactContent {
+  /** Contact email address shown beneath the wordmark, linked via mailto. */
+  readonly email: string;
+}
+
 export interface FounderProfile {
   /** Role line shown above the name, e.g. "Founder / CEO". */
   readonly role: string;
@@ -325,6 +330,11 @@ export interface SectionContent {
    * of portfolio company cards across the bottom.
    */
   readonly team?: TeamContent;
+  /**
+   * When set, the section renders the "contact" layout: a large ZODE wordmark
+   * centered on the panel with the contact email linked beneath it.
+   */
+  readonly contact?: ContactContent;
   /** Optional source citations rendered at the bottom of the section. */
   readonly citations?: readonly Citation[];
 }
@@ -880,5 +890,13 @@ export const SECTIONS: readonly SectionContent[] = [
         ],
       },
     },
+  },
+  {
+    id: "contact",
+    label: "Contact",
+    title: "Get in touch.",
+    lede: "",
+    body: [],
+    contact: { email: "hello@zode.org" },
   },
 ];
