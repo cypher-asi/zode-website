@@ -25,6 +25,8 @@ const LINE = 0x9a9aa1; // soft gray for the outer perimeter / structure
 const LINE_DETAIL = 0x55555b; // darker gray for inner detail (cladding, seams, mullions)
 const LINE_WIDTH = 1.1; // structural line thickness, in CSS pixels
 const LINE_DETAIL_WIDTH = 0.45; // much thinner inner-detail lines
+const HILITE = 0x01d892; // brand green used to light up an active zone
+const HILITE_WIDTH = 1.6; // green zone outline thickness, in CSS pixels
 
 // Twin layout: two cabins end-to-end along Z (gable-to-gable) joined by an
 // enclosed connector box (wall height, sitting on the floor base).
@@ -49,6 +51,7 @@ export function CabinScene({
   isometric = false,
   twin = false,
   showPanel,
+  highlight,
 }: {
   matchPageBackground?: boolean;
   /** When false, the scene is static: no drag-to-rotate or Ctrl+wheel zoom. */
@@ -65,6 +68,11 @@ export function CabinScene({
   twin?: boolean;
   /** Show the layer / style control panel. Defaults to `interactive`. */
   showPanel?: boolean;
+  /**
+   * When set (twin layout only), lights up one named zone of the assembly in
+   * green: "noc", "compute", "cooling", "power", or "generators".
+   */
+  highlight?: string | null;
 }): ReactElement {
   const containerRef = useRef<HTMLDivElement>(null);
   // Imperatively applies the current style + layer visibility to the built
@@ -73,6 +81,11 @@ export function CabinScene({
   // values from a separate effect (react-hooks immutability rule) while still
   // matching three.js's imperative model.
   const applyRef = useRef<() => void>(() => {});
+  // Shows only the active highlight zone's overlay group. Built by the scene
+  // effect; driven imperatively (like applyRef) so changing zones never
+  // re-parses the model.
+  const applyHighlightRef = useRef<() => void>(() => {});
+  const highlightRef = useRef<string | null | undefined>(highlight);
 
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -147,7 +160,23 @@ export function CabinScene({
       metalness: 0.04,
       side: THREE.DoubleSide,
     });
-    materials.push(matFill, matStruct, matDetail, matStandard);
+    // Zone-highlight overlays draw on top of the line drawing (depthTest off,
+    // high renderOrder) so a lit region reads through the model.
+    const matHiliteFill = new THREE.MeshBasicMaterial({
+      color: HILITE,
+      transparent: true,
+      opacity: 0.22,
+      side: THREE.FrontSide,
+      depthTest: false,
+      depthWrite: false,
+    });
+    const matHilite = new LineMaterial({
+      color: HILITE,
+      linewidth: HILITE_WIDTH,
+      transparent: true,
+      depthTest: false,
+    });
+    materials.push(matFill, matStruct, matDetail, matStandard, matHiliteFill, matHilite);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableZoom = false; // toggled on only while Ctrl is held
@@ -183,6 +212,7 @@ export function CabinScene({
       // LineMaterial needs the viewport size to size screen-space line widths.
       matStruct.resolution.set(w, h);
       matDetail.resolution.set(w, h);
+      matHilite.resolution.set(w, h);
     };
     resize();
 
@@ -317,6 +347,111 @@ export function CabinScene({
           return { line, solid };
         };
 
+        // Adds a translucent green box + crisp green wireframe to a zone group.
+        const addHiliteBox = (
+          group: THREE.Group,
+          cx: number,
+          cy: number,
+          cz: number,
+          dx: number,
+          dy: number,
+          dz: number,
+        ): void => {
+          const geo = new THREE.BoxGeometry(dx, dy, dz);
+          geo.translate(cx, cy, cz);
+          geometries.push(geo);
+          const mesh = new THREE.Mesh(geo, matHiliteFill);
+          mesh.renderOrder = 999;
+          group.add(mesh);
+          const eg = new THREE.EdgesGeometry(geo);
+          const lines = makeLines(
+            eg.attributes.position.array as Float32Array,
+            matHilite,
+          );
+          eg.dispose();
+          if (lines) {
+            lines.renderOrder = 1000;
+            group.add(lines);
+          }
+        };
+
+        const zoneGroups: Record<string, THREE.Group> = {};
+
+        // Builds the green zone overlays for the twin (product) layout. Left
+        // cabin sits at +offsetZ (screen-left), right cabin at -offsetZ;
+        // generators are placed beyond the right cabin.
+        const buildZones = (offsetZ: number): void => {
+          const sx = model.size.x;
+          const sz = model.size.z;
+          const y0 = model.floorY;
+          const y1 = model.eaveY;
+          const hy = y1 - y0; // interior wall height
+          const cyMid = (y0 + y1) / 2;
+          const wx = sx * 0.78; // interior width (inside the walls)
+          const halfZ = sz / 2;
+
+          const newZone = (id: string): THREE.Group => {
+            const g = new THREE.Group();
+            g.visible = false;
+            zoneGroups[id] = g;
+            cabin.add(g);
+            return g;
+          };
+
+          // 01 NOC: front 15% of the left cabin.
+          const nocLen = sz * 0.15;
+          const nocCz = offsetZ + halfZ - nocLen / 2;
+          addHiliteBox(newZone("noc"), 0, cyMid, nocCz, wx, hy, nocLen * 0.9);
+
+          // 02 Compute Hall: rear 85% of the left cabin + 12 racks (2 x 6).
+          const compute = newZone("compute");
+          const hallLen = sz * 0.85;
+          const hallCz = offsetZ - halfZ + hallLen / 2;
+          addHiliteBox(compute, 0, cyMid, hallCz, wx, hy, hallLen * 0.94);
+          const rackLen = hallLen * 0.86;
+          const rackStep = rackLen / 6;
+          const rackDz = rackStep * 0.62;
+          const rackDx = wx * 0.2;
+          const rackDy = hy * 0.62;
+          const rackCy = y0 + rackDy / 2;
+          for (let col = 0; col < 6; col++) {
+            const rz = hallCz - rackLen / 2 + rackStep * (col + 0.5);
+            for (const rx of [-wx * 0.24, wx * 0.24]) {
+              addHiliteBox(compute, rx, rackCy, rz, rackDx, rackDy, rackDz);
+            }
+          }
+
+          // 03 Cooling Yard: 6 units inside the bridge, 3 rows x 2 columns.
+          const cooling = newZone("cooling");
+          const bw = sx * BRIDGE_WIDTH_FRAC * 0.78;
+          const gapSpan = gap * 0.84;
+          const unitDx = bw * 0.36;
+          const unitDz = (gapSpan / 3) * 0.6;
+          const unitDy = (y1 - 0) * 0.5;
+          const unitCy = unitDy / 2;
+          for (let row = 0; row < 3; row++) {
+            const cz = -gapSpan / 2 + (gapSpan / 3) * (row + 0.5);
+            for (const cx of [-bw * 0.25, bw * 0.25]) {
+              addHiliteBox(cooling, cx, unitCy, cz, unitDx, unitDy, unitDz);
+            }
+          }
+
+          // 04 Power Hall: the entire right cabin interior.
+          addHiliteBox(newZone("power"), 0, cyMid, -offsetZ, wx, hy, sz * 0.92);
+
+          // 05 Generators: a row of 4 boxes beyond the right cabin (far right).
+          const generators = newZone("generators");
+          const genDy = y1 * 0.55;
+          const genDx = sx * 0.16;
+          const genDz = sz * 0.18;
+          const genCy = genDy / 2;
+          const genCz = -offsetZ - halfZ - genDz * 0.9;
+          for (let i = 0; i < 4; i++) {
+            const gx = (i - 1.5) * (sx * 0.26);
+            addHiliteBox(generators, gx, genCy, genCz, genDx, genDy, genDz);
+          }
+        };
+
         const gap = model.size.z * GAP_FRAC;
         let bridge: { line: THREE.Group; solid: THREE.Mesh } | null = null;
         if (twin) {
@@ -325,6 +460,7 @@ export function CabinScene({
           buildCabinUnit(-offsetZ);
           bridge = buildBridge(gap);
           cabin.add(bridge.line, bridge.solid);
+          buildZones(offsetZ);
         } else {
           buildCabinUnit(0);
         }
@@ -365,6 +501,14 @@ export function CabinScene({
         };
         applyRef.current();
 
+        applyHighlightRef.current = () => {
+          const h = highlightRef.current;
+          for (const id of Object.keys(zoneGroups)) {
+            zoneGroups[id].visible = id === h;
+          }
+        };
+        applyHighlightRef.current();
+
         setAvailable(model.present);
         setLoading(false);
       })
@@ -397,6 +541,7 @@ export function CabinScene({
     return () => {
       disposed = true;
       applyRef.current = () => {};
+      applyHighlightRef.current = () => {};
       themeObserver?.disconnect();
       cancelAnimationFrame(frame);
       observer.disconnect();
@@ -416,6 +561,11 @@ export function CabinScene({
       }
     };
   }, [matchPageBackground, interactive, isometric, twin]);
+
+  useEffect(() => {
+    highlightRef.current = highlight;
+    applyHighlightRef.current();
+  }, [highlight]);
 
   const changeStyle = (next: RenderStyle): void => {
     styleRef.current = next;

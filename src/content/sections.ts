@@ -77,6 +77,8 @@ export interface ProductModule {
   readonly code: string;
   /** Expanded description shown when the module is active. */
   readonly description: string;
+  /** Highlight zone id lit in the 3D scene when this module is active. */
+  readonly zone: string;
 }
 
 export interface ProductSpec {
@@ -433,45 +435,43 @@ export const SECTIONS: readonly SectionContent[] = [
       modules: [
         {
           number: "01",
-          name: "Compute Pod",
-          code: "AI-01",
+          name: "NOC",
+          code: "NOC-01",
+          zone: "noc",
           description:
-            "High-density GPU racks with liquid cooling and hot-swappable trays, sized for inference and training workloads at the edge.",
+            "The Network Operations Center anchors the front of the first cabin. Operators monitor every workload, alert, and uplink from a single wall of telemetry. It is the staffed front door to the entire ZODE.",
         },
         {
           number: "02",
-          name: "Power Module",
-          code: "PW-01",
+          name: "Compute Hall",
+          code: "CMP-02",
+          zone: "compute",
           description:
-            "Modular 1 MW power distribution with grid tie-in, on-site battery buffer, and automatic failover between sources.",
+            "The compute hall fills the rest of the first cabin with twelve liquid-cooled GPU racks. Hot-swappable trays keep inference and training online during service. This is where the ZODE turns power into compute.",
         },
         {
           number: "03",
-          name: "Cooling System",
-          code: "CL-01",
+          name: "Cooling Yard",
+          code: "COOL-03",
+          zone: "cooling",
           description:
-            "Closed-loop liquid cooling with heat rejection and optional heat-recovery interface for adjacent facilities.",
+            "The cooling yard bridges the two cabins with six closed-loop heat-rejection units. Paired rows reject rack heat with full redundancy. Captured heat can feed adjacent buildings instead of the sky.",
         },
         {
           number: "04",
-          name: "Network Interface",
-          code: "NW-01",
+          name: "Power Hall",
+          code: "PWR-04",
+          zone: "power",
           description:
-            "Multi-gigabit uplink with redundant paths, low-latency intra-pod switching, and secure tenant isolation.",
+            "The power hall occupies the second cabin with switchgear, distribution, and battery buffering. It ties the grid feed to on-site backup with automatic failover. Clean, conditioned power flows from here to every rack.",
         },
         {
           number: "05",
-          name: "Control Panel",
-          code: "CT-01",
+          name: "Generators",
+          code: "GEN-05",
+          zone: "generators",
           description:
-            "Unified telemetry, remote orchestration, and carbon-aware scheduling from a single operations dashboard.",
-        },
-        {
-          number: "06",
-          name: "Enclosure Shell",
-          code: "SH-01",
-          description:
-            "Road-transportable container shell with weatherproof cladding, 26 ft clear span, and rapid on-site assembly.",
+            "Standby generators sit outside on the far end of the site. They carry the full load through grid interruptions and maintenance windows. Sized for the whole ZODE, they keep compute running no matter what.",
         },
       ],
       specs: [

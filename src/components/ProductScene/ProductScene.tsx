@@ -15,6 +15,7 @@ export function ProductScene({
   const modules = section.product?.modules ?? [];
   const specs = section.product?.specs ?? [];
   const [activeIndex, setActiveIndex] = useState(0);
+  const activeZone = modules[activeIndex]?.zone ?? null;
 
   return (
     <SlideLayout
@@ -31,7 +32,13 @@ export function ProductScene({
       middle={
         <div className={styles.explorer}>
           <div className={styles.sceneViewport}>
-            <CabinScene matchPageBackground interactive={false} isometric twin />
+            <CabinScene
+            matchPageBackground
+            interactive={false}
+            isometric
+            twin
+            highlight={activeZone}
+          />
           </div>
           <nav className={styles.moduleNav} aria-label="ZODE modules">
             <ol className={styles.moduleList}>
