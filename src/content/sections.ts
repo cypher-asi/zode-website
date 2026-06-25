@@ -123,8 +123,16 @@ export interface BuildOutColumn {
 export interface BuildOutRow {
   /** Row label, e.g. "Zodes". */
   readonly label: string;
-  /** One pre-formatted cell per half-year column, left-to-right. */
-  readonly cells: readonly string[];
+  /** One numeric cell per half-year column, left-to-right. */
+  readonly cells: readonly number[];
+  /**
+   * How to render each cell:
+   * - "number" (default): grouped integer, e.g. "192"
+   * - "decimal": two decimals, e.g. "1.50"
+   * - "compact": K/M/B abbreviation, e.g. "648K"
+   * - "currency": $ + K/M/B abbreviation, e.g. "$15.2B"
+   */
+  readonly format?: "number" | "decimal" | "compact" | "currency";
   /** Bold the row (e.g. Revenue). */
   readonly emphasis?: boolean;
 }
@@ -518,35 +526,27 @@ export const SECTIONS: readonly SectionContent[] = [
           { year: "2029", halves: ["H1", "H2"] },
         ],
         rows: [
-          { label: "Sites", cells: ["1", "1", "12", "24", "36", "60"] },
-          { label: "Zodes / site", cells: ["3", "6", "6", "8", "10", "10"] },
-          { label: "Zodes", cells: ["3", "6", "72", "192", "360", "600"] },
+          { label: "Sites", cells: [1, 1, 12, 24, 36, 60] },
+          { label: "Zodes / site", cells: [3, 6, 6, 8, 10, 10] },
+          { label: "Zodes", cells: [3, 6, 72, 192, 360, 600] },
           {
             label: "MW / zode",
-            cells: ["1.50", "1.50", "1.50", "1.50", "1.50", "1.50"],
+            format: "decimal",
+            cells: [1.5, 1.5, 1.5, 1.5, 1.5, 1.5],
           },
-          { label: "MW", cells: ["5", "9", "108", "288", "540", "900"] },
+          { label: "MW", cells: [5, 9, 108, 288, 540, 900] },
           {
             label: "GPUs",
-            cells: [
-              "3,240",
-              "6,480",
-              "77,760",
-              "207,360",
-              "388,800",
-              "648,000",
-            ],
+            format: "compact",
+            cells: [3240, 6480, 77760, 207360, 388800, 648000],
           },
           {
             label: "Revenue",
+            format: "currency",
             emphasis: true,
             cells: [
-              "75,893,760",
-              "151,787,520",
-              "1,821,450,240",
-              "4,857,200,640",
-              "9,107,251,200",
-              "15,178,752,000",
+              75_893_760, 151_787_520, 1_821_450_240, 4_857_200_640,
+              9_107_251_200, 15_178_752_000,
             ],
           },
         ],

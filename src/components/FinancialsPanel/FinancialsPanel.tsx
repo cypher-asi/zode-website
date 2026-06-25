@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import type {
+  BuildOutRow,
   FinancialsTable,
   SectionContent,
 } from "@/content/sections";
@@ -18,10 +19,40 @@ import styles from "./FinancialsPanel.module.css";
 
 const REVENUE_ACCENT = "#48c79a";
 
+const compactNumber = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+const compactCurrency = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 1,
+});
+
+const axisCurrency = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
+
+function formatCell(value: number, format: BuildOutRow["format"]): string {
+  switch (format) {
+    case "decimal":
+      return value.toFixed(2);
+    case "compact":
+      return compactNumber.format(value);
+    case "currency":
+      return compactCurrency.format(value);
+    default:
+      return value.toLocaleString("en-US");
+  }
+}
+
 function formatAxis(value: number): string {
-  if (value >= 1e9) return `$${(value / 1e9).toFixed(0)}B`;
-  if (value >= 1e6) return `$${(value / 1e6).toFixed(0)}M`;
-  return `$${value}`;
+  return axisCurrency.format(value);
 }
 
 function formatFull(value: number): string {
@@ -120,7 +151,7 @@ export function FinancialsPanel({
                       </th>
                       {row.cells.map((cell, index) => (
                         <td key={index} className={styles.buildOutCell}>
-                          {cell}
+                          {formatCell(cell, row.format)}
                         </td>
                       ))}
                     </tr>
