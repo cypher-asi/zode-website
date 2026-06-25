@@ -1,18 +1,19 @@
 /*
- * Center the whole block (header + tables + chart) vertically as a group.
- * `margin: auto` centers it when it fits and collapses to 0 when the
- * content is taller than the slide, so the parent can scroll without
- * clipping the top (which `justify-content: center` would do).
+ * Three bands like the Product slide: a top band holding the header, the
+ * content grid in the middle, and an empty bottom band. The 1fr top and
+ * bottom rows are equal, so the middle content sits dead-center on the
+ * slide; the header is vertically centered within the top band.
  */
 .panel {
-  display: flex;
-  flex-direction: column;
-  gap: 2.4vmin;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
   width: 100%;
-  margin: auto 0;
+  height: 100%;
+  min-height: 0;
 }
 
 .header {
+  align-self: center;
   text-align: center;
 }
 
@@ -35,9 +36,7 @@
 }
 
 .grid {
-  /* Keep the grid at its natural height so the stacked left-hand tables
-   * never get squeezed into each other when the slide is short. */
-  flex: 0 0 auto;
+  align-self: center;
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);

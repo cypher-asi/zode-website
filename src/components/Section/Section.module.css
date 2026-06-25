@@ -327,11 +327,8 @@
   scroll-snap-align: start;
   scroll-snap-stop: always;
   height: 100%;
-  display: flex;
-  flex-direction: column;
   padding: 5vmin 6vw;
-  /* Scrolls only when the content is taller than the slide; otherwise the
-   * panel's auto margins keep it vertically centered. */
+  /* Scrolls only when the content is taller than the slide. */
   overflow-y: auto;
   overflow-x: hidden;
 }
