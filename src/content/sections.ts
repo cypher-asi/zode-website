@@ -538,7 +538,7 @@ export const SECTIONS: readonly SectionContent[] = [
   {
     id: "traction",
     label: "Traction",
-    title: "First SITE ready to deploy.",
+    title: "Deploying December 2026.",
     lede: "",
     body: [],
     site: {
