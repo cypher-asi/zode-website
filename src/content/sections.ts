@@ -335,7 +335,7 @@ export const SECTIONS: readonly SectionContent[] = [
   },
   {
     id: "opportunity",
-    label: "Opportunity",
+    label: "Market",
     title: "Deploy 1 GW of compute by 2030.",
     lede: "",
     body: [],
@@ -345,7 +345,7 @@ export const SECTIONS: readonly SectionContent[] = [
         name: "Total Addressable Market",
         headline: "$255B",
         description:
-          "Global AI inference and edge AI infrastructure \u2014 the full AI compute build-out.",
+          "Global AI inference and edge AI infrastructure across the full AI compute build-out.",
         weight: 1,
       },
       {
@@ -359,9 +359,9 @@ export const SECTIONS: readonly SectionContent[] = [
       {
         acronym: "SOM",
         name: "Serviceable Obtainable Market",
-        headline: "1 GW of power + estimated value",
+        headline: "$15B+",
         description:
-          "Power-advantaged micro data centers in renewable-rich secondary markets \u2014 privacy and edge AI inference, agent workloads, and sovereign compute.",
+          "Power-advantaged micro data centers in renewable-rich secondary markets for edge AI.",
         weight: 0.32,
       },
     ],
