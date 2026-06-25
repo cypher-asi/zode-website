@@ -26,11 +26,12 @@ const LINE_DETAIL = 0x55555b; // darker gray for inner detail (cladding, seams, 
 const LINE_WIDTH = 1.1; // structural line thickness, in CSS pixels
 const LINE_DETAIL_WIDTH = 0.45; // much thinner inner-detail lines
 
-// Twin layout: two cabins end-to-end along Z (gable-to-gable) with a breezeway.
-const GAP_FRAC = 0.4; // breezeway gap as a fraction of one cabin's Z depth
-const BRIDGE_WIDTH_FRAC = 0.5; // deck width along X as a fraction of cabin width
-const BRIDGE_OVERLAP = 1.4; // how far the deck tucks under each facing gable
-const SLAT_PITCH = 1.6; // spacing between slat seam lines, in model units
+// Twin layout: two cabins end-to-end along Z (gable-to-gable) joined by an
+// enclosed connector box (wall height, sitting on the floor base).
+const GAP_FRAC = 0.8; // breezeway gap as a fraction of one cabin's Z depth
+const BRIDGE_WIDTH_FRAC = 0.5; // connector width along X as a fraction of cabin width
+const BRIDGE_OVERLAP = 1.4; // how far the connector tucks into each facing gable
+const SLAT_PITCH = 1.6; // spacing between wall slat battens, in model units
 const FIT_MARGIN = 1.06; // extra padding when framing the combined model
 
 /**
@@ -254,9 +255,10 @@ export function CabinScene({
           cabin.add(unit);
         };
 
-        // Open slatted-deck breezeway spanning the gap between the two facing
-        // gable ends. Returned as a line-style group (background-filled slab +
-        // gray edge/slat lines) plus a lit solid for the realistic style.
+        // Enclosed connector box spanning the gap between the two facing gable
+        // ends: wall-height, bottom flush with the floor base (y = 0). Returned
+        // as a line-style group (background-filled box + gray edge/batten lines)
+        // plus a lit solid for the realistic style.
         const buildBridge = (
           gap: number,
         ): { line: THREE.Group; solid: THREE.Mesh } => {
@@ -265,43 +267,51 @@ export function CabinScene({
           const z0 = -gap / 2 - BRIDGE_OVERLAP;
           const z1 = gap / 2 + BRIDGE_OVERLAP;
           const span = z1 - z0;
-          const t = Math.max(0.6, model.size.y * 0.02); // thin slab
-          const top = model.floorY;
           const cz = (z0 + z1) / 2;
+          const h = model.eaveY; // similar height to the cabin walls
+          const xs = [-halfW, halfW];
 
-          const slab = new THREE.BoxGeometry(w, t, span);
-          slab.translate(0, top - t / 2, cz);
-          geometries.push(slab);
+          const box = new THREE.BoxGeometry(w, h, span);
+          box.translate(0, h / 2, cz); // bottom along the floor base
+          geometries.push(box);
 
-          // Structural: deck-top perimeter + the two long stringer edges.
+          // Structural: the 12 box edges (bottom + top rectangles + verticals).
           const struct: number[] = [];
-          const edge = (
+          const seg = (
             ax: number,
+            ay: number,
             az: number,
             bx: number,
+            by: number,
             bz: number,
           ): void => {
-            struct.push(ax, top, az, bx, top, bz);
+            struct.push(ax, ay, az, bx, by, bz);
           };
-          edge(-halfW, z0, halfW, z0);
-          edge(halfW, z0, halfW, z1);
-          edge(halfW, z1, -halfW, z1);
-          edge(-halfW, z1, -halfW, z0);
+          for (const y of [0, h]) {
+            seg(-halfW, y, z0, halfW, y, z0);
+            seg(halfW, y, z0, halfW, y, z1);
+            seg(halfW, y, z1, -halfW, y, z1);
+            seg(-halfW, y, z1, -halfW, y, z0);
+          }
+          for (const x of xs) {
+            seg(x, 0, z0, x, h, z0);
+            seg(x, 0, z1, x, h, z1);
+          }
 
-          // Detail: the slat seams running across the deck width.
+          // Detail: vertical slat battens along the two long side walls.
           const detail: number[] = [];
           for (let z = z0 + SLAT_PITCH; z < z1 - SLAT_PITCH / 2; z += SLAT_PITCH) {
-            detail.push(-halfW, top, z, halfW, top, z);
+            for (const x of xs) detail.push(x, 0, z, x, h, z);
           }
 
           const line = new THREE.Group();
-          line.add(new THREE.Mesh(slab, matFill));
+          line.add(new THREE.Mesh(box, matFill));
           const structLines = makeLines(new Float32Array(struct), matStruct);
           const detailLines = makeLines(new Float32Array(detail), matDetail);
           if (structLines) line.add(structLines);
           if (detailLines) line.add(detailLines);
 
-          const solid = new THREE.Mesh(slab, matStandard);
+          const solid = new THREE.Mesh(box, matStandard);
           return { line, solid };
         };
 
@@ -444,7 +454,7 @@ export function CabinScene({
           interactive
             ? "Interactive 3D model of the ZODE steep-gable cabin imported from a CAD asset, shown as a line drawing of the roof, glazing, walls and deck. Drag to rotate; hold Ctrl and scroll to zoom. Use the panel to toggle layers and switch between line and realistic styling."
             : twin
-              ? "3D model of two ZODE steep-gable cabins set end-to-end with a gap, joined by an open slatted-deck bridgeway, shown from a fixed top-down isometric angle as a line drawing."
+              ? "3D model of two ZODE steep-gable cabins set end-to-end, joined by an enclosed wall-height connector box with slatted side walls, shown from a fixed top-down isometric angle as a line drawing."
               : "3D model of the ZODE steep-gable cabin imported from a CAD asset, shown from a fixed top-down isometric angle as a line drawing of the roof, glazing, walls and deck."
         }
       />

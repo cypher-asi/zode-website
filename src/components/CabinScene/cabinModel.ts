@@ -101,6 +101,8 @@ export interface CabinLayers {
   size: { x: number; y: number; z: number };
   /** Scaled height of the floor/deck surface (top of the base), base at y = 0. */
   floorY: number;
+  /** Scaled height of the eave line (top of the walls), base at y = 0. */
+  eaveY: number;
 }
 
 const MODEL_URL = "/zode_3D.obj";
@@ -418,8 +420,9 @@ async function build(): Promise<CabinLayers> {
     z: (maxZ - minZ) * scale,
   };
   const floorY = BASE_FRAC * height;
+  const eaveY = EAVE_FRAC * height;
 
-  return { solids, edges, present, radius, size, floorY };
+  return { solids, edges, present, radius, size, floorY, eaveY };
 }
 
 export function loadCabinLayers(): Promise<CabinLayers> {
