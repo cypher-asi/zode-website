@@ -308,7 +308,8 @@
  * grid center on the page while the header centers within the entire
  * remaining space above it (no padding offset skewing the header down).
  */
-.investment {
+.investment,
+.team {
   scroll-snap-align: start;
   scroll-snap-stop: always;
   height: 100%;
@@ -317,7 +318,8 @@
 }
 
 @media (max-width: 900px) {
-  .investment {
+  .investment,
+  .team {
     padding: 4vh 6vw;
     overflow-y: auto;
   }
@@ -367,7 +369,7 @@
  */
 .siteFrame {
   position: relative;
-  height: clamp(280px, 46vh, 520px);
+  height: clamp(336px, 55.2vh, 624px);
   border: 1px solid var(--color-border);
   overflow: hidden;
 }

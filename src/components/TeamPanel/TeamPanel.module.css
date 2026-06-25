@@ -1,0 +1,247 @@
+/*
+ * "Team" slide: a centered header, a founder bio + vertical timeline in the
+ * middle, and a row of portfolio company cards across the bottom. The three
+ * rows let the header center in the top band, the bio/timeline grid fill the
+ * middle, and the company cards anchor to the bottom.
+ */
+.panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: clamp(16px, 2.4vh, 28px);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: clamp(20px, 4vh, 40px) 0;
+}
+
+.header {
+  text-align: center;
+}
+
+.kicker {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.title {
+  margin: 0 auto;
+  max-width: 28ch;
+  font-size: clamp(1.5rem, 3.2vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.grid {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: clamp(24px, 4vw, 64px);
+  align-items: start;
+  overflow: hidden;
+}
+
+/* --- Founder bio --- */
+.bio {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.role {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.founderName {
+  margin: 0 0 16px;
+  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+}
+
+.founderBio {
+  margin: 0 0 24px;
+  max-width: 42ch;
+  font-size: clamp(0.9rem, 1.2vw, 1.05rem);
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.achievementsLabel {
+  margin: 0 0 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.achievements {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: clamp(0.9rem, 1.2vw, 1.05rem);
+  line-height: 1.4;
+  color: var(--color-text-primary);
+}
+
+.achievements li {
+  position: relative;
+  padding-left: 18px;
+}
+
+.achievements li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 6px;
+  height: 6px;
+  background: var(--color-accent, #01d892);
+}
+
+/* --- Timeline --- */
+.timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.timelineEntry {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.4fr) minmax(0, 1fr);
+  gap: clamp(12px, 1.6vw, 24px);
+  padding: clamp(8px, 1.2vh, 12px) 0;
+}
+
+.timelineYear {
+  display: flex;
+  flex-direction: column;
+}
+
+.year {
+  font-size: clamp(0.95rem, 1.3vw, 1.1rem);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.yearLabel {
+  margin-top: 2px;
+  font-size: clamp(0.8rem, 1.1vw, 0.95rem);
+  color: var(--color-text-secondary);
+}
+
+.timelineEvents {
+  margin: 0;
+  padding: 0 0 0 1.1em;
+  list-style: disc;
+  font-size: clamp(0.82rem, 1.1vw, 0.95rem);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.timelineEvents li {
+  margin-bottom: 4px;
+}
+
+.timelineEvents li:last-child {
+  margin-bottom: 0;
+}
+
+/* --- Company cards --- */
+.companies {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: clamp(10px, 1.2vw, 16px);
+}
+
+.companyCard {
+  gap: 10px;
+}
+
+.companyDescription {
+  margin: 0;
+  flex: 1 1 auto;
+  font-size: clamp(0.78rem, 1vw, 0.88rem);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.companyMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.companyLink,
+.companyYear {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: clamp(0.75rem, 1vw, 0.85rem);
+  color: var(--color-text-secondary);
+}
+
+.companyLink {
+  text-decoration: none;
+  transition: color 120ms ease;
+  word-break: break-word;
+}
+
+.companyLink:hover {
+  color: var(--color-text-primary);
+}
+
+.companyLink:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.icon {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+}
+
+@media (max-width: 900px) {
+  .panel {
+    grid-template-rows: auto auto auto;
+    overflow-y: auto;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .timeline {
+    overflow-y: visible;
+  }
+
+  .companies {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .companies {
+    grid-template-columns: 1fr;
+  }
+}

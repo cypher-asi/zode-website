@@ -197,6 +197,57 @@ export interface InvestmentContent {
   readonly whyInvestNow: InvestmentBulletGroup;
 }
 
+export interface FounderProfile {
+  /** Role line shown above the name, e.g. "Founder / CEO". */
+  readonly role: string;
+  /** Founder's full name. */
+  readonly name: string;
+  /** Short bio paragraph. */
+  readonly bio: string;
+  /** Heading above the achievements list, e.g. "Key Achievements". */
+  readonly achievementsLabel: string;
+  /** Bullet list of headline achievements. */
+  readonly achievements: readonly string[];
+}
+
+export interface TimelineEntry {
+  /** Year shown in the left column, e.g. "2016". */
+  readonly year: string;
+  /** Optional short phase label beneath the year, e.g. "Early Days". */
+  readonly label?: string;
+  /** Milestones for that year. */
+  readonly events: readonly string[];
+}
+
+export interface CompanyLink {
+  /** Visible text, e.g. "zero.tech". */
+  readonly label: string;
+  /** Destination URL. */
+  readonly href: string;
+}
+
+export interface CompanyCard {
+  /** Company name, e.g. "ZERO". */
+  readonly name: string;
+  /** One-line description. */
+  readonly description: string;
+  /** Website link. */
+  readonly url: CompanyLink;
+  /** X (Twitter) link; label is the handle, e.g. "@zero_app". */
+  readonly x: CompanyLink;
+  /** Founding year, e.g. "2017". */
+  readonly year: string;
+}
+
+export interface TeamContent {
+  /** Founder/CEO bio shown on the left. */
+  readonly founder: FounderProfile;
+  /** Chronological milestones shown on the right. */
+  readonly timeline: readonly TimelineEntry[];
+  /** Portfolio company cards shown across the bottom. */
+  readonly companies: readonly CompanyCard[];
+}
+
 export interface SectionContent {
   readonly id: string;
   readonly label: string;
@@ -266,6 +317,12 @@ export interface SectionContent {
    * the right.
    */
   readonly investment?: InvestmentContent;
+  /**
+   * When set, the section renders the "team" layout: a centered header, a
+   * founder/CEO bio on the left, a vertical timeline on the right, and a row
+   * of portfolio company cards across the bottom.
+   */
+  readonly team?: TeamContent;
   /** Optional source citations rendered at the bottom of the section. */
   readonly citations?: readonly Citation[];
 }
@@ -659,12 +716,111 @@ export const SECTIONS: readonly SectionContent[] = [
   {
     id: "team",
     label: "Team",
-    title: "Team",
-    lede: "The people building THE GRID.",
-    body: [
-      "A team spanning distributed systems, cryptography, and product, with a track record of shipping at scale.",
-      "Replace this section with founder and team bios.",
-    ],
+    title: "Over a decade building sovereign technology",
+    lede: "",
+    body: [],
+    team: {
+      founder: {
+        role: "Founder / CEO",
+        name: "Matthew Dorey",
+        bio: "THE GRID is founded by Matthew Dorey, a Canadian entrepreneur and software developer with over 20+ years building and scaling technology companies.",
+        achievementsLabel: "Key Achievements",
+        achievements: [
+          "Collective peak valuation of $2 billion+",
+          "Over $100 million raised",
+          "First exit in 20s",
+        ],
+      },
+      timeline: [
+        {
+          year: "2016",
+          label: "Early Days",
+          events: ["ZERO is incubated at Factory 0 in San Francisco at 711 Scott St."],
+        },
+        {
+          year: "2020",
+          label: "All Systems Go",
+          events: ["ZERO whitepaper is publicly released for a Social Operating System."],
+        },
+        {
+          year: "2021",
+          events: [
+            "Wilder World is founded to create a large scale simulation using ZERO technology.",
+          ],
+        },
+        {
+          year: "2022",
+          events: [
+            "Z Wilder World hits valuation > $2 billion.",
+            "ZNS 1.0 launches.",
+          ],
+        },
+        {
+          year: "2023",
+          events: ["First Wilder World trailer hits 1M views.", "Work begins on The GRID"],
+        },
+        {
+          year: "2024",
+          events: [
+            "Wilder World partners with Epic Games, NVIDIA and Lamborghini.",
+            "Z Chain launches. ZNS 2.0 launches.",
+          ],
+        },
+        {
+          year: "2025",
+          events: [
+            "Wilder World launches Super Early Access.",
+            "CYPHER is announced.",
+            "AURA AI is founded.",
+          ],
+        },
+        {
+          year: "2026",
+          events: [
+            "ZODE launches.",
+            "Wilder World economy goes live.",
+            "The GRID launches.",
+          ],
+        },
+      ],
+      companies: [
+        {
+          name: "ZERO",
+          description: "A secure platform for deploying an agentic workforce.",
+          url: { label: "zero.tech", href: "https://zero.tech" },
+          x: { label: "@zero_app", href: "https://x.com/zero_app" },
+          year: "2017",
+        },
+        {
+          name: "WILDER WORLD",
+          description: "A secure platform for deploying an agentic workforce.",
+          url: { label: "wilderworld.com", href: "https://wilderworld.com" },
+          x: { label: "@wilderworld", href: "https://x.com/wilderworld" },
+          year: "2021",
+        },
+        {
+          name: "Z CHAIN",
+          description: "A secure platform for deploying an agentic workforce.",
+          url: { label: "zchain.org", href: "https://zchain.org" },
+          x: { label: "@zchain_org", href: "https://x.com/zchain_org" },
+          year: "2023",
+        },
+        {
+          name: "AURA",
+          description: "A secure platform for deploying an agentic workforce.",
+          url: { label: "aura.ai", href: "https://aura.ai" },
+          x: { label: "@aura_asi", href: "https://x.com/aura_asi" },
+          year: "2024",
+        },
+        {
+          name: "ZODE",
+          description: "Distributed compute network powered by THE GRID.",
+          url: { label: "thegrid.host", href: "https://thegrid.host" },
+          x: { label: "@zode_org", href: "https://x.com/zode_org" },
+          year: "2026",
+        },
+      ],
+    },
   },
   {
     id: "investment",

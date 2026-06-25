@@ -8,6 +8,7 @@ import { MarketScene } from "@/components/MarketScene";
 import { ProductScene } from "@/components/ProductScene";
 import { FinancialsPanel } from "@/components/FinancialsPanel";
 import { InvestmentPanel } from "@/components/InvestmentPanel";
+import { TeamPanel } from "@/components/TeamPanel";
 import { Citations } from "@/components/Citations";
 import { FeatureCard, ListCard, CardBulletList } from "@/components/Card";
 import styles from "./Section.module.css";
@@ -160,6 +161,18 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
         aria-label={section.label}
       >
         <InvestmentPanel section={section} />
+      </section>
+    );
+  }
+
+  if (section.team) {
+    return (
+      <section
+        id={section.id}
+        className={styles.team}
+        aria-label={section.label}
+      >
+        <TeamPanel section={section} />
       </section>
     );
   }
