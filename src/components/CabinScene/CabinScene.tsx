@@ -298,10 +298,12 @@ export function CabinScene({
             seg(x, 0, z1, x, h, z1);
           }
 
-          // Detail: vertical slat battens along the two long side walls.
+          // Detail: slat battens that wrap each side wall and continue across
+          // the top, so the top lines line up with the side-wall lines.
           const detail: number[] = [];
           for (let z = z0 + SLAT_PITCH; z < z1 - SLAT_PITCH / 2; z += SLAT_PITCH) {
             for (const x of xs) detail.push(x, 0, z, x, h, z);
+            detail.push(-halfW, h, z, halfW, h, z);
           }
 
           const line = new THREE.Group();
