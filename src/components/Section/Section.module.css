@@ -319,6 +319,26 @@
 }
 
 /*
+ * "Financials" variant: a centered header with two stacked tables on the
+ * left and the build-out table + revenue chart on the right. Snap behavior
+ * matches the other slides so deck navigation is unaffected.
+ */
+.financials {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  height: 100%;
+  display: flex;
+  padding: 5vmin 6vw;
+  overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  .financials {
+    overflow-y: auto;
+  }
+}
+
+/*
  * "Site" variant: mirrors the product slide's structure -- a centered header
  * on top, a bordered framed container in the middle holding the cleaned
  * terrain artwork, and a bottom band with the Key Facts card and progress
