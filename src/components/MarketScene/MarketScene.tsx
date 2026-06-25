@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import type { MarketTier, SectionContent } from "@/content/sections";
 import { Citations } from "@/components/Citations";
 import { FeatureCard } from "@/components/Card";
+import { SlideLayout } from "@/components/SlideLayout";
 import styles from "./MarketScene.module.css";
 
 const FALLBACK_TIERS: readonly MarketTier[] = [
@@ -39,39 +40,46 @@ export function MarketScene({
       : FALLBACK_TIERS;
 
   return (
-    <div className={styles.scene}>
-      <header className={styles.header}>
-        <p className={styles.kicker}>{section.label}</p>
-        <h2 className={styles.title}>{section.title}</h2>
-        {section.lede && <p className={styles.lede}>{section.lede}</p>}
-      </header>
-
-      <div className={styles.rings} aria-hidden="true">
-        {tiers.map((tier, index) => (
-          <div key={tier.acronym} className={styles.ring} data-tier={index}>
-            <span className={styles.ringLabel}>{tier.acronym}</span>
-          </div>
-        ))}
-      </div>
-
-      <div className={styles.bottomBand}>
-        <p className={styles.horizon}>by 2030</p>
-
-        <ol className={styles.cards}>
+    <SlideLayout
+      id={section.id}
+      ariaLabel={section.label}
+      className={styles.slide}
+      top={
+        <header className={styles.header}>
+          <p className={styles.kicker}>{section.label}</p>
+          <h2 className={styles.title}>{section.title}</h2>
+          {section.lede && <p className={styles.lede}>{section.lede}</p>}
+        </header>
+      }
+      middle={
+        <div className={styles.rings} aria-hidden="true">
           {tiers.map((tier, index) => (
-            <li key={tier.acronym} data-tier={index}>
-              <FeatureCard
-                align="center"
-                label={tier.name}
-                value={tier.headline}
-                description={tier.description}
-              />
-            </li>
+            <div key={tier.acronym} className={styles.ring} data-tier={index}>
+              <span className={styles.ringLabel}>{tier.acronym}</span>
+            </div>
           ))}
-        </ol>
+        </div>
+      }
+      bottom={
+        <div className={styles.bottomBand}>
+          <p className={styles.horizon}>by 2030</p>
 
-        <Citations items={section.citations} />
-      </div>
-    </div>
+          <ol className={styles.cards}>
+            {tiers.map((tier, index) => (
+              <li key={tier.acronym} data-tier={index}>
+                <FeatureCard
+                  align="center"
+                  label={tier.name}
+                  value={tier.headline}
+                  description={tier.description}
+                />
+              </li>
+            ))}
+          </ol>
+
+          <Citations items={section.citations} />
+        </div>
+      }
+    />
   );
 }

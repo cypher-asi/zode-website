@@ -1,40 +1,13 @@
 /*
- * "Product" slide: centered header, CabinScene + module nav explorer,
- * and four spec cards across the bottom. Fills the full-panel slide
- * supplied by Section's `.feature` wrapper.
+ * "Product" slide: centered header (top band), CabinScene + module nav
+ * explorer (middle band), and four spec cards (bottom band). Built on the
+ * shared SlideLayout primitive, which owns the three-band vertical rhythm.
  */
-/*
- * Three equal-fr rows around the explorer: the top and bottom rows are the
- * same height, so the explorer is centered on the page. The header is
- * centered within the top row; the spec cards sit at the bottom of the
- * lower row. minmax(0, 1fr) keeps the rows equal even when card content
- * can't shrink.
- */
-.scene {
-  height: 100%;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
-  padding: 0 6vw;
-  overflow: hidden;
-}
-
-.headerBand {
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.bottomBand {
-  min-height: 0;
-  padding-bottom: 5vmin;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
+.slide {
+  --slide-pad-x: 6vw;
 }
 
 .header {
-  flex: 0 0 auto;
   text-align: center;
 }
 

@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import type { SectionContent } from "@/content/sections";
 import { ListCard, CardBulletList } from "@/components/Card";
+import { SlideLayout } from "@/components/SlideLayout";
 import styles from "./InvestmentPanel.module.css";
 
 /** Slice colors for the Use of Proceeds pie, reusing the deck accent palette. */
@@ -35,13 +36,18 @@ export function InvestmentPanel({
   const total = useOfProceeds.reduce((sum, slice) => sum + slice.value, 0);
 
   return (
-    <div className={styles.panel}>
-      <header className={styles.header}>
-        <p className={styles.kicker}>{section.label}</p>
-        <h2 className={styles.title}>{section.title}</h2>
-      </header>
-
-      <div className={styles.grid}>
+    <SlideLayout
+      id={section.id}
+      ariaLabel={section.label}
+      className={styles.slide}
+      top={
+        <header className={styles.header}>
+          <p className={styles.kicker}>{section.label}</p>
+          <h2 className={styles.title}>{section.title}</h2>
+        </header>
+      }
+      middle={
+        <div className={styles.grid}>
         <div className={styles.left}>
           {bulletGroups.map((group) => (
             <ListCard key={group.title} title={group.title}>
@@ -103,7 +109,8 @@ export function InvestmentPanel({
             <CardBulletList items={whyInvestNow.bullets} />
           </ListCard>
         </div>
-      </div>
-    </div>
+        </div>
+      }
+    />
   );
 }

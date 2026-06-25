@@ -16,6 +16,7 @@ import type {
   FinancialsTable,
   SectionContent,
 } from "@/content/sections";
+import { SlideLayout } from "@/components/SlideLayout";
 import styles from "./FinancialsPanel.module.css";
 
 type Metric = "revenue" | "capital";
@@ -172,13 +173,18 @@ export function FinancialsPanel({
   }));
 
   return (
-    <div className={styles.panel}>
-      <header className={styles.header}>
-        <p className={styles.kicker}>{section.label}</p>
-        <h2 className={styles.title}>{section.title}</h2>
-      </header>
-
-      <div className={styles.grid}>
+    <SlideLayout
+      id={section.id}
+      ariaLabel={section.label}
+      className={styles.slide}
+      top={
+        <header className={styles.header}>
+          <p className={styles.kicker}>{section.label}</p>
+          <h2 className={styles.title}>{section.title}</h2>
+        </header>
+      }
+      middle={
+        <div className={styles.grid}>
         <Table table={unitEconomics} />
 
         <div className={styles.card}>
@@ -330,6 +336,7 @@ export function FinancialsPanel({
             </div>
           </div>
       </div>
-    </div>
+      }
+    />
   );
 }

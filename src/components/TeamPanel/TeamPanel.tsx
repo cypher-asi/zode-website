@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import type { SectionContent } from "@/content/sections";
 import { ListCard } from "@/components/Card";
+import { SlideLayout } from "@/components/SlideLayout";
 import styles from "./TeamPanel.module.css";
 
 function LinkIcon(): ReactElement {
@@ -65,13 +66,18 @@ export function TeamPanel({
   const { founder, timeline, companies } = data;
 
   return (
-    <div className={styles.panel}>
-      <header className={styles.header}>
-        <p className={styles.kicker}>{section.label}</p>
-        <h2 className={styles.title}>{section.title}</h2>
-      </header>
-
-      <div className={styles.grid}>
+    <SlideLayout
+      id={section.id}
+      ariaLabel={section.label}
+      className={styles.slide}
+      top={
+        <header className={styles.header}>
+          <p className={styles.kicker}>{section.label}</p>
+          <h2 className={styles.title}>{section.title}</h2>
+        </header>
+      }
+      middle={
+        <div className={styles.grid}>
         <div className={styles.bio}>
           <p className={styles.role}>{founder.role}</p>
           <p className={styles.founderName}>{founder.name}</p>
@@ -101,9 +107,10 @@ export function TeamPanel({
             </li>
           ))}
         </ol>
-      </div>
-
-      <div className={styles.companies}>
+        </div>
+      }
+      bottom={
+        <div className={styles.companies}>
         {companies.map((company) => (
           <ListCard
             key={company.name}
@@ -137,7 +144,8 @@ export function TeamPanel({
             </div>
           </ListCard>
         ))}
-      </div>
-    </div>
+        </div>
+      }
+    />
   );
 }

@@ -1,0 +1,49 @@
+/*
+ * Full-panel slide primitive. Three rows — equal flexible top/bottom around an
+ * `auto` middle — keep the middle band centered on the panel no matter how much
+ * content the top and bottom bands hold. Each band then centers its own content
+ * within the room it has. Only horizontal padding is applied here: vertical
+ * padding would offset the middle and break the page centering.
+ */
+.slide {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  height: 100%;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
+  padding: 0 var(--slide-pad-x, 7vw);
+  overflow: hidden;
+}
+
+.top,
+.bottom {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.middle {
+  min-height: 0;
+}
+
+/*
+ * On narrow screens fall back to a simple centered column that can scroll when
+ * content is taller than the panel, matching the deck's previous mobile flow.
+ */
+@media (max-width: 900px) {
+  .slide {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 4vh var(--slide-pad-x, 7vw);
+  }
+
+  .top,
+  .bottom {
+    flex: 0 0 auto;
+  }
+}

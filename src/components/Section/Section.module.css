@@ -1,17 +1,11 @@
 /*
- * Each section is a full-panel slide: it fills the scroll container's
- * height and snaps into view, so scrolling advances one card at a time.
+ * Section variants live inside the shared SlideLayout primitive, which owns the
+ * full-panel sizing, snap behavior, and the three-band (top/middle/bottom)
+ * vertical rhythm. The rules here are purely presentational: typography, the
+ * inner content blocks, media framing, and card grids.
  */
-.section {
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  padding: 6vmin 7vw;
-  overflow: hidden;
-}
 
+/* --- Standard text slide (middle band) --- */
 .inner {
   width: 100%;
   max-width: 720px;
@@ -82,21 +76,12 @@
   color: var(--color-text-secondary);
 }
 
-/*
- * Split variant: copy on the left, an interactive chart on the right.
- * Matches the snap behavior of the other slides so deck navigation is
- * unaffected.
- */
-.split {
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
-  height: 100%;
+/* --- Split variant: copy on the left, interactive chart on the right --- */
+.splitGrid {
   display: grid;
   grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
   align-items: center;
   gap: 5vw;
-  padding: 6vmin 7vw;
-  overflow: hidden;
 }
 
 .splitText {
@@ -116,9 +101,8 @@
 }
 
 @media (max-width: 900px) {
-  .split {
+  .splitGrid {
     grid-template-columns: 1fr;
-    align-content: center;
     gap: 4vh;
   }
 
@@ -127,25 +111,18 @@
   }
 }
 
-/*
- * Image-led "feature" variant: the rendering fills the upper region and the
- * title + lede sit in a band below, matching the Zode One template. Snap
- * behavior matches the standard slide so deck navigation is unaffected.
- */
-.feature {
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
-  height: 100%;
+/* --- Image-led "feature" / model variant (centered middle block) --- */
+.featureBlock {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  gap: clamp(20px, 4vh, 40px);
+  width: 100%;
 }
 
 .media {
   position: relative;
-  flex: 0 0 50%;
-  min-height: 0;
   width: 100%;
+  height: clamp(220px, 44vh, 480px);
 }
 
 .mediaImage {
@@ -154,12 +131,8 @@
 }
 
 .band {
-  flex: 0 0 50%;
-  min-height: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  padding: 5vmin 7vw;
 }
 
 .featureTitle {
@@ -179,47 +152,15 @@
   color: var(--color-text-secondary);
 }
 
-/*
- * Model variant: an interactive 3D scene fills the upper 3/4 of the card and
- * the title + lede sit in a band below. Reuses the `.feature` column flow.
- */
+/* Model variant: a taller interactive 3D scene above its caption band. */
 .sceneMedia {
   position: relative;
-  flex: 0 0 75%;
-  min-height: 0;
   width: 100%;
+  height: clamp(280px, 52vh, 560px);
 }
 
-.sceneBand {
-  flex: 0 0 25%;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 4vmin 7vw;
-}
-
-/*
- * "Deploy" variant: a centered header at the top, the rendering centered
- * behind the middle, and a row of stat cards across the bottom. Three rows
- * (1fr / auto / 1fr) keep the stage centered, with the header centered in
- * the top band and the cards anchored to the bottom band — matching the
- * Product slide. Snap behavior matches the standard slide so deck
- * navigation is unaffected.
- */
-.deploy {
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
-  height: 100%;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
-  padding: 6vmin 7vw;
-  overflow: hidden;
-}
-
+/* --- "Deploy" variant: header (top), render (middle), stat cards (bottom) --- */
 .deployHeaderBand {
-  min-height: 0;
-  align-self: center;
   text-align: center;
 }
 
@@ -243,22 +184,17 @@
 
 .deployStage {
   position: relative;
-  min-height: 0;
   width: 100%;
   height: clamp(280px, 46vh, 520px);
 }
 
-/*
- * `contain` keeps the render fully visible at its natural aspect ratio,
- * centered within the stage between the header and the cards.
- */
+/* `contain` keeps the render fully visible at its natural aspect ratio. */
 .deployImage {
   object-fit: contain;
   object-position: center;
 }
 
 .deployCards {
-  align-self: end;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 4vw;
@@ -268,16 +204,7 @@
 }
 
 @media (max-width: 900px) {
-  .deploy {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 4vh;
-    overflow-y: auto;
-  }
-
   .deployStage {
-    flex: 0 0 auto;
     height: clamp(220px, 36vh, 420px);
   }
 
@@ -287,64 +214,8 @@
   }
 }
 
-/*
- * "Financials" variant: a centered header with two stacked tables on the
- * left and the build-out table + revenue chart on the right. Snap behavior
- * matches the other slides so deck navigation is unaffected.
- */
-.financials {
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
-  height: 100%;
-  padding: 5vmin 6vw;
-  /* Scrolls only when the content is taller than the slide. */
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-/*
- * "Investment" variant: like financials, but with no vertical padding so the
- * panel's three-row grid spans the full slide height. This lets the content
- * grid center on the page while the header centers within the entire
- * remaining space above it (no padding offset skewing the header down).
- */
-.investment,
-.team {
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
-  height: 100%;
-  padding: 0 6vw;
-  overflow: hidden;
-}
-
-@media (max-width: 900px) {
-  .investment,
-  .team {
-    padding: 4vh 6vw;
-    overflow-y: auto;
-  }
-}
-
-/*
- * "Site" variant: mirrors the product slide's structure -- a centered header
- * on top, a bordered framed container in the middle holding the cleaned
- * terrain artwork, and a bottom band with the Key Facts card and progress
- * bar. Three rows (1fr / auto / 1fr) keep the frame centered on the panel.
- * Snap behavior matches the other slides so deck navigation is unaffected.
- */
-.site {
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
-  height: 100%;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
-  padding: 6vmin 7vw;
-  overflow: hidden;
-}
-
+/* --- "Site" variant: header (top), framed terrain (middle), cards (bottom) --- */
 .siteHeaderBand {
-  min-height: 0;
-  align-self: center;
   display: flex;
   justify-content: center;
 }
@@ -363,10 +234,6 @@
   color: var(--color-text-primary);
 }
 
-/*
- * Framed container for the terrain, matching the product slide's `.explorer`
- * box. `cover` crops the artwork to fill the frame.
- */
 .siteFrame {
   position: relative;
   height: clamp(336px, 55.2vh, 624px);
@@ -390,29 +257,15 @@
   z-index: 1;
 }
 
-/*
- * Three floating cards across the bottom, matching the product slide's spec
- * cards (same padding, border, radius, and type scale).
- */
 .siteCards {
-  min-height: 0;
-  align-self: end;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: clamp(10px, 1.5vw, 16px);
+  width: 100%;
 }
 
 @media (max-width: 900px) {
-  .site {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 4vh;
-    overflow-y: auto;
-  }
-
   .siteFrame {
-    flex: 0 0 auto;
     height: clamp(220px, 36vh, 420px);
   }
 

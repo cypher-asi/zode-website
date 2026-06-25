@@ -1,0 +1,6 @@
+/* The cover centers the large logo mark within the slide's middle band. */
+.cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

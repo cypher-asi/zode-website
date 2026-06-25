@@ -23,6 +23,7 @@ import {
   ZAI,
 } from "@lobehub/icons";
 import type { SectionContent } from "@/content/sections";
+import { SlideLayout } from "@/components/SlideLayout";
 import styles from "./EcosystemScene.module.css";
 
 /** Provider brand-mark size in the demand rail. */
@@ -306,7 +307,7 @@ function Constellation({
           className={styles.dot}
           cx={dot.x}
           cy={dot.y}
-          r={dot.r}
+          r={dot.r * 0.62}
         />
       ))}
 
@@ -323,7 +324,7 @@ function Constellation({
           className={styles.starNode}
           cx={star.x}
           cy={star.y}
-          r={1.7}
+          r={1.1}
           data-on={activeSet.has(i) ? "true" : undefined}
           data-flash={activeStar === i ? "true" : undefined}
         />
@@ -528,16 +529,19 @@ export function EcosystemScene({
   }, []);
 
   return (
-    <div className={styles.scene}>
-      <div className={styles.headerBand}>
+    <SlideLayout
+      id={section.id}
+      ariaLabel={section.label}
+      className={styles.slide}
+      top={
         <header className={styles.header}>
           <p className={styles.kicker}>{section.label}</p>
           <h2 className={styles.title}>{section.title}</h2>
           {section.lede && <p className={styles.lede}>{section.lede}</p>}
         </header>
-      </div>
-
-      <div className={styles.grid} ref={gridRef}>
+      }
+      middle={
+        <div className={styles.grid} ref={gridRef}>
         <ConnectionField
           stageRef={gridRef}
           count={companies.length}
@@ -613,7 +617,8 @@ export function EcosystemScene({
             ))}
           </ul>
         </section>
-      </div>
-    </div>
+        </div>
+      }
+    />
   );
 }

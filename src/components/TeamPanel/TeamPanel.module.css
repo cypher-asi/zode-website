@@ -1,17 +1,10 @@
 /*
- * "Team" slide: a centered header, a founder bio + vertical timeline in the
- * middle, and a row of portfolio company cards across the bottom. The three
- * rows let the header center in the top band, the bio/timeline grid fill the
- * middle, and the company cards anchor to the bottom.
+ * "Team" slide: a centered header (top band), a founder bio + vertical
+ * timeline (page-centered middle band), and a row of portfolio company cards
+ * (bottom band). Built on the shared SlideLayout primitive.
  */
-.panel {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: clamp(16px, 2.4vh, 28px);
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  padding: clamp(20px, 4vh, 40px) 0;
+.slide {
+  --slide-pad-x: 6vw;
 }
 
 .header {
@@ -120,7 +113,7 @@
   padding: 0;
   list-style: none;
   min-height: 0;
-  max-height: 100%;
+  max-height: 56vh;
   overflow-y: auto;
 }
 
@@ -221,17 +214,13 @@
 }
 
 @media (max-width: 900px) {
-  .panel {
-    grid-template-rows: auto auto auto;
-    overflow-y: auto;
-  }
-
   .grid {
     grid-template-columns: 1fr;
     overflow: visible;
   }
 
   .timeline {
+    max-height: none;
     overflow-y: visible;
   }
 
