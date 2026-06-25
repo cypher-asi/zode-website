@@ -86,7 +86,7 @@
 }
 
 .ring:hover {
-  border-color: var(--color-accent);
+  border-color: var(--color-accent, #01d892);
 }
 
 /* TAM (outer) -> SOM (inner): nested, narrowing, neutral tints. */

@@ -117,8 +117,8 @@
 }
 
 .moduleButton[data-active] {
-  color: var(--color-accent);
-  box-shadow: inset 3px 0 0 var(--color-accent);
+  color: var(--color-accent, #01d892);
+  box-shadow: inset 3px 0 0 var(--color-accent, #01d892);
 }
 
 .moduleRow {
@@ -149,7 +149,7 @@
 }
 
 .moduleButton[data-active] .moduleCode {
-  color: var(--color-accent);
+  color: var(--color-accent, #01d892);
 }
 
 .moduleDescription {
