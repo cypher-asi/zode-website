@@ -21,7 +21,7 @@
 
 .email {
   font-size: clamp(18px, 2.4vw, 28px);
-  font-weight: 600;
+  font-weight: 400;
   letter-spacing: 0.04em;
   color: var(--color-text-primary);
   text-decoration: none;
