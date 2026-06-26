@@ -1,0 +1,54 @@
+.hero {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Bottom scrim so the copy stays legible over the bright lower edge. */
+.scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.8) 0%,
+    rgba(0, 0, 0, 0.45) 22%,
+    rgba(0, 0, 0, 0) 50%
+  );
+  pointer-events: none;
+}
+
+.copy {
+  position: absolute;
+  left: clamp(20px, 5vw, 56px);
+  bottom: clamp(20px, 5vw, 48px);
+  max-width: 620px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(28px, 5vw, 52px);
+  font-weight: 700;
+  line-height: 1.05;
+  color: #ffffff;
+}
+
+.description {
+  margin: 0;
+  font-size: clamp(15px, 1.6vw, 19px);
+  line-height: 1.5;
+  color: #c9c9cf;
+}
