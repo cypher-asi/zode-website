@@ -1,0 +1,50 @@
+/*
+ * Floating overlay scrollbar. The track spans the scroll viewport's right
+ * edge but never reserves layout space (it sits over content), and the thumb
+ * is the only interactive, visible element. Kept clear of the deck tick rail
+ * (right: 14px) by hugging the very edge.
+ */
+.track {
+  position: absolute;
+  top: 6px;
+  right: 3px;
+  bottom: 6px;
+  width: 10px;
+  z-index: 6;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+
+.visible {
+  opacity: 1;
+}
+
+.thumb {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  border-radius: 999px;
+  background: rgba(140, 140, 150, 0.45);
+  pointer-events: auto;
+  cursor: grab;
+  transition: background 160ms ease, width 120ms ease;
+  will-change: transform, height;
+}
+
+.thumb:hover {
+  width: 8px;
+  background: rgba(160, 160, 170, 0.7);
+}
+
+.thumb:active {
+  cursor: grabbing;
+  background: rgba(170, 170, 180, 0.8);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track {
+    transition: none;
+  }
+}

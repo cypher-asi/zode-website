@@ -2,6 +2,7 @@ import type { ReactElement, ReactNode } from "react";
 import { SiteNav } from "@/components/SiteNav";
 import { BottomTaskbar } from "@/components/BottomTaskbar";
 import { SectionTickRail, type RailSection } from "@/components/SectionTickRail";
+import { OverlayScrollbar } from "@/components/OverlayScrollbar";
 import { DeckController } from "./DeckController";
 import styles from "./OuterShell.module.css";
 
@@ -30,6 +31,7 @@ export function OuterShell({ children, sections, coverId }: OuterShellProps): Re
           {children}
         </div>
         <DeckController scrollRootId={SCROLL_ROOT_ID} slideCount={sections.length + 1} />
+        <OverlayScrollbar targetId={SCROLL_ROOT_ID} />
         <SectionTickRail
           sections={sections}
           scrollRootId={SCROLL_ROOT_ID}
