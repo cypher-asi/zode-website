@@ -16,6 +16,9 @@
   margin: 0 6px;
   border-radius: 12px;
   background: var(--color-bg);
+  /* `overlay` lets the custom scrollbar float over content instead of
+   * reserving gutter space (Blink); falls back to `auto` elsewhere. */
   overflow-y: auto;
+  overflow-y: overlay;
   overflow-x: hidden;
 }
