@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { SiteNav } from "@/components/SiteNav";
 import { BottomTaskbar } from "@/components/BottomTaskbar";
+import { SiteFooter } from "@/components/SiteFooter";
 import { OverlayScrollbar } from "@/components/OverlayScrollbar";
 import { isAuthenticated } from "@/lib/session";
 import styles from "./SiteShell.module.css";
@@ -23,6 +24,7 @@ export default async function SiteLayout({
       <div className={styles.body} data-shell-body="">
         <div id={SITE_SCROLL_ID} className={styles.scroll}>
           {children}
+          <SiteFooter />
         </div>
         <OverlayScrollbar targetId={SITE_SCROLL_ID} />
       </div>
