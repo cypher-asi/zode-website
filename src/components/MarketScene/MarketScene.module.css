@@ -1,7 +1,7 @@
 /*
  * "Opportunity" slide: a centered TAM/SAM/SOM diagram of three concentric
  * circles — TAM outermost, SOM the innermost core (middle band) — with the
- * detail cards and horizon label in the bottom band. Built on the shared
+ * detail cards in the bottom band. Built on the shared
  * SlideLayout primitive, which owns the three-band vertical rhythm.
  */
 .slide {
@@ -43,16 +43,6 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
-}
-
-.horizon {
-  flex: 0 0 auto;
-  margin: clamp(8px, 1.5vh, 16px) 0 clamp(8px, 1.5vh, 16px);
-  font-size: clamp(0.7rem, 1vw, 0.82rem);
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--color-text-secondary);
 }
 
 /*

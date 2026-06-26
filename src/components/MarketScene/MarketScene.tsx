@@ -74,8 +74,6 @@ export function MarketScene({
       }
       bottom={
         <div className={styles.bottomBand}>
-          <p className={styles.horizon}>by 2030</p>
-
           <ol className={styles.cards}>
             {tiers.map((tier, index) => (
               <li key={tier.acronym} data-tier={index}>
