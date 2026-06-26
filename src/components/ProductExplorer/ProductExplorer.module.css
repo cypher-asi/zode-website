@@ -1,0 +1,147 @@
+/*
+ * Product-page explorer: a content-sized adaptation of the investor
+ * ProductScene (header + CabinScene + module nav), without SlideLayout's
+ * full-height constraint or the spec cards.
+ */
+.section {
+  padding: clamp(56px, 12vh, 96px) clamp(20px, 6vw, 56px);
+  background: var(--color-bg);
+}
+
+.header {
+  text-align: center;
+  margin: 0 auto clamp(32px, 6vh, 56px);
+}
+
+.kicker {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.75rem, 3.6vw, 2.75rem);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.explorer {
+  height: clamp(440px, 64vh, 640px);
+  display: grid;
+  grid-template-columns: 2.25fr 1fr;
+  border: 1px solid var(--color-border);
+}
+
+.sceneViewport {
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.moduleNav {
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.moduleList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.moduleItem {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.moduleItem:last-child {
+  border-bottom: none;
+}
+
+.moduleButton {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: clamp(12px, 1.8vh, 18px) clamp(14px, 1.6vw, 20px);
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: color 0.15s ease;
+}
+
+.moduleButton:hover {
+  color: var(--color-text-primary);
+}
+
+.moduleButton[data-active] {
+  color: var(--color-accent, #01d892);
+  box-shadow: inset 3px 0 0 var(--color-accent, #01d892);
+}
+
+.moduleRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.moduleName {
+  font-size: clamp(0.85rem, 1.2vw, 0.95rem);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.moduleNumber {
+  margin-right: 0.6em;
+  font-variant-numeric: tabular-nums;
+}
+
+.moduleCode {
+  flex-shrink: 0;
+  font-size: clamp(0.7rem, 1vw, 0.78rem);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.moduleButton[data-active] .moduleCode {
+  color: var(--color-accent, #01d892);
+}
+
+.moduleDescription {
+  margin: 10px 0 0;
+  font-size: clamp(0.78rem, 1.05vw, 0.85rem);
+  line-height: 1.55;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 900px) {
+  .explorer {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(360px, auto) auto;
+    height: auto;
+    max-height: min(72vh, 720px);
+  }
+
+  .sceneViewport {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+    height: clamp(360px, 56vh, 520px);
+  }
+
+  .moduleNav {
+    max-height: 28vh;
+  }
+}
