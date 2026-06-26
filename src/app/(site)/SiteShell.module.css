@@ -1,0 +1,22 @@
+.shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-height: 0;
+  background: var(--shell-outer-bg);
+}
+
+/* Rounded, bordered inner panel floating on the white outer shell,
+ * matching the deck's frame so marketing pages feel cohesive. */
+.body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin: 0 6px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 12px;
+  background: var(--color-bg);
+  overflow-y: auto;
+  overflow-x: hidden;
+}

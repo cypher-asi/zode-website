@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from "react";
-import { TopBar } from "@/components/TopBar";
+import { SiteNav } from "@/components/SiteNav";
 import { BottomTaskbar } from "@/components/BottomTaskbar";
 import { SectionTickRail, type RailSection } from "@/components/SectionTickRail";
 import { DeckController } from "./DeckController";
@@ -23,7 +23,7 @@ interface OuterShellProps {
 export function OuterShell({ children, sections, coverId }: OuterShellProps): ReactElement {
   return (
     <div className={styles.shell}>
-      <TopBar />
+      <SiteNav />
       <div className={styles.body} data-shell-body="">
 
         <div id={SCROLL_ROOT_ID} className={styles.scroll}>

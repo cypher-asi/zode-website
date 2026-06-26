@@ -5,7 +5,7 @@ import { Cover, COVER_ID } from "@/components/Cover";
 import { SECTIONS } from "@/content/sections";
 import { isAuthenticated } from "@/lib/session";
 
-export default async function Home() {
+export default async function Invest() {
   // Defense in depth: proxy.ts already gates this route, but re-check
   // here so content is never rendered without a valid session.
   if (!(await isAuthenticated())) {
