@@ -28,12 +28,16 @@
   flex-direction: column;
 }
 
+.card:first-child {
+  margin-left: 100px;
+}
+
 .image {
   display: block;
   width: 100%;
   aspect-ratio: 16 / 10;
   object-fit: cover;
-  border-radius: 100px 0 0 100px;
+  border-radius: 12px;
   background: var(--color-surface-tint);
 }
 
