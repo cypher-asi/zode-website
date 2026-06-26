@@ -21,10 +21,6 @@ export function ProductExplorer(): ReactElement {
 
   return (
     <section className={styles.section} aria-label={KICKER}>
-      <header className={styles.header}>
-        <h2 className={styles.title}>{TITLE}</h2>
-      </header>
-
       <div className={styles.explorer}>
         <div className={styles.sceneViewport}>
           <CabinScene
@@ -65,6 +61,10 @@ export function ProductExplorer(): ReactElement {
           </ol>
         </nav>
       </div>
+
+      <header className={styles.header}>
+        <h2 className={styles.title}>{TITLE}</h2>
+      </header>
     </section>
   );
 }

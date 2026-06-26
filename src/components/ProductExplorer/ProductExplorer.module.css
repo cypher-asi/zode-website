@@ -4,13 +4,13 @@
  * full-height constraint or the spec cards.
  */
 .section {
-  padding: clamp(56px, 12vh, 96px) clamp(20px, 6vw, 56px);
+  padding: 0 clamp(20px, 6vw, 56px) clamp(56px, 12vh, 96px);
   background: var(--color-bg);
 }
 
 .header {
   text-align: center;
-  margin: 0 auto clamp(32px, 6vh, 56px);
+  margin: clamp(32px, 6vh, 56px) auto 0;
 }
 
 .kicker {
