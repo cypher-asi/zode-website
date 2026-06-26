@@ -110,6 +110,7 @@
 .bio,
 .parent {
   min-width: 0;
+  padding-block: clamp(20px, 5vh, 48px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -157,9 +158,9 @@
   max-width: 100%;
   text-align: left;
   list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 8px clamp(20px, 3vw, 40px);
   font-size: clamp(0.9rem, 1.2vw, 1.05rem);
   line-height: 1.4;
   color: var(--color-text-primary);
