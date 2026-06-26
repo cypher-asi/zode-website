@@ -10,7 +10,7 @@
 .track {
   display: flex;
   gap: clamp(16px, 2vw, 28px);
-  padding: 0 clamp(20px, 5vw, 56px);
+  padding: 0;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
@@ -33,7 +33,7 @@
   width: 100%;
   aspect-ratio: 16 / 10;
   object-fit: cover;
-  border-radius: 12px;
+  border-radius: 100px 0 0 100px;
   background: var(--color-surface-tint);
 }
 
