@@ -2,6 +2,7 @@ import { ProductHero } from "@/components/ProductHero";
 import { ProductStats } from "@/components/ProductStats";
 import { ProductFeature } from "@/components/ProductFeature";
 import { ProductCards } from "@/components/ProductCards";
+import { ProductSpecs } from "@/components/ProductSpecs";
 
 export default function ProductPage() {
   return (
@@ -10,6 +11,7 @@ export default function ProductPage() {
       <ProductStats />
       <ProductFeature />
       <ProductCards />
+      <ProductSpecs />
     </>
   );
 }
