@@ -753,7 +753,8 @@ export const SECTIONS: readonly SectionContent[] = [
         achievements: [
           "Collective peak valuation of $2 billion+",
           "Over $100 million raised",
-          "Founded 5+ companies",
+          "20+ Fortune 500 deals",
+          "Built industry-leading healthcare SaaS co.",
           "First exit in 20s",
         ],
       },
