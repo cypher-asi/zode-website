@@ -1,0 +1,96 @@
+.section {
+  padding: 0 0 clamp(56px, 12vh, 120px);
+  background: var(--color-bg);
+}
+
+.viewport {
+  position: relative;
+}
+
+.track {
+  display: flex;
+  gap: clamp(16px, 2vw, 28px);
+  padding: 0 clamp(20px, 5vw, 56px);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.track::-webkit-scrollbar {
+  display: none;
+}
+
+.card {
+  flex: 0 0 clamp(280px, 78%, 880px);
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border-radius: 12px;
+  background: var(--color-surface-tint);
+}
+
+.title {
+  margin: clamp(14px, 2vh, 20px) 0 0;
+  font-size: clamp(18px, 2vw, 24px);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--color-text-primary);
+}
+
+.description {
+  margin: 8px 0 0;
+  max-width: 52ch;
+  font-size: clamp(13px, 1.3vw, 15px);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+/* Floating chevron controls centered on the card image band. */
+.control {
+  position: absolute;
+  top: calc((78vw * 0.625) / 2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(20, 20, 20, 0.55);
+  color: #ffffff;
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: background-color 160ms ease;
+}
+
+.control:hover {
+  background: rgba(20, 20, 20, 0.8);
+}
+
+.control:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.prev {
+  left: clamp(20px, 5vw, 56px);
+}
+
+.next {
+  right: clamp(20px, 5vw, 56px);
+}
+
+/* Anchor the controls to the image's vertical center across breakpoints. */
+@media (min-width: 1128px) {
+  .control {
+    top: calc((880px * 0.625) / 2);
+  }
+}
