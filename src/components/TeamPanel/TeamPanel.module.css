@@ -190,16 +190,17 @@
  */
 .timeline {
   position: relative;
+  box-sizing: border-box;
   width: 100%;
+  max-width: 1120px;
   height: var(--team-view-h);
-  margin: 0;
+  margin: 0 auto;
   padding: 0;
   list-style: none;
   display: flex;
   align-items: stretch;
-  gap: clamp(4px, 0.8vw, 12px);
-  overflow-x: auto;
-  overflow-y: hidden;
+  gap: clamp(2px, 0.4vw, 6px);
+  overflow: hidden;
 }
 
 /* The horizontal baseline the year markers sit on. */
@@ -216,7 +217,7 @@
 .timelineEntry {
   position: relative;
   flex: 1 1 0;
-  min-width: clamp(112px, 12vw, 160px);
+  min-width: 0;
   height: 100%;
 }
 
@@ -248,24 +249,25 @@
 }
 
 .year {
-  font-size: clamp(0.95rem, 1.3vw, 1.1rem);
+  font-size: clamp(0.82rem, 1.05vw, 1rem);
   font-weight: 600;
   color: var(--color-text-primary);
 }
 
 .yearLabel {
   margin-top: 2px;
-  font-size: clamp(0.72rem, 0.95vw, 0.85rem);
+  font-size: clamp(0.62rem, 0.8vw, 0.74rem);
   color: var(--color-text-secondary);
 }
 
-/* Events floated above the line; odd columns sit low, even columns sit high. */
+/* Events floated above the line; odd columns sit low, even columns sit high.
+   Confined to the column width so the row never overflows or scrolls. */
 .timelineEvents {
   position: absolute;
-  left: 50%;
+  left: 0;
+  right: 0;
   bottom: calc(var(--axis-bottom) + 16px);
-  width: clamp(112px, 12vw, 160px);
-  transform: translateX(-50%);
+  padding: 0 4px;
 }
 
 .timelineEntry:nth-child(even) .timelineEvents {
@@ -294,15 +296,18 @@
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  font-size: clamp(0.72rem, 1vw, 0.85rem);
-  line-height: 1.4;
+  gap: 4px;
+  font-size: clamp(0.64rem, 0.82vw, 0.76rem);
+  line-height: 1.35;
   text-align: center;
   color: var(--color-text-secondary);
 }
 
 /* --- Company cards --- */
 .companies {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: clamp(10px, 1.2vw, 16px);
