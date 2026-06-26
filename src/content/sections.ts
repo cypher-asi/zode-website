@@ -746,9 +746,9 @@ export const SECTIONS: readonly SectionContent[] = [
     body: [],
     team: {
       founder: {
-        role: "Founder / CEO",
+        role: "Founder & CEO",
         name: "Matthew Dorey",
-        bio: "THE GRID is founded by Matthew Dorey, a Canadian entrepreneur and software developer with over 20+ years building and scaling technology companies.",
+        bio: "ZODE is founded by Matthew Dorey, a Canadian entrepreneur and software developer with over 20+ years building and scaling technology companies.",
         achievementsLabel: "Key Achievements",
         achievements: [
           "Collective peak valuation of $2 billion+",
@@ -760,7 +760,7 @@ export const SECTIONS: readonly SectionContent[] = [
       parentCompany: {
         label: "Parent Company",
         name: "CYPHER, INC.",
-        bio: "CYPHER is the holding company behind multiple consumer AI-focused companies built on top of THE GRID protocol. Our mission is to build sovereign systems that empower humanity.",
+        bio: "CYPHER is the holding company behind multiple consumer AI companies built on THE GRID, building sovereign systems that empower humanity.",
         valuesLabel: "Core Values",
         values: ["Sovereignty", "Privacy", "Security", "Open Source"],
       },

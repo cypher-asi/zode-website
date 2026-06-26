@@ -136,7 +136,8 @@
 
 .founderBio {
   margin: 0 0 24px;
-  max-width: 42ch;
+  max-width: 54ch;
+  min-height: calc(1.6em * 3);
   font-size: clamp(0.9rem, 1.2vw, 1.05rem);
   line-height: 1.6;
   color: var(--color-text-secondary);
@@ -158,9 +159,9 @@
   max-width: 100%;
   text-align: left;
   list-style: none;
-  display: grid;
-  grid-template-columns: repeat(2, auto);
-  gap: 8px clamp(20px, 3vw, 40px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   font-size: clamp(0.9rem, 1.2vw, 1.05rem);
   line-height: 1.4;
   color: var(--color-text-primary);
