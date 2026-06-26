@@ -80,6 +80,37 @@
   box-sizing: border-box;
 }
 
+/* Sleek, transparent custom scrollbar shared across the deck and pages. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(140, 140, 150, 0.4) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(140, 140, 150, 0.35);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(140, 140, 150, 0.6);
+  background-clip: padding-box;
+}
+
+img {
+  border: 0;
+}
+
 html {
   height: 100%;
   scroll-behavior: smooth;

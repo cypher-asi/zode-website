@@ -160,7 +160,7 @@
 .cabinStage {
   position: relative;
   width: 100%;
-  height: clamp(360px, 64vh, 760px);
+  height: clamp(340px, 58vh, 700px);
 }
 
 .cabinCaption {
@@ -173,6 +173,8 @@
 .cabinCaption .featureLede {
   margin-left: auto;
   margin-right: auto;
+  /* Even out the two wrapped lines so they're close to the same length. */
+  text-wrap: balance;
 }
 
 @media (max-width: 900px) {
@@ -259,7 +261,6 @@
 .siteFrame {
   position: relative;
   height: clamp(336px, 55.2vh, 624px);
-  border: 1px solid var(--color-border);
   overflow: hidden;
 }
 
