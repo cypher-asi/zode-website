@@ -374,7 +374,7 @@ export const SECTIONS: readonly SectionContent[] = [
   {
     id: "problem",
     label: "The Problem",
-    title: "The AI energy crisis is here.",
+    title: "The AI energy crisis\u00A0is\u00A0here.",
     lede: "",
     body: [
       "The demand for AI energy is expected to ~3x over the next decade from 415 TWh to 1,200 TWh.",
