@@ -72,7 +72,7 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-geist-sans);
+  --font-sans: "Universal Sans Display", var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
