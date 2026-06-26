@@ -58,7 +58,7 @@ export function SiteNav(): ReactElement {
         <Link className={styles.ghostButton} href="/give-compute">
           Give compute
         </Link>
-        <Link className={styles.primaryButton} href="/buy-compute">
+        <Link className={styles.ghostButton} href="/buy-compute">
           Buy compute
         </Link>
       </div>
