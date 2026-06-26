@@ -30,20 +30,75 @@
   color: var(--color-text-primary);
 }
 
+/* --- Middle band: selector + active view --- */
+.middleInner {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(16px, 2.4vh, 28px);
+}
+
+.selector {
+  flex: 0 0 auto;
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  border-radius: 0;
+}
+
+.selectorBtn {
+  appearance: none;
+  margin: 0;
+  padding: 8px 18px;
+  background: none;
+  border: none;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color 120ms ease, background-color 120ms ease;
+}
+
+.selectorBtn + .selectorBtn {
+  border-left: 1px solid var(--color-border);
+}
+
+.selectorBtn:hover {
+  color: var(--color-text-primary);
+}
+
+.selectorBtn[data-active="true"] {
+  color: var(--color-bg, #000);
+  background: var(--color-accent, #01d892);
+}
+
+.selectorBtn:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
 .grid {
+  width: 100%;
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
   gap: clamp(24px, 4vw, 64px);
-  align-items: start;
+  align-items: center;
   overflow: hidden;
 }
 
-/* --- Founder bio --- */
-.bio {
+/* --- Founder bio + parent company columns --- */
+.bio,
+.parent {
   min-width: 0;
   display: flex;
   flex-direction: column;
+}
+
+.parent .founderBio:last-child {
+  margin-bottom: 0;
 }
 
 .role {
@@ -107,11 +162,13 @@
   background: var(--color-accent, #01d892);
 }
 
-/* --- Timeline --- */
+/* --- Timeline (standalone view) --- */
 .timeline {
   margin: 0;
   padding: 0;
   list-style: none;
+  width: 100%;
+  max-width: 720px;
   min-height: 0;
   max-height: 56vh;
   overflow-y: auto;
@@ -167,6 +224,8 @@
 
 .companyCard {
   gap: 10px;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .companyDescription {
@@ -175,6 +234,11 @@
   font-size: clamp(0.78rem, 1vw, 0.88rem);
   line-height: 1.5;
   color: var(--color-text-secondary);
+  transition: color 120ms ease;
+}
+
+.companyCard:hover .companyDescription {
+  color: var(--color-accent, #01d892);
 }
 
 .companyMeta {

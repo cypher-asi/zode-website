@@ -1,4 +1,6 @@
-import type { ReactElement } from "react";
+"use client";
+
+import { useState, type ReactElement } from "react";
 import type { SectionContent } from "@/content/sections";
 import { ListCard } from "@/components/Card";
 import { SlideLayout } from "@/components/SlideLayout";
@@ -61,9 +63,10 @@ export function TeamPanel({
   section: SectionContent;
 }): ReactElement | null {
   const data = section.team;
+  const [view, setView] = useState<"leadership" | "timeline">("leadership");
   if (!data) return null;
 
-  const { founder, timeline, companies } = data;
+  const { founder, parentCompany, timeline, companies } = data;
 
   return (
     <SlideLayout
@@ -77,36 +80,75 @@ export function TeamPanel({
         </header>
       }
       middle={
-        <div className={styles.grid}>
-        <div className={styles.bio}>
-          <p className={styles.role}>{founder.role}</p>
-          <p className={styles.founderName}>{founder.name}</p>
-          <p className={styles.founderBio}>{founder.bio}</p>
-          <p className={styles.achievementsLabel}>{founder.achievementsLabel}</p>
-          <ul className={styles.achievements}>
-            {founder.achievements.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </div>
+        <div className={styles.middleInner}>
+          <div className={styles.selector} role="tablist" aria-label="Team view">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={view === "leadership"}
+              className={styles.selectorBtn}
+              data-active={view === "leadership"}
+              onClick={() => setView("leadership")}
+            >
+              Leadership
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={view === "timeline"}
+              className={styles.selectorBtn}
+              data-active={view === "timeline"}
+              onClick={() => setView("timeline")}
+            >
+              Timeline
+            </button>
+          </div>
 
-        <ol className={styles.timeline} aria-label="Timeline">
-          {timeline.map((entry) => (
-            <li key={entry.year} className={styles.timelineEntry}>
-              <div className={styles.timelineYear}>
-                <span className={styles.year}>{entry.year}</span>
-                {entry.label && (
-                  <span className={styles.yearLabel}>{entry.label}</span>
-                )}
+          {view === "leadership" ? (
+            <div className={styles.grid}>
+              <div className={styles.bio}>
+                <p className={styles.role}>{founder.role}</p>
+                <p className={styles.founderName}>{founder.name}</p>
+                <p className={styles.founderBio}>{founder.bio}</p>
+                <p className={styles.achievementsLabel}>
+                  {founder.achievementsLabel}
+                </p>
+                <ul className={styles.achievements}>
+                  {founder.achievements.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
               </div>
-              <ul className={styles.timelineEvents}>
-                {entry.events.map((event) => (
-                  <li key={event}>{event}</li>
+
+              <div className={styles.parent}>
+                <p className={styles.role}>{parentCompany.label}</p>
+                <p className={styles.founderName}>{parentCompany.name}</p>
+                {parentCompany.body.map((paragraph) => (
+                  <p key={paragraph} className={styles.founderBio}>
+                    {paragraph}
+                  </p>
                 ))}
-              </ul>
-            </li>
-          ))}
-        </ol>
+              </div>
+            </div>
+          ) : (
+            <ol className={styles.timeline} aria-label="Timeline">
+              {timeline.map((entry) => (
+                <li key={entry.year} className={styles.timelineEntry}>
+                  <div className={styles.timelineYear}>
+                    <span className={styles.year}>{entry.year}</span>
+                    {entry.label && (
+                      <span className={styles.yearLabel}>{entry.label}</span>
+                    )}
+                  </div>
+                  <ul className={styles.timelineEvents}>
+                    {entry.events.map((event) => (
+                      <li key={event}>{event}</li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ol>
+          )}
         </div>
       }
       bottom={

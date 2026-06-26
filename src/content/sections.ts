@@ -246,10 +246,21 @@ export interface CompanyCard {
   readonly year: string;
 }
 
+export interface ParentCompany {
+  /** Kicker above the name, e.g. "Parent Company". */
+  readonly label: string;
+  /** Holding company name, e.g. "CYPHER, INC.". */
+  readonly name: string;
+  /** Description paragraphs. */
+  readonly body: readonly string[];
+}
+
 export interface TeamContent {
-  /** Founder/CEO bio shown on the left. */
+  /** Founder/CEO bio shown on the left in the Leadership view. */
   readonly founder: FounderProfile;
-  /** Chronological milestones shown on the right. */
+  /** Parent holding company shown on the right in the Leadership view. */
+  readonly parentCompany: ParentCompany;
+  /** Chronological milestones shown in the Timeline view. */
   readonly timeline: readonly TimelineEntry[];
   /** Portfolio company cards shown across the bottom. */
   readonly companies: readonly CompanyCard[];
@@ -739,6 +750,14 @@ export const SECTIONS: readonly SectionContent[] = [
           "Collective peak valuation of $2 billion+",
           "Over $100 million raised",
           "First exit in 20s",
+        ],
+      },
+      parentCompany: {
+        label: "Parent Company",
+        name: "CYPHER, INC.",
+        body: [
+          "CYPHER is the holding company behind multiple consumer AI-focused companies built on top of THE GRID protocol.",
+          "Our mission is to build sovereign systems that empower humanity. Everything we do is focused on our core values: sovereignty, privacy, security and open source.",
         ],
       },
       timeline: [
