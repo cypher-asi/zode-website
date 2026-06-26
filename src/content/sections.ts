@@ -407,7 +407,7 @@ export const SECTIONS: readonly SectionContent[] = [
       },
       {
         label: "ELASTIC",
-        stat: "1 MW",
+        stat: "1.5 MW",
         description: "Tap into latent energy availability with ease.",
       },
       {
