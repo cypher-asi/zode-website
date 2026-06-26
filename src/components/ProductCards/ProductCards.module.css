@@ -44,7 +44,7 @@
 .title {
   margin: clamp(14px, 2vh, 20px) 0 0;
   font-size: 34px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.2;
   color: var(--color-text-primary);
 }
