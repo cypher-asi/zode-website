@@ -22,7 +22,6 @@ export function ProductExplorer(): ReactElement {
   return (
     <section className={styles.section} aria-label={KICKER}>
       <header className={styles.header}>
-        <p className={styles.kicker}>{KICKER}</p>
         <h2 className={styles.title}>{TITLE}</h2>
       </header>
 
