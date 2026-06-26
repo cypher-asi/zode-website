@@ -9,7 +9,7 @@ interface Stat {
 
 const STATS: readonly Stat[] = [
   { value: "1.5", unit: "MW", label: "Power Capacity" },
-  { value: "12", label: "Liquid cooled racks" },
+  { value: "12", label: "Liquid-cooled Racks" },
   { value: "720", label: "B300 GPUs" },
 ];
 
