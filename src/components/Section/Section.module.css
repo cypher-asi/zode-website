@@ -152,11 +152,33 @@
   color: var(--color-text-secondary);
 }
 
-/* Model variant: a taller interactive 3D scene above its caption band. */
-.sceneMedia {
+/*
+ * Model variant: the interactive 3D scene is the centered middle band (full
+ * width, large) so it sits with equal flexible space above and below it, and
+ * the title/lede caption drops into the slide's bottom band.
+ */
+.cabinStage {
   position: relative;
   width: 100%;
-  height: clamp(280px, 52vh, 560px);
+  height: clamp(360px, 64vh, 760px);
+}
+
+.cabinCaption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.cabinCaption .featureLede {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 900px) {
+  .cabinStage {
+    height: clamp(300px, 52vh, 520px);
+  }
 }
 
 /* --- "Deploy" variant: header (top), render (middle), stat cards (bottom) --- */
@@ -244,6 +266,7 @@
 .siteBg {
   object-fit: cover;
   object-position: center;
+  opacity: 0.75;
 }
 
 .siteMarker {
