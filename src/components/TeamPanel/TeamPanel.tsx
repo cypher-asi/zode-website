@@ -104,51 +104,60 @@ export function TeamPanel({
             </button>
           </div>
 
-          {view === "leadership" ? (
-            <div className={styles.grid}>
-              <div className={styles.bio}>
-                <p className={styles.role}>{founder.role}</p>
-                <p className={styles.founderName}>{founder.name}</p>
-                <p className={styles.founderBio}>{founder.bio}</p>
-                <p className={styles.achievementsLabel}>
-                  {founder.achievementsLabel}
-                </p>
-                <ul className={styles.achievements}>
-                  {founder.achievements.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className={styles.parent}>
-                <p className={styles.role}>{parentCompany.label}</p>
-                <p className={styles.founderName}>{parentCompany.name}</p>
-                {parentCompany.body.map((paragraph) => (
-                  <p key={paragraph} className={styles.founderBio}>
-                    {paragraph}
+          <div className={styles.viewport}>
+            {view === "leadership" ? (
+              <div className={styles.grid}>
+                <div className={styles.bio}>
+                  <p className={styles.role}>{founder.role}</p>
+                  <p className={styles.founderName}>{founder.name}</p>
+                  <p className={styles.founderBio}>{founder.bio}</p>
+                  <p className={styles.achievementsLabel}>
+                    {founder.achievementsLabel}
                   </p>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <ol className={styles.timeline} aria-label="Timeline">
-              {timeline.map((entry) => (
-                <li key={entry.year} className={styles.timelineEntry}>
-                  <div className={styles.timelineYear}>
-                    <span className={styles.year}>{entry.year}</span>
-                    {entry.label && (
-                      <span className={styles.yearLabel}>{entry.label}</span>
-                    )}
-                  </div>
-                  <ul className={styles.timelineEvents}>
-                    {entry.events.map((event) => (
-                      <li key={event}>{event}</li>
+                  <ul className={styles.achievements}>
+                    {founder.achievements.map((item) => (
+                      <li key={item}>{item}</li>
                     ))}
                   </ul>
-                </li>
-              ))}
-            </ol>
-          )}
+                </div>
+
+                <div className={styles.parent}>
+                  <p className={styles.role}>{parentCompany.label}</p>
+                  <p className={styles.founderName}>{parentCompany.name}</p>
+                  <p className={styles.founderBio}>{parentCompany.bio}</p>
+                  <p className={styles.achievementsLabel}>
+                    {parentCompany.valuesLabel}
+                  </p>
+                  <ul className={styles.achievements}>
+                    {parentCompany.values.map((value) => (
+                      <li key={value}>{value}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ) : (
+              <ol className={styles.timeline} aria-label="Timeline">
+                {timeline.map((entry) => (
+                  <li key={entry.year} className={styles.timelineEntry}>
+                    <div className={styles.timelineEvents}>
+                      <ul className={styles.eventList}>
+                        {entry.events.map((event) => (
+                          <li key={event}>{event}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <span className={styles.axisDot} aria-hidden="true" />
+                    <div className={styles.timelineYear}>
+                      <span className={styles.year}>{entry.year}</span>
+                      {entry.label && (
+                        <span className={styles.yearLabel}>{entry.label}</span>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
         </div>
       }
       bottom={

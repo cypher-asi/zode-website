@@ -5,6 +5,10 @@
  */
 .slide {
   --slide-pad-x: 6vw;
+  /* Shared height for both views so toggling never resizes the panel. */
+  --team-view-h: clamp(300px, 46vh, 440px);
+  /* Distance of the timeline axis line from the bottom of the view. */
+  --axis-bottom: 56px;
 }
 
 .header {
@@ -79,26 +83,37 @@
   outline-offset: 2px;
 }
 
-.grid {
+/*
+ * Fixed-height viewport keeps the Leadership and Timeline views the same size
+ * so switching tabs never changes the panel layout.
+ */
+.viewport {
   width: 100%;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-  gap: clamp(24px, 4vw, 64px);
+  min-height: var(--team-view-h);
+  display: flex;
   align-items: center;
-  overflow: hidden;
+  justify-content: center;
 }
 
-/* --- Founder bio + parent company columns --- */
+.grid {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(24px, 5vw, 72px);
+  align-items: center;
+  justify-items: center;
+}
+
+/* --- Founder bio + parent company columns (centered) --- */
 .bio,
 .parent {
   min-width: 0;
   display: flex;
   flex-direction: column;
-}
-
-.parent .founderBio:last-child {
-  margin-bottom: 0;
+  align-items: center;
+  text-align: center;
 }
 
 .role {
@@ -136,8 +151,11 @@
 }
 
 .achievements {
-  margin: 0;
+  margin: 0 auto;
   padding: 0;
+  width: fit-content;
+  max-width: 100%;
+  text-align: left;
   list-style: none;
   display: flex;
   flex-direction: column;
@@ -162,28 +180,69 @@
   background: var(--color-accent, #01d892);
 }
 
-/* --- Timeline (standalone view) --- */
+/*
+ * --- Timeline (horizontal) ---
+ * Years run left-to-right along a baseline at the bottom; each year's events
+ * are stacked above its marker and staggered (alternating near/far from the
+ * line) so adjacent columns don't crowd each other.
+ */
 .timeline {
+  position: relative;
+  width: 100%;
+  height: var(--team-view-h);
   margin: 0;
   padding: 0;
   list-style: none;
-  width: 100%;
-  max-width: 720px;
-  min-height: 0;
-  max-height: 56vh;
-  overflow-y: auto;
+  display: flex;
+  align-items: stretch;
+  gap: clamp(4px, 0.8vw, 12px);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* The horizontal baseline the year markers sit on. */
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--axis-bottom);
+  height: 1px;
+  background: var(--color-border);
 }
 
 .timelineEntry {
-  display: grid;
-  grid-template-columns: minmax(120px, 0.4fr) minmax(0, 1fr);
-  gap: clamp(12px, 1.6vw, 24px);
-  padding: clamp(8px, 1.2vh, 12px) 0;
+  position: relative;
+  flex: 1 1 0;
+  min-width: clamp(112px, 12vw, 160px);
+  height: 100%;
 }
 
+/* Marker dot centered on the baseline. */
+.axisDot {
+  position: absolute;
+  left: 50%;
+  bottom: var(--axis-bottom);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-accent, #01d892);
+  transform: translate(-50%, 50%);
+}
+
+/* Year + phase label below the baseline. */
 .timelineYear {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--axis-bottom);
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 12px;
+  text-align: center;
 }
 
 .year {
@@ -194,25 +253,50 @@
 
 .yearLabel {
   margin-top: 2px;
-  font-size: clamp(0.8rem, 1.1vw, 0.95rem);
+  font-size: clamp(0.72rem, 0.95vw, 0.85rem);
   color: var(--color-text-secondary);
 }
 
+/* Events floated above the line; odd columns sit low, even columns sit high. */
 .timelineEvents {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--axis-bottom) + 16px);
+  width: clamp(112px, 12vw, 160px);
+  transform: translateX(-50%);
+}
+
+.timelineEntry:nth-child(even) .timelineEvents {
+  bottom: calc(var(--axis-bottom) + 128px);
+}
+
+/* Connector from the events block down to the baseline. */
+.timelineEvents::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 1px;
+  height: 16px;
+  background: var(--color-border);
+  transform: translateX(-50%);
+}
+
+.timelineEntry:nth-child(even) .timelineEvents::after {
+  height: 128px;
+}
+
+.eventList {
   margin: 0;
-  padding: 0 0 0 1.1em;
-  list-style: disc;
-  font-size: clamp(0.82rem, 1.1vw, 0.95rem);
-  line-height: 1.5;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: clamp(0.72rem, 1vw, 0.85rem);
+  line-height: 1.4;
+  text-align: center;
   color: var(--color-text-secondary);
-}
-
-.timelineEvents li {
-  margin-bottom: 4px;
-}
-
-.timelineEvents li:last-child {
-  margin-bottom: 0;
 }
 
 /* --- Company cards --- */
@@ -280,12 +364,7 @@
 @media (max-width: 900px) {
   .grid {
     grid-template-columns: 1fr;
-    overflow: visible;
-  }
-
-  .timeline {
-    max-height: none;
-    overflow-y: visible;
+    max-width: 420px;
   }
 
   .companies {

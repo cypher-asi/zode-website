@@ -251,8 +251,12 @@ export interface ParentCompany {
   readonly label: string;
   /** Holding company name, e.g. "CYPHER, INC.". */
   readonly name: string;
-  /** Description paragraphs. */
-  readonly body: readonly string[];
+  /** Short description paragraph. */
+  readonly bio: string;
+  /** Heading above the core values list, e.g. "Core Values". */
+  readonly valuesLabel: string;
+  /** The company's core values. */
+  readonly values: readonly string[];
 }
 
 export interface TeamContent {
@@ -755,10 +759,9 @@ export const SECTIONS: readonly SectionContent[] = [
       parentCompany: {
         label: "Parent Company",
         name: "CYPHER, INC.",
-        body: [
-          "CYPHER is the holding company behind multiple consumer AI-focused companies built on top of THE GRID protocol.",
-          "Our mission is to build sovereign systems that empower humanity. Everything we do is focused on our core values: sovereignty, privacy, security and open source.",
-        ],
+        bio: "CYPHER is the holding company behind multiple consumer AI-focused companies built on top of THE GRID protocol. Our mission is to build sovereign systems that empower humanity.",
+        valuesLabel: "Core Values",
+        values: ["Sovereignty", "Privacy", "Security", "Open Source"],
       },
       timeline: [
         {
