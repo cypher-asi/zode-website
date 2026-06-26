@@ -22,6 +22,25 @@
 .trailing {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Brand wordmark at the top-left, linking home. Ships as white lines on
+ * transparency; inverts to black on the white shell via --logo-invert. */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.wordmark {
+  display: block;
+  height: 16px;
+  width: auto;
+  filter: invert(var(--logo-invert, 0));
 }
 
 .links {

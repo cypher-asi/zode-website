@@ -34,8 +34,9 @@ export function SiteNav(): ReactElement {
   return (
     <header className={styles.nav}>
       <div className={styles.leading}>
-        <Link className={styles.ghostButton} href="/give-compute">
-          Give compute
+        <Link className={styles.brand} href="/" aria-label="ZODE — home">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className={styles.wordmark} src="/wordmark.png" alt="" aria-hidden="true" />
         </Link>
       </div>
 
@@ -54,6 +55,9 @@ export function SiteNav(): ReactElement {
       </nav>
 
       <div className={styles.trailing}>
+        <Link className={styles.ghostButton} href="/give-compute">
+          Give compute
+        </Link>
         <Link className={styles.primaryButton} href="/buy-compute">
           Buy compute
         </Link>
