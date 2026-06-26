@@ -8,7 +8,7 @@ import styles from "./ProductHero.module.css";
  */
 export function ProductHero(): ReactElement {
   return (
-    <section className={styles.hero} aria-label="Introducing ZODE One">
+    <section className={styles.hero} aria-label="Meet ZODE One">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className={styles.image}
@@ -17,7 +17,7 @@ export function ProductHero(): ReactElement {
       />
       <div className={styles.scrim} aria-hidden="true" />
       <div className={styles.copy}>
-        <h1 className={styles.title}>Introducing ZODE One.</h1>
+        <h1 className={styles.title}>Meet ZODE One.</h1>
         <p className={styles.description}>
           The first rapidly deployable data center to respond to the AI energy
           crisis.
