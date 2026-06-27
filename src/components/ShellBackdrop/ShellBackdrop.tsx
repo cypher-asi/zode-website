@@ -6,20 +6,20 @@ import styles from "./ShellBackdrop.module.css";
 
 /*
  * A fixed, full-viewport WebGL canvas that paints a soft white/gray gradient
- * which drifts slowly underneath the white shell frame. Only the shell chrome
- * (top nav, bottom taskbar, panel edges/corners) is transparent, so the motion
+ * which drifts underneath the white shell frame. Only the shell chrome (top
+ * nav, bottom taskbar, panel edges/corners) is transparent, so the motion
  * reads as a gentle living backdrop around the opaque content panel.
  *
- * Kept intentionally low-contrast and slow. Honors prefers-reduced-motion by
- * rendering a single static frame, and pauses when the tab is hidden.
+ * The loop always runs so the gradient is continuously visible and moving;
+ * it only pauses when the tab is hidden.
  */
 
 // Soft white/gray ramp: a bright near-white highlight down to a clearly
-// readable cool gray, so the drifting gradient is visible in the thin frame
-// without feeling heavy.
-const COLOR_LIGHT = new THREE.Color("#eef1f6");
-const COLOR_BASE = new THREE.Color("#d8dde5");
-const COLOR_SHADE = new THREE.Color("#c1c8d2");
+// readable cool gray, with enough range that the drifting gradient is
+// noticeable in the thin shell frame.
+const COLOR_LIGHT = new THREE.Color("#f2f4f8");
+const COLOR_BASE = new THREE.Color("#cfd6e0");
+const COLOR_SHADE = new THREE.Color("#aeb8c6");
 
 const VERTEX_SHADER = /* glsl */ `
   varying vec2 vUv;
@@ -61,22 +61,22 @@ const FRAGMENT_SHADER = /* glsl */ `
     vec2 aspect = vec2(uResolution.x / uResolution.y, 1.0);
     vec2 p = vUv * aspect;
 
-    float t = uTime * 0.12;
+    float t = uTime * 0.22;
 
     // Domain warp: drift two low-frequency noise fields against each other so
-    // the gradient slowly churns rather than just sliding.
+    // the gradient churns rather than just sliding.
     vec2 warp = vec2(
-      noise(p * 1.3 + vec2(t, -t * 0.7)),
-      noise(p * 1.1 - vec2(t * 0.8, t))
+      noise(p * 1.2 + vec2(t, -t * 0.7)),
+      noise(p * 1.0 - vec2(t * 0.8, t))
     );
 
-    float field = noise(p * 1.7 + warp * 1.1 + vec2(t * 0.4, t * 0.6));
+    float field = noise(p * 1.5 + warp * 1.4 + vec2(t * 0.5, t * 0.7));
 
     // Broad diagonal gradient (lighter top-right, cooler lower-left), with the
     // animated noise field driving most of the tonal movement so the drift is
-    // actually perceptible in the thin shell frame.
+    // clearly perceptible in the thin shell frame.
     float diag = clamp((vUv.x + (1.0 - vUv.y)) * 0.5, 0.0, 1.0);
-    float blend = clamp(diag * 0.4 + field * 0.75 - 0.05, 0.0, 1.0);
+    float blend = clamp(diag * 0.35 + field * 0.85 - 0.05, 0.0, 1.0);
 
     vec3 col = mix(uShade, uBase, smoothstep(0.0, 0.55, blend));
     col = mix(col, uLight, smoothstep(0.5, 1.0, blend));
@@ -94,19 +94,9 @@ export function ShellBackdrop(): ReactElement {
       return;
     }
 
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
     let renderer: THREE.WebGLRenderer;
     try {
-      renderer = new THREE.WebGLRenderer({
-        canvas,
-        antialias: false,
-        alpha: false,
-        // When motion is disabled we draw a single frame and stop, so the
-        // buffer must be preserved or the lone frame gets cleared after the
-        // first composite (leaving only the --shell-outer-bg fallback).
-        preserveDrawingBuffer: reduceMotion,
-      });
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false });
     } catch {
       // No WebGL context: the transparent body falls back to --shell-outer-bg.
       return;
@@ -153,10 +143,6 @@ export function ShellBackdrop(): ReactElement {
       const height = window.innerHeight;
       renderer.setSize(width, height, false);
       uniforms.uResolution.value.set(width, height);
-      // Repaint immediately so the static (reduced-motion) frame isn't stale.
-      if (reduceMotion) {
-        renderFrame(performance.now());
-      }
     };
     resize();
 
@@ -166,9 +152,6 @@ export function ShellBackdrop(): ReactElement {
     };
 
     const onVisibility = (): void => {
-      if (reduceMotion) {
-        return;
-      }
       if (document.hidden) {
         if (frame) {
           window.cancelAnimationFrame(frame);
@@ -182,11 +165,7 @@ export function ShellBackdrop(): ReactElement {
     window.addEventListener("resize", resize);
     document.addEventListener("visibilitychange", onVisibility);
 
-    if (reduceMotion) {
-      renderFrame(performance.now());
-    } else {
-      frame = window.requestAnimationFrame(loop);
-    }
+    frame = window.requestAnimationFrame(loop);
 
     return () => {
       if (frame) {
