@@ -14,11 +14,12 @@ import styles from "./ShellBackdrop.module.css";
  * rendering a single static frame, and pauses when the tab is hidden.
  */
 
-// Soft grays sampled from the reference: a near-white highlight, a neutral
-// base, and a slightly cooler gray for the shaded lobe.
-const COLOR_LIGHT = new THREE.Color("#f7f8f9");
-const COLOR_BASE = new THREE.Color("#eef0f2");
-const COLOR_SHADE = new THREE.Color("#e3e5e8");
+// Soft white/gray ramp: a bright near-white highlight down to a clearly
+// readable cool gray, so the drifting gradient is visible in the thin frame
+// without feeling heavy.
+const COLOR_LIGHT = new THREE.Color("#eef1f6");
+const COLOR_BASE = new THREE.Color("#d8dde5");
+const COLOR_SHADE = new THREE.Color("#c1c8d2");
 
 const VERTEX_SHADER = /* glsl */ `
   varying vec2 vUv;
@@ -60,23 +61,25 @@ const FRAGMENT_SHADER = /* glsl */ `
     vec2 aspect = vec2(uResolution.x / uResolution.y, 1.0);
     vec2 p = vUv * aspect;
 
-    float t = uTime * 0.04;
+    float t = uTime * 0.12;
 
-    // Slow domain warp: drift two low-frequency noise fields against each other.
+    // Domain warp: drift two low-frequency noise fields against each other so
+    // the gradient slowly churns rather than just sliding.
     vec2 warp = vec2(
       noise(p * 1.3 + vec2(t, -t * 0.7)),
       noise(p * 1.1 - vec2(t * 0.8, t))
     );
 
-    float field = noise(p * 1.6 + warp * 0.6 + vec2(0.0, t * 0.5));
+    float field = noise(p * 1.7 + warp * 1.1 + vec2(t * 0.4, t * 0.6));
 
-    // Broad diagonal gradient (lighter top-right, cooler lower-left) like the
-    // reference, modulated subtly by the drifting noise field.
+    // Broad diagonal gradient (lighter top-right, cooler lower-left), with the
+    // animated noise field driving most of the tonal movement so the drift is
+    // actually perceptible in the thin shell frame.
     float diag = clamp((vUv.x + (1.0 - vUv.y)) * 0.5, 0.0, 1.0);
-    float blend = clamp(diag * 0.7 + field * 0.45 - 0.08, 0.0, 1.0);
+    float blend = clamp(diag * 0.4 + field * 0.75 - 0.05, 0.0, 1.0);
 
-    vec3 col = mix(uShade, uBase, smoothstep(0.0, 0.6, blend));
-    col = mix(col, uLight, smoothstep(0.45, 1.0, blend));
+    vec3 col = mix(uShade, uBase, smoothstep(0.0, 0.55, blend));
+    col = mix(col, uLight, smoothstep(0.5, 1.0, blend));
 
     gl_FragColor = vec4(col, 1.0);
   }
@@ -91,9 +94,19 @@ export function ShellBackdrop(): ReactElement {
       return;
     }
 
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     let renderer: THREE.WebGLRenderer;
     try {
-      renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false });
+      renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: false,
+        alpha: false,
+        // When motion is disabled we draw a single frame and stop, so the
+        // buffer must be preserved or the lone frame gets cleared after the
+        // first composite (leaving only the --shell-outer-bg fallback).
+        preserveDrawingBuffer: reduceMotion,
+      });
     } catch {
       // No WebGL context: the transparent body falls back to --shell-outer-bg.
       return;
@@ -121,17 +134,11 @@ export function ShellBackdrop(): ReactElement {
       depthWrite: false,
     });
     const mesh = new THREE.Mesh(geometry, material);
+    // The fullscreen quad bypasses the camera in the vertex shader; without
+    // this, three frustum-culls it against the degenerate ortho frustum and
+    // nothing is ever drawn.
+    mesh.frustumCulled = false;
     scene.add(mesh);
-
-    const resize = (): void => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      renderer.setSize(width, height, false);
-      uniforms.uResolution.value.set(width, height);
-    };
-    resize();
-
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     let frame = 0;
     const start = performance.now();
@@ -141,18 +148,33 @@ export function ShellBackdrop(): ReactElement {
       renderer.render(scene, camera);
     };
 
+    const resize = (): void => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      renderer.setSize(width, height, false);
+      uniforms.uResolution.value.set(width, height);
+      // Repaint immediately so the static (reduced-motion) frame isn't stale.
+      if (reduceMotion) {
+        renderFrame(performance.now());
+      }
+    };
+    resize();
+
     const loop = (now: number): void => {
       renderFrame(now);
       frame = window.requestAnimationFrame(loop);
     };
 
     const onVisibility = (): void => {
+      if (reduceMotion) {
+        return;
+      }
       if (document.hidden) {
         if (frame) {
           window.cancelAnimationFrame(frame);
           frame = 0;
         }
-      } else if (!reduceMotion && !frame) {
+      } else if (!frame) {
         frame = window.requestAnimationFrame(loop);
       }
     };
