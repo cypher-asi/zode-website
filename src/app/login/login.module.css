@@ -4,7 +4,8 @@
   justify-content: center;
   min-height: 100dvh;
   padding: 24px;
-  background: var(--shell-outer-bg);
+  /* Transparent so the animated ShellBackdrop shows through the frame. */
+  background: transparent;
 }
 
 .panel {

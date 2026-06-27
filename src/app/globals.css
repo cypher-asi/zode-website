@@ -37,8 +37,9 @@
   --chart-5: #1f8f63; /* deep emerald */
   --chart-6: #5fbf4c; /* grass green */
 
-  /* Constant white frame around the inner content "screen". */
-  --shell-outer-bg: #ffffff;
+  /* Soft white/gray frame around the inner content "screen". Used as the
+   * static base/fallback behind the animated WebGL ShellBackdrop. */
+  --shell-outer-bg: #eef0f2;
 }
 
 /* Inner content panel — dark "screen" by default (dark mode). */
@@ -114,12 +115,17 @@ img {
 html {
   height: 100%;
   scroll-behavior: smooth;
+  /* Fallback base shown if WebGL is unavailable; lives on <html> (not <body>)
+   * so it never paints over the fixed ShellBackdrop canvas (z-index: -1). */
+  background: var(--shell-outer-bg);
 }
 
 body {
   margin: 0;
   min-height: 100%;
-  background: var(--shell-outer-bg);
+  /* Transparent so the fixed ShellBackdrop canvas (z-index: -1) shows through;
+   * the fallback color lives on <html>. */
+  background: transparent;
   color: var(--color-text-primary);
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;

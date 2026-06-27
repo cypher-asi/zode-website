@@ -1,0 +1,14 @@
+/*
+ * The animated shell backdrop sits behind everything (z-index -1), pinned to
+ * the viewport, and never intercepts pointer events. The transparent shell
+ * chrome above it reveals the drifting gradient around the content panel.
+ */
+.canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+  display: block;
+}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import { themeInitScript } from "@/lib/theme/theme-script";
+import { ShellBackdrop } from "@/components/ShellBackdrop";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -30,6 +31,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>
+        <ShellBackdrop />
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

@@ -4,7 +4,8 @@
   flex-direction: column;
   height: 100dvh;
   min-height: 0;
-  background: var(--shell-outer-bg);
+  /* Transparent so the animated ShellBackdrop shows through the frame. */
+  background: transparent;
 }
 
 /* Rounded, bordered inner panel floating on the white outer shell,
