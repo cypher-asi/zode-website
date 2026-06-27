@@ -4,6 +4,7 @@ import { SiteNav } from "@/components/SiteNav";
 import { BottomTaskbar } from "@/components/BottomTaskbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { OverlayScrollbar } from "@/components/OverlayScrollbar";
+import { ScrollReset } from "@/components/ScrollReset";
 import { isAuthenticated } from "@/lib/session";
 import styles from "./SiteShell.module.css";
 
@@ -26,6 +27,7 @@ export default async function SiteLayout({
           {children}
           <SiteFooter />
         </div>
+        <ScrollReset targetId={SITE_SCROLL_ID} />
         <OverlayScrollbar targetId={SITE_SCROLL_ID} />
       </div>
       <BottomTaskbar />

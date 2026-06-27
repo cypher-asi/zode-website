@@ -4,6 +4,7 @@ import { BottomTaskbar } from "@/components/BottomTaskbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SectionTickRail, type RailSection } from "@/components/SectionTickRail";
 import { OverlayScrollbar } from "@/components/OverlayScrollbar";
+import { ScrollReset } from "@/components/ScrollReset";
 import { DeckController } from "./DeckController";
 import styles from "./OuterShell.module.css";
 
@@ -35,6 +36,7 @@ export function OuterShell({ children, sections, coverId }: OuterShellProps): Re
           </div>
         </div>
         <DeckController scrollRootId={SCROLL_ROOT_ID} slideCount={sections.length + 2} />
+        <ScrollReset targetId={SCROLL_ROOT_ID} />
         <OverlayScrollbar targetId={SCROLL_ROOT_ID} />
         <SectionTickRail
           sections={sections}
