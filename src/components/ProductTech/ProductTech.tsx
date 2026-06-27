@@ -16,14 +16,14 @@ const GENERATIONS: readonly GenerationInfo[] = [
   {
     id: "blackwell",
     label: "Blackwell",
-    image: "/images/product-capabilities.png",
-    alt: "NVIDIA Blackwell-based compute layout inside a ZODE One unit.",
+    image: "/images/zode-rack.png",
+    alt: "A stack of ZODE-branded rack servers lit in a dark data center.",
   },
   {
     id: "rubin",
     label: "Rubin",
-    image: "/images/product-capabilities.png",
-    alt: "NVIDIA Rubin-based compute layout inside a ZODE One unit.",
+    image: "/images/zode-rack.png",
+    alt: "A stack of ZODE-branded rack servers lit in a dark data center.",
   },
 ];
 
