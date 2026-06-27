@@ -1,9 +1,11 @@
 import type { CSSProperties } from "react";
 import { ProductHero } from "@/components/ProductHero";
+import { ProductCapabilities } from "@/components/ProductCapabilities";
 import { ProductStats } from "@/components/ProductStats";
 import { ProductExplorer } from "@/components/ProductExplorer";
 import { ProductFeature } from "@/components/ProductFeature";
 import { ProductCards } from "@/components/ProductCards";
+import { ProductScale } from "@/components/ProductScale";
 import { ProductSpecs } from "@/components/ProductSpecs";
 import { ProductCTA } from "@/components/ProductCTA";
 
@@ -22,6 +24,8 @@ export default function ProductPage() {
       <ProductExplorer />
       <ProductFeature />
       <ProductCards />
+      <ProductCapabilities />
+      <ProductScale />
       <ProductSpecs />
       <ProductCTA />
     </div>
