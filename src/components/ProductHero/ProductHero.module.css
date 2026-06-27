@@ -6,13 +6,19 @@
   border-radius: inherit;
 }
 
-.image {
+.video {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+  opacity: 0;
+}
+
+/* No transition: swapping opacity gives an instant hard cut between clips. */
+.active {
+  opacity: 1;
 }
 
 /* Bottom scrim so the copy stays legible over the bright lower edge. */
