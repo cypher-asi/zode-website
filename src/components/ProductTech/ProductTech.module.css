@@ -1,0 +1,54 @@
+.tech {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(56px, 12vh, 120px) clamp(20px, 6vw, 56px);
+  background: #161616;
+}
+
+.selector {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.option {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  padding: 10px 28px;
+  border-radius: 999px;
+  background: transparent;
+  font-size: clamp(13px, 1.3vw, 15px);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.6);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.option:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.optionActive {
+  background: #f4f4f5;
+  color: #161616;
+}
+
+.optionActive:hover {
+  color: #161616;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: clamp(36px, 6vh, 64px);
+  aspect-ratio: 16 / 6;
+  object-fit: cover;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+}

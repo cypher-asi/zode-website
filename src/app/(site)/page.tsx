@@ -5,6 +5,7 @@ import { ProductStats } from "@/components/ProductStats";
 import { ProductExplorer } from "@/components/ProductExplorer";
 import { ProductFeature } from "@/components/ProductFeature";
 import { ProductCards } from "@/components/ProductCards";
+import { ProductTech } from "@/components/ProductTech";
 import { ProductScale } from "@/components/ProductScale";
 import { ProductSpecs } from "@/components/ProductSpecs";
 import { ProductCTA } from "@/components/ProductCTA";
@@ -25,6 +26,7 @@ export default function ProductPage() {
       <ProductFeature />
       <ProductCards />
       <ProductCapabilities />
+      <ProductTech />
       <ProductScale />
       <ProductSpecs />
       <ProductCTA />
