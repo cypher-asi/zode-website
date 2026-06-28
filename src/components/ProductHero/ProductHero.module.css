@@ -24,9 +24,11 @@
   object-fit: cover;
   display: block;
   opacity: 0;
+  /* Fade the active clip in (and crossfade between clips) so the imagery
+   * eases up on load instead of snapping in. */
+  transition: opacity 800ms ease;
 }
 
-/* No transition: swapping opacity gives an instant hard cut between clips. */
 .active {
   opacity: 1;
 }

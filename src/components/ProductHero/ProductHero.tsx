@@ -94,7 +94,7 @@ export function ProductHero(): ReactElement {
           ref={(el) => {
             videoRefs.current[index] = el;
           }}
-          className={`${styles.video} ${index === active ? styles.active : ""}`}
+          className={`${styles.video} ${ready && index === active ? styles.active : ""}`}
           src={src}
           muted
           loop
