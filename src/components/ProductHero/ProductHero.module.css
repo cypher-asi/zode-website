@@ -4,6 +4,19 @@
   min-height: 0;
   overflow: hidden;
   border-radius: inherit;
+  opacity: 0;
+  transition: opacity 700ms ease;
+}
+
+/* Fade the hero in once the first clip can play (set from JS). */
+.ready {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero {
+    transition: none;
+  }
 }
 
 .video {
