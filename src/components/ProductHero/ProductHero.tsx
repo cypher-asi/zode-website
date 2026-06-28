@@ -22,6 +22,9 @@ const TITLE = "Meet ZODE One.";
 /** Per-character cadence of the title typewriter reveal. */
 const TYPE_SPEED_MS = 65;
 
+/** Initial clip fade-in duration; must match the CSS transition below. */
+const INTRO_FADE_MS = 800;
+
 /**
  * Full-bleed hero for the Product page: a looping sequence of video clips with
  * a bottom gradient scrim and bottom-left intro copy. Sits inside the (site)
@@ -30,6 +33,7 @@ const TYPE_SPEED_MS = 65;
 export function ProductHero(): ReactElement {
   const [active, setActive] = useState(0);
   const [ready, setReady] = useState(false);
+  const [introDone, setIntroDone] = useState(false);
   const [typedCount, setTypedCount] = useState(0);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
@@ -47,6 +51,14 @@ export function ProductHero(): ReactElement {
     const id = window.setTimeout(() => setReady(true), 1200);
     return () => window.clearTimeout(id);
   }, []);
+
+  // The clip fade only applies to the first reveal; once it completes, drop
+  // the transition so clip-to-clip changes stay instant hard cuts.
+  useEffect(() => {
+    if (!ready) return;
+    const id = window.setTimeout(() => setIntroDone(true), INTRO_FADE_MS);
+    return () => window.clearTimeout(id);
+  }, [ready]);
 
   // Once the hero has revealed, type the title out one character at a time.
   useEffect(() => {
@@ -94,7 +106,7 @@ export function ProductHero(): ReactElement {
           ref={(el) => {
             videoRefs.current[index] = el;
           }}
-          className={`${styles.video} ${ready && index === active ? styles.active : ""}`}
+          className={`${styles.video} ${introDone ? "" : styles.fadeable} ${ready && index === active ? styles.active : ""}`}
           src={src}
           muted
           loop
