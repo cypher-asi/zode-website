@@ -251,6 +251,14 @@
   color: var(--color-text-primary);
 }
 
+/* Units (ZODES, MW, /yr, ARR) sit small beside the main number. */
+.statUnit {
+  font-size: 0.5em;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+}
+
 .statCaption {
   margin: 0;
   font-size: 11px;

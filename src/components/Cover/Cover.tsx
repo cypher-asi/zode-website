@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { useEffect, useState, type ReactElement } from "react";
 import Image from "next/image";
 import { SlideLayout } from "@/components/SlideLayout";
 import styles from "./Cover.module.css";
@@ -10,24 +10,42 @@ export const COVER_ID = "cover";
 /** Anchor of the Investment slide the cover's primary CTA jumps to. */
 const INVESTMENT_SECTION_ID = "investment";
 
-/** When the raise opens; "Opens in N days" counts down to this date. */
-const OPEN_DATE = new Date("2026-08-01T00:00:00Z");
+/** When the raise opens; the "Opens in" countdown ticks down to this date. */
+const OPEN_DATE = new Date("2026-08-15T00:00:00");
 
 interface TargetStat {
   readonly value: string;
+  /** Smaller trailing unit; the leading separator is baked in. */
+  readonly unit: string;
   readonly caption: string;
 }
 
 const TARGET_STATS: readonly TargetStat[] = [
-  { value: "9 ZODES", caption: "In Development" },
-  { value: "9 MW", caption: "Power" },
-  { value: "$225M/yr", caption: "Revenue" },
-  { value: "46.96% ARR", caption: "Target ROE" },
+  { value: "9", unit: " ZODES", caption: "In Development" },
+  { value: "9", unit: " MW", caption: "Power" },
+  { value: "$225M", unit: "/yr", caption: "Revenue" },
+  { value: "46.96%", unit: " ARR", caption: "Target ROE" },
 ];
 
-function daysUntilOpen(): number {
-  const ms = OPEN_DATE.getTime() - Date.now();
-  return Math.max(0, Math.ceil(ms / 86_400_000));
+interface Countdown {
+  readonly days: number;
+  readonly hours: number;
+  readonly minutes: number;
+  readonly seconds: number;
+}
+
+function getCountdown(targetMs: number): Countdown {
+  const total = Math.max(0, Math.floor((targetMs - Date.now()) / 1000));
+  return {
+    days: Math.floor(total / 86_400),
+    hours: Math.floor((total % 86_400) / 3_600),
+    minutes: Math.floor((total % 3_600) / 60),
+    seconds: total % 60,
+  };
+}
+
+function pad(n: number): string {
+  return String(n).padStart(2, "0");
 }
 
 /**
@@ -37,7 +55,17 @@ function daysUntilOpen(): number {
  * Investment section deeper in the deck. Excluded from the numbered tick-rail.
  */
 export function Cover(): ReactElement {
-  const days = daysUntilOpen();
+  // Null until mounted so the server and first client render match; the
+  // live time is only known on the client.
+  const [countdown, setCountdown] = useState<Countdown | null>(null);
+
+  useEffect(() => {
+    const targetMs = OPEN_DATE.getTime();
+    const tick = (): void => setCountdown(getCountdown(targetMs));
+    tick();
+    const id = setInterval(tick, 1_000);
+    return () => clearInterval(id);
+  }, []);
 
   const goToInvestment = (): void => {
     document
@@ -51,9 +79,12 @@ export function Cover(): ReactElement {
       ariaLabel="Investment opportunity"
       top={
         <header className={styles.header}>
-          <p className={styles.kicker}>ZODE Build Out (In Development)</p>
+          <div className={styles.kickerRow}>
+            <p className={styles.kicker}>ZODE Build Out</p>
+            <span className={styles.tag}>In Development</span>
+          </div>
           <h1 className={styles.title}>Invest in the ZODE 9 MW site</h1>
-          <p className={styles.location}>British Columbia</p>
+          <p className={styles.location}>British Columbia, Canada &middot; 200+ acres</p>
         </header>
       }
       middle={
@@ -80,7 +111,41 @@ export function Cover(): ReactElement {
               <div className={styles.metaRow}>
                 <dt className={styles.metaLabel}>Opens in</dt>
                 <dd className={styles.metaValue}>
-                  {days} {days === 1 ? "day" : "days"}
+                  <span className={styles.countdown} suppressHydrationWarning>
+                    {([
+                      ["days", countdown?.days],
+                      ["hrs", countdown?.hours],
+                      ["min", countdown?.minutes],
+                      ["sec", countdown?.seconds],
+                    ] as const).map(([unit, value]) => (
+                      <span key={unit} className={styles.countdownUnit}>
+                        <span className={styles.countdownNumber}>
+                          {value === undefined ? "--" : pad(value)}
+                        </span>
+                        <span className={styles.countdownLabel}>{unit}</span>
+                      </span>
+                    ))}
+                  </span>
+                </dd>
+              </div>
+              <div className={styles.metaRow}>
+                <dt className={styles.metaLabel}>Partner</dt>
+                <dd className={styles.metaValue}>
+                  Private +{" "}
+                  <a
+                    className={styles.metaLink}
+                    href="https://republic.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Republic.com
+                  </a>
+                </dd>
+              </div>
+              <div className={styles.metaRow}>
+                <dt className={styles.metaLabel}>Structure</dt>
+                <dd className={styles.metaValue}>
+                  Corporate Equity + Participating Profit Units (PPUs) in Site
                 </dd>
               </div>
               <div className={styles.metaRow}>
@@ -105,7 +170,10 @@ export function Cover(): ReactElement {
           <div className={styles.statsRow}>
             {TARGET_STATS.map((stat) => (
               <div key={stat.caption} className={styles.stat}>
-                <p className={styles.statValue}>{stat.value}</p>
+                <p className={styles.statValue}>
+                  {stat.value}
+                  <span className={styles.statUnit}>{stat.unit}</span>
+                </p>
                 <p className={styles.statCaption}>{stat.caption}</p>
               </div>
             ))}
