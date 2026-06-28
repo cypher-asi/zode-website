@@ -4,28 +4,16 @@
   min-height: 0;
   overflow: hidden;
   border-radius: inherit;
-  /* Gray base sits under the clips; fades in with the hero so there is no
-   * abrupt pop while the first video is still buffering. */
-  background: var(--color-bg);
+  /* Dark base under the clips so the imagery visibly fades up (instead of
+   * gray-on-gray) while the first video is still buffering. */
+  background: #06070b;
   opacity: 0;
-  transition: opacity 700ms ease;
+  transition: opacity 800ms ease;
 }
 
 /* Fade the hero in once the first clip can play (set from JS). */
 .hero.ready {
   opacity: 1;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hero,
-  .scrim,
-  .description {
-    transition: none;
-  }
-
-  .caret {
-    display: none;
-  }
 }
 
 .video {

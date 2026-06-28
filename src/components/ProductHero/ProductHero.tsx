@@ -22,13 +22,6 @@ const TITLE = "Meet ZODE One.";
 /** Per-character cadence of the title typewriter reveal. */
 const TYPE_SPEED_MS = 65;
 
-function prefersReducedMotion(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true
-  );
-}
-
 /**
  * Full-bleed hero for the Product page: a looping sequence of video clips with
  * a bottom gradient scrim and bottom-left intro copy. Sits inside the (site)
@@ -38,7 +31,6 @@ export function ProductHero(): ReactElement {
   const [active, setActive] = useState(0);
   const [ready, setReady] = useState(false);
   const [typedCount, setTypedCount] = useState(0);
-  const [reduced] = useState(prefersReducedMotion);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
   useEffect(() => {
@@ -56,10 +48,9 @@ export function ProductHero(): ReactElement {
     return () => window.clearTimeout(id);
   }, []);
 
-  // Once the first clip is ready and the hero has faded in, type the title out
-  // one character at a time. Reduced-motion users get the full title at once.
+  // Once the hero has revealed, type the title out one character at a time.
   useEffect(() => {
-    if (!ready || reduced) return;
+    if (!ready) return;
     const id = window.setInterval(() => {
       setTypedCount((count) => {
         if (count >= TITLE.length) {
@@ -70,11 +61,10 @@ export function ProductHero(): ReactElement {
       });
     }, TYPE_SPEED_MS);
     return () => window.clearInterval(id);
-  }, [ready, reduced]);
+  }, [ready]);
 
-  // Nothing renders until the hero is ready (keeps SSR/hydration output empty);
-  // reduced-motion then jumps straight to the full title.
-  const shown = ready ? (reduced ? TITLE.length : typedCount) : 0;
+  // Nothing renders until the hero is ready (keeps SSR/hydration output empty).
+  const shown = ready ? typedCount : 0;
   const typingDone = shown >= TITLE.length;
 
   // Drive playback explicitly so every cut is a clean restart: the active clip
