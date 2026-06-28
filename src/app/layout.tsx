@@ -16,9 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "THE GRID",
+  title: "ZODE",
   description:
-    "THE GRID — the connective layer for a decentralized, secure compute network.",
+    "ZODE — the connective layer for a decentralized, secure compute network.",
   robots: { index: false, follow: false },
 };
 

@@ -9,7 +9,7 @@ export default function LoginPage(): ReactElement {
       <div className={styles.panel}>
         <div className={styles.brand}>
           <GridLogo showWordmark={false} />
-          <span className={styles.wordmark}>THE GRID</span>
+          <span className={styles.wordmark}>ZODE</span>
         </div>
         <p className={styles.prompt}>Enter the password to continue.</p>
         <LoginForm />
