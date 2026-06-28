@@ -17,6 +17,18 @@ const CLIPS = [
 
 const CLIP_DURATION_MS = 2500;
 
+const TITLE = "Meet ZODE One.";
+
+/** Per-character cadence of the title typewriter reveal. */
+const TYPE_SPEED_MS = 65;
+
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true
+  );
+}
+
 /**
  * Full-bleed hero for the Product page: a looping sequence of video clips with
  * a bottom gradient scrim and bottom-left intro copy. Sits inside the (site)
@@ -25,6 +37,8 @@ const CLIP_DURATION_MS = 2500;
 export function ProductHero(): ReactElement {
   const [active, setActive] = useState(0);
   const [ready, setReady] = useState(false);
+  const [typedCount, setTypedCount] = useState(0);
+  const [reduced] = useState(prefersReducedMotion);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
   useEffect(() => {
@@ -33,6 +47,27 @@ export function ProductHero(): ReactElement {
     }, CLIP_DURATION_MS);
     return () => window.clearInterval(id);
   }, []);
+
+  // Once the first clip is ready and the hero has faded in, type the title out
+  // one character at a time. Reduced-motion users get the full title at once.
+  useEffect(() => {
+    if (!ready || reduced) return;
+    const id = window.setInterval(() => {
+      setTypedCount((count) => {
+        if (count >= TITLE.length) {
+          window.clearInterval(id);
+          return count;
+        }
+        return count + 1;
+      });
+    }, TYPE_SPEED_MS);
+    return () => window.clearInterval(id);
+  }, [ready, reduced]);
+
+  // Nothing renders until the hero is ready (keeps SSR/hydration output empty);
+  // reduced-motion then jumps straight to the full title.
+  const shown = ready ? (reduced ? TITLE.length : typedCount) : 0;
+  const typingDone = shown >= TITLE.length;
 
   // Drive playback explicitly so every cut is a clean restart: the active clip
   // plays from frame 0, while inactive clips are paused and rewound so they're
@@ -71,10 +106,20 @@ export function ProductHero(): ReactElement {
           onCanPlay={index === 0 ? () => setReady(true) : undefined}
         />
       ))}
-      <div className={styles.scrim} aria-hidden="true" />
+      <div
+        className={`${styles.scrim} ${typingDone ? styles.revealed : ""}`}
+        aria-hidden="true"
+      />
       <div className={styles.copy}>
-        <h1 className={styles.title}>Meet ZODE One.</h1>
-        <p className={styles.description}>
+        <h1 className={styles.title} aria-label={TITLE}>
+          <span aria-hidden="true">{TITLE.slice(0, shown)}</span>
+          {ready && !typingDone ? (
+            <span className={styles.caret} aria-hidden="true" />
+          ) : null}
+        </h1>
+        <p
+          className={`${styles.description} ${typingDone ? styles.revealed : ""}`}
+        >
           The first rapidly deployable data center to respond to the AI energy
           crisis.
         </p>

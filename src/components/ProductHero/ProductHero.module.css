@@ -14,8 +14,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero {
+  .hero,
+  .scrim,
+  .description {
     transition: none;
+  }
+
+  .caret {
+    display: none;
   }
 }
 
@@ -45,6 +51,13 @@
     rgba(0, 0, 0, 0) 50%
   );
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 700ms ease;
+}
+
+/* Scrim + description fade in after the title finishes typing. */
+.revealed {
+  opacity: 1;
 }
 
 .copy {
@@ -65,6 +78,22 @@
   color: #ffffff;
 }
 
+.caret {
+  display: inline-block;
+  width: 0.06em;
+  height: 0.9em;
+  margin-left: 0.04em;
+  background: currentColor;
+  vertical-align: -0.05em;
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
 .description {
   margin: 0;
   max-width: 32ch;
@@ -72,4 +101,6 @@
   line-height: 1.5;
   color: #c9c9cf;
   text-wrap: balance;
+  opacity: 0;
+  transition: opacity 700ms ease;
 }
