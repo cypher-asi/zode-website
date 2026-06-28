@@ -13,6 +13,25 @@
   width: 100%;
 }
 
+.kickerRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
 .kicker {
   margin: 0;
   font-size: 12px;
@@ -48,7 +67,7 @@
 
 .media {
   position: relative;
-  min-height: clamp(220px, 38vh, 460px);
+  min-height: clamp(343px, 59.3vh, 718px);
   overflow: hidden;
   border: 1px solid var(--color-border);
 }
@@ -83,8 +102,8 @@
 
 .raiseValue {
   margin: 0;
-  font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 700;
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-weight: 400;
   line-height: 1;
   letter-spacing: -0.02em;
   color: var(--color-text-primary);
@@ -114,9 +133,55 @@
 
 .metaValue {
   margin: 0;
-  font-size: clamp(1rem, 1.4vw, 1.2rem);
-  font-weight: 600;
+  font-size: clamp(0.9rem, 1.15vw, 1rem);
+  font-weight: 400;
   color: var(--color-text-primary);
+}
+
+.metaLink {
+  color: var(--color-accent);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-accent) 45%, transparent);
+  transition: opacity 160ms ease;
+}
+
+.metaLink:hover {
+  opacity: 0.8;
+}
+
+.metaLink:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.countdown {
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(8px, 1vw, 14px);
+}
+
+.countdownUnit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.countdownNumber {
+  font-size: clamp(0.95rem, 1.4vw, 1.25rem);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.countdownLabel {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
 }
 
 .investButton {
@@ -179,8 +244,8 @@
 
 .statValue {
   margin: 0;
-  font-size: clamp(1.25rem, 2.6vw, 2rem);
-  font-weight: 600;
+  font-size: clamp(1.05rem, 2vw, 1.5rem);
+  font-weight: 400;
   line-height: 1.05;
   letter-spacing: -0.01em;
   color: var(--color-text-primary);
