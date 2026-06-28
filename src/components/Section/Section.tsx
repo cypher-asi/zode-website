@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import Image from "next/image";
 import type { SectionContent } from "@/content/sections";
 import { EnergyDemandChart } from "@/components/EnergyDemandChart";
+import { OpenSourceChart } from "@/components/OpenSourceChart";
 import { CabinScene } from "@/components/CabinScene";
 import { EcosystemScene } from "@/components/EcosystemScene";
 import { MarketScene } from "@/components/MarketScene";
@@ -16,7 +17,13 @@ import { SlideLayout } from "@/components/SlideLayout";
 import styles from "./Section.module.css";
 
 export function Section({ section }: { section: SectionContent }): ReactElement {
-  if (section.chart === "energy-demand") {
+  if (section.chart) {
+    const chart =
+      section.chart === "open-source-growth" ? (
+        <OpenSourceChart />
+      ) : (
+        <EnergyDemandChart />
+      );
     return (
       <SlideLayout
         id={section.id}
@@ -44,9 +51,7 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
               )}
               <Citations items={section.citations} />
             </div>
-            <div className={styles.splitChart}>
-              <EnergyDemandChart />
-            </div>
+            <div className={styles.splitChart}>{chart}</div>
           </>
         }
       />
@@ -113,15 +118,15 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
         id={section.id}
         ariaLabel={section.label}
         middle={
-          <div className={styles.featureBlock}>
-            <div className={styles.sceneMedia}>
-              <CabinScene matchPageBackground />
-            </div>
-            <div className={styles.band}>
-              <h2 className={styles.featureTitle}>{section.title}</h2>
-              <p className={styles.featureLede}>{section.lede}</p>
-              <Citations items={section.citations} />
-            </div>
+          <div className={styles.cabinStage}>
+            <CabinScene matchPageBackground />
+          </div>
+        }
+        bottom={
+          <div className={styles.cabinCaption}>
+            <h2 className={styles.featureTitle}>{section.title}</h2>
+            <p className={styles.featureLede}>{section.lede}</p>
+            <Citations items={section.citations} />
           </div>
         }
       />

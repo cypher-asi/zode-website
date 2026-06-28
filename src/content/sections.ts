@@ -390,6 +390,29 @@ export const SECTIONS: readonly SectionContent[] = [
     ],
   },
   {
+    id: "imperative",
+    label: "The Imperative",
+    title: "Open source as a human\u00A0right.",
+    lede: "",
+    body: [
+      "Centralized AI concentrates wealth in the hands of the few.",
+      "Super intelligence risks totalitarian control of entire populations.",
+      "Decentralized and open source AI is necessary.",
+    ],
+    chart: "open-source-growth",
+    footnote: "Figures are approximate and illustrative.",
+    citations: [
+      {
+        label: "Hugging Face, Models hub",
+        href: "https://huggingface.co/models",
+      },
+      {
+        label: "Epoch AI, Notable AI models",
+        href: "https://epoch.ai/data/notable-ai-models",
+      },
+    ],
+  },
+  {
     id: "solution",
     label: "The Solution",
     title: "Deploy compute in months not years.",
