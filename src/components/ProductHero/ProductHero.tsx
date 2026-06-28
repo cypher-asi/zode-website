@@ -48,6 +48,14 @@ export function ProductHero(): ReactElement {
     return () => window.clearInterval(id);
   }, []);
 
+  // Reveal the hero as soon as the first clip can play, but never block on it:
+  // a fallback timer guarantees the intro runs even if `canplay` is missed or
+  // already fired before mount (e.g. a cached video).
+  useEffect(() => {
+    const id = window.setTimeout(() => setReady(true), 1200);
+    return () => window.clearTimeout(id);
+  }, []);
+
   // Once the first clip is ready and the hero has faded in, type the title out
   // one character at a time. Reduced-motion users get the full title at once.
   useEffect(() => {
