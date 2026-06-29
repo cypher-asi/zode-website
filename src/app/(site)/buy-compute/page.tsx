@@ -36,6 +36,7 @@ const TRUST = ["Fast human reply", "Cancel anytime", "Transparent pricing"] as c
 export default function BuyComputePage(): ReactElement {
   return (
     <div className={styles.page}>
+      <div className={styles.inner}>
       <section className={styles.compliance}>
         <p className={styles.complianceLabel}>
           Built to enterprise security standards
@@ -88,6 +89,7 @@ export default function BuyComputePage(): ReactElement {
         </div>
 
         <RequestComputeForm />
+      </div>
       </div>
     </div>
   );
