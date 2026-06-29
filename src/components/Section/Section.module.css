@@ -262,6 +262,7 @@
   position: relative;
   height: clamp(336px, 55.2vh, 624px);
   overflow: hidden;
+  border: 1px solid var(--color-border);
 }
 
 .siteBg {
@@ -274,7 +275,7 @@
   position: absolute;
   width: clamp(16px, 1.6vw, 22px);
   aspect-ratio: 1;
-  border: 2px solid #01d892;
+  border: 2px solid var(--color-accent);
   border-radius: 50%;
   background: #0d1110;
   transform: translate(-50%, -50%);

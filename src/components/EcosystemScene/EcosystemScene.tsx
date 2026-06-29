@@ -24,6 +24,7 @@ import {
 } from "@lobehub/icons";
 import type { SectionContent } from "@/content/sections";
 import { SlideLayout } from "@/components/SlideLayout";
+import { useInView } from "@/lib/useInView";
 import styles from "./EcosystemScene.module.css";
 
 /** Provider brand-mark size in the demand rail. */
@@ -452,9 +453,13 @@ export function EcosystemScene({
   const [patternIndex, setPatternIndex] = useState(0);
   const counter = useRef(0);
   const gridRef = useRef<HTMLDivElement>(null);
+  // The deck mounts every slide at once; hold the animation timers until the
+  // scene is actually near the viewport so they don't churn on initial load.
+  const inView = useInView(gridRef);
 
   // Fast loop: stream transactions in, lighting the node each one settles on.
   useEffect(() => {
+    if (!inView) return;
     let finalizeTimer: ReturnType<typeof setTimeout> | undefined;
 
     const emit = () => {
@@ -495,10 +500,11 @@ export function EcosystemScene({
         clearTimeout(finalizeTimer);
       }
     };
-  }, [companies, zodes]);
+  }, [companies, zodes, inView]);
 
   // Slow loop: shift which company is actively drawing compute.
   useEffect(() => {
+    if (!inView) return;
     let clearTimer: ReturnType<typeof setTimeout> | undefined;
 
     const pulse = () => {
@@ -518,15 +524,16 @@ export function EcosystemScene({
         clearTimeout(clearTimer);
       }
     };
-  }, [companies]);
+  }, [companies, inView]);
 
   // Constellation loop: reconfigure the zodiac wiring on a steady tick.
   useEffect(() => {
+    if (!inView) return;
     const interval = setInterval(() => {
       setPatternIndex((prev) => (prev + 1) % ZODIAC_PATTERNS.length);
     }, CONSTELLATION_TICK_MS);
     return () => clearInterval(interval);
-  }, []);
+  }, [inView]);
 
   return (
     <SlideLayout

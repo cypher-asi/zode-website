@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
 import styles from "./NetworkHero.module.css";
 
-const TITLE = "THE GRID";
+const TITLE = "THE GRID.";
 
 /** Per-character cadence of the title typewriter reveal. */
 const TYPE_SPEED_MS = 65;

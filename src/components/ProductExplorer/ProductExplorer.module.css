@@ -10,7 +10,7 @@
 
 .header {
   text-align: center;
-  margin: clamp(32px, 6vh, 56px) auto 0;
+  margin: clamp(56px, 12vh, 96px) auto 0;
 }
 
 .kicker {

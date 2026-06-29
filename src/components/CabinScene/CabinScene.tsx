@@ -25,8 +25,8 @@ const LINE = 0x9a9aa1; // soft gray for the outer perimeter / structure
 const LINE_DETAIL = 0x55555b; // darker gray for inner detail (cladding, seams, mullions)
 const LINE_WIDTH = 1.1; // structural line thickness, in CSS pixels
 const LINE_DETAIL_WIDTH = 0.45; // much thinner inner-detail lines
-const HILITE = 0x01d892; // brand green used to light up an active zone
-const HILITE_WIDTH = 1.6; // green zone outline thickness, in CSS pixels
+const HILITE = 0xffd6a0; // fallback zone glow if the page accent can't be read
+const HILITE_WIDTH = 1.6; // zone outline thickness, in CSS pixels
 
 // Twin layout: two cabins end-to-end along Z (gable-to-gable) joined by an
 // enclosed connector box (wall height, sitting on the floor base).
@@ -35,6 +35,10 @@ const BRIDGE_WIDTH_FRAC = 0.5; // connector width along X as a fraction of cabin
 const BRIDGE_OVERLAP = 1.4; // how far the connector tucks into each facing gable
 const SLAT_PITCH = 1.6; // spacing between wall slat battens, in model units
 const FIT_MARGIN = 1.06; // extra padding when framing the combined model
+// Single (interactive) cabin uses a larger margin and frames by the model's
+// bounding sphere, which is rotation-invariant, so dragging to any angle never
+// clips the cabin out of the viewport.
+const SINGLE_FIT_MARGIN = 1.18;
 
 /**
  * Per sub-layer scene objects. Each entry holds one line representation and one
@@ -70,7 +74,8 @@ export function CabinScene({
   showPanel?: boolean;
   /**
    * When set (twin layout only), lights up one named zone of the assembly in
-   * green: "noc", "compute", "cooling", "power", or "generators".
+   * the page accent color: "noc", "compute", "cooling", "power", or
+   * "generators".
    */
   highlight?: string | null;
 }): ReactElement {
@@ -119,6 +124,23 @@ export function CabinScene({
       return new THREE.Color(BG);
     };
 
+    // Zone highlights follow the page accent (`--color-accent`), which the
+    // product page overrides to its sun-toned amber, so the lit zone matches
+    // the surrounding accent UI instead of using the brand green.
+    const resolveAccent = (): THREE.Color => {
+      const css = getComputedStyle(container)
+        .getPropertyValue("--color-accent")
+        .trim();
+      if (css) {
+        try {
+          return new THREE.Color(css);
+        } catch {
+          /* fall through to the constant */
+        }
+      }
+      return new THREE.Color(HILITE);
+    };
+
     const geometries: THREE.BufferGeometry[] = [];
     const materials: THREE.Material[] = [];
 
@@ -162,8 +184,9 @@ export function CabinScene({
     });
     // Zone-highlight overlays draw on top of the line drawing (depthTest off,
     // high renderOrder) so a lit region reads through the model.
+    const accent = resolveAccent();
     const matHiliteFill = new THREE.MeshBasicMaterial({
-      color: HILITE,
+      color: accent.clone(),
       transparent: true,
       opacity: 0.22,
       side: THREE.FrontSide,
@@ -171,7 +194,7 @@ export function CabinScene({
       depthWrite: false,
     });
     const matHilite = new LineMaterial({
-      color: HILITE,
+      color: accent.clone(),
       linewidth: HILITE_WIDTH,
       transparent: true,
       depthTest: false,
@@ -347,7 +370,7 @@ export function CabinScene({
           return { line, solid };
         };
 
-        // Adds a translucent green box + crisp green wireframe to a zone group.
+        // Adds a translucent accent box + crisp accent wireframe to a zone group.
         const addHiliteBox = (
           group: THREE.Group,
           cx: number,
@@ -377,7 +400,7 @@ export function CabinScene({
 
         const zoneGroups: Record<string, THREE.Group> = {};
 
-        // Builds the green zone overlays for the twin (product) layout. Left
+        // Builds the accent-colored zone overlays for the twin (product) layout. Left
         // cabin sits at +offsetZ (screen-left), right cabin at -offsetZ;
         // generators are placed beyond the right cabin.
         const buildZones = (offsetZ: number): void => {
@@ -479,6 +502,20 @@ export function CabinScene({
             camera.position.clone().normalize().multiplyScalar(fitDist),
           );
           controls.maxDistance = Math.max(controls.maxDistance, fitDist * 1.4);
+          controls.update();
+        } else {
+          // Frame the lone cabin by its circumscribed bounding sphere so the
+          // whole model stays visible at every drag-rotate angle (a sphere is
+          // rotation-invariant, so no orientation can push it off-frame).
+          const radius =
+            0.5 * Math.hypot(model.size.x, model.size.y, model.size.z);
+          const fov = THREE.MathUtils.degToRad(camera.fov);
+          const fitDist = (radius * SINGLE_FIT_MARGIN) / Math.sin(fov / 2);
+          camera.position.copy(
+            camera.position.clone().normalize().multiplyScalar(fitDist),
+          );
+          controls.minDistance = Math.min(controls.minDistance, fitDist * 0.6);
+          controls.maxDistance = Math.max(controls.maxDistance, fitDist * 1.6);
           controls.update();
         }
 

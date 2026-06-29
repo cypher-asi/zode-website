@@ -1,6 +1,6 @@
 .section {
-  padding: 0 0 clamp(56px, 12vh, 120px);
-  background: var(--color-bg);
+  padding: clamp(56px, 12vh, 120px) 0;
+  background: #fafafa;
 }
 
 .viewport {
@@ -38,6 +38,7 @@
   width: 100%;
   aspect-ratio: 16 / 10;
   object-fit: cover;
+  object-position: center bottom;
   border-radius: 12px;
   background: var(--color-surface-tint);
 }
@@ -47,13 +48,13 @@
   font-size: 34px;
   font-weight: 500;
   line-height: 1.2;
-  color: var(--color-text-primary);
+  color: #161616;
 }
 
 .description {
   margin: 8px 0 0;
   max-width: 52ch;
-  font-size: 24px;
+  font-size: 20px;
   line-height: 1.5;
   color: var(--color-text-secondary);
 }

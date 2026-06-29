@@ -1,0 +1,198 @@
+.section {
+  padding: clamp(56px, 12vh, 120px) clamp(20px, 5vw, 64px);
+  /* Always a black surface with light text, independent of the page theme. */
+  background: #000000;
+  color: #f4f4f5;
+}
+
+.inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 760px;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #8a8a92;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(28px, 4.2vw, 46px);
+  font-weight: 500;
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+  text-wrap: balance;
+}
+
+.tabs {
+  display: flex;
+  margin-top: clamp(32px, 6vh, 64px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.tab {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  margin-bottom: -1px;
+  padding: 0 8px 16px 0;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: #8a8a92;
+  font-size: clamp(13px, 1.3vw, 15px);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+
+.tab:hover {
+  color: #d4d4d8;
+}
+
+.tabActive {
+  color: #ffffff;
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--color-focus-ring, #6aa6ff);
+  outline-offset: 2px;
+}
+
+/* Active-tab underline that fills left-to-right over the slide duration, sitting
+ * on top of the row's bottom border. Restarts whenever the active tab changes
+ * (the element is freshly mounted under the new button). */
+.progress {
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  height: 2px;
+  width: 100%;
+  background: var(--color-accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  /* Duration kept in sync with SLIDE_DURATION_MS in NetworkCustomers.tsx. */
+  animation: fill 6s linear forwards;
+}
+
+@keyframes fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(28px, 5vw, 72px);
+  align-items: start;
+  margin-top: clamp(32px, 5vh, 56px);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(28px, 4vh, 44px);
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.blockLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: #c9c9cf;
+}
+
+.dots {
+  flex: 0 0 auto;
+  color: #6b6b72;
+}
+
+.blockText {
+  margin: 0;
+  max-width: 46ch;
+  font-size: clamp(15px, 1.6vw, 18px);
+  line-height: 1.55;
+  color: #c9c9cf;
+}
+
+.media {
+  display: block;
+}
+
+/* Blank placeholder panel until real imagery is added. */
+.placeholder {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: clamp(24px, 4vh, 40px);
+}
+
+.control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f4f4f5;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.control:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.control:focus-visible {
+  outline: 2px solid var(--color-focus-ring, #6aa6ff);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .body {
+    grid-template-columns: 1fr;
+  }
+
+  .media {
+    order: -1;
+  }
+}

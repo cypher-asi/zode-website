@@ -115,6 +115,8 @@ export function LayerPanel({
   onToggleLayer: (id: string) => void;
   onSetMany: (ids: string[], value: boolean) => void;
 }): ReactElement {
+  const [open, setOpen] = useState(false);
+
   const availableSet = new Set(available);
   const categories = CATEGORIES.map((cat) => ({
     ...cat,
@@ -123,36 +125,56 @@ export function LayerPanel({
 
   return (
     <div className={styles.panel} role="group" aria-label="Model display options">
-      <p className={styles.panelTitle}>Style</p>
-      <div className={styles.styleToggle} role="radiogroup" aria-label="Render style">
-        {STYLE_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            role="radio"
-            aria-checked={style === opt.value}
-            data-active={style === opt.value || undefined}
-            className={styles.styleButton}
-            onClick={() => onStyleChange(opt.value)}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
+      <button
+        type="button"
+        className={styles.panelToggle}
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span>Display</span>
+        <span className={styles.panelToggleIcon} aria-hidden="true">
+          {open ? "\u25be" : "\u25b8"}
+        </span>
+      </button>
 
-      <p className={styles.panelTitle}>Layers</p>
-      <ul className={styles.layerList}>
-        {categories.map((cat) => (
-          <Category
-            key={cat.id}
-            category={cat}
-            subs={cat.subs}
-            layers={layers}
-            onToggleLayer={onToggleLayer}
-            onSetMany={onSetMany}
-          />
-        ))}
-      </ul>
+      {open && (
+        <div className={styles.panelBody}>
+          <p className={styles.panelTitle}>Style</p>
+          <div
+            className={styles.styleToggle}
+            role="radiogroup"
+            aria-label="Render style"
+          >
+            {STYLE_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                role="radio"
+                aria-checked={style === opt.value}
+                data-active={style === opt.value || undefined}
+                className={styles.styleButton}
+                onClick={() => onStyleChange(opt.value)}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          <p className={styles.panelTitle}>Layers</p>
+          <ul className={styles.layerList}>
+            {categories.map((cat) => (
+              <Category
+                key={cat.id}
+                category={cat}
+                subs={cat.subs}
+                layers={layers}
+                onToggleLayer={onToggleLayer}
+                onSetMany={onSetMany}
+              />
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

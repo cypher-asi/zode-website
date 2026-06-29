@@ -137,10 +137,31 @@
 .founderBio {
   margin: 0 0 24px;
   max-width: 54ch;
-  min-height: calc(1.6em * 3);
   font-size: clamp(0.9rem, 1.2vw, 1.05rem);
   line-height: 1.6;
   color: var(--color-text-secondary);
+}
+
+.parentLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 24px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-weight: 500;
+  text-decoration: none;
+  color: var(--color-accent);
+  transition: opacity 120ms ease;
+}
+
+.parentLink:hover {
+  opacity: 0.8;
+}
+
+.parentLink:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .achievementsLabel {

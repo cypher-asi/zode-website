@@ -12,7 +12,7 @@ export function ProductFeature(): ReactElement {
       <img
         className={styles.image}
         src="/product-interior.png"
-        alt="ZODE One server racks installed inside a timber A-frame overlooking a mountain lake."
+        alt="ZODE One server racks installed inside a timber A-frame overlooking an autumn forest."
       />
       <h2 className={styles.caption}>Built in harmony with nature.</h2>
     </section>

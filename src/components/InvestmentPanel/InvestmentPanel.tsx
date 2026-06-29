@@ -12,21 +12,51 @@ import {
 import type { SectionContent } from "@/content/sections";
 import { ListCard, CardBulletList } from "@/components/Card";
 import { SlideLayout } from "@/components/SlideLayout";
-import { GREEN_SERIES } from "@/lib/theme/chartPalette";
+import { Deferred } from "@/components/Deferred";
+import { TAN_SERIES } from "@/lib/theme/chartPalette";
 import styles from "./InvestmentPanel.module.css";
 
 /**
  * Slice colors for the Use of Proceeds pie. Ordered for maximum contrast
- * between adjacent slices while staying within the shared green palette.
+ * between adjacent slices while staying within the shared tan palette.
  */
 const SLICE_COLORS = [
-  GREEN_SERIES[0],
-  GREEN_SERIES[4],
-  GREEN_SERIES[1],
-  GREEN_SERIES[2],
-  GREEN_SERIES[3],
-  GREEN_SERIES[5],
+  TAN_SERIES[0],
+  TAN_SERIES[4],
+  TAN_SERIES[1],
+  TAN_SERIES[2],
+  TAN_SERIES[3],
+  TAN_SERIES[5],
 ] as const;
+
+interface LegendEntry {
+  readonly value?: string | number;
+  readonly color?: string;
+}
+
+/**
+ * Custom legend that lays the slices out in a fixed grid so the labels stay
+ * balanced across two rows instead of wrapping unevenly by available width.
+ */
+function ProceedsLegend({
+  payload,
+}: {
+  payload?: readonly LegendEntry[];
+}): ReactElement {
+  return (
+    <ul className={styles.legend}>
+      {payload?.map((entry) => (
+        <li key={String(entry.value)} className={styles.legendItem}>
+          <span
+            className={styles.legendSwatch}
+            style={{ background: entry.color }}
+          />
+          <span>{entry.value}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export function InvestmentPanel({
   section,
@@ -62,7 +92,7 @@ export function InvestmentPanel({
 
         <div className={styles.right}>
           <ListCard title="Use of Proceeds">
-            <div className={styles.chart}>
+            <Deferred className={styles.chart}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -99,6 +129,7 @@ export function InvestmentPanel({
                     ]}
                   />
                   <Legend
+                    content={<ProceedsLegend />}
                     wrapperStyle={{
                       fontSize: 12,
                       color: "var(--color-text-secondary)",
@@ -106,7 +137,7 @@ export function InvestmentPanel({
                   />
                 </PieChart>
               </ResponsiveContainer>
-            </div>
+            </Deferred>
           </ListCard>
 
           <ListCard title={whyInvestNow.title}>

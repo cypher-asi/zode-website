@@ -1,6 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import {
+  AUTH_DISABLED,
   SESSION_COOKIE,
   SESSION_MAX_AGE_SECONDS,
   createSessionToken,
@@ -26,6 +27,8 @@ export async function deleteSession(): Promise<void> {
 }
 
 export async function isAuthenticated(): Promise<boolean> {
+  // Password gate temporarily disabled: treat everyone as authenticated.
+  if (AUTH_DISABLED) return true;
   const cookieStore = await cookies();
   return verifySessionToken(cookieStore.get(SESSION_COOKIE)?.value);
 }

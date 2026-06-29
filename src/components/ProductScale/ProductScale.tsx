@@ -10,18 +10,18 @@ interface ScaleStep {
 
 const STEPS: readonly ScaleStep[] = [
   {
-    image: "/product-hero.png",
-    alt: "A single ZODE One unit sited in a remote valley at dusk.",
+    image: "/images/zode-single.png",
+    alt: "An aerial view of a single ZODE One unit set among solar arrays and trees.",
     title: "1.5 MW",
     description:
       "A single ZODE One. One module, sited and online in weeks, delivering 1.5 MW of dispatchable compute wherever the power already is.",
   },
   {
-    image: "/images/zode-deploy.png",
-    alt: "Several ZODE One modules linked together on one site.",
-    title: "15 MW",
+    image: "/images/zode-cluster.png",
+    alt: "An aerial view of several ZODE One units arranged in a cluster on one site.",
+    title: "9 MW",
     description:
-      "Link ten units into a cluster. Shared power and networking turn a row of modules into 15 MW of coordinated capacity on a single site.",
+      "Link several units into a cluster. Shared power and networking turn a group of modules into 9 MW of coordinated capacity on a single site.",
   },
   {
     image: "/images/zode-ring.png",
@@ -39,9 +39,12 @@ const STEPS: readonly ScaleStep[] = [
  */
 export function ProductScale(): ReactElement {
   return (
-    <section className={styles.scale} aria-label="Combine ZODES for more compute">
+    <section className={styles.scale} aria-label="Supercharge your ZODE">
       <div className={styles.intro}>
-        <h2 className={styles.header}>Combine ZODES for more compute.</h2>
+        <h2 className={styles.header}>Supercharge your ZODE.</h2>
+        <p className={styles.subheader}>
+          ZODES can link to create more powerful sites.
+        </p>
       </div>
       <div className={styles.row}>
         {STEPS.map((step) => (

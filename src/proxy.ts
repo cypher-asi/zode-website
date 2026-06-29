@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { SESSION_COOKIE, verifySessionToken } from "@/lib/session-token";
+import { AUTH_DISABLED, SESSION_COOKIE, verifySessionToken } from "@/lib/session-token";
 
 const LOGIN_PATH = "/login";
 
@@ -12,6 +12,11 @@ const LOGIN_PATH = "/login";
  * runtime, so `node:crypto`-based verification works here.
  */
 export function proxy(request: NextRequest): NextResponse {
+  // Password gate temporarily disabled: let every request through.
+  if (AUTH_DISABLED) {
+    return NextResponse.next();
+  }
+
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   const authed = verifySessionToken(token);

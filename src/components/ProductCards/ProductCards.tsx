@@ -7,14 +7,22 @@ interface Card {
   readonly image: string;
   readonly title: string;
   readonly description: string;
+  readonly objectPosition?: string;
 }
 
 const CARDS: readonly Card[] = [
   {
-    image: "/product-interior.png",
-    title: "Liquid-Cooled Compute",
+    image: "/product-hardware.png",
+    title: "Frontier Hardware",
     description:
-      "Direct-to-chip liquid cooling keeps 720 B300 GPUs at peak performance with a fraction of the energy and water overhead.",
+      "Racks of NVIDIA B300 GPUs run directly liquid-cooled, delivering frontier-scale training and inference performance at the highest density and efficiency available today.",
+    objectPosition: "center top",
+  },
+  {
+    image: "/product-secure-door.png",
+    title: "Secure Facility",
+    description:
+      "A Faraday-caged enclosure shields every rack from electromagnetic interference and eavesdropping, while hardened steel entry, biometric access control, and 24/7 surveillance keep your data physically locked down.",
   },
   {
     image: "/product-hero.png",
@@ -53,7 +61,13 @@ export function ProductCards(): ReactElement {
           {CARDS.map((card) => (
             <article key={card.title} className={styles.card}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className={styles.image} src={card.image} alt="" aria-hidden="true" />
+              <img
+                className={styles.image}
+                src={card.image}
+                alt=""
+                aria-hidden="true"
+                style={card.objectPosition ? { objectPosition: card.objectPosition } : undefined}
+              />
               <h3 className={styles.title}>{card.title}</h3>
               <p className={styles.description}>{card.description}</p>
             </article>

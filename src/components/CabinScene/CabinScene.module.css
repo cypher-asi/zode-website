@@ -53,23 +53,59 @@
   pointer-events: none;
 }
 
-/* Layer / style control panel, floated over the canvas. */
+/* Layer / style control panel, floated over the top-right of the canvas. */
 .panel {
   position: absolute;
   top: 16px;
-  left: 16px;
+  right: 16px;
   z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-width: 148px;
-  padding: 12px 14px;
+  gap: 10px;
+  padding: 10px 12px;
   border: 1px solid var(--color-border-strong, rgba(255, 255, 255, 0.18));
   border-radius: 10px;
   background: var(--color-bg-elevated, rgba(24, 24, 27, 0.82));
   backdrop-filter: blur(8px);
   color: var(--color-text-primary, #eaeaea);
   font-size: 0.8rem;
+}
+
+/* Header button: the only thing shown while the panel is collapsed. */
+.panelToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary, #eaeaea);
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.panelToggleIcon {
+  font-size: 0.7rem;
+  line-height: 1;
+  color: var(--color-text-secondary, #9b9ba3);
+}
+
+.panelToggle:hover .panelToggleIcon {
+  color: var(--color-text-primary, #eaeaea);
+}
+
+/* Expanded controls (style toggle + layer tree). */
+.panelBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 168px;
 }
 
 .panelTitle {

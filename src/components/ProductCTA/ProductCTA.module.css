@@ -2,7 +2,7 @@
   position: relative;
   display: flex;
   justify-content: center;
-  min-height: clamp(420px, 60vh, 640px);
+  min-height: clamp(655px, 94vh, 998px);
   overflow: hidden;
 }
 
@@ -35,6 +35,7 @@
   align-items: center;
   text-align: center;
   gap: 12px;
+  margin-top: 150px;
   padding: clamp(40px, 8vh, 72px) 24px 0;
 }
 
@@ -60,17 +61,20 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 220px;
-  padding: 12px 28px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.95);
-  color: #171a20;
-  font-size: 15px;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+  background: transparent;
+  color: #ffffff;
+  font-size: 13px;
   font-weight: 600;
+  white-space: nowrap;
   text-decoration: none;
-  transition: background 0.15s ease;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease;
 }
 
 .button:hover {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
 }

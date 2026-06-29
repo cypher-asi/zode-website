@@ -100,7 +100,6 @@ export function SiteFooter(): ReactElement {
         </nav>
 
         <div className={styles.bottom}>
-          <p className={styles.copyright}>Copyright &copy; 2026 Cypher, Inc.</p>
           <div className={styles.social}>
             <a
               className={styles.socialLink}
@@ -119,6 +118,7 @@ export function SiteFooter(): ReactElement {
               <LinkedInIcon />
             </a>
           </div>
+          <p className={styles.copyright}>Copyright &copy; 2026 Cypher, Inc.</p>
         </div>
       </div>
     </footer>

@@ -3,6 +3,13 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 export const SESSION_COOKIE = "grid_session";
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 
+/**
+ * Temporary kill-switch for the shared-password gate. While `true`, every
+ * page is publicly accessible and the login flow is bypassed. Flip back to
+ * `false` to re-enable the password requirement.
+ */
+export const AUTH_DISABLED = true;
+
 function getSecret(): string {
   const secret = process.env.SESSION_SECRET;
   if (!secret) {

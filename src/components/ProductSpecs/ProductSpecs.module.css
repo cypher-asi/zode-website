@@ -1,8 +1,8 @@
 .specs {
   display: flex;
   justify-content: center;
-  padding: 0 24px clamp(56px, 12vh, 120px);
-  background: var(--color-bg);
+  padding: clamp(80px, 18vh, 180px) 24px clamp(40px, 8vh, 80px);
+  background: #000000;
 }
 
 .inner {
@@ -11,22 +11,29 @@
 }
 
 .heading {
-  margin: 0 0 clamp(20px, 4vh, 40px);
-  font-size: clamp(28px, 4vw, 44px);
+  margin: 0 0 clamp(14px, 2.4vh, 24px);
+  font-size: clamp(22px, 3vw, 32px);
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--color-text-primary);
 }
 
+/* --- Two-column band: the mid groups paired up to save vertical space --- */
+.groupColumns {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  column-gap: clamp(24px, 4vw, 56px);
+}
+
 /* --- Category band: hairline rule, title, then a grid of cells --- */
 .group {
-  padding: clamp(24px, 4vh, 40px) 0;
+  padding: clamp(16px, 2.4vh, 24px) 0;
   border-top: 1px solid var(--color-border-strong);
 }
 
 .groupTitle {
-  margin: 0 0 clamp(16px, 3vh, 28px);
-  font-size: clamp(18px, 2.2vw, 24px);
+  margin: 0 0 clamp(10px, 1.6vh, 16px);
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-text-primary);
 }
@@ -34,26 +41,26 @@
 .grid {
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: clamp(20px, 3vw, 40px) clamp(24px, 4vw, 56px);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: clamp(12px, 1.6vw, 20px) clamp(16px, 2.4vw, 32px);
 }
 
 .cell {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
 }
 
 .cellLabel {
   margin: 0;
-  font-size: clamp(12px, 1.2vw, 14px);
+  font-size: 14px;
   font-weight: 500;
   color: var(--color-text-secondary);
 }
 
 .cellValue {
   margin: 0;
-  font-size: clamp(15px, 1.5vw, 18px);
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-text-primary);
 }
@@ -68,13 +75,13 @@
 /* --- Dimensions: cells beside a unit photo with callout labels --- */
 .dimensionsLayout {
   display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
   gap: clamp(24px, 4vw, 56px);
 }
 
 .dimensionsGroup .grid {
-  grid-template-columns: repeat(2, minmax(120px, 1fr));
+  grid-template-columns: repeat(2, minmax(110px, 1fr));
 }
 
 .unit {
@@ -85,28 +92,30 @@
 .unitImage {
   display: block;
   width: 100%;
+  max-width: 100%;
   height: auto;
+  max-height: 320px;
   object-fit: contain;
 }
 
 .callout {
   position: absolute;
-  padding: 2px 8px;
-  font-size: clamp(11px, 1.1vw, 13px);
+  padding: 1px 6px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--color-text-secondary);
   white-space: nowrap;
 }
 
 .calloutLength {
-  left: 50%;
-  bottom: 2%;
-  transform: translateX(-50%);
+  left: 4%;
+  bottom: 8%;
 }
 
 .calloutWidth {
-  left: 6%;
-  bottom: 14%;
+  left: 50%;
+  bottom: 2%;
+  transform: translateX(-50%);
 }
 
 .calloutHeight {
@@ -118,8 +127,8 @@
 /* --- Warranty link + footnote --- */
 .link {
   display: inline-block;
-  margin-top: clamp(16px, 3vh, 24px);
-  font-size: clamp(13px, 1.3vw, 15px);
+  margin-top: clamp(10px, 1.6vh, 16px);
+  font-size: 14px;
   font-weight: 500;
   color: var(--color-text-primary);
   text-decoration: underline;
@@ -136,20 +145,22 @@
 }
 
 .footnote {
-  margin: clamp(28px, 5vh, 44px) 0 0;
-  padding-top: clamp(20px, 3vh, 28px);
-  border-top: 1px solid var(--color-border-strong);
-  font-size: clamp(12px, 1.1vw, 13px);
+  margin: clamp(16px, 2.4vh, 24px) 0 0;
+  font-size: 14px;
   line-height: 1.5;
   color: var(--color-text-secondary);
 }
 
 @media (max-width: 900px) {
+  .groupColumns {
+    grid-template-columns: 1fr;
+  }
+
   .dimensionsLayout {
     grid-template-columns: 1fr;
   }
 
   .dimensionsGroup .grid {
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   }
 }

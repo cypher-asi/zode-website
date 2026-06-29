@@ -3,7 +3,7 @@ import Image from "next/image";
 import type { SectionContent } from "@/content/sections";
 import { EnergyDemandChart } from "@/components/EnergyDemandChart";
 import { OpenSourceChart } from "@/components/OpenSourceChart";
-import { CabinScene } from "@/components/CabinScene";
+import { LazyCabinScene } from "@/components/CabinScene";
 import { EcosystemScene } from "@/components/EcosystemScene";
 import { MarketScene } from "@/components/MarketScene";
 import { ProductScene } from "@/components/ProductScene";
@@ -119,7 +119,7 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
         ariaLabel={section.label}
         middle={
           <div className={styles.cabinStage}>
-            <CabinScene matchPageBackground />
+            <LazyCabinScene matchPageBackground />
           </div>
         }
         bottom={

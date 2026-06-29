@@ -27,7 +27,7 @@
   transform: translateX(-50%);
   width: min(94%, 1100px);
   height: auto;
-  opacity: 0.05;
+  opacity: 0.08;
   filter: invert(var(--logo-invert, 0));
   pointer-events: none;
   user-select: none;

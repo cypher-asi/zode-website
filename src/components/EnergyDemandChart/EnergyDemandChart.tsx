@@ -10,7 +10,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { GREEN_SERIES } from "@/lib/theme/chartPalette";
+import { TAN_SERIES } from "@/lib/theme/chartPalette";
+import { Deferred } from "@/components/Deferred";
 import styles from "./EnergyDemandChart.module.css";
 
 /** Base-case data-center electricity demand, in TWh per year. */
@@ -58,7 +59,7 @@ const UNITS: readonly UnitConfig[] = [
     id: "twh",
     label: "TWh",
     seriesName: "Electricity demand (TWh/yr)",
-    accent: GREEN_SERIES[0],
+    accent: TAN_SERIES[0],
     toValue: (twh) => twh,
     formatAxis: (value) => `${Math.round(value)}`,
     formatTooltip: (value) => `${value.toLocaleString()} TWh`,
@@ -67,7 +68,7 @@ const UNITS: readonly UnitConfig[] = [
     id: "homes",
     label: "Homes",
     seriesName: "Homes powered (proxy)",
-    accent: GREEN_SERIES[2],
+    accent: TAN_SERIES[2],
     toValue: (twh) => twh * HOMES_PER_TWH,
     formatAxis: (value) => `${(value / 1e6).toFixed(0)}M`,
     formatTooltip: (value) =>
@@ -79,7 +80,7 @@ const UNITS: readonly UnitConfig[] = [
     id: "usd",
     label: "$",
     seriesName: "Approx. energy value (USD/yr)",
-    accent: GREEN_SERIES[3],
+    accent: TAN_SERIES[3],
     toValue: (twh) => twh * USD_PER_TWH,
     formatAxis: (value) => `$${(value / 1e9).toFixed(0)}B`,
     formatTooltip: (value) =>
@@ -110,7 +111,7 @@ export function EnergyDemandChart(): ReactElement {
         Global data-center electricity demand, 2024-2035
       </figcaption>
 
-      <div className={styles.chart}>
+      <Deferred className={styles.chart}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}
@@ -144,6 +145,7 @@ export function EnergyDemandChart(): ReactElement {
                 color: "var(--color-text-primary)",
               }}
               labelStyle={{ color: "var(--color-text-secondary)" }}
+              itemStyle={{ color: "var(--color-text-primary)" }}
               formatter={(value) => [
                 config.formatTooltip(Number(value)),
                 config.seriesName,
@@ -153,14 +155,14 @@ export function EnergyDemandChart(): ReactElement {
               dataKey="value"
               name={config.seriesName}
               fill={config.accent}
-              radius={[0, 0, 0, 0]}
+              radius={[2, 2, 0, 0]}
               maxBarSize={12}
               hide={hidden}
               isAnimationActive
             />
           </BarChart>
         </ResponsiveContainer>
-      </div>
+      </Deferred>
 
       <div className={styles.footer}>
         <ul className={styles.legend} aria-label="Chart series (click to toggle)">

@@ -2,7 +2,7 @@
 
 import { useState, type ReactElement } from "react";
 import type { SectionContent } from "@/content/sections";
-import { CabinScene } from "@/components/CabinScene";
+import { LazyCabinScene } from "@/components/CabinScene";
 import { ListCard, CardBulletList } from "@/components/Card";
 import { SlideLayout } from "@/components/SlideLayout";
 import styles from "./ProductScene.module.css";
@@ -32,7 +32,7 @@ export function ProductScene({
       middle={
         <div className={styles.explorer}>
           <div className={styles.sceneViewport}>
-            <CabinScene
+            <LazyCabinScene
             matchPageBackground
             interactive={false}
             isometric

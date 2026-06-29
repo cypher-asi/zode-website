@@ -1,3 +1,11 @@
+/* Closing slide is always a black surface with a white wordmark/email,
+ * regardless of the active deck theme. */
+.slide {
+  background: #000000;
+  --color-text-primary: #f4f4f5;
+  --logo-invert: 0;
+}
+
 .contact {
   display: flex;
   align-items: center;

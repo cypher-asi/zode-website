@@ -14,6 +14,7 @@ export function ContactPanel({
     <SlideLayout
       id={section.id}
       ariaLabel={section.label}
+      className={styles.slide}
       middleClassName={styles.contact}
       middle={
         <div className={styles.inner}>

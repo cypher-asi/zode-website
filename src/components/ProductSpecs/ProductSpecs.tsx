@@ -50,8 +50,10 @@ const GROUPS: readonly SpecGroup[] = [
 ];
 
 const DIMENSIONS: readonly SpecItem[] = [
-  { label: "Footprint", value: "40 x 8 ft" },
-  { label: "Height", value: "9.5 ft" },
+  { label: "Footprint", value: "50 x 24 ft" },
+  { label: "Square Footage", value: "1,200 sq ft" },
+  { label: "Height", value: "24 ft" },
+  { label: "Interior Volume", value: "~28,800 cu ft" },
   { label: "Weight", value: "~38,000 lbs" },
   { label: "Form Factor", value: "ISO-modular" },
 ];
@@ -72,17 +74,6 @@ export function ProductSpecs(): ReactElement {
       <div className={styles.inner}>
         <h2 className={styles.heading}>ZODE One Specs</h2>
 
-        {GROUPS.map((group) => (
-          <div key={group.title} className={styles.group}>
-            <h3 className={styles.groupTitle}>{group.title}</h3>
-            <dl className={styles.grid}>
-              {group.items.map((item) => (
-                <SpecCell key={item.label} item={item} />
-              ))}
-            </dl>
-          </div>
-        ))}
-
         <div className={`${styles.group} ${styles.dimensionsGroup}`}>
           <h3 className={styles.groupTitle}>Dimensions</h3>
           <div className={styles.dimensionsLayout}>
@@ -95,20 +86,33 @@ export function ProductSpecs(): ReactElement {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 className={styles.unitImage}
-                src="/product-hero.png"
-                alt="ZODE One micro-data center unit"
+                src="/images/zode-cabin-wireframe.png"
+                alt="ZODE One micro-data center unit wireframe"
               />
               <span className={`${styles.callout} ${styles.calloutLength}`}>
-                40 ft
+                50 ft
               </span>
               <span className={`${styles.callout} ${styles.calloutWidth}`}>
-                8 ft
+                24 ft
               </span>
               <span className={`${styles.callout} ${styles.calloutHeight}`}>
-                9.5 ft
+                24 ft
               </span>
             </figure>
           </div>
+        </div>
+
+        <div className={styles.groupColumns}>
+          {GROUPS.map((group) => (
+            <div key={group.title} className={styles.group}>
+              <h3 className={styles.groupTitle}>{group.title}</h3>
+              <dl className={styles.grid}>
+                {group.items.map((item) => (
+                  <SpecCell key={item.label} item={item} />
+                ))}
+              </dl>
+            </div>
+          ))}
         </div>
 
         <div className={styles.group}>

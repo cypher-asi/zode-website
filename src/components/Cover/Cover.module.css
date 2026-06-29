@@ -136,6 +136,7 @@
   font-size: clamp(0.9rem, 1.15vw, 1rem);
   font-weight: 400;
   color: var(--color-text-primary);
+  text-wrap: balance;
 }
 
 .metaLink {
@@ -158,6 +159,14 @@
   display: flex;
   align-items: flex-end;
   gap: clamp(8px, 1vw, 14px);
+  /* The "--" placeholders reserve the final layout, so fading in the live
+   * values never shifts surrounding elements. */
+  opacity: 0;
+  transition: opacity 420ms ease;
+}
+
+.countdown[data-ready="true"] {
+  opacity: 1;
 }
 
 .countdownUnit {
@@ -191,10 +200,10 @@
   justify-content: center;
   height: 44px;
   padding: 0 18px;
-  border: 1px solid transparent;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 55%, #000);
   border-radius: 999px;
   background: var(--color-accent);
-  color: #04261c;
+  color: #2a1c08;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.02em;

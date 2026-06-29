@@ -12,7 +12,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { GREEN_SERIES } from "@/lib/theme/chartPalette";
+import { TAN_SERIES } from "@/lib/theme/chartPalette";
+import { Deferred } from "@/components/Deferred";
 import styles from "./OpenSourceChart.module.css";
 
 type View = "frontier" | "hugging-face";
@@ -44,9 +45,9 @@ const HUGGING_FACE: ReadonlyArray<{ year: number; models: number }> = [
   { year: 2026, models: 2_600_000 },
 ];
 
-const CLOSED_COLOR = GREEN_SERIES[4];
-const OPEN_COLOR = GREEN_SERIES[0];
-const LONG_TAIL_COLOR = GREEN_SERIES[0];
+const CLOSED_COLOR = TAN_SERIES[4];
+const OPEN_COLOR = TAN_SERIES[0];
+const LONG_TAIL_COLOR = TAN_SERIES[0];
 
 const VIEWS: readonly { id: View; label: string }[] = [
   { id: "frontier", label: "Frontier" },
@@ -84,7 +85,7 @@ export function OpenSourceChart(): ReactElement {
           : "Open-source models hosted on Hugging Face, 2021-2026"}
       </figcaption>
 
-      <div className={styles.chart}>
+      <Deferred className={styles.chart}>
         <ResponsiveContainer width="100%" height="100%">
           {isFrontier ? (
             <LineChart
@@ -187,7 +188,7 @@ export function OpenSourceChart(): ReactElement {
             </AreaChart>
           )}
         </ResponsiveContainer>
-      </div>
+      </Deferred>
 
       <div className={styles.footer}>
         <ul className={styles.legend} aria-label="Chart series">

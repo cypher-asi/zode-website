@@ -13,7 +13,7 @@ export function NetworkHow(): ReactElement {
     <section
       id="how-it-works"
       className={styles.section}
-      aria-label="How THE GRID works"
+      aria-label="A constellation of compute"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -24,12 +24,15 @@ export function NetworkHow(): ReactElement {
       />
       <div className={styles.scrim} aria-hidden="true" />
       <div className={styles.copy}>
-        <h2 className={styles.title}>How THE GRID works</h2>
+        <h2 className={styles.title}>
+          A constellation
+          <br />
+          of compute.
+        </h2>
         <p className={styles.description}>
-          THE GRID links rapidly deployable sites into a single distributed
-          network. Providers contribute idle hardware, and customers tap that
-          pooled capacity on demand &mdash; routed to the nearest available
-          compute, anywhere on the network.
+          THE GRID links rapidly deployable sites into one network. Providers
+          contribute idle hardware, and customers tap that pooled capacity on
+          demand.
         </p>
         <div className={styles.actions}>
           <Link className={styles.primaryAction} href="/give-compute">

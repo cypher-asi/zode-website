@@ -19,6 +19,14 @@
   color: #f4f4f5;
 }
 
+.subheader {
+  margin: 12px 0 0;
+  max-width: 720px;
+  font-size: clamp(14px, 1.4vw, 17px);
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.6);
+}
+
 .row {
   margin-top: clamp(36px, 6vh, 64px);
   display: grid;

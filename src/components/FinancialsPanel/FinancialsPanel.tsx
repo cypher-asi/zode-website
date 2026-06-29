@@ -17,7 +17,8 @@ import type {
   SectionContent,
 } from "@/content/sections";
 import { SlideLayout } from "@/components/SlideLayout";
-import { GREEN_SERIES } from "@/lib/theme/chartPalette";
+import { Deferred } from "@/components/Deferred";
+import { TAN_SERIES } from "@/lib/theme/chartPalette";
 import styles from "./FinancialsPanel.module.css";
 
 type Metric = "revenue" | "capital";
@@ -48,16 +49,16 @@ const METRICS: readonly MetricConfig[] = [
     id: "revenue",
     label: "Revenue",
     lines: [
-      { dataKey: "revenue", name: "Revenue", accent: GREEN_SERIES[0] },
-      { dataKey: "noi", name: "NOI", accent: GREEN_SERIES[2] },
+      { dataKey: "revenue", name: "Revenue", accent: TAN_SERIES[0] },
+      { dataKey: "noi", name: "NOI", accent: TAN_SERIES[2] },
     ],
   },
   {
     id: "capital",
     label: "Capital",
     lines: [
-      { dataKey: "parentEquity", name: "Parent Equity", accent: GREEN_SERIES[0] },
-      { dataKey: "spvCapital", name: "SPV Capital", accent: GREEN_SERIES[3] },
+      { dataKey: "parentEquity", name: "Parent Equity", accent: TAN_SERIES[0] },
+      { dataKey: "spvCapital", name: "SPV Capital", accent: TAN_SERIES[3] },
     ],
   },
 ];
@@ -270,7 +271,7 @@ export function FinancialsPanel({
                 ))}
               </div>
             </div>
-            <div className={styles.chart}>
+            <Deferred className={styles.chart}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={chartData as unknown as Record<string, number>[]}
@@ -334,7 +335,7 @@ export function FinancialsPanel({
                   ))}
                 </LineChart>
               </ResponsiveContainer>
-            </div>
+            </Deferred>
           </div>
       </div>
       }

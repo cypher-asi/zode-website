@@ -7,8 +7,8 @@ import styles from "./Cover.module.css";
 
 export const COVER_ID = "cover";
 
-/** Anchor of the Investment slide the cover's primary CTA jumps to. */
-const INVESTMENT_SECTION_ID = "investment";
+/** Anchor of the next slide the cover's primary CTA jumps to. */
+const NEXT_SECTION_ID = "summary";
 
 /** When the raise opens; the "Opens in" countdown ticks down to this date. */
 const OPEN_DATE = new Date("2026-08-15T00:00:00");
@@ -67,9 +67,9 @@ export function Cover(): ReactElement {
     return () => clearInterval(id);
   }, []);
 
-  const goToInvestment = (): void => {
+  const goToNext = (): void => {
     document
-      .getElementById(INVESTMENT_SECTION_ID)
+      .getElementById(NEXT_SECTION_ID)
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -83,8 +83,10 @@ export function Cover(): ReactElement {
             <p className={styles.kicker}>ZODE Build Out</p>
             <span className={styles.tag}>In Development</span>
           </div>
-          <h1 className={styles.title}>Invest in the ZODE 9 MW site</h1>
-          <p className={styles.location}>British Columbia, Canada &middot; 200+ acres</p>
+            <h1 className={styles.title}>Invest in ZODE SITE I</h1>
+            <p className={styles.location}>
+              British Columbia, Canada &middot; 200+ acres &middot; 9 MW &middot; 4,230 GPUs
+            </p>
         </header>
       }
       middle={
@@ -104,14 +106,18 @@ export function Cover(): ReactElement {
           <aside className={styles.panel}>
             <div className={styles.raise}>
               <p className={styles.raiseLabel}>Raising</p>
-              <p className={styles.raiseValue}>$50M</p>
+              <p className={styles.raiseValue}>$45M</p>
             </div>
 
             <dl className={styles.meta}>
               <div className={styles.metaRow}>
                 <dt className={styles.metaLabel}>Opens in</dt>
                 <dd className={styles.metaValue}>
-                  <span className={styles.countdown} suppressHydrationWarning>
+                  <span
+                    className={styles.countdown}
+                    data-ready={countdown ? "true" : "false"}
+                    suppressHydrationWarning
+                  >
                     {([
                       ["days", countdown?.days],
                       ["hrs", countdown?.hours],
@@ -131,7 +137,6 @@ export function Cover(): ReactElement {
               <div className={styles.metaRow}>
                 <dt className={styles.metaLabel}>Partner</dt>
                 <dd className={styles.metaValue}>
-                  Private +{" "}
                   <a
                     className={styles.metaLink}
                     href="https://republic.com"
@@ -139,7 +144,8 @@ export function Cover(): ReactElement {
                     rel="noopener noreferrer"
                   >
                     Republic.com
-                  </a>
+                  </a>{" "}
+                  + Private
                 </dd>
               </div>
               <div className={styles.metaRow}>
@@ -150,16 +156,16 @@ export function Cover(): ReactElement {
               </div>
               <div className={styles.metaRow}>
                 <dt className={styles.metaLabel}>Target Deployment</dt>
-                <dd className={styles.metaValue}>Dec. 2026</dd>
+                <dd className={styles.metaValue}>December 2026</dd>
               </div>
             </dl>
 
             <button
               type="button"
               className={styles.investButton}
-              onClick={goToInvestment}
+              onClick={goToNext}
             >
-              Invest
+              Learn More
             </button>
           </aside>
         </div>

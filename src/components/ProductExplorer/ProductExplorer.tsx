@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
-import { CabinScene } from "@/components/CabinScene";
+import { LazyCabinScene } from "@/components/CabinScene";
 import { SECTIONS } from "@/content/sections";
 import styles from "./ProductExplorer.module.css";
 
@@ -23,7 +23,7 @@ export function ProductExplorer(): ReactElement {
     <section className={styles.section} aria-label={KICKER}>
       <div className={styles.explorer}>
         <div className={styles.sceneViewport}>
-          <CabinScene
+          <LazyCabinScene
             matchPageBackground
             interactive={false}
             isometric

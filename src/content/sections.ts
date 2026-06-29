@@ -253,6 +253,8 @@ export interface ParentCompany {
   readonly name: string;
   /** Short description paragraph. */
   readonly bio: string;
+  /** Website link shown below the bio, above the core values. */
+  readonly url: CompanyLink;
   /** Heading above the core values list, e.g. "Core Values". */
   readonly valuesLabel: string;
   /** The company's core values. */
@@ -784,8 +786,15 @@ export const SECTIONS: readonly SectionContent[] = [
         label: "Parent Company",
         name: "CYPHER, INC.",
         bio: "CYPHER is the holding company behind multiple consumer AI companies built on THE GRID, building sovereign systems that empower humanity.",
+        url: { label: "cypher.net", href: "https://cypher.net" },
         valuesLabel: "Core Values",
-        values: ["Sovereignty", "Privacy", "Security", "Open Source"],
+        values: [
+          "Sovereignty",
+          "Privacy",
+          "Decentralization",
+          "Censorship-Resistance",
+          "Open Source",
+        ],
       },
       timeline: [
         {

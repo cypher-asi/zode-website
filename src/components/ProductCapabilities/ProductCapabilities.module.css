@@ -1,0 +1,71 @@
+.capabilities {
+  display: flex;
+  flex-direction: column;
+  padding: clamp(56px, 12vh, 120px) clamp(20px, 6vw, 56px);
+  background: #fafafa;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+
+.intro {
+  width: 100%;
+  margin-top: clamp(36px, 6vh, 64px);
+  text-align: left;
+}
+
+.header {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 46px);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  color: #161616;
+}
+
+.description {
+  margin: 16px 0 0;
+  max-width: 900px;
+  font-size: clamp(15px, 1.5vw, 18px);
+  line-height: 1.55;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.row {
+  margin-top: clamp(36px, 6vh, 64px);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(24px, 4vw, 56px);
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.itemTitle {
+  margin: 0;
+  font-size: clamp(17px, 1.8vw, 21px);
+  font-weight: 600;
+  line-height: 1.2;
+  color: #161616;
+}
+
+.itemDescription {
+  margin: 0;
+  font-size: clamp(13px, 1.3vw, 15px);
+  line-height: 1.5;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+@media (max-width: 720px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}

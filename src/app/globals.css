@@ -22,20 +22,20 @@
   --color-focus-ring: #2563eb;
   --logo-invert: 1;
 
-  /* Brand accent — inherited across both themes. */
-  --color-accent: #01d892;
+  /* Brand accent — tan, inherited across both themes. */
+  --color-accent: #ffd6a0;
 
   /*
-   * Categorical chart palette — a ramp of greens harmonized with the accent.
+   * Categorical chart palette — a warm tan cluster anchored on the accent.
    * Kept in sync with `src/lib/theme/chartPalette.ts` (the source of truth used
    * by Recharts); these tokens let CSS-based graphs/tables match the same set.
    */
-  --chart-1: #01d892; /* brand spring green */
-  --chart-2: #7cf0bd; /* pale mint */
-  --chart-3: #16b8a6; /* teal-green */
-  --chart-4: #a3e635; /* lime / chartreuse */
-  --chart-5: #1f8f63; /* deep emerald */
-  --chart-6: #5fbf4c; /* grass green */
+  --chart-1: #ffd6a0; /* brand tan accent */
+  --chart-2: #ffe8c9; /* pale cream */
+  --chart-3: #f4be7c; /* warm amber */
+  --chart-4: #e3a155; /* honey / gold */
+  --chart-5: #9e6526; /* deep bronze */
+  --chart-6: #c6843c; /* toffee */
 
   /* Soft white/gray frame around the inner content "screen". Used as the
    * static base/fallback behind the animated WebGL ShellBackdrop. */

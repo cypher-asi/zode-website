@@ -78,7 +78,7 @@
 }
 
 .flowLine[data-active="true"] .flowBase {
-  stroke: rgba(1, 216, 146, 0.6);
+  stroke: rgba(255, 214, 160, 0.6);
   opacity: 1;
   transition:
     stroke 220ms ease-in,
@@ -86,8 +86,8 @@
 }
 
 .flowLine[data-active="true"] .flowDot {
-  fill: #01d892;
-  filter: drop-shadow(0 0 3px rgba(1, 216, 146, 0.9));
+  fill: var(--color-accent);
+  filter: drop-shadow(0 0 3px rgba(255, 214, 160, 0.9));
   transition:
     fill 220ms ease-in,
     filter 220ms ease-in;
@@ -234,7 +234,7 @@
 /* Node a transaction is currently settling on flashes green. */
 .starNode[data-flash="true"] {
   fill: var(--color-accent);
-  filter: drop-shadow(0 0 4px rgba(1, 216, 146, 1));
+  filter: drop-shadow(0 0 4px rgba(255, 214, 160, 1));
 }
 
 /* Convergence port on the circle's left edge — where the provider lines feed
@@ -257,13 +257,13 @@
 .port[data-active="true"] {
   background: radial-gradient(
     circle at 50% 40%,
-    #01d892 0%,
-    rgba(1, 216, 146, 1) 55%,
-    rgba(1, 216, 146, 0.6) 100%
+    var(--color-accent) 0%,
+    rgba(255, 214, 160, 1) 55%,
+    rgba(255, 214, 160, 0.6) 100%
   );
   box-shadow:
-    0 0 8px rgba(1, 216, 146, 0.85),
-    0 0 16px rgba(1, 216, 146, 0.5);
+    0 0 8px rgba(255, 214, 160, 0.85),
+    0 0 16px rgba(255, 214, 160, 0.5);
 }
 
 /* Right: live transaction feed */
@@ -318,7 +318,7 @@
 }
 
 .txStatus[data-status="finalized"] {
-  color: #01d892;
+  color: var(--color-accent);
   background: transparent;
 }
 
