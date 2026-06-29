@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactElement } from "react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
 import Image from "next/image";
 import { SlideLayout } from "@/components/SlideLayout";
 import styles from "./Cover.module.css";
@@ -59,12 +59,22 @@ export function Cover(): ReactElement {
   // live time is only known on the client.
   const [countdown, setCountdown] = useState<Countdown | null>(null);
 
+  // Fade the hero artwork in once it has actually decoded, so navigating to
+  // the deck never flashes a half-painted image.
+  const [imageReady, setImageReady] = useState(false);
+  const imageRef = useRef<HTMLImageElement>(null);
+
   useEffect(() => {
     const targetMs = OPEN_DATE.getTime();
     const tick = (): void => setCountdown(getCountdown(targetMs));
     tick();
     const id = setInterval(tick, 1_000);
     return () => clearInterval(id);
+  }, []);
+
+  // A cached image can finish before React attaches `onLoad`; catch that here.
+  useEffect(() => {
+    if (imageRef.current?.complete) setImageReady(true);
   }, []);
 
   const goToNext = (): void => {
@@ -93,6 +103,7 @@ export function Cover(): ReactElement {
         <div className={styles.hero}>
           <div className={styles.media}>
             <Image
+              ref={imageRef}
               src="/images/opportunity-cabins.png"
               alt="ZODE site: clustered units on a forested British Columbia hillside"
               fill
@@ -100,6 +111,8 @@ export function Cover(): ReactElement {
               priority
               unoptimized
               className={styles.mediaImage}
+              data-ready={imageReady ? "true" : "false"}
+              onLoad={() => setImageReady(true)}
             />
           </div>
 

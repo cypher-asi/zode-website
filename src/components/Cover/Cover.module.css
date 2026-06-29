@@ -74,6 +74,19 @@
 
 .mediaImage {
   object-fit: cover;
+  /* Fade in once decoded (data-ready set from JS on load). */
+  opacity: 0;
+  transition: opacity 700ms ease;
+}
+
+.mediaImage[data-ready="true"] {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mediaImage {
+    transition: none;
+  }
 }
 
 /* --- Funding panel --- */
