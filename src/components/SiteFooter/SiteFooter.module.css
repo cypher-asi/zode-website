@@ -1,21 +1,29 @@
 .footer {
   position: relative;
   overflow: hidden;
-  padding: clamp(48px, 7vw, 96px) clamp(20px, 5vw, 64px) clamp(28px, 4vw, 48px);
-  background: var(--color-bg);
+  /* Generous bottom padding leaves a clear gap between the link content and
+     the faded wordmark anchored to the bottom edge. */
+  padding: clamp(48px, 7vw, 96px) clamp(20px, 5vw, 64px) clamp(220px, 26vw, 380px);
+  /* Footer is always a black surface, regardless of theme. Pin the dark-palette
+     tokens locally so the link/heading text and wordmark stay legible even in
+     light mode. */
+  --color-text-primary: #f4f4f5;
+  --color-text-secondary: #8a8a92;
+  --logo-invert: 0;
+  background: #000000;
   color: var(--color-text-primary);
-  border-top: 1px solid var(--color-border);
 }
 
 /*
- * Large faded wordmark sitting behind the columns. The PNG ships white on
- * transparency, so `--logo-invert` flips it to match the surface; low opacity
- * keeps it as a watermark rather than a focal element.
+ * Large faded wordmark anchored to the bottom of the footer, separated from
+ * the link content above. The PNG ships white on transparency, so
+ * `--logo-invert` flips it to match the surface; low opacity keeps it as a
+ * watermark rather than a focal element.
  */
 .brandMark {
   position: absolute;
   left: 50%;
-  bottom: -6%;
+  bottom: clamp(44px, 5vw, 80px);
   transform: translateX(-50%);
   width: min(94%, 1100px);
   height: auto;
@@ -30,15 +38,17 @@
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: clamp(48px, 8vw, 120px);
+  gap: clamp(28px, 4vw, 56px);
   max-width: 1240px;
   margin: 0 auto;
 }
 
+/* Columns hug their content and sit centered as a tight cluster. */
 .columns {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: clamp(24px, 3vw, 48px) clamp(20px, 2vw, 32px);
+  grid-template-columns: repeat(5, max-content);
+  justify-content: center;
+  gap: clamp(24px, 3vw, 40px) clamp(84px, 9vw, 168px);
 }
 
 .column {
@@ -80,10 +90,9 @@
 
 .bottom {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 14px;
 }
 
 .copyright {
@@ -120,12 +129,12 @@
 
 @media (max-width: 900px) {
   .columns {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3, max-content);
   }
 }
 
 @media (max-width: 560px) {
   .columns {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, max-content);
   }
 }

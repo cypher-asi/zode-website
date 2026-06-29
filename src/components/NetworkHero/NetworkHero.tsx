@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
 import styles from "./NetworkHero.module.css";
 
-const TITLE = "Enter THE GRID";
+const TITLE = "THE GRID";
 
 /** Per-character cadence of the title typewriter reveal. */
 const TYPE_SPEED_MS = 65;
@@ -74,6 +74,29 @@ export function NetworkHero(): ReactElement {
           A distributed grid of rapidly deployable compute, connected into one
           network.
         </p>
+        <div
+          className={`${styles.actions} ${typingDone ? styles.revealed : ""}`}
+        >
+          <button
+            type="button"
+            className={styles.primaryAction}
+            onClick={() =>
+              document
+                .getElementById("how-it-works")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+          >
+            Learn More
+          </button>
+          <a
+            className={styles.secondaryAction}
+            href="https://cypher.net/research/the-grid"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Read Whitepaper
+          </a>
+        </div>
       </div>
     </section>
   );

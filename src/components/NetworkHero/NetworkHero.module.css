@@ -91,3 +91,54 @@
   opacity: 0;
   transition: opacity 700ms ease;
 }
+
+/* Action row fades in alongside the description once the title finishes. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+  opacity: 0;
+  transition: opacity 700ms ease;
+}
+
+.actions.revealed {
+  opacity: 1;
+}
+
+.primaryAction,
+.secondaryAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease,
+    opacity 160ms ease;
+}
+
+.primaryAction {
+  border: 1px solid #ffffff;
+  background: #ffffff;
+  color: #06070b;
+}
+
+.primaryAction:hover {
+  opacity: 0.9;
+}
+
+.secondaryAction {
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  background: transparent;
+  color: #ffffff;
+}
+
+.secondaryAction:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
