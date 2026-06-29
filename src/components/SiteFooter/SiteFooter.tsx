@@ -1,6 +1,27 @@
+"use client";
+
 import type { ReactElement } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import styles from "./SiteFooter.module.css";
+
+// Scroll containers used by the two shells the footer renders inside:
+// the (site) layout and the invest OuterShell.
+const SCROLL_ROOT_IDS = ["site-scroll", "grid-scroll"] as const;
+
+// When a footer link points at the page we're already on, the route won't
+// change (so no navigation/scroll reset fires). Smooth-scroll the active
+// shell's scroll container back to the top instead.
+function scrollToTopIfCurrent(pathname: string, href: string): void {
+  if (href !== pathname) return;
+  for (const id of SCROLL_ROOT_IDS) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+  }
+}
 
 interface FooterLink {
   readonly label: string;
@@ -13,6 +34,10 @@ interface FooterColumn {
   readonly links: readonly FooterLink[];
 }
 
+// Toggle the X / LinkedIn social row. Kept off until real profile links exist;
+// set to true to bring the icons back in their original footer position.
+const SOCIAL_LINKS_READY = false;
+
 const COLUMNS: readonly FooterColumn[] = [
   {
     heading: "Product",
@@ -21,22 +46,24 @@ const COLUMNS: readonly FooterColumn[] = [
   {
     heading: "Network",
     links: [
-      { label: "Protocol", href: "#" },
-      { label: "Whitepaper", href: "#" },
-      { label: "Docs", href: "#" },
+      { label: "THE GRID", href: "/network" },
+      {
+        label: "Whitepaper",
+        href: "https://cypher.net/research/the-grid",
+        external: true,
+      },
     ],
   },
   {
     heading: "Invest",
     links: [
-      { label: "Deck", href: "/invest" },
-      { label: "Contact", href: "#" },
+      { label: "Learn More", href: "/invest" },
+      { label: "Contact", href: "/contact" },
     ],
   },
   {
     heading: "Compute",
     links: [
-      { label: "Purchase ZODE", href: "#" },
       { label: "Buy compute", href: "/buy-compute" },
       { label: "Give compute", href: "/give-compute" },
     ],
@@ -44,9 +71,8 @@ const COLUMNS: readonly FooterColumn[] = [
   {
     heading: "Legal",
     links: [
-      { label: "Privacy", href: "#" },
-      { label: "TOS", href: "#" },
-      { label: "Securities", href: "#" },
+      { label: "Privacy", href: "/privacy" },
+      { label: "Terms", href: "/terms" },
     ],
   },
 ];
@@ -73,7 +99,17 @@ function LinkedInIcon(): ReactElement {
  * copyright line. Rendered at the end of the scrollable content area in each
  * shell so it appears on every gated page.
  */
-export function SiteFooter(): ReactElement {
+// Routes whose page provides its own full-height layout and should not
+// render the shared site footer below the fold.
+const HIDDEN_FOOTER_ROUTES = ["/buy-compute", "/give-compute"] as const;
+
+export function SiteFooter(): ReactElement | null {
+  const pathname = usePathname() ?? "/";
+
+  if (HIDDEN_FOOTER_ROUTES.includes(pathname as (typeof HIDDEN_FOOTER_ROUTES)[number])) {
+    return null;
+  }
+
   return (
     <footer className={styles.footer} aria-label="Site footer">
       {/* Decorative watermark: ships white on transparency and inverts to match
@@ -89,9 +125,24 @@ export function SiteFooter(): ReactElement {
               <ul className={styles.links}>
                 {column.links.map((link) => (
                   <li key={link.label}>
-                    <Link className={styles.link} href={link.href}>
-                      {link.label}
-                    </Link>
+                    {link.external ? (
+                      <a
+                        className={styles.link}
+                        href={link.href}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        className={styles.link}
+                        href={link.href}
+                        onClick={() => scrollToTopIfCurrent(pathname, link.href)}
+                      >
+                        {link.label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -100,24 +151,28 @@ export function SiteFooter(): ReactElement {
         </nav>
 
         <div className={styles.bottom}>
-          <div className={styles.social}>
-            <a
-              className={styles.socialLink}
-              href="https://x.com/zode_org"
-              target="_blank"
-              rel="noreferrer noopener"
-              aria-label="ZODE on X"
-            >
-              <XIcon />
-            </a>
-            <a
-              className={styles.socialLink}
-              href="#"
-              aria-label="ZODE on LinkedIn"
-            >
-              <LinkedInIcon />
-            </a>
-          </div>
+          {/* Social links are hidden until real destinations are ready; flip
+              SOCIAL_LINKS_READY to true to restore them in place. */}
+          {SOCIAL_LINKS_READY ? (
+            <div className={styles.social}>
+              <a
+                className={styles.socialLink}
+                href="https://x.com/zode_org"
+                target="_blank"
+                rel="noreferrer noopener"
+                aria-label="ZODE on X"
+              >
+                <XIcon />
+              </a>
+              <a
+                className={styles.socialLink}
+                href="#"
+                aria-label="ZODE on LinkedIn"
+              >
+                <LinkedInIcon />
+              </a>
+            </div>
+          ) : null}
           <p className={styles.copyright}>Copyright &copy; 2026 Cypher, Inc.</p>
         </div>
       </div>
