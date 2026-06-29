@@ -101,25 +101,19 @@ export function NetworkCustomers(): ReactElement {
         </div>
 
         <div className={styles.body}>
-          <div className={styles.content}>
-            <div className={styles.block}>
-              <p className={styles.blockLabel}>
-                <Dots />
-                Challenge
-              </p>
-              <p className={styles.blockText}>{current.challenge}</p>
-            </div>
-            <div className={styles.block}>
-              <p className={styles.blockLabel}>
-                <Dots />
-                Solution
-              </p>
-              <p className={styles.blockText}>{current.solution}</p>
-            </div>
+          <div className={styles.block}>
+            <p className={styles.blockLabel}>
+              <Dots />
+              Challenge
+            </p>
+            <p className={styles.blockText}>{current.challenge}</p>
           </div>
-
-          <div className={styles.media}>
-            <div className={styles.placeholder} role="img" aria-label={current.alt} />
+          <div className={styles.block}>
+            <p className={styles.blockLabel}>
+              <Dots />
+              Solution
+            </p>
+            <p className={styles.blockText}>{current.solution}</p>
           </div>
         </div>
 

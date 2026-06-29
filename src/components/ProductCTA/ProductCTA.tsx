@@ -14,7 +14,7 @@ export function ProductCTA(): ReactElement {
       <img
         className={styles.image}
         src="/images/cta-cabin.png"
-        alt="A timber cabin home office overlooking a mountain lake at dusk."
+        alt="A ZODE unit overlooking a mountain lake at dusk."
       />
       <div className={styles.scrim} aria-hidden="true" />
       <div className={styles.copy}>

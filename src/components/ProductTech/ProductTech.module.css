@@ -27,43 +27,6 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
-.selector {
-  display: inline-flex;
-  gap: 4px;
-  margin-top: clamp(24px, 4vh, 40px);
-  padding: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.option {
-  appearance: none;
-  border: none;
-  cursor: pointer;
-  padding: 10px 28px;
-  border-radius: 999px;
-  background: transparent;
-  font-size: clamp(13px, 1.3vw, 15px);
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: rgba(255, 255, 255, 0.6);
-  transition: background 0.2s ease, color 0.2s ease;
-}
-
-.option:hover {
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.optionActive {
-  background: #f4f4f5;
-  color: #161616;
-}
-
-.optionActive:hover {
-  color: #161616;
-}
-
 .grid {
   width: 100%;
   margin-top: clamp(36px, 6vh, 64px);

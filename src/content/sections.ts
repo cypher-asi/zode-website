@@ -489,7 +489,7 @@ export const SECTIONS: readonly SectionContent[] = [
           code: "NOC-01",
           zone: "noc",
           description:
-            "The Network Operations Center anchors the front of the first cabin. Operators monitor every workload, alert, and uplink from a single wall of telemetry. It is the staffed front door to the entire ZODE.",
+            "The Network Operations Center anchors the front of the first unit. Operators monitor every workload, alert, and uplink from a single wall of telemetry. It is the staffed front door to the entire ZODE.",
         },
         {
           number: "02",
@@ -497,7 +497,7 @@ export const SECTIONS: readonly SectionContent[] = [
           code: "CMP-02",
           zone: "compute",
           description:
-            "The compute hall fills the rest of the first cabin with twelve liquid-cooled GPU racks. Hot-swappable trays keep inference and training online during service. This is where the ZODE turns power into compute.",
+            "The compute hall fills the rest of the first unit with twelve liquid-cooled GPU racks. Hot-swappable trays keep inference and training online during service. This is where the ZODE turns power into compute.",
         },
         {
           number: "03",
@@ -505,7 +505,7 @@ export const SECTIONS: readonly SectionContent[] = [
           code: "COOL-03",
           zone: "cooling",
           description:
-            "The cooling yard bridges the two cabins with six closed-loop heat-rejection units. Paired rows reject rack heat with full redundancy. Captured heat can feed adjacent buildings instead of the sky.",
+            "The cooling yard bridges the two units with six closed-loop heat-rejection units. Paired rows reject rack heat with full redundancy. Captured heat can feed adjacent buildings instead of the sky.",
         },
         {
           number: "04",
@@ -513,7 +513,7 @@ export const SECTIONS: readonly SectionContent[] = [
           code: "PWR-04",
           zone: "power",
           description:
-            "The power hall occupies the second cabin with switchgear, distribution, and battery buffering. It ties the grid feed to on-site backup with automatic failover. Clean, conditioned power flows from here to every rack.",
+            "The power hall occupies the second unit with switchgear, distribution, and battery buffering. It ties the grid feed to on-site backup with automatic failover. Clean, conditioned power flows from here to every rack.",
         },
         {
           number: "05",
@@ -851,35 +851,40 @@ export const SECTIONS: readonly SectionContent[] = [
       companies: [
         {
           name: "ZERO",
-          description: "A secure platform for deploying an agentic workforce.",
+          description:
+            "ZERO is a secure, private messenger for an agentic world, pairing end-to-end encrypted communication with the identity and infrastructure people need to own their data.",
           url: { label: "zero.tech", href: "https://zero.tech" },
           x: { label: "@zero_app", href: "https://x.com/zero_app" },
           year: "2017",
         },
         {
           name: "WILDER WORLD",
-          description: "A secure platform for deploying an agentic workforce.",
+          description:
+            "Wilder World is an AI-powered virtual simulation, a photorealistic, living world owned by its community and built on open, decentralized rails.",
           url: { label: "wilderworld.com", href: "https://wilderworld.com" },
           x: { label: "@wilderworld", href: "https://x.com/wilderworld" },
           year: "2021",
         },
         {
           name: "Z CHAIN",
-          description: "A secure platform for deploying an agentic workforce.",
+          description:
+            "Z Chain is a blazing-fast blockchain built for autonomous systems, delivering verifiable, high-throughput settlement so agents can transact and coordinate without a central authority.",
           url: { label: "zchain.org", href: "https://zchain.org" },
           x: { label: "@zchain_org", href: "https://x.com/zchain_org" },
           year: "2023",
         },
         {
           name: "AURA",
-          description: "A secure platform for deploying an agentic workforce.",
+          description:
+            "AURA is an agentic coding system that plans, writes, tests, and ships software end to end, operating as a sovereign engineering workforce that compounds with every task.",
           url: { label: "aura.ai", href: "https://aura.ai" },
           x: { label: "@aura_asi", href: "https://x.com/aura_asi" },
           year: "2024",
         },
         {
           name: "ZODE",
-          description: "Distributed compute network powered by THE GRID.",
+          description:
+            "ZODE is a micro-data center for AI, compact, energy-aware compute infrastructure that brings sovereign training and inference closer to where it is needed.",
           url: { label: "thegrid.host", href: "https://thegrid.host" },
           x: { label: "@zode_org", href: "https://x.com/zode_org" },
           year: "2026",

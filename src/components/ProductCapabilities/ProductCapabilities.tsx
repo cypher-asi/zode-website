@@ -36,7 +36,7 @@ export function ProductCapabilities(): ReactElement {
       <img
         className={styles.image}
         src="/images/product-capabilities.png"
-        alt="ZODE One timber cabins lit from within at dusk, set against a mountain hillside."
+        alt="ZODE One units lit from within at dusk, set against a mountain hillside."
       />
       <div className={styles.intro}>
         <h2 className={styles.header}>Compute that grows with you.</h2>

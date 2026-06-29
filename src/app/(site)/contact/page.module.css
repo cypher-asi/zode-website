@@ -1,0 +1,130 @@
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 6rem 2rem 6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  overflow-wrap: anywhere;
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono), "Fira Code", monospace;
+}
+
+.heading {
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--color-text-primary);
+}
+
+.subtitle {
+  max-width: 560px;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+}
+
+.emailBlock,
+.connect {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.emailLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono), "Fira Code", monospace;
+}
+
+.emailLink {
+  align-self: flex-start;
+  font-size: clamp(1.25rem, 4vw, 1.75rem);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+  text-decoration: none;
+  border-bottom: 1px solid var(--color-border-strong);
+  transition: opacity 200ms ease;
+}
+
+.emailLink:hover {
+  opacity: 0.7;
+}
+
+.socialRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.socialLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  background: var(--color-bg-elevated);
+  transition:
+    color 200ms ease,
+    border-color 200ms ease;
+}
+
+.socialLink:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-border-strong);
+}
+
+.externalIcon {
+  color: var(--color-text-secondary);
+}
+
+.backRow {
+  margin-top: 1rem;
+}
+
+.backLink {
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-family: var(--font-mono), "Fira Code", monospace;
+  transition: color 200ms ease;
+}
+
+.backLink:hover {
+  color: var(--color-text-primary);
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 4rem 1.25rem 4rem;
+    gap: 2.5rem;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+  }
+}

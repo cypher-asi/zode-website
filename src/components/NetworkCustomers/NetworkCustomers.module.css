@@ -106,12 +106,6 @@
   margin-top: clamp(32px, 5vh, 56px);
 }
 
-.content {
-  display: flex;
-  flex-direction: column;
-  gap: clamp(28px, 4vh, 44px);
-}
-
 .block {
   display: flex;
   flex-direction: column;
@@ -142,18 +136,6 @@
   font-size: clamp(15px, 1.6vw, 18px);
   line-height: 1.55;
   color: #c9c9cf;
-}
-
-.media {
-  display: block;
-}
-
-/* Blank placeholder panel until real imagery is added. */
-.placeholder {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.06);
 }
 
 .controls {
@@ -190,9 +172,5 @@
 @media (max-width: 760px) {
   .body {
     grid-template-columns: 1fr;
-  }
-
-  .media {
-    order: -1;
   }
 }

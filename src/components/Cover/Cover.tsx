@@ -94,7 +94,7 @@ export function Cover(): ReactElement {
           <div className={styles.media}>
             <Image
               src="/images/opportunity-cabins.png"
-              alt="ZODE site: clustered cabins on a forested British Columbia hillside"
+              alt="ZODE site: clustered units on a forested British Columbia hillside"
               fill
               sizes="(max-width: 900px) 100vw, 66vw"
               priority

@@ -641,10 +641,10 @@ export function CabinScene({
         role="img"
         aria-label={
           interactive
-            ? "Interactive 3D model of the ZODE steep-gable cabin imported from a CAD asset, shown as a line drawing of the roof, glazing, walls and deck. Drag to rotate; hold Ctrl and scroll to zoom. Use the panel to toggle layers and switch between line and realistic styling."
+            ? "Interactive 3D model of the steep-gable ZODE unit imported from a CAD asset, shown as a line drawing of the roof, glazing, walls and deck. Drag to rotate; hold Ctrl and scroll to zoom. Use the panel to toggle layers and switch between line and realistic styling."
             : twin
-              ? "3D model of two ZODE steep-gable cabins set end-to-end, joined by an enclosed wall-height connector box with slatted side walls, shown from a fixed top-down isometric angle as a line drawing."
-              : "3D model of the ZODE steep-gable cabin imported from a CAD asset, shown from a fixed top-down isometric angle as a line drawing of the roof, glazing, walls and deck."
+              ? "3D model of two steep-gable ZODE units set end-to-end, joined by an enclosed wall-height connector box with slatted side walls, shown from a fixed top-down isometric angle as a line drawing."
+              : "3D model of the steep-gable ZODE unit imported from a CAD asset, shown from a fixed top-down isometric angle as a line drawing of the roof, glazing, walls and deck."
         }
       />
       {loading && <div className={styles.status}>Loading model...</div>}

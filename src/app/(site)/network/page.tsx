@@ -8,10 +8,10 @@ export default function NetworkPage() {
   return (
     <>
       <NetworkHero />
+      <LiveGpuPrices />
       <NetworkHow />
       <WorkloadShowcase />
       <NetworkCustomers />
-      <LiveGpuPrices />
     </>
   );
 }

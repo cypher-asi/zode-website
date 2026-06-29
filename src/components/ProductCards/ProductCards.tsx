@@ -15,26 +15,34 @@ const CARDS: readonly Card[] = [
     image: "/product-hardware.png",
     title: "Frontier Hardware",
     description:
-      "Racks of NVIDIA B300 GPUs run directly liquid-cooled, delivering frontier-scale training and inference performance at the highest density and efficiency available today.",
+      "Racks of directly liquid-cooled NVIDIA B300 GPUs deliver frontier-scale training and inference at the highest density and efficiency available today.",
     objectPosition: "center top",
   },
   {
     image: "/product-secure-door.png",
     title: "Secure Facility",
     description:
-      "A Faraday-caged enclosure shields every rack from electromagnetic interference and eavesdropping, while hardened steel entry, biometric access control, and 24/7 surveillance keep your data physically locked down.",
+      "A Faraday-caged enclosure shields every rack from interference and eavesdropping, while hardened steel entry, biometric access, and 24/7 surveillance lock your data down.",
   },
   {
-    image: "/product-hero.png",
-    title: "Rapid Deployment",
+    image: "/product-dry-cooler.png",
+    title: "Extreme Quiet",
     description:
-      "Factory-built and site-assembled in weeks, ZODE One drops into remote sites without traditional data-center construction.",
+      "Heat is spread across multiple loops and rejected through oversized dry coolers running well below peak speed, holding roughly 55 dB(A), about 75% quieter than conventional cooling.",
+    objectPosition: "center top",
   },
   {
-    image: "/product-interior.png",
-    title: "Grid-Flexible Power",
+    image: "/product-redundancy.png",
+    title: "N+1 Redundancy",
     description:
-      "1.5 MW of dispatchable capacity pairs with renewables and storage to balance the grid while powering AI.",
+      "Power, cooling, and networking all run at N+1 redundancy across the deployment, so any single component can fail and be serviced live without taking the site offline.",
+    objectPosition: "center 12%",
+  },
+  {
+    image: "/product-infiniband.png",
+    title: "InfiniBand Networking",
+    description:
+      "NVIDIA Quantum-X800 InfiniBand links nodes at 800 Gb/s per port over ConnectX-8 SuperNICs with SHARP v4 in-network compute, scaling training and inference near-linearly beyond Ethernet.",
   },
 ];
 
