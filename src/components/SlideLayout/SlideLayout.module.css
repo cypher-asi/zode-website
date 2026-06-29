@@ -46,7 +46,12 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  /* Never let a band shrink below its content. Otherwise the middle band
+   * (default flex-shrink: 1) collapses when a slide is taller than the panel
+   * and its content spills over the band below it; instead the slide should
+   * grow and scroll. */
   .top,
+  .middle,
   .bottom {
     flex: 0 0 auto;
   }
