@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: zode-website
+    runtime: node
+    plan: starter
+    branch: main
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 22.20.0
