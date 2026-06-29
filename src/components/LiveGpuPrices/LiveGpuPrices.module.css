@@ -1,0 +1,286 @@
+.section {
+  padding: clamp(56px, 12vh, 120px) clamp(20px, 5vw, 64px);
+  background: #000000;
+}
+
+.inner {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(20px, 3vh, 32px);
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+}
+
+.heading {
+  margin: 0;
+  font-size: clamp(28px, 4.4vw, 48px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: #f4f4f5;
+}
+
+.sub {
+  margin: 0 auto;
+  max-width: 560px;
+  font-size: clamp(14px, 1.4vw, 16px);
+  line-height: 1.5;
+  color: #8a8a92;
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  color: #8a8a92;
+}
+
+.legendLabel {
+  color: #f4f4f5;
+  font-weight: 600;
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dotHigh {
+  background: #10b981;
+}
+
+.dotMed {
+  background: #f59e0b;
+}
+
+.dotLow {
+  background: #ef4444;
+}
+
+.toggle {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.toggleBtn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: #8a8a92;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.toggleBtn:hover {
+  color: #f4f4f5;
+}
+
+.toggleBtnActive {
+  background: #ffffff;
+  color: #000000;
+}
+
+.groupRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.groupLabel {
+  font-size: clamp(18px, 2vw, 22px);
+  font-weight: 600;
+  color: #f4f4f5;
+}
+
+.groupCount {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8a8a92;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(16px, 2vw, 24px);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 12px;
+  background: #000000;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: border-color 140ms ease;
+}
+
+.card:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.name {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #f4f4f5;
+}
+
+.avail {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bars {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.barSeg {
+  width: 10px;
+  height: 8px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.barSegOn {
+  background: #10b981;
+}
+
+.availLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8a8a92;
+  padding: 2px 7px;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.arch {
+  font-size: 11px;
+  font-weight: 600;
+  color: #f4f4f5;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.vram {
+  font-size: 12px;
+  color: #8a8a92;
+}
+
+.spark {
+  width: 100%;
+  height: 56px;
+  display: block;
+}
+
+.priceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.price {
+  font-size: 26px;
+  font-weight: 700;
+  color: #f4f4f5;
+  letter-spacing: -0.01em;
+}
+
+.per {
+  font-size: 13px;
+  color: #8a8a92;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.range {
+  font-size: 12px;
+  color: #8a8a92;
+}
+
+.rent {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  text-decoration: none;
+  padding: 7px 16px;
+  border-radius: 7px;
+  background: #2563eb;
+  transition: background 120ms ease;
+}
+
+.rent:hover {
+  background: #1d4ed8;
+}
+
+@media (max-width: 980px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
