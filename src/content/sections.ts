@@ -850,18 +850,18 @@ export const SECTIONS: readonly SectionContent[] = [
       ],
       companies: [
         {
+          name: "AURA",
+          description: "An agentic coding system.",
+          url: { label: "aura.ai", href: "https://aura.ai" },
+          x: { label: "@aura_asi", href: "https://x.com/aura_asi" },
+          year: "2024",
+        },
+        {
           name: "ZERO",
           description: "A secure messenger.",
           url: { label: "zero.tech", href: "https://zero.tech" },
           x: { label: "@zero_app", href: "https://x.com/zero_app" },
           year: "2017",
-        },
-        {
-          name: "WILDER WORLD",
-          description: "A virtual simulation.",
-          url: { label: "wilderworld.com", href: "https://wilderworld.com" },
-          x: { label: "@wilderworld", href: "https://x.com/wilderworld" },
-          year: "2021",
         },
         {
           name: "Z CHAIN",
@@ -871,18 +871,18 @@ export const SECTIONS: readonly SectionContent[] = [
           year: "2023",
         },
         {
-          name: "AURA",
-          description: "An agentic coding system.",
-          url: { label: "aura.ai", href: "https://aura.ai" },
-          x: { label: "@aura_asi", href: "https://x.com/aura_asi" },
-          year: "2024",
-        },
-        {
           name: "ZODE",
           description: "A micro-data center.",
           url: { label: "thegrid.host", href: "https://thegrid.host" },
           x: { label: "@zode_org", href: "https://x.com/zode_org" },
           year: "2026",
+        },
+        {
+          name: "WILDER WORLD",
+          description: "A virtual simulation.",
+          url: { label: "wilderworld.com", href: "https://wilderworld.com" },
+          x: { label: "@wilderworld", href: "https://x.com/wilderworld" },
+          year: "2021",
         },
       ],
     },
