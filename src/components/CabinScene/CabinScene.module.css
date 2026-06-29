@@ -216,3 +216,22 @@
   accent-color: var(--color-accent, #01d892);
   cursor: pointer;
 }
+
+@media (max-width: 520px) {
+  /* Keep the floating control panel from blanketing the small 3D viewport. */
+  .panel {
+    top: 10px;
+    right: 10px;
+    max-width: calc(100% - 20px);
+    font-size: 0.72rem;
+  }
+
+  .panelBody {
+    min-width: 0;
+    width: min(56vw, 200px);
+  }
+
+  .layerList {
+    max-height: 40vh;
+  }
+}

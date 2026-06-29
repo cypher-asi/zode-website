@@ -110,3 +110,15 @@
   border-radius: 3px;
   flex: 0 0 auto;
 }
+
+@media (max-width: 640px) {
+  .footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .legend {
+    margin-left: 0;
+    gap: 10px;
+  }
+}

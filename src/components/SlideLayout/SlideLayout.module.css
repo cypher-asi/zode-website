@@ -35,11 +35,15 @@
   .slide {
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    /* `safe center` keeps short slides centered but pins tall content to the
+     * top edge instead of clipping it above the fold; the slide then scrolls
+     * internally (DeckController yields to this scroll). */
+    justify-content: safe center;
     gap: 4vh;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 4vh var(--slide-pad-x, 7vw);
+    -webkit-overflow-scrolling: touch;
   }
 
   .top,

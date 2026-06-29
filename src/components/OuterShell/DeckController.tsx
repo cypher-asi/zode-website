@@ -125,13 +125,57 @@ export function DeckController({ scrollRootId, slideCount }: DeckControllerProps
     };
 
     let touchStartY: number | null = null;
+    // The scrollable slide under the finger (on narrow screens slides switch to
+    // `overflow-y: auto`), plus whether it was pinned to an edge when the
+    // gesture began. We only advance the deck once the inner content has nothing
+    // left to scroll in the swipe direction, so tall slides stay readable.
+    let touchSlide: HTMLElement | null = null;
+    let startAtTop = true;
+    let startAtBottom = true;
+
+    const SCROLL_EPSILON = 1;
+
+    const atTop = (el: HTMLElement): boolean => el.scrollTop <= SCROLL_EPSILON;
+
+    const atBottom = (el: HTMLElement): boolean =>
+      el.scrollTop + el.clientHeight >= el.scrollHeight - SCROLL_EPSILON;
+
+    // Walk up from the touched node to the nearest descendant of the deck that
+    // can actually scroll vertically (a slide that overflows its panel).
+    const findScrollableSlide = (target: EventTarget | null): HTMLElement | null => {
+      let node: HTMLElement | null =
+        target instanceof HTMLElement ? target : null;
+      while (node && node !== root) {
+        const overflowY = window.getComputedStyle(node).overflowY;
+        const scrollable = overflowY === "auto" || overflowY === "scroll";
+        if (scrollable && node.scrollHeight - node.clientHeight > SCROLL_EPSILON) {
+          return node;
+        }
+        node = node.parentElement;
+      }
+      return null;
+    };
 
     const onTouchStart = (event: TouchEvent): void => {
       touchStartY = event.touches[0]?.clientY ?? null;
+      touchSlide = findScrollableSlide(event.target);
+      startAtTop = touchSlide ? atTop(touchSlide) : true;
+      startAtBottom = touchSlide ? atBottom(touchSlide) : true;
     };
 
     const onTouchMove = (event: TouchEvent): void => {
-      // Suppress native scroll so the deck moves as discrete slides.
+      if (touchStartY === null || !touchSlide) {
+        // No scrollable inner content: the deck owns the gesture, so suppress
+        // native scroll and move as discrete slides.
+        event.preventDefault();
+        return;
+      }
+      const currentY = event.touches[0]?.clientY ?? touchStartY;
+      const swipingUp = touchStartY - currentY > 0;
+      const canScrollHere = swipingUp ? !atBottom(touchSlide) : !atTop(touchSlide);
+      // Let the slide scroll natively until it hits the edge; only then do we
+      // take over so a further swipe can advance the deck.
+      if (canScrollHere) return;
       event.preventDefault();
     };
 
@@ -142,9 +186,16 @@ export function DeckController({ scrollRootId, slideCount }: DeckControllerProps
       }
       const endY = event.changedTouches[0]?.clientY ?? touchStartY;
       const delta = touchStartY - endY;
+      const slide = touchSlide;
       touchStartY = null;
+      touchSlide = null;
       if (Math.abs(delta) < TOUCH_THRESHOLD) return;
-      step(delta > 0 ? 1 : -1);
+      const direction = delta > 0 ? 1 : -1;
+      // Only advance when the inner slide had no more room to scroll in this
+      // direction at the start of the gesture (or wasn't scrollable at all).
+      const canStep = !slide || (direction > 0 ? startAtBottom : startAtTop);
+      if (!canStep) return;
+      step(direction);
     };
 
     const onScrollEnd = (): void => releaseLock();

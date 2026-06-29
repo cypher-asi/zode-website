@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import { themeInitScript } from "@/lib/theme/theme-script";
@@ -20,6 +20,12 @@ export const metadata: Metadata = {
   description:
     "ZODE — the connective layer for a decentralized, secure compute network.",
   robots: { index: false, follow: false },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

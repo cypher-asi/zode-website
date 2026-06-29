@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { useId, useState, type ReactElement } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./SiteNav.module.css";
@@ -43,6 +43,17 @@ function scrollSiteToTopIfCurrent(pathname: string, href: string): void {
  */
 export function SiteNav(): ReactElement {
   const pathname = usePathname() ?? "/";
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuId = useId();
+
+  // Collapse the mobile menu whenever the route changes so it never lingers
+  // open over a freshly navigated page. Adjusting state during render (the
+  // React-recommended pattern) avoids an extra effect pass.
+  const [lastPathname, setLastPathname] = useState(pathname);
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
+    setMenuOpen(false);
+  }
 
   return (
     <header className={styles.nav}>
@@ -80,6 +91,62 @@ export function SiteNav(): ReactElement {
         <Link className={styles.ghostButton} href="/buy-compute">
           Buy Compute
         </Link>
+      </div>
+
+      <button
+        type="button"
+        className={styles.menuButton}
+        aria-label={menuOpen ? "Close menu" : "Open menu"}
+        aria-expanded={menuOpen}
+        aria-controls={menuId}
+        onClick={() => setMenuOpen((open) => !open)}
+      >
+        <span className={styles.menuIcon} data-open={menuOpen ? "" : undefined} aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </span>
+      </button>
+
+      <div
+        id={menuId}
+        className={styles.menuPanel}
+        data-open={menuOpen ? "" : undefined}
+        hidden={!menuOpen}
+      >
+        <nav className={styles.menuLinks} aria-label="Primary mobile">
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={styles.menuLink}
+              aria-current={isActive(pathname, link.href) ? "page" : undefined}
+              data-active={isActive(pathname, link.href) ? "" : undefined}
+              onClick={() => {
+                scrollSiteToTopIfCurrent(pathname, link.href);
+                setMenuOpen(false);
+              }}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+        <div className={styles.menuActions}>
+          <Link
+            className={styles.menuGhostButton}
+            href="/give-compute"
+            onClick={() => setMenuOpen(false)}
+          >
+            Give Compute
+          </Link>
+          <Link
+            className={styles.menuGhostButton}
+            href="/buy-compute"
+            onClick={() => setMenuOpen(false)}
+          >
+            Buy Compute
+          </Link>
+        </div>
       </div>
     </header>
   );

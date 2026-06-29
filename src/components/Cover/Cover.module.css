@@ -282,7 +282,19 @@
     grid-template-columns: 1fr;
   }
 
+  /* Once stacked, the hero image no longer needs to fill the panel height; cap
+   * it so the funding panel and stats remain reachable on phones. */
+  .media {
+    min-height: clamp(200px, 34vh, 320px);
+  }
+
   .statsRow {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .statsRow {
+    grid-template-columns: 1fr;
   }
 }

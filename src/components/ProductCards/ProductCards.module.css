@@ -45,7 +45,7 @@
 
 .title {
   margin: clamp(14px, 2vh, 20px) 0 0;
-  font-size: 34px;
+  font-size: clamp(24px, 4.5vw, 34px);
   font-weight: 500;
   line-height: 1.2;
   color: #161616;
@@ -54,7 +54,7 @@
 .description {
   margin: 8px 0 0;
   max-width: 52ch;
-  font-size: 20px;
+  font-size: clamp(15px, 2.6vw, 20px);
   line-height: 1.5;
   color: var(--color-text-secondary);
 }
@@ -98,5 +98,26 @@
 @media (min-width: 1128px) {
   .control {
     top: calc((880px * 0.625) / 2);
+  }
+}
+
+/* On phones the 100px gutter eats roughly a third of the viewport; tighten it
+ * so the first card and its copy get usable width. */
+@media (max-width: 720px) {
+  .track {
+    scroll-padding-left: 20px;
+    gap: 16px;
+  }
+
+  .card {
+    flex: 0 0 86%;
+  }
+
+  .card:first-child {
+    margin-left: 20px;
+  }
+
+  .control {
+    top: calc((86vw * 0.625) / 2);
   }
 }

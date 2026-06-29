@@ -136,5 +136,14 @@
 @media (max-width: 560px) {
   .columns {
     grid-template-columns: repeat(2, max-content);
+    gap: 24px 40px;
+  }
+}
+
+@media (max-width: 400px) {
+  /* Two max-content columns + gap can exceed the tightest phones and clip under
+   * the footer's overflow:hidden; drop to a single centered column. */
+  .columns {
+    grid-template-columns: max-content;
   }
 }

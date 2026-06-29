@@ -35,7 +35,7 @@
   align-items: center;
   text-align: center;
   gap: 12px;
-  margin-top: 150px;
+  margin-top: clamp(64px, 16vh, 150px);
   padding: clamp(40px, 8vh, 72px) 24px 0;
 }
 

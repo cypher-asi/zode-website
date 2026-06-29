@@ -174,3 +174,28 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 560px) {
+  /* Let the tab row scroll horizontally instead of squashing four labels into
+   * ellipsis-truncated slivers. */
+  .tabs {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab {
+    flex: 0 0 auto;
+    padding-right: 18px;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .progress {
+    /* Underline should span only the (now auto-width) active tab. */
+    width: calc(100% - 18px);
+  }
+}
