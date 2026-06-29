@@ -396,6 +396,31 @@
 
   .panel {
     height: auto;
+    align-items: center;
+  }
+
+  .panelLabel {
+    text-align: center;
+  }
+
+  /* The SVG routes provider icons (left rail) into the central port; that
+   * spatial mapping breaks once the panels stack, leaving stray lines. */
+  .connectionField {
+    display: none;
+  }
+
+  /* Demand becomes a centered wrapping row of marks instead of a tall column
+   * hugging the left edge. */
+  .companyList {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(14px, 4vw, 24px);
+  }
+
+  .feed {
+    width: 100%;
   }
 
   .constellation {
