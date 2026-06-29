@@ -226,6 +226,10 @@ export function CabinScene({
       });
     }
 
+    // Re-frames the camera for the current aspect ratio. Assigned once the
+    // model loads and its bounding radius is known; a no-op until then.
+    let refit: () => void = () => {};
+
     const resize = () => {
       const { clientWidth: w, clientHeight: h } = container;
       if (w === 0 || h === 0) return;
@@ -236,6 +240,9 @@ export function CabinScene({
       matStruct.resolution.set(w, h);
       matDetail.resolution.set(w, h);
       matHilite.resolution.set(w, h);
+      // Keep the model framed when the viewport aspect changes (e.g. a portrait
+      // phone, or rotating the device), not just on first load.
+      refit();
     };
     resize();
 
@@ -490,34 +497,38 @@ export function CabinScene({
 
         scene.add(cabin);
 
-        // Keep the existing isometric viewing direction, but pull the camera
-        // back far enough to frame both cabins + the bridge along Z.
-        if (twin) {
-          const totalZ = 2 * model.size.z + gap;
-          const radius =
-            0.5 * Math.hypot(totalZ, model.size.x, model.size.y);
-          const fov = THREE.MathUtils.degToRad(camera.fov);
-          const fitDist = (radius * FIT_MARGIN) / Math.sin(fov / 2);
-          camera.position.copy(
-            camera.position.clone().normalize().multiplyScalar(fitDist),
-          );
-          controls.maxDistance = Math.max(controls.maxDistance, fitDist * 1.4);
-          controls.update();
-        } else {
-          // Frame the lone cabin by its circumscribed bounding sphere so the
-          // whole model stays visible at every drag-rotate angle (a sphere is
-          // rotation-invariant, so no orientation can push it off-frame).
-          const radius =
-            0.5 * Math.hypot(model.size.x, model.size.y, model.size.z);
-          const fov = THREE.MathUtils.degToRad(camera.fov);
-          const fitDist = (radius * SINGLE_FIT_MARGIN) / Math.sin(fov / 2);
-          camera.position.copy(
-            camera.position.clone().normalize().multiplyScalar(fitDist),
-          );
-          controls.minDistance = Math.min(controls.minDistance, fitDist * 0.6);
+        // Frame by the model's circumscribed bounding sphere (rotation-
+        // invariant, so no drag angle clips it) accounting for BOTH axes of the
+        // frustum: on a portrait viewport the horizontal FOV is much narrower
+        // than the vertical one, so framing by vertical FOV alone lets a wide
+        // model overflow left/right. Fit to whichever FOV is smaller.
+        const radius = twin
+          ? 0.5 * Math.hypot(2 * model.size.z + gap, model.size.x, model.size.y)
+          : 0.5 * Math.hypot(model.size.x, model.size.y, model.size.z);
+        const margin = twin ? FIT_MARGIN : SINGLE_FIT_MARGIN;
+
+        const fitDistance = (): number => {
+          const vFov = THREE.MathUtils.degToRad(camera.fov);
+          const aspect = camera.aspect || 1;
+          // Horizontal FOV derived from the vertical FOV and aspect ratio.
+          const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect);
+          const minFov = Math.min(vFov, hFov);
+          return (radius * margin) / Math.sin(minFov / 2);
+        };
+
+        refit = () => {
+          const fitDist = fitDistance();
+          // Preserve the current viewing direction (so user rotation survives a
+          // resize) and only adjust the distance to keep the model framed.
+          const dir = camera.position.clone().normalize();
+          camera.position.copy(dir.multiplyScalar(fitDist));
           controls.maxDistance = Math.max(controls.maxDistance, fitDist * 1.6);
+          if (!twin) {
+            controls.minDistance = Math.min(controls.minDistance, fitDist * 0.6);
+          }
           controls.update();
-        }
+        };
+        refit();
 
         const ids = model.present;
         const lights = [hemi, dir, dir2];
