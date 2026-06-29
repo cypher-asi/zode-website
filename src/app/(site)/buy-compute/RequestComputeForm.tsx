@@ -4,7 +4,7 @@ import { useState, type FormEvent, type ReactElement } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
 
-const RECIPIENT = "info@zode.org";
+const RECIPIENT = "hello@zode.org";
 
 const GPU_OPTIONS = [
   "1 - 8 GPUs",
