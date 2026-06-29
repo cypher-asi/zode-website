@@ -263,27 +263,27 @@
   justify-content: center;
   gap: 0.5rem;
   width: 100%;
-  padding: 0.875rem 1.25rem;
-  border: none;
-  border-radius: 8px;
-  background: var(--color-focus-ring);
-  color: #ffffff;
+  height: 44px;
+  padding: 0 18px;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 55%, #000);
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: #2a1c08;
   font-family: inherit;
-  font-size: 0.875rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  transition:
-    filter 160ms ease,
-    transform 160ms ease;
+  transition: opacity 160ms ease;
 }
 
 .submit:hover {
-  filter: brightness(1.08);
+  opacity: 0.9;
 }
 
-.submit:active {
-  transform: translateY(1px);
+.submit:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
 }
 
 .disclaimer {
