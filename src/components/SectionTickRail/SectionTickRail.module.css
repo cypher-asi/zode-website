@@ -146,21 +146,67 @@
   outline-offset: 2px;
 }
 
-@media (max-width: 640px) {
+/*
+ * On mobile the deck scrolls one slide at a time and there's no hover, so the
+ * vertical right-edge rail + hover panel doesn't suit touch. Lay the ticks out
+ * as a centered horizontal progress strip across the top instead; the active
+ * tick still advances via the IntersectionObserver as you swipe.
+ */
+@media (max-width: 900px) {
+  .rail {
+    top: 10px;
+    right: auto;
+    left: 0;
+    width: 100%;
+    transform: none;
+    justify-content: center;
+    /* Only the ticks themselves should capture touches. */
+    pointer-events: none;
+  }
+
   .list {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
     gap: 6px;
+    pointer-events: auto;
+  }
+
+  /* A stray focus must not fade the ticks out (the panel is hidden here). */
+  .rail[data-panel-open="true"] .list {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .row {
+    justify-content: center;
+  }
+
+  .tickButton {
+    /* Larger vertical tap target around the thin segment. */
+    padding: 7px 1px;
   }
 
   .tick {
     width: 14px;
+    height: 3px;
+  }
+
+  .tickButton[data-active="true"] .tick {
+    width: 22px;
   }
 
   .panel {
-    min-width: 164px;
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .tick {
+    width: 12px;
   }
 
-  .panelItem {
-    font-size: 12px;
-    padding: 7px 10px;
+  .tickButton[data-active="true"] .tick {
+    width: 20px;
   }
 }

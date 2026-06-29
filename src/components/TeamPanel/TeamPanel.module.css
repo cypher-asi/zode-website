@@ -26,11 +26,13 @@
 
 .title {
   margin: 0 auto;
-  max-width: 28ch;
+  max-width: 22ch;
   font-size: clamp(1.5rem, 3.2vw, 2.5rem);
   font-weight: 600;
   line-height: 1.1;
   letter-spacing: -0.02em;
+  /* Even out the wrap so the title sits on two balanced lines. */
+  text-wrap: balance;
   color: var(--color-text-primary);
 }
 
