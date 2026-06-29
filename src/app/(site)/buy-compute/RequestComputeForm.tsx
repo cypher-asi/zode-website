@@ -66,7 +66,7 @@ export function RequestComputeForm(): ReactElement {
         <h2 className={styles.cardTitle}>Request Compute</h2>
         <span className={styles.slaTag}>
           <CheckIcon />
-          SLA &lt; 5 hours
+          Typical reply under 5h
         </span>
       </div>
 
@@ -113,7 +113,7 @@ export function RequestComputeForm(): ReactElement {
               id="company"
               name="company"
               className={styles.input}
-              placeholder="Acme AI"
+              placeholder="Your company"
               autoComplete="organization"
               required
               value={company}
@@ -198,7 +198,7 @@ export function RequestComputeForm(): ReactElement {
               id="workload"
               name="workload"
               className={styles.textarea}
-              placeholder="e.g. fine-tuning a 70B model, data in GCP us-central1, need 8× H100 for ~3 weeks"
+              placeholder="e.g. training a vision model, dataset sits in AWS eu-west-1, want 16× H100 for about a month"
               value={workload}
               onChange={(e) => setWorkload(e.target.value)}
             />
@@ -210,7 +210,7 @@ export function RequestComputeForm(): ReactElement {
         </button>
 
         <p className={styles.disclaimer}>
-          By submitting you agree to ZODE&apos;s{" "}
+          Sending this request means you accept ZODE&apos;s{" "}
           <Link className={styles.disclaimerLink} href="/terms">
             Terms
           </Link>{" "}

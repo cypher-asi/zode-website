@@ -18,27 +18,27 @@ const COMPLIANCE = [
 
 const FEATURES = [
   {
-    title: "Capacity match",
-    body: "we find the GPUs you need across the network, today.",
+    title: "Sourced capacity",
+    body: "we locate available GPUs across the grid that fit your run.",
   },
   {
-    title: "Private link setup",
-    body: "connect to your data in AWS, GCP, Azure, K8s or on-prem.",
+    title: "Secure data path",
+    body: "peer directly into your stack on AWS, GCP, Azure, Kubernetes, or bare metal.",
   },
   {
-    title: "Launch fast",
-    body: "first instance live the same day, billed by the second.",
+    title: "Quick to spin up",
+    body: "nodes can come online within the day, metered by the second.",
   },
 ] as const;
 
-const TRUST = ["Reply within hours", "No lock-in", "No hidden fees"] as const;
+const TRUST = ["Fast human reply", "Cancel anytime", "Transparent pricing"] as const;
 
 export default function BuyComputePage(): ReactElement {
   return (
     <div className={styles.page}>
       <section className={styles.compliance}>
         <p className={styles.complianceLabel}>
-          Enterprise-grade security &amp; compliance
+          Built to enterprise security standards
         </p>
         <div className={styles.badgeRow}>
           {COMPLIANCE.map((item) => (
@@ -54,14 +54,14 @@ export default function BuyComputePage(): ReactElement {
         <div className={styles.intro}>
           <p className={styles.eyebrow}>Get started</p>
           <h1 className={styles.heading}>
-            Tell us what
+            Describe your
             <br />
-            you&apos;re running.
+            workload.
           </h1>
           <p className={styles.description}>
-            We&apos;ll match your workload to live capacity and wire the private
-            link to your data. A real engineer replies — usually within a few
-            hours.
+            Share a few details and we&apos;ll pair your job with available
+            capacity and a secure path to your data. Expect a reply from an
+            actual engineer, often the same day.
           </p>
 
           <div className={styles.features}>
