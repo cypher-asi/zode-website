@@ -851,40 +851,35 @@ export const SECTIONS: readonly SectionContent[] = [
       companies: [
         {
           name: "ZERO",
-          description:
-            "ZERO is a secure, private messenger for an agentic world, pairing end-to-end encrypted communication with the identity and infrastructure people need to own their data.",
+          description: "A secure messenger.",
           url: { label: "zero.tech", href: "https://zero.tech" },
           x: { label: "@zero_app", href: "https://x.com/zero_app" },
           year: "2017",
         },
         {
           name: "WILDER WORLD",
-          description:
-            "Wilder World is an AI-powered virtual simulation, a photorealistic, living world owned by its community and built on open, decentralized rails.",
+          description: "A virtual simulation.",
           url: { label: "wilderworld.com", href: "https://wilderworld.com" },
           x: { label: "@wilderworld", href: "https://x.com/wilderworld" },
           year: "2021",
         },
         {
           name: "Z CHAIN",
-          description:
-            "Z Chain is a blazing-fast blockchain built for autonomous systems, delivering verifiable, high-throughput settlement so agents can transact and coordinate without a central authority.",
+          description: "A blazing-fast blockchain.",
           url: { label: "zchain.org", href: "https://zchain.org" },
           x: { label: "@zchain_org", href: "https://x.com/zchain_org" },
           year: "2023",
         },
         {
           name: "AURA",
-          description:
-            "AURA is an agentic coding system that plans, writes, tests, and ships software end to end, operating as a sovereign engineering workforce that compounds with every task.",
+          description: "An agentic coding system.",
           url: { label: "aura.ai", href: "https://aura.ai" },
           x: { label: "@aura_asi", href: "https://x.com/aura_asi" },
           year: "2024",
         },
         {
           name: "ZODE",
-          description:
-            "ZODE is a micro-data center for AI, compact, energy-aware compute infrastructure that brings sovereign training and inference closer to where it is needed.",
+          description: "A micro-data center.",
           url: { label: "thegrid.host", href: "https://thegrid.host" },
           x: { label: "@zode_org", href: "https://x.com/zode_org" },
           year: "2026",
