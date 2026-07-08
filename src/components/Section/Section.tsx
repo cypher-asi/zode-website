@@ -118,15 +118,15 @@ export function Section({ section }: { section: SectionContent }): ReactElement 
         id={section.id}
         ariaLabel={section.label}
         middle={
-          <div className={styles.cabinStage}>
-            <LazyCabinScene matchPageBackground />
-          </div>
-        }
-        bottom={
-          <div className={styles.cabinCaption}>
-            <h2 className={styles.featureTitle}>{section.title}</h2>
-            <p className={styles.featureLede}>{section.lede}</p>
-            <Citations items={section.citations} />
+          <div className={styles.cabinBlock}>
+            <div className={styles.cabinStage}>
+              <LazyCabinScene matchPageBackground />
+            </div>
+            <div className={styles.cabinCaption}>
+              <h2 className={styles.featureTitle}>{section.title}</h2>
+              <p className={styles.featureLede}>{section.lede}</p>
+              <Citations items={section.citations} />
+            </div>
           </div>
         }
       />

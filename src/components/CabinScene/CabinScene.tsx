@@ -235,7 +235,12 @@ export function CabinScene({
       if (w === 0 || h === 0) return;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setSize(w, h, false);
+      // updateStyle must stay on (the default): it sets the canvas CSS size to
+      // the container's CSS pixels while the drawing buffer scales by
+      // devicePixelRatio. Passing `false` leaves the canvas with no CSS size, so
+      // on high-DPI screens (phones/retina) it falls back to its buffer size
+      // (w * DPR) and overflows the viewport, pushing the model off-screen.
+      renderer.setSize(w, h);
       // LineMaterial needs the viewport size to size screen-space line widths.
       matStruct.resolution.set(w, h);
       matDetail.resolution.set(w, h);

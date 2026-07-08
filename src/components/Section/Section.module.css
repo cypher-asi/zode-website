@@ -153,14 +153,22 @@
 }
 
 /*
- * Model variant: the interactive 3D scene is the centered middle band (full
- * width, large) so it sits with equal flexible space above and below it, and
- * the title/lede caption drops into the slide's bottom band.
+ * Model variant: the interactive 3D scene and its caption form one centered
+ * block in the slide's middle band, so the title/lede sits directly beneath the
+ * model with a controlled gap instead of drifting to the bottom of the panel.
  */
+.cabinBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(16px, 3vh, 32px);
+  width: 100%;
+}
+
 .cabinStage {
   position: relative;
   width: 100%;
-  height: clamp(340px, 58vh, 700px);
+  height: clamp(300px, 52vh, 620px);
 }
 
 .cabinCaption {

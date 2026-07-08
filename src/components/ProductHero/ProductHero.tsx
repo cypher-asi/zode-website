@@ -7,13 +7,21 @@ import styles from "./ProductHero.module.css";
 // The hero cycles through these clips, hard-cutting to the next every
 // CLIP_DURATION_MS, then loops back to the first. To swap a clip, drop the
 // file into public/videos/ and update the matching entry below.
+//
+// Clips are web-optimized H.264 MP4 (1080p, faststart, no audio). H.264 is
+// chosen deliberately: HEVC/H.265 does not decode in Chromium on Linux
+// (Brave/Chrome) or in Firefox, which was the original "videos don't load"
+// bug. Keep any replacement in H.264 MP4 (or add a matching WebM source).
 const CLIPS = [
-  "/videos/hero-1.mp4",
-  "/videos/magnific_have-camera-panning-from-sky-looking-down-over-lan_seedance_4K_4-3_24fps_11052.mp4",
-  "/videos/magnific_start-further-out-and-very-slowly-zoom-in-on-build_seedance_4K_4-3_24fps_11050.mp4",
-  "/videos/magnific_have-camera-panning-from-sky-looking-down-over-lan_seedance_4K_4-3_24fps_67532.mp4",
-  "/videos/magnific_have-camera-panning-left-to-right-over-scene-slowl_seedance_4K_4-3_24fps_53330.mp4",
+  "/videos/clip-1.mp4",
+  "/videos/clip-2.mp4",
+  "/videos/clip-3.mp4",
+  "/videos/clip-4.mp4",
+  "/videos/clip-5.mp4",
 ];
+
+/** Shown instantly (and as a decode fallback) while the first clip buffers. */
+const POSTER = "/videos/hero-poster.jpg";
 
 const CLIP_DURATION_MS = 2500;
 
@@ -46,10 +54,18 @@ export function ProductHero(): ReactElement {
 
   // Reveal the hero as soon as the first clip can play, but never block on it:
   // a fallback timer guarantees the intro runs even if `canplay` is missed or
-  // already fired before mount (e.g. a cached video).
+  // already fired before mount (e.g. a cached video), or if decoding fails
+  // entirely (the poster still paints under the copy).
   useEffect(() => {
     const id = window.setTimeout(() => setReady(true), 1200);
     return () => window.clearTimeout(id);
+  }, []);
+
+  // Kick off buffering explicitly on mount. Some browsers (notably Safari)
+  // won't reliably begin fetching muted, autoplay-less <video> elements until
+  // load() is called, which previously left the hero stuck on a blank frame.
+  useEffect(() => {
+    videoRefs.current.forEach((video) => video?.load());
   }, []);
 
   // The clip fade only applies to the first reveal; once it completes, drop
@@ -107,14 +123,16 @@ export function ProductHero(): ReactElement {
             videoRefs.current[index] = el;
           }}
           className={`${styles.video} ${introDone ? "" : styles.fadeable} ${ready && index === active ? styles.active : ""}`}
-          src={src}
           muted
           loop
           playsInline
           preload="auto"
+          poster={POSTER}
           aria-hidden="true"
           onCanPlay={index === 0 ? () => setReady(true) : undefined}
-        />
+        >
+          <source src={src} type="video/mp4" />
+        </video>
       ))}
       <div
         className={`${styles.scrim} ${typingDone ? styles.revealed : ""}`}

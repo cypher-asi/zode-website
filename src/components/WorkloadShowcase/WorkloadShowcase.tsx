@@ -48,7 +48,7 @@ export function WorkloadShowcase(): ReactElement {
               workload on THE GRID.
             </p>
             <Link className={styles.cta} href="/buy-compute">
-              Use Cases
+              Buy Compute
               <Arrow />
             </Link>
           </div>
