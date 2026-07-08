@@ -4,12 +4,12 @@ import styles from "./ProductCTA.module.css";
 
 /**
  * Closing call-to-action band for the Product page: a full-bleed cabin photo
- * with top-aligned centered copy and a single estimate button. Rendered as the
+ * with top-aligned centered copy and a single buy-compute button. Rendered as the
  * last page child so it sits between the specs section and the site footer.
  */
 export function ProductCTA(): ReactElement {
   return (
-    <section className={styles.cta} aria-label="Get a ZODE One estimate">
+    <section className={styles.cta} aria-label="Buy compute for ZODE One">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className={styles.image}
@@ -20,8 +20,8 @@ export function ProductCTA(): ReactElement {
       <div className={styles.copy}>
         <h2 className={styles.title}>ZODE One</h2>
         <p className={styles.subtitle}>Deploy your site today.</p>
-        <Link className={styles.button} href="#">
-          Get an Estimate
+        <Link className={styles.button} href="/buy-compute">
+          Buy Compute
         </Link>
       </div>
     </section>

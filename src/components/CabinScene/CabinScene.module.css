@@ -14,7 +14,10 @@
   height: 100%;
   background: #2b2b2b;
   cursor: grab;
-  touch-action: none;
+  /* Allow vertical page scroll on touch devices; horizontal drags still
+   * rotate the model. OrbitControls forces `touch-action: none` inline on the
+   * canvas, so CabinScene overrides that to `pan-y` at runtime. */
+  touch-action: pan-y;
   overflow: hidden;
 }
 
@@ -37,9 +40,14 @@
   background: var(--color-bg);
 }
 
-/* Static (non-interactive) scenes: no grab affordance. */
+/* Static (non-interactive) scenes: no grab affordance, and fully transparent
+ * to pointer/touch input so the page scrolls normally when a swipe starts on
+ * the model. `pointer-events: none` cascades to the canvas, overriding the
+ * `touch-action: none` OrbitControls sets inline. */
 .static {
   cursor: default;
+  touch-action: auto;
+  pointer-events: none;
 }
 
 .static:active {

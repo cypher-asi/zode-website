@@ -216,6 +216,16 @@ export function CabinScene({
     controls.target.set(0, isometric ? 12 : 15, 0);
     controls.update();
 
+    // OrbitControls sets `touch-action: none` on the canvas in its constructor,
+    // which swallows vertical scroll on touch devices and traps the user on the
+    // slide. Allow vertical panning (page scroll) so mobile users can scroll
+    // past the model; horizontal single-finger drags still rotate it. Static
+    // scenes are fully non-interactive (pointer-events: none via CSS), so no
+    // override is needed there.
+    if (interactive) {
+      renderer.domElement.style.touchAction = "pan-y";
+    }
+
     const onWheelCapture = (event: WheelEvent) => {
       controls.enableZoom = event.ctrlKey;
     };

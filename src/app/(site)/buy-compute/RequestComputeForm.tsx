@@ -2,6 +2,8 @@
 
 import { useState, type FormEvent, type ReactElement } from "react";
 import Link from "next/link";
+import { buildMailto, openMailDraft } from "@/lib/mailto";
+import { SubmittedPanel } from "./SubmittedPanel";
 import styles from "./page.module.css";
 
 const RECIPIENT = "hello@zode.org";
@@ -38,26 +40,40 @@ export function RequestComputeForm(): ReactElement {
   const [spend, setSpend] = useState("");
   const [start, setStart] = useState("");
   const [workload, setWorkload] = useState("");
+  const [mailtoUrl, setMailtoUrl] = useState("");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
 
-    const subject = `Compute request — ${company || name}`;
-    const body = [
-      `Name: ${name}`,
-      `Work email: ${email}`,
-      `Company: ${company}`,
-      `GPUs needed: ${gpus}`,
-      `Monthly compute spend: ${spend}`,
-      `Start: ${start}`,
-      ``,
-      `What they're running:`,
-      workload,
-    ].join("\n");
+    const url = buildMailto({
+      recipient: RECIPIENT,
+      subject: `Compute request — ${company || name}`,
+      bodyLines: [
+        `Name: ${name}`,
+        `Work email: ${email}`,
+        `Company: ${company}`,
+        `GPUs needed: ${gpus}`,
+        `Monthly compute spend: ${spend}`,
+        `Start: ${start}`,
+        ``,
+        `What they're running:`,
+        workload || "(not provided)",
+      ],
+    });
 
-    window.location.href = `mailto:${RECIPIENT}?subject=${encodeURIComponent(
-      subject,
-    )}&body=${encodeURIComponent(body)}`;
+    setMailtoUrl(url);
+    openMailDraft(url);
+  }
+
+  if (mailtoUrl) {
+    return (
+      <div className={styles.card}>
+        <SubmittedPanel
+          mailtoUrl={mailtoUrl}
+          onReset={() => setMailtoUrl("")}
+        />
+      </div>
+    );
   }
 
   return (
