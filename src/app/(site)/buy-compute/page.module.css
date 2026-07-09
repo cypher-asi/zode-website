@@ -295,6 +295,28 @@
   outline-offset: 2px;
 }
 
+.submit:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* Honeypot: visually and programmatically hidden, but still submittable by
+ * bots that ignore CSS. Pinned off-screen and untabbable rather than
+ * display:none, which some bots skip. */
+.honeypot {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Post-submit confirmation / fallback */
 .confirmation {
   display: flex;
