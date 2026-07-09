@@ -2,35 +2,19 @@
 
 import { useState, type FormEvent, type ReactElement } from "react";
 import Link from "next/link";
-import { buildMailto, openMailDraft } from "@/lib/mailto";
+import {
+  BUY_GPU_OPTIONS,
+  BUY_SPEND_OPTIONS,
+  BUY_START_OPTIONS,
+  HONEYPOT_FIELD,
+  buildMailtoUrl,
+} from "@/lib/leads";
+import { postLead } from "@/lib/leads-submit";
+import { openMailDraft } from "@/lib/mailto";
 import { SubmittedPanel } from "./SubmittedPanel";
 import styles from "./page.module.css";
 
-const RECIPIENT = "hello@zode.org";
-
-const GPU_OPTIONS = [
-  "1 - 8 GPUs",
-  "8 - 32 GPUs",
-  "32 - 128 GPUs",
-  "128 - 512 GPUs",
-  "512+ GPUs",
-] as const;
-
-const SPEND_OPTIONS = [
-  "Under $10k / mo",
-  "$10k - $50k / mo",
-  "$50k - $250k / mo",
-  "$250k - $1M / mo",
-  "$1M+ / mo",
-] as const;
-
-const START_OPTIONS = [
-  "Immediately",
-  "Within a week",
-  "This month",
-  "This quarter",
-  "Just exploring",
-] as const;
+type Status = "idle" | "submitting" | "success" | "fallback";
 
 export function RequestComputeForm(): ReactElement {
   const [name, setName] = useState("");
@@ -40,38 +24,52 @@ export function RequestComputeForm(): ReactElement {
   const [spend, setSpend] = useState("");
   const [start, setStart] = useState("");
   const [workload, setWorkload] = useState("");
+  const [honeypot, setHoneypot] = useState("");
+  const [status, setStatus] = useState<Status>("idle");
   const [mailtoUrl, setMailtoUrl] = useState("");
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>): void {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
+    if (status === "submitting") return;
+    setStatus("submitting");
 
-    const url = buildMailto({
-      recipient: RECIPIENT,
-      subject: `Compute request — ${company || name}`,
-      bodyLines: [
-        `Name: ${name}`,
-        `Work email: ${email}`,
-        `Company: ${company}`,
-        `GPUs needed: ${gpus}`,
-        `Monthly compute spend: ${spend}`,
-        `Start: ${start}`,
-        ``,
-        `What they're running:`,
-        workload || "(not provided)",
-      ],
-    });
+    const values = { name, email, company, gpus, spend, start, workload };
+    const ok = await postLead({ type: "buy", ...values, [HONEYPOT_FIELD]: honeypot });
 
+    if (ok) {
+      setStatus("success");
+      return;
+    }
+
+    // Capture failed — hand the lead to a pre-filled mail draft so it still
+    // reaches a human, then show the draft/fallback panel.
+    const url = buildMailtoUrl("buy", values);
     setMailtoUrl(url);
     openMailDraft(url);
+    setStatus("fallback");
   }
 
-  if (mailtoUrl) {
+  if (status === "success") {
     return (
       <div className={styles.card}>
-        <SubmittedPanel
-          mailtoUrl={mailtoUrl}
-          onReset={() => setMailtoUrl("")}
-        />
+        <div className={styles.confirmation}>
+          <span className={styles.confirmationIcon} aria-hidden="true">
+            <BigCheckIcon />
+          </span>
+          <h2 className={styles.confirmationTitle}>Request received</h2>
+          <p className={styles.confirmationText}>
+            Thanks — an engineer will reply to your email, usually within a few
+            hours.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "fallback") {
+    return (
+      <div className={styles.card}>
+        <SubmittedPanel mailtoUrl={mailtoUrl} onReset={() => setStatus("idle")} />
       </div>
     );
   }
@@ -87,6 +85,18 @@ export function RequestComputeForm(): ReactElement {
       </div>
 
       <form className={styles.form} onSubmit={handleSubmit}>
+        {/* Honeypot: hidden from users, catches bots. Never rendered visibly. */}
+        <input
+          type="text"
+          name={HONEYPOT_FIELD}
+          className={styles.honeypot}
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+        />
+
         <div className={styles.grid}>
           <div className={styles.field}>
             <label className={styles.label} htmlFor="name">
@@ -152,7 +162,7 @@ export function RequestComputeForm(): ReactElement {
               <option value="" disabled>
                 Select…
               </option>
-              {GPU_OPTIONS.map((option) => (
+              {BUY_GPU_OPTIONS.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
@@ -175,7 +185,7 @@ export function RequestComputeForm(): ReactElement {
               <option value="" disabled>
                 Select…
               </option>
-              {SPEND_OPTIONS.map((option) => (
+              {BUY_SPEND_OPTIONS.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
@@ -198,7 +208,7 @@ export function RequestComputeForm(): ReactElement {
               <option value="" disabled>
                 Select…
               </option>
-              {START_OPTIONS.map((option) => (
+              {BUY_START_OPTIONS.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
@@ -221,8 +231,14 @@ export function RequestComputeForm(): ReactElement {
           </div>
         </div>
 
-        <button type="submit" className={styles.submit}>
-          Request Compute <span aria-hidden="true">→</span>
+        <button type="submit" className={styles.submit} disabled={status === "submitting"}>
+          {status === "submitting" ? (
+            "Sending…"
+          ) : (
+            <>
+              Request Compute <span aria-hidden="true">→</span>
+            </>
+          )}
         </button>
 
         <p className={styles.disclaimer}>
@@ -246,6 +262,24 @@ function CheckIcon(): ReactElement {
     <svg
       width="14"
       height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
+function BigCheckIcon(): ReactElement {
+  return (
+    <svg
+      width="28"
+      height="28"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
