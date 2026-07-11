@@ -5,6 +5,7 @@ import { BottomTaskbar } from "@/components/BottomTaskbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { OverlayScrollbar } from "@/components/OverlayScrollbar";
 import { ScrollReset } from "@/components/ScrollReset";
+import { ShellTouchScroll } from "@/components/ShellTouchScroll";
 import { isAuthenticated } from "@/lib/session";
 import styles from "./SiteShell.module.css";
 
@@ -20,7 +21,7 @@ export default async function SiteLayout({
   }
 
   return (
-    <div className={styles.shell}>
+    <div className={styles.shell} data-shell-root="">
       <SiteNav />
       <div className={styles.body} data-shell-body="">
         <div id={SITE_SCROLL_ID} className={styles.scroll}>
@@ -29,6 +30,7 @@ export default async function SiteLayout({
         </div>
         <ScrollReset targetId={SITE_SCROLL_ID} />
         <OverlayScrollbar targetId={SITE_SCROLL_ID} />
+        <ShellTouchScroll scrollTargetId={SITE_SCROLL_ID} />
       </div>
       <BottomTaskbar />
     </div>

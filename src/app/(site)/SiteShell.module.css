@@ -24,6 +24,8 @@
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
+  /* Keep edge overscroll from chaining into an iOS page/body bounce. */
+  overscroll-behavior: contain;
   /* Native bar hidden; OverlayScrollbar draws a floating custom one. */
   scrollbar-width: none;
 }

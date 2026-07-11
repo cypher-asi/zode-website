@@ -136,6 +136,7 @@ export function OverlayScrollbar({
     <div
       ref={trackRef}
       className={`${styles.track}${visible && scrollable ? ` ${styles.visible}` : ""}`}
+      data-overlay-scrollbar=""
       aria-hidden="true"
     >
       <div ref={thumbRef} className={styles.thumb} />
