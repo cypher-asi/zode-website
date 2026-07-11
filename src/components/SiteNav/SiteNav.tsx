@@ -3,6 +3,7 @@
 import { useId, useState, type ReactElement } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { INVEST_ENABLED } from "@/lib/flags";
 import styles from "./SiteNav.module.css";
 
 interface NavLink {
@@ -10,10 +11,12 @@ interface NavLink {
   readonly label: string;
 }
 
+// `/invest` is hidden from the nav while the investor page is flagged off
+// (the route itself 404s). Flip INVEST_ENABLED to surface it again.
 const NAV_LINKS: readonly NavLink[] = [
   { href: "/", label: "Product" },
   { href: "/network", label: "Network" },
-  { href: "/invest", label: "Invest" },
+  ...(INVEST_ENABLED ? [{ href: "/invest", label: "Invest" }] : []),
 ];
 
 function isActive(pathname: string, href: string): boolean {

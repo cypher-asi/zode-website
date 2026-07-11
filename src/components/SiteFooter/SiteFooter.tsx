@@ -3,6 +3,7 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { INVEST_ENABLED } from "@/lib/flags";
 import styles from "./SiteFooter.module.css";
 
 // Scroll containers used by the two shells the footer renders inside:
@@ -54,13 +55,18 @@ const COLUMNS: readonly FooterColumn[] = [
       },
     ],
   },
-  {
-    heading: "Invest",
-    links: [
-      { label: "Learn More", href: "/invest" },
-      { label: "Contact", href: "/contact" },
-    ],
-  },
+  // The investor column is hidden while the /invest page is flagged off.
+  ...(INVEST_ENABLED
+    ? [
+        {
+          heading: "Invest",
+          links: [
+            { label: "Learn More", href: "/invest" },
+            { label: "Contact", href: "/contact" },
+          ],
+        },
+      ]
+    : []),
   {
     heading: "Compute",
     links: [
