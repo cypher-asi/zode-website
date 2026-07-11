@@ -25,7 +25,7 @@ interface OuterShellProps {
  */
 export function OuterShell({ children, sections, coverId }: OuterShellProps): ReactElement {
   return (
-    <div className={styles.shell}>
+    <div className={styles.shell} data-shell-root="">
       <SiteNav />
       <div className={styles.body} data-shell-body="">
 

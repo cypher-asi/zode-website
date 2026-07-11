@@ -32,6 +32,12 @@ export function DeckController({ scrollRootId, slideCount }: DeckControllerProps
     const root = document.getElementById(scrollRootId);
     if (!root) return;
 
+    // Touch listeners live on the whole shell frame (nav, taskbar, panel
+    // margins), not just the inner scroll container, so a swipe that starts
+    // anywhere on the page still drives the deck. All scroll math stays on
+    // `root`; wheel/keyboard stay scoped to the scroll container.
+    const touchSurface: HTMLElement = root.closest<HTMLElement>("[data-shell-root]") ?? root;
+
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     let locked = false;
@@ -202,17 +208,17 @@ export function DeckController({ scrollRootId, slideCount }: DeckControllerProps
 
     root.addEventListener("wheel", onWheel, { passive: false });
     window.addEventListener("keydown", onKeyDown);
-    root.addEventListener("touchstart", onTouchStart, { passive: true });
-    root.addEventListener("touchmove", onTouchMove, { passive: false });
-    root.addEventListener("touchend", onTouchEnd);
+    touchSurface.addEventListener("touchstart", onTouchStart, { passive: true });
+    touchSurface.addEventListener("touchmove", onTouchMove, { passive: false });
+    touchSurface.addEventListener("touchend", onTouchEnd);
     root.addEventListener("scrollend", onScrollEnd);
 
     return () => {
       root.removeEventListener("wheel", onWheel);
       window.removeEventListener("keydown", onKeyDown);
-      root.removeEventListener("touchstart", onTouchStart);
-      root.removeEventListener("touchmove", onTouchMove);
-      root.removeEventListener("touchend", onTouchEnd);
+      touchSurface.removeEventListener("touchstart", onTouchStart);
+      touchSurface.removeEventListener("touchmove", onTouchMove);
+      touchSurface.removeEventListener("touchend", onTouchEnd);
       root.removeEventListener("scrollend", onScrollEnd);
       if (lockTimer !== null) clearTimeout(lockTimer);
       if (idleTimer !== null) clearTimeout(idleTimer);
