@@ -11,12 +11,13 @@ interface NavLink {
   readonly label: string;
 }
 
-// `/invest` is hidden from the nav while the investor page is flagged off
-// (the route itself 404s). Flip INVEST_ENABLED to surface it again.
+// The "Invest" entry is hidden from the nav while INVEST_ENABLED is false.
+// The deck itself always lives publicly at /deck; the flag only gates this
+// discovery link. Flip INVEST_ENABLED to surface it again.
 const NAV_LINKS: readonly NavLink[] = [
   { href: "/", label: "Product" },
   { href: "/network", label: "Network" },
-  ...(INVEST_ENABLED ? [{ href: "/invest", label: "Invest" }] : []),
+  ...(INVEST_ENABLED ? [{ href: "/deck", label: "Invest" }] : []),
 ];
 
 function isActive(pathname: string, href: string): boolean {

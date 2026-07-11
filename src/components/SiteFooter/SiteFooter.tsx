@@ -7,7 +7,7 @@ import { INVEST_ENABLED } from "@/lib/flags";
 import styles from "./SiteFooter.module.css";
 
 // Scroll containers used by the two shells the footer renders inside:
-// the (site) layout and the invest OuterShell.
+// the (site) layout and the /deck OuterShell.
 const SCROLL_ROOT_IDS = ["site-scroll", "grid-scroll"] as const;
 
 // When a footer link points at the page we're already on, the route won't
@@ -55,13 +55,14 @@ const COLUMNS: readonly FooterColumn[] = [
       },
     ],
   },
-  // The investor column is hidden while the /invest page is flagged off.
+  // The investor column is hidden while INVEST_ENABLED is false; the deck
+  // still lives publicly at /deck, the flag only gates this discovery link.
   ...(INVEST_ENABLED
     ? [
         {
           heading: "Invest",
           links: [
-            { label: "Learn More", href: "/invest" },
+            { label: "Learn More", href: "/deck" },
             { label: "Contact", href: "/contact" },
           ],
         },
