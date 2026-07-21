@@ -16,6 +16,7 @@ interface NavLink {
 // discovery link. Flip INVEST_ENABLED to surface it again.
 const NAV_LINKS: readonly NavLink[] = [
   { href: "/", label: "Product" },
+  { href: "/deployments", label: "Deployments" },
   { href: "/network", label: "Network" },
   ...(INVEST_ENABLED ? [{ href: "/deck", label: "Invest" }] : []),
 ];

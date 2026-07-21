@@ -45,6 +45,10 @@ const COLUMNS: readonly FooterColumn[] = [
     links: [{ label: "Overview", href: "/" }],
   },
   {
+    heading: "Deployments",
+    links: [{ label: "Overview", href: "/deployments" }],
+  },
+  {
     heading: "Network",
     links: [
       { label: "THE GRID", href: "/network" },
