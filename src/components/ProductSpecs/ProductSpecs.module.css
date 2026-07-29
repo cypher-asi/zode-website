@@ -124,26 +124,6 @@
   transform: translateY(-50%);
 }
 
-/* --- Warranty link + footnote --- */
-.link {
-  display: inline-block;
-  margin-top: clamp(10px, 1.6vh, 16px);
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text-primary);
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-
-.link:hover {
-  color: var(--color-accent);
-}
-
-.link:focus-visible {
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: 2px;
-}
-
 .footnote {
   margin: clamp(16px, 2.4vh, 24px) 0 0;
   font-size: 14px;

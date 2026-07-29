@@ -122,9 +122,6 @@ export function ProductSpecs(): ReactElement {
               <SpecCell key={item.label} item={item} />
             ))}
           </dl>
-          <a className={styles.link} href="/warranty">
-            See Details
-          </a>
         </div>
 
         <p className={styles.footnote}>

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import { themeInitScript } from "@/lib/theme/theme-script";
+import { SITE_URL } from "@/lib/site";
 import { ShellBackdrop } from "@/components/ShellBackdrop";
 import "./globals.css";
 
@@ -16,10 +17,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "ZODE",
   description:
     "ZODE — the connective layer for a decentralized, secure compute network.",
-  robots: { index: false, follow: false },
+  openGraph: {
+    title: "ZODE",
+    description:
+      "ZODE — the connective layer for a decentralized, secure compute network.",
+    url: SITE_URL,
+    siteName: "ZODE",
+    type: "website",
+  },
 };
 
 export const viewport: Viewport = {
