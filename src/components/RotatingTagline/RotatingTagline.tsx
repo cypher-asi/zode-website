@@ -5,7 +5,7 @@ import styles from "./RotatingTagline.module.css";
 
 const ROTATE_MS = 2500;
 
-const TAGLINES = ["Decentralized.", "Secure.", "Private.", "Open Source."] as const;
+const TAGLINES = ["Distributed.", "Secure.", "Private.", "Open Source."] as const;
 
 /**
  * Decorative chrome text in the bottom taskbar that cycles the value

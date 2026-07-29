@@ -20,11 +20,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "ZODE",
   description:
-    "ZODE — the connective layer for a decentralized, secure compute network.",
+    "ZODE — the connective layer for a distributed, secure compute network.",
   openGraph: {
     title: "ZODE",
     description:
-      "ZODE — the connective layer for a decentralized, secure compute network.",
+      "ZODE — the connective layer for a distributed, secure compute network.",
     url: SITE_URL,
     siteName: "ZODE",
     type: "website",

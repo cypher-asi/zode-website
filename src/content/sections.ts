@@ -399,7 +399,7 @@ export const SECTIONS: readonly SectionContent[] = [
     body: [
       "Centralized AI concentrates wealth in the hands of the few.",
       "Super intelligence risks totalitarian control of entire populations.",
-      "Decentralized and open source AI is necessary.",
+      "Distributed and open source AI is necessary.",
     ],
     chart: "open-source-growth",
     footnote: "Figures are approximate and illustrative.",
@@ -787,7 +787,7 @@ export const SECTIONS: readonly SectionContent[] = [
         values: [
           "Sovereignty",
           "Privacy",
-          "Decentralization",
+          "Distribution",
           "Censorship-Resistance",
           "Open Source",
         ],
