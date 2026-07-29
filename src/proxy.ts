@@ -37,5 +37,9 @@ export function proxy(request: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.svg$).*)"],
+  // `.well-known` stays public so security.txt is reachable even while the
+  // password gate is on.
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|\\.well-known|.*\\.svg$).*)",
+  ],
 };
