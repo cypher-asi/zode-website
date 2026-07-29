@@ -787,7 +787,7 @@ export const SECTIONS: readonly SectionContent[] = [
         values: [
           "Sovereignty",
           "Privacy",
-          "Distribution",
+          "Distributed",
           "Censorship-Resistance",
           "Open Source",
         ],
