@@ -21,10 +21,10 @@ interface TargetStat {
 }
 
 const TARGET_STATS: readonly TargetStat[] = [
-  { value: "9", unit: " ZODES", caption: "In Development" },
+  { value: "6", unit: " ZODES", caption: "In Development" },
   { value: "9", unit: " MW", caption: "Power" },
-  { value: "$225M", unit: "/yr", caption: "Revenue" },
-  { value: "46.96%", unit: " ARR", caption: "Target ROE" },
+  { value: "$150M", unit: "/yr", caption: "Revenue" },
+  { value: "56.35%", unit: "", caption: "Target Annual ROE" },
 ];
 
 interface Countdown {
@@ -95,7 +95,7 @@ export function Cover(): ReactElement {
           </div>
             <h1 className={styles.title}>Invest in ZODE SITE I</h1>
             <p className={styles.location}>
-              British Columbia, Canada &middot; 200+ acres &middot; 9 MW &middot; 4,230 GPUs
+              British Columbia, Canada &middot; 200+ acres &middot; 9 MW &middot; 4,320 GPUs
             </p>
         </header>
       }
@@ -119,7 +119,7 @@ export function Cover(): ReactElement {
           <aside className={styles.panel}>
             <div className={styles.raise}>
               <p className={styles.raiseLabel}>Raising</p>
-              <p className={styles.raiseValue}>$45M</p>
+              <p className={styles.raiseValue}>$5M</p>
             </div>
 
             <dl className={styles.meta}>

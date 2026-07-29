@@ -537,7 +537,7 @@ export const SECTIONS: readonly SectionContent[] = [
         {
           title: "Energy",
           bullets: [
-            "1 MW modular power draw",
+            "1.5 MW modular power draw",
             "Grid + backup hybrid",
             "PUE target under 1.2",
             "On-site battery buffer",
@@ -572,15 +572,11 @@ export const SECTIONS: readonly SectionContent[] = [
     body: [],
     scene: "ecosystem-network",
     companies: [
-      { name: "Anthropic", provider: "Anthropic" },
-      { name: "OpenAI", provider: "OpenAI" },
-      { name: "Gemini", provider: "Google" },
       { name: "DeepSeek", provider: "DeepSeek AI" },
       { name: "Kimi", provider: "Moonshot AI" },
       { name: "MiniMax", provider: "MiniMax" },
       { name: "GLM", provider: "Z.ai" },
       { name: "Qwen", provider: "Alibaba Cloud" },
-      { name: "Doubao", provider: "ByteDance" },
       { name: "Tripo", provider: "Tripo AI" },
     ],
     zodes: ["ZODE-01", "ZODE-02", "ZODE-03", "ZODE-04", "ZODE-05", "ZODE-06"],
@@ -686,8 +682,8 @@ export const SECTIONS: readonly SectionContent[] = [
             indent: true,
           },
           { label: "Total Financing", value: "$60,304,000.00", emphasis: true },
-          { label: "Investor profit", value: "$2,348,096.09", emphasis: true },
-          { label: "Annual ROE", value: "46.96%", muted: true },
+          { label: "Investor profit", value: "$2,817,715.20", emphasis: true },
+          { label: "Annual ROE", value: "56.35%", muted: true },
         ],
       },
       buildOut: {

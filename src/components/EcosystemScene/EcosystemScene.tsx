@@ -11,13 +11,9 @@ import {
   type RefObject,
 } from "react";
 import {
-  Anthropic,
-  ByteDance,
   DeepSeek,
-  Gemini,
   Minimax,
   Moonshot,
-  OpenAI,
   Qwen,
   Tripo,
   ZAI,
@@ -35,16 +31,12 @@ const LOGO_SIZE = 27;
  * mono variant so they inherit `currentColor` and read in both themes.
  */
 const PROVIDER_LOGOS: Record<string, ReactNode> = {
-  Anthropic: <Anthropic size={LOGO_SIZE} />,
-  OpenAI: <OpenAI size={LOGO_SIZE} />,
   "DeepSeek AI": <DeepSeek size={LOGO_SIZE} />,
   "Moonshot AI": <Moonshot size={LOGO_SIZE} />,
   MiniMax: <Minimax size={LOGO_SIZE} />,
   "Z.ai": <ZAI size={LOGO_SIZE} />,
   "Alibaba Cloud": <Qwen size={LOGO_SIZE} />,
-  Google: <Gemini size={LOGO_SIZE} />,
   "Tripo AI": <Tripo size={LOGO_SIZE} />,
-  ByteDance: <ByteDance size={LOGO_SIZE} />,
 };
 
 interface Point {
@@ -355,15 +347,11 @@ function randomAddress(): string {
 }
 
 const DEFAULT_COMPANIES = [
-  { name: "Anthropic", provider: "Anthropic" },
-  { name: "OpenAI", provider: "OpenAI" },
-  { name: "Gemini", provider: "Google" },
   { name: "DeepSeek", provider: "DeepSeek AI" },
   { name: "Kimi", provider: "Moonshot AI" },
   { name: "MiniMax", provider: "MiniMax" },
   { name: "GLM", provider: "Z.ai" },
   { name: "Qwen", provider: "Alibaba Cloud" },
-  { name: "Doubao", provider: "ByteDance" },
   { name: "Tripo", provider: "Tripo AI" },
 ] as const;
 
@@ -555,9 +543,9 @@ export function EcosystemScene({
           activeIndex={activeCompany}
         />
 
-        {/* Left: providers that need compute */}
-        <section className={styles.panel} aria-label="Demand">
-          <p className={styles.panelLabel}>Demand</p>
+        {/* Left: open-source model providers that need compute */}
+        <section className={styles.panel} aria-label="Models">
+          <p className={styles.panelLabel}>Models</p>
           <ul className={styles.companyList}>
             {companies.map((company, index) => (
               <li
