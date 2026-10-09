@@ -43,12 +43,25 @@
   background: linear-gradient(0deg, var(--off-black) 0%, rgba(12, 12, 13, 0.8) 45%, rgba(12, 12, 13, 0) 100%);
 }
 
+/* Left-edge fade behind the vertically centered heading. */
+.sideFade {
+  position: absolute;
+  top: 0;
+  bottom: var(--bar-height, 52px);
+  left: 0;
+  z-index: 1;
+  width: min(620px, 50%);
+  background: linear-gradient(90deg, var(--off-black) 0%, rgba(12, 12, 13, 0.75) 45%, rgba(12, 12, 13, 0) 100%);
+  pointer-events: none;
+}
+
 .intro {
   position: absolute;
-  top: 48px;
+  top: calc((100% - var(--bar-height, 52px)) / 2);
   left: var(--edge);
   z-index: 2;
   max-width: 520px;
+  transform: translateY(-50%);
   pointer-events: none;
 }
 
@@ -61,12 +74,14 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
+/* Same display type as the hero headline and the stack section title. */
 .title {
-  margin: 12px 0 0;
-  font-size: clamp(24px, 2.4vw, 36px);
-  font-weight: 600;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  margin: 16px 0 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(32px, 3.6vw, 56px);
+  font-weight: 300;
+  line-height: 1.06;
+  letter-spacing: -0.025em;
   color: var(--off-white);
 }
 
@@ -283,9 +298,19 @@
 }
 
 @media (max-width: 900px) {
+  .root::before {
+    height: 240px;
+  }
+
+  .sideFade {
+    display: none;
+  }
+
+  /* Too narrow for a side heading: sit top-left, below the pinned wordmark. */
   .intro {
-    top: 28px;
+    top: 72px;
     right: var(--edge);
+    transform: none;
   }
 
   .callout {

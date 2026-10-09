@@ -50,20 +50,6 @@
   color: var(--off-white);
 }
 
-.brand {
-  position: absolute;
-  top: 32px;
-  left: var(--edge);
-  display: inline-flex;
-}
-
-.wordmark {
-  display: block;
-  height: 22px;
-  width: auto;
-  filter: invert(1);
-}
-
 .copy {
   max-width: 560px;
 }
@@ -178,14 +164,6 @@
 
   .left {
     padding: 120px var(--edge) calc(var(--bar-height) + 48px);
-  }
-
-  .brand {
-    top: 24px;
-  }
-
-  .wordmark {
-    height: 18px;
   }
 
   .headline {

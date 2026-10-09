@@ -49,6 +49,8 @@ export function AssemblyLine(): ReactElement {
     <div ref={hostRef} className={styles.root}>
       {inView ? <AssemblyScene onStep={onStep} onTick={onTick} seek={seek} /> : null}
 
+      <div className={styles.sideFade} aria-hidden="true" />
+
       <header className={styles.intro}>
         <p className={styles.eyebrow}>Assembly line</p>
         <h2 className={styles.title}>

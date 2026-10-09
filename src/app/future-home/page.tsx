@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isAuthenticated } from "@/lib/session";
 import { AssemblyLine } from "./assembly/AssemblyLine";
+import { PinnedBrand } from "./PinnedBrand";
 import { FullStack } from "./stack/FullStack";
 import { WordLoop } from "./WordLoop";
 import { ZodeGallery } from "./ZodeGallery";
@@ -39,13 +40,10 @@ export default async function FutureHome() {
 
   return (
     <main className={`${styles.page} ${display.variable} ${text.variable}`}>
-      <div className={styles.hero}>
-        <section className={styles.left}>
-          <Link className={styles.brand} href="/" aria-label="ZODE — home">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className={styles.wordmark} src="/wordmark.png" alt="" aria-hidden="true" />
-          </Link>
+      <PinnedBrand />
 
+      <div className={styles.hero}>
+        <section className={styles.left} data-surface="light">
           <div className={styles.copy}>
             <h1 className={styles.headline}>
               <span className={styles.line}>Sovereign</span>{" "}
@@ -79,16 +77,21 @@ export default async function FutureHome() {
           </div>
         </section>
 
-        <section className={styles.right} aria-label="ZODE gallery">
+        <section className={styles.right} aria-label="ZODE gallery" data-surface="dark">
           <ZodeGallery />
         </section>
       </div>
 
-      <section id="learn-more" className={styles.assembly} aria-label="How a ZODE is built">
+      <section
+        id="learn-more"
+        className={styles.assembly}
+        aria-label="How a ZODE is built"
+        data-surface="dark"
+      >
         <AssemblyLine />
       </section>
 
-      <section className={styles.stack} aria-label="The ZODE stack">
+      <section className={styles.stack} aria-label="The ZODE stack" data-surface="light">
         <FullStack />
       </section>
     </main>
