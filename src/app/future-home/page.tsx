@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isAuthenticated } from "@/lib/session";
 import { AssemblyLine } from "./assembly/AssemblyLine";
+import { Features } from "./features/Features";
 import { PinnedBrand } from "./PinnedBrand";
 import { FullStack } from "./stack/FullStack";
 import { WordLoop } from "./WordLoop";
@@ -93,6 +94,10 @@ export default async function FutureHome() {
 
       <section className={styles.stack} aria-label="The ZODE stack" data-surface="light">
         <FullStack />
+      </section>
+
+      <section className={styles.features} aria-label="Why ZODE" data-surface="light">
+        <Features />
       </section>
     </main>
   );

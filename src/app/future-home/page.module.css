@@ -34,6 +34,12 @@
   color: var(--off-black);
 }
 
+/* White features grid below the stack (see features/). */
+.features {
+  background: #ffffff;
+  color: var(--off-black);
+}
+
 .left {
   position: relative;
   display: flex;

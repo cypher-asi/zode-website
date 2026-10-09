@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactElement } from "react";
+import { Sketch as BaseSketch, backToFront, project, rng, type P3 } from "../lineart";
 import { LAYERS, type LayerId } from "./layers";
 import styles from "./FullStack.module.css";
 
@@ -17,83 +18,10 @@ export function labelY(index: number): number {
   return (index - MID) * GAP + 40;
 }
 
-type P3 = readonly [number, number, number?];
-
-const round = (n: number) => Math.round(n * 100) / 100;
-
-/** 2:1 dimetric projection; +z is up, +x/+y run toward the viewer's right/left. */
-function project([x, y, z = 0]: P3): [number, number] {
-  return [round(x - y), round((x + y) / 2 - z)];
-}
-
-const toPoints = (ps: readonly P3[]) => ps.map((p) => project(p).join(",")).join(" ");
-
-/** Deterministic PRNG so the server and client render identical geometry. */
-function rng(seed: number): () => number {
-  let a = seed;
-  return () => {
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/** Collects SVG elements in paint order. */
-class Sketch {
-  readonly items: ReactElement[] = [];
-
-  face(ps: readonly P3[], className: string): void {
-    this.items.push(<polygon key={this.items.length} className={className} points={toPoints(ps)} />);
-  }
-
-  line(ps: readonly P3[], className: string = styles.fine): void {
-    this.items.push(<polyline key={this.items.length} className={className} points={toPoints(ps)} />);
-  }
-
-  path(d: string, className: string = styles.fine): void {
-    this.items.push(<path key={this.items.length} className={className} d={d} />);
-  }
-
-  /** A circle of radius `r` lying flat at `p`. */
-  disc(p: P3, r: number, className: string): void {
-    const [cx, cy] = project(p);
-    const rx = round(r * Math.SQRT2);
-    this.items.push(
-      <ellipse key={this.items.length} className={className} cx={cx} cy={cy} rx={rx} ry={round(rx / 2)} />,
-    );
-  }
-
-  /** Axis-aligned box; only the three faces turned toward the viewer are drawn. */
-  box(x0: number, y0: number, w: number, d: number, z0: number, h: number): void {
-    const [x1, y1, z1] = [x0 + w, y0 + d, z0 + h];
-    this.face(
-      [
-        [x1, y0, z0],
-        [x1, y1, z0],
-        [x1, y1, z1],
-        [x1, y0, z1],
-      ],
-      styles.sideR,
-    );
-    this.face(
-      [
-        [x0, y1, z0],
-        [x1, y1, z0],
-        [x1, y1, z1],
-        [x0, y1, z1],
-      ],
-      styles.sideL,
-    );
-    this.face(
-      [
-        [x0, y0, z1],
-        [x1, y0, z1],
-        [x1, y1, z1],
-        [x0, y1, z1],
-      ],
-      styles.top,
-    );
+/** A `Sketch` that knows the plate size shared by every layer. */
+class Sketch extends BaseSketch {
+  constructor() {
+    super(styles);
   }
 
   slab(thickness: number): void {
@@ -113,8 +41,6 @@ class Sketch {
     );
   }
 }
-
-const backToFront = <T extends { x: number; y: number }>(a: T, b: T) => a.x + a.y - (b.x + b.y);
 
 function network(s: Sketch): void {
   s.slab(PLATE);
