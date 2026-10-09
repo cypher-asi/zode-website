@@ -1,0 +1,202 @@
+/*
+ * Fixed off-white/black split, independent of the site theme. Opaque
+ * panels cover the animated ShellBackdrop rendered by the root layout. `--edge`
+ * is the shared horizontal inset (logo, headline, and word loop all align to
+ * it) and `--bar-height` keeps the bottom boxes on both halves the same height
+ * so they read as one strip; ZodeGallery.module.css inherits all of these.
+ */
+.page {
+  --off-white: #f6f6f3;
+  --off-black: #0c0c0d;
+  --edge: clamp(32px, 6vw, 96px);
+  --bar-height: 52px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* Full-viewport assembly-line scene below the hero (see assembly/). */
+.assembly {
+  position: relative;
+  height: 100dvh;
+  min-height: 560px;
+  background: var(--off-black);
+  color: var(--off-white);
+}
+
+/* Light exploded-stack section below the assembly line (see stack/). */
+.stack {
+  background: var(--off-white);
+  color: var(--off-black);
+}
+
+.left {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 96px var(--edge) calc(var(--bar-height) + 48px);
+  background: var(--off-white);
+  color: var(--off-black);
+}
+
+.right {
+  position: relative;
+  min-height: 0;
+  background: #000000;
+  color: var(--off-white);
+}
+
+.brand {
+  position: absolute;
+  top: 32px;
+  left: var(--edge);
+  display: inline-flex;
+}
+
+.wordmark {
+  display: block;
+  height: 22px;
+  width: auto;
+  filter: invert(1);
+}
+
+.copy {
+  max-width: 560px;
+}
+
+.headline {
+  margin: 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(36px, 4.2vw, 68px);
+  font-weight: 300;
+  line-height: 1.06;
+  letter-spacing: -0.025em;
+}
+
+.line {
+  display: block;
+}
+
+.helper {
+  margin: 20px 0 0;
+  font-family: var(--font-text), system-ui, sans-serif;
+  font-size: clamp(15px, 1.15vw, 18px);
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  color: #85858a;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  margin-top: 36px;
+}
+
+.primary {
+  display: inline-flex;
+  align-items: center;
+  height: 46px;
+  padding: 0 24px;
+  border-radius: 999px;
+  background: var(--off-black);
+  color: var(--off-white);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 160ms ease;
+}
+
+.primary:hover {
+  background: #2a2a2e;
+}
+
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--off-black);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.arrow {
+  width: 16px;
+  height: 16px;
+  transition: transform 160ms ease;
+}
+
+.secondary:hover .arrow {
+  transform: translateY(3px);
+}
+
+.primary:focus-visible,
+.secondary:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+
+.bar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  height: var(--bar-height);
+  padding: 0 var(--edge);
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--off-black);
+}
+
+@media (max-width: 900px) {
+  .page {
+    --edge: 24px;
+    --bar-height: 48px;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(420px, 1fr);
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .left {
+    padding: 120px var(--edge) calc(var(--bar-height) + 48px);
+  }
+
+  .brand {
+    top: 24px;
+  }
+
+  .wordmark {
+    height: 18px;
+  }
+
+  .headline {
+    font-size: clamp(34px, 9vw, 52px);
+  }
+
+  .helper {
+    white-space: normal;
+  }
+
+  .right {
+    min-height: 110vw;
+  }
+}
