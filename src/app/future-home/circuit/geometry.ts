@@ -30,44 +30,51 @@ export interface Trace {
   readonly rotate?: number;
 }
 
-/** A junction pad centered on pixel (`x`, `y`) that lights up `at` ms into each cycle. */
+/** A junction pad centered on pixel (`x`, `y`); `node` names the junction it sits on. */
 export interface Pad {
   readonly x: number;
   readonly y: number;
   readonly tone: Tone;
-  readonly at: number;
+  readonly node: string;
+}
+
+/** Page rows `top` to `bottom` in which a pulse is drawn in `tone`. */
+export interface Band {
+  readonly tone: Tone;
+  readonly top: number;
+  readonly bottom: number;
 }
 
 /**
- * A path a pulse runs along, entering at `start` ms into each cycle. The pulse
- * is only drawn between page rows `clipTop` and `clipBottom`, so a rail's
- * pulse is split into one copy per surface it crosses, each in that surface's
- * tone, and switches color exactly at the boundary.
+ * One directed stretch of trace between two junctions that a pulse can run
+ * along. The pulse is drawn once per band, each clipped to its rows, so on a
+ * rail it switches color exactly where it crosses into another surface.
+ * `top`/`bottom` bound the stretch vertically, for on-screen checks.
  */
-export interface Route {
+export interface Edge {
   readonly d: string;
   readonly length: number;
-  readonly start: number;
-  readonly tone: Tone;
-  readonly clipTop: number;
-  readonly clipBottom: number;
+  readonly from: string;
+  readonly to: string;
+  readonly top: number;
+  readonly bottom: number;
+  readonly bands: readonly Band[];
 }
 
 export interface Circuit {
   readonly height: number;
   readonly traces: readonly Trace[];
+  readonly corners: readonly Corner[];
   readonly pads: readonly Pad[];
-  readonly routes: readonly Route[];
-  /** Length of one full pulse cycle, rest included, in ms. */
-  readonly cycle: number;
+  readonly edges: readonly Edge[];
 }
 
 /** Pulse speed in px per ms. */
-export const PULSE_SPEED = 1.4;
+export const PULSE_SPEED = 1.2;
 /** Length of the glowing pulse in px. */
 export const PULSE_LENGTH = 64;
-/** Pause after the last pulse lands before the next cycle starts, in ms. */
-const REST = 2500;
+
+const node = (x: number, y: number) => `${x},${y}`;
 
 function toneAt(surfaces: readonly Surface[], x: number, y: number): Tone {
   const hit = surfaces.find((s) => x >= s.left && x < s.right && y >= s.top && y < s.bottom);
@@ -109,9 +116,8 @@ function rail(
  * the boundary on the risen side. The first rises on the left, so the hero
  * split runs straight into the jog's upper corner.
  *
- * A pulse leaves the top of each rail (and of the hero split) at once and runs
- * down; as it passes each seam a pair of pulses leaves both rails and meets in
- * the middle of the jog.
+ * Pulses run along `edges`: rails downward between junctions, and each seam
+ * in both directions as two stretches meeting at the jog's left corner.
  */
 export function buildCircuit(
   width: number,
@@ -138,9 +144,11 @@ export function buildCircuit(
     across.find((seam) => seam.at === y)?.[side] ?? y;
 
   const crossingTone = (y: number) => toneAt(surfaces, left, y);
+  const leftRail = rail(surfaces, left, bottom, liftOn("left"));
+  const rightRail = rail(surfaces, right, bottom, liftOn("right"));
   const traces: Trace[] = [
-    ...rail(surfaces, left, bottom, liftOn("left")),
-    ...rail(surfaces, right, bottom, liftOn("right")),
+    ...leftRail,
+    ...rightRail,
     ...across.flatMap((seam) => {
       const tone = crossingTone(seam.at);
       return [
@@ -159,88 +167,102 @@ export function buildCircuit(
     { x: left, y: bottom, width: right - left + 1, height: 1, tone: crossingTone(bottom) },
   ];
 
+  const pad = (x: number, y: number, tone: Tone): Pad => ({ x, y, tone, node: node(x, y) });
   const pads: Pad[] = [
     ...across.flatMap((seam) => {
       const tone = crossingTone(seam.at);
-      return [
-        { x: left, y: seam.left, tone, at: seam.left / PULSE_SPEED },
-        { x: right, y: seam.right, tone, at: seam.right / PULSE_SPEED },
-      ];
+      return [pad(left, seam.left, tone), pad(right, seam.right, tone)];
     }),
-    { x: left, y: bottom, tone: crossingTone(bottom), at: bottom / PULSE_SPEED },
-    { x: right, y: bottom, tone: crossingTone(bottom), at: bottom / PULSE_SPEED },
+    pad(left, bottom, crossingTone(bottom)),
+    pad(right, bottom, crossingTone(bottom)),
   ];
 
-  const railRoutes = (x: number, lift: (y: number) => number): Route[] =>
-    rail(surfaces, x, bottom, lift).map((segment) => ({
-      d: `M${x + 0.5} 0V${bottom + 0.5}`,
-      length: bottom,
-      start: 0,
-      tone: segment.tone,
-      clipTop: segment.y,
-      clipBottom: segment.y + segment.height,
-    }));
-  const half = (rise / 2) * Math.SQRT2;
-  const meetX = jog + rise / 2;
-  const routes: Route[] = [
-    ...railRoutes(left, liftOn("left")),
-    ...railRoutes(right, liftOn("right")),
-    ...across.flatMap((seam) => {
-      const tone = crossingTone(seam.at);
-      const meetY = (seam.left + seam.right) / 2 + 0.5;
-      return [
-        {
-          d: `M${left + 0.5} ${seam.left + 0.5}H${jog}L${meetX} ${meetY}`,
-          length: jog - left - 0.5 + half,
-          start: seam.left / PULSE_SPEED,
-          tone,
-          clipTop: 0,
-          clipBottom: height,
-        },
-        {
-          d: `M${right + 0.5} ${seam.right + 0.5}H${jog + rise}L${meetX} ${meetY}`,
-          length: right + 0.5 - jog - rise + half,
-          start: seam.right / PULSE_SPEED,
-          tone,
-          clipTop: 0,
-          clipBottom: height,
-        },
-      ];
-    }),
-    ...[left, right].map((x) => ({
-      d: `M${x + 0.5} ${bottom + 0.5}H${width / 2}`,
-      length: Math.abs(width / 2 - x - 0.5),
-      start: bottom / PULSE_SPEED,
-      tone: crossingTone(bottom),
-      clipTop: 0,
-      clipBottom: height,
-    })),
-  ];
+  const edges: Edge[] = [];
+  const page = (tone: Tone): Band[] => [{ tone, top: 0, bottom: height }];
+  /** Adds the stretch from `a` to `b` and, given `back`, the reverse too. */
+  const link = (
+    a: string,
+    b: string,
+    d: string,
+    back: string | null,
+    length: number,
+    top: number,
+    bottom: number,
+    bands: readonly Band[],
+  ) => {
+    edges.push({ d, length, from: a, to: b, top, bottom, bands });
+    if (back) edges.push({ d: back, length, from: b, to: a, top, bottom, bands });
+  };
+
+  for (const [x, segments, side] of [
+    [left, leftRail, "left"],
+    [right, rightRail, "right"],
+  ] as const) {
+    const stops = [0, ...across.map((seam) => seam[side]), bottom];
+    for (let i = 1; i < stops.length; i++) {
+      const [a, b] = [stops[i - 1], stops[i]];
+      // Include the surface above so the pulse's trailing tail still shows past the junction.
+      const bands = segments
+        .filter((s) => s.y < b && s.y + s.height > a - PULSE_LENGTH)
+        .map((s) => ({ tone: s.tone, top: s.y, bottom: s.y + s.height }));
+      link(node(x, a), node(x, b), `M${x + 0.5} ${a + 0.5}V${b + 0.5}`, null, b - a, a, b, bands);
+    }
+  }
+
+  for (const seam of across) {
+    const bands = page(crossingTone(seam.at));
+    const corner = node(jog, seam.left);
+    const [l, r] = [seam.left + 0.5, seam.right + 0.5];
+    link(
+      node(left, seam.left),
+      corner,
+      `M${left + 0.5} ${l}H${jog}`,
+      `M${jog} ${l}H${left + 0.5}`,
+      jog - left - 0.5,
+      seam.left,
+      seam.left,
+      bands,
+    );
+    link(
+      corner,
+      node(right, seam.right),
+      `M${jog} ${l}L${jog + rise} ${r}H${right + 0.5}`,
+      `M${right + 0.5} ${r}H${jog + rise}L${jog} ${l}`,
+      rise * Math.SQRT2 + right + 0.5 - jog - rise,
+      Math.min(seam.left, seam.right),
+      Math.max(seam.left, seam.right),
+      bands,
+    );
+  }
+
+  link(
+    node(left, bottom),
+    node(right, bottom),
+    `M${left + 0.5} ${bottom + 0.5}H${right + 0.5}`,
+    `M${right + 0.5} ${bottom + 0.5}H${left + 0.5}`,
+    right - left,
+    bottom,
+    bottom,
+    page(crossingTone(bottom)),
+  );
 
   if (hero) {
     const { x, top, height: h } = hero;
     const jogTop = top + h / 2 - step / 2;
     const landing = across.find((seam) => seam.at === Math.round(top + h));
     const end = landing ? landing.left : top + h;
-    const length = end - top - step + step * Math.SQRT2;
-    routes.push({
-      d: `M${x} ${top}V${jogTop}L${x - step} ${jogTop + step}V${end}`,
-      length,
-      start: top / PULSE_SPEED,
-      tone: toneAt(surfaces, x - step - 1, top),
-      clipTop: 0,
-      clipBottom: height,
-    });
-    if (landing) {
-      pads.push({
-        x: jog,
-        y: end,
-        tone: crossingTone(landing.at),
-        at: (top + length) / PULSE_SPEED,
-      });
-    }
+    if (landing) pads.push(pad(jog, end, crossingTone(landing.at)));
+    link(
+      node(Math.round(x), Math.round(top)),
+      landing ? node(jog, end) : node(Math.round(x - step), Math.round(end)),
+      `M${x} ${top}V${jogTop}L${x - step} ${jogTop + step}V${end}`,
+      null,
+      end - top - step + step * Math.SQRT2,
+      top,
+      end,
+      page(toneAt(surfaces, x - step - 1, top)),
+    );
   }
 
-  const lastLanding = Math.max(...routes.map((r) => r.start + r.length / PULSE_SPEED));
-  return { height, traces, pads, routes, cycle: lastLanding + REST };
+  return { height, traces, pads, edges };
 }
