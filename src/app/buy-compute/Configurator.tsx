@@ -28,7 +28,7 @@ const STEPS = [
     id: "compute",
     title: "Compute",
     heading: "Compute Platform",
-    lede: "Pick the GPU platform and how many nodes to deploy.",
+    lede: "Pick how many nodes to deploy and the GPU platform.",
     focus: { pod: "compute", zone: "racks" },
   },
   {
@@ -100,14 +100,6 @@ export function Configurator(): ReactElement {
 
                 {current.id === "compute" ? (
                   <>
-                    <ChoiceGroup
-                      legend="GPU platform"
-                      choices={PLATFORMS}
-                      value={config.platform}
-                      onChange={(platform) => update({ platform })}
-                      onPreview={setPreview}
-                    />
-                    <IncludedCard legend="Cooling" choice={COOLING} onPreview={setPreview} />
                     <NodeStepper value={config.nodes} onChange={(nodes) => update({ nodes })} />
                     <Readouts
                       items={[
@@ -123,6 +115,14 @@ export function Configurator(): ReactElement {
                         },
                       ]}
                     />
+                    <ChoiceGroup
+                      legend="GPU platform"
+                      choices={PLATFORMS}
+                      value={config.platform}
+                      onChange={(platform) => update({ platform })}
+                      onPreview={setPreview}
+                    />
+                    <IncludedCard legend="Cooling" choice={COOLING} onPreview={setPreview} />
                   </>
                 ) : null}
 
