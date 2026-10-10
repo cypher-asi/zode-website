@@ -163,11 +163,18 @@ export function Configurator(): ReactElement {
             disabled={step === 0}
             onClick={() => goTo(step - 1)}
           >
+            <Arrow direction="back" />
             Back
           </button>
           {step < STEPS.length - 1 ? (
-            <button type="button" className={styles.primary} onClick={() => goTo(step + 1)}>
-              Continue to {STEPS[step + 1].title}
+            <button
+              type="button"
+              className={styles.primary}
+              aria-label={`Next: ${STEPS[step + 1].title}`}
+              onClick={() => goTo(step + 1)}
+            >
+              Next
+              <Arrow direction="next" />
             </button>
           ) : null}
         </nav>
@@ -183,5 +190,13 @@ export function Configurator(): ReactElement {
 
       <PriceBar quote={quote} summary={summarize(config)} />
     </div>
+  );
+}
+
+function Arrow({ direction }: { direction: "back" | "next" }): ReactElement {
+  return (
+    <svg className={styles.arrow} viewBox="0 0 12 10" aria-hidden="true">
+      <path d={direction === "next" ? "M1 5h10M7 1l4 4-4 4" : "M11 5H1M5 1L1 5l4 4"} />
+    </svg>
   );
 }

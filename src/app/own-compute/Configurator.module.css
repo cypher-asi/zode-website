@@ -116,6 +116,9 @@
 
 .primary,
 .secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   height: 40px;
   padding: 0 18px;
   border: 1px solid var(--off-black);
@@ -152,6 +155,25 @@
 .secondary:disabled {
   opacity: 0.35;
   cursor: not-allowed;
+}
+
+.arrow {
+  width: 12px;
+  height: 10px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: translate 160ms ease;
+}
+
+.primary:hover:not(:disabled) .arrow {
+  translate: 2px 0;
+}
+
+.secondary:hover:not(:disabled) .arrow {
+  translate: -2px 0;
 }
 
 .primary:focus-visible,
