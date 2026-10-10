@@ -12,16 +12,29 @@
   height: 100dvh;
 }
 
-.panel {
+/* Positioned parent the overlay scrollbar draws into. */
+.panelFrame {
+  position: relative;
   grid-area: panel;
+  min-height: 0;
+  border-right: 1px solid #e6e6e2;
+}
+
+/* Native bar hidden so steps that scroll keep the same width as ones that don't; OverlayScrollbar floats over it. */
+.panel {
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  height: 100%;
   padding: 0 var(--edge);
   overflow-y: auto;
   overscroll-behavior: contain;
-  border-right: 1px solid #e6e6e2;
   background: #ffffff;
+  scrollbar-width: none;
+}
+
+.panel::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 /* Solid band under the pinned wordmark that scrolled steps slide beneath. */
@@ -67,6 +80,10 @@
 .step {
   flex: 1;
   padding-top: 28px;
+}
+
+/* Remounted per step so each one fades in; `.step` stays put for the overlay scrollbar's resize observer. */
+.stepBody {
   animation: step 280ms ease both;
 }
 
@@ -201,10 +218,14 @@
     min-height: 100dvh;
   }
 
+  .panelFrame {
+    border-right: 0;
+  }
+
   .panel {
+    height: auto;
     padding-top: 32px;
     overflow: visible;
-    border-right: 0;
   }
 
   .panel::before {
@@ -228,7 +249,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .step {
+  .stepBody {
     animation: none;
   }
 }

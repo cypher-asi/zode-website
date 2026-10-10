@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState, type ReactElement } from "react";
+import { OverlayScrollbar } from "@/components/OverlayScrollbar";
 import {
   ASSUMPTIONS,
   COOLING,
@@ -19,6 +20,8 @@ import { PriceBar } from "./PriceBar";
 import { ChoiceGroup, IncludedCard, NodeStepper, Readouts, RedundancyList, StepTabs } from "./StepPanel";
 import { ZodePreview } from "./ZodePreview";
 import styles from "./Configurator.module.css";
+
+const PANEL_ID = "own-compute-steps";
 
 const STEPS = [
   {
@@ -74,115 +77,126 @@ export function Configurator(): ReactElement {
 
   return (
     <div className={styles.root}>
-      <section ref={bodyRef} className={styles.panel} data-surface="light" aria-label="Configure your ZODE">
-        <header className={styles.intro}>
-          <h1 className={styles.heading}>Build your ZODE</h1>
-          <p className={styles.lede}>Own a sovereign AI cluster. Pricing updates as you configure.</p>
-        </header>
+      <div className={styles.panelFrame}>
+        <section
+          ref={bodyRef}
+          id={PANEL_ID}
+          className={styles.panel}
+          data-surface="light"
+          aria-label="Configure your ZODE"
+        >
+          <header className={styles.intro}>
+            <h1 className={styles.heading}>Build your ZODE</h1>
+            <p className={styles.lede}>Own a sovereign AI cluster. Pricing updates as you configure.</p>
+          </header>
 
-        <StepTabs steps={STEPS} active={step} onSelect={goTo} />
+          <StepTabs steps={STEPS} active={step} onSelect={goTo} />
 
-        <div key={current.id} className={styles.step}>
-          <h2 className={styles.stepHeading}>
-            <span className={styles.stepNo}>Step {step + 1}</span>
-            {current.heading}
-          </h2>
-          <p className={styles.stepLede}>{current.lede}</p>
+          <div className={styles.step}>
+            <div key={current.id} className={styles.stepBody}>
+              <h2 className={styles.stepHeading}>
+                <span className={styles.stepNo}>Step {step + 1}</span>
+                {current.heading}
+              </h2>
+              <p className={styles.stepLede}>{current.lede}</p>
 
-          {current.id === "compute" ? (
-            <>
-              <ChoiceGroup
-                legend="GPU platform"
-                choices={PLATFORMS}
-                value={config.platform}
-                onChange={(platform) => update({ platform })}
-                onPreview={setPreview}
-              />
-              <IncludedCard legend="Cooling" choice={COOLING} onPreview={setPreview} />
-              <NodeStepper value={config.nodes} onChange={(nodes) => update({ nodes })} />
-              <Readouts
-                items={[
-                  {
-                    label: "GPUs",
-                    value: quote.gpus.toLocaleString("en-US"),
-                    detail: `${ASSUMPTIONS.gpusPerNode} per node`,
-                  },
-                  {
-                    label: "Power",
-                    value: `${quote.mw.toFixed(2)} MW`,
-                    detail: `Est. facility load, PUE ${ASSUMPTIONS.pue}`,
-                  },
-                ]}
-              />
-            </>
-          ) : null}
+              {current.id === "compute" ? (
+                <>
+                  <ChoiceGroup
+                    legend="GPU platform"
+                    choices={PLATFORMS}
+                    value={config.platform}
+                    onChange={(platform) => update({ platform })}
+                    onPreview={setPreview}
+                  />
+                  <IncludedCard legend="Cooling" choice={COOLING} onPreview={setPreview} />
+                  <NodeStepper value={config.nodes} onChange={(nodes) => update({ nodes })} />
+                  <Readouts
+                    items={[
+                      {
+                        label: "GPUs",
+                        value: quote.gpus.toLocaleString("en-US"),
+                        detail: `${ASSUMPTIONS.gpusPerNode} per node`,
+                      },
+                      {
+                        label: "Power",
+                        value: `${quote.mw.toFixed(2)} MW`,
+                        detail: `Est. facility load, PUE ${ASSUMPTIONS.pue}`,
+                      },
+                    ]}
+                  />
+                </>
+              ) : null}
 
-          {current.id === "workload" ? (
-            <>
-              <ChoiceGroup
-                legend="Primary workload"
-                choices={WORKLOADS}
-                value={config.workload}
-                onChange={(workload) => update({ workload })}
-                onPreview={setPreview}
-              />
-              <ChoiceGroup
-                legend="Deployment"
-                choices={DEPLOYMENTS}
-                value={config.deployment}
-                onChange={(deployment) => update({ deployment })}
-                onPreview={setPreview}
-              />
-            </>
-          ) : null}
+              {current.id === "workload" ? (
+                <>
+                  <ChoiceGroup
+                    legend="Primary workload"
+                    choices={WORKLOADS}
+                    value={config.workload}
+                    onChange={(workload) => update({ workload })}
+                    onPreview={setPreview}
+                  />
+                  <ChoiceGroup
+                    legend="Deployment"
+                    choices={DEPLOYMENTS}
+                    value={config.deployment}
+                    onChange={(deployment) => update({ deployment })}
+                    onPreview={setPreview}
+                  />
+                </>
+              ) : null}
 
-          {current.id === "networking" ? (
-            <ChoiceGroup
-              legend="GPU fabric"
-              choices={NETWORKS}
-              value={config.network}
-              onChange={(network) => update({ network })}
-              onPreview={setPreview}
-            />
-          ) : null}
+              {current.id === "networking" ? (
+                <ChoiceGroup
+                  legend="GPU fabric"
+                  choices={NETWORKS}
+                  value={config.network}
+                  onChange={(network) => update({ network })}
+                  onPreview={setPreview}
+                />
+              ) : null}
 
-          {current.id === "redundancy" ? (
-            <RedundancyList
-              choices={REDUNDANCY}
-              value={config.redundancy}
-              onChange={(redundancy) => update({ redundancy })}
-              onPreview={setPreview}
-            />
-          ) : null}
-        </div>
+              {current.id === "redundancy" ? (
+                <RedundancyList
+                  choices={REDUNDANCY}
+                  value={config.redundancy}
+                  onChange={(redundancy) => update({ redundancy })}
+                  onPreview={setPreview}
+                />
+              ) : null}
+            </div>
+          </div>
 
-        <nav className={styles.nav} aria-label="Step navigation">
-          <button
-            type="button"
-            className={styles.secondary}
-            disabled={step === 0}
-            onClick={() => goTo(step - 1)}
-          >
-            <Arrow direction="back" />
-            Back
-          </button>
-          {step < STEPS.length - 1 ? (
+          <nav className={styles.nav} aria-label="Step navigation">
             <button
               type="button"
-              className={styles.primary}
-              aria-label={`Next: ${STEPS[step + 1].title}`}
-              onClick={() => goTo(step + 1)}
+              className={styles.secondary}
+              disabled={step === 0}
+              onClick={() => goTo(step - 1)}
             >
-              Next
-              <Arrow direction="next" />
+              <Arrow direction="back" />
+              Back
             </button>
-          ) : null}
-        </nav>
+            {step < STEPS.length - 1 ? (
+              <button
+                type="button"
+                className={styles.primary}
+                aria-label={`Next: ${STEPS[step + 1].title}`}
+                onClick={() => goTo(step + 1)}
+              >
+                Next
+                <Arrow direction="next" />
+              </button>
+            ) : null}
+          </nav>
 
-        <p className={styles.disclaimer}>
-          All prices are placeholder estimates for planning, not a quote.
-        </p>
-      </section>
+          <p className={styles.disclaimer}>
+            All prices are placeholder estimates for planning, not a quote.
+          </p>
+        </section>
+        <OverlayScrollbar targetId={PANEL_ID} />
+      </div>
 
       <section className={styles.preview} data-surface="light" aria-label="ZODE preview">
         <ZodePreview focus={preview ?? current.focus} quote={quote} />
