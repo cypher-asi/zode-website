@@ -99,7 +99,7 @@ export function ChoiceGroup<Id extends string>({
               {choice.label}
               {choice.badge ? <span className={styles.badge}>{choice.badge}</span> : null}
             </span>
-            <span className={styles.cardDetail}>{choice.detail}</span>
+            {choice.detail ? <span className={styles.cardDetail}>{choice.detail}</span> : null}
             {choice.note ? <span className={styles.cardNote}>{choice.note}</span> : null}
           </label>
         ))}

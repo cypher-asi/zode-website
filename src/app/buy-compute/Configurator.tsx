@@ -7,6 +7,7 @@ import {
   COOLING,
   DEFAULT_CONFIG,
   DEPLOYMENTS,
+  LOCATIONS,
   NETWORKS,
   PLATFORMS,
   REDUNDANCY,
@@ -102,6 +103,14 @@ export function Configurator(): ReactElement {
                       ]}
                     />
                     <ChoiceGroup
+                      legend="Location"
+                      choices={LOCATIONS}
+                      value={config.location}
+                      onChange={(location) => update({ location })}
+                      onPreview={setPreview}
+                      inline
+                    />
+                    <ChoiceGroup
                       legend="GPU platform"
                       choices={PLATFORMS}
                       value={config.platform}
@@ -188,7 +197,7 @@ export function Configurator(): ReactElement {
 
       <section className={styles.preview} data-surface="light" aria-label="ZODE preview">
         <ZodePreview focus={preview ?? current.focus} quote={quote} />
-        <PriceBar quote={quote} summary={summarize(config)} />
+        <PriceBar quote={quote} summary={summarize(config, quote)} />
       </section>
     </div>
   );

@@ -15,7 +15,7 @@ export interface Focus {
 export interface Choice<Id extends string> {
   id: Id;
   label: string;
-  detail: string;
+  detail?: string;
   /** Shown on the right of the option card, e.g. "+$38k / node" or "Included". */
   note?: string;
   disabled?: boolean;
@@ -43,6 +43,7 @@ export const ASSUMPTIONS = {
 /** The only cluster sizes offered, in nodes: 64 doubling up. */
 export const NODE_SIZES = [64, 128, 256, 512, 1024] as const;
 
+export type LocationId = "usa" | "canada";
 export type PlatformId = "b300" | "vera-rubin";
 export type WorkloadId = "training" | "inference";
 export type DeploymentId = "bare-metal" | "virtualized";
@@ -59,6 +60,11 @@ export type RedundancyId =
   | "fuel";
 
 const RACKS: Focus = { pod: "compute", zone: "racks" };
+
+export const LOCATIONS: readonly Choice<LocationId>[] = [
+  { id: "usa", label: "USA" },
+  { id: "canada", label: "Canada" },
+];
 
 /** Price per node, by platform. */
 export const NODE_PRICE: Record<PlatformId, number> = {
@@ -221,6 +227,7 @@ export const REDUNDANCY: readonly RedundancyChoice[] = [
 ];
 
 export interface Config {
+  location: LocationId;
   platform: PlatformId;
   nodes: number;
   workload: WorkloadId;
@@ -230,6 +237,7 @@ export interface Config {
 }
 
 export const DEFAULT_CONFIG: Config = {
+  location: "usa",
   platform: "b300",
   nodes: 64,
   workload: "training",
@@ -332,15 +340,31 @@ export interface Stat {
   value: string;
 }
 
-/** The configured choices, one figure per step, for the price panel. */
-export function summarize(config: Config): Stat[] {
-  return [
-    { label: "Platform", value: label(PLATFORMS, config.platform).replace(/^NVIDIA /, "") },
-    { label: "Workload", value: label(WORKLOADS, config.workload) },
-    { label: "Deployment", value: label(DEPLOYMENTS, config.deployment) },
-    { label: "Network", value: label(NETWORKS, config.network) },
-    { label: "N+1 systems", value: `${activeRedundancy(config).length} of ${REDUNDANCY.length}` },
-  ];
+export interface Summary {
+  /** What was picked, by name. */
+  choices: Stat[];
+  /** What it adds up to, by count. */
+  cluster: Stat[];
+}
+
+/** The price panel's two rows of figures; both are five long so they share columns. */
+export function summarize(config: Config, quote: Quote): Summary {
+  return {
+    choices: [
+      { label: "Location", value: label(LOCATIONS, config.location) },
+      { label: "Platform", value: label(PLATFORMS, config.platform).replace(/^NVIDIA /, "") },
+      { label: "Workload", value: label(WORKLOADS, config.workload) },
+      { label: "Deployment", value: label(DEPLOYMENTS, config.deployment) },
+      { label: "Network", value: label(NETWORKS, config.network) },
+    ],
+    cluster: [
+      { label: "GPUs", value: quote.gpus.toLocaleString("en-US") },
+      { label: "Nodes", value: quote.nodes.toLocaleString("en-US") },
+      { label: quote.zodes === 1 ? "ZODE" : "ZODEs", value: String(quote.zodes) },
+      { label: "Est. power", value: `${quote.mw.toFixed(2)} MW` },
+      { label: "N+1 systems", value: `${activeRedundancy(config).length} of ${REDUNDANCY.length}` },
+    ],
+  };
 }
 
 const USD = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });

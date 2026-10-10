@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactElement } from "react";
-import { ASSUMPTIONS, usd, type Quote, type Stat } from "./config";
+import { ASSUMPTIONS, usd, type Quote, type Stat, type Summary } from "./config";
 import styles from "./PriceBar.module.css";
 
 const TWEEN_MS = 450;
@@ -55,7 +55,7 @@ function Stats({ label, stats, className }: { label: string; stats: Stat[]; clas
  * stays out of the panel until the chevron opens it, with the itemized
  * breakdown, above.
  */
-export function PriceBar({ quote, summary }: { quote: Quote; summary: Stat[] }): ReactElement {
+export function PriceBar({ quote, summary }: { quote: Quote; summary: Summary }): ReactElement {
   const monthly = useTweened(quote.monthly);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -95,17 +95,8 @@ export function PriceBar({ quote, summary }: { quote: Quote; summary: Stat[] }):
     <div ref={rootRef} className={styles.dock} data-surface="light">
       <div className={styles.bar}>
         <div className={styles.stats}>
-          <Stats label="Configuration" stats={summary} className={`${styles.statRow} ${styles.spec}`} />
-          <Stats
-            label="Cluster"
-            className={styles.statRow}
-            stats={[
-              { label: "GPUs", value: quote.gpus.toLocaleString("en-US") },
-              { label: "Nodes", value: quote.nodes.toLocaleString("en-US") },
-              { label: quote.zodes === 1 ? "ZODE" : "ZODEs", value: String(quote.zodes) },
-              { label: "Est. power", value: `${quote.mw.toFixed(2)} MW` },
-            ]}
-          />
+          <Stats label="Configuration" stats={summary.choices} className={`${styles.statRow} ${styles.spec}`} />
+          <Stats label="Cluster" stats={summary.cluster} className={styles.statRow} />
         </div>
 
         <div className={styles.figures} aria-live="polite">
