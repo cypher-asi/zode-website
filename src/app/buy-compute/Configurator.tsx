@@ -27,32 +27,24 @@ const STEPS = [
   {
     id: "compute",
     title: "Compute",
-    heading: "Compute Platform",
-    lede: "Pick how many nodes to deploy and the GPU platform.",
     focus: { pod: "compute", zone: "racks" },
   },
   {
     id: "workload",
     title: "Workload",
-    heading: "Workload",
-    lede: "Tune storage and the software layer to what you'll run.",
     focus: { pod: "compute", zone: "racks" },
   },
   {
     id: "networking",
     title: "Networking",
-    heading: "Networking",
-    lede: "The GPU fabric that ties every node together.",
     focus: { pod: "compute", zone: "spine" },
   },
   {
     id: "redundancy",
     title: "Redundancy",
-    heading: "Redundancy",
-    lede: "Add a spare (N+1) for any component you can't afford to lose.",
     focus: { pod: "electrical", zone: null },
   },
-] as const satisfies readonly { id: string; title: string; heading: string; lede: string; focus: Focus }[];
+] as const satisfies readonly { id: string; title: string; focus: Focus }[];
 
 /**
  * Build-your-own ZODE: the steps panel on the left edits one configuration,
@@ -92,9 +84,6 @@ export function Configurator(): ReactElement {
 
             <div className={styles.step}>
               <div key={current.id} className={styles.stepBody}>
-                <h2 className={styles.stepHeading}>{current.heading}</h2>
-                <p className={styles.stepLede}>{current.lede}</p>
-
                 {current.id === "compute" ? (
                   <>
                     <NodeStepper value={config.nodes} onChange={(nodes) => update({ nodes })} />

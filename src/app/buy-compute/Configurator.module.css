@@ -66,7 +66,7 @@
 }
 
 .intro {
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 .heading {
@@ -93,21 +93,6 @@
     opacity: 0;
     translate: 0 6px;
   }
-}
-
-.stepHeading {
-  margin: 0;
-  font-family: var(--font-display), Georgia, serif;
-  font-size: 24px;
-  font-weight: 400;
-  letter-spacing: -0.015em;
-}
-
-.stepLede {
-  margin: 6px 0 22px;
-  font-size: 13px;
-  line-height: 1.5;
-  color: #8a8a8f;
 }
 
 /* Fixed foot of the steps panel: the stage tabs above Back / Next. */
