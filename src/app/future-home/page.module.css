@@ -40,6 +40,12 @@
   color: var(--off-black);
 }
 
+/* Shared site footer, then the landscape band inset as a card (see footer/). */
+.footer {
+  padding: 0 clamp(6px, 0.8vw, 12px) clamp(6px, 0.8vw, 12px);
+  background: #000000;
+}
+
 .left {
   position: relative;
   display: flex;

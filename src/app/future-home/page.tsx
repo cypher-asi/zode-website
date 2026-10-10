@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { Inter, Newsreader } from "next/font/google";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { SiteFooter } from "@/components/SiteFooter";
 import { isAuthenticated } from "@/lib/session";
 import { AssemblyLine } from "./assembly/AssemblyLine";
 import { Features } from "./features/Features";
+import { FooterScene } from "./footer/FooterScene";
 import { PinnedBrand } from "./PinnedBrand";
 import { FullStack } from "./stack/FullStack";
 import { WordLoop } from "./WordLoop";
@@ -31,8 +33,8 @@ const text = Inter({
  * Candidate replacement for the home page: a full-viewport split with the
  * headline on a white panel and a clickable ZODE render gallery on a black
  * panel, followed by an autoplaying assembly-line build of a ZODE. Lives
- * outside the `(site)` group so it renders without the shared nav, footer,
- * and taskbar.
+ * outside the `(site)` group so it renders without the shared nav and
+ * taskbar; it closes with the shared footer over a rotating landscape band.
  */
 export default async function FutureHome() {
   if (!(await isAuthenticated())) {
@@ -99,6 +101,11 @@ export default async function FutureHome() {
       <section className={styles.features} aria-label="Why ZODE" data-surface="light">
         <Features />
       </section>
+
+      <div className={styles.footer} data-surface="dark">
+        <SiteFooter />
+        <FooterScene />
+      </div>
     </main>
   );
 }
