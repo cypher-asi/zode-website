@@ -52,11 +52,11 @@ export default async function FutureHome() {
               <span className={styles.line}>Sovereign</span>{" "}
               <span className={styles.line}>Super Intelligence</span>
             </h1>
-            <p className={styles.helper}>The fastest deployable compute infrastructure.</p>
             <TerminalMenu />
           </div>
 
           <div className={styles.bar}>
+            <p className={styles.helper}>The fastest deployable compute infrastructure.</p>
             <WordLoop />
           </div>
         </section>
