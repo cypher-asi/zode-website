@@ -5,9 +5,9 @@ import type { KeyboardEvent, ReactElement } from "react";
 import styles from "./TerminalMenu.module.css";
 
 const ACTIONS = [
-  { label: "Deploy Compute", href: "/deployments", cmd: "./deploy" },
-  { label: "Buy Compute", href: "/buy-compute", cmd: "./buy" },
-  { label: "Learn More", href: "#learn-more", cmd: "man zode" },
+  { label: "Deploy Compute", href: "/deployments" },
+  { label: "Buy Compute", href: "/buy-compute" },
+  { label: "Learn More", href: "#learn-more" },
 ];
 
 /** Moves focus between the menu's links with the arrow keys, wrapping at the ends. */
@@ -24,37 +24,25 @@ function onMenuKey(event: KeyboardEvent<HTMLElement>): void {
 }
 
 /**
- * Hero call-to-action styled as a terminal picker: a shell prompt over
- * numbered rows, with the hovered or focused row inverted and a blinking
- * block cursor after its label.
+ * Hero call-to-action styled as a terminal picker: the hovered or focused row
+ * gets a caret and a blinking block cursor.
  */
 export function TerminalMenu(): ReactElement {
   return (
     <nav className={styles.menu} aria-label="Get started" onKeyDown={onMenuKey}>
-      <p className={styles.prompt} aria-hidden="true">
-        zode@sovereign:~$ <span>select --action</span>
-      </p>
-      <ol className={styles.items}>
-        {ACTIONS.map((action, n) => (
+      <ul className={styles.items}>
+        {ACTIONS.map((action) => (
           <li key={action.href}>
             <Link className={styles.item} href={action.href}>
               <span className={styles.caret} aria-hidden="true">
                 &gt;
               </span>
-              <span className={styles.index} aria-hidden="true">
-                {String(n + 1).padStart(2, "0")}
-              </span>
-              <span className={styles.label}>
-                {action.label}
-                <span className={styles.cursor} aria-hidden="true" />
-              </span>
-              <span className={styles.cmd} aria-hidden="true">
-                {action.cmd}
-              </span>
+              {action.label}
+              <span className={styles.cursor} aria-hidden="true" />
             </Link>
           </li>
         ))}
-      </ol>
+      </ul>
     </nav>
   );
 }
