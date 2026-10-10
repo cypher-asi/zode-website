@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter, Newsreader } from "next/font/google";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SiteFooter } from "@/components/SiteFooter";
 import { isAuthenticated } from "@/lib/session";
@@ -9,6 +8,7 @@ import { Features } from "./features/Features";
 import { FooterScene } from "./footer/FooterScene";
 import { PinnedBrand } from "./PinnedBrand";
 import { FullStack } from "./stack/FullStack";
+import { TerminalMenu } from "./TerminalMenu";
 import { WordLoop } from "./WordLoop";
 import { ZodeGallery } from "./ZodeGallery";
 import styles from "./page.module.css";
@@ -53,26 +53,7 @@ export default async function FutureHome() {
               <span className={styles.line}>Super Intelligence</span>
             </h1>
             <p className={styles.helper}>The fastest deployable compute infrastructure.</p>
-            <div className={styles.actions}>
-              <Link className={styles.primary} href="/buy-compute">
-                Deploy Compute
-              </Link>
-              <a className={styles.secondary} href="#learn-more">
-                Learn more
-                <svg
-                  className={styles.arrow}
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M8 3v10M3.5 8.5 8 13l4.5-4.5" />
-                </svg>
-              </a>
-            </div>
+            <TerminalMenu />
           </div>
 
           <div className={styles.bar}>
