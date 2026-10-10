@@ -67,7 +67,7 @@ export const NODE_PRICE: Record<PlatformId, number> = {
 };
 
 export const PLATFORMS: readonly Choice<PlatformId>[] = [
-  { id: "b300", label: "NVIDIA B300", detail: "HGX B300 · 8 GPUs per node", note: "$425k / node", focus: RACKS },
+  { id: "b300", label: "NVIDIA B300", detail: "8 GPUs per node", note: "$425k / node", focus: RACKS },
   {
     id: "vera-rubin",
     label: "NVIDIA Vera Rubin",
