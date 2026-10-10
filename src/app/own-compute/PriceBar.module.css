@@ -1,0 +1,259 @@
+/* Bottom pricing bar across the configurator (see PriceBar.tsx). */
+
+.bar {
+  position: relative;
+  z-index: 5;
+  grid-area: bar;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 14px var(--edge);
+  border-top: 1px solid #e6e6e2;
+  background: #ffffff;
+}
+
+.summary {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.config {
+  overflow: hidden;
+  margin: 2px 0 0;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: #8a8a8f;
+}
+
+.figures {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.amount {
+  margin-right: -6px;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 22px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  animation: flash 1100ms ease;
+}
+
+.monthly {
+  font-size: 28px;
+}
+
+/* Remounted on every new value, so each change replays the flash. */
+@keyframes flash {
+  from {
+    background-color: rgba(240, 138, 60, 0.24);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+.unit {
+  font-size: 15px;
+  font-weight: 400;
+  color: #8a8a8f;
+}
+
+.caption {
+  font-size: 11px;
+  white-space: nowrap;
+  color: #8a8a8f;
+}
+
+.divider {
+  width: 1px;
+  height: 40px;
+  background: #e6e6e2;
+}
+
+.toggle {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid #d9d9d4;
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--off-black);
+  cursor: pointer;
+}
+
+.toggle:hover {
+  border-color: #a5a5a0;
+}
+
+.toggle:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.chevron {
+  width: 10px;
+  height: 6px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: rotate 200ms ease;
+}
+
+.toggle[aria-expanded="true"] .chevron {
+  rotate: 180deg;
+}
+
+.breakdown {
+  position: absolute;
+  right: var(--edge);
+  bottom: calc(100% + 8px);
+  width: min(400px, calc(100vw - 2 * var(--edge)));
+  padding: 18px 20px;
+  border: 1px solid #e0e0db;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 12px 40px rgba(12, 12, 13, 0.12);
+  animation: rise 200ms ease both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+
+.breakdownTitle {
+  margin: 0 0 12px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #8a8a8f;
+}
+
+.rows {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 13px;
+}
+
+.row dt {
+  display: flex;
+  flex-direction: column;
+}
+
+.row dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rowDetail {
+  font-size: 11px;
+  color: #8a8a8f;
+}
+
+.rowTotal {
+  padding-top: 10px;
+  border-top: 1px solid #e6e6e2;
+  font-weight: 500;
+}
+
+.fineprint {
+  margin: 14px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #8a8a8f;
+}
+
+@media (max-width: 1100px) {
+  .summary {
+    display: none;
+  }
+
+  .figures {
+    flex: 1;
+    justify-content: flex-end;
+  }
+}
+
+/* The page scrolls as a whole here, so the bar sticks to stay in reach. */
+@media (max-width: 900px) {
+  .bar {
+    position: sticky;
+    bottom: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .bar {
+    padding-block: 10px;
+  }
+
+  .figures {
+    gap: 14px;
+  }
+
+  .amount {
+    font-size: 17px;
+  }
+
+  .monthly {
+    font-size: 20px;
+  }
+
+  .unit {
+    font-size: 12px;
+  }
+
+  .caption {
+    font-size: 10px;
+  }
+
+  .terms {
+    display: none;
+  }
+
+  .divider {
+    height: 28px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .amount,
+  .breakdown {
+    animation: none;
+  }
+}

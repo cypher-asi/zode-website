@@ -1,0 +1,16 @@
+/*
+ * Fixed light palette, independent of the site theme. PinnedHeader and the
+ * configurator inherit `--edge`, `--button-radius` and the font variables.
+ */
+.page {
+  --off-white: #f6f6f3;
+  --off-black: #0c0c0d;
+  --edge: clamp(24px, 2.5vw, 40px);
+  --button-radius: 3px;
+
+  position: relative;
+  min-height: 100dvh;
+  background: #ffffff;
+  color: var(--off-black);
+  font-family: var(--font-text), system-ui, sans-serif;
+}

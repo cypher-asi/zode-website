@@ -1,0 +1,212 @@
+/*
+ * Steps panel on the left, drawing on the right, pricing bar across the
+ * bottom, all inside one viewport; the panel scrolls on its own.
+ */
+.root {
+  display: grid;
+  grid-template-columns: minmax(360px, 460px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "panel preview"
+    "bar bar";
+  height: 100dvh;
+}
+
+.panel {
+  grid-area: panel;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0 var(--edge);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-right: 1px solid #e6e6e2;
+  background: #ffffff;
+}
+
+/* Solid band under the pinned wordmark that scrolled steps slide beneath. */
+.panel::before {
+  content: "";
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  flex: none;
+  height: 92px;
+  margin-inline: calc(-1 * var(--edge));
+  background: linear-gradient(to bottom, #ffffff 72px, rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+
+.preview {
+  position: relative;
+  grid-area: preview;
+  min-height: 0;
+  background: var(--off-white);
+}
+
+.intro {
+  margin-bottom: 28px;
+}
+
+.heading {
+  margin: 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(30px, 2.4vw, 38px);
+  font-weight: 300;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+}
+
+.lede {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #8a8a8f;
+}
+
+.step {
+  flex: 1;
+  padding-top: 28px;
+  animation: step 280ms ease both;
+}
+
+@keyframes step {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+
+.stepHeading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 24px;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+}
+
+.stepNo {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: #8a8a8f;
+}
+
+.stepLede {
+  margin: 6px 0 22px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #8a8a8f;
+}
+
+.nav {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 14px 0;
+  border-top: 1px solid #ececea;
+  background: #ffffff;
+}
+
+.primary,
+.secondary {
+  height: 40px;
+  padding: 0 18px;
+  border: 1px solid var(--off-black);
+  border-radius: var(--button-radius);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    opacity 160ms ease;
+}
+
+.primary {
+  margin-left: auto;
+  background: var(--off-black);
+  color: #ffffff;
+}
+
+.primary:hover {
+  background: #2a2a2d;
+}
+
+.secondary {
+  background: #ffffff;
+  color: var(--off-black);
+}
+
+.secondary:hover {
+  background: var(--off-white);
+}
+
+.secondary:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.primary:focus-visible,
+.secondary:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.disclaimer {
+  margin: 0;
+  padding: 0 0 20px;
+  font-size: 11px;
+  color: #8a8a8f;
+}
+
+@media (max-width: 900px) {
+  .root {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      "preview"
+      "panel"
+      "bar";
+    height: auto;
+    min-height: 100dvh;
+  }
+
+  .panel {
+    padding-top: 32px;
+    overflow: visible;
+    border-right: 0;
+  }
+
+  .panel::before {
+    display: none;
+  }
+
+  /* The page scrolls as a whole here, so the band sits behind the pinned header instead. */
+  .root::before {
+    content: "";
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 4;
+    height: 76px;
+    background: linear-gradient(to bottom, var(--off-white) 56px, rgba(246, 246, 243, 0));
+    pointer-events: none;
+  }
+
+  .nav {
+    position: static;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step {
+    animation: none;
+  }
+}

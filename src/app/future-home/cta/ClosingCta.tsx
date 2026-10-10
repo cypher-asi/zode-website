@@ -4,7 +4,7 @@ import styles from "./ClosingCta.module.css";
 
 const ACTIONS: readonly TerminalMenuItem[] = [
   { id: "rent", label: "Rent Compute", href: "/buy-compute" },
-  { id: "own", label: "Own Compute", href: "/deployments" },
+  { id: "own", label: "Own Compute", href: "/own-compute" },
   { id: "meet", label: "Schedule Meeting", href: "/contact" },
 ];
 

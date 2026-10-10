@@ -12,7 +12,7 @@ const ORDER = ["t1", "f2", "t2", "f1", "t3", "f3", "t4", "f5", "t5", "f4", "cta"
 
 const ACTIONS: readonly TerminalMenuItem[] = [
   { id: "rent", label: "Rent Compute", href: "/buy-compute" },
-  { id: "own", label: "Own Compute", href: "/deployments" },
+  { id: "own", label: "Own Compute", href: "/own-compute" },
   { id: "meet", label: "Schedule Meeting", href: "/contact" },
 ];
 

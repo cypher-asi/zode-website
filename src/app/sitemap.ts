@@ -6,6 +6,7 @@ const PUBLIC_ROUTES = [
   "/network",
   "/buy-compute",
   "/give-compute",
+  "/own-compute",
   "/contact",
   "/privacy",
   "/terms",
