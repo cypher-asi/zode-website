@@ -54,7 +54,7 @@ export function AssemblyLine(): ReactElement {
       <header className={styles.intro}>
         <p className={styles.eyebrow}>Assembly line</p>
         <h2 className={styles.title}>
-          Built in the factory,
+          Factory built,
           <br />
           pod by pod.
         </h2>
