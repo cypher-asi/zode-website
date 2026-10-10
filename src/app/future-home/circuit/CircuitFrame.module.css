@@ -1,0 +1,65 @@
+/*
+ * Page-sized overlay for the circuit frame (see CircuitFrame.tsx). The left
+ * padding only carries `--frame-inset` so the component can read it in px;
+ * every child is absolutely positioned in page coordinates.
+ */
+.root {
+  --pulse: #ffa45c;
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  overflow: hidden;
+  padding-left: var(--frame-inset, 12px);
+  pointer-events: none;
+}
+
+.trace {
+  position: absolute;
+  background: rgba(12, 12, 13, 0.14);
+}
+
+.trace[data-tone="dark"] {
+  background: rgba(246, 246, 243, 0.16);
+}
+
+.pad {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: rgba(12, 12, 13, 0.4);
+}
+
+.pad[data-tone="dark"] {
+  background: rgba(246, 246, 243, 0.4);
+}
+
+.lit {
+  position: absolute;
+  inset: -1px;
+  background: var(--pulse);
+  box-shadow: 0 0 8px 1px var(--pulse);
+  opacity: 0;
+}
+
+/* Head at the leading end; `offset-rotate` turns it to face along the route. */
+.pulse {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: linear-gradient(to right, rgba(255, 164, 92, 0), var(--pulse) 70%, #fff3e4);
+  box-shadow:
+    0 0 6px rgba(255, 164, 92, 0.9),
+    0 0 16px rgba(255, 164, 92, 0.45);
+  opacity: 0;
+  offset-anchor: 100% 50%;
+  offset-rotate: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lit,
+  .pulse {
+    display: none;
+  }
+}

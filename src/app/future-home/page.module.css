@@ -6,6 +6,9 @@
  * so they read as one strip; ZodeGallery.module.css inherits all of these.
  */
 .page {
+  position: relative;
+  /* How far the circuit frame's rails sit in from the screen edges (see circuit/). */
+  --frame-inset: clamp(8px, 1vw, 16px);
   --off-white: #f6f6f3;
   --off-black: #0c0c0d;
   --edge: clamp(32px, 6vw, 96px);
@@ -58,14 +61,13 @@
 
 /* Closing call to action between the network and the footer (see cta/). */
 .closing {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
   background: #000000;
   color: var(--off-white);
 }
 
-/* Landscape band inset as a card, then the copyright row (see footer/). */
+/* Landscape band inset as a card inside the circuit rails, then the copyright row (see footer/). */
 .footer {
-  padding: clamp(6px, 0.8vw, 12px);
+  padding: calc(var(--frame-inset) + 6px);
   background: #000000;
 }
 

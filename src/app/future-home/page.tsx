@@ -3,6 +3,7 @@ import { Inter, Newsreader } from "next/font/google";
 import { redirect } from "next/navigation";
 import { isAuthenticated } from "@/lib/session";
 import { AssemblyLine } from "./assembly/AssemblyLine";
+import { CircuitFrame } from "./circuit/CircuitFrame";
 import { ClosingCta } from "./cta/ClosingCta";
 import { Features } from "./features/Features";
 import { FooterReveal } from "./footer/FooterReveal";
@@ -54,10 +55,11 @@ export default async function FutureHome() {
 
   return (
     <main className={`${styles.page} ${display.variable} ${text.variable}`}>
+      <CircuitFrame />
       <PinnedHeader />
 
-      <div className={styles.hero}>
-        <section className={styles.left} data-surface="light">
+      <div className={styles.hero} data-circuit>
+        <section className={styles.left} data-surface="light" data-circuit-seam>
           <div className={styles.copy} data-top-fade>
             <h1 className={styles.headline}>
               <span className={styles.line}>Sovereign</span>{" "}
@@ -80,21 +82,32 @@ export default async function FutureHome() {
       <section
         id="learn-more"
         className={styles.tour}
-        aria-label="A rapidly deployable supercompute"
+        aria-label="A rapidly deployable supercomputer"
         data-surface="light"
+        data-circuit
       >
         <PodTour />
       </section>
 
-      <section className={styles.stack} aria-label="The ZODE stack" data-surface="light">
+      <section
+        className={styles.stack}
+        aria-label="The ZODE stack"
+        data-surface="light"
+        data-circuit
+      >
         <FullStack />
       </section>
 
-      <section className={styles.assembly} aria-label="How a ZODE is built" data-surface="dark">
+      <section
+        className={styles.assembly}
+        aria-label="How a ZODE is built"
+        data-surface="dark"
+        data-circuit
+      >
         <AssemblyLine />
       </section>
 
-      <section className={styles.features} aria-label="Why ZODE" data-surface="light">
+      <section className={styles.features} aria-label="Why ZODE" data-surface="light" data-circuit>
         <Features />
       </section>
 
@@ -102,15 +115,16 @@ export default async function FutureHome() {
         className={styles.network}
         aria-label="Distributed edge network"
         data-surface="dark"
+        data-circuit
       >
         <Network />
       </section>
 
-      <section className={styles.closing} aria-label="Get started" data-surface="dark">
+      <section className={styles.closing} aria-label="Get started" data-surface="dark" data-circuit>
         <ClosingCta />
       </section>
 
-      <footer className={styles.footer} aria-label="Site footer" data-surface="dark">
+      <footer className={styles.footer} aria-label="Site footer" data-surface="dark" data-circuit>
         <FooterScene />
         <FooterReveal />
         {/* eslint-disable-next-line @next/next/no-img-element */}
