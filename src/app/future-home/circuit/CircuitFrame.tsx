@@ -43,7 +43,7 @@ function measureSurfaces(blocks: readonly HTMLElement[], origin: DOMRect): Surfa
   });
 }
 
-/** The hero split, while its panels sit side by side; they overlap by the jog's width. */
+/** The hero split, while its panels sit side by side. */
 function measureHeroSeam(page: HTMLElement, origin: DOMRect): HeroSeam | null {
   const panel = page.querySelector<HTMLElement>("[data-circuit-seam]");
   const neighbor = panel?.nextElementSibling;
@@ -51,12 +51,7 @@ function measureHeroSeam(page: HTMLElement, origin: DOMRect): HeroSeam | null {
   const a = panel.getBoundingClientRect();
   const b = neighbor.getBoundingClientRect();
   if (Math.abs(a.top - b.top) > 1) return null;
-  return {
-    x: a.right - origin.left,
-    top: a.top - origin.top,
-    height: a.height,
-    step: a.right - b.left,
-  };
+  return { x: a.right - origin.left, top: a.top - origin.top, height: a.height };
 }
 
 function pulseFrames(route: Route, cycle: number): Keyframe[] {
@@ -105,10 +100,12 @@ export function CircuitFrame(): ReactElement {
       frame = 0;
       const origin = page.getBoundingClientRect();
       const blocks = Array.from(page.querySelectorAll<HTMLElement>(":scope > [data-circuit]"));
+      const box = getComputedStyle(root);
       const next = buildCircuit(
         origin.width,
         origin.height,
-        parseFloat(getComputedStyle(root).paddingLeft) || 0,
+        parseFloat(box.paddingLeft) || 0,
+        parseFloat(box.paddingRight) || 0,
         blocks.slice(1).map((block) => block.getBoundingClientRect().top - origin.top),
         measureSurfaces(blocks, origin),
         measureHeroSeam(page, origin),
@@ -158,7 +155,13 @@ export function CircuitFrame(): ReactElement {
           key={`trace-${index}`}
           className={styles.trace}
           data-tone={trace.tone}
-          style={{ left: trace.x, top: trace.y, width: trace.width, height: trace.height }}
+          style={{
+            left: trace.x,
+            top: trace.y,
+            width: trace.width,
+            height: trace.height,
+            transform: trace.rotate ? `rotate(${trace.rotate}deg)` : undefined,
+          }}
         />
       ))}
       {circuit?.pads.map((pad, index) => (

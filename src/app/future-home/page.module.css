@@ -14,8 +14,31 @@
   --edge: clamp(32px, 6vw, 96px);
   --bar-height: 52px;
   --button-radius: 3px;
-  /* Width of the 45° jog in the hero seam between the white and black halves. */
+  /* Width of the 45° jog in the seams between the hero halves and between sections. */
   --seam-step: clamp(10px, 1vw, 18px);
+}
+
+/*
+ * Each section below the hero rises `--seam-step` over the left half of the
+ * one above, stepping down through a 45° jog at the center, so the hero split
+ * runs straight into the jog and on along the boundary like one trace. Every
+ * section background is a solid color, so the tab can inherit it.
+ */
+.page > [data-circuit] + [data-circuit] {
+  position: relative;
+}
+
+.page > [data-circuit] + [data-circuit]::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: calc(-1 * var(--seam-step));
+  right: calc(50% - var(--seam-step) / 2);
+  left: 0;
+  height: var(--seam-step);
+  background: inherit;
+  clip-path: polygon(0 0, calc(100% - var(--seam-step)) 0, 100% 100%, 0 100%);
+  pointer-events: none;
 }
 
 .hero {
@@ -161,7 +184,8 @@
   justify-content: space-between;
   gap: 24px;
   height: var(--bar-height);
-  padding: 0 calc(var(--edge) / 2 + var(--seam-step)) 0 var(--edge);
+  /* The section below rises `--seam-step` over this half; keep the text clear of it. */
+  padding: 0 calc(var(--edge) / 2 + var(--seam-step)) var(--seam-step) var(--edge);
   border-top: 1px solid rgba(0, 0, 0, 0.12);
   font-size: 13px;
   font-weight: 500;

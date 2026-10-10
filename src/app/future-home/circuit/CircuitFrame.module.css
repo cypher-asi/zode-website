@@ -1,19 +1,21 @@
 /*
- * Page-sized overlay for the circuit frame (see CircuitFrame.tsx). The left
- * padding only carries `--frame-inset` so the component can read it in px;
- * every child is absolutely positioned in page coordinates.
+ * Page-sized overlay for the circuit frame (see CircuitFrame.tsx). The
+ * paddings only carry `--frame-inset` and `--seam-step` so the component can
+ * read them in px; every child is absolutely positioned in page coordinates.
  */
 .root {
   position: absolute;
   inset: 0;
   z-index: 4;
   overflow: hidden;
+  padding-right: var(--seam-step, 14px);
   padding-left: var(--frame-inset, 12px);
   pointer-events: none;
 }
 
 .trace {
   position: absolute;
+  transform-origin: 0 50%;
   background: rgba(12, 12, 13, 0.14);
 }
 
