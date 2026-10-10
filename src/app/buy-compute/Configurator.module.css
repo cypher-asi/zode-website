@@ -79,13 +79,6 @@
   letter-spacing: -0.025em;
 }
 
-.lede {
-  margin: 8px 0 0;
-  font-size: 14px;
-  line-height: 1.5;
-  color: #8a8a8f;
-}
-
 .step {
   flex: 1;
   padding-top: 28px;

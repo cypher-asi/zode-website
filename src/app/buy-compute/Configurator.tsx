@@ -88,7 +88,6 @@ export function Configurator(): ReactElement {
           >
             <header className={styles.intro}>
               <h1 className={styles.heading}>Build your ZODE</h1>
-              <p className={styles.lede}>Own a sovereign AI cluster. Pricing updates as you configure.</p>
             </header>
 
             <StepTabs steps={STEPS} active={step} onSelect={goTo} />
