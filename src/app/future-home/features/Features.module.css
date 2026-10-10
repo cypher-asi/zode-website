@@ -117,28 +117,116 @@
   color: var(--ink);
 }
 
-.button {
-  display: inline-flex;
+/*
+ * Terminal-style picker. With no hover or focus inside the menu, the first
+ * row shows the active state so it reads as a preselected option.
+ */
+.menu {
+  width: min(100%, 400px);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+.prompt {
+  margin: 0 0 12px;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+.prompt span {
+  color: var(--ink);
+}
+
+.items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+}
+
+.items li {
+  border-bottom: 1px solid var(--rule);
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 14px 28px 1fr auto;
   align-items: center;
   height: 46px;
-  padding: 0 24px;
-  border-radius: var(--button-radius);
-  background: var(--ink);
-  color: #ffffff;
+  padding: 0 14px 0 10px;
+  color: var(--ink);
   font-size: 15px;
-  font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
-  transition: background-color 160ms ease;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
 }
 
-.button:hover {
-  background: #2a2a2e;
+.caret {
+  opacity: 0;
+  translate: -4px 0;
+  transition:
+    opacity 120ms ease,
+    translate 120ms ease;
 }
 
-.button:focus-visible {
+.index,
+.cmd {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+}
+
+.cursor {
+  display: none;
+  width: 0.55em;
+  height: 1.05em;
+  margin-left: 6px;
+  background: currentColor;
+  animation: cursor 1s steps(1) infinite;
+}
+
+.item:hover,
+.item:focus-visible,
+.menu:not(:hover, :focus-within) li:first-child .item {
+  background: var(--ink);
+  color: #ffffff;
+}
+
+.item:hover :is(.index, .cmd),
+.item:focus-visible :is(.index, .cmd),
+.menu:not(:hover, :focus-within) li:first-child :is(.index, .cmd) {
+  color: #9a9aa0;
+}
+
+.item:hover .caret,
+.item:focus-visible .caret,
+.menu:not(:hover, :focus-within) li:first-child .caret {
+  opacity: 1;
+  translate: 0 0;
+}
+
+.item:hover .cursor,
+.item:focus-visible .cursor,
+.menu:not(:hover, :focus-within) li:first-child .cursor {
+  display: inline-block;
+}
+
+.item:focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: 3px;
+}
+
+@keyframes cursor {
+  50% {
+    opacity: 0;
+  }
 }
 
 /* Drawings (see FeatureArt.tsx). `--w` is the figure's viewBox width. */
@@ -278,6 +366,10 @@
     padding: 32px 24px;
   }
 
+  .menu {
+    width: 100%;
+  }
+
   .figure {
     min-height: 300px;
     padding: 32px 20px 48px;
@@ -296,5 +388,9 @@
   .token {
     animation: none;
     opacity: 1;
+  }
+
+  .cursor {
+    animation: none;
   }
 }
