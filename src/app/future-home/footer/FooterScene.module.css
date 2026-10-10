@@ -1,179 +1,43 @@
 /*
- * Landscape band at the very bottom of the page (see FooterScene.tsx). The
- * drawing covers the card like a background image: on wide cards it spans the
- * full width; on narrow ones it keeps the card's height and slides so the
- * ZODE (at `--focus` of the art's width) sits about 60% across.
+ * Photo band at the very bottom of the page (see FooterScene.tsx). The photos
+ * are 2:1 with the ZODE's footprint centred at 62.5% / 75%; using that same
+ * point as `object-position` keeps the ZODE in frame however the card crops.
  */
 .root {
-  --paper: #f6f6f3;
-  --ink: #0c0c0d;
-  --muted: #8a8a8f;
-  --ratio: 3.2;
-  --focus: 0.68;
-
   position: relative;
-  aspect-ratio: 16 / 5;
-  min-height: 300px;
+  aspect-ratio: 2 / 1;
+  min-height: 260px;
   overflow: hidden;
   border-radius: 10px;
-  background: var(--paper);
-  container-type: size;
+  background: #0c0c0d;
 }
 
-.art {
-  --w: max(100cqw, 100cqh * var(--ratio));
-
-  position: absolute;
-  bottom: 0;
-  left: clamp(100cqw - var(--w), 60cqw - var(--w) * var(--focus), 0px);
-  display: block;
-  width: var(--w);
-  height: auto;
-}
-
-.art :is(polygon, polyline, path, ellipse, rect, circle, line) {
-  vector-effect: non-scaling-stroke;
-  stroke-linejoin: round;
-  stroke-linecap: round;
-}
-
-.scene {
+/*
+ * The incoming photo fades in over the outgoing one, which stays opaque
+ * underneath; fading both at once would dim the ZODE mid-transition.
+ */
+.image {
+  z-index: 0;
+  object-fit: cover;
+  object-position: 62.5% 75%;
   opacity: 0;
   transition: opacity 900ms ease;
 }
 
-.scene[data-active] {
+.image[data-prev] {
+  z-index: 1;
   opacity: 1;
+  transition: none;
 }
 
-/* Shared sketch palette (matches ../features/Features.module.css). */
-.top,
-.sideL,
-.sideR,
-.ring,
-.land {
-  stroke: var(--ink);
-  stroke-width: 1;
-}
-
-.top,
-.ring {
-  fill: #ffffff;
-}
-
-.sideL {
-  fill: #f0f0ec;
-}
-
-.sideR {
-  fill: #e6e6e1;
-}
-
-.land {
-  fill: var(--paper);
-}
-
-.far,
-.cloud {
-  fill: var(--paper);
-  stroke: #a9a9ae;
-  stroke-width: 1;
-}
-
-.edge,
-.fine,
-.faint,
-.frame,
-.frameFace,
-.glint,
-.seam,
-.rackLine {
-  fill: none;
-}
-
-.edge {
-  stroke: var(--ink);
-  stroke-width: 1;
-}
-
-.fine {
-  stroke: #77777d;
-  stroke-width: 0.75;
-}
-
-.faint {
-  stroke: #b0b0b5;
-  stroke-width: 0.75;
-}
-
-.ink {
-  fill: var(--ink);
-}
-
-.flake {
-  fill: #ffffff;
-  stroke: #a9a9ae;
-  stroke-width: 0.6;
-}
-
-/* ZODE */
-.pad {
-  fill: #e9e9e4;
-  stroke: #b0b0b5;
-  stroke-width: 0.75;
-}
-
-.glass {
-  fill: #dde2e6;
-  stroke: var(--ink);
-  stroke-width: 1;
-}
-
-.rack {
-  fill: #9ba1a7;
-}
-
-.rackLine {
-  stroke: #7c8288;
-  stroke-width: 0.6;
-}
-
-.glint {
-  stroke: #ffffff;
-  stroke-width: 1.4;
-}
-
-.frame,
-.frameFace {
-  stroke: #1b1b1e;
-  stroke-width: 2.2;
-}
-
-.roof {
-  fill: #2a2a2e;
-  stroke: var(--ink);
-  stroke-width: 1;
-}
-
-.seam {
-  stroke: #45454b;
-  stroke-width: 0.6;
-}
-
-.fascia {
-  fill: #111113;
-  stroke: var(--ink);
-  stroke-width: 1;
-}
-
-.rail {
-  fill: rgba(221, 226, 230, 0.55);
-  stroke: #77777d;
-  stroke-width: 0.75;
+.image[data-active] {
+  z-index: 2;
+  opacity: 1;
 }
 
 .captions {
   position: absolute;
+  z-index: 3;
   top: 20px;
   left: 24px;
   margin: 0;
@@ -182,7 +46,8 @@
   font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.75);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
 }
 
 .caption {
@@ -200,11 +65,11 @@
 
 .label {
   margin-left: 12px;
-  color: var(--ink);
+  color: #ffffff;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .scene,
+  .image,
   .caption {
     transition: none;
   }
