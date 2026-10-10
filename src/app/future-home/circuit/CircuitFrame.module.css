@@ -4,7 +4,7 @@
  * every child is absolutely positioned in page coordinates.
  */
 .root {
-  --pulse: #ffa45c;
+  --pulse: #ffffff;
   position: absolute;
   inset: 0;
   z-index: 4;
@@ -33,11 +33,14 @@
   background: rgba(246, 246, 243, 0.4);
 }
 
+/* The faint dark edge keeps the white glow readable over the light sections. */
 .lit {
   position: absolute;
   inset: -1px;
   background: var(--pulse);
-  box-shadow: 0 0 8px 1px var(--pulse);
+  box-shadow:
+    0 0 0 0.5px rgba(12, 12, 13, 0.2),
+    0 0 8px 1px var(--pulse);
   opacity: 0;
 }
 
@@ -48,10 +51,11 @@
   left: 0;
   height: 2px;
   border-radius: 1px;
-  background: linear-gradient(to right, rgba(255, 164, 92, 0), var(--pulse) 70%, #fff3e4);
+  background: linear-gradient(to right, rgba(255, 255, 255, 0), var(--pulse) 70%);
   box-shadow:
-    0 0 6px rgba(255, 164, 92, 0.9),
-    0 0 16px rgba(255, 164, 92, 0.45);
+    0 0 1px rgba(12, 12, 13, 0.25),
+    0 0 6px rgba(255, 255, 255, 0.9),
+    0 0 16px rgba(255, 255, 255, 0.45);
   opacity: 0;
   offset-anchor: 100% 50%;
   offset-rotate: auto;
