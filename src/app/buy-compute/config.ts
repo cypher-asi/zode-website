@@ -1,4 +1,4 @@
-import type { PodId } from "../future-home/pod/podTour";
+import type { PodId } from "../(home)/pod/podTour";
 
 /*
  * Option lists, sizing assumptions and the price model behind the Own Compute

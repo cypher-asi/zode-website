@@ -100,13 +100,11 @@ function network(s: Sketch): void {
 function routing(s: Sketch): void {
   s.slab(PLATE);
 
-  // Fan-out centred toward the front so it shows below the plate above.
-  const c = 12;
   const turns: ((x: number, y: number) => P3)[] = [
-    (x, y) => [c + x, c + y],
-    (x, y) => [c - y, c + x],
-    (x, y) => [c - x, c - y],
-    (x, y) => [c + y, c - x],
+    (x, y) => [x, y],
+    (x, y) => [-y, x],
+    (x, y) => [-x, -y],
+    (x, y) => [y, -x],
   ];
   turns.forEach((turn, t) => {
     for (let j = -4; j <= 4; j++) {
@@ -119,9 +117,9 @@ function routing(s: Sketch): void {
     }
   });
 
-  s.box(c - 16, c - 16, 32, 32, 0, 5);
+  s.box(-16, -16, 32, 32, 0, 5);
   for (let x = -9; x <= 9; x += 6) {
-    for (let y = -9; y <= 9; y += 6) s.disc([c + x, c + y, 5], 1, styles.ink);
+    for (let y = -9; y <= 9; y += 6) s.disc([x, y, 5], 1, styles.ink);
   }
 }
 

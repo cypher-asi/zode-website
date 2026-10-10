@@ -54,14 +54,8 @@ const DOOR = { y0: 54, y1: 78, top: 40 };
 const NOC = 40;
 const DECK = { length: 56, wall: 22 };
 
-/** Where each fiber route leaves the pod, on the ground just outside the glazed side. */
-const ENTRY_A: P3 = [HW + 7, 100, 0];
-const ENTRY_B: P3 = [HW + 7, -100, 0];
-/** Screen y of the outbound strands; inbound strands run `STRAND` below. */
-const TRUNK = 60;
-const STRAND = 2.6;
-/** Far enough past the drawing that the strands always cross the screen edge. */
-const FAR = 4000;
+/** Half the spacing between the two fiber routes' parallel floor lanes. */
+const LANE = 1.5;
 
 export interface Layer {
   key: string;
@@ -72,7 +66,7 @@ export interface Layer {
   items: ReactElement[];
 }
 
-/** Screen-space extent of everything drawn except the fiber strands, which run off past the edges. */
+/** Screen-space extent of everything drawn. */
 const extent = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
 
 function grow(x: number, y: number): void {
@@ -459,54 +453,27 @@ function deck(s: Sketch): void {
 // Fiber
 // ---------------------------------------------------------------------------
 
-const [AX] = view(ENTRY_A);
-const [BX] = view(ENTRY_B);
-const BEND = 3;
-
-/** One route's strands: out from the pod along the upper line, back in along the lower one. */
-function strands(x: number, y: number, side: -1 | 1): { out: string; in: string; duct: string } {
-  const xo = x + side * (STRAND / 2);
-  const xi = x - side * (STRAND / 2);
-  const yi = TRUNK + STRAND;
-  const ym = TRUNK + STRAND / 2;
-  const end = side * FAR;
-  return {
-    out: `M${xo} ${y}V${TRUNK - BEND}Q${xo} ${TRUNK} ${xo + side * BEND} ${TRUNK}H${end}`,
-    in: `M${end} ${yi}H${xi + side * BEND}Q${xi} ${yi} ${xi} ${yi - BEND}V${y}`,
-    duct: `M${x} ${y}V${ym - BEND}Q${x} ${ym} ${x + side * BEND} ${ym}H${end}`,
-  };
-}
-
-function fiber(entry: P3, side: -1 | 1): (s: Sketch) => void {
-  return (s) => {
-    const [x, y] = view(entry);
-    const { out, in: inbound, duct } = strands(x, y, side);
-    s.box(entry[0] - 3, entry[1] - 3, 6, 6, 0, 1.5);
-    s.path(duct, styles.duct);
-    for (const d of [150, 420]) {
-      s.el("rect", { x: round(x + side * d - 3.5), y: TRUNK - 2.5, width: 7, height: STRAND + 5, className: styles.vault });
-    }
-    s.path(out, styles.strand);
-    s.path(inbound, styles.strand);
-    s.path(out, styles.pulse);
-    s.path(inbound, `${styles.pulse} ${styles.inbound}`);
-  };
-}
-
-/** Floor run inside the pod from both entries to the equipment the fiber lands on. */
+/*
+ * Both routes leave the pod side by side through the foot of the glazed side,
+ * straight below the middle of the drawing (`DROP_Y`). Outside, the page's
+ * circuit frame carries them down into its grid, A turning west and B east
+ * (see `DROP`); inside, they keep to parallel floor lanes all the way to the
+ * equipment, A on the far one so the two never cross. Every pod's target must
+ * lie toward the hall (lower y than `DROP_Y`) and inboard of its lane.
+ */
 function runs(pod: PodId, laneX: number, target: [number, number]): Layer[] {
   const [tx, ty] = target;
-  const run = (entry: P3) => (s: Sketch) =>
+  const run = (side: -1 | 1) => (s: Sketch) =>
     s.line(
       [
-        [HW - 6, entry[1], BASE],
-        [laneX, entry[1], BASE],
-        [laneX, ty, BASE],
-        [tx, ty, BASE],
+        [HW - 6, DROP_Y + side * LANE, BASE],
+        [laneX - side * LANE, DROP_Y + side * LANE, BASE],
+        [laneX - side * LANE, ty + side * LANE, BASE],
+        [tx, ty + side * LANE, BASE],
       ],
       styles.run,
     );
-  return [layer(`${pod}-run-a`, "fiber-a", run(ENTRY_A), true), layer(`${pod}-run-b`, "fiber-b", run(ENTRY_B), true)];
+  return [layer(`${pod}-run-a`, "fiber-a", run(1), true), layer(`${pod}-run-b`, "fiber-b", run(-1), true)];
 }
 
 // ---------------------------------------------------------------------------
@@ -718,17 +685,15 @@ function cooling(): Layer[] {
 // ---------------------------------------------------------------------------
 
 const SHELL_BACK = layer("shell-back", undefined, back);
-const INTERIOR: Record<PodId, Layer[]> = { compute: compute(), electrical: electrical(), cooling: cooling() };
 const SHELL_FRONT = [
   layer("noc", "noc", noc),
   layer("facade", "facade", facade),
   layer("roof", "roof", roof),
   layer("deck", "deck", deck),
-  layer("fiber-a", "fiber-a", fiber(ENTRY_A, -1)),
-  layer("fiber-b", "fiber-b", fiber(ENTRY_B, 1)),
 ];
-grow(AX, TRUNK + STRAND + 4);
-grow(BX, TRUNK + STRAND + 4);
+/** Along the glazed side, where its foot sits below the drawing's middle; the equipment all stays inside the shell's extent. */
+const DROP_Y = round((HW * SA - (extent.x0 + extent.x1) / 2) / CA);
+const INTERIOR: Record<PodId, Layer[]> = { compute: compute(), electrical: electrical(), cooling: cooling() };
 
 const PAD = 10;
 export const VIEW: Bounds = {
@@ -744,13 +709,18 @@ export const LAYERS: Record<PodId, Layer[]> = {
   cooling: [SHELL_BACK, ...INTERIOR.cooling, ...SHELL_FRONT],
 };
 
-const ANCHOR_POINTS: Record<string, P3 | [number, number, "screen"]> = {
+const fraction = ([sx, sy]: [number, number]) => ({ x: (sx - VIEW.x) / VIEW.w, y: (sy - VIEW.y) / VIEW.h });
+
+/** Where the fiber leaves the pod, as fractions of the drawing's width and height. */
+export const DROP = fraction(view([HW, DROP_Y, 0]));
+
+const ANCHOR_POINTS: Record<string, P3> = {
   roof: [27, -50, RIDGE - SLOPE * 27],
   facade: [HW, -90, (GLASS + EAVE) / 2],
   noc: [-20, 89, BASE + 26],
   deck: [10, HL + 30, 2],
-  "fiber-a": [AX - 90, TRUNK + STRAND / 2, "screen"],
-  "fiber-b": [BX + 90, TRUNK + STRAND / 2, "screen"],
+  "fiber-a": [HW, DROP_Y + 4, 0],
+  "fiber-b": [HW, DROP_Y - 4, 0],
   racks: [-16, rackY(1) + 6, 28],
   spine: [-16, rackY(5), 34],
   coolant: [-16, -110, 28],
@@ -766,10 +736,7 @@ const ANCHOR_POINTS: Record<string, P3 | [number, number, "screen"]> = {
 
 /** Hotspot marker positions as fractions of the drawing's width and height. */
 export const ANCHORS: Record<string, { x: number; y: number }> = Object.fromEntries(
-  Object.entries(ANCHOR_POINTS).map(([id, p]) => {
-    const [sx, sy] = p[2] === "screen" ? [p[0], p[1]] : view(p as P3);
-    return [id, { x: (sx - VIEW.x) / VIEW.w, y: (sy - VIEW.y) / VIEW.h }];
-  }),
+  Object.entries(ANCHOR_POINTS).map(([id, p]) => [id, fraction(view(p))]),
 );
 
 export interface CabinArtProps {

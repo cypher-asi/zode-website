@@ -17,7 +17,7 @@ const productAccent = {
   display: "contents",
 } as CSSProperties;
 
-export default function ProductPage() {
+export default function LegacyHomePage() {
   return (
     <div style={productAccent}>
       <ProductHero />

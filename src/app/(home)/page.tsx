@@ -23,8 +23,8 @@ export const metadata: Metadata = {
 };
 
 const HERO_ACTIONS: readonly TerminalMenuItem[] = [
+  { id: "buy", label: "Buy Compute", href: "/buy-compute" },
   { id: "rent", label: "Rent Compute", href: "/rent-compute" },
-  { id: "own", label: "Own Compute", href: "/buy-compute" },
   { id: "learn", label: "Learn More", href: "#learn-more" },
 ];
 
@@ -40,15 +40,14 @@ const text = Inter({
 });
 
 /**
- * Candidate replacement for the home page: a full-viewport split with the
- * headline on a white panel and a clickable ZODE render gallery on a black
- * panel, followed by a hoverable pod explorer and an autoplaying
- * assembly-line build of a ZODE. Lives
- * outside the `(site)` group so it renders without the shared nav and
- * taskbar; it closes with a rotating landscape band whose copyright line
- * reveals the shared footer links.
+ * Home page: a full-viewport split with the headline on a white panel and a
+ * clickable ZODE render gallery on a black panel, followed by a hoverable pod
+ * explorer and an autoplaying assembly-line build of a ZODE. Lives in its own
+ * `(home)` group, outside `(site)`, so it renders without the shared nav and
+ * taskbar; it closes with a rotating landscape band above the wordmark and
+ * a sideways copyright line. The previous home page lives at `/legacy`.
  */
-export default async function FutureHome() {
+export default async function HomePage() {
   if (!(await isAuthenticated())) {
     redirect("/login");
   }
@@ -68,13 +67,18 @@ export default async function FutureHome() {
             <TerminalMenu items={HERO_ACTIONS} label="Get started" className={styles.menu} />
           </div>
 
-          <div className={styles.bar} data-top-fade>
+          <div className={styles.bar} data-top-fade data-circuit-rule>
             <p className={styles.helper}>The fastest deployable data center.</p>
             <WordLoop />
           </div>
         </section>
 
-        <section className={styles.right} aria-label="ZODE gallery" data-surface="dark">
+        <section
+          className={styles.right}
+          aria-label="ZODE gallery"
+          data-surface="dark"
+          data-circuit-rule
+        >
           <ZodeGallery />
         </section>
       </div>
@@ -124,11 +128,14 @@ export default async function FutureHome() {
         <ClosingCta />
       </section>
 
-      <footer className={styles.footer} aria-label="Site footer" data-surface="dark" data-circuit>
+      <footer
+        className={styles.footer}
+        aria-label="Site footer"
+        data-surface="dark"
+        data-circuit
+      >
         <FooterScene />
         <FooterReveal />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className={styles.footerMark} src="/wordmark.png" alt="" aria-hidden="true" />
       </footer>
     </main>
   );

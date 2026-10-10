@@ -1,21 +1,19 @@
 /*
  * Page-sized overlay for the circuit frame (see CircuitFrame.tsx). The
- * paddings only carry `--frame-inset` and `--seam-step` so the component can
- * read them in px; every child is absolutely positioned in page coordinates.
+ * padding only carries `--frame-inset` so the component can read it in px;
+ * every child is absolutely positioned in page coordinates.
  */
 .root {
   position: absolute;
   inset: 0;
   z-index: 4;
   overflow: hidden;
-  padding-right: var(--seam-step, 14px);
   padding-left: var(--frame-inset, 12px);
   pointer-events: none;
 }
 
 .trace {
   position: absolute;
-  transform-origin: 0 50%;
   background: rgba(12, 12, 13, 0.14);
 }
 
@@ -39,30 +37,26 @@
   position: absolute;
   inset: -1px;
   background: #ffffff;
-  box-shadow: 0 0 8px 1px #ffffff;
+  box-shadow: 0 0 5px rgba(255, 255, 255, 0.7);
   opacity: 0;
 }
 
 .pad[data-tone="light"] .lit {
   background: #0c0c0d;
-  box-shadow: 0 0 6px rgba(12, 12, 13, 0.45);
+  box-shadow: 0 0 4px rgba(12, 12, 13, 0.3);
 }
 
 /*
- * Shows a pulse only within its route's band of page rows; the stage inside
- * shifts back up so the pulse's `offset-path` stays in page coordinates.
+ * Shows a pulse only within its route's band of the page; the stage inside
+ * shifts back so the pulse's `offset-path` stays in page coordinates.
  */
 .clip {
   position: absolute;
-  right: 0;
-  left: 0;
   overflow: hidden;
 }
 
 .stage {
   position: absolute;
-  left: 0;
-  width: 100%;
 }
 
 /* Head at the leading end; `offset-rotate` turns it to face along the route. */
@@ -70,12 +64,12 @@
   position: absolute;
   top: 0;
   left: 0;
-  height: 2px;
+  height: 1.5px;
   border-radius: 1px;
   background: linear-gradient(to right, rgba(255, 255, 255, 0), #ffffff 70%);
   box-shadow:
-    0 0 6px rgba(255, 255, 255, 0.9),
-    0 0 16px rgba(255, 255, 255, 0.45);
+    0 0 4px rgba(255, 255, 255, 0.6),
+    0 0 10px rgba(255, 255, 255, 0.25);
   opacity: 0;
   offset-anchor: 100% 50%;
   offset-rotate: auto;
@@ -84,8 +78,8 @@
 .pulse[data-tone="light"] {
   background: linear-gradient(to right, rgba(12, 12, 13, 0), #0c0c0d 70%);
   box-shadow:
-    0 0 5px rgba(12, 12, 13, 0.35),
-    0 0 12px rgba(12, 12, 13, 0.15);
+    0 0 4px rgba(12, 12, 13, 0.22),
+    0 0 9px rgba(12, 12, 13, 0.08);
 }
 
 @media (prefers-reduced-motion: reduce) {

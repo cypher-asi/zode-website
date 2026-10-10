@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
-import { CabinArt } from "../future-home/pod/CabinArt";
-import { POD_TOURS, type PodId } from "../future-home/pod/podTour";
+import { CabinArt } from "../(home)/pod/CabinArt";
+import { POD_TOURS, type PodId } from "../(home)/pod/podTour";
 import type { Focus, Quote } from "./config";
 import styles from "./ZodePreview.module.css";
 

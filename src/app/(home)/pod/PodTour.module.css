@@ -1,15 +1,20 @@
 /*
- * White "rapidly deployable supercompute" section. Sits inside `.tour` in
- * ../page.module.css (which clips the fiber strands at the screen edges) and
- * inherits its `--edge`, `--button-radius`, `--off-black` and font variables.
+ * White "rapidly deployable supercomputer" section. Sits inside `.tour` in
+ * ../page.module.css and inherits its `--edge`,
+ * `--button-radius`, `--off-black` and font variables.
  */
 .root {
   --ink: #0c0c0d;
   --muted: #8a8a8f;
   --accent: #f08a3c;
 
-  /* Vertical space taken by the padding, heading and gap, which the drawing must leave room for. */
-  --chrome: 270px;
+  /* Vertical space taken by the padding, which the drawing must leave room for. */
+  --chrome: 120px;
+  /* Width reserved for each side column, and the gap between it and the drawing. */
+  --side: 340px;
+  --gap: 48px;
+  /* How much wider than the middle column the drawing is allowed to grow. */
+  --grow: 1.37;
 
   position: relative;
   display: flex;
@@ -19,35 +24,85 @@
   font-family: var(--font-text), system-ui, sans-serif;
 }
 
+/*
+ * The two fiber routes leaving the pod: hairlines in the circuit grid's ink
+ * from the foot of the cabin down to the seam with the section below, each
+ * turning into the grid through a rounded corner, A west and B east, either
+ * side of the center line. Rounded to whole pixels the way the grid's traces
+ * are, so the turns land on them; the bottom border is the traced row itself.
+ */
+.drop {
+  --center: round(50%, 1px);
+
+  position: absolute;
+  z-index: 3;
+  box-sizing: border-box;
+  width: 13px;
+  border: 0 solid rgba(12, 12, 13, 0.14);
+  border-bottom-width: 1px;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 900ms ease,
+    border-color 200ms ease;
+}
+
+.drop[data-route="a"] {
+  bottom: -1px;
+  left: calc(var(--center) - 16px);
+  border-right-width: 1px;
+  border-bottom-right-radius: 12px;
+}
+
+.drop[data-route="b"] {
+  bottom: -1px;
+  left: calc(var(--center) + 3px);
+  border-left-width: 1px;
+  border-bottom-left-radius: 12px;
+}
+
+.drop[data-shown] {
+  opacity: 1;
+}
+
+.drop[data-on] {
+  border-color: var(--accent);
+}
+
 .title {
-  margin: 0 0 40px;
+  margin: 0 0 32px;
   font-family: var(--font-display), Georgia, serif;
-  font-size: clamp(32px, 3.6vw, 56px);
+  font-size: var(--h2-size);
   font-weight: 300;
-  line-height: 1.06;
-  letter-spacing: -0.025em;
-  text-align: left;
+  line-height: var(--h2-leading);
+  letter-spacing: var(--h2-tracking);
 }
 
 /*
- * Pod picker on the left, drawing in the middle, hover points on the right.
- * The heading stays at the top and the panel sinks to the bottom of the section.
+ * Heading and pod picker on the left, drawing in the middle, hover points on
+ * the right. Both side columns reserve the same width so the drawing sits in
+ * the middle of the screen, and the panel is centred vertically in the section.
  */
 .panel {
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr) 230px;
+  grid-template-columns: var(--side) minmax(0, 1fr) var(--side);
   grid-template-areas: "pods figure side";
-  column-gap: 48px;
+  column-gap: var(--gap);
   width: 100%;
-  margin-top: auto;
+  margin-block: auto;
 }
 
-/* As wide as the column allows, but never taller than the viewport left after the heading. */
+/*
+ * About a third wider than the middle column, spilling into the gaps and side
+ * columns (whose contents sit over the panel, clear of the cabin's outline),
+ * but never taller than the viewport left after the padding.
+ */
 .figure {
   position: relative;
   grid-area: figure;
+  grid-column: 1 / -1;
   justify-self: center;
-  width: min(100%, calc((100dvh - var(--chrome)) * var(--ratio)));
+  width: min(calc((100% - 2 * (var(--side) + var(--gap))) * var(--grow)), calc((100dvh - var(--chrome)) * var(--ratio)));
   opacity: 0;
   translate: 0 16px;
   transition:
@@ -92,6 +147,7 @@
   --left: #fde6d3;
   --right: #f8d8bd;
   --band: #eeb88e;
+  --frame: #c98a5e;
 }
 
 .enter {
@@ -105,7 +161,7 @@
 }
 
 /* Drawing primitives (see CabinArt.tsx). */
-.art :is(polygon, polyline, path, rect):not(.pulse, .run) {
+.art :is(polygon, polyline, path, rect):not(.run) {
   vector-effect: non-scaling-stroke;
   stroke-linejoin: round;
   stroke-linecap: round;
@@ -115,8 +171,7 @@
 .sideL,
 .sideR,
 .ring,
-.roof,
-.vault {
+.roof {
   stroke: var(--line);
   stroke-width: 1;
   transition:
@@ -125,8 +180,7 @@
 }
 
 .top,
-.ring,
-.vault {
+.ring {
   fill: var(--top, #ffffff);
 }
 
@@ -225,52 +279,22 @@
   stroke-width: 0.6;
 }
 
-.duct {
-  fill: none;
-  stroke: #f1f1ee;
-  stroke-width: 6;
-}
-
-.layer[data-on] .duct {
-  stroke: #fdeadb;
-}
-
-.strand {
-  fill: none;
-  stroke: var(--line);
-  stroke-width: 0.75;
-  pointer-events: none;
-}
-
 /*
- * Packets stream along each path's own direction: outbound strands start at
- * the pod, inbound ones at the edge, and the floor runs end at the equipment.
- * Lengths are in viewBox units, so these strokes scale with the drawing.
+ * Packets stream along the fiber's floor runs toward the equipment. Lengths
+ * are in viewBox units, so these strokes scale with the drawing.
  */
-.pulse,
 .run {
   fill: none;
   stroke: var(--accent);
   stroke-width: 0.6;
   stroke-dasharray: 1.4 5.6;
   stroke-linecap: round;
+  opacity: 0.7;
   pointer-events: none;
   animation: flow 0.22s linear infinite;
 }
 
-.pulse {
-  opacity: 0.85;
-}
-
-.run {
-  opacity: 0.7;
-}
-
-.inbound {
-  animation-delay: -0.11s;
-}
-
-.figure:not([data-shown]) :is(.pulse, .run) {
+.figure:not([data-shown]) .run {
   opacity: 0;
   animation-play-state: paused;
 }
@@ -323,27 +347,35 @@
   scale: 1.4;
 }
 
-/*
- * Pod picker and hover points are both centred on the whole section, clear of
- * the left-aligned heading; their grid columns stay reserved.
- */
-.pods,
+/* The heading-and-picker column and the hover points are both centred on the whole section; their grid columns stay reserved. */
+.lead,
 .side {
   position: absolute;
   top: 50%;
   translate: 0 -50%;
 }
 
-.pods {
+.lead {
   grid-area: pods;
   left: var(--edge);
-  width: 150px;
+  width: var(--side);
 }
 
+/*
+ * Centred in the gutter between the drawing's right edge and the screen's.
+ * Percentages here resolve against the section's full width, so the drawing's
+ * width is restated from `.figure` in those terms: the panel is the section
+ * less both edges, and the gutter is half of what the drawing leaves over.
+ */
 .side {
+  --drawing: min(
+    calc((100% - 2 * var(--edge) - 2 * (var(--side) + var(--gap))) * var(--grow)),
+    calc((100dvh - var(--chrome)) * var(--ratio))
+  );
+
   grid-area: side;
-  right: var(--edge);
-  width: 230px;
+  right: max(16px, calc((100% - var(--drawing)) / 4 - 90px));
+  width: 180px;
 }
 
 .pods .eyebrow,
@@ -408,18 +440,37 @@
 }
 
 @media (max-width: 1180px) {
-  /* Pod picker and hover points side by side under the drawing. */
+  /* Heading above the drawing; pod picker and hover points side by side under it. */
   .panel {
     grid-template-columns: auto minmax(0, 1fr);
     grid-template-areas:
+      "title title"
       "figure figure"
       "pods side";
     gap: 32px 56px;
-    margin-top: 0;
+    margin-block: 0;
+  }
+
+  .lead {
+    display: contents;
+  }
+
+  .title {
+    grid-area: title;
+    margin: 0;
+  }
+
+  .pods {
+    grid-area: pods;
   }
 
   .figure {
     width: 100%;
+  }
+
+  /* The pod picker and hover points sit below the drawing here, in the drops' way. */
+  .drop {
+    display: none;
   }
 
   .pods,
@@ -427,7 +478,6 @@
     align-self: start;
   }
 
-  .pods,
   .side {
     position: static;
     width: auto;
@@ -457,8 +507,11 @@
     animation: none;
   }
 
-  .pulse,
   .run {
     display: none;
+  }
+
+  .drop {
+    transition: none;
   }
 }

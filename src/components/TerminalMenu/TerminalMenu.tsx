@@ -44,7 +44,7 @@ function onMenuKey(event: KeyboardEvent<HTMLElement>): void {
 }
 
 /**
- * Terminal-style picker shared by the future-home sections: the hovered or
+ * Terminal-style picker shared by the home page sections: the hovered or
  * focused row, or `current` while the menu is idle, gets a caret and a
  * blinking block cursor. Rows are links for navigation or buttons for
  * in-page choices such as switching the pod on display.

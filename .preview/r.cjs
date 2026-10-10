@@ -1,0 +1,12 @@
+const fs=require("fs"),path=require("path"),Module=require("module");
+const root=path.resolve(__dirname,"..");const o=Module._load;
+Module._load=function(r,p,m){if(r.endsWith(".module.css")){const s=new Proxy({},{get:(_,k)=>k==="__esModule"?false:k==="default"?s:String(k)});return s;}return o.call(this,r,p,m);};
+const {createJiti}=require("jiti");const jiti=createJiti(__filename,{alias:{"@":path.join(root,"src")},jsx:true});
+const React=require("react");globalThis.React=React;const {renderToStaticMarkup}=require("react-dom/server");
+const {CabinArt,VIEW}=jiti(path.join(root,"src/app/future-home/pod/CabinArt.tsx"));
+let svg=renderToStaticMarkup(React.createElement(CabinArt,{pod:"compute",active:process.env.ACTIVE||null,onActive(){}}));
+const vars={"--line":"#0c0c0d","--soft":"#77777d","--faint":"#b4b4b9","--accent":"#f08a3c","--frame":"#4c4d53","--band":"#77787e","--led":"#f08a3c"};
+let css=fs.readFileSync(path.join(root,"src/app/future-home/pod/PodTour.module.css"),"utf8").replace(/@media[\s\S]*$/,"").replace(/@keyframes[^{]*\{[^}]*\{[^}]*\}\s*\}/g,"");
+css=css.replace(/var\((--[\w]+)(?:,\s*([^)]+))?\)/g,(m,n,f)=>vars[n]??f??m);
+const w=200;svg=svg.replace(/^<svg/,'<svg xmlns="http://www.w3.org/2000/svg" style="background:#fff"').replace(/viewBox="[^"]*"/,`viewBox="${VIEW.x-w} ${VIEW.y} ${VIEW.w+2*w} ${VIEW.h}"`).replace(/>/,`><style>${css}</style>`);
+process.stdout.write(svg);

@@ -46,7 +46,7 @@ export const SHELL_HOTSPOTS: readonly Hotspot[] = [
   {
     id: "fiber-b",
     title: "Fiber route B",
-    body: "A diverse path east, entering at the far end. Traffic flows both ways on both routes, all the time.",
+    body: "A diverse path east, in a separate conduit from A. Traffic flows both ways on both routes, all the time.",
   },
 ];
 

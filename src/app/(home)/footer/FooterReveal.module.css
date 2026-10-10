@@ -1,102 +1,46 @@
 /*
- * Copyright row under the landscape band (see FooterReveal.tsx). The link
- * panel is anchored to the row's top edge so it rises over the photo.
+ * Band under the landscape (see FooterReveal.tsx): the wordmark centred
+ * between two equal side columns, the right one holding the sideways
+ * copyright. The band is as tall as the larger of the two, so the copyright
+ * never spills out on narrow screens. The circuit frame draws a trace along
+ * the band's top edge, right on the photo's bottom edge. The photo above is
+ * full bleed, so the band carries the inset that keeps it 6px inside the rails.
  */
 .root {
-  position: relative;
-  /* Pin the dark-palette tokens the shared footer links read from. */
-  --color-text-primary: #f4f4f5;
-  --color-text-secondary: #8a8a92;
-}
-
-.row {
-  display: flex;
+  --rail-inset: clamp(14px, 1.6vw, 20px);
+  --rail: calc(16px + var(--rail-inset));
+  --mark-opacity: 0.2;
+  flex: 1 0 auto;
+  display: grid;
+  grid-template-columns: var(--rail) minmax(0, 1fr) var(--rail);
   align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  padding: 14px clamp(14px, 1.6vw, 20px) 0;
+  padding: 0 calc(var(--frame-inset) + 6px) calc(var(--frame-inset) + 6px);
 }
 
+/* The shared footer's watermark, drawn stronger here; sized to the screen height too. */
+.mark {
+  grid-column: 2;
+  display: block;
+  width: min(94%, 1100px, 120dvh);
+  height: auto;
+  margin: clamp(24px, 5dvh, 80px) auto;
+  opacity: var(--mark-opacity);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Reads bottom-to-top, like a book spine. */
 .copyright {
-  margin: 0;
+  grid-column: 3;
+  justify-self: end;
+  align-self: center;
+  margin: 12px var(--rail-inset) 12px 0;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
   font-size: 12px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--color-text-secondary);
-}
-
-.toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition:
-    color 120ms ease,
-    border-color 120ms ease;
-}
-
-.toggle:hover,
-.toggle[aria-expanded="true"] {
-  color: var(--color-text-primary);
-  border-color: rgba(255, 255, 255, 0.4);
-}
-
-.toggle:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-}
-
-.arrow {
-  width: 14px;
-  height: 14px;
-  display: block;
-  transition: transform 200ms ease;
-}
-
-.toggle[aria-expanded="true"] .arrow {
-  transform: rotate(180deg);
-}
-
-.panel {
-  position: absolute;
-  z-index: 5;
-  left: 0;
-  right: 0;
-  bottom: calc(100% + 8px);
-  padding: clamp(32px, 4vw, 56px) clamp(20px, 5vw, 64px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  background: #000000;
-  color: var(--color-text-primary);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(12px);
-  transition:
-    opacity 220ms ease,
-    transform 220ms ease,
-    visibility 0s linear 220ms;
-}
-
-.panel[data-open] {
-  opacity: 1;
-  visibility: visible;
-  transform: none;
-  transition:
-    opacity 220ms ease,
-    transform 220ms ease;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .arrow,
-  .panel,
-  .panel[data-open] {
-    transition: none;
-  }
+  color: #ffffff;
+  opacity: 0.4;
 }

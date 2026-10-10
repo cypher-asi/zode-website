@@ -1,7 +1,7 @@
 import { createElement, type ReactElement, type SVGProps } from "react";
 
 /**
- * Shared helpers for the future-home line drawings: a 2:1 dimetric projection
+ * Shared helpers for the home page line drawings: a 2:1 dimetric projection
  * and a `Sketch` that collects SVG elements in paint order while tracking the
  * projected bounds so callers can size a viewBox to fit.
  */

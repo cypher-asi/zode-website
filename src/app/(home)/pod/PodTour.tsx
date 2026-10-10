@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useState, type CSSProperties, type ReactElement } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactElement } from "react";
 import { TerminalMenu, type TerminalMenuItem } from "@/components/TerminalMenu";
 import { useInView } from "@/lib/useInView";
-import { ANCHORS, CabinArt, VIEW } from "./CabinArt";
+import { ANCHORS, CabinArt, DROP, VIEW } from "./CabinArt";
 import { POD_TOURS, SHELL_HOTSPOTS, type PodId } from "./podTour";
 import styles from "./PodTour.module.css";
 
@@ -12,16 +12,31 @@ const pct = (n: number) => `${(n * 100).toFixed(2)}%`;
 const POD_ITEMS: readonly TerminalMenuItem[] = POD_TOURS.map(({ id, label }) => ({ id, label }));
 
 /**
- * "A rapidly deployable supercompute.": a line drawing of a ZODE cabin whose equipment
- * highlights on hover, wired into two diverse fiber routes that run out to
- * both screen edges. A terminal menu on the left picks the pod on display;
- * the list on the right mirrors the drawing's hover points.
+ * "A rapidly deployable supercomputer.": a line drawing of a ZODE cabin whose equipment
+ * highlights on hover, wired by two diverse fiber routes that drop from its
+ * middle into the page's circuit grid below. The heading and a terminal menu
+ * that picks the pod on display sit in the left column; the list on the right
+ * mirrors the drawing's hover points.
  */
 export function PodTour(): ReactElement {
+  const rootRef = useRef<HTMLDivElement>(null);
   const ref = useRef<HTMLDivElement>(null);
   const shown = useInView(ref, "0px 0px -20% 0px");
   const [pod, setPod] = useState<PodId>("compute");
   const [active, setActive] = useState<string | null>(null);
+  const [dropTop, setDropTop] = useState<number | null>(null);
+
+  // Offsets ignore the figure's slide-in, so the drops start where the cabin comes to rest.
+  useEffect(() => {
+    const root = rootRef.current;
+    const figure = ref.current;
+    if (!root || !figure) return;
+    const measure = () => setDropTop(Math.round(figure.offsetTop + DROP.y * figure.offsetHeight));
+    const observer = new ResizeObserver(measure);
+    observer.observe(root);
+    observer.observe(figure);
+    return () => observer.disconnect();
+  }, []);
 
   const tour = POD_TOURS.find((t) => t.id === pod) ?? POD_TOURS[0];
   const hotspots = [...tour.hotspots, ...SHELL_HOTSPOTS];
@@ -35,18 +50,25 @@ export function PodTour(): ReactElement {
   };
 
   return (
-    <div className={styles.root}>
-      <h2 className={styles.title} data-top-fade>
-        A rapidly deployable supercompute.
-      </h2>
-
+    <div ref={rootRef} className={styles.root} style={{ "--ratio": VIEW.w / VIEW.h } as CSSProperties}>
+      {dropTop !== null &&
+        (["a", "b"] as const).map((route) => (
+          <span
+            key={route}
+            className={styles.drop}
+            data-route={route}
+            data-shown={shown || undefined}
+            data-on={active === `fiber-${route}` || undefined}
+            style={{ top: dropTop }}
+            aria-hidden="true"
+          />
+        ))}
       <div className={styles.panel}>
         <div
           ref={ref}
           className={styles.figure}
           data-shown={shown || undefined}
           data-active={active ?? undefined}
-          style={{ "--ratio": VIEW.w / VIEW.h } as CSSProperties}
         >
           <CabinArt pod={pod} active={active} onActive={setActive} />
           <ol className={styles.markers} aria-hidden="true">
@@ -61,16 +83,23 @@ export function PodTour(): ReactElement {
           </ol>
         </div>
 
-        <div className={styles.pods} data-top-fade>
-          <p className={styles.eyebrow}>Pod</p>
-          <TerminalMenu
-            items={POD_ITEMS}
-            label="ZODE pods"
-            size="sm"
-            current={pod}
-            selected={pod}
-            onSelect={choosePod}
-          />
+        <div className={styles.lead}>
+          <h2 className={styles.title} data-top-fade>
+            A rapidly deployable
+            <br />
+            supercomputer.
+          </h2>
+          <div className={styles.pods} data-top-fade>
+            <p className={styles.eyebrow}>Pod</p>
+            <TerminalMenu
+              items={POD_ITEMS}
+              label="ZODE pods"
+              size="sm"
+              current={pod}
+              selected={pod}
+              onSelect={choosePod}
+            />
+          </div>
         </div>
 
         <div className={styles.side} data-top-fade>

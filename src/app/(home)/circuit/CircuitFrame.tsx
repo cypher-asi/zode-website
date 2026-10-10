@@ -6,14 +6,18 @@ import {
   PULSE_SPEED,
   buildCircuit,
   type Circuit,
-  type HeroSeam,
+  type Split,
   type Surface,
   type Tone,
 } from "./geometry";
 import styles from "./CircuitFrame.module.css";
 
 /** How long a junction pad stays lit after a pulse passes, in ms. */
-const PAD_GLOW = 700;
+const PAD_GLOW = 260;
+/** Peak opacity of the pulse and of a freshly lit pad. */
+const PEAK = 0.75;
+/** Distance over which a run's pulse fades in and out, in px. */
+const FADE = 18;
 
 function toTone(value: string | undefined): Tone {
   return value === "light" ? "light" : "dark";
@@ -43,22 +47,22 @@ function measureSurfaces(blocks: readonly HTMLElement[], origin: DOMRect): Surfa
 }
 
 /** The hero split, while its panels sit side by side. */
-function measureHeroSeam(page: HTMLElement, origin: DOMRect): HeroSeam | null {
+function measureSplit(page: HTMLElement, origin: DOMRect): Split | null {
   const panel = page.querySelector<HTMLElement>("[data-circuit-seam]");
   const neighbor = panel?.nextElementSibling;
   if (!panel || !neighbor) return null;
   const a = panel.getBoundingClientRect();
   const b = neighbor.getBoundingClientRect();
   if (Math.abs(a.top - b.top) > 1) return null;
-  return { x: a.right - origin.left, top: a.top - origin.top, height: a.height };
+  return { x: a.right - origin.left, top: a.top - origin.top, bottom: a.bottom - origin.top };
 }
 
 /** Quiet gap between one pulse's run and the next, in ms. */
 const GAP_MIN = 700;
 const GAP_MAX = 3200;
 /** How many connected stretches one run passes through. */
-const HOPS_MIN = 2;
-const HOPS_MAX = 5;
+const HOPS_MIN = 1;
+const HOPS_MAX = 3;
 
 const between = (min: number, max: number) => min + Math.random() * (max - min);
 const pick = <T,>(items: readonly T[]): T => items[Math.floor(Math.random() * items.length)];
@@ -68,19 +72,20 @@ const pick = <T,>(items: readonly T[]): T => items[Math.floor(Math.random() * it
  * between, consecutive stretches hand it over at full strength.
  */
 function pulseFrames(length: number, fadeIn: boolean, fadeOut: boolean): Keyframe[] {
-  const ramp = Math.min(PULSE_LENGTH, length / 2) / length;
+  const ramp = Math.min(FADE, length / 2) / length;
   return [
-    { offset: 0, offsetDistance: "0px", opacity: fadeIn ? 0 : 1 },
-    { offset: ramp, offsetDistance: `${ramp * length}px`, opacity: 1 },
-    { offset: 1 - ramp, offsetDistance: `${(1 - ramp) * length}px`, opacity: 1 },
-    { offset: 1, offsetDistance: `${length}px`, opacity: fadeOut ? 0 : 1 },
+    { offset: 0, offsetDistance: "0px", opacity: fadeIn ? 0 : PEAK },
+    { offset: ramp, offsetDistance: `${ramp * length}px`, opacity: PEAK },
+    { offset: 1 - ramp, offsetDistance: `${(1 - ramp) * length}px`, opacity: PEAK },
+    { offset: 1, offsetDistance: `${length}px`, opacity: fadeOut ? 0 : PEAK },
   ];
 }
 
 /**
- * Circuit-board frame drawn over the whole page: hairline rails just inside
- * both screen edges, a trace across every boundary between `data-circuit`
- * blocks, and square pads at the junctions (see geometry.ts). Every so often a
+ * Circuit-board frame drawn over the whole page as a straight grid: hairline
+ * rails just inside both screen edges, a trace across every boundary between
+ * `data-circuit` blocks and along the top of each `data-circuit-rule` element,
+ * and square pads at the junctions (see geometry.ts). Every so often a
  * single pulse starts on a random on-screen stretch and runs through a few
  * connected ones, lighting each pad it reaches. Must be a direct child of the
  * positioned page element, which it measures.
@@ -100,15 +105,17 @@ export function CircuitFrame(): ReactElement {
       frame = 0;
       const origin = page.getBoundingClientRect();
       const blocks = Array.from(page.querySelectorAll<HTMLElement>(":scope > [data-circuit]"));
-      const box = getComputedStyle(root);
+      const topOf = (el: HTMLElement) => el.getBoundingClientRect().top - origin.top;
       const next = buildCircuit(
         origin.width,
         origin.height,
-        parseFloat(box.paddingLeft) || 0,
-        parseFloat(box.paddingRight) || 0,
-        blocks.slice(1).map((block) => block.getBoundingClientRect().top - origin.top),
+        parseFloat(getComputedStyle(root).paddingLeft) || 0,
+        [
+          ...blocks.slice(1).map(topOf),
+          ...Array.from(page.querySelectorAll<HTMLElement>("[data-circuit-rule]"), topOf),
+        ],
         measureSurfaces(blocks, origin),
-        measureHeroSeam(page, origin),
+        measureSplit(page, origin),
       );
       const key = JSON.stringify(next);
       if (key === lastKey) return;
@@ -168,7 +175,7 @@ export function CircuitFrame(): ReactElement {
       running = pulses[index].map((el) => el.animate(frames, { duration }));
       running[0]?.addEventListener("finish", () => {
         if (stopped) return;
-        lights.get(edge.to)?.animate([{ opacity: 1 }, { opacity: 0 }], {
+        lights.get(edge.to)?.animate([{ opacity: PEAK }, { opacity: 0 }], {
           duration: PAD_GLOW,
           easing: "ease-out",
         });
@@ -206,7 +213,6 @@ export function CircuitFrame(): ReactElement {
             top: trace.y,
             width: trace.width,
             height: trace.height,
-            transform: trace.rotate ? `rotate(${trace.rotate}deg)` : undefined,
           }}
         />
       ))}
@@ -225,9 +231,22 @@ export function CircuitFrame(): ReactElement {
           <div
             key={`edge-${index}-${copy}`}
             className={styles.clip}
-            style={{ top: band.top, height: band.bottom - band.top }}
+            style={{
+              top: band.top,
+              left: band.left,
+              width: band.right - band.left,
+              height: band.bottom - band.top,
+            }}
           >
-            <div className={styles.stage} style={{ top: -band.top, height: circuit.height }}>
+            <div
+              className={styles.stage}
+              style={{
+                top: -band.top,
+                left: -band.left,
+                width: circuit.width,
+                height: circuit.height,
+              }}
+            >
               <div
                 className={styles.pulse}
                 data-edge={index}

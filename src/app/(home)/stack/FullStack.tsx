@@ -24,7 +24,10 @@ export function FullStack(): ReactElement {
           <h2 className={styles.title}>From dirt to tokens.</h2>
           <p className={styles.lede}>
             ZODE builds every layer itself, from the land and power to the
-            network that delivers your tokens. Owning the stack means fewer
+            network that delivers your tokens.
+            <br />
+            <br />
+            Owning the stack means fewer
             parts, systems tuned for specific AI workloads, lower costs, and
             sites that deploy in weeks.
           </p>

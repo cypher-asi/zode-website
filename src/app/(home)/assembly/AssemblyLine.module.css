@@ -1,16 +1,11 @@
 /*
  * Overlay for the assembly-line scene. Sits inside `.assembly` in
  * ../page.module.css and inherits its `--edge`, `--bar-height`,
- * `--seam-step`, `--off-white` and `--off-black` variables.
+ * `--off-white` and `--off-black` variables.
  */
 .root {
   --accent: #ffa45c;
-  /*
-   * The section below rises `--seam-step` over half of this one's bottom edge,
-   * so the stage strip sits that far up to keep every cell clear of it.
-   */
-  --strip-lift: var(--seam-step, 0px);
-  --strip-top: calc(var(--bar-height, 52px) + var(--strip-lift));
+  --strip-top: var(--bar-height, 52px);
 
   position: absolute;
   inset: 0;
@@ -75,10 +70,10 @@
 .title {
   margin: 0;
   font-family: var(--font-display), Georgia, serif;
-  font-size: clamp(32px, 3.6vw, 56px);
+  font-size: var(--h2-size);
   font-weight: 300;
-  line-height: 1.06;
-  letter-spacing: -0.025em;
+  line-height: var(--h2-leading);
+  letter-spacing: var(--h2-tracking);
   color: var(--off-white);
 }
 
@@ -198,7 +193,7 @@
 .bar {
   position: absolute;
   right: 0;
-  bottom: var(--strip-lift);
+  bottom: 0;
   left: 0;
   display: flex;
   height: var(--bar-height, 52px);

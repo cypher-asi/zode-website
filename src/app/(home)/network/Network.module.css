@@ -10,7 +10,6 @@
 .root {
   --accent: #ffa45c;
   --muted: rgba(246, 246, 243, 0.5);
-  --rule: rgba(255, 255, 255, 0.14);
   --sweep: 1800ms;
 
   position: relative;
@@ -296,10 +295,10 @@
 .title {
   margin: 0;
   font-family: var(--font-display), Georgia, serif;
-  font-size: clamp(32px, 3.6vw, 56px);
+  font-size: var(--h2-size);
   font-weight: 300;
-  line-height: 1.06;
-  letter-spacing: -0.025em;
+  line-height: var(--h2-leading);
+  letter-spacing: var(--h2-tracking);
   color: var(--off-white);
 }
 
@@ -324,7 +323,6 @@
 .stats {
   display: grid;
   margin: 18px 0 0;
-  border-top: 1px solid var(--rule);
 }
 
 .stat {
@@ -332,10 +330,6 @@
   flex-direction: column-reverse;
   gap: 10px;
   padding: 22px 0 24px;
-}
-
-.stat + .stat {
-  border-top: 1px solid var(--rule);
 }
 
 .statValue {
@@ -439,8 +433,6 @@
 
   .stat + .stat {
     padding-left: 16px;
-    border-top: 0;
-    border-left: 1px solid var(--rule);
   }
 }
 

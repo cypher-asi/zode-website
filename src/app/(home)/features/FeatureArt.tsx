@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactElement } from "react";
-import { Sketch, project, round, type Bounds } from "../lineart";
+import { Sketch, project, rng, round, type Bounds } from "../lineart";
 import { FEATURES, type FeatureId } from "./features";
 import styles from "./Features.module.css";
 
@@ -7,6 +7,9 @@ import styles from "./Features.module.css";
 const FONT = 9;
 
 const GHOST = { top: styles.ghost, sideL: styles.ghost, sideR: styles.ghost };
+
+/** Props for a group animated while its figure is hovered; `k` staggers its start. */
+const anim = (className: string, k = 0) => ({ className, style: { "--k": k } as CSSProperties });
 
 function note(s: Sketch, x: number, y: number, text: string, anchor: "start" | "middle" | "end" = "middle"): void {
   const w = text.length * FONT * 0.62;
@@ -61,39 +64,46 @@ function rapid(s: Sketch): void {
     [24, 52, 50],
     [20, 34, 24],
   ] as const) {
-    s.line([[-108 - len, y, z], [-108, y, z]], styles.dash);
+    s.group(anim(styles.flow), () => s.line([[-108, y, z], [-108 - len, y, z]], styles.dash));
   }
 
-  s.box(-104, -24, 216, 48, 12, 8);
-  s.line([[74, 24, 12], [74, 24, 3]], styles.edge);
-  s.box(70, 20, 8, 8, 0, 3);
+  // Trailer and pod ride their suspension; the wheels painted between them stay planted.
+  s.group(anim(styles.hop), () => {
+    s.box(-104, -24, 216, 48, 12, 8);
+    s.line([[74, 24, 12], [74, 24, 3]], styles.edge);
+    s.box(70, 20, 8, 8, 0, 3);
+  });
   for (const x of [-80, -56]) {
     s.wheel([x, 27, 10], 10, "xz", styles.ring);
     s.wheel([x, 27, 10], 3.5, "xz", styles.ring);
   }
 
-  s.box(-100, -28, 200, 56, 20, 64);
-  for (let x = -92; x <= 92; x += 8) s.line([[x, 28, 24], [x, 28, 80]]);
-  s.line([[-100, 28, 24], [100, 28, 24]]);
-  s.line([[-100, 28, 80], [100, 28, 80]]);
-  s.face(
-    [
-      [100, -25, 23],
-      [100, 25, 23],
-      [100, 25, 81],
-      [100, -25, 81],
-    ],
-    styles.fine,
-  );
-  s.line([[100, 0, 23], [100, 0, 81]], styles.edge);
-  for (const y of [-17, -8, 8, 17]) s.line([[100, y, 26], [100, y, 78]]);
+  s.group(anim(styles.hop), () => {
+    s.box(-100, -28, 200, 56, 20, 64);
+    for (let x = -92; x <= 92; x += 8) s.line([[x, 28, 24], [x, 28, 80]]);
+    s.line([[-100, 28, 24], [100, 28, 24]]);
+    s.line([[-100, 28, 80], [100, 28, 80]]);
+    s.face(
+      [
+        [100, -25, 23],
+        [100, 25, 23],
+        [100, 25, 81],
+        [100, -25, 81],
+      ],
+      styles.fine,
+    );
+    s.line([[100, 0, 23], [100, 0, 81]], styles.edge);
+    for (const y of [-17, -8, 8, 17]) s.line([[100, y, 26], [100, y, 78]]);
+  });
 
   const Y = 58;
   s.line([[-100, Y], [100, Y]], styles.edge);
   for (let k = 0; k <= 13; k++) {
     const x = -100 + (200 * k) / 13;
     const end = k === 0 || k === 13;
-    s.line([[x, Y], [x, Y + (end ? 10 : 5)]], end ? styles.edge : styles.fine);
+    s.group(anim(styles.ripple, k), () =>
+      s.line([[x, Y], [x, Y + (end ? 10 : 5)]], end ? styles.edge : styles.fine),
+    );
   }
   s.disc([100, Y], 2.2, styles.ink);
   const [ax, ay] = project([-100, Y + 14]);
@@ -113,22 +123,33 @@ function redundant(s: Sketch): void {
     const ghost = k === N;
     const x = x0(k);
     const cx = x + W / 2;
-    s.box(x, -D / 2, W, D, 0, H, ghost ? GHOST : s.cls);
-    if (!ghost) for (let z = 10; z <= 44; z += 6) s.line([[x + 5, D / 2, z], [x + W - 5, D / 2, z]]);
-    s.disc([cx, 0, H], 12, ghost ? styles.ghost : styles.ring);
-    for (let b = 0; b < 4; b++) {
-      const a = (b / 4) * Math.PI * 2 + 0.4;
-      s.line([[cx, 0, H], [cx + 10 * Math.cos(a), 10 * Math.sin(a), H]], ghost ? styles.dash : styles.fine);
-    }
-    s.disc([cx, 0, H], 2.6, ghost ? styles.ring : styles.ink);
+    const unit = () => {
+      s.box(x, -D / 2, W, D, 0, H, ghost ? GHOST : s.cls);
+      if (!ghost) for (let z = 10; z <= 44; z += 6) s.line([[x + 5, D / 2, z], [x + W - 5, D / 2, z]]);
+      s.disc([cx, 0, H], 12, ghost ? styles.ghost : styles.ring);
+      for (let b = 0; b < 4; b++) {
+        const a = (b / 4) * Math.PI * 2 + 0.4;
+        const blade = () =>
+          s.line([[cx, 0, H], [cx + 10 * Math.cos(a), 10 * Math.sin(a), H]], ghost ? styles.dash : styles.fine);
+        if (ghost) blade();
+        else s.group(anim(styles.whirl, b), blade);
+      }
+      s.disc([cx, 0, H], 2.6, ghost ? styles.ring : styles.ink);
+    };
+    if (ghost) s.group(anim(styles.ripple), unit);
+    else unit();
   }
 
-  s.line([[-126, A], [104, A]], styles.edge);
-  s.line([[-126, B], [104, B]], styles.edge);
+  s.group(anim(styles.flow), () => {
+    s.line([[-126, A], [104, A]], styles.edge);
+    s.line([[-126, B], [104, B]], styles.edge);
+  });
   for (let k = 0; k <= N; k++) {
     const ghost = k === N;
     const cx = x0(k) + W / 2;
-    s.line([[cx, D / 2], [cx, B]], ghost ? styles.dash : styles.edge);
+    s.group(anim(ghost ? styles.ripple : styles.flow), () =>
+      s.line([[cx, B], [cx, D / 2]], ghost ? styles.dash : styles.edge),
+    );
     for (const y of [A, B]) s.disc([cx, y], 1.8, ghost ? styles.ring : styles.ink);
   }
   const [lax, lay] = project([-126, A]);
@@ -168,17 +189,19 @@ function weather(s: Sketch): void {
     ],
     styles.fine,
   );
-  for (const z of [72, 60, 48, 36, 24]) {
-    s.face(
-      [
-        [-46, 45, z],
-        [46, 45, z],
-        [46, 50, z - 5],
-        [-46, 50, z - 5],
-      ],
-      styles.top,
-    );
-  }
+  [72, 60, 48, 36, 24].forEach((z, k) =>
+    s.group(anim(styles.shade, k * 2), () =>
+      s.face(
+        [
+          [-46, 45, z],
+          [46, 45, z],
+          [46, 50, z - 5],
+          [-46, 50, z - 5],
+        ],
+        styles.top,
+      ),
+    ),
+  );
 
   for (const k of [7, 10]) {
     s.face(
@@ -203,13 +226,15 @@ function weather(s: Sketch): void {
   seg(s, X, at(115), X, at(-40), styles.edge);
   for (let t = -40; t <= 115; t += 5) {
     const major = t % 25 === 0 || t === -40 || t === 115;
-    seg(s, X, at(t), X + (major ? 8 : 4), at(t), major ? styles.edge : styles.fine);
+    s.group(anim(styles.ripple, ((t + 40) / 5) * 0.4), () =>
+      seg(s, X, at(t), X + (major ? 8 : 4), at(t), major ? styles.edge : styles.fine),
+    );
   }
   note(s, X - 6, at(115) + 3, "115°F", "end");
   note(s, X - 6, at(32) + 3, "32°F", "end");
   note(s, X - 6, at(-40) + 3, "−40°F", "end");
-  sun(s, X, at(115) - 18);
-  snowflake(s, X, at(-40) + 18);
+  s.group(anim(styles.spin), () => sun(s, X, at(115) - 18));
+  s.group(anim(styles.spin), () => snowflake(s, X, at(-40) + 18));
 }
 
 type RackRow = "power" | "compute" | "switch";
@@ -242,17 +267,23 @@ function nvidia(s: Sketch): void {
   let y = RY + 7 + gap;
   let switchTop = 0;
   let switchBottom = 0;
+  let tray = 0;
+  const blink = rng(5);
   for (const row of RACK) {
     const h = ROW_HEIGHT[row];
     if (row === "compute") {
-      rect(s, x0, y, w, h, styles.sideL);
-      rect(s, x0 + 3, y + 1.5, 8, h - 3, styles.fine);
-      for (let vx = x0 + 40; vx <= x0 + w - 4; vx += 3.5) seg(s, vx, y + 1.5, vx, y + h - 1.5, styles.fine);
+      s.group(anim(styles.shade, tray++), () => {
+        rect(s, x0, y, w, h, styles.sideL);
+        rect(s, x0 + 3, y + 1.5, 8, h - 3, styles.fine);
+        for (let vx = x0 + 40; vx <= x0 + w - 4; vx += 3.5) seg(s, vx, y + 1.5, vx, y + h - 1.5, styles.fine);
+      });
     } else if (row === "switch") {
       if (!switchTop) switchTop = y;
       switchBottom = y + h;
       rect(s, x0, y, w, h, styles.sideR);
-      for (let px = x0 + 4; px + 3 <= x0 + w - 4; px += 5) rect(s, px, y + 1, 3, h - 2, styles.ink);
+      for (let px = x0 + 4; px + 3 <= x0 + w - 4; px += 5) {
+        s.group(anim(styles.dim, Math.floor(blink() * 36)), () => rect(s, px, y + 1, 3, h - 2, styles.ink));
+      }
     } else {
       rect(s, x0, y, w, h, styles.top);
       for (let i = 0; i < 6; i++) circle(s, x0 + 8 + i * 13.2, y + h / 2, 2.4, styles.ring);
@@ -265,11 +296,11 @@ function nvidia(s: Sketch): void {
   const callR = 14;
   const [DX, DY, R] = [78, mid, 72];
   circle(s, callX, mid, callR, styles.halo);
-  circle(s, callX, mid, callR, styles.dash);
+  s.group(anim(styles.flow), () => circle(s, callX, mid, callR, styles.dash));
   note(s, RX + RW + 5, mid - 5, "A", "start");
   seg(s, callX + callR, mid, DX - R, DY, styles.fine);
 
-  circle(s, DX, DY, R, styles.dash);
+  s.group(anim(styles.flow), () => circle(s, DX, DY, R, styles.dash));
   circle(s, DX, DY, 56, styles.ring);
   circle(s, DX, DY, 46, styles.fine);
   rect(s, DX - 4, DY - 49, 8, 6, styles.top);
@@ -284,10 +315,10 @@ function nvidia(s: Sketch): void {
   circle(s, DX, DY, HR, styles.edge);
   const pins: [number, number][] = [[DX, DY]];
   for (let k = 0; k < 6; k++) pins.push(polar(DX, DY, 20, (k / 6) * Math.PI * 2 - Math.PI / 2));
-  for (const [px, py] of pins) {
-    circle(s, px, py, 6, styles.ring);
+  pins.forEach(([px, py], k) => {
+    s.group(anim(styles.flash, k), () => circle(s, px, py, 6, styles.ring));
     circle(s, px, py, 1.4, styles.ink);
-  }
+  });
 
   seg(s, DX - 64, DY, DX + 64, DY, styles.center);
   seg(s, DX, DY - 64, DX, DY + 64, styles.center);
@@ -301,22 +332,24 @@ function tokens(s: Sketch): void {
     ["COOL", 0],
     ["NET", 36],
   ] as const) {
-    s.line([[-130, y], [-90, y]], styles.edge);
+    s.group(anim(styles.flow), () => s.line([[-130, y], [-90, y]], styles.edge));
     s.disc([-130, y], 2.2, styles.ring);
     const [lx, ly] = project([-136, y]);
     note(s, lx - 2, ly + 3, label, "end");
   }
 
   s.box(-90, -70, 180, 140, 0, 6);
-  s.line([[58, 0, 6], [90, 0, 6], [90, 0, 0], [96, 0, 0]], styles.edge);
+  s.group(anim(styles.flow), () =>
+    s.line([[58, 0, 6], [90, 0, 6], [90, 0, 0], [96, 0, 0]], styles.edge),
+  );
   s.box(-58, -48, 116, 96, 6, 3);
 
   const hbm = (x: number) => {
-    for (const y of [-42, -20, 2, 24]) {
+    [-42, -20, 2, 24].forEach((y, j) => {
       const [x1, y1] = [x + 22, y + 18];
-      s.box(x, y, 22, 18, 9, 9);
+      s.group(anim(styles.shade, j * 3), () => s.box(x, y, 22, 18, 9, 9));
       for (const z of [11.25, 13.5, 15.75]) s.line([[x1, y, z], [x1, y1, z], [x, y1, z]]);
-    }
+    });
   };
   hbm(-53);
   for (const x of [-27, 2]) {
@@ -337,9 +370,7 @@ function tokens(s: Sketch): void {
   for (let x = -80; x <= 76; x += 12) s.box(x, 58, 6, 4, 6, 2.5);
 
   for (let i = 0; i < 4; i++) {
-    s.group({ className: styles.token, style: { "--t": i } as CSSProperties }, () =>
-      s.box(98 + i * 14, -4, 8, 8, 0, 8),
-    );
+    s.group(anim(styles.pulse, i), () => s.box(98 + i * 14, -4, 8, 8, 0, 8));
   }
 }
 

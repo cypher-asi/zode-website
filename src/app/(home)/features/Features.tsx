@@ -33,9 +33,9 @@ export function Features(): ReactElement {
         {FEATURES.map((feature, n) => (
           <Fragment key={feature.id}>
             <article className={styles.text} style={area(`t${n + 1}`)}>
-              <h3 className={styles.title}>
+              <h2 className={styles.title}>
                 <span>{feature.title[0]}</span> <span>{feature.title[1]}</span>
-              </h3>
+              </h2>
               <p className={styles.body}>{feature.body}</p>
             </article>
             <figure className={styles.figure} style={area(`f${n + 1}`)}>
@@ -46,7 +46,7 @@ export function Features(): ReactElement {
         ))}
 
         <div className={styles.cta} style={area("cta")}>
-          <p className={styles.ctaTitle}>From order to tokens in 90 days.</p>
+          <h1 className={styles.ctaTitle}>From order to tokens in 90 days.</h1>
           <TerminalMenu items={ACTIONS} label="Get compute" />
         </div>
       </div>

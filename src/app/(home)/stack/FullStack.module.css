@@ -41,10 +41,10 @@
 .title {
   margin: 0;
   font-family: var(--font-display), Georgia, serif;
-  font-size: clamp(32px, 3.6vw, 56px);
+  font-size: var(--h2-size);
   font-weight: 300;
-  line-height: 1.06;
-  letter-spacing: -0.025em;
+  line-height: var(--h2-leading);
+  letter-spacing: var(--h2-tracking);
 }
 
 .lede {

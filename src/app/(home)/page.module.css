@@ -13,40 +13,16 @@
   --off-black: #0c0c0d;
   --edge: clamp(32px, 6vw, 96px);
   --bar-height: 52px;
+  /* Twice the pinned header's centre line (see PinnedHeader.module.css), so the header sits centred in it. */
+  --header-band: 86px;
   --button-radius: 3px;
-  /* Width of the 45° jog in the seams between the hero halves and between sections. */
-  --seam-step: clamp(10px, 1vw, 18px);
-}
-
-/*
- * Each section below the hero rises `--seam-step` over one half of the one
- * above through a 45° jog at the center, alternating left, right, left down
- * the page (circuit/geometry.ts assumes the same order). The first rises on
- * the left, so the hero split runs straight into the jog and on along the
- * boundary like one trace. Every section background is a solid color, so the
- * tab can inherit it.
- */
-.page > [data-circuit] + [data-circuit] {
-  position: relative;
-}
-
-.page > [data-circuit] + [data-circuit]::before {
-  content: "";
-  position: absolute;
-  z-index: 2;
-  top: calc(-1 * var(--seam-step));
-  right: calc(50% - var(--seam-step) / 2);
-  left: 0;
-  height: var(--seam-step);
-  background: inherit;
-  clip-path: polygon(0 0, calc(100% - var(--seam-step)) 0, 100% 100%, 0 100%);
-  pointer-events: none;
-}
-
-.page > [data-circuit] + [data-circuit]:nth-child(odd of [data-circuit])::before {
-  right: 0;
-  left: calc(50% - var(--seam-step) / 2);
-  clip-path: polygon(0 100%, var(--seam-step) 0, 100% 0, 100% 100%);
+  /* Heading scale: H1 is the hero headline, H2 every section title. */
+  --h1-size: clamp(34px, 3.6vw, 56px);
+  --h1-leading: 1.06;
+  --h1-tracking: -0.025em;
+  --h2-size: clamp(29px, 2.55vw, 40px);
+  --h2-leading: 1.1;
+  --h2-tracking: -0.02em;
 }
 
 .hero {
@@ -56,18 +32,18 @@
   overflow: hidden;
 }
 
-/* White pod explorer below the hero (see pod/); clips the fiber strands at the screen edges. */
+/* White pod explorer below the hero (see pod/); clips the drawing where it spills past the screen edges. */
 .tour {
   background: #ffffff;
   color: var(--off-black);
   overflow-x: clip;
 }
 
-/* Full-viewport assembly-line scene below the stack (see assembly/). */
+/* Slightly taller-than-viewport assembly-line scene below the stack (see assembly/). */
 .assembly {
   position: relative;
-  height: 100dvh;
-  min-height: 560px;
+  height: 112dvh;
+  min-height: 630px;
   background: var(--off-black);
   color: var(--off-white);
 }
@@ -96,51 +72,34 @@
   color: var(--off-white);
 }
 
-/* Landscape band inset as a card inside the circuit rails, then the copyright row (see footer/). */
+/*
+ * Full-bleed landscape below a band the pinned header sits centred in, then
+ * the wordmark and sideways copyright band (see footer/). Exactly one screen:
+ * the landscape gives up height first so the whole footer fits, and the
+ * wordmark band takes any spare.
+ */
 .footer {
-  padding: calc(var(--frame-inset) + 6px);
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  /* Floor keeps the header band, the landscape's min-height, and the band's sideways copyright inside the cap. */
+  max-height: max(100dvh, calc(452px + var(--header-band)));
+  padding-top: var(--header-band);
   background: #000000;
 }
-
-/* Same faded watermark the shared footer draws, moved below the landscape. */
-.footerMark {
-  display: block;
-  width: min(94%, 1100px);
-  height: auto;
-  margin: clamp(44px, 5vw, 80px) auto;
-  opacity: 0.08;
-  pointer-events: none;
-  user-select: none;
-}
-
-/*
- * The two halves overlap by `--seam-step`, and the white panel is clipped like
- * a circuit trace: straight down half a step right of the center line, a 45°
- * jog in at mid-height, then straight down half a step left of it.
- */
 .left {
   position: relative;
   z-index: 1;
   display: flex;
   align-items: center;
-  margin-right: calc(var(--seam-step) / -2);
-  padding: 96px calc(var(--edge) + var(--seam-step) / 2) calc(var(--bar-height) + 48px) var(--edge);
+  padding: 96px var(--edge) calc(var(--bar-height) + 48px);
   background: var(--off-white);
   color: var(--off-black);
-  clip-path: polygon(
-    0 0,
-    100% 0,
-    100% calc(50% - var(--seam-step) / 2),
-    calc(100% - var(--seam-step)) calc(50% + var(--seam-step) / 2),
-    calc(100% - var(--seam-step)) 100%,
-    0 100%
-  );
 }
 
 .right {
   position: relative;
   min-height: 0;
-  margin-left: calc(var(--seam-step) / -2);
   background: #000000;
   color: var(--off-white);
 }
@@ -152,10 +111,10 @@
 .headline {
   margin: 0;
   font-family: var(--font-display), Georgia, serif;
-  font-size: clamp(36px, 4.2vw, 68px);
+  font-size: var(--h1-size);
   font-weight: 300;
-  line-height: 1.06;
-  letter-spacing: -0.025em;
+  line-height: var(--h1-leading);
+  letter-spacing: var(--h1-tracking);
 }
 
 .line {
@@ -192,9 +151,8 @@
   justify-content: space-between;
   gap: 24px;
   height: var(--bar-height);
-  /* The section below rises `--seam-step` over this half; keep the text clear of it. */
-  padding: 0 calc(var(--edge) / 2 + var(--seam-step)) var(--seam-step) var(--edge);
-  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  /* The top rule is a circuit trace (`data-circuit-rule`), drawn across both halves. */
+  padding: 0 calc(var(--edge) / 2) 0 var(--edge);
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -206,6 +164,8 @@
   .page {
     --edge: 24px;
     --bar-height: 48px;
+    --header-band: 66px;
+    --h1-size: clamp(32px, 8vw, 46px);
   }
 
   .hero {
@@ -216,31 +176,15 @@
     overflow: visible;
   }
 
-  /* Stacked, so the seam runs across and jogs up at mid-width instead. */
   .left {
-    margin: 0 0 calc(var(--seam-step) / -2);
-    padding: 120px var(--edge) calc(var(--bar-height) + 48px + var(--seam-step));
-    clip-path: polygon(
-      0 0,
-      100% 0,
-      100% calc(100% - var(--seam-step)),
-      calc(50% + var(--seam-step) / 2) calc(100% - var(--seam-step)),
-      calc(50% - var(--seam-step) / 2) 100%,
-      0 100%
-    );
-  }
-
-  .headline {
-    font-size: clamp(34px, 9vw, 52px);
+    padding: 120px var(--edge) calc(var(--bar-height) + 48px);
   }
 
   /* Single column here, so the bar no longer has to match the gallery's. */
   .bar {
-    bottom: var(--seam-step);
     height: auto;
     min-height: var(--bar-height);
     padding-block: 10px;
-    padding-right: calc(var(--edge) / 2);
   }
 
   .helper {
@@ -249,6 +193,5 @@
 
   .right {
     min-height: 110vw;
-    margin: calc(var(--seam-step) / -2) 0 0;
   }
 }

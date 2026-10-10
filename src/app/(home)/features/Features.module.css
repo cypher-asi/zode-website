@@ -58,10 +58,10 @@
 .title {
   margin: 0;
   font-family: var(--font-display), Georgia, serif;
-  font-size: clamp(26px, 2.2vw, 34px);
+  font-size: var(--h2-size);
   font-weight: 300;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  line-height: var(--h2-leading);
+  letter-spacing: var(--h2-tracking);
   color: var(--ink);
 }
 
@@ -109,10 +109,10 @@
   max-width: 520px;
   margin: 0;
   font-family: var(--font-display), Georgia, serif;
-  font-size: clamp(32px, 3.2vw, 52px);
+  font-size: var(--h2-size);
   font-weight: 300;
-  line-height: 1.06;
-  letter-spacing: -0.025em;
+  line-height: var(--h2-leading);
+  letter-spacing: var(--h2-tracking);
   text-wrap: balance;
   color: var(--ink);
 }
@@ -207,19 +207,128 @@
   letter-spacing: 0.08em;
 }
 
-.token {
-  animation: token 2.4s ease-in-out infinite;
-  animation-delay: calc(var(--t) * 300ms);
+/*
+ * Hover loops (groups tagged in FeatureArt.tsx), mirroring the stack plates
+ * in ../stack/FullStack.module.css. Each group starts `--k` x `--step` late;
+ * keep `--step` x the largest `--k` within one `--period` so a sweep never
+ * overlaps the next.
+ */
+.flash {
+  --step: 110ms;
 }
 
-@keyframes token {
-  0%,
-  100% {
-    opacity: 0.25;
+.dim {
+  --step: 40ms;
+  --period: 1440ms;
+}
+
+.shade {
+  --step: 60ms;
+}
+
+.hop {
+  --period: 520ms;
+}
+
+.ripple {
+  --step: 100ms;
+}
+
+.whirl {
+  --step: 120ms;
+  --period: 480ms;
+}
+
+.pulse {
+  --step: 150ms;
+  --period: 1200ms;
+}
+
+/* Rotates about its own centre, so only screen-space drawings (not projected ones) can spin. */
+.spin {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .figure:hover
+    :is(.flash .ring, .dim .ink, .shade :is(.top, .sideL), .hop, .ripple > *, .whirl > *, .pulse) {
+    animation-duration: var(--period, 1600ms);
+    animation-timing-function: ease-in-out;
+    animation-delay: calc(var(--k) * var(--step));
+    animation-iteration-count: infinite;
   }
 
-  40% {
-    opacity: 1;
+  .figure:hover .flow :is(line, polyline, circle) {
+    stroke-dasharray: 3 3;
+    animation: dash-flow 600ms linear infinite;
+  }
+
+  .figure:hover .spin {
+    animation: spin 9s linear infinite;
+  }
+
+  .figure:hover .flash .ring {
+    animation-name: fill-ink;
+  }
+
+  .figure:hover :is(.dim .ink, .pulse) {
+    animation-name: fade-out;
+  }
+
+  .figure:hover .shade :is(.top, .sideL) {
+    animation-name: fill-shade;
+  }
+
+  .figure:hover .hop {
+    animation-name: hop-up;
+  }
+
+  .figure:hover :is(.ripple, .whirl) > * {
+    animation-name: stroke-ink;
+  }
+}
+
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -6;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fill-ink {
+  50% {
+    fill: var(--ink);
+  }
+}
+
+@keyframes fade-out {
+  50% {
+    opacity: 0.15;
+  }
+}
+
+@keyframes fill-shade {
+  50% {
+    fill: #c4c4be;
+  }
+}
+
+@keyframes hop-up {
+  50% {
+    transform: translateY(-1.5px);
+  }
+}
+
+@keyframes stroke-ink {
+  50% {
+    stroke: var(--ink);
+    stroke-width: 1.4;
   }
 }
 
@@ -267,10 +376,5 @@
     opacity: 1;
     translate: none;
     transition: none;
-  }
-
-  .token {
-    animation: none;
-    opacity: 1;
   }
 }

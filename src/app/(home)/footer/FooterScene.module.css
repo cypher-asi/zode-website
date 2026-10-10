@@ -1,14 +1,15 @@
 /*
  * Photo band at the very bottom of the page (see FooterScene.tsx). The photos
  * are 8:3 with the ZODE's footprint centred at 50% / 77%; using that same
- * point as `object-position` keeps the ZODE in frame however the card crops.
+ * point as `object-position` keeps the ZODE in frame however the band crops,
+ * including when the footer squeezes it shorter to fit the screen.
  */
 .root {
   position: relative;
-  aspect-ratio: 8 / 3;
+  width: 100%;
+  aspect-ratio: 16 / 5;
   min-height: 220px;
   overflow: hidden;
-  border-radius: 10px;
   background: #0c0c0d;
 }
 

@@ -16,10 +16,10 @@
 .title {
   margin: 0;
   font-family: var(--font-display), Georgia, serif;
-  font-size: clamp(29px, 3.52vw, 58px);
+  font-size: var(--h2-size);
   font-weight: 300;
-  line-height: 1.06;
-  letter-spacing: -0.025em;
+  line-height: var(--h2-leading);
+  letter-spacing: var(--h2-tracking);
   white-space: nowrap;
   color: var(--off-white);
 }

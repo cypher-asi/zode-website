@@ -85,7 +85,7 @@ export function ZodeGallery(): ReactElement {
   };
 
   return (
-    <div className={styles.gallery} data-top-fade="left">
+    <div className={styles.gallery} data-top-fade="left" data-media>
       <div
         id={`${baseId}-panel`}
         className={styles.panel}

@@ -64,6 +64,9 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: import.meta.dirname,
   },
+  async redirects() {
+    return [{ source: "/future-home", destination: "/", permanent: false }];
+  },
   async rewrites() {
     return [
       // RFC 9116 requires security.txt at this path; the route handler lives at
