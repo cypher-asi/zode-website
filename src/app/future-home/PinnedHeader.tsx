@@ -38,7 +38,12 @@ function sampleTone(el: HTMLElement): Tone | null {
  * starts under the button, so it only fades under the wordmark). Section
  * backgrounds stay unmarked so the surface behind both remains solid.
  */
-export function PinnedHeader(): ReactElement {
+export function PinnedHeader({
+  showAction = true,
+}: {
+  /** Set false to leave out the top-right action, e.g. on the page it links to. */
+  showAction?: boolean;
+}): ReactElement {
   const brandRef = useRef<HTMLAnchorElement>(null);
   const actionRef = useRef<HTMLAnchorElement>(null);
   const [brandTone, setBrandTone] = useState<Tone>("light");
@@ -51,14 +56,14 @@ export function PinnedHeader(): ReactElement {
       frame = 0;
       const brand = brandRef.current;
       const action = actionRef.current;
-      if (!brand || !action) return;
+      if (!brand) return;
       const brandRect = brand.getBoundingClientRect();
-      const actionRect = action.getBoundingClientRect();
+      const actionRect = action?.getBoundingClientRect();
 
-      const clear = Math.max(brandRect.bottom, actionRect.bottom) + FADE_GAP;
+      const clear = Math.max(brandRect.bottom, actionRect?.bottom ?? 0) + FADE_GAP;
       const solid = clear + FADE_LENGTH;
       const leftEdge = brandRect.right + SIDE_PAD;
-      const rightEdge = actionRect.left - SIDE_PAD;
+      const rightEdge = actionRect ? actionRect.left - SIDE_PAD : Infinity;
       for (const node of document.querySelectorAll<HTMLElement>("[data-top-fade]")) {
         const { top, left, right } = node.getBoundingClientRect();
         const sides = node.dataset.topFade;
@@ -89,8 +94,10 @@ export function PinnedHeader(): ReactElement {
 
       const nextBrandTone = sampleTone(brand);
       if (nextBrandTone) setBrandTone(nextBrandTone);
-      const nextActionTone = sampleTone(action);
-      if (nextActionTone) setActionTone(nextActionTone);
+      if (action) {
+        const nextActionTone = sampleTone(action);
+        if (nextActionTone) setActionTone(nextActionTone);
+      }
     };
 
     const schedule = () => {
@@ -105,7 +112,7 @@ export function PinnedHeader(): ReactElement {
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
     };
-  }, []);
+  }, [showAction]);
 
   return (
     <>
@@ -119,9 +126,11 @@ export function PinnedHeader(): ReactElement {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className={styles.wordmark} src="/wordmark.png" alt="" aria-hidden="true" />
       </Link>
-      <Link ref={actionRef} className={styles.action} href="/rent-compute" data-tone={actionTone}>
-        Rent Compute
-      </Link>
+      {showAction ? (
+        <Link ref={actionRef} className={styles.action} href="/rent-compute" data-tone={actionTone}>
+          Rent Compute
+        </Link>
+      ) : null}
     </>
   );
 }

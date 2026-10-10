@@ -35,7 +35,7 @@ export default async function BuyComputePage() {
 
   return (
     <main className={`${styles.page} ${display.variable} ${text.variable}`}>
-      <PinnedHeader />
+      <PinnedHeader showAction={false} />
       <Configurator />
     </main>
   );
