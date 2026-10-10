@@ -121,6 +121,7 @@ export function Configurator(): ReactElement {
                       value={config.platform}
                       onChange={(platform) => update({ platform })}
                       onPreview={setPreview}
+                      inline
                     />
                     <IncludedCard legend="Cooling" choice={COOLING} onPreview={setPreview} />
                   </>

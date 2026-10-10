@@ -57,25 +57,27 @@ const previewHandlers = (focus: Focus | undefined, onPreview: Preview) => ({
   onBlur: () => onPreview(null),
 });
 
-/** Radio cards for one exclusive choice. */
+/** Radio cards for one exclusive choice; `inline` sets them side by side instead of stacked. */
 export function ChoiceGroup<Id extends string>({
   legend,
   choices,
   value,
   onChange,
   onPreview,
+  inline = false,
 }: {
   legend: string;
   choices: readonly Choice<Id>[];
   value: Id;
   onChange: (id: Id) => void;
   onPreview: Preview;
+  inline?: boolean;
 }): ReactElement {
   const name = useId();
   return (
     <fieldset className={styles.group}>
       <legend className={styles.legend}>{legend}</legend>
-      <div className={styles.cards}>
+      <div className={styles.cards} data-inline={inline || undefined}>
         {choices.map((choice) => (
           <label
             key={choice.id}
