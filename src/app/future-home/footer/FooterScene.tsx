@@ -63,7 +63,7 @@ export function FooterScene(): ReactElement {
   }, []);
 
   return (
-    <div ref={ref} className={styles.root} data-surface="light" aria-hidden="true">
+    <div ref={ref} className={styles.root} data-surface="dark" aria-hidden="true">
       {SCENES.map((scene, i) => (
         <Image
           key={scene.id}
