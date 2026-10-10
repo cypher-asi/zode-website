@@ -1,6 +1,6 @@
 /*
  * White features grid. Sits inside `.features` in ../page.module.css and
- * inherits its `--edge`, `--off-black`, `--button-radius` and font variables.
+ * inherits its `--edge`, `--off-black` and font variables.
  * Hairlines are the grid background showing through 1px gaps, so the outer
  * edge stays open.
  */
@@ -115,30 +115,6 @@
   letter-spacing: -0.025em;
   text-wrap: balance;
   color: var(--ink);
-}
-
-.button {
-  display: inline-flex;
-  align-items: center;
-  height: 46px;
-  padding: 0 24px;
-  border-radius: var(--button-radius);
-  background: var(--ink);
-  color: #ffffff;
-  font-size: 15px;
-  font-weight: 600;
-  text-decoration: none;
-  white-space: nowrap;
-  transition: background-color 160ms ease;
-}
-
-.button:hover {
-  background: #2a2a2e;
-}
-
-.button:focus-visible {
-  outline: 2px solid #2563eb;
-  outline-offset: 3px;
 }
 
 /* Drawings (see FeatureArt.tsx). `--w` is the figure's viewBox width. */

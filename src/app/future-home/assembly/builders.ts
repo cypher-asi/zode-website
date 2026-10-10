@@ -4,7 +4,7 @@ import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeome
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { CabinLayers } from "@/components/CabinScene/cabinModel";
-import { POD, partBounds, type Part, type Shape } from "./podSpec";
+import { END_CAP, POD, partBounds, type Part, type Shape } from "./podSpec";
 import { ARM_LINKS, BELT, BELT_TOP, GANTRY, POD_PITCH, SHELL_X, type Vec3 } from "./timeline";
 
 /*
@@ -252,6 +252,8 @@ export interface PrismOpts {
   capRound?: number;
   /** Rotation about `center`, e.g. a tilt. */
   rotation?: THREE.Matrix4;
+  /** Thin lines where a curved edge meets a flat face, so a large fillet still reads from the front. */
+  tangents?: boolean;
 }
 
 /**
@@ -272,6 +274,7 @@ export class Prism {
   readonly halfLen: number;
   private readonly normals: THREE.Vector2[];
   private readonly creases: boolean[];
+  private readonly tangents: boolean[];
 
   constructor(
     readonly center: THREE.Vector3,
@@ -293,6 +296,13 @@ export class Prism {
     const n = this.outer.length;
     this.normals = this.outer.map((p, i) => edgeNormal(p, this.outer[(i + 1) % n]));
     this.creases = this.outer.map((_, i) => this.normals[(i + n - 1) % n].dot(this.normals[i]) < CREASE_COS);
+    // A flat side meeting an arc shows up as a long edge next to a short one.
+    this.tangents = this.outer.map((p, i) => {
+      if (!opts.tangents || this.creases[i]) return false;
+      const a = p.distanceTo(this.outer[(i + n - 1) % n]);
+      const b = p.distanceTo(this.outer[(i + 1) % n]);
+      return Math.max(a, b) > 2.5 * Math.min(a, b);
+    });
     this.cap = Math.min(Math.max(opts.capRound ?? 0, 0), length * 0.45);
     this.inner = this.cap > 0 ? insetProfile(this.outer, this.cap) : null;
     this.halfLen = length / 2;
@@ -328,7 +338,7 @@ export class Prism {
     const uv = view ? this.viewUV(view) : null;
     for (let i = 0; i < this.outer.length; i++) {
       const sil = uv !== null && this.isSilhouette(i, uv[0], uv[1]);
-      if (!sil && !this.creases[i]) continue;
+      if (!sil && !this.creases[i] && !this.tangents[i]) continue;
       segs.push(sil ? detail : true, this.at(this.outer[i], -this.half), this.at(this.outer[i], this.half));
     }
   }
@@ -437,6 +447,126 @@ export function cylPiece(
   return prismPiece(segs, center, axis, circleProfile(radius), length, { detail, fill, capRound });
 }
 
+export interface LoftSpec {
+  /** Plan outline as (x, z) in metres; edge i runs from point i to point i + 1. */
+  plan: THREE.Vector2[];
+  y0: number;
+  y1: number;
+  /** Rounding of the top edges: radius plus a weight per plan edge (0 keeps that edge square). */
+  top?: { r: number; w: readonly number[] };
+  /** Rounding of the bottom edges, weighted the same way. */
+  bottom?: { r: number; w: readonly number[] };
+  detail?: boolean;
+}
+
+/** Quarter-circle steps used for a loft's rounded top / bottom edges. */
+const LOFT_STEPS = 5;
+
+/**
+ * Vertical solid from a plan outline whose top and bottom edges are rounded
+ * edge by edge, so a pod can curve on its open sides and stay square where it
+ * couples to a neighbour. Edges are drawn as the top and bottom face
+ * outlines, thin shoulder lines where a rounding meets the walls, and profile
+ * lines through every ring at plan corners and silhouettes.
+ */
+export function loftPiece(segs: Segs, spec: LoftSpec, fill = true): THREE.BufferGeometry | null {
+  const n = spec.plan.length;
+  const P = spec.plan.slice();
+  let wT = spec.top ? spec.top.w.slice() : new Array<number>(n).fill(0);
+  let wB = spec.bottom ? spec.bottom.w.slice() : new Array<number>(n).fill(0);
+  if (THREE.ShapeUtils.area(P) < 0) {
+    P.reverse();
+    const remap = (w: number[]) => w.map((_, j) => w[(2 * n - 2 - j) % n]);
+    wT = remap(wT);
+    wB = remap(wB);
+  }
+  const N = P.map((p, i) => edgeNormal(p, P[(i + 1) % n]));
+
+  /** Plan outline with each edge pushed inward by inset x its weight. */
+  const ring = (inset: number, w: number[]) =>
+    P.map((p, i) => {
+      const a = (i + n - 1) % n;
+      const n0 = N[a];
+      const n1 = N[i];
+      const d0 = inset * w[a];
+      const d1 = inset * w[i];
+      const det = n0.x * n1.y - n0.y * n1.x;
+      if (Math.abs(det) > 0.5) {
+        return new THREE.Vector2(p.x - (d0 * n1.y - d1 * n0.y) / det, p.y - (n0.x * d1 - n1.x * d0) / det);
+      }
+      const k = (d0 + d1) / 2 / (1 + n0.dot(n1));
+      return new THREE.Vector2(p.x - (n0.x + n1.x) * k, p.y - (n0.y + n1.y) * k);
+    });
+
+  const rb = spec.bottom?.r ?? 0;
+  const rt = spec.top?.r ?? 0;
+  const rings: { y: number; pts: THREE.Vector2[] }[] = [];
+  for (let k = 0; k <= (rb > 0 ? LOFT_STEPS : 0); k++) {
+    const t = rb > 0 ? (k / LOFT_STEPS) * (Math.PI / 2) : Math.PI / 2;
+    rings.push({ y: spec.y0 + rb * (1 - Math.cos(t)), pts: ring(rb * (1 - Math.sin(t)), wB) });
+  }
+  const topStart = rings.length;
+  for (let k = 0; k <= (rt > 0 ? LOFT_STEPS : 0); k++) {
+    const t = rt > 0 ? (k / LOFT_STEPS) * (Math.PI / 2) : 0;
+    rings.push({ y: spec.y1 - rt + rt * Math.sin(t), pts: ring(rt * (1 - Math.cos(t)), wT) });
+  }
+
+  const at = (p: THREE.Vector2, y: number) => new THREE.Vector3(p.x, y, p.y);
+  const d = spec.detail ?? false;
+  const ringLine = (r: number, weight: boolean, w?: number[]) => {
+    const { y, pts } = rings[r];
+    for (let i = 0; i < n; i++) {
+      if (w && w[i] < 0.05) continue;
+      segs.push(weight, at(pts[i], y), at(pts[(i + 1) % n], y));
+    }
+  };
+  ringLine(0, d);
+  ringLine(rings.length - 1, d);
+  if (rb > 0) ringLine(topStart - 1, true, wB);
+  if (rt > 0) ringLine(topStart, true, wT);
+
+  const du = VIEW_DIR.x;
+  const dv = VIEW_DIR.z;
+  const facing = (m: THREE.Vector2) => Math.sign(Math.round((m.x * du + m.y * dv) * 1e6));
+  /** Facing split at 45 degrees, so wide plan curves also get a line where a side view would outline them. */
+  const band = (m: THREE.Vector2) => {
+    const s = (m.x * du + m.y * dv) / Math.hypot(du, dv);
+    return facing(m) * (Math.abs(s) > Math.SQRT1_2 ? 2 : 1);
+  };
+  for (let i = 0; i < n; i++) {
+    const a = N[(i + n - 1) % n];
+    const b = N[i];
+    const sil = facing(a) !== facing(b);
+    const turn = a.dot(b);
+    if (!sil && turn >= CREASE_COS && band(a) === band(b)) continue;
+    const heavy = sil || turn < 0.5;
+    for (let r = 0; r + 1 < rings.length; r++) {
+      segs.push(heavy ? d : true, at(rings[r].pts[i], rings[r].y), at(rings[r + 1].pts[i], rings[r + 1].y));
+    }
+  }
+
+  if (!fill) return null;
+  const pos: number[] = [];
+  const tri = (a: THREE.Vector2, ya: number, b: THREE.Vector2, yb: number, c: THREE.Vector2, yc: number) => {
+    pos.push(a.x, ya, a.y, b.x, yb, b.y, c.x, yc, c.y);
+  };
+  for (let r = 0; r + 1 < rings.length; r++) {
+    const lo = rings[r];
+    const hi = rings[r + 1];
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      tri(lo.pts[i], lo.y, lo.pts[j], lo.y, hi.pts[j], hi.y);
+      tri(lo.pts[i], lo.y, hi.pts[j], hi.y, hi.pts[i], hi.y);
+    }
+  }
+  for (const { y, pts } of [rings[0], rings[rings.length - 1]]) {
+    for (const [a, b, c] of THREE.ShapeUtils.triangulateShape(pts, [])) tri(pts[a], y, pts[b], y, pts[c], y);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  return g;
+}
+
 function mergeFills(fills: (THREE.BufferGeometry | null)[]): THREE.BufferGeometry | null {
   const list = fills
     .filter((g): g is THREE.BufferGeometry => g !== null)
@@ -472,6 +602,18 @@ export function buildPart(kit: Kit, part: Part, mats: LineMats): THREE.Group {
     );
     const fill = !s.ghost;
     const cap = (s.cap ?? 0) / 1000;
+    if (s.kind === "loft" && s.loft) {
+      const { plan, top, topW, bottom, bottomW } = s.loft;
+      const spec: LoftSpec = {
+        plan: plan.map(([x, z]) => new THREE.Vector2((x - b.x) / 1000, -(z - b.z) / 1000)),
+        y0: (s.y - b.y) / 1000,
+        y1: (s.y + s.h - b.y) / 1000,
+        top: top && topW ? { r: top / 1000, w: topW } : undefined,
+        bottom: bottom && bottomW ? { r: bottom / 1000, w: bottomW } : undefined,
+        detail: s.detail,
+      };
+      return loftPiece(segs, spec, fill);
+    }
     if (s.kind === "box") {
       const size = new THREE.Vector3(s.w / 1000, s.h / 1000, s.d / 1000);
       const top = s.roundTop ?? s.bevelTop ?? 0;
@@ -482,6 +624,7 @@ export function buildPart(kit: Kit, part: Part, mats: LineMats): THREE.Group {
         bevel: (s.bevel ?? 0) / 1000,
         top: top / 1000,
         topBevel: s.bevelTop !== undefined,
+        tangents: s.roundTop !== undefined,
         capRound: cap,
         detail: s.detail,
         fill,
@@ -853,7 +996,7 @@ export function buildShell(
   const bodyLen = roofBox.max.z - roofBox.min.z;
   const cx = (roofBox.min.x + roofBox.max.x) / 2;
   const cz = (roofBox.min.z + roofBox.max.z) / 2;
-  const rowLen = (3 * POD_PITCH * 1000 - POD.joint) / 1000;
+  const rowLen = (3 * POD_PITCH * 1000 - POD.joint + 2 * END_CAP) / 1000;
   const podHeight = (POD.height + 1600) / 1000;
   const k = Math.max((rowLen + 1.8) / (bodyLen * 0.92), podHeight / (model.eaveY - model.floorY));
 

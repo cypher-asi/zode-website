@@ -1,16 +1,16 @@
 "use client";
 
-import Link from "next/link";
 import { useRef, useState, type CSSProperties, type ReactElement } from "react";
 import { useInView } from "@/lib/useInView";
 import { LAYERS, type LayerId } from "./layers";
-import { StackArt, VIEW, labelY } from "./StackArt";
+import { ANCHOR_X, StackArt, VIEW, labelY } from "./StackArt";
 import styles from "./FullStack.module.css";
 
 /**
- * "Full stack" section: an exploded line drawing of the six layers with
- * labels alternating either side. The plates spread apart once the figure
- * scrolls into view, and hovering a plate or its label highlights the pair.
+ * "Full stack" section: the intro copy on the left, and an exploded line
+ * drawing of the six layers with labels to its right, each joined to its
+ * plate by a leader line. The plates spread apart once the figure scrolls
+ * into view, and hovering a plate highlights it and its label.
  */
 export function FullStack(): ReactElement {
   const figureRef = useRef<HTMLDivElement>(null);
@@ -18,60 +18,58 @@ export function FullStack(): ReactElement {
   const [active, setActive] = useState<LayerId | null>(null);
 
   return (
-    <div className={styles.root}>
-      <header className={styles.header}>
+    <div className={styles.root} data-top-fade>
+      <div className={styles.layout}>
         <div className={styles.intro}>
-          <p className={styles.pill}>Full stack</p>
-          <h2 className={styles.title}>The full stack, from land to network.</h2>
-          <p className={styles.helper}>
-            Every layer a sovereign AI deployment needs, built and operated as one system.
+          <h2 className={styles.title}>From dirt to tokens.</h2>
+          <p className={styles.lede}>
+            ZODE builds every layer itself, from the land and power to the
+            network that delivers your tokens. Owning the stack means fewer
+            parts, systems tuned for specific AI workloads, lower costs, and
+            sites that deploy in weeks.
           </p>
         </div>
-        <Link className={styles.cta} href="/buy-compute">
-          Deploy Compute
-          <svg
-            className={styles.ctaArrow}
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M3 8h10M8.5 3.5 13 8l-4.5 4.5" />
-          </svg>
-        </Link>
-      </header>
 
-      <div
-        ref={figureRef}
-        className={styles.figure}
-        data-exploded={exploded || undefined}
-        data-active={active ?? undefined}
-      >
-        <StackArt active={active} onActive={setActive} />
+        <div
+          ref={figureRef}
+          className={styles.figure}
+          data-exploded={exploded || undefined}
+          data-active={active ?? undefined}
+          style={
+            {
+              "--anchor-in": ((VIEW.x + VIEW.w - ANCHOR_X) / VIEW.w).toFixed(4),
+              "--view-w": VIEW.w,
+            } as CSSProperties
+          }
+        >
+          <StackArt active={active} onActive={setActive} />
 
-        <ol className={styles.labels}>
-          {LAYERS.map((layer, i) => (
-            <li
-              key={layer.id}
-              className={styles.label}
-              data-side={layer.side}
-              data-on={active === layer.id || undefined}
-              style={
-                {
-                  "--y": `${(((labelY(i) - VIEW.y) / VIEW.h) * 100).toFixed(2)}%`,
-                  "--i": i,
-                } as CSSProperties
-              }
-              onPointerEnter={() => setActive(layer.id)}
-              onPointerLeave={() => setActive(null)}
-            >
-              <span className={styles.labelTitle}>{layer.title}</span> - {layer.body}
-            </li>
-          ))}
-        </ol>
+          <ol className={styles.labels}>
+            {LAYERS.map((layer, i) => (
+              <li
+                key={layer.id}
+                className={styles.label}
+                data-on={active === layer.id || undefined}
+                style={
+                  {
+                    "--y": `${(((labelY(i) - VIEW.y) / VIEW.h) * 100).toFixed(2)}%`,
+                    "--i": i,
+                  } as CSSProperties
+                }
+              >
+                <span className={styles.labelText}>
+                  <span className={styles.labelHead}>
+                    <span className={styles.labelTitle}>{layer.title}</span>
+                    <span className={styles.labelIndex}>
+                      Layer {String(LAYERS.length - i).padStart(2, "0")}
+                    </span>
+                  </span>
+                  <span className={styles.labelBody}>{layer.body}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
       </div>
     </div>
   );

@@ -188,7 +188,7 @@
   background: var(--accent);
 }
 
-/* Stage strip; same height and rules as the hero's bottom bar. */
+/* Stage strip; same height as the hero's bottom bar. */
 .bar {
   position: absolute;
   right: 0;
@@ -199,7 +199,6 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.16);
   background: var(--off-black);
 }
 
@@ -208,13 +207,8 @@
   display: flex;
   flex: 1 1 0;
   min-width: 0;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.4);
   transition: color 240ms ease;
-}
-
-.cell:first-child {
-  border-left: 0;
 }
 
 .cell[data-state="active"] {
@@ -229,6 +223,7 @@
   display: flex;
   flex: 1 1 auto;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   min-width: 0;
   padding: 0 16px;
@@ -238,16 +233,12 @@
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.08em;
-  text-align: left;
+  text-align: center;
   text-transform: uppercase;
   white-space: nowrap;
   color: inherit;
   cursor: pointer;
   transition: background-color 160ms ease;
-}
-
-.cell:first-child .cellButton {
-  padding-left: var(--edge);
 }
 
 .cellButton:hover {
@@ -272,7 +263,7 @@
 
 .fill {
   position: absolute;
-  top: -1px;
+  top: 0;
   left: 0;
   width: 0;
   height: 2px;
@@ -297,9 +288,9 @@
     display: none;
   }
 
-  /* Too narrow for a side heading: sit top-left, below the pinned wordmark. */
+  /* Too narrow for a side heading: sit top-left, clear of the wordmark's fade zone. */
   .intro {
-    top: 72px;
+    top: 120px;
     right: var(--edge);
     bottom: auto;
   }
@@ -308,9 +299,7 @@
     bottom: calc(var(--bar-height, 48px) + 20px);
   }
 
-  .cellButton,
-  .cell:first-child .cellButton {
-    justify-content: center;
+  .cellButton {
     padding: 0;
   }
 

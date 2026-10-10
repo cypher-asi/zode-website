@@ -10,6 +10,9 @@
   --off-black: #0c0c0d;
   --edge: clamp(32px, 6vw, 96px);
   --bar-height: 52px;
+  --button-radius: 3px;
+  /* Width of the 45° jog in the hero seam between the white and black halves. */
+  --seam-step: clamp(10px, 1vw, 18px);
 }
 
 .hero {
@@ -19,7 +22,14 @@
   overflow: hidden;
 }
 
-/* Full-viewport assembly-line scene below the hero (see assembly/). */
+/* White pod explorer below the hero (see pod/); clips the fiber strands at the screen edges. */
+.tour {
+  background: #ffffff;
+  color: var(--off-black);
+  overflow-x: clip;
+}
+
+/* Full-viewport assembly-line scene below the stack (see assembly/). */
 .assembly {
   position: relative;
   height: 100dvh;
@@ -28,16 +38,29 @@
   color: var(--off-white);
 }
 
-/* Light exploded-stack section below the assembly line (see stack/). */
+/* Light exploded-stack section below the pod explorer (see stack/). */
 .stack {
   background: var(--off-white);
   color: var(--off-black);
 }
 
-/* White features grid below the stack (see features/). */
+/* White features grid below the assembly line (see features/). */
 .features {
   background: #ffffff;
   color: var(--off-black);
+}
+
+/* Dark network map below the features (see network/). */
+.network {
+  background: var(--off-black);
+  color: var(--off-white);
+}
+
+/* Closing call to action between the network and the footer (see cta/). */
+.closing {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: #000000;
+  color: var(--off-white);
 }
 
 /* Landscape band inset as a card, then the copyright row (see footer/). */
@@ -57,18 +80,34 @@
   user-select: none;
 }
 
+/*
+ * The two halves overlap by `--seam-step`, and the white panel is clipped like
+ * a circuit trace: straight down half a step right of the center line, a 45°
+ * jog in at mid-height, then straight down half a step left of it.
+ */
 .left {
   position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
-  padding: 96px var(--edge) calc(var(--bar-height) + 48px);
+  margin-right: calc(var(--seam-step) / -2);
+  padding: 96px calc(var(--edge) + var(--seam-step) / 2) calc(var(--bar-height) + 48px) var(--edge);
   background: var(--off-white);
   color: var(--off-black);
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(50% - var(--seam-step) / 2),
+    calc(100% - var(--seam-step)) calc(50% + var(--seam-step) / 2),
+    calc(100% - var(--seam-step)) 100%,
+    0 100%
+  );
 }
 
 .right {
   position: relative;
   min-height: 0;
+  margin-left: calc(var(--seam-step) / -2);
   background: #000000;
   color: var(--off-white);
 }
@@ -88,6 +127,10 @@
 
 .line {
   display: block;
+}
+
+.menu {
+  margin-top: 36px;
 }
 
 /* Tagline on the left of the bottom bar, opposite the word loop. */
@@ -116,7 +159,7 @@
   justify-content: space-between;
   gap: 24px;
   height: var(--bar-height);
-  padding: 0 calc(var(--edge) / 2) 0 var(--edge);
+  padding: 0 calc(var(--edge) / 2 + var(--seam-step)) 0 var(--edge);
   border-top: 1px solid rgba(0, 0, 0, 0.12);
   font-size: 13px;
   font-weight: 500;
@@ -139,8 +182,18 @@
     overflow: visible;
   }
 
+  /* Stacked, so the seam runs across and jogs up at mid-width instead. */
   .left {
-    padding: 120px var(--edge) calc(var(--bar-height) + 48px);
+    margin: 0 0 calc(var(--seam-step) / -2);
+    padding: 120px var(--edge) calc(var(--bar-height) + 48px + var(--seam-step));
+    clip-path: polygon(
+      0 0,
+      100% 0,
+      100% calc(100% - var(--seam-step)),
+      calc(50% + var(--seam-step) / 2) calc(100% - var(--seam-step)),
+      calc(50% - var(--seam-step) / 2) 100%,
+      0 100%
+    );
   }
 
   .headline {
@@ -149,9 +202,11 @@
 
   /* Single column here, so the bar no longer has to match the gallery's. */
   .bar {
+    bottom: var(--seam-step);
     height: auto;
     min-height: var(--bar-height);
     padding-block: 10px;
+    padding-right: calc(var(--edge) / 2);
   }
 
   .helper {
@@ -160,5 +215,6 @@
 
   .right {
     min-height: 110vw;
+    margin: calc(var(--seam-step) / -2) 0 0;
   }
 }

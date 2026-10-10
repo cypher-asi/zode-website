@@ -12,6 +12,11 @@ interface Shot {
 
 const SHOTS: readonly Shot[] = [
   {
+    src: "/images/future-home/zode-hero.jpg",
+    label: "Dusk",
+    alt: "Glass-walled ZODE at dusk, its compute racks and warm wall lights glowing through the glazing",
+  },
+  {
     src: "/images/future-home/zode-cutaway.jpg",
     label: "Cutaway",
     alt: "Cutaway of a ZODE showing its timber-lined steel frame, compute racks, and office",
@@ -44,9 +49,9 @@ const SHOTS: readonly Shot[] = [
 ];
 
 /**
- * One ZODE render at a time with a tab bar along the bottom. Every image stays
- * mounted and stacked so switching tabs cross-fades without a layout jump or
- * a fresh network fetch.
+ * One ZODE render at a time, advanced only by the user, with dot indicators
+ * along the bottom. Every image stays mounted and stacked so switching
+ * cross-fades without a layout jump or a fresh network fetch.
  */
 export function ZodeGallery(): ReactElement {
   const [active, setActive] = useState(0);
@@ -80,7 +85,7 @@ export function ZodeGallery(): ReactElement {
   };
 
   return (
-    <div className={styles.gallery}>
+    <div className={styles.gallery} data-top-fade="left">
       <div
         id={`${baseId}-panel`}
         className={styles.panel}
@@ -109,7 +114,7 @@ export function ZodeGallery(): ReactElement {
         </button>
       </div>
 
-      <div className={styles.tabs} role="tablist" aria-label="ZODE views">
+      <div className={styles.bar} role="tablist" aria-label="ZODE views">
         {SHOTS.map((shot, index) => {
           const selected = index === active;
           return (
@@ -120,16 +125,15 @@ export function ZodeGallery(): ReactElement {
               }}
               type="button"
               id={`${baseId}-tab-${index}`}
-              className={styles.tab}
+              className={styles.dot}
               role="tab"
+              aria-label={shot.label}
               aria-selected={selected}
               aria-controls={`${baseId}-panel`}
               tabIndex={selected ? 0 : -1}
               onClick={() => select(index)}
               onKeyDown={onTabKeyDown}
-            >
-              {shot.label}
-            </button>
+            />
           );
         })}
       </div>

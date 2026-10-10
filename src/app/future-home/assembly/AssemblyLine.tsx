@@ -46,16 +46,14 @@ export function AssemblyLine(): ReactElement {
   const stage = TIMELINE.stages[cursor.stage];
 
   return (
-    <div ref={hostRef} className={styles.root}>
+    <div ref={hostRef} className={styles.root} data-top-fade>
       {inView ? <AssemblyScene onStep={onStep} onTick={onTick} seek={seek} /> : null}
 
       <div className={styles.sideFade} aria-hidden="true" />
 
       <header className={styles.intro}>
         <h2 className={styles.title}>
-          Factory built,
-          <br />
-          pod by pod.
+          Built by robots.
         </h2>
       </header>
 

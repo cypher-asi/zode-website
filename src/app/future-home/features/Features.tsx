@@ -1,14 +1,20 @@
 "use client";
 
-import Link from "next/link";
 import { Fragment, useRef, type CSSProperties, type ReactElement } from "react";
 import { useInView } from "@/lib/useInView";
+import { TerminalMenu, type TerminalMenuItem } from "@/components/TerminalMenu";
 import { FeatureArt } from "./FeatureArt";
 import { FEATURES } from "./features";
 import styles from "./Features.module.css";
 
 /** Desktop reading order of the grid areas, used to stagger the reveal. */
 const ORDER = ["t1", "f2", "t2", "f1", "t3", "f3", "t4", "f5", "t5", "f4", "cta"];
+
+const ACTIONS: readonly TerminalMenuItem[] = [
+  { id: "rent", label: "Rent Compute", href: "/buy-compute" },
+  { id: "own", label: "Own Compute", href: "/deployments" },
+  { id: "meet", label: "Schedule Meeting", href: "/contact" },
+];
 
 const area = (name: string) => ({ gridArea: name, "--i": ORDER.indexOf(name) }) as CSSProperties;
 
@@ -41,9 +47,7 @@ export function Features(): ReactElement {
 
         <div className={styles.cta} style={area("cta")}>
           <p className={styles.ctaTitle}>From order to tokens in 90 days.</p>
-          <Link className={styles.button} href="/buy-compute">
-            Deploy Compute
-          </Link>
+          <TerminalMenu items={ACTIONS} label="Get compute" />
         </div>
       </div>
     </div>

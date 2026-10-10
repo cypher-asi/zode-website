@@ -15,6 +15,9 @@ export function project([x, y, z = 0]: P3): [number, number] {
   return [round(x - y), round((x + y) / 2 - z)];
 }
 
+/** Maps a model point to screen space; it must keep the +x, +y and +z faces turned toward the viewer. */
+export type Projector = (p: P3) => [number, number];
+
 /** Deterministic PRNG so the server and client render identical geometry. */
 export function rng(seed: number): () => number {
   let a = seed;
@@ -54,11 +57,13 @@ export class Sketch {
   private maxY = -Infinity;
 
   readonly cls: SketchClasses;
+  readonly project: Projector;
 
   /** `classes` is a CSS module defining every `SketchClasses` name. */
-  constructor(classes: Readonly<Record<string, string>>) {
+  constructor(classes: Readonly<Record<string, string>>, projector: Projector = project) {
     const { top, sideL, sideR, edge, fine, ink, ring } = classes;
     this.cls = { top, sideL, sideR, edge, fine, ink, ring };
+    this.project = projector;
   }
 
   /** Grows the tracked bounds to include a screen-space rectangle. */
@@ -82,7 +87,7 @@ export class Sketch {
   private points(ps: readonly P3[]): string {
     return ps
       .map((p) => {
-        const [x, y] = project(p);
+        const [x, y] = this.project(p);
         this.extend(x, y);
         return `${x},${y}`;
       })
@@ -118,9 +123,9 @@ export class Sketch {
     );
   }
 
-  /** A circle of radius `r` lying flat at `p`. */
+  /** A circle of radius `r` lying flat at `p`; its ellipse proportions assume the default dimetric projection. */
   disc(p: P3, r: number, className: string): void {
-    const [cx, cy] = project(p);
+    const [cx, cy] = this.project(p);
     const rx = round(r * Math.SQRT2);
     const ry = round(rx / 2);
     this.extend(cx, cy, rx, ry);

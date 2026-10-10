@@ -25,8 +25,19 @@ const M = POD.frame;
 const TOP = POD.height - M; // underside of the top rails
 const POST_H = TOP - F;
 
+/** Vertical solid from a plan outline (pod-local mm) with per-edge rounding of its top / bottom edges. */
+export interface LoftData {
+  plan: [number, number][];
+  top?: number;
+  /** Weight per plan edge (edge i runs from point i to i + 1); 0 keeps it square. */
+  topW?: number[];
+  bottom?: number;
+  bottomW?: number[];
+}
+
 export interface Shape {
-  kind: "box" | "cyl";
+  kind: "box" | "cyl" | "loft";
+  loft?: LoftData;
   x: number;
   y: number;
   z: number;
@@ -213,51 +224,153 @@ function frameStep(): BuildStep {
   };
 }
 
+/** Outer cladding thickness; two pods' end skins still fit inside the coupling joint. */
+const CLAD = 25;
+
+/** Rounded bumper on the row's two outer ends (electrical right, compute left): plan corner radius and depth. */
+export const END_CAP = 450;
+/** Radius of the outer ends' rounded bottom edge, seen from the front. */
+const END_FOOT = 300;
+
+type End = "left" | "right";
+type Side = "front" | "back" | End;
+
+/** One plan edge: which side it belongs to and, on a corner arc, how far round (0 at the long side, 1 at the end). */
+interface PlanEdge {
+  side: Side;
+  arc: boolean;
+  t: number;
+}
+
+interface Plan {
+  pts: [number, number][];
+  edges: PlanEdge[];
+}
+
+/** Plan outline of x0..x1 by z0..z1 (pod-local mm) whose `rounded` ends get corner radius r. */
+function planOutline(x0: number, x1: number, z0: number, z1: number, r: number, rounded: readonly End[]): Plan {
+  const pts: [number, number][] = [];
+  const edges: PlanEdge[] = [];
+  const add = (x: number, z: number, e: PlanEdge) => {
+    const last = pts[pts.length - 1];
+    if (last && Math.abs(last[0] - x) < 1e-6 && Math.abs(last[1] - z) < 1e-6) {
+      edges[edges.length - 1] = e;
+      return;
+    }
+    pts.push([x, z]);
+    edges.push(e);
+  };
+  const straight = (side: Side): PlanEdge => ({ side, arc: false, t: 0 });
+  const SEG = 8;
+  const arc = (cx: number, cz: number, a0: number, side: End, towardEnd: boolean) => {
+    for (let k = 0; k < SEG; k++) {
+      const a = a0 + (k / SEG) * (Math.PI / 2);
+      const t = (k + 0.5) / SEG;
+      add(cx + r * Math.cos(a), cz + r * Math.sin(a), { side, arc: true, t: towardEnd ? t : 1 - t });
+    }
+  };
+  const rl = rounded.includes("left") ? r : 0;
+  const rr = rounded.includes("right") ? r : 0;
+
+  add(x0 + rl, z0, straight("front"));
+  if (rr) arc(x1 - rr, z0 + rr, -Math.PI / 2, "right", true);
+  add(x1, z0 + rr, straight("right"));
+  if (rr) arc(x1 - rr, z1 - rr, 0, "right", false);
+  add(x1 - rr, z1, straight("back"));
+  if (rl) arc(x0 + rl, z1 - rl, Math.PI / 2, "left", true);
+  add(x0, z1 - rl, straight("left"));
+  if (rl) arc(x0 + rl, z0 + rl, Math.PI, "left", false);
+  return { pts, edges };
+}
+
+function loft(
+  plan: Plan,
+  y: number,
+  h: number,
+  opts: { top?: number; topW?: (e: PlanEdge) => number; bottom?: number; bottomW?: (e: PlanEdge) => number } = {},
+): Shape {
+  const xs = plan.pts.map((p) => p[0]);
+  const zs = plan.pts.map((p) => p[1]);
+  const x = Math.min(...xs);
+  const z = Math.min(...zs);
+  return {
+    kind: "loft",
+    x,
+    y,
+    z,
+    w: Math.max(...xs) - x,
+    h,
+    d: Math.max(...zs) - z,
+    loft: {
+      plan: plan.pts,
+      top: opts.top,
+      topW: opts.topW && plan.edges.map(opts.topW),
+      bottom: opts.bottom,
+      bottomW: opts.bottomW && plan.edges.map(opts.bottomW),
+    },
+  };
+}
+
 /**
- * Rear, end and front wall panels. Ordered so the front panels close last
- * and alternate between the front (even) and rear (odd) robot arms.
+ * Roof footprint, flush with the cladding. On an outer end it runs over the
+ * bumper with the same rounded corners; its top curves along the front, back
+ * and any outer end, and stays square where it meets the next pod.
  */
-function wallsStep(label: string, frontDetail: Shape[] = []): BuildStep {
-  const half = L / 2 - M - M / 2;
-  const right = L / 2 + M / 2;
-  const h = POST_H;
-  const frontA = box(M, F, 0, half, h, 60);
-  const frontB = box(right, F, 0, half, h, 60);
+function roofLoft(y: number, h: number, curve: number, outer?: End): Shape {
+  const x0 = outer === "left" ? -END_CAP : -CLAD;
+  const x1 = outer === "right" ? L + END_CAP : L + CLAD;
+  const plan = planOutline(x0, x1, -CLAD, W + CLAD, END_CAP, outer ? [outer] : []);
+  const curved = (e: PlanEdge) => (e.side === "front" || e.side === "back" || e.side === outer ? 1 : 0);
+  return loft(plan, y, h, { top: curve, topW: curved });
+}
+
+/**
+ * Cladding skin hung outside the steel frame, base to roof line, so posts,
+ * rails and base members disappear behind a smooth finish. Front and rear are
+ * two full-length halves meeting at `seam` (kept clear of any front detail);
+ * square end panels wrap the corners, except on the row's `outer` end, which
+ * gets a phone-like rounded bumper: rounded corners in plan and a rounded
+ * foot that fades out where it meets the front and rear skins. Ordered so the
+ * front panels close last and alternate between the front (even) and rear
+ * (odd) robot arms. Front detail plates sit on the skin.
+ */
+function wallsStep(label: string, frontDetail: Shape[] = [], seam = L / 2, outer?: End): BuildStep {
+  const H = POD.height;
+  const onSkin = frontDetail.map((s) => ({ ...s, z: s.z - CLAD }));
+  const end = (side: End): Shape => {
+    if (side !== outer) return box(side === "left" ? -CLAD : L, 0, -CLAD, CLAD, H, W + 2 * CLAD);
+    const [x0, x1] = side === "left" ? [-END_CAP, 0] : [L, L + END_CAP];
+    const plan = planOutline(x0, x1, -CLAD, W + CLAD, END_CAP, [side]);
+    const foot = (e: PlanEdge) => (e.side !== side ? 0 : e.arc ? Math.sin((e.t * Math.PI) / 2) : 1);
+    return loft(plan, 0, H, { bottom: END_FOOT, bottomW: foot });
+  };
   return {
     id: "walls",
     label,
     tool: "arm",
     seconds: 4.2,
     parts: [
-      { id: "end-l", shapes: [box(0, F, M, 60, h, W - 2 * M)] },
-      { id: "rear-b", shapes: [box(right, F, W - 60, half, h, 60)] },
-      { id: "front-a", shapes: [frontA, ...frontDetail.filter((s) => s.x < L / 2)] },
-      { id: "rear-a", shapes: [box(M, F, W - 60, half, h, 60)] },
-      { id: "front-b", shapes: [frontB, ...frontDetail.filter((s) => s.x >= L / 2)] },
-      { id: "end-r", shapes: [box(L - 60, F, M, 60, h, W - 2 * M)] },
+      { id: "end-l", shapes: [end("left")] },
+      { id: "rear-b", shapes: [box(seam, 0, W, L - seam, H, CLAD)] },
+      { id: "front-a", shapes: [box(0, 0, -CLAD, seam, H, CLAD), ...onSkin.filter((s) => s.x < seam)] },
+      { id: "rear-a", shapes: [box(0, 0, W, seam, H, CLAD)] },
+      { id: "front-b", shapes: [box(seam, 0, -CLAD, L - seam, H, CLAD), ...onSkin.filter((s) => s.x >= seam)] },
+      { id: "end-r", shapes: [end("right")] },
     ],
   };
 }
 
-/** Dry-cooler roof module: deck, posts, V-coil banks and 12 EC fans (2 x 6). */
-function dryCoolerRoofStep(): BuildStep {
-  const y0 = POD.height;
-  const coilLen = 5520;
-  const slant = 1093;
-  const thick = 128;
-  const rise = 1050 - 250;
-  const tilt = Math.acos(rise / slant);
-  const run = slant * Math.sin(tilt);
-  const coilY = y0 + (250 + 1050) / 2 - slant / 2;
-  const coilX = (L - coilLen) / 2;
-  const coil = (side: 1 | -1) =>
-    box(coilX, coilY, W / 2 - side * (run / 2 + 120) - thick / 2, coilLen, slant, thick, {
-      tilt: side * tilt,
-      detail: true,
-      round: 40,
-      roundAxis: "x",
-    });
+/** Radius of the dry-cooler housing's curved top edges. */
+const COOLER_CURVE = 300;
 
+/**
+ * Dry-cooler roof module: a coil housing with curved top edges along the
+ * front and back (and round any outer end), an intake grille, and 12 EC fans
+ * (2 x 6) on the flat top.
+ */
+function dryCoolerRoofStep(outer?: End): BuildStep {
+  const y0 = POD.height;
+  const top = 1480;
   const frame = 970;
   const fans: Shape[] = [];
   for (let r = 0; r < 2; r++) {
@@ -265,33 +378,28 @@ function dryCoolerRoofStep(): BuildStep {
       const fx = 69 + c * (frame + 20);
       const fz = 209 + r * (frame + 80);
       fans.push(
-        box(fx, y0 + 1480, fz, frame, 20, frame, { detail: true, round: 90, roundAxis: "y" }),
-        cylY(fx + frame / 2, y0 + 1500, fz + frame / 2, 857, 80, { cap: 24 }),
-        cylY(fx + frame / 2, y0 + 1590, fz + frame / 2, 800, 10, true),
+        box(fx, y0 + top, fz, frame, 20, frame, { detail: true, round: 90, roundAxis: "y" }),
+        cylY(fx + frame / 2, y0 + top + 20, fz + frame / 2, 857, 80, { cap: 24 }),
+        cylY(fx + frame / 2, y0 + top + 110, fz + frame / 2, 800, 10, true),
       );
     }
   }
+  const louvres = [0, 1, 2, 3, 4].map((k) =>
+    box(460, y0 + 360 + k * 140, -CLAD - 4, L - 920, 1, 4, { detail: true, ghost: true }),
+  );
 
   return {
     id: "roof",
-    label: "Dry-cooler roof: V-coils + 12 EC fans",
+    label: "Dry-cooler roof: coil housing + 12 EC fans",
     tool: "gantry",
     seconds: 4.4,
     parts: [
       {
         id: "dry-cooler",
         shapes: [
-          box(0, y0, 0, L, 200, W, { bevel: 60 }),
-          box(0, y0 + 200, 0, 100, 1280, 100, { round: 30 }),
-          box(L - 100, y0 + 200, 0, 100, 1280, 100, { round: 30 }),
-          box(0, y0 + 200, W - 100, 100, 1280, 100, { round: 30 }),
-          box(L - 100, y0 + 200, W - 100, 100, 1280, 100, { round: 30 }),
-          box(100, y0 + 200, 0, L - 200, 1170, 20, { detail: true, ghost: true }),
-          box(100, y0 + 200, W - 20, L - 200, 1170, 20, { detail: true, ghost: true }),
-          box(0, y0 + 1370, 0, L, 30, 209, { round: 14 }),
-          box(0, y0 + 1370, W - 209, L, 30, 209, { round: 14 }),
-          coil(1),
-          coil(-1),
+          roofLoft(y0, top, COOLER_CURVE, outer),
+          box(400, y0 + 240, -CLAD - 4, L - 800, 860, 4, { ...PLATE, round: 120, ghost: true }),
+          ...louvres,
           ...fans,
         ],
       },
@@ -390,11 +498,16 @@ const ELECTRICAL: PodSpec = {
         { id: "fan-b", shapes: [cylZ(1750, 2650, W - M - 360, W - M, 700, { cap: 45 })] },
       ],
     },
-    wallsStep("Wall panels + access doors", [
-      box(500, 2300, -8, 1300, 600, 8, { ...PLATE, round: 90 }),
-      box(3700, F + 100, -8, 1000, 2100, 8, { ...PLATE, round: 90 }),
-    ]),
-    dryCoolerRoofStep(),
+    wallsStep(
+      "Wall panels + access doors",
+      [
+        box(500, 2300, -8, 1300, 600, 8, { ...PLATE, round: 90 }),
+        box(3700, F + 100, -8, 1000, 2100, 8, { ...PLATE, round: 90 }),
+      ],
+      L / 2,
+      "right",
+    ),
+    dryCoolerRoofStep("right"),
   ],
 };
 
@@ -491,10 +604,14 @@ const COOLING: PodSpec = {
         { id: "br-c", motion: "grow-z", shapes: [cylZ(1430, 2900, 400, W - 560, 120, PIPE)] },
       ],
     },
-    wallsStep("Wall panels + tank manway hatches", [
-      box(2600, F + 400, -8, 1000, 1000, 8, { ...PLATE, round: 500 }),
-      box(4380, F + 400, -8, 1000, 1000, 8, { ...PLATE, round: 500 }),
-    ]),
+    wallsStep(
+      "Wall panels + tank manway hatches",
+      [
+        box(2600, F + 400, -8, 1000, 1000, 8, { ...PLATE, round: 500 }),
+        box(4380, F + 400, -8, 1000, 1000, 8, { ...PLATE, round: 500 }),
+      ],
+      3990,
+    ),
     dryCoolerRoofStep(),
   ],
 };
@@ -522,6 +639,9 @@ function rack(i: number): Part {
     ],
   };
 }
+
+/** Radius of the service roof's curved top edges. */
+const ROOF_CURVE = 520;
 
 const RUN_X0 = M + 129;
 const RUN_X1 = L - M - 129;
@@ -578,6 +698,8 @@ const COMPUTE: PodSpec = {
         const pw = (L - 300 - 9 * 40) / 10;
         return box(150 + i * (pw + 40), F + 50, -8, pw, POST_H - 100, 8, { ...PLATE, round: 70 });
       }),
+      L / 2,
+      "left",
     ),
     {
       id: "roof",
@@ -588,8 +710,12 @@ const COMPUTE: PodSpec = {
         {
           id: "service-roof",
           shapes: [
-            box(0, POD.height, 0, L, 1600, W, { round: 300, roundAxis: "x" }),
-            ...[1, 2, 3, 4, 5].map((k) => box((L / 6) * k - 15, POD.height + 1600, 0, 30, 12, W, { detail: true })),
+            roofLoft(POD.height, 1600, ROOF_CURVE, "left"),
+            ...[1, 2, 3, 4, 5].map((k) =>
+              box((L / 6) * k - 15, POD.height + 1600, ROOF_CURVE - CLAD, 30, 12, W + 2 * CLAD - 2 * ROOF_CURVE, {
+                detail: true,
+              }),
+            ),
           ],
         },
       ],

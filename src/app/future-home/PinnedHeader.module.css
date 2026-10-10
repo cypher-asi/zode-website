@@ -1,0 +1,209 @@
+/*
+ * Fixed top-left wordmark. Inherits `--edge`, `--button-radius` and the font
+ * variables from `.page` in page.module.css.
+ * The source PNG is white on transparency, so it inverts to black by default
+ * and drops the filter over dark surfaces.
+ *
+ * On hover a rounded box in the logo's current color fades in around it, then
+ * the logo flips to the opposite color. The box is a pseudo-element outset from
+ * the link so the link's bounding rect (used for tone sampling and the scroll
+ * fade) stays the size of the wordmark.
+ */
+.brand {
+  position: fixed;
+  top: 32px;
+  left: var(--edge);
+  z-index: 10;
+  display: inline-flex;
+  isolation: isolate;
+}
+
+.brand::before {
+  content: "";
+  position: absolute;
+  inset: -10px -14px;
+  z-index: -1;
+  border-radius: 8px;
+  background: #000;
+  opacity: 0;
+  transition: opacity 200ms ease 120ms;
+}
+
+.brand[data-tone="dark"]::before {
+  background: #fff;
+}
+
+.wordmark {
+  display: block;
+  height: 22px;
+  width: auto;
+  filter: invert(1);
+  transition: filter 200ms ease;
+}
+
+.brand[data-tone="dark"] .wordmark {
+  filter: none;
+}
+
+@media (hover: hover) {
+  .brand:hover::before {
+    opacity: 1;
+    transition-delay: 0ms;
+  }
+
+  .brand:hover .wordmark {
+    filter: none;
+    transition-delay: 120ms;
+  }
+
+  .brand[data-tone="dark"]:hover .wordmark {
+    filter: invert(1);
+  }
+}
+
+.brand:focus-visible::before {
+  opacity: 1;
+  transition-delay: 0ms;
+}
+
+.brand:focus-visible .wordmark {
+  filter: none;
+  transition-delay: 120ms;
+}
+
+.brand[data-tone="dark"]:focus-visible .wordmark {
+  filter: invert(1);
+}
+
+.brand:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 14px;
+}
+
+/*
+ * Fixed top-right button, vertically centred on the wordmark. Outlined in the
+ * current tone; on hover it fills with that tone and the label flips, with the
+ * same timing as the wordmark's hover box.
+ */
+.action {
+  position: fixed;
+  top: 27px;
+  right: var(--edge);
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid #000;
+  border-radius: var(--button-radius);
+  background: transparent;
+  color: #000;
+  font-family: var(--font-text), system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  transition:
+    background-color 200ms ease 120ms,
+    border-color 200ms ease,
+    color 200ms ease;
+}
+
+/*
+ * Periodic glint. Always white, so it reads on whichever part of the button is
+ * dark: the label over light surfaces, the background over dark ones.
+ */
+.action::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.12) 42%,
+    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0.12) 58%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  pointer-events: none;
+  animation: glint 7s cubic-bezier(0.45, 0, 0.2, 1) 2.5s infinite;
+}
+
+@keyframes glint {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  16%,
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.action[data-tone="dark"] {
+  border-color: #fff;
+  color: #fff;
+}
+
+@media (hover: hover) {
+  .action:hover {
+    background-color: #000;
+    color: #fff;
+    transition-delay: 0ms, 0ms, 120ms;
+  }
+
+  .action[data-tone="dark"]:hover {
+    background-color: #fff;
+    color: #000;
+  }
+}
+
+.action:focus-visible {
+  background-color: #000;
+  color: #fff;
+  outline: 2px solid #2563eb;
+  outline-offset: 4px;
+  transition-delay: 0ms, 0ms, 120ms;
+}
+
+.action[data-tone="dark"]:focus-visible {
+  background-color: #fff;
+  color: #000;
+}
+
+@media (max-width: 900px) {
+  .brand {
+    top: 24px;
+  }
+
+  .brand::before {
+    inset: -8px -11px;
+  }
+
+  .wordmark {
+    height: 18px;
+  }
+
+  .action {
+    top: 19px;
+    height: 28px;
+    padding: 0 11px;
+    font-size: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand::before,
+  .wordmark,
+  .action {
+    transition: none;
+  }
+
+  .action::after {
+    animation: none;
+  }
+}

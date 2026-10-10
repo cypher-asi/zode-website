@@ -8,15 +8,23 @@ const H = 90;
 const PLATE = 8;
 const BASE = 24;
 /** Exploded spacing between plates, in viewBox units. */
-const GAP = 96;
+const GAP = 84;
 const MID = (LAYERS.length - 1) / 2;
+/** Room past the outermost plate centres for the plate itself plus its tallest detail. */
+const REACH = MID * GAP + 124;
 
-export const VIEW = { x: -184, y: -364, w: 368, h: 728 };
+export const VIEW = { x: -184, y: -REACH, w: 368, h: 2 * REACH };
 
-/** Exploded viewBox y a layer's label lines up with: just below the plate's centre, where its front shows. */
+/** Leader lines meet their plates at the top face's rightmost corner: `ANCHOR_X` across, `labelY` down. */
+export const ANCHOR_X = 2 * H;
+
+/** Exploded viewBox y where a layer's leader line meets its plate. */
 export function labelY(index: number): number {
-  return (index - MID) * GAP + 40;
+  return (index - MID) * GAP;
 }
+
+/** Props for a group animated while its plate is hovered; `k` staggers its start. */
+const anim = (className: string, k = 0) => ({ className, style: { "--k": k } as CSSProperties });
 
 /** A `Sketch` that knows the plate size shared by every layer. */
 class Sketch extends BaseSketch {
@@ -57,23 +65,26 @@ function network(s: Sketch): void {
     })),
   );
 
-  for (let i = 0; i < n; i++) {
-    for (let j = 0; j < n; j++) {
-      const a = nodes[i][j];
-      const next = [i + 1 < n && nodes[i + 1][j], j + 1 < n && nodes[i][j + 1]];
-      if (i + 1 < n && j + 1 < n && rand() < 0.3) next.push(nodes[i + 1][j + 1]);
-      for (const b of next) if (b) s.line([[a.x, a.y], [b.x, b.y]]);
+  s.group(anim(styles.flow), () => {
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        const a = nodes[i][j];
+        const next = [i + 1 < n && nodes[i + 1][j], j + 1 < n && nodes[i][j + 1]];
+        if (i + 1 < n && j + 1 < n && rand() < 0.3) next.push(nodes[i + 1][j + 1]);
+        for (const b of next) if (b) s.line([[a.x, a.y], [b.x, b.y]]);
+      }
     }
-  }
+  });
 
   const all = nodes.flat().sort(backToFront);
   for (const p of all) if (!p.hub) s.disc([p.x, p.y], 1.8, styles.ink);
-  for (const p of all) {
-    if (!p.hub) continue;
-    s.disc([p.x, p.y], 4.2, styles.ring);
-    s.line([[p.x, p.y, 0], [p.x, p.y, 16]], styles.edge);
-    s.disc([p.x, p.y, 16], 1.8, styles.ink);
-  }
+  all
+    .filter((p) => p.hub)
+    .forEach((p, k) => {
+      s.group(anim(styles.flash, k * 2), () => s.disc([p.x, p.y], 4.2, styles.ring));
+      s.line([[p.x, p.y, 0], [p.x, p.y, 16]], styles.edge);
+      s.disc([p.x, p.y, 16], 1.8, styles.ink);
+    });
 
   s.face(
     [
@@ -97,14 +108,16 @@ function routing(s: Sketch): void {
     (x, y) => [c - x, c - y],
     (x, y) => [c + y, c - x],
   ];
-  for (const turn of turns) {
+  turns.forEach((turn, t) => {
     for (let j = -4; j <= 4; j++) {
       const a = j * 3.5;
       const b = j * 11;
-      s.line([turn(17, a), turn(26, a), turn(26 + Math.abs(b - a), b), turn(63, b)]);
-      s.disc(turn(66, b), 1.5, styles.ink);
+      s.group(anim(styles.flow), () =>
+        s.line([turn(17, a), turn(26, a), turn(26 + Math.abs(b - a), b), turn(63, b)]),
+      );
+      s.group(anim(styles.dim, t * 9 + j + 4), () => s.disc(turn(66, b), 1.5, styles.ink));
     }
-  }
+  });
 
   s.box(c - 16, c - 16, 32, 32, 0, 5);
   for (let x = -9; x <= 9; x += 6) {
@@ -118,21 +131,23 @@ function compute(s: Sketch): void {
 
   const size = 16;
   const pitch = 24;
-  const cells: { x: number; y: number }[] = [];
+  const cells: { x: number; y: number; k: number }[] = [];
   for (let i = 0; i < 6; i++) {
-    for (let j = 0; j < 6; j++) cells.push({ x: -68 + i * pitch, y: -68 + j * pitch });
+    for (let j = 0; j < 6; j++) cells.push({ x: -68 + i * pitch, y: -68 + j * pitch, k: i + j });
   }
   for (const c of cells.sort(backToFront)) {
-    s.box(c.x, c.y, size, size, 0, 6);
-    s.face(
-      [
-        [c.x + 4, c.y + 4, 6],
-        [c.x + size - 4, c.y + 4, 6],
-        [c.x + size - 4, c.y + size - 4, 6],
-        [c.x + 4, c.y + size - 4, 6],
-      ],
-      styles.fine,
-    );
+    s.group(anim(styles.shade, c.k), () => {
+      s.box(c.x, c.y, size, size, 0, 6);
+      s.face(
+        [
+          [c.x + 4, c.y + 4, 6],
+          [c.x + size - 4, c.y + 4, 6],
+          [c.x + size - 4, c.y + size - 4, 6],
+          [c.x + 4, c.y + size - 4, 6],
+        ],
+        styles.fine,
+      );
+    });
   }
 }
 
@@ -146,46 +161,50 @@ function pods(s: Sketch): void {
   for (const x of [-78, 6]) {
     for (let k = 0; k < 4; k++) units.push({ x, y: -69 + k * 38 });
   }
-  for (const { x, y } of units.sort(backToFront)) {
+  units.sort(backToFront).forEach(({ x, y }, k) => {
     const [x1, y1] = [x + w, y + d];
-    s.box(x, y, w, d, 0, h);
-    for (let rx = x + 6; rx < x1 - 3; rx += 6) s.line([[rx, y1, 2], [rx, y1, h - 2]]);
-    s.line(
-      [
-        [x1, y + 8, 0],
-        [x1, y + 8, 12],
-        [x1, y + 16, 12],
-        [x1, y + 16, 0],
-      ],
-      styles.edge,
-    );
-    s.line([[x + 4, y + d / 2, h], [x1 - 4, y + d / 2, h]]);
-  }
+    s.group(anim(styles.hop, k * 2), () => {
+      s.box(x, y, w, d, 0, h);
+      for (let rx = x + 6; rx < x1 - 3; rx += 6) s.line([[rx, y1, 2], [rx, y1, h - 2]]);
+      s.line(
+        [
+          [x1, y + 8, 0],
+          [x1, y + 8, 12],
+          [x1, y + 16, 12],
+          [x1, y + 16, 0],
+        ],
+        styles.edge,
+      );
+      s.line([[x + 4, y + d / 2, h], [x1 - 4, y + d / 2, h]]);
+    });
+  });
 }
 
 function power(s: Sketch): void {
   s.slab(PLATE);
 
-  const cells: { x: number; y: number }[] = [];
+  const cells: { x: number; y: number; k: number }[] = [];
   for (const y of [-80, -56]) {
-    for (let c = 0; c < 7; c++) cells.push({ x: -78 + c * 23, y });
+    for (let c = 0; c < 7; c++) cells.push({ x: -78 + c * 23, y, k: c });
   }
-  for (const { x, y } of cells.sort(backToFront)) {
-    s.box(x, y, 18, 16, 0, 14);
+  for (const { x, y, k } of cells.sort(backToFront)) {
+    s.group(anim(styles.shade, k * 1.5), () => s.box(x, y, 18, 16, 0, 14));
     s.line([[x, y + 16, 10], [x + 18, y + 16, 10], [x + 18, y, 10]]);
     s.line([[x + 5, y + 8, 14], [x + 5, y + 8, 16]], styles.edge);
   }
 
   for (let k = 0; k < 6; k++) {
     const y = -28 + k * 18;
-    s.face(
-      [
-        [-78, y, 9],
-        [78, y, 9],
-        [78, y + 12, 3],
-        [-78, y + 12, 3],
-      ],
-      styles.top,
+    s.group(anim(styles.shade, 4 + k * 1.5), () =>
+      s.face(
+        [
+          [-78, y, 9],
+          [78, y, 9],
+          [78, y + 12, 3],
+          [-78, y + 12, 3],
+        ],
+        styles.top,
+      ),
     );
     for (let x = -65; x < 78; x += 13) s.line([[x, y, 9], [x, y + 12, 3]]);
     s.line([[-78, y + 6, 6], [78, y + 6, 6]]);
@@ -215,7 +234,7 @@ function land(s: Sketch): void {
       d += `${pen ? "L" : "M"}${project([x, y]).join(",")}`;
       pen = true;
     }
-    if (d) s.path(closed ? `${d}Z` : d);
+    if (d) s.group(anim(styles.ripple, r / 12), () => s.path(closed ? `${d}Z` : d));
   }
 
   s.line([[34, 30, 0], [34, 30, 24]], styles.edge);
@@ -240,12 +259,31 @@ const ART = Object.fromEntries(
   }),
 ) as Record<LayerId, ReactElement[]>;
 
+/** Each slab's projected outline, used as a hover target that stays put while the drawing lifts. */
+const HIT = Object.fromEntries(
+  LAYERS.map(({ id }) => {
+    const t = id === "land" ? BASE : PLATE;
+    const outline: P3[] = [
+      [-H, -H, 0],
+      [H, -H, 0],
+      [H, -H, -t],
+      [H, H, -t],
+      [-H, H, -t],
+      [-H, H, 0],
+    ];
+    return [id, outline.map((p) => project(p).join(",")).join(" ")];
+  }),
+) as Record<LayerId, string>;
+
 export interface StackArtProps {
   active: LayerId | null;
   onActive: (id: LayerId | null) => void;
 }
 
-/** Exploded line drawing of the stack; plates are painted bottom-up so upper ones occlude lower. */
+/**
+ * Exploded line drawing of the stack; plates are painted bottom-up so upper ones occlude lower.
+ * SVG has no z-index, so the hovered plate is repainted last as a pointer-transparent copy.
+ */
 export function StackArt({ active, onActive }: StackArtProps): ReactElement {
   const order = LAYERS.map((layer, i) => ({ layer, i })).reverse();
 
@@ -265,9 +303,21 @@ export function StackArt({ active, onActive }: StackArtProps): ReactElement {
           onPointerEnter={() => onActive(layer.id)}
           onPointerLeave={() => onActive(null)}
         >
+          <polygon className={styles.hit} points={HIT[layer.id]} />
           <g className={styles.lift}>{ART[layer.id]}</g>
         </g>
       ))}
+      {active && (
+        <g
+          key={active}
+          className={styles.layer}
+          data-on
+          data-raised
+          style={{ "--o": LAYERS.findIndex((l) => l.id === active) - MID } as CSSProperties}
+        >
+          <g className={styles.lift}>{ART[active]}</g>
+        </g>
+      )}
     </svg>
   );
 }

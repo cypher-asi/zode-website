@@ -1,0 +1,475 @@
+/*
+ * Dark network section. Sits inside `.network` in ../page.module.css and
+ * inherits its `--edge`, `--off-white`, `--off-black`, `--button-radius` and
+ * font variables. The map covers the section like a background image (sized
+ * off the stage's container units) and is centred behind the copy (bottom
+ * left) and the figures (right); site markers are HTML positioned in
+ * percentages of the map box, so they stay a fixed pixel size however far the
+ * map scales.
+ */
+.root {
+  --accent: #ffa45c;
+  --muted: rgba(246, 246, 243, 0.5);
+  --rule: rgba(255, 255, 255, 0.14);
+  --sweep: 1800ms;
+
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 64px;
+  min-height: 100dvh;
+  padding: 128px var(--edge) 72px;
+  overflow: hidden;
+  font-family: var(--font-text), system-ui, sans-serif;
+}
+
+.stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  container-type: size;
+}
+
+/* Centred; fills the section height, then shrinks to the stage width on narrower screens. */
+.map {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(calc(100cqh * 1.02 * var(--ratio)), 100cqw);
+  aspect-ratio: var(--ratio);
+  translate: -50% -50%;
+}
+
+/* Coastline sweeps in west to east; dots and links key their delay off `--t` (0 west, 1 east). */
+.art {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path var(--sweep) cubic-bezier(0.45, 0, 0.25, 1);
+}
+
+.root[data-shown] .art {
+  clip-path: inset(0 0 0 0);
+}
+
+.art :is(path, line) {
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.graticule {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.05);
+  stroke-width: 1;
+}
+
+.land {
+  fill: #121214;
+  stroke: rgba(246, 246, 243, 0.34);
+  stroke-width: 0.8;
+}
+
+.borders {
+  fill: none;
+  stroke: rgba(246, 246, 243, 0.22);
+  stroke-width: 0.8;
+  stroke-dasharray: 2 3;
+}
+
+.link {
+  stroke: var(--accent);
+  stroke-width: 0.8;
+  stroke-dasharray: 2 4;
+  opacity: 0;
+  transition: opacity 800ms ease calc(var(--sweep) * var(--t) + 500ms);
+  animation: flow 1.6s linear infinite;
+}
+
+.root[data-shown] .link {
+  opacity: 0.4;
+}
+
+@keyframes flow {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+/* Edge fades blend the cropped map into the section and keep the copy legible. */
+.shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, var(--off-black) 0%, rgba(12, 12, 13, 0.6) 8%, rgba(12, 12, 13, 0) 20%),
+    linear-gradient(270deg, var(--off-black) 0%, rgba(12, 12, 13, 0.6) 8%, rgba(12, 12, 13, 0) 20%),
+    linear-gradient(180deg, var(--off-black) 0%, rgba(12, 12, 13, 0) 12%),
+    linear-gradient(0deg, var(--off-black) 0%, rgba(12, 12, 13, 0.7) 14%, rgba(12, 12, 13, 0) 34%);
+}
+
+.sites {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site {
+  position: absolute;
+  top: var(--y);
+  left: var(--x);
+}
+
+.site[data-on] {
+  z-index: 2;
+}
+
+.hit {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  translate: -50% -50%;
+}
+
+.hit:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+
+.dot {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 12px 2px rgba(255, 164, 92, 0.45);
+  scale: 0;
+  transition:
+    scale 520ms cubic-bezier(0.3, 1.6, 0.5, 1) calc(var(--sweep) * var(--t) + 200ms),
+    box-shadow 200ms ease;
+}
+
+.root[data-shown] .dot {
+  scale: 1;
+}
+
+.dot::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  opacity: 0;
+  animation: pulse 2.8s ease-out infinite;
+  animation-delay: calc(var(--p) * -2.8s);
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.8;
+    scale: 1;
+  }
+
+  100% {
+    opacity: 0;
+    scale: 4.5;
+  }
+}
+
+.site[data-status="pipeline"] .dot {
+  width: 9px;
+  height: 9px;
+  border: 1px solid rgba(255, 164, 92, 0.65);
+  background: var(--off-black);
+  box-shadow: none;
+}
+
+.site[data-status="pipeline"] .dot::after {
+  content: none;
+}
+
+.site[data-on] .dot {
+  box-shadow: 0 0 18px 5px rgba(255, 164, 92, 0.6);
+}
+
+.site[data-on][data-status="pipeline"] .dot {
+  background: rgba(255, 164, 92, 0.35);
+}
+
+.code {
+  position: absolute;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--muted);
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity 500ms ease calc(var(--sweep) * var(--t) + 500ms),
+    color 200ms ease;
+}
+
+.root[data-shown] .code {
+  opacity: 1;
+}
+
+.root[data-active] .code {
+  transition:
+    opacity 200ms ease,
+    color 200ms ease;
+}
+
+.root[data-shown][data-active] .site:not([data-on]) .code {
+  opacity: 0.25;
+}
+
+.site[data-on] .code {
+  color: var(--off-white);
+}
+
+.site[data-side="e"] .code {
+  top: 50%;
+  left: calc(50% + 9px);
+  translate: 0 -50%;
+}
+
+.site[data-side="w"] .code {
+  top: 50%;
+  right: calc(50% + 9px);
+  translate: 0 -50%;
+}
+
+.site[data-side="n"] .code {
+  bottom: calc(50% + 9px);
+  left: 50%;
+  translate: -50% 0;
+}
+
+.site[data-side="s"] .code {
+  top: calc(50% + 9px);
+  left: 50%;
+  translate: -50% 0;
+}
+
+/* Copy and figures sit above the map; only their own boxes take pointer events. */
+.copy,
+.numbers {
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.copy {
+  max-width: 460px;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Same display type as the assembly-line and stack section titles. */
+.title {
+  margin: 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(32px, 3.6vw, 56px);
+  font-weight: 300;
+  line-height: 1.06;
+  letter-spacing: -0.025em;
+  color: var(--off-white);
+}
+
+.title span {
+  display: block;
+}
+
+.helper {
+  max-width: 380px;
+  margin: 20px 0 0;
+  font-size: 15px;
+  line-height: 1.55;
+  letter-spacing: -0.005em;
+  color: #85858a;
+}
+
+.numbers {
+  align-self: center;
+  width: 220px;
+}
+
+.stats {
+  display: grid;
+  margin: 18px 0 0;
+  border-top: 1px solid var(--rule);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  padding: 22px 0 24px;
+}
+
+.stat + .stat {
+  border-top: 1px solid var(--rule);
+}
+
+.statValue {
+  margin: 0;
+  font-size: clamp(34px, 3.4vw, 52px);
+  font-weight: 300;
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+  color: var(--off-white);
+}
+
+.unit {
+  margin-left: 0.18em;
+  font-size: 0.42em;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+
+.statLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.legend {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px 2px rgba(255, 164, 92, 0.45);
+}
+
+.stat[data-status="pipeline"] .legend {
+  width: 9px;
+  height: 9px;
+  border: 1px solid rgba(255, 164, 92, 0.65);
+  background: none;
+  box-shadow: none;
+}
+
+@media (max-width: 900px) {
+  .root {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-height: 0;
+    padding: 104px var(--edge) 72px;
+  }
+
+  .stage {
+    position: relative;
+    inset: auto;
+    order: 1;
+    height: clamp(340px, 90vw, 620px);
+    margin: 32px calc(-1 * var(--edge)) 0;
+  }
+
+  .copy {
+    order: 0;
+  }
+
+  .numbers {
+    order: 2;
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .map {
+    width: min(112cqw, calc(100cqh * var(--ratio)));
+  }
+
+  .shade {
+    background:
+      linear-gradient(180deg, var(--off-black) 0%, rgba(12, 12, 13, 0) 18%),
+      linear-gradient(0deg, var(--off-black) 0%, rgba(12, 12, 13, 0) 18%);
+  }
+
+  .code {
+    display: none;
+  }
+
+  .site[data-on] .code {
+    display: block;
+  }
+
+  .stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stat {
+    padding: 22px 16px 0 0;
+  }
+
+  .stat + .stat {
+    padding-left: 16px;
+    border-top: 0;
+    border-left: 1px solid var(--rule);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .art,
+  .dot,
+  .code,
+  .link {
+    transition: none;
+  }
+
+  .art {
+    clip-path: none;
+  }
+
+  .dot {
+    scale: 1;
+  }
+
+  .code {
+    opacity: 1;
+  }
+
+  .link {
+    opacity: 0.4;
+    animation: none;
+  }
+
+  .dot::after {
+    content: none;
+  }
+}

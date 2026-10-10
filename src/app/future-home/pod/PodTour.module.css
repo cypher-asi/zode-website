@@ -1,0 +1,464 @@
+/*
+ * White "rapidly deployable supercompute" section. Sits inside `.tour` in
+ * ../page.module.css (which clips the fiber strands at the screen edges) and
+ * inherits its `--edge`, `--button-radius`, `--off-black` and font variables.
+ */
+.root {
+  --ink: #0c0c0d;
+  --muted: #8a8a8f;
+  --accent: #f08a3c;
+
+  /* Vertical space taken by the padding, heading and gap, which the drawing must leave room for. */
+  --chrome: 270px;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  padding: 88px var(--edge) 24px;
+  font-family: var(--font-text), system-ui, sans-serif;
+}
+
+.title {
+  margin: 0 0 40px;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(32px, 3.6vw, 56px);
+  font-weight: 300;
+  line-height: 1.06;
+  letter-spacing: -0.025em;
+  text-align: left;
+}
+
+/*
+ * Pod picker on the left, drawing in the middle, hover points on the right.
+ * The heading stays at the top and the panel sinks to the bottom of the section.
+ */
+.panel {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) 230px;
+  grid-template-areas: "pods figure side";
+  column-gap: 48px;
+  width: 100%;
+  margin-top: auto;
+}
+
+/* As wide as the column allows, but never taller than the viewport left after the heading. */
+.figure {
+  position: relative;
+  grid-area: figure;
+  justify-self: center;
+  width: min(100%, calc((100dvh - var(--chrome)) * var(--ratio)));
+  opacity: 0;
+  translate: 0 16px;
+  transition:
+    opacity 900ms ease,
+    translate 900ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.figure[data-shown] {
+  opacity: 1;
+  translate: 0 0;
+}
+
+.art {
+  --line: var(--ink);
+  --soft: #77777d;
+  --faint: #b4b4b9;
+  --frame: #4c4d53;
+  --band: #77787e;
+  --led: var(--accent);
+
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.layer {
+  transition: opacity 200ms ease;
+}
+
+.layer:not([data-zone]) {
+  pointer-events: none;
+}
+
+.layer[data-zone] {
+  cursor: pointer;
+}
+
+/* The hovered part warms up; everything else stays as drawn. */
+.layer[data-on] {
+  --top: #fff5ec;
+  --left: #fde6d3;
+  --right: #f8d8bd;
+  --band: #eeb88e;
+}
+
+.enter {
+  animation: enter 500ms ease both;
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Drawing primitives (see CabinArt.tsx). */
+.art :is(polygon, polyline, path, rect):not(.pulse, .run) {
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.top,
+.sideL,
+.sideR,
+.ring,
+.roof,
+.vault {
+  stroke: var(--line);
+  stroke-width: 1;
+  transition:
+    stroke 200ms ease,
+    fill 200ms ease;
+}
+
+.top,
+.ring,
+.vault {
+  fill: var(--top, #ffffff);
+}
+
+.sideL {
+  fill: var(--left, #f1f1ed);
+}
+
+.sideR {
+  fill: var(--right, #e5e5e0);
+}
+
+.roof {
+  fill: var(--top, #ececea);
+}
+
+/* The roof's second tone: the darker band over the eave, below the light panels. */
+.band {
+  fill: var(--band);
+  stroke: var(--line);
+  stroke-width: 1;
+  transition:
+    fill 200ms ease,
+    stroke 200ms ease;
+}
+
+.edge {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.fine {
+  fill: none;
+  stroke: var(--soft);
+  stroke-width: 0.6;
+}
+
+.hair {
+  fill: none;
+  stroke: var(--faint);
+  stroke-width: 0.5;
+}
+
+.ink {
+  fill: var(--line);
+}
+
+/* Charcoal steel frame, the cabin's defining line. */
+.frame {
+  fill: var(--frame);
+  stroke: var(--line);
+  stroke-width: 1;
+  transition:
+    fill 200ms ease,
+    stroke 200ms ease;
+}
+
+.shadow {
+  fill: #f3f3f1;
+}
+
+.wall {
+  fill: #f6f6f3;
+  stroke: var(--soft);
+  stroke-width: 0.6;
+}
+
+.wallEnd {
+  fill: #efefeb;
+  stroke: var(--soft);
+  stroke-width: 0.6;
+}
+
+/* Timber lining of the operations room. */
+.wood {
+  fill: #f3ebe1;
+  stroke: var(--soft);
+  stroke-width: 0.6;
+}
+
+.led {
+  fill: var(--led);
+  transition: fill 200ms ease;
+}
+
+.under {
+  fill: #ebebe6;
+  stroke: var(--soft);
+  stroke-width: 0.6;
+}
+
+/* Glazing tints what is behind it; CabinArt's hit test looks through it to any solid part first. */
+.glass {
+  fill: rgba(206, 216, 222, 0.16);
+  stroke: var(--soft);
+  stroke-width: 0.6;
+}
+
+.duct {
+  fill: none;
+  stroke: #f1f1ee;
+  stroke-width: 6;
+}
+
+.layer[data-on] .duct {
+  stroke: #fdeadb;
+}
+
+.strand {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 0.75;
+  pointer-events: none;
+}
+
+/*
+ * Packets stream along each path's own direction: outbound strands start at
+ * the pod, inbound ones at the edge, and the floor runs end at the equipment.
+ * Lengths are in viewBox units, so these strokes scale with the drawing.
+ */
+.pulse,
+.run {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 0.6;
+  stroke-dasharray: 1.4 5.6;
+  stroke-linecap: round;
+  pointer-events: none;
+  animation: flow 0.22s linear infinite;
+}
+
+.pulse {
+  opacity: 0.85;
+}
+
+.run {
+  opacity: 0.7;
+}
+
+.inbound {
+  animation-delay: -0.11s;
+}
+
+.figure:not([data-shown]) :is(.pulse, .run) {
+  opacity: 0;
+  animation-play-state: paused;
+}
+
+@keyframes flow {
+  to {
+    stroke-dashoffset: -7;
+  }
+}
+
+.markers {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+
+.marker {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  background: #ffffff;
+  translate: -50% -50%;
+  opacity: 0;
+  transition:
+    opacity 500ms ease calc(500ms + var(--i) * 50ms),
+    background-color 200ms ease,
+    scale 200ms ease;
+}
+
+.figure[data-shown] .marker {
+  opacity: 0.55;
+}
+
+.figure[data-active] .marker:not([data-on]) {
+  opacity: 0.2;
+  transition:
+    opacity 200ms ease,
+    background-color 200ms ease,
+    scale 200ms ease;
+}
+
+.figure[data-shown] .marker[data-on] {
+  opacity: 1;
+  background: var(--accent);
+  scale: 1.4;
+}
+
+/*
+ * Pod picker and hover points are both centred on the whole section, clear of
+ * the left-aligned heading; their grid columns stay reserved.
+ */
+.pods,
+.side {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+}
+
+.pods {
+  grid-area: pods;
+  left: var(--edge);
+  width: 150px;
+}
+
+.side {
+  grid-area: side;
+  right: var(--edge);
+  width: 230px;
+}
+
+.pods .eyebrow,
+.side .eyebrow {
+  margin-bottom: 8px;
+}
+
+/* Hover points: plain labels that light the matching part of the drawing, not a menu. */
+.spots {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.spot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  font-size: 13px;
+  line-height: 1.3;
+  letter-spacing: -0.005em;
+  color: var(--muted);
+  cursor: default;
+  outline: none;
+  transition: color 200ms ease;
+}
+
+.spot:hover,
+.spot[data-on] {
+  color: var(--ink);
+}
+
+.spot:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.spotDot {
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease;
+}
+
+.spot[data-on] .spotDot {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+@media (max-width: 1180px) {
+  /* Pod picker and hover points side by side under the drawing. */
+  .panel {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "figure figure"
+      "pods side";
+    gap: 32px 56px;
+    margin-top: 0;
+  }
+
+  .figure {
+    width: 100%;
+  }
+
+  .pods,
+  .side {
+    align-self: start;
+  }
+
+  .pods,
+  .side {
+    position: static;
+    width: auto;
+    translate: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .root {
+    min-height: 0;
+    padding: 72px var(--edge) 56px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .figure,
+  .marker {
+    transition: none;
+  }
+
+  .figure {
+    opacity: 1;
+    translate: none;
+  }
+
+  .enter {
+    animation: none;
+  }
+
+  .pulse,
+  .run {
+    display: none;
+  }
+}
