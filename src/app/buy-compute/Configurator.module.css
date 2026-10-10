@@ -1,14 +1,13 @@
 /*
- * Steps panel on the left, drawing on the right, pricing bar across the
- * bottom, all inside one viewport; the panel scrolls on its own.
+ * Full-height steps panel on the left, drawing on the right with the pricing
+ * bar floating over its foot, all inside one viewport; the panel scrolls on
+ * its own.
  */
 .root {
   display: grid;
   grid-template-columns: minmax(360px, 460px) minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) auto;
-  grid-template-areas:
-    "panel preview"
-    "bar bar";
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: "panel preview";
   height: 100dvh;
 }
 
@@ -209,13 +208,14 @@
 @media (max-width: 900px) {
   .root {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto auto;
+    grid-template-rows: auto auto;
     grid-template-areas:
       "preview"
-      "panel"
-      "bar";
+      "panel";
     height: auto;
     min-height: 100dvh;
+    /* Room for the price bar, pinned to the bottom of the screen here. */
+    padding-bottom: 128px;
   }
 
   .panelFrame {

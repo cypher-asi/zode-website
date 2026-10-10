@@ -6,7 +6,8 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 92px var(--edge) 28px;
+  /* The bottom keeps the pod picker clear of the floating price panel. */
+  padding: 92px var(--edge) 132px;
 }
 
 .head {
@@ -125,10 +126,17 @@
   outline-offset: 2px;
 }
 
+/* A narrow drawing panel stacks the price panel into two rows. */
+@media (min-width: 901px) and (max-width: 1200px) {
+  .root {
+    padding-bottom: 176px;
+  }
+}
+
 @media (max-width: 900px) {
   .root {
     position: static;
-    padding-top: 84px;
+    padding: 84px var(--edge) 28px;
   }
 
   .figure {

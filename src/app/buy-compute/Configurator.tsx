@@ -200,9 +200,8 @@ export function Configurator(): ReactElement {
 
       <section className={styles.preview} data-surface="light" aria-label="ZODE preview">
         <ZodePreview focus={preview ?? current.focus} quote={quote} />
+        <PriceBar quote={quote} summary={summarize(config)} />
       </section>
-
-      <PriceBar quote={quote} summary={summarize(config)} />
     </div>
   );
 }

@@ -64,51 +64,53 @@ export function PriceBar({ quote, summary }: { quote: Quote; summary: string }):
   }, [open]);
 
   return (
-    <div ref={rootRef} className={styles.bar} data-surface="light">
-      <div className={styles.summary}>
-        <p className={styles.name}>Your ZODE</p>
-        <p className={styles.config} title={summary}>
-          {summary}
-        </p>
-      </div>
-
-      <dl className={styles.stats}>
-        {[
-          { label: "GPUs", value: quote.gpus.toLocaleString("en-US") },
-          { label: "Nodes", value: quote.nodes.toLocaleString("en-US") },
-          { label: quote.zodes === 1 ? "ZODE" : "ZODEs", value: String(quote.zodes) },
-          { label: "Est. power", value: `${quote.mw.toFixed(2)} MW` },
-        ].map((s) => (
-          <div key={s.label} className={styles.stat}>
-            <dt className={styles.statLabel}>{s.label}</dt>
-            <dd className={styles.statValue}>{s.value}</dd>
-          </div>
-        ))}
-      </dl>
-
-      <div className={styles.figures} aria-live="polite">
-        <div className={styles.figure}>
-          <span key={quote.monthly} className={`${styles.amount} ${styles.monthly}`}>
-            {usd(monthly)}
-            <span className={styles.unit}> /mo</span>
-          </span>
-          <span className={styles.caption}>
-            Est. monthly<span className={styles.terms}> · {TERMS}</span>
-          </span>
+    <div ref={rootRef} className={styles.dock} data-surface="light">
+      <div className={styles.bar}>
+        <div className={styles.summary}>
+          <p className={styles.name}>Your ZODE</p>
+          <p className={styles.config} title={summary}>
+            {summary}
+          </p>
         </div>
 
-        <button
-          type="button"
-          className={styles.toggle}
-          aria-label={open ? "Hide total cost and breakdown" : "Show total cost and breakdown"}
-          aria-expanded={open}
-          aria-controls={panelId}
-          onClick={() => setOpen((v) => !v)}
-        >
-          <svg className={styles.chevron} viewBox="0 0 10 6" aria-hidden="true">
-            <path d="M1 5l4-4 4 4" />
-          </svg>
-        </button>
+        <dl className={styles.stats}>
+          {[
+            { label: "GPUs", value: quote.gpus.toLocaleString("en-US") },
+            { label: "Nodes", value: quote.nodes.toLocaleString("en-US") },
+            { label: quote.zodes === 1 ? "ZODE" : "ZODEs", value: String(quote.zodes) },
+            { label: "Est. power", value: `${quote.mw.toFixed(2)} MW` },
+          ].map((s) => (
+            <div key={s.label} className={styles.stat}>
+              <dt className={styles.statLabel}>{s.label}</dt>
+              <dd className={styles.statValue}>{s.value}</dd>
+            </div>
+          ))}
+        </dl>
+
+        <div className={styles.figures} aria-live="polite">
+          <div className={styles.figure}>
+            <span key={quote.monthly} className={`${styles.amount} ${styles.monthly}`}>
+              {usd(monthly)}
+              <span className={styles.unit}> /mo</span>
+            </span>
+            <span className={styles.caption}>
+              Est. monthly<span className={styles.terms}> · {TERMS}</span>
+            </span>
+          </div>
+
+          <button
+            type="button"
+            className={styles.toggle}
+            aria-label={open ? "Hide total cost and breakdown" : "Show total cost and breakdown"}
+            aria-expanded={open}
+            aria-controls={panelId}
+            onClick={() => setOpen((v) => !v)}
+          >
+            <svg className={styles.chevron} viewBox="0 0 10 6" aria-hidden="true">
+              <path d="M1 5l4-4 4 4" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {open ? (

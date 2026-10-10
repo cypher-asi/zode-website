@@ -1,17 +1,29 @@
-/* Bottom pricing bar across the configurator (see PriceBar.tsx). */
+/*
+ * Pricing panel floating over the foot of the drawing panel (see PriceBar.tsx).
+ * The dock is the query container, so the layout follows the panel's own
+ * width rather than the window's.
+ */
+
+.dock {
+  position: absolute;
+  right: var(--edge);
+  bottom: 20px;
+  left: var(--edge);
+  z-index: 5;
+  container: price-bar / inline-size;
+}
 
 .bar {
-  position: relative;
-  z-index: 5;
-  grid-area: bar;
   display: grid;
-  /* Equal side columns keep the stats centred on the bar, not between its neighbours. */
+  /* Equal side columns keep the stats centred on the panel, not between its neighbours. */
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 32px;
-  padding: 14px var(--edge);
-  border-top: 1px solid #e6e6e2;
+  padding: 14px 16px 14px 22px;
+  border: 1px solid #e6e6e2;
+  border-radius: 10px;
   background: #ffffff;
+  box-shadow: 0 10px 32px rgba(12, 12, 13, 0.08);
 }
 
 .summary {
@@ -152,9 +164,9 @@
 
 .breakdown {
   position: absolute;
-  right: var(--edge);
+  right: 0;
   bottom: calc(100% + 8px);
-  width: min(400px, calc(100vw - 2 * var(--edge)));
+  width: min(400px, 100%);
   padding: 18px 20px;
   border: 1px solid #e0e0db;
   border-radius: 8px;
@@ -232,7 +244,7 @@
   color: #8a8a8f;
 }
 
-@media (max-width: 1100px) {
+@container price-bar (max-width: 960px) {
   .bar {
     grid-template-columns: auto minmax(0, 1fr);
   }
@@ -242,16 +254,8 @@
   }
 }
 
-/* The page scrolls as a whole here, so the bar sticks to stay in reach. */
-@media (max-width: 900px) {
-  .bar {
-    position: sticky;
-    bottom: 0;
-  }
-}
-
 /* Stats on their own row above the price. */
-@media (max-width: 600px) {
+@container price-bar (max-width: 660px) {
   .bar {
     grid-template-columns: minmax(0, 1fr);
     gap: 8px;
@@ -263,7 +267,31 @@
     padding-bottom: 8px;
     border-bottom: 1px solid #ececea;
   }
+}
 
+/* The page scrolls as a whole here, so the panel pins to the bottom of the screen instead. */
+@media (max-width: 900px) {
+  .dock {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+  }
+
+  .bar {
+    padding-inline: var(--edge);
+    border-width: 1px 0 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .breakdown {
+    right: var(--edge);
+    width: min(400px, calc(100% - 2 * var(--edge)));
+  }
+}
+
+@container price-bar (max-width: 440px) {
   .statValue {
     font-size: 15px;
   }
