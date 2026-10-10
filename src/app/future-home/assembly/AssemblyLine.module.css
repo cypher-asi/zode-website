@@ -58,7 +58,7 @@
 /* Bottom-left heading, on the same baseline band as the bottom-right callout. */
 .intro {
   position: absolute;
-  bottom: calc(var(--bar-height, 52px) + 32px);
+  bottom: calc(var(--bar-height, 52px) + 72px);
   left: var(--edge);
   z-index: 2;
   max-width: 520px;
