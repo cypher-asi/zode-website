@@ -1,10 +1,16 @@
 /*
  * Overlay for the assembly-line scene. Sits inside `.assembly` in
  * ../page.module.css and inherits its `--edge`, `--bar-height`,
- * `--off-white` and `--off-black` variables.
+ * `--seam-step`, `--off-white` and `--off-black` variables.
  */
 .root {
   --accent: #ffa45c;
+  /*
+   * The section below rises `--seam-step` over half of this one's bottom edge,
+   * so the stage strip sits that far up to keep every cell clear of it.
+   */
+  --strip-lift: var(--seam-step, 0px);
+  --strip-top: calc(var(--bar-height, 52px) + var(--strip-lift));
 
   position: absolute;
   inset: 0;
@@ -13,7 +19,7 @@
 
 .canvas {
   position: absolute;
-  inset: 0 0 var(--bar-height, 52px);
+  inset: 0 0 var(--strip-top);
 }
 
 .canvas canvas {
@@ -38,7 +44,7 @@
 }
 
 .root::after {
-  bottom: var(--bar-height, 52px);
+  bottom: var(--strip-top);
   height: 220px;
   background: linear-gradient(0deg, var(--off-black) 0%, rgba(12, 12, 13, 0.8) 45%, rgba(12, 12, 13, 0) 100%);
 }
@@ -47,7 +53,7 @@
 .sideFade {
   position: absolute;
   top: 0;
-  bottom: var(--bar-height, 52px);
+  bottom: var(--strip-top);
   left: 0;
   z-index: 1;
   width: min(620px, 50%);
@@ -58,7 +64,7 @@
 /* Bottom-left heading, on the same baseline band as the bottom-right callout. */
 .intro {
   position: absolute;
-  bottom: calc(var(--bar-height, 52px) + 72px);
+  bottom: calc(var(--strip-top) + 72px);
   left: var(--edge);
   z-index: 2;
   max-width: 520px;
@@ -80,7 +86,7 @@
 .callout {
   position: absolute;
   right: var(--edge);
-  bottom: calc(var(--bar-height, 52px) + 32px);
+  bottom: calc(var(--strip-top) + 32px);
   z-index: 2;
   width: min(360px, calc(100% - 2 * var(--edge)));
   pointer-events: none;
@@ -192,7 +198,7 @@
 .bar {
   position: absolute;
   right: 0;
-  bottom: 0;
+  bottom: var(--strip-lift);
   left: 0;
   display: flex;
   height: var(--bar-height, 52px);
@@ -296,7 +302,7 @@
   }
 
   .callout {
-    bottom: calc(var(--bar-height, 48px) + 20px);
+    bottom: calc(var(--strip-top) + 20px);
   }
 
   .cellButton {
