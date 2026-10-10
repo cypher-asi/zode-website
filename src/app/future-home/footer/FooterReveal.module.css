@@ -1,0 +1,102 @@
+/*
+ * Copyright row under the landscape band (see FooterReveal.tsx). The link
+ * panel is anchored to the row's top edge so it rises over the photo.
+ */
+.root {
+  position: relative;
+  /* Pin the dark-palette tokens the shared footer links read from. */
+  --color-text-primary: #f4f4f5;
+  --color-text-secondary: #8a8a92;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px clamp(14px, 1.6vw, 20px) 0;
+}
+
+.copyright {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    border-color 120ms ease;
+}
+
+.toggle:hover,
+.toggle[aria-expanded="true"] {
+  color: var(--color-text-primary);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.arrow {
+  width: 14px;
+  height: 14px;
+  display: block;
+  transition: transform 200ms ease;
+}
+
+.toggle[aria-expanded="true"] .arrow {
+  transform: rotate(180deg);
+}
+
+.panel {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 8px);
+  padding: clamp(32px, 4vw, 56px) clamp(20px, 5vw, 64px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: #000000;
+  color: var(--color-text-primary);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px);
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease,
+    visibility 0s linear 220ms;
+}
+
+.panel[data-open] {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arrow,
+  .panel,
+  .panel[data-open] {
+    transition: none;
+  }
+}

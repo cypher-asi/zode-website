@@ -40,10 +40,21 @@
   color: var(--off-black);
 }
 
-/* Shared site footer, then the landscape band inset as a card (see footer/). */
+/* Landscape band inset as a card, then the copyright row (see footer/). */
 .footer {
-  padding: 0 clamp(6px, 0.8vw, 12px) clamp(6px, 0.8vw, 12px);
+  padding: clamp(6px, 0.8vw, 12px);
   background: #000000;
+}
+
+/* Same faded watermark the shared footer draws, moved below the landscape. */
+.footerMark {
+  display: block;
+  width: min(94%, 1100px);
+  height: auto;
+  margin: clamp(44px, 5vw, 80px) auto;
+  opacity: 0.08;
+  pointer-events: none;
+  user-select: none;
 }
 
 .left {

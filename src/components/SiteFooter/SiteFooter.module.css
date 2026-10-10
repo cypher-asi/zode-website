@@ -3,7 +3,7 @@
   overflow: hidden;
   /* Generous bottom padding leaves a clear gap between the link content and
      the faded wordmark anchored to the bottom edge. */
-  padding: clamp(48px, 7vw, 96px) clamp(20px, 5vw, 64px) clamp(220px, 26vw, 380px);
+  padding: clamp(48px, 7vw, 96px) clamp(20px, 5vw, 64px);
   /* Footer is always a black surface, regardless of theme. Pin the dark-palette
      tokens locally so the link/heading text and wordmark stay legible even in
      light mode. */
@@ -12,6 +12,10 @@
   --logo-invert: 0;
   background: #000000;
   color: var(--color-text-primary);
+}
+
+.footer[data-watermark] {
+  padding-bottom: clamp(220px, 26vw, 380px);
 }
 
 /*

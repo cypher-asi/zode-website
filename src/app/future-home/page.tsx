@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Inter, Newsreader } from "next/font/google";
 import { redirect } from "next/navigation";
-import { SiteFooter } from "@/components/SiteFooter";
 import { isAuthenticated } from "@/lib/session";
 import { AssemblyLine } from "./assembly/AssemblyLine";
 import { Features } from "./features/Features";
+import { FooterReveal } from "./footer/FooterReveal";
 import { FooterScene } from "./footer/FooterScene";
 import { PinnedBrand } from "./PinnedBrand";
 import { FullStack } from "./stack/FullStack";
@@ -34,7 +34,8 @@ const text = Inter({
  * headline on a white panel and a clickable ZODE render gallery on a black
  * panel, followed by an autoplaying assembly-line build of a ZODE. Lives
  * outside the `(site)` group so it renders without the shared nav and
- * taskbar; it closes with the shared footer over a rotating landscape band.
+ * taskbar; it closes with a rotating landscape band whose copyright line
+ * reveals the shared footer links.
  */
 export default async function FutureHome() {
   if (!(await isAuthenticated())) {
@@ -83,10 +84,12 @@ export default async function FutureHome() {
         <Features />
       </section>
 
-      <div className={styles.footer} data-surface="dark">
-        <SiteFooter />
+      <footer className={styles.footer} aria-label="Site footer" data-surface="dark">
         <FooterScene />
-      </div>
+        <FooterReveal />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className={styles.footerMark} src="/wordmark.png" alt="" aria-hidden="true" />
+      </footer>
     </main>
   );
 }

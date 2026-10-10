@@ -104,6 +104,45 @@ function LinkedInIcon(): ReactElement {
   );
 }
 
+/** The footer's link columns, shared with surfaces that reveal them on demand. */
+export function FooterNav(): ReactElement {
+  const pathname = usePathname() ?? "/";
+
+  return (
+    <nav className={styles.columns} aria-label="Footer navigation">
+      {COLUMNS.map((column) => (
+        <div key={column.heading} className={styles.column}>
+          <h2 className={styles.heading}>{column.heading}</h2>
+          <ul className={styles.links}>
+            {column.links.map((link) => (
+              <li key={link.label}>
+                {link.external ? (
+                  <a
+                    className={styles.link}
+                    href={link.href}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                  >
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link
+                    className={styles.link}
+                    href={link.href}
+                    onClick={() => scrollToTopIfCurrent(pathname, link.href)}
+                  >
+                    {link.label}
+                  </Link>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </nav>
+  );
+}
+
 /**
  * Site-wide marketing footer: uppercase section headers with link lists, a
  * large faded ZODE wordmark centered behind the columns, social links, and a
@@ -114,7 +153,12 @@ function LinkedInIcon(): ReactElement {
 // render the shared site footer below the fold.
 const HIDDEN_FOOTER_ROUTES = ["/buy-compute", "/give-compute"] as const;
 
-export function SiteFooter(): ReactElement | null {
+interface SiteFooterProps {
+  /** Draw the large faded wordmark along the bottom edge. */
+  readonly watermark?: boolean;
+}
+
+export function SiteFooter({ watermark = true }: SiteFooterProps): ReactElement | null {
   const pathname = usePathname() ?? "/";
 
   if (HIDDEN_FOOTER_ROUTES.includes(pathname as (typeof HIDDEN_FOOTER_ROUTES)[number])) {
@@ -122,44 +166,16 @@ export function SiteFooter(): ReactElement | null {
   }
 
   return (
-    <footer className={styles.footer} aria-label="Site footer">
+    <footer className={styles.footer} aria-label="Site footer" data-watermark={watermark || undefined}>
       {/* Decorative watermark: ships white on transparency and inverts to match
           the surface via the shared --logo-invert token. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className={styles.brandMark} src="/wordmark.png" alt="" aria-hidden="true" />
+      {watermark ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className={styles.brandMark} src="/wordmark.png" alt="" aria-hidden="true" />
+      ) : null}
 
       <div className={styles.inner}>
-        <nav className={styles.columns} aria-label="Footer navigation">
-          {COLUMNS.map((column) => (
-            <div key={column.heading} className={styles.column}>
-              <h2 className={styles.heading}>{column.heading}</h2>
-              <ul className={styles.links}>
-                {column.links.map((link) => (
-                  <li key={link.label}>
-                    {link.external ? (
-                      <a
-                        className={styles.link}
-                        href={link.href}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                      >
-                        {link.label}
-                      </a>
-                    ) : (
-                      <Link
-                        className={styles.link}
-                        href={link.href}
-                        onClick={() => scrollToTopIfCurrent(pathname, link.href)}
-                      >
-                        {link.label}
-                      </Link>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </nav>
+        <FooterNav />
 
         <div className={styles.bottom}>
           {/* Social links are hidden until real destinations are ready; flip
