@@ -235,10 +235,6 @@
   border-radius: 6px;
 }
 
-.stepper:focus-within {
-  border-color: var(--off-black);
-}
-
 .stepButton {
   flex: none;
   width: 52px;
@@ -269,29 +265,10 @@
   border-inline: 1px solid #e6e6e2;
 }
 
-.stepInput {
-  width: 4ch;
-  padding: 0;
-  border: 0;
-  background: none;
-  font: inherit;
+.stepNumber {
   font-size: 20px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
-  text-align: right;
-  color: var(--off-black);
-  appearance: textfield;
-  -moz-appearance: textfield;
-}
-
-.stepInput::-webkit-outer-spin-button,
-.stepInput::-webkit-inner-spin-button {
-  margin: 0;
-  -webkit-appearance: none;
-}
-
-.stepInput:focus {
-  outline: none;
 }
 
 .stepUnit {

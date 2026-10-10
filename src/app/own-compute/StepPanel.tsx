@@ -1,10 +1,9 @@
 "use client";
 
-import { useId, useState, type KeyboardEvent, type ReactElement } from "react";
+import { useId, type ReactElement } from "react";
 import {
-  ASSUMPTIONS,
-  NODE_PRESETS,
-  clampNodes,
+  NODE_SIZES,
+  snapNodes,
   usdShort,
   type Choice,
   type Focus,
@@ -136,7 +135,7 @@ export function IncludedCard({
   );
 }
 
-/** Node count: a typed value with +/- buttons and quick presets. */
+/** Node count, limited to the offered sizes: +/- step between them, or pick one directly. */
 export function NodeStepper({
   value,
   onChange,
@@ -144,61 +143,40 @@ export function NodeStepper({
   value: number;
   onChange: (nodes: number) => void;
 }): ReactElement {
-  const inputId = useId();
-  const [draft, setDraft] = useState<string | null>(null);
-
-  const commit = () => {
-    if (draft !== null) onChange(clampNodes(Number(draft)));
-    setDraft(null);
-  };
-
-  const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Enter") commit();
-    if (event.key === "Escape") setDraft(null);
-  };
+  const labelId = useId();
+  const at = NODE_SIZES.indexOf(snapNodes(value) as (typeof NODE_SIZES)[number]);
 
   return (
-    <div className={styles.group}>
-      <label className={styles.legend} htmlFor={inputId}>
+    <div className={styles.group} role="group" aria-labelledby={labelId}>
+      <p id={labelId} className={styles.legend}>
         Cluster size
-      </label>
+      </p>
       <div className={styles.stepper}>
         <button
           type="button"
           className={styles.stepButton}
-          aria-label="Remove a node"
-          disabled={value <= ASSUMPTIONS.minNodes}
-          onClick={() => onChange(clampNodes(value - 1))}
+          aria-label="Smaller cluster"
+          disabled={at <= 0}
+          onClick={() => onChange(NODE_SIZES[at - 1])}
         >
           −
         </button>
-        <span className={styles.stepValue}>
-          <input
-            id={inputId}
-            className={styles.stepInput}
-            type="number"
-            inputMode="numeric"
-            min={ASSUMPTIONS.minNodes}
-            max={ASSUMPTIONS.maxNodes}
-            value={draft ?? String(value)}
-            onChange={(event) => setDraft(event.target.value)}
-            onBlur={commit}
-            onKeyDown={onKeyDown}
-          />
-          <span className={styles.stepUnit}>{value === 1 ? "node" : "nodes"}</span>
-        </span>
+        <output className={styles.stepValue} aria-live="polite">
+          <span className={styles.stepNumber}>{value.toLocaleString("en-US")}</span>
+          <span className={styles.stepUnit}>nodes</span>
+        </output>
         <button
           type="button"
           className={styles.stepButton}
-          aria-label="Add a node"
-          disabled={value >= ASSUMPTIONS.maxNodes}
-          onClick={() => onChange(clampNodes(value + 1))}
+          aria-label="Larger cluster"
+          disabled={at >= NODE_SIZES.length - 1}
+          onClick={() => onChange(NODE_SIZES[at + 1])}
         >
           +
         </button>
       </div>
-      <div className={styles.presets} role="group" aria-label="Cluster size presets">
-        {NODE_PRESETS.map((n) => (
+      <div className={styles.presets} role="group" aria-label="Cluster sizes">
+        {NODE_SIZES.map((n) => (
           <button
             key={n}
             type="button"
@@ -206,7 +184,7 @@ export function NodeStepper({
             aria-pressed={n === value}
             onClick={() => onChange(n)}
           >
-            {n}
+            {n.toLocaleString("en-US")}
           </button>
         ))}
       </div>

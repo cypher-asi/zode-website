@@ -31,8 +31,6 @@ export const ASSUMPTIONS = {
   nodeKw: 14.3,
   /** Facility overhead with direct-to-chip liquid cooling. */
   pue: 1.15,
-  minNodes: 1,
-  maxNodes: 512,
   /** Electrical, cooling and compute pods, delivered and commissioned, per ZODE. */
   zodeInfrastructure: 1_800_000,
   financing: {
@@ -42,7 +40,8 @@ export const ASSUMPTIONS = {
   },
 } as const;
 
-export const NODE_PRESETS = [4, 8, 16, 32, 64, 128, 256] as const;
+/** The only cluster sizes offered, in nodes: 64 doubling up. */
+export const NODE_SIZES = [64, 128, 256, 512, 1024] as const;
 
 export type PlatformId = "b300" | "vera-rubin";
 export type WorkloadId = "training" | "inference";
@@ -232,7 +231,7 @@ export interface Config {
 
 export const DEFAULT_CONFIG: Config = {
   platform: "b300",
-  nodes: 32,
+  nodes: 64,
   workload: "training",
   deployment: "bare-metal",
   network: "infiniband",
@@ -256,8 +255,9 @@ export interface Quote {
   monthly: number;
 }
 
-export const clampNodes = (n: number): number =>
-  Math.min(ASSUMPTIONS.maxNodes, Math.max(ASSUMPTIONS.minNodes, Math.round(n) || ASSUMPTIONS.minNodes));
+/** The offered size closest to `n`. */
+export const snapNodes = (n: number): number =>
+  NODE_SIZES.reduce((best, size) => (Math.abs(size - n) < Math.abs(best - n) ? size : best), NODE_SIZES[0]);
 
 const label = <Id extends string>(list: readonly Choice<Id>[], id: Id) => list.find((c) => c.id === id)?.label ?? id;
 
@@ -276,7 +276,7 @@ export function activeRedundancy(config: Config): RedundancyChoice[] {
 }
 
 export function quote(config: Config): Quote {
-  const nodes = clampNodes(config.nodes);
+  const nodes = snapNodes(config.nodes);
   const gpus = nodes * ASSUMPTIONS.gpusPerNode;
   const zodes = Math.ceil(nodes / ASSUMPTIONS.nodesPerZode);
   const mw = (nodes * ASSUMPTIONS.nodeKw * ASSUMPTIONS.pue) / 1000;
@@ -328,7 +328,7 @@ export function quote(config: Config): Quote {
 }
 
 export function summarize(config: Config): string {
-  const nodes = clampNodes(config.nodes);
+  const nodes = snapNodes(config.nodes);
   return [
     label(PLATFORMS, config.platform),
     `${nodes} node${nodes === 1 ? "" : "s"}`,
