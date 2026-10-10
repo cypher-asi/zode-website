@@ -1,18 +1,21 @@
 /* Light drawing panel on the configurator's right (see ZodePreview.tsx). */
 
 .root {
+  /* Equal top and bottom insets keep the drawing centred in the panel, clear of the header and the pod picker. */
+  --figure-inset: 172px;
+
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
-  gap: 20px;
   /* The bottom keeps the pod picker clear of the floating price panel. */
   padding: 92px var(--edge) 132px;
 }
 
 .head {
+  position: relative;
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
 }
@@ -78,11 +81,11 @@
 }
 
 .figure {
+  position: absolute;
+  inset: var(--figure-inset) var(--edge);
   display: flex;
-  flex: 1;
   align-items: center;
   justify-content: center;
-  min-height: 0;
 }
 
 .figure > svg {
@@ -92,9 +95,11 @@
 }
 
 .pods {
+  position: relative;
   display: flex;
   justify-content: center;
   gap: 4px;
+  margin-top: auto;
 }
 
 .pod {
@@ -129,6 +134,8 @@
 /* A narrow drawing panel stacks the price panel into two rows. */
 @media (min-width: 901px) and (max-width: 1200px) {
   .root {
+    --figure-inset: 214px;
+
     padding-bottom: 176px;
   }
 }
@@ -136,12 +143,17 @@
 @media (max-width: 900px) {
   .root {
     position: static;
+    gap: 20px;
     padding: 84px var(--edge) 28px;
   }
 
   .figure {
-    flex: none;
+    position: static;
     height: min(46vh, 360px);
+  }
+
+  .pods {
+    margin-top: 0;
   }
 }
 
