@@ -19,10 +19,12 @@
 }
 
 /*
- * Each section below the hero rises `--seam-step` over the left half of the
- * one above, stepping down through a 45° jog at the center, so the hero split
- * runs straight into the jog and on along the boundary like one trace. Every
- * section background is a solid color, so the tab can inherit it.
+ * Each section below the hero rises `--seam-step` over one half of the one
+ * above through a 45° jog at the center, alternating left, right, left down
+ * the page (circuit/geometry.ts assumes the same order). The first rises on
+ * the left, so the hero split runs straight into the jog and on along the
+ * boundary like one trace. Every section background is a solid color, so the
+ * tab can inherit it.
  */
 .page > [data-circuit] + [data-circuit] {
   position: relative;
@@ -39,6 +41,12 @@
   background: inherit;
   clip-path: polygon(0 0, calc(100% - var(--seam-step)) 0, 100% 100%, 0 100%);
   pointer-events: none;
+}
+
+.page > [data-circuit] + [data-circuit]:nth-child(odd of [data-circuit])::before {
+  right: 0;
+  left: calc(50% - var(--seam-step) / 2);
+  clip-path: polygon(0 100%, var(--seam-step) 0, 100% 0, 100% 100%);
 }
 
 .hero {

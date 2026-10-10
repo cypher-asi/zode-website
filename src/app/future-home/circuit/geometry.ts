@@ -103,11 +103,11 @@ function rail(
  * Lays out the page frame: a rail `inset` px in from each side, a trace across
  * every block boundary in `seams` plus one closing the bottom, a pad at each
  * junction, and a trace down the hero split. Each block below the first rises
- * `step` px over the left half of the one above it, stepping down through a
- * 45° jog at the center (see `.page > [data-circuit] + [data-circuit]` in
- * page.module.css), so its seam trace runs `step` px above the boundary on the
- * left and at it on the right, and the hero split runs into the jog's upper
- * corner.
+ * `step` px over one half of the one above it through a 45° jog at the center,
+ * alternating left, right, left down the page (see `.page > [data-circuit] +
+ * [data-circuit]` in page.module.css), so each seam trace runs `step` px above
+ * the boundary on the risen side. The first rises on the left, so the hero
+ * split runs straight into the jog's upper corner.
  *
  * A pulse leaves the top of each rail (and of the hero split) at once and runs
  * down; as it passes each seam a pair of pulses leaves both rails and meets in
@@ -127,30 +127,44 @@ export function buildCircuit(
   const bottom = Math.round(height - inset) - 1;
   const rise = Math.round(step);
   const jog = Math.round(width / 2 - step / 2);
-  const across = seams.map(Math.round).filter((y) => y > rise && y < bottom);
-  const lifted = (y: number) => (across.includes(y) ? y - rise : y);
+  const across = seams
+    .map((y, index) => {
+      const at = Math.round(y);
+      const risesLeft = index % 2 === 0;
+      return { at, left: risesLeft ? at - rise : at, right: risesLeft ? at : at - rise };
+    })
+    .filter(({ at }) => at > rise && at < bottom);
+  const liftOn = (side: "left" | "right") => (y: number) =>
+    across.find((seam) => seam.at === y)?.[side] ?? y;
 
   const crossingTone = (y: number) => toneAt(surfaces, left, y);
   const traces: Trace[] = [
-    ...rail(surfaces, left, bottom, lifted),
-    ...rail(surfaces, right, bottom, (y) => y),
-    ...across.flatMap((y) => {
-      const tone = crossingTone(y);
+    ...rail(surfaces, left, bottom, liftOn("left")),
+    ...rail(surfaces, right, bottom, liftOn("right")),
+    ...across.flatMap((seam) => {
+      const tone = crossingTone(seam.at);
       return [
-        { x: left, y: y - rise, width: jog - left, height: 1, tone },
-        { x: jog, y: y - rise, width: rise * Math.SQRT2, height: 1, tone, rotate: 45 },
-        { x: jog + rise, y, width: right - jog - rise + 1, height: 1, tone },
+        { x: left, y: seam.left, width: jog - left, height: 1, tone },
+        {
+          x: jog,
+          y: seam.left,
+          width: rise * Math.SQRT2,
+          height: 1,
+          tone,
+          rotate: seam.right > seam.left ? 45 : -45,
+        },
+        { x: jog + rise, y: seam.right, width: right - jog - rise + 1, height: 1, tone },
       ];
     }),
     { x: left, y: bottom, width: right - left + 1, height: 1, tone: crossingTone(bottom) },
   ];
 
   const pads: Pad[] = [
-    ...across.flatMap((y) => {
-      const tone = crossingTone(y);
+    ...across.flatMap((seam) => {
+      const tone = crossingTone(seam.at);
       return [
-        { x: left, y: y - rise, tone, at: (y - rise) / PULSE_SPEED },
-        { x: right, y, tone, at: y / PULSE_SPEED },
+        { x: left, y: seam.left, tone, at: seam.left / PULSE_SPEED },
+        { x: right, y: seam.right, tone, at: seam.right / PULSE_SPEED },
       ];
     }),
     { x: left, y: bottom, tone: crossingTone(bottom), at: bottom / PULSE_SPEED },
@@ -169,24 +183,24 @@ export function buildCircuit(
   const half = (rise / 2) * Math.SQRT2;
   const meetX = jog + rise / 2;
   const routes: Route[] = [
-    ...railRoutes(left, lifted),
-    ...railRoutes(right, (y) => y),
-    ...across.flatMap((y) => {
-      const tone = crossingTone(y);
-      const meetY = y + 0.5 - rise / 2;
+    ...railRoutes(left, liftOn("left")),
+    ...railRoutes(right, liftOn("right")),
+    ...across.flatMap((seam) => {
+      const tone = crossingTone(seam.at);
+      const meetY = (seam.left + seam.right) / 2 + 0.5;
       return [
         {
-          d: `M${left + 0.5} ${y - rise + 0.5}H${jog}L${meetX} ${meetY}`,
+          d: `M${left + 0.5} ${seam.left + 0.5}H${jog}L${meetX} ${meetY}`,
           length: jog - left - 0.5 + half,
-          start: (y - rise) / PULSE_SPEED,
+          start: seam.left / PULSE_SPEED,
           tone,
           clipTop: 0,
           clipBottom: height,
         },
         {
-          d: `M${right + 0.5} ${y + 0.5}H${jog + rise}L${meetX} ${meetY}`,
+          d: `M${right + 0.5} ${seam.right + 0.5}H${jog + rise}L${meetX} ${meetY}`,
           length: right + 0.5 - jog - rise + half,
-          start: y / PULSE_SPEED,
+          start: seam.right / PULSE_SPEED,
           tone,
           clipTop: 0,
           clipBottom: height,
@@ -206,9 +220,8 @@ export function buildCircuit(
   if (hero) {
     const { x, top, height: h } = hero;
     const jogTop = top + h / 2 - step / 2;
-    const landing = Math.round(top + h);
-    const meets = across.includes(landing);
-    const end = meets ? landing - rise : top + h;
+    const landing = across.find((seam) => seam.at === Math.round(top + h));
+    const end = landing ? landing.left : top + h;
     const length = end - top - step + step * Math.SQRT2;
     routes.push({
       d: `M${x} ${top}V${jogTop}L${x - step} ${jogTop + step}V${end}`,
@@ -218,11 +231,11 @@ export function buildCircuit(
       clipTop: 0,
       clipBottom: height,
     });
-    if (meets) {
+    if (landing) {
       pads.push({
         x: jog,
         y: end,
-        tone: crossingTone(landing),
+        tone: crossingTone(landing.at),
         at: (top + length) / PULSE_SPEED,
       });
     }
