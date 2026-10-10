@@ -12,14 +12,7 @@ const INTERVAL = 3000;
  * `.image` for the point it's anchored on), so cross-fading between them
  * changes only the surroundings.
  */
-const SCENES = [
-  { id: "city", label: "Downtown" },
-  { id: "field", label: "Open prairie" },
-  { id: "mountain", label: "Alpine meadow" },
-  { id: "desert", label: "High desert" },
-  { id: "coast", label: "Coastline" },
-  { id: "snow", label: "Boreal winter" },
-] as const;
+const SCENES = ["city", "field", "mountain", "desert", "coast", "snow"] as const;
 
 /**
  * Closing band of the page: a ZODE that never moves while the landscape
@@ -66,25 +59,16 @@ export function FooterScene(): ReactElement {
     <div ref={ref} className={styles.root} data-surface="dark" aria-hidden="true">
       {SCENES.map((scene, i) => (
         <Image
-          key={scene.id}
+          key={scene}
           className={styles.image}
           data-active={i === active || undefined}
           data-prev={i === prev || undefined}
-          src={`/images/future-home/footer/${scene.id}-wide.jpg`}
+          src={`/images/future-home/footer/${scene}-wide.jpg`}
           alt=""
           fill
           sizes="100vw"
         />
       ))}
-
-      <p className={styles.captions}>
-        {SCENES.map((scene, i) => (
-          <span key={scene.id} className={styles.caption} data-active={i === active || undefined}>
-            {String(i + 1).padStart(2, "0")} / {String(SCENES.length).padStart(2, "0")}
-            <span className={styles.label}>{scene.label}</span>
-          </span>
-        ))}
-      </p>
     </div>
   );
 }
