@@ -4,7 +4,9 @@
   position: relative;
   z-index: 5;
   grid-area: bar;
-  display: flex;
+  display: grid;
+  /* Equal side columns keep the stats centred on the bar, not between its neighbours. */
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 32px;
   padding: 14px var(--edge);
@@ -13,8 +15,35 @@
 }
 
 .summary {
-  flex: 1;
   min-width: 0;
+}
+
+.stats {
+  display: flex;
+  gap: clamp(20px, 3vw, 48px);
+  margin: 0;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 1px;
+}
+
+.statValue {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+}
+
+.statLabel {
+  font-size: 11px;
+  white-space: nowrap;
+  color: #8a8a8f;
 }
 
 .name {
@@ -34,6 +63,7 @@
 
 .figures {
   display: flex;
+  justify-self: end;
   align-items: center;
   gap: 28px;
 }
@@ -203,13 +233,12 @@
 }
 
 @media (max-width: 1100px) {
-  .summary {
-    display: none;
+  .bar {
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
-  .figures {
-    flex: 1;
-    justify-content: flex-end;
+  .summary {
+    display: none;
   }
 }
 
@@ -221,9 +250,26 @@
   }
 }
 
+/* Stats on their own row above the price. */
 @media (max-width: 600px) {
   .bar {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
     padding-block: 10px;
+  }
+
+  .stats {
+    justify-content: space-between;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #ececea;
+  }
+
+  .statValue {
+    font-size: 15px;
+  }
+
+  .statLabel {
+    font-size: 10px;
   }
 
   .figures {

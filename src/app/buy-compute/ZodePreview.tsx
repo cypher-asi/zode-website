@@ -29,13 +29,6 @@ export function ZodePreview({ focus, quote }: { focus: Focus; quote: Quote }): R
   const tour = POD_TOURS.find((t) => t.id === pod) ?? POD_TOURS[0];
   const active = hovered ?? (override ? null : focus.zone);
 
-  const stats = [
-    { label: "GPUs", value: quote.gpus.toLocaleString("en-US") },
-    { label: "Nodes", value: quote.nodes.toLocaleString("en-US") },
-    { label: quote.zodes === 1 ? "ZODE" : "ZODEs", value: String(quote.zodes) },
-    { label: "Est. power", value: `${quote.mw.toFixed(2)} MW` },
-  ];
-
   return (
     <div className={styles.root}>
       <header className={styles.head}>
@@ -71,15 +64,6 @@ export function ZodePreview({ focus, quote }: { focus: Focus; quote: Quote }): R
           </button>
         ))}
       </div>
-
-      <dl className={styles.stats}>
-        {stats.map((s) => (
-          <div key={s.label} className={styles.stat}>
-            <dt className={styles.statLabel}>{s.label}</dt>
-            <dd className={styles.statValue}>{s.value}</dd>
-          </div>
-        ))}
-      </dl>
     </div>
   );
 }

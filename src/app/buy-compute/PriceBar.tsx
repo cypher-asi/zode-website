@@ -36,7 +36,8 @@ const { downPayment, months, apr } = ASSUMPTIONS.financing;
 const TERMS = `${Math.round(downPayment * 100)}% down · ${months} mo · ${(apr * 100).toFixed(1)}% APR`;
 
 /**
- * Bottom bar: the configuration summary on the left; the estimated monthly
+ * Bottom bar: the configuration summary on the left, the cluster's GPU,
+ * node, ZODE and power figures in the middle, and the estimated monthly
  * payment on the right, flashing when it changes. The total cost stays out
  * of the bar until the chevron opens it, with the itemized breakdown, above.
  */
@@ -70,6 +71,20 @@ export function PriceBar({ quote, summary }: { quote: Quote; summary: string }):
           {summary}
         </p>
       </div>
+
+      <dl className={styles.stats}>
+        {[
+          { label: "GPUs", value: quote.gpus.toLocaleString("en-US") },
+          { label: "Nodes", value: quote.nodes.toLocaleString("en-US") },
+          { label: quote.zodes === 1 ? "ZODE" : "ZODEs", value: String(quote.zodes) },
+          { label: "Est. power", value: `${quote.mw.toFixed(2)} MW` },
+        ].map((s) => (
+          <div key={s.label} className={styles.stat}>
+            <dt className={styles.statLabel}>{s.label}</dt>
+            <dd className={styles.statValue}>{s.value}</dd>
+          </div>
+        ))}
+      </dl>
 
       <div className={styles.figures} aria-live="polite">
         <div className={styles.figure}>
