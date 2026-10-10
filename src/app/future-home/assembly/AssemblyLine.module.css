@@ -43,7 +43,7 @@
   background: linear-gradient(0deg, var(--off-black) 0%, rgba(12, 12, 13, 0.8) 45%, rgba(12, 12, 13, 0) 100%);
 }
 
-/* Left-edge fade behind the vertically centered heading. */
+/* Left-edge fade behind the heading. */
 .sideFade {
   position: absolute;
   top: 0;
@@ -55,13 +55,13 @@
   pointer-events: none;
 }
 
+/* Bottom-left heading, on the same baseline band as the bottom-right callout. */
 .intro {
   position: absolute;
-  top: calc((100% - var(--bar-height, 52px)) / 2);
+  bottom: calc(var(--bar-height, 52px) + 32px);
   left: var(--edge);
   z-index: 2;
   max-width: 520px;
-  transform: translateY(-50%);
   pointer-events: none;
 }
 
@@ -310,7 +310,7 @@
   .intro {
     top: 72px;
     right: var(--edge);
-    transform: none;
+    bottom: auto;
   }
 
   .callout {
