@@ -1,12 +1,12 @@
 /*
  * Photo band at the very bottom of the page (see FooterScene.tsx). The photos
- * are 2:1 with the ZODE's footprint centred at 62.5% / 75%; using that same
+ * are 8:3 with the ZODE's footprint centred at 50% / 77%; using that same
  * point as `object-position` keeps the ZODE in frame however the card crops.
  */
 .root {
   position: relative;
-  aspect-ratio: 2 / 1;
-  min-height: 260px;
+  aspect-ratio: 8 / 3;
+  min-height: 220px;
   overflow: hidden;
   border-radius: 10px;
   background: #0c0c0d;
@@ -19,7 +19,7 @@
 .image {
   z-index: 0;
   object-fit: cover;
-  object-position: 62.5% 75%;
+  object-position: 50% 77%;
   opacity: 0;
   transition: opacity 900ms ease;
 }
