@@ -25,7 +25,7 @@ function onMenuKey(event: KeyboardEvent<HTMLElement>): void {
 
 /**
  * Hero call-to-action styled as a terminal picker: the hovered or focused row
- * gets a return-key marker.
+ * gets a caret and a blinking block cursor.
  */
 export function TerminalMenu(): ReactElement {
   return (
@@ -34,19 +34,11 @@ export function TerminalMenu(): ReactElement {
         {ACTIONS.map((action) => (
           <li key={action.href}>
             <Link className={styles.item} href={action.href}>
-              <svg
-                className={styles.enter}
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M13 3v4.5a2 2 0 0 1-2 2H3.5M6.5 6.5l-3 3 3 3" />
-              </svg>
+              <span className={styles.caret} aria-hidden="true">
+                &gt;
+              </span>
               {action.label}
+              <span className={styles.cursor} aria-hidden="true" />
             </Link>
           </li>
         ))}
