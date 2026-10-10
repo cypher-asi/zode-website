@@ -96,21 +96,11 @@
 }
 
 .stepHeading {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
   margin: 0;
   font-family: var(--font-display), Georgia, serif;
   font-size: 24px;
   font-weight: 400;
   letter-spacing: -0.015em;
-}
-
-.stepNo {
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  color: #8a8a8f;
 }
 
 .stepLede {

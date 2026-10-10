@@ -92,10 +92,7 @@ export function Configurator(): ReactElement {
 
             <div className={styles.step}>
               <div key={current.id} className={styles.stepBody}>
-                <h2 className={styles.stepHeading}>
-                  <span className={styles.stepNo}>Step {step + 1}</span>
-                  {current.heading}
-                </h2>
+                <h2 className={styles.stepHeading}>{current.heading}</h2>
                 <p className={styles.stepLede}>{current.lede}</p>
 
                 {current.id === "compute" ? (
