@@ -90,8 +90,6 @@ export function Configurator(): ReactElement {
               <h1 className={styles.heading}>Build your ZODE</h1>
             </header>
 
-            <StepTabs steps={STEPS} active={step} onSelect={goTo} />
-
             <div className={styles.step}>
               <div key={current.id} className={styles.stepBody}>
                 <h2 className={styles.stepHeading}>
@@ -174,28 +172,31 @@ export function Configurator(): ReactElement {
           </section>
           <OverlayScrollbar targetId={PANEL_ID} />
         </div>
-        <nav className={styles.nav} aria-label="Step navigation">
-          <button
-            type="button"
-            className={styles.secondary}
-            disabled={step === 0}
-            onClick={() => goTo(step - 1)}
-          >
-            <Arrow direction="back" />
-            Back
-          </button>
-          {step < STEPS.length - 1 ? (
+        <div className={styles.footer}>
+          <StepTabs steps={STEPS} active={step} onSelect={goTo} />
+          <nav className={styles.nav} aria-label="Step navigation">
             <button
               type="button"
-              className={styles.primary}
-              aria-label={`Next: ${STEPS[step + 1].title}`}
-              onClick={() => goTo(step + 1)}
+              className={styles.secondary}
+              disabled={step === 0}
+              onClick={() => goTo(step - 1)}
             >
-              Next
-              <Arrow direction="next" />
+              <Arrow direction="back" />
+              Back
             </button>
-          ) : null}
-        </nav>
+            {step < STEPS.length - 1 ? (
+              <button
+                type="button"
+                className={styles.primary}
+                aria-label={`Next: ${STEPS[step + 1].title}`}
+                onClick={() => goTo(step + 1)}
+              >
+                Next
+                <Arrow direction="next" />
+              </button>
+            ) : null}
+          </nav>
+        </div>
       </div>
 
       <section className={styles.preview} data-surface="light" aria-label="ZODE preview">

@@ -80,7 +80,7 @@
 
 .step {
   flex: 1;
-  padding-top: 28px;
+  padding-top: 8px;
 }
 
 /* Remounted per step so each one fades in; `.step` stays put for the overlay scrollbar's resize observer. */
@@ -120,14 +120,21 @@
   color: #8a8a8f;
 }
 
-.nav {
+/* Fixed foot of the steps panel: the stage tabs above Back / Next. */
+.footer {
   display: flex;
   flex: none;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px var(--edge);
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px var(--edge);
   border-top: 1px solid #e6e6e2;
   background: #ffffff;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .primary,
