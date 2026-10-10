@@ -3,8 +3,8 @@ import { TerminalMenu, type TerminalMenuItem } from "@/components/TerminalMenu";
 import styles from "./ClosingCta.module.css";
 
 const ACTIONS: readonly TerminalMenuItem[] = [
-  { id: "rent", label: "Rent Compute", href: "/buy-compute" },
-  { id: "own", label: "Own Compute", href: "/own-compute" },
+  { id: "rent", label: "Rent Compute", href: "/rent-compute" },
+  { id: "own", label: "Own Compute", href: "/buy-compute" },
   { id: "meet", label: "Schedule Meeting", href: "/contact" },
 ];
 

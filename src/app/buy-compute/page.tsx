@@ -7,7 +7,7 @@ import { Configurator } from "./Configurator";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
-  title: "Own Compute | ZODE",
+  title: "Buy Compute | ZODE",
   description: "Configure your own ZODE: compute platform, workload, networking and redundancy, with live pricing.",
 };
 
@@ -28,7 +28,7 @@ const text = Inter({
  * pricing bar along the bottom. Lives outside the `(site)` group, like
  * `future-home`, so it fills the viewport without the shared nav and taskbar.
  */
-export default async function OwnComputePage() {
+export default async function BuyComputePage() {
   if (!(await isAuthenticated())) {
     redirect("/login");
   }

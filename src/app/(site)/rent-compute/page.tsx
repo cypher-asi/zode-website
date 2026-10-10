@@ -4,7 +4,7 @@ import { RequestComputeForm } from "./RequestComputeForm";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
-  title: "Buy Compute | ZODE",
+  title: "Rent Compute | ZODE",
   description:
     "Request compute on the grid. We match your workload to live capacity and wire a private link to your data.",
 };
@@ -33,7 +33,7 @@ const FEATURES = [
 
 const TRUST = ["Fast human reply", "Cancel anytime", "Transparent pricing"] as const;
 
-export default function BuyComputePage(): ReactElement {
+export default function RentComputePage(): ReactElement {
   return (
     <div className={styles.page}>
       <div className={styles.inner}>

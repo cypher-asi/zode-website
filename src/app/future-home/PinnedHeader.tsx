@@ -119,7 +119,7 @@ export function PinnedHeader(): ReactElement {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className={styles.wordmark} src="/wordmark.png" alt="" aria-hidden="true" />
       </Link>
-      <Link ref={actionRef} className={styles.action} href="/buy-compute" data-tone={actionTone}>
+      <Link ref={actionRef} className={styles.action} href="/rent-compute" data-tone={actionTone}>
         Rent Compute
       </Link>
     </>

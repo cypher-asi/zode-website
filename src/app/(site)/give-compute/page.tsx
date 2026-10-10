@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactElement, ReactNode } from "react";
 import { ProvideComputeForm } from "./ProvideComputeForm";
-import styles from "../buy-compute/page.module.css";
+import styles from "../rent-compute/page.module.css";
 
 export const metadata: Metadata = {
   title: "Give Compute | ZODE",

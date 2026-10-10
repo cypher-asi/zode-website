@@ -151,7 +151,7 @@ export function FooterNav(): ReactElement {
  */
 // Routes whose page provides its own full-height layout and should not
 // render the shared site footer below the fold.
-const HIDDEN_FOOTER_ROUTES = ["/buy-compute", "/give-compute"] as const;
+const HIDDEN_FOOTER_ROUTES = ["/rent-compute", "/give-compute"] as const;
 
 interface SiteFooterProps {
   /** Draw the large faded wordmark along the bottom edge. */

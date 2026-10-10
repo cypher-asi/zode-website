@@ -21,7 +21,7 @@ import { ChoiceGroup, IncludedCard, NodeStepper, Readouts, RedundancyList, StepT
 import { ZodePreview } from "./ZodePreview";
 import styles from "./Configurator.module.css";
 
-const PANEL_ID = "own-compute-steps";
+const PANEL_ID = "buy-compute-steps";
 
 const STEPS = [
   {

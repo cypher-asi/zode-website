@@ -11,8 +11,8 @@ import {
 } from "@/lib/leads";
 import { postLead } from "@/lib/leads-submit";
 import { openMailDraft } from "@/lib/mailto";
-import { SubmittedPanel } from "../buy-compute/SubmittedPanel";
-import styles from "../buy-compute/page.module.css";
+import { SubmittedPanel } from "../rent-compute/SubmittedPanel";
+import styles from "../rent-compute/page.module.css";
 
 type Status = "idle" | "submitting" | "success" | "fallback";
 

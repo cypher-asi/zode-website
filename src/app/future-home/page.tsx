@@ -23,8 +23,8 @@ export const metadata: Metadata = {
 };
 
 const HERO_ACTIONS: readonly TerminalMenuItem[] = [
-  { id: "rent", label: "Rent Compute", href: "/buy-compute" },
-  { id: "own", label: "Own Compute", href: "/own-compute" },
+  { id: "rent", label: "Rent Compute", href: "/rent-compute" },
+  { id: "own", label: "Own Compute", href: "/buy-compute" },
   { id: "learn", label: "Learn More", href: "#learn-more" },
 ];
 
