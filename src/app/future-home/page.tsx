@@ -15,7 +15,7 @@ import styles from "./page.module.css";
 
 export const metadata: Metadata = {
   title: "ZODE — Sovereign Super Intelligence",
-  description: "The fastest deployable compute infrastructure.",
+  description: "The fastest deployable data center.",
 };
 
 const display = Newsreader({
@@ -57,7 +57,7 @@ export default async function FutureHome() {
           </div>
 
           <div className={styles.bar}>
-            <p className={styles.helper}>The fastest deployable compute infrastructure.</p>
+            <p className={styles.helper}>The fastest deployable data center.</p>
             <WordLoop />
           </div>
         </section>
