@@ -2,20 +2,20 @@
 
 .root {
   /* `--price-panel-h` is the floating price panel's live height (see PriceBar.tsx). */
-  --pods-bottom: calc(var(--price-panel-h, 134px) + 38px);
-  --figure-bottom: calc(var(--pods-bottom) + 38px);
+  --price-top: calc(var(--price-panel-h, 134px) + 20px);
   /*
-   * Equal insets keep the drawing centred in the panel, clear of the header
-   * above and the pod picker below; a short panel with a tall price panel
-   * gives up the symmetry before the drawing gets too small.
+   * The drawing sits midway between the top of the screen and the price
+   * panel: equal insets from each, clear of the header above and the pod
+   * picker below.
    */
-  --figure-top: max(172px, min(var(--figure-bottom), 25%));
+  --figure-inset: 128px;
 
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
-  padding: 92px var(--edge) var(--pods-bottom);
+  /* Top aligns with the pinned wordmark. */
+  padding: 32px var(--edge) calc(var(--price-top) + 18px);
 }
 
 .head {
@@ -88,7 +88,7 @@
 
 .figure {
   position: absolute;
-  inset: var(--figure-top) var(--edge) max(var(--figure-top), var(--figure-bottom));
+  inset: var(--figure-inset) var(--edge) calc(var(--price-top) + var(--figure-inset));
   display: flex;
   align-items: center;
   justify-content: center;
