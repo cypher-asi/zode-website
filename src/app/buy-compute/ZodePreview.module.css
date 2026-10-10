@@ -1,15 +1,21 @@
 /* Light drawing panel on the configurator's right (see ZodePreview.tsx). */
 
 .root {
-  /* Equal top and bottom insets keep the drawing centred in the panel, clear of the header and the pod picker. */
-  --figure-inset: 172px;
+  /* `--price-panel-h` is the floating price panel's live height (see PriceBar.tsx). */
+  --pods-bottom: calc(var(--price-panel-h, 134px) + 38px);
+  --figure-bottom: calc(var(--pods-bottom) + 38px);
+  /*
+   * Equal insets keep the drawing centred in the panel, clear of the header
+   * above and the pod picker below; a short panel with a tall price panel
+   * gives up the symmetry before the drawing gets too small.
+   */
+  --figure-top: max(172px, min(var(--figure-bottom), 25%));
 
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
-  /* The bottom keeps the pod picker clear of the floating price panel. */
-  padding: 92px var(--edge) 132px;
+  padding: 92px var(--edge) var(--pods-bottom);
 }
 
 .head {
@@ -82,7 +88,7 @@
 
 .figure {
   position: absolute;
-  inset: var(--figure-inset) var(--edge);
+  inset: var(--figure-top) var(--edge) max(var(--figure-top), var(--figure-bottom));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -129,15 +135,6 @@
 .pod:focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
-}
-
-/* A narrow drawing panel stacks the price panel into two rows. */
-@media (min-width: 901px) and (max-width: 1200px) {
-  .root {
-    --figure-inset: 214px;
-
-    padding-bottom: 176px;
-  }
 }
 
 @media (max-width: 900px) {

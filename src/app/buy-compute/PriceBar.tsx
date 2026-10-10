@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactElement } from "react";
-import { ASSUMPTIONS, usd, type Quote } from "./config";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactElement } from "react";
+import { ASSUMPTIONS, usd, type Quote, type Stat } from "./config";
 import styles from "./PriceBar.module.css";
 
 const TWEEN_MS = 450;
@@ -35,17 +35,45 @@ function useTweened(target: number): number {
 const { downPayment, months, apr } = ASSUMPTIONS.financing;
 const TERMS = `${Math.round(downPayment * 100)}% down · ${months} mo · ${(apr * 100).toFixed(1)}% APR`;
 
+function Stats({ label, stats, className }: { label: string; stats: Stat[]; className: string }): ReactElement {
+  return (
+    <dl className={className} aria-label={label}>
+      {stats.map((s) => (
+        <div key={s.label} className={styles.stat}>
+          <dt className={styles.statLabel}>{s.label}</dt>
+          <dd className={styles.statValue}>{s.value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 /**
- * Bottom bar: the configuration summary on the left, the cluster's GPU,
- * node, ZODE and power figures in the middle, and the estimated monthly
- * payment on the right, flashing when it changes. The total cost stays out
- * of the bar until the chevron opens it, with the itemized breakdown, above.
+ * Floating price panel: the configured choices above the cluster's GPU,
+ * node, ZODE and power figures, sharing one column grid, with the estimated
+ * monthly payment beside them, flashing when it changes. The total cost
+ * stays out of the panel until the chevron opens it, with the itemized
+ * breakdown, above.
  */
-export function PriceBar({ quote, summary }: { quote: Quote; summary: string }): ReactElement {
+export function PriceBar({ quote, summary }: { quote: Quote; summary: Stat[] }): ReactElement {
   const monthly = useTweened(quote.monthly);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
+
+  // The drawing panel keeps its contents clear of however tall this panel lays out.
+  useLayoutEffect(() => {
+    const dock = rootRef.current;
+    const host = dock?.parentElement;
+    if (!dock || !host) return;
+    const bar = dock.firstElementChild as HTMLElement;
+    const observer = new ResizeObserver(() => host.style.setProperty("--price-panel-h", `${bar.offsetHeight}px`));
+    observer.observe(bar);
+    return () => {
+      observer.disconnect();
+      host.style.removeProperty("--price-panel-h");
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -66,26 +94,19 @@ export function PriceBar({ quote, summary }: { quote: Quote; summary: string }):
   return (
     <div ref={rootRef} className={styles.dock} data-surface="light">
       <div className={styles.bar}>
-        <div className={styles.summary}>
-          <p className={styles.name}>Your ZODE</p>
-          <p className={styles.config} title={summary}>
-            {summary}
-          </p>
+        <div className={styles.stats}>
+          <Stats label="Configuration" stats={summary} className={`${styles.statRow} ${styles.spec}`} />
+          <Stats
+            label="Cluster"
+            className={styles.statRow}
+            stats={[
+              { label: "GPUs", value: quote.gpus.toLocaleString("en-US") },
+              { label: "Nodes", value: quote.nodes.toLocaleString("en-US") },
+              { label: quote.zodes === 1 ? "ZODE" : "ZODEs", value: String(quote.zodes) },
+              { label: "Est. power", value: `${quote.mw.toFixed(2)} MW` },
+            ]}
+          />
         </div>
-
-        <dl className={styles.stats}>
-          {[
-            { label: "GPUs", value: quote.gpus.toLocaleString("en-US") },
-            { label: "Nodes", value: quote.nodes.toLocaleString("en-US") },
-            { label: quote.zodes === 1 ? "ZODE" : "ZODEs", value: String(quote.zodes) },
-            { label: "Est. power", value: `${quote.mw.toFixed(2)} MW` },
-          ].map((s) => (
-            <div key={s.label} className={styles.stat}>
-              <dt className={styles.statLabel}>{s.label}</dt>
-              <dd className={styles.statValue}>{s.value}</dd>
-            </div>
-          ))}
-        </dl>
 
         <div className={styles.figures} aria-live="polite">
           <div className={styles.figure}>

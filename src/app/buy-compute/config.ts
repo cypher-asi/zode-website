@@ -327,16 +327,20 @@ export function quote(config: Config): Quote {
   return { nodes, gpus, zodes, mw, lineItems, total, downPayment, monthly };
 }
 
-export function summarize(config: Config): string {
-  const nodes = snapNodes(config.nodes);
+export interface Stat {
+  label: string;
+  value: string;
+}
+
+/** The configured choices, one figure per step, for the price panel. */
+export function summarize(config: Config): Stat[] {
   return [
-    label(PLATFORMS, config.platform),
-    `${nodes} node${nodes === 1 ? "" : "s"}`,
-    label(WORKLOADS, config.workload),
-    label(DEPLOYMENTS, config.deployment),
-    label(NETWORKS, config.network),
-    `${activeRedundancy(config).length} x N+1`,
-  ].join(" · ");
+    { label: "Platform", value: label(PLATFORMS, config.platform).replace(/^NVIDIA /, "") },
+    { label: "Workload", value: label(WORKLOADS, config.workload) },
+    { label: "Deployment", value: label(DEPLOYMENTS, config.deployment) },
+    { label: "Network", value: label(NETWORKS, config.network) },
+    { label: "N+1 systems", value: `${activeRedundancy(config).length} of ${REDUNDANCY.length}` },
+  ];
 }
 
 const USD = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });

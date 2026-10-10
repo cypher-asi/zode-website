@@ -15,10 +15,8 @@
 
 .bar {
   display: grid;
-  /* Equal side columns keep the stats centred on the panel, not between its neighbours. */
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: 32px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 28px;
   padding: 14px 16px 14px 22px;
   border: 1px solid #e6e6e2;
   border-radius: 10px;
@@ -26,30 +24,43 @@
   box-shadow: 0 10px 32px rgba(12, 12, 13, 0.08);
 }
 
-.summary {
-  min-width: 0;
+/* Both rows share these columns, so the choices line up over the cluster figures. */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 180px));
+  column-gap: 20px;
+  align-content: center;
 }
 
-.stats {
-  display: flex;
-  gap: clamp(20px, 3vw, 48px);
+.statRow {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   margin: 0;
+}
+
+.spec {
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ececea;
 }
 
 .stat {
   display: flex;
   flex-direction: column-reverse;
-  align-items: center;
+  min-width: 0;
   gap: 1px;
 }
 
 .statValue {
+  overflow: hidden;
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.015em;
   white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .statLabel {
@@ -58,26 +69,13 @@
   color: #8a8a8f;
 }
 
-.name {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 500;
-}
-
-.config {
-  overflow: hidden;
-  margin: 2px 0 0;
-  font-size: 12px;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  color: #8a8a8f;
-}
-
 .figures {
   display: flex;
-  justify-self: end;
+  justify-content: flex-end;
   align-items: center;
   gap: 28px;
+  padding-left: 28px;
+  border-left: 1px solid #ececea;
 }
 
 .figure {
@@ -244,28 +242,23 @@
   color: #8a8a8f;
 }
 
-@container price-bar (max-width: 960px) {
-  .bar {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
-  .summary {
-    display: none;
-  }
-}
-
-/* Stats on their own row above the price. */
-@container price-bar (max-width: 660px) {
+/* Stats above the price. */
+@container price-bar (max-width: 720px) {
   .bar {
     grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
-    padding-block: 10px;
+    gap: 10px;
+    padding-block: 12px;
   }
 
   .stats {
-    justify-content: space-between;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #ececea;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    column-gap: 12px;
+  }
+
+  .figures {
+    padding: 10px 0 0;
+    border-top: 1px solid #ececea;
+    border-left: 0;
   }
 }
 
@@ -291,7 +284,16 @@
   }
 }
 
+/* Phones show the choices in the steps right above, so only the cluster figures stay. */
 @container price-bar (max-width: 440px) {
+  .spec {
+    display: none;
+  }
+
+  .stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
   .statValue {
     font-size: 15px;
   }
