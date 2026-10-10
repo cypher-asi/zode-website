@@ -37,12 +37,11 @@ const TERMS = `${Math.round(downPayment * 100)}% down · ${months} mo · ${(apr 
 
 /**
  * Bottom bar: the configuration summary on the left; the estimated monthly
- * payment and total cost on the right, each flashing when it changes. The
- * chevron opens an itemized breakdown above the bar.
+ * payment on the right, flashing when it changes. The total cost stays out
+ * of the bar until the chevron opens it, with the itemized breakdown, above.
  */
 export function PriceBar({ quote, summary }: { quote: Quote; summary: string }): ReactElement {
   const monthly = useTweened(quote.monthly);
-  const total = useTweened(quote.total);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
@@ -83,19 +82,10 @@ export function PriceBar({ quote, summary }: { quote: Quote; summary: string }):
           </span>
         </div>
 
-        <span className={styles.divider} aria-hidden="true" />
-
-        <div className={styles.figure}>
-          <span key={quote.total} className={styles.amount}>
-            {usd(total)}
-          </span>
-          <span className={styles.caption}>Est. total cost</span>
-        </div>
-
         <button
           type="button"
           className={styles.toggle}
-          aria-label={open ? "Hide price breakdown" : "Show price breakdown"}
+          aria-label={open ? "Hide total cost and breakdown" : "Show total cost and breakdown"}
           aria-expanded={open}
           aria-controls={panelId}
           onClick={() => setOpen((v) => !v)}
@@ -108,7 +98,8 @@ export function PriceBar({ quote, summary }: { quote: Quote; summary: string }):
 
       {open ? (
         <div id={panelId} className={styles.breakdown} role="region" aria-label="Price breakdown">
-          <p className={styles.breakdownTitle}>Estimated price breakdown</p>
+          <p className={styles.breakdownTitle}>Est. total cost</p>
+          <p className={styles.total}>{usd(quote.total)}</p>
           <dl className={styles.rows}>
             {quote.lineItems.map((item) => (
               <div key={item.label} className={styles.row}>
