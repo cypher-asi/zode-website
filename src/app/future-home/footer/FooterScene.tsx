@@ -70,7 +70,7 @@ export function FooterScene(): ReactElement {
           className={styles.image}
           data-active={i === active || undefined}
           data-prev={i === prev || undefined}
-          src={`/images/future-home/footer/${scene.id}.jpg`}
+          src={`/images/future-home/footer/${scene.id}-wide.jpg`}
           alt=""
           fill
           sizes="100vw"
