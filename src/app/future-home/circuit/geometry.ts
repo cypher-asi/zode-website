@@ -36,14 +36,23 @@ export interface Pad {
   readonly at: number;
 }
 
-/** A path a pulse runs along, entering at `start` ms into each cycle. */
+/**
+ * A path a pulse runs along, entering at `start` ms into each cycle. The pulse
+ * is only drawn between page rows `clipTop` and `clipBottom`, so a rail's
+ * pulse is split into one copy per surface it crosses, each in that surface's
+ * tone, and switches color exactly at the boundary.
+ */
 export interface Route {
   readonly d: string;
   readonly length: number;
   readonly start: number;
+  readonly tone: Tone;
+  readonly clipTop: number;
+  readonly clipBottom: number;
 }
 
 export interface Circuit {
+  readonly height: number;
   readonly traces: readonly Trace[];
   readonly pads: readonly Pad[];
   readonly routes: readonly Route[];
@@ -122,16 +131,29 @@ export function buildCircuit(
     ];
   });
 
-  const railLength = bottom;
+  const railRoutes = (x: number): Route[] =>
+    rail(surfaces, x, bottom).map((segment) => ({
+      d: `M${x + 0.5} 0V${bottom + 0.5}`,
+      length: bottom,
+      start: 0,
+      tone: segment.tone,
+      clipTop: segment.y,
+      clipBottom: segment.y + segment.height,
+    }));
   const routes: Route[] = [
-    { d: `M${left + 0.5} 0V${bottom + 0.5}`, length: railLength, start: 0 },
-    { d: `M${right + 0.5} 0V${bottom + 0.5}`, length: railLength, start: 0 },
+    ...railRoutes(left),
+    ...railRoutes(right),
     ...across.flatMap((y) => {
-      const start = y / PULSE_SPEED;
-      const length = middle - left - 0.5;
+      const crossing = {
+        length: middle - left - 0.5,
+        start: y / PULSE_SPEED,
+        tone: toneAt(surfaces, left, y),
+        clipTop: 0,
+        clipBottom: height,
+      };
       return [
-        { d: `M${left + 0.5} ${y + 0.5}H${middle}`, length, start },
-        { d: `M${right + 0.5} ${y + 0.5}H${middle}`, length, start },
+        { ...crossing, d: `M${left + 0.5} ${y + 0.5}H${middle}` },
+        { ...crossing, d: `M${right + 0.5} ${y + 0.5}H${middle}` },
       ];
     }),
   ];
@@ -144,6 +166,9 @@ export function buildCircuit(
       d: `M${x} ${top}V${jogTop}L${x - step} ${jogTop + step}V${end}`,
       length: h - step + step * Math.SQRT2,
       start: top / PULSE_SPEED,
+      tone: toneAt(surfaces, x - step - 1, top),
+      clipTop: 0,
+      clipBottom: height,
     });
     const landing = Math.round(end);
     if (across.includes(landing)) {
@@ -157,5 +182,5 @@ export function buildCircuit(
   }
 
   const lastLanding = Math.max(...routes.map((r) => r.start + r.length / PULSE_SPEED));
-  return { traces, pads, routes, cycle: lastLanding + REST };
+  return { height, traces, pads, routes, cycle: lastLanding + REST };
 }

@@ -174,10 +174,18 @@ export function CircuitFrame(): ReactElement {
       {circuit?.routes.map((route, index) => (
         <div
           key={`route-${index}`}
-          className={styles.pulse}
-          data-route={index}
-          style={{ width: PULSE_LENGTH, offsetPath: `path("${route.d}")` }}
-        />
+          className={styles.clip}
+          style={{ top: route.clipTop, height: route.clipBottom - route.clipTop }}
+        >
+          <div className={styles.stage} style={{ top: -route.clipTop, height: circuit.height }}>
+            <div
+              className={styles.pulse}
+              data-route={index}
+              data-tone={route.tone}
+              style={{ width: PULSE_LENGTH, offsetPath: `path("${route.d}")` }}
+            />
+          </div>
+        </div>
       ))}
     </div>
   );
