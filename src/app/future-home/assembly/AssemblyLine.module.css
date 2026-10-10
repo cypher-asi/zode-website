@@ -65,18 +65,9 @@
   pointer-events: none;
 }
 
-.eyebrow {
-  margin: 0;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.5);
-}
-
 /* Same display type as the hero headline and the stack section title. */
 .title {
-  margin: 16px 0 0;
+  margin: 0;
   font-family: var(--font-display), Georgia, serif;
   font-size: clamp(32px, 3.6vw, 56px);
   font-weight: 300;

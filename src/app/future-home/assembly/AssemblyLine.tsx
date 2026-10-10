@@ -52,7 +52,6 @@ export function AssemblyLine(): ReactElement {
       <div className={styles.sideFade} aria-hidden="true" />
 
       <header className={styles.intro}>
-        <p className={styles.eyebrow}>Assembly line</p>
         <h2 className={styles.title}>
           Factory built,
           <br />
