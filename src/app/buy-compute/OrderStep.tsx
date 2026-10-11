@@ -30,8 +30,9 @@ export function OrderStep({ mode, config, view }: Props): ReactElement {
         <p className={styles.legend}>{mode === "buy" ? "Order placed" : "Request sent"}</p>
         <p className={styles.reference}>{state.reference}</p>
         <p className={styles.placedText}>
-          Thanks{contact.name ? `, ${contact.name.split(" ")[0]}` : ""}. We&apos;ll email {contact.email} to confirm
-          the configuration and pricing before anything is final. Quote this reference in any reply.
+          Thanks{contact.name ? `, ${contact.name.split(" ")[0]}` : ""}. We&apos;ve sent a copy to {contact.email}{" "}
+          and will be in touch to confirm the configuration and pricing before anything is final. Quote this reference
+          in any reply.
         </p>
       </div>
     );

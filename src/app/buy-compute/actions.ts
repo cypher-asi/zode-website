@@ -1,5 +1,7 @@
 "use server";
 
+import { after } from "next/server";
+import { sendOrderEmails } from "@/lib/email";
 import { RECIPIENT_EMAIL } from "@/lib/leads";
 import { createOrder, parseOrder, referenceFor } from "@/lib/orders";
 import { isAuthenticated } from "@/lib/session";
@@ -23,13 +25,18 @@ export async function placeOrder(_prevState: OrderState, formData: FormData): Pr
     return { status: "placed", reference: referenceFor(crypto.randomUUID()) };
   }
 
+  const { order } = parsed;
+  let reference: string;
   try {
-    return { status: "placed", reference: await createOrder(parsed.order) };
+    reference = await createOrder(order);
   } catch (err) {
-    console.error(`[orders] could not store ${parsed.order.mode} order:`, err);
+    console.error(`[orders] could not store ${order.mode} order:`, err);
     return {
       status: "error",
       error: `We couldn't place your order just now. Please try again, or email ${RECIPIENT_EMAIL}.`,
     };
   }
+
+  after(() => sendOrderEmails(order, reference));
+  return { status: "placed", reference };
 }
