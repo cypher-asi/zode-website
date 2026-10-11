@@ -173,3 +173,43 @@ export async function createOrder(order: Order): Promise<string> {
 
 /** The first block of the order's uuid, as shown to the customer. */
 export const referenceFor = (id: string): string => id.slice(0, 8).toUpperCase();
+
+export interface OrderSummary {
+  reference: string;
+  createdAt: Date;
+  mode: "buy" | "rent";
+  status: string;
+  monthlyUsd: number;
+  totalUsd: number | null;
+  platform: string;
+  location: string;
+  gpus: number;
+}
+
+const choiceLabel = (choices: readonly Choice<string, unknown>[], id: unknown): string =>
+  choices.find((c) => c.id === id)?.label.replace(/^NVIDIA /, "") ?? String(id ?? "");
+
+/** Orders placed with this email at checkout, newest first. */
+export async function listOrdersByEmail(email: string): Promise<OrderSummary[]> {
+  const rows = await db()`
+    select id, created_at, mode, status, monthly_usd, total_usd, config, quote
+    from compute_orders
+    where lower(email) = ${email.trim().toLowerCase()}
+    order by created_at desc
+  `;
+  return rows.map((row) => {
+    const config = row.config as Record<string, unknown>;
+    const priced = row.quote as { gpus?: number };
+    return {
+      reference: referenceFor(String(row.id)),
+      createdAt: new Date(row.created_at as string | Date),
+      mode: row.mode === "rent" ? "rent" : "buy",
+      status: String(row.status),
+      monthlyUsd: Number(row.monthly_usd),
+      totalUsd: row.total_usd == null ? null : Number(row.total_usd),
+      platform: choiceLabel(PLATFORMS, config.platform),
+      location: choiceLabel(LOCATIONS, config.location),
+      gpus: Number(priced.gpus ?? 0),
+    };
+  });
+}

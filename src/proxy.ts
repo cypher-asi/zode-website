@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { AUTH_DISABLED, SESSION_COOKIE, verifySessionToken } from "@/lib/session-token";
 
-const LOGIN_PATH = "/login";
+const UNLOCK_PATH = "/unlock";
 
 /**
  * Gate every page behind the shared-password session cookie (Next 16
  * renamed Middleware to Proxy). Unauthenticated requests are
- * redirected to `/login`; an already-authenticated visitor hitting
- * `/login` is bounced back to the gated page. Runs on the Node.js
+ * redirected to `/unlock`; an already-authenticated visitor hitting
+ * `/unlock` is bounced back to the gated page. Runs on the Node.js
  * runtime, so `node:crypto`-based verification works here.
  */
 export function proxy(request: NextRequest): NextResponse {
@@ -21,7 +21,7 @@ export function proxy(request: NextRequest): NextResponse {
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   const authed = verifySessionToken(token);
 
-  if (pathname === LOGIN_PATH) {
+  if (pathname === UNLOCK_PATH) {
     if (authed) {
       return NextResponse.redirect(new URL("/", request.nextUrl));
     }
@@ -29,8 +29,8 @@ export function proxy(request: NextRequest): NextResponse {
   }
 
   if (!authed) {
-    const loginUrl = new URL(LOGIN_PATH, request.nextUrl);
-    return NextResponse.redirect(loginUrl);
+    const unlockUrl = new URL(UNLOCK_PATH, request.nextUrl);
+    return NextResponse.redirect(unlockUrl);
   }
 
   return NextResponse.next();

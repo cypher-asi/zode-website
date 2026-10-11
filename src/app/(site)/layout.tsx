@@ -17,7 +17,7 @@ export default async function SiteLayout({
   // Defense in depth: proxy.ts already gates these routes, but re-check
   // here so content is never rendered without a valid session.
   if (!(await isAuthenticated())) {
-    redirect("/login");
+    redirect("/unlock");
   }
 
   return (

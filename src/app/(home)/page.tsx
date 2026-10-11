@@ -49,7 +49,7 @@ const text = Inter({
  */
 export default async function HomePage() {
   if (!(await isAuthenticated())) {
-    redirect("/login");
+    redirect("/unlock");
   }
 
   return (

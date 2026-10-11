@@ -275,6 +275,14 @@
   }
 }
 
+/* Spans the menu's border-to-border, past its 4px padding. */
+.separator {
+  height: 1px;
+  margin: 4px -4px;
+  background: var(--ink);
+  opacity: 0.2;
+}
+
 @media (max-width: 900px) {
   .brand {
     top: 24px;

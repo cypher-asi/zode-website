@@ -8,7 +8,7 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       // Keep the API, auth, customer-specific quote pages, and the superseded
       // home page out of search.
-      disallow: ["/api/", "/login", "/deck", "/deployments", "/legacy"],
+      disallow: ["/api/", "/unlock", "/login", "/register", "/portal", "/deck", "/deployments", "/legacy"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };

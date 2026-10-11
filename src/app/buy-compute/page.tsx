@@ -36,7 +36,7 @@ export default async function BuyComputePage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   if (!(await isAuthenticated())) {
-    redirect("/login");
+    redirect("/unlock");
   }
 
   const { mode } = await searchParams;

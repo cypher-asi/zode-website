@@ -13,6 +13,11 @@ const ACTION_MENU = [
   { id: "meet", label: "Schedule Meeting", href: "/contact" },
 ] as const;
 
+const ACCOUNT_MENU = [
+  { id: "register", label: "Register", href: "/register" },
+  { id: "login", label: "Login", href: "/login" },
+];
+
 /** Content is fully transparent this far below the wordmark and button... */
 const FADE_GAP = 8;
 /** ...and fully opaque again this much further down. */
@@ -232,6 +237,19 @@ export function PinnedHeader({
               onKeyDown={onMenuKey}
             >
               {ACTION_MENU.map((item) => (
+                <li key={item.id} role="none">
+                  <Link
+                    role="menuitem"
+                    className={styles.menuItem}
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+              <li role="separator" className={styles.separator} />
+              {ACCOUNT_MENU.map((item) => (
                 <li key={item.id} role="none">
                   <Link
                     role="menuitem"
