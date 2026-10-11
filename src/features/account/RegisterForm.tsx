@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useId, useState, type ReactElement } from "react";
+import { useActionState, useId, useRef, useState, type ReactElement } from "react";
 import { register, type RegisterState } from "./actions";
+import { useFocusFirstField } from "./useFocusFirstField";
 import {
   MIN_PASSWORD_LENGTH,
   STRENGTH_LABELS,
@@ -57,13 +58,15 @@ export function RegisterForm({ next }: { next?: string }): ReactElement {
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState(state.values?.email ?? "");
   const feedbackId = useId();
+  const formRef = useRef<HTMLFormElement>(null);
+  useFocusFirstField(formRef, state);
 
   const checks = checkPassword(password, email);
   const strength = passwordStrength(checks);
   const tooShort = strength === "too-short";
 
   return (
-    <form action={action} className={styles.form}>
+    <form ref={formRef} action={action} className={styles.form}>
       {next ? <input type="hidden" name="next" value={next} /> : null}
       <div className={styles.field}>
         <label className={styles.label} htmlFor="name">
@@ -73,7 +76,6 @@ export function RegisterForm({ next }: { next?: string }): ReactElement {
           id="name"
           name="name"
           autoComplete="name"
-          autoFocus
           required
           maxLength={120}
           defaultValue={state.values?.name}

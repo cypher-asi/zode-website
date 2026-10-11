@@ -58,6 +58,49 @@
   opacity: 0;
 }
 
+.text {
+  flex: none;
+}
+
+/*
+ * `typeIn`: each label grows from zero width one character per step, as in
+ * FooterNav. Every Geist Mono character advances 1ch, so `steps(--chars)`
+ * lands on character boundaries, and the cursor after it rides the end.
+ */
+.menu[data-typing] {
+  --type-start: 150ms;
+  --type-stagger: 45ms;
+  --type-char: 14ms;
+}
+
+.menu[data-typing] .text {
+  overflow: hidden;
+  animation: type calc(var(--chars) * var(--type-char)) steps(var(--chars), end)
+    calc(var(--type-start) + var(--i) * var(--type-stagger)) both;
+}
+
+.menu[data-typing] .cursor {
+  animation: type-cursor calc(var(--chars) * var(--type-char))
+    calc(var(--type-start) + var(--i) * var(--type-stagger));
+}
+
+@keyframes type {
+  from {
+    width: 0;
+  }
+
+  to {
+    width: calc(var(--chars) * 1ch);
+  }
+}
+
+@keyframes type-cursor {
+  from,
+  to {
+    opacity: 1;
+  }
+}
+
 .item[data-selected],
 .item:focus-visible {
   color: var(--ink);
@@ -73,32 +116,32 @@
 
 @media (hover: hover) {
   .item:hover,
-  .menu:not(:hover, :focus-within) .item[data-current] {
+  .menu:not(:hover, :focus-within, [data-typing]) .item[data-current] {
     color: var(--ink);
   }
 
   .item:hover .caret,
-  .menu:not(:hover, :focus-within) .item[data-current] .caret {
+  .menu:not(:hover, :focus-within, [data-typing]) .item[data-current] .caret {
     opacity: 1;
   }
 
   .item:hover .cursor,
-  .menu:not(:hover, :focus-within) .item[data-current] .cursor {
+  .menu:not(:hover, :focus-within, [data-typing]) .item[data-current] .cursor {
     animation: cursor 1s steps(1) infinite;
   }
 }
 
 /* Touch has no hover, and a tap focuses without `:focus-visible`, so the caret rests on `current`. */
 @media (hover: none) {
-  .menu:not(:has(:focus-visible)) .item[data-current] {
+  .menu:not(:has(:focus-visible), [data-typing]) .item[data-current] {
     color: var(--ink);
   }
 
-  .menu:not(:has(:focus-visible)) .item[data-current] .caret {
+  .menu:not(:has(:focus-visible), [data-typing]) .item[data-current] .caret {
     opacity: 1;
   }
 
-  .menu:not(:has(:focus-visible)) .item[data-current] .cursor {
+  .menu:not(:has(:focus-visible), [data-typing]) .item[data-current] .cursor {
     animation: cursor 1s steps(1) infinite;
   }
 }
@@ -136,10 +179,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .menu[data-typing] .text,
+  .menu[data-typing] .cursor,
   .item:hover .cursor,
   .item:focus-visible .cursor,
-  .menu:not(:hover, :focus-within) .item[data-current] .cursor,
-  .menu:not(:has(:focus-visible)) .item[data-current] .cursor {
+  .menu:not(:hover, :focus-within, [data-typing]) .item[data-current] .cursor,
+  .menu:not(:has(:focus-visible), [data-typing]) .item[data-current] .cursor {
     animation: none;
   }
 
@@ -149,13 +194,13 @@
 
   @media (hover: hover) {
     .item:hover .cursor,
-    .menu:not(:hover, :focus-within) .item[data-current] .cursor {
+    .menu:not(:hover, :focus-within, [data-typing]) .item[data-current] .cursor {
       opacity: 1;
     }
   }
 
   @media (hover: none) {
-    .menu:not(:has(:focus-visible)) .item[data-current] .cursor {
+    .menu:not(:has(:focus-visible), [data-typing]) .item[data-current] .cursor {
       opacity: 1;
     }
   }

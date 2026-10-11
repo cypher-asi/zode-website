@@ -100,7 +100,7 @@ export async function deleteRoomAction(roomId: string, _prev: ActionState, formD
 
   await deleteRoomBlobs(roomId);
   await deleteRoom(roomId);
-  redirect("/portal");
+  redirect("/portal/data-rooms");
 }
 
 // Folders and files
@@ -429,7 +429,7 @@ export async function removeMemberAction(roomId: string, memberId: string): Prom
     action: member.active ? "remove" : "invite_revoke",
     detail: { email: member.email, role: member.role },
   });
-  if (member.userId === access.account.userId) redirect("/portal");
+  if (member.userId === access.account.userId) redirect("/portal/data-rooms");
   refresh();
   return {};
 }

@@ -98,10 +98,11 @@
   color: var(--off-black);
 }
 
+/* Matches the left panel, so the gallery's first render fades in from white (see ZodeGallery). */
 .right {
   position: relative;
   min-height: 0;
-  background: #000000;
+  background: var(--off-white);
   color: var(--off-white);
 }
 

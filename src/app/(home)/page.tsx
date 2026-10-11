@@ -5,6 +5,7 @@ import { TerminalMenu, type TerminalMenuItem } from "@/components/ui/TerminalMen
 import { AssemblyLine } from "@/features/home/assembly/AssemblyLine";
 import { CircuitFrame } from "@/features/home/circuit/CircuitFrame";
 import { ClosingCta } from "@/features/home/closing-cta/ClosingCta";
+import { TypedLine } from "@/features/home/hero/TypedLine";
 import { WordLoop } from "@/features/home/hero/WordLoop";
 import { ZodeGallery } from "@/features/home/hero/ZodeGallery";
 import { Network } from "@/features/home/network/Network";
@@ -45,11 +46,11 @@ export default function HomePage() {
               <span className={styles.line}>Sovereign</span>{" "}
               <span className={styles.line}>Superintelligence</span>
             </h1>
-            <TerminalMenu items={HERO_ACTIONS} label="Get started" className={styles.menu} />
+            <TerminalMenu items={HERO_ACTIONS} label="Get started" className={styles.menu} typeIn />
           </div>
 
           <div className={styles.bar} data-top-fade data-circuit-rule>
-            <p className={styles.helper}>The fastest deployable AI data center.</p>
+            <TypedLine className={styles.helper} text="The fastest deployable AI data center." />
             <WordLoop />
           </div>
         </section>

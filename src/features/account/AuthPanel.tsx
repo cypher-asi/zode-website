@@ -68,6 +68,7 @@ export function AuthPanel({ mode, next }: { mode: AuthMode; next: string }): Rea
           {brand}
         </Link>
       )}
+      <hr className={styles.divider} />
       <h1 id={AUTH_TITLE_ID} className={styles.title}>
         {copy.title}
       </h1>

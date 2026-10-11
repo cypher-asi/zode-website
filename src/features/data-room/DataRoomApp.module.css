@@ -41,8 +41,7 @@
 }
 
 .search:focus-within {
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: 1px;
+  border-color: var(--color-text-primary);
 }
 
 .search svg {

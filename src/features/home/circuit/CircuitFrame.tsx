@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactElement } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactElement } from "react";
 import {
   PULSE_LENGTH,
   PULSE_SPEED,
@@ -60,6 +60,14 @@ function measureSplit(page: HTMLElement, origin: DOMRect): Split | null {
   return { x: a.right - origin.left, top: a.top - origin.top, bottom: a.bottom - origin.top };
 }
 
+/** Intro timing in ms: the rails draw down, then each row expands as they reach it, then its pads appear. */
+const RAIL_DRAW = 900;
+const ROW_START = 250;
+const ROW_DRAW = 700;
+const PAD_FADE = 300;
+/** Extra delay for a row, pad or rail segment at the bottom of the screen versus the top. */
+const DESCENT = 500;
+
 /** Quiet gap between one pulse's run and the next, in ms. */
 const GAP_MIN = 700;
 const GAP_MAX = 3200;
@@ -97,12 +105,16 @@ function pulseFrames(edge: Edge, fadeIn: boolean, fadeOut: boolean): Keyframe[] 
  * `data-circuit` blocks and along the top of each `data-circuit-rule` element,
  * and square pads at the junctions (see geometry.ts). Every so often a
  * single pulse starts on a random on-screen stretch and runs through a few
- * connected ones, lighting each pad it reaches. Must be a direct child of the
- * positioned page element, which it measures.
+ * connected ones, lighting each pad it reaches. On load the on-screen part of
+ * the grid draws itself in first. Must be a direct child of the positioned
+ * page element, which it measures.
  */
 export function CircuitFrame(): ReactElement {
   const rootRef = useRef<HTMLDivElement>(null);
   const [circuit, setCircuit] = useState<Circuit | null>(null);
+  const introduced = useRef(false);
+  /** `performance.now()` at which the intro finishes; pulses hold off until then. */
+  const introEnd = useRef(0);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -145,6 +157,69 @@ export function CircuitFrame(): ReactElement {
       observer.disconnect();
     };
   }, []);
+
+  /*
+   * First layout only, before it paints: rails and the hero split grow down
+   * from their tops, rows expand outward from the page's centre (the hero
+   * seam) once the rails reach them, and pads fade in after their row.
+   * Anything off-screen is simply there.
+   */
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root || !circuit || introduced.current) return;
+    introduced.current = true;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const viewTop = -root.getBoundingClientRect().top;
+    const viewBottom = viewTop + window.innerHeight;
+    const onScreen = (top: number, bottom: number) => bottom >= viewTop && top <= viewBottom;
+    const descent = (y: number) =>
+      DESCENT * Math.min(1, Math.max(0, (y - viewTop) / window.innerHeight));
+    const center = circuit.width / 2;
+    let end = 0;
+
+    const traces = root.querySelectorAll<HTMLElement>(`.${styles.trace}`);
+    circuit.traces.forEach((trace, index) => {
+      const el = traces[index];
+      if (!el || !onScreen(trace.y, trace.y + trace.height)) return;
+      const vertical = trace.height > trace.width;
+      const origin = vertical
+        ? "0 0"
+        : `${Math.min(trace.width, Math.max(0, center - trace.x))}px 0`;
+      const scale = vertical ? "scaleY" : "scaleX";
+      const delay = vertical ? descent(trace.y) : ROW_START + descent(trace.y);
+      const duration = vertical ? RAIL_DRAW : ROW_DRAW;
+      el.animate(
+        [
+          { transformOrigin: origin, transform: `${scale}(0)` },
+          { transformOrigin: origin, transform: `${scale}(1)` },
+        ],
+        {
+          duration,
+          delay,
+          easing: vertical ? "cubic-bezier(0.65, 0, 0.35, 1)" : "cubic-bezier(0.22, 1, 0.36, 1)",
+          fill: "backwards",
+        },
+      );
+      end = Math.max(end, delay + duration);
+    });
+
+    const pads = root.querySelectorAll<HTMLElement>(`.${styles.pad}`);
+    circuit.pads.forEach((pad, index) => {
+      const el = pads[index];
+      if (!el || !onScreen(pad.y, pad.y)) return;
+      const delay = ROW_START + descent(pad.y) + ROW_DRAW / 2;
+      el.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: PAD_FADE,
+        delay,
+        easing: "ease-out",
+        fill: "backwards",
+      });
+      end = Math.max(end, delay + PAD_FADE);
+    });
+
+    introEnd.current = performance.now() + end;
+  }, [circuit]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -203,7 +278,10 @@ export function CircuitFrame(): ReactElement {
       run(pick(visible), Math.round(between(HOPS_MIN, HOPS_MAX)), true);
     };
 
-    rest();
+    timer = window.setTimeout(
+      start,
+      Math.max(0, introEnd.current - performance.now()) + between(GAP_MIN, GAP_MAX),
+    );
     return () => {
       stopped = true;
       window.clearTimeout(timer);

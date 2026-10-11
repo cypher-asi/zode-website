@@ -60,13 +60,10 @@ export function RouteModal({
     panelRef.current?.focus({ preventScroll: true });
 
     const root = document.documentElement;
-    const { overflow, scrollbarGutter } = root.style;
-    // Keep the space of the scrollbar being hidden, so the page underneath doesn't shift sideways.
-    if (window.innerWidth > root.clientWidth) root.style.scrollbarGutter = "stable";
+    const { overflow } = root.style;
     root.style.overflow = "hidden";
     return () => {
       root.style.overflow = overflow;
-      root.style.scrollbarGutter = scrollbarGutter;
     };
   }, []);
 

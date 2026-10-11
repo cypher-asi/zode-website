@@ -1,0 +1,170 @@
+/*
+ * The portal's frame: a fixed column of icons under the pinned wordmark,
+ * aligned to its left edge, and one fixed panel to the right that every
+ * section renders into. Inherits `--edge` from SiteShell. The page itself
+ * never scrolls, so the header's top fade is off here.
+ *
+ * Spacing is even all the way down: the wordmark sits `--portal-gap` from the
+ * top of the window, the rail and panel start `--portal-gap` below the header
+ * (the Buy Compute button's bottom edge, `--header-bottom`), and the panel
+ * ends `--portal-gap` above the bottom.
+ */
+.rail,
+.content {
+  --tile: 48px;
+  --portal-gap: 32px;
+  --header-bottom: calc(59px + env(safe-area-inset-top, 0px));
+  --portal-top: calc(var(--header-bottom) + var(--portal-gap));
+}
+
+.rail {
+  position: fixed;
+  top: var(--portal-top);
+  left: max(var(--edge), env(safe-area-inset-left, 0px));
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+  font-family: var(--font-text), system-ui, sans-serif;
+}
+
+/* As wide as its tile, so the tile lines up with the wordmark's left edge; wider labels spill evenly to both sides. */
+.item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  width: var(--tile);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tile {
+  display: grid;
+  place-items: center;
+  width: var(--tile);
+  height: var(--tile);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.tile svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+  transition: color 180ms ease;
+}
+
+.item[aria-current="page"] {
+  color: var(--color-text-primary);
+}
+
+.item[aria-current="page"] .tile {
+  border-color: var(--color-text-primary);
+  background: var(--color-text-primary);
+  color: var(--color-bg);
+  box-shadow: 0 6px 16px -8px rgba(0, 0, 0, 0.45);
+}
+
+@media (hover: hover) {
+  .item:hover {
+    color: var(--color-text-primary);
+  }
+
+  .item:not([aria-current="page"]):hover .tile {
+    border-color: var(--color-border-strong);
+    box-shadow: 0 6px 16px -10px rgba(0, 0, 0, 0.3);
+    transform: translateY(-1px);
+  }
+}
+
+.item:focus-visible {
+  outline: none;
+}
+
+.item:focus-visible .tile {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/*
+ * The panel keeps the same size and place as you move between sections;
+ * sections scroll inside it. It runs from `--portal-gap` past the icon tiles
+ * to the header's right edge, under the avatar.
+ */
+.panel {
+  position: fixed;
+  top: var(--portal-top);
+  right: max(var(--edge), env(safe-area-inset-right, 0px));
+  bottom: calc(var(--portal-gap) + env(safe-area-inset-bottom, 0px));
+  left: calc(max(var(--edge), env(safe-area-inset-left, 0px)) + var(--tile) + var(--portal-gap));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  background: var(--color-bg);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.03),
+    0 24px 48px -32px rgba(0, 0, 0, 0.18);
+}
+
+/* PinnedHeader tightens up here: the wordmark sits 24px down and the button ends at 47px. */
+@media (max-width: 900px) {
+  .rail,
+  .content {
+    --portal-gap: 24px;
+    --header-bottom: calc(47px + env(safe-area-inset-top, 0px));
+  }
+}
+
+/* Phones: the icons run across under the wordmark, with the panel a gap below them. */
+@media (max-width: 760px) {
+  .rail {
+    --tile: 44px;
+
+    flex-direction: row;
+    gap: 22px;
+  }
+
+  .tile {
+    border-radius: 13px;
+  }
+
+  /* 65px is the row of icons: a 44px tile, the 7px gap and the label. */
+  .panel {
+    top: calc(var(--portal-top) + 65px + var(--portal-gap));
+    left: max(var(--edge), env(safe-area-inset-left, 0px));
+    border-radius: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile,
+  .label {
+    transition: none;
+  }
+}

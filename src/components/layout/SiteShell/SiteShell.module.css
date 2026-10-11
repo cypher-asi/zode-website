@@ -16,6 +16,11 @@
   font-family: var(--font-text), system-ui, sans-serif;
 }
 
+/* The buy compute page's insets: the wordmark and button tuck into the corners to free up room. */
+.shell[data-edge="tight"] {
+  --edge: clamp(24px, 2.5vw, 40px);
+}
+
 /* Opaque over the <html> fallback colour; clears the pinned header. */
 .main {
   min-height: 100svh;

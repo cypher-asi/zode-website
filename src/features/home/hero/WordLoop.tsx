@@ -5,7 +5,7 @@ import styles from "./WordLoop.module.css";
 
 const ROTATE_MS = 2200;
 
-const WORDS = ["Sovereign", "Distributed", "Sustainable", "Private"] as const;
+const WORDS = ["Sovereign", "Distributed", "Sustainable", "Private", "Open Source"] as const;
 
 /**
  * Vertical ticker that cycles the value props one word at a time: the

@@ -55,6 +55,15 @@
   background-clip: padding-box;
 }
 
+/* The page's own gutter is always reserved; a clear track there shows black, not the page. */
+html {
+  scrollbar-color: rgba(140, 140, 150, 0.4) var(--shell-outer-bg);
+}
+
+html::-webkit-scrollbar-track {
+  background: var(--shell-outer-bg);
+}
+
 img {
   border: 0;
 }
@@ -62,6 +71,8 @@ img {
 html {
   height: 100%;
   scroll-behavior: smooth;
+  /* Short pages (the portal) don't scroll; reserving the gutter keeps their layout from shifting against long ones. */
+  scrollbar-gutter: stable;
   /* Fallback base under the backdrop; lives on <html> (not <body>) so it
    * never paints over the fixed ShellBackdrop (z-index: -1). */
   background: var(--shell-outer-bg);
@@ -78,9 +89,15 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+::selection {
+  background: #b6d3d8;
+  color: #0a0a0a;
+}
+
 /*
  * View transitions: the page itself swaps instantly as before; only named
- * elements (the pinned wordmark, see PinnedHeader) animate between routes.
+ * elements (the pinned wordmark and Buy Compute group, see PinnedHeader)
+ * animate between routes.
  */
 ::view-transition-group(root),
 ::view-transition-old(root),
@@ -88,7 +105,8 @@ body {
   animation: none;
 }
 
-::view-transition-group(zode-wordmark) {
+::view-transition-group(zode-wordmark),
+::view-transition-group(zode-action) {
   z-index: 100;
   animation-duration: 550ms;
   animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);

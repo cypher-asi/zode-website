@@ -5,12 +5,15 @@ import { usePathname } from "next/navigation";
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   ViewTransition,
+  type CSSProperties,
   type KeyboardEvent,
   type ReactElement,
 } from "react";
+import { markSignedIn, readSignedInCookie } from "@/features/account/signedInCookie";
 import { isPortalPath, useAccountInitials, useLogout, useLogoutToast } from "@/features/account/useAccount";
 import { COMPUTE_ACTIONS, ENGINEER_ACTION } from "@/lib/navigation";
 import styles from "./PinnedHeader.module.css";
@@ -41,6 +44,19 @@ function LogoutNotice(): ReactElement | null {
     <p className={styles.notice} role="status" data-leaving={toast === "leaving" || undefined}>
       You&apos;re logged out
     </p>
+  );
+}
+
+/**
+ * A menu row's label, typed in behind a block cursor like the footer menu's
+ * lines once the menu has unrolled; `index` staggers it after the rows above.
+ */
+function TypedLabel({ text, index }: { text: string; index: number }): ReactElement {
+  return (
+    <span className={styles.line} style={{ "--i": index, "--chars": text.length } as CSSProperties}>
+      <span className={styles.text}>{text}</span>
+      <span className={styles.cursor} aria-hidden="true" />
+    </span>
   );
 }
 
@@ -92,8 +108,9 @@ export function PinnedHeader({
 }): ReactElement {
   const pathname = usePathname();
   const brandRef = useRef<HTMLAnchorElement>(null);
-  const avatarRef = useRef<HTMLAnchorElement>(null);
+  const anchorRef = useRef<HTMLDivElement>(null);
   const actionRef = useRef<HTMLDivElement>(null);
+  const growRef = useRef<HTMLSpanElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLUListElement>(null);
   const [brandTone, setBrandTone] = useState<Tone>("light");
@@ -103,11 +120,18 @@ export function PinnedHeader({
   const accountInitials = useAccountInitials();
   const signedIn = accountInitials !== null;
   const inPortal = isPortalPath(pathname ?? "/");
-  // The portal page already shows who you are, so the avatar only appears on the public site.
-  const showAvatar = showAction && signedIn && !inPortal;
   const menu = inPortal ? PORTAL_ACTION_MENU : ACTION_MENU;
   const { logOut, pending: loggingOut } = useLogout();
   const menuId = useId();
+
+  /**
+   * Keeps the avatar's `<html>` flags in step after signing in or out. Reads
+   * the cookie rather than `accountInitials`, which is still `null` while
+   * hydrating; also restores the flags after the dev Strict Mode remount resets `<html>`.
+   */
+  useLayoutEffect(() => {
+    markSignedIn(readSignedInCookie(document.cookie));
+  }, [accountInitials]);
 
   useEffect(() => {
     if (!open) return;
@@ -130,6 +154,29 @@ export function PinnedHeader({
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [open]);
+
+  /**
+   * How much the split button has to widen to match the menu below it, written
+   * to `--grow` on the anchor. The button's resting width excludes the spacer,
+   * so it reads the same mid-animation.
+   */
+  useEffect(() => {
+    const anchor = anchorRef.current;
+    const split = actionRef.current;
+    const grow = growRef.current;
+    const list = menuRef.current;
+    if (!anchor || !split || !grow || !list) return;
+
+    const measure = () => {
+      const resting = split.getBoundingClientRect().width - grow.getBoundingClientRect().width;
+      const extra = Math.max(0, list.getBoundingClientRect().width - resting);
+      anchor.style.setProperty("--grow", `${extra}px`);
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(split);
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, [showAction]);
 
   /** Moves focus between the menu items with the arrow keys, wrapping at the ends. */
   const onMenuKey = (event: KeyboardEvent<HTMLUListElement>) => {
@@ -191,7 +238,6 @@ export function PinnedHeader({
       // Reads first: interleaving them with the mask writes below would force a style recalc per node.
       const brandRect = brand.getBoundingClientRect();
       const actionRect = action?.getBoundingClientRect();
-      const avatarRect = avatarRef.current?.getBoundingClientRect();
       const measured: [HTMLElement, DOMRect][] = [];
       // Re-queried every frame because sections such as the assembly line mount late.
       for (const node of document.querySelectorAll<HTMLElement>("[data-top-fade]")) {
@@ -213,7 +259,7 @@ export function PinnedHeader({
       const clear = Math.max(brandRect.bottom, actionRect?.bottom ?? 0) + FADE_GAP;
       const solid = clear + FADE_LENGTH;
       const leftEdge = brandRect.right + SIDE_PAD;
-      const rightEdge = actionRect ? (avatarRect ?? actionRect).left - SIDE_PAD : Infinity;
+      const rightEdge = actionRect ? actionRect.left - SIDE_PAD : Infinity;
       for (const [node, { top, left, right }] of measured) {
         const sides = node.dataset.topFade;
         const fadeLeft = sides !== "right" && left < leftEdge;
@@ -261,7 +307,7 @@ export function PinnedHeader({
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
     };
-  }, [showAction, showAvatar]);
+  }, [showAction]);
 
   return (
     <>
@@ -291,37 +337,28 @@ export function PinnedHeader({
           data-media={actionOverMedia || undefined}
           data-open={open || undefined}
         >
-          {showAvatar ? (
-            <Link ref={avatarRef} className={styles.avatar} href="/portal" aria-label="Your portal">
-              {accountInitials || (
-                <svg className={styles.avatarGlyph} viewBox="0 0 16 16" aria-hidden="true">
-                  <circle cx="8" cy="5.5" r="2.75" />
-                  <path d="M2.75 14c.6-2.9 2.7-4.5 5.25-4.5s4.65 1.6 5.25 4.5" />
+          <div ref={anchorRef} className={styles.menuAnchor}>
+            <div ref={actionRef} className={styles.split}>
+              <Link className={styles.primary} href="/buy-compute">
+                Buy Compute
+                <span ref={growRef} className={styles.grow} aria-hidden="true" />
+              </Link>
+              <button
+                ref={toggleRef}
+                type="button"
+                className={styles.toggle}
+                aria-label="More options"
+                aria-haspopup="menu"
+                aria-expanded={open}
+                aria-controls={menuId}
+                onClick={() => setOpen((value) => !value)}
+                onKeyDown={onToggleKey}
+              >
+                <svg className={styles.chevron} viewBox="0 0 10 6" aria-hidden="true">
+                  <path d="M1 1l4 4 4-4" />
                 </svg>
-              )}
-            </Link>
-          ) : null}
-          <div ref={actionRef} className={styles.split}>
-            <Link className={styles.primary} href="/buy-compute">
-              Buy Compute
-            </Link>
-            <button
-              ref={toggleRef}
-              type="button"
-              className={styles.toggle}
-              aria-label="More options"
-              aria-haspopup="menu"
-              aria-expanded={open}
-              aria-controls={menuId}
-              onClick={() => setOpen((value) => !value)}
-              onKeyDown={onToggleKey}
-            >
-              <svg className={styles.chevron} viewBox="0 0 10 6" aria-hidden="true">
-                <path d="M1 1l4 4 4-4" />
-              </svg>
-            </button>
-          </div>
-          {open && (
+              </button>
+            </div>
             <ul
               ref={menuRef}
               id={menuId}
@@ -330,7 +367,7 @@ export function PinnedHeader({
               className={styles.menu}
               onKeyDown={onMenuKey}
             >
-              {menu.map((item) => (
+              {menu.map((item, i) => (
                 <li key={item.id} role="none">
                   <Link
                     role="menuitem"
@@ -339,7 +376,7 @@ export function PinnedHeader({
                     scroll={"scroll" in item ? item.scroll : undefined}
                     onClick={() => setOpen(false)}
                   >
-                    {item.label}
+                    <TypedLabel text={item.label} index={i} />
                   </Link>
                 </li>
               ))}
@@ -353,11 +390,11 @@ export function PinnedHeader({
                     disabled={loggingOut}
                     onClick={() => logOut(() => setOpen(false))}
                   >
-                    {loggingOut ? "Logging out…" : "Logout"}
+                    <TypedLabel text={loggingOut ? "Logging out…" : "Logout"} index={menu.length} />
                   </button>
                 </li>
               ) : (
-                SIGNED_OUT_MENU.map((item) => (
+                SIGNED_OUT_MENU.map((item, i) => (
                   <li key={item.id} role="none">
                     <Link
                       role="menuitem"
@@ -365,13 +402,20 @@ export function PinnedHeader({
                       href={item.href}
                       onClick={() => setOpen(false)}
                     >
-                      {item.label}
+                      <TypedLabel text={item.label} index={menu.length + i} />
                     </Link>
                   </li>
                 ))
               )}
             </ul>
-          )}
+          </div>
+          {/* Always rendered; CSS shows it and supplies the initials from the `<html>` flags. */}
+          <Link className={styles.avatar} href="/portal" aria-label="Your portal">
+            <svg className={styles.avatarGlyph} viewBox="0 0 16 16" aria-hidden="true">
+              <circle cx="8" cy="5.5" r="2.75" />
+              <path d="M2.75 14c.6-2.9 2.7-4.5 5.25-4.5s4.65 1.6 5.25 4.5" />
+            </svg>
+          </Link>
         </div>
       ) : null}
       <LogoutNotice />

@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: LayoutProps<"/portal/data-roo
   return { title: `${room.name} | Data room | ZODE`, robots: { index: false, follow: false } };
 }
 
-/** A data room fills the viewport under the pinned header; admins also get Members and Activity tabs. */
+/** A data room fills the viewport beside the portal's icons; admins also get Members and Activity tabs. */
 export default async function DataRoomLayout({
   children,
   params,
@@ -22,17 +22,18 @@ export default async function DataRoomLayout({
   return (
     <div className={styles.frame}>
       <header className={styles.bar}>
-        <Link href="/portal" className={styles.back}>
-          <svg viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M10 3 5 8l5 5" />
-          </svg>
-          Portal
-        </Link>
         <div className={styles.titleGroup}>
-          <span className={styles.eyebrow}>Data room</span>
-          <h1 className={styles.title}>{room.name}</h1>
+          <Link href="/portal/data-rooms" className={styles.crumb}>
+            Data rooms
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M6 3.5 10.5 8 6 12.5" />
+            </svg>
+          </Link>
+          <div className={styles.titleRow}>
+            <h1 className={styles.title}>{room.name}</h1>
+            <span className={styles.role}>{role === "admin" ? "Admin" : "Viewer"}</span>
+          </div>
         </div>
-        <span className={styles.role}>{role === "admin" ? "Admin" : "Viewer"}</span>
         {role === "admin" ? <RoomTabs roomId={roomId} /> : null}
       </header>
       <div className={styles.body}>{children}</div>

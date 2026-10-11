@@ -1,44 +1,54 @@
-/* The room frame: a bar with the room's name and tabs over a panel that fills the viewport. */
+/* The room fills the portal's panel: its name and tabs over the files, members or activity. */
 .frame {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  height: calc(100svh - var(--header-band));
-  min-height: 480px;
-  padding: 0 clamp(12px, 2vw, 24px) clamp(12px, 2vw, 20px);
+  min-height: 0;
 }
 
 .bar {
   display: flex;
+  flex: none;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 16px;
-  padding: 4px 0 14px;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 24px;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid var(--color-border);
 }
 
-.back {
+.titleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.crumb {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  height: 32px;
-  padding: 0 10px 0 6px;
-  border-radius: 8px;
+  gap: 2px;
+  align-self: flex-start;
   color: var(--color-text-secondary);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   text-decoration: none;
-  transition:
-    background-color 160ms ease,
-    color 160ms ease;
+  transition: color 160ms ease;
 }
 
-.back:hover {
-  background: var(--color-surface-hover);
+.crumb:hover {
   color: var(--color-text-primary);
 }
 
-.back svg {
-  width: 14px;
-  height: 14px;
+.crumb:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.crumb svg {
+  width: 12px;
+  height: 12px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.6;
@@ -46,48 +56,43 @@
   stroke-linejoin: round;
 }
 
-.titleGroup {
+.titleRow {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
-}
-
-.eyebrow {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
 }
 
 .title {
   margin: 0;
   overflow: hidden;
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 600;
-  line-height: 1.25;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .role {
-  padding: 2px 8px;
+  flex: none;
+  padding: 3px 8px;
   border-radius: 999px;
   background: var(--color-surface-tint);
   color: var(--color-text-secondary);
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
+/* A quiet segmented control: the current tab lifts out as a white chip. */
 .tabs {
   display: flex;
   gap: 2px;
-  margin-left: auto;
   padding: 3px;
-  border: 1px solid var(--color-border);
   border-radius: 10px;
+  background: var(--color-surface-tint);
 }
 
 .tab {
@@ -95,10 +100,11 @@
   border-radius: 7px;
   color: var(--color-text-secondary);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   text-decoration: none;
   transition:
     background-color 160ms ease,
+    box-shadow 160ms ease,
     color 160ms ease;
 }
 
@@ -106,9 +112,17 @@
   color: var(--color-text-primary);
 }
 
+.tab:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
 .tab[aria-current="page"] {
-  background: var(--color-text-primary);
-  color: var(--color-bg);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
 }
 
 .body {
@@ -118,13 +132,23 @@
   min-height: 0;
 }
 
+/* The panel already draws the edge, so the file browser runs flush to it. */
+.frame .body > * {
+  border: 0;
+  border-radius: 0;
+}
+
 /* Members and Activity scroll inside the frame. */
 .scroll {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
+}
+
+@media (max-width: 700px) {
+  .bar {
+    padding: 16px 18px 14px;
+  }
 }
 
 .page {

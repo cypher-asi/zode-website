@@ -1,0 +1,65 @@
+/*
+ * Starts once the hero menu's last row has typed (TerminalMenu: 150ms start,
+ * 45ms stagger, 14ms a character) and keeps its pace. Each character is
+ * hidden until its turn; the cursor rides on the newest one, then goes.
+ */
+.line {
+  --type-start: 420ms;
+  --type-char: 14ms;
+
+  /* Room for the cursor past the last character, inside the line's clip. */
+  padding-right: calc(0.55em + 3px);
+}
+
+/* The cursors are out of flow, which would otherwise let the line wrap between any two letters. */
+.word {
+  white-space: nowrap;
+}
+
+.char {
+  position: relative;
+  animation: type-char 0s calc(var(--type-start) + var(--n) * var(--type-char)) backwards;
+}
+
+.char::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  width: 0.55em;
+  height: 1.1em;
+  margin-left: 3px;
+  background: currentColor;
+  opacity: 0;
+  translate: 0 -50%;
+  animation: type-cursor var(--type-char) calc(var(--type-start) + var(--n) * var(--type-char));
+}
+
+@keyframes type-char {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes type-cursor {
+  from,
+  to {
+    opacity: 1;
+  }
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .char,
+  .char::after {
+    animation: none;
+  }
+}

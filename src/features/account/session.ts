@@ -6,11 +6,14 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { SITE_URL } from "@/lib/site";
 import { initials } from "./initials";
+import { REMEMBER_COOKIE } from "./rememberedAccounts";
 import { SIGNED_IN_COOKIE } from "./signedInCookie";
 import type { Account } from "./zos";
 
 const ACCOUNT_COOKIE = "zode_account";
 const ACCOUNT_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
+/** Only needs to outlive the redirect after signing in, when the browser moves it into localStorage. */
+const REMEMBER_MAX_AGE_SECONDS = 5 * 60;
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -77,6 +80,11 @@ export async function createAccountSession(account: Account): Promise<void> {
   } as const;
   cookieStore.set(ACCOUNT_COOKIE, encode({ sid: String(row.id), account }, exp), { ...options, httpOnly: true });
   cookieStore.set(SIGNED_IN_COOKIE, initials(account.displayName), options);
+  cookieStore.set(
+    REMEMBER_COOKIE,
+    JSON.stringify({ email: account.email, name: account.displayName, image: account.profileImage }),
+    { ...options, maxAge: REMEMBER_MAX_AGE_SECONDS },
+  );
 }
 
 /** Revokes the session server-side as well, so a copied cookie stops working too. */

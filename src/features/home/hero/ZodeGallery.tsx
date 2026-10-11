@@ -64,12 +64,14 @@ function whenIdle(callback: () => void): void {
  * along the bottom. Images are stacked so switching cross-fades without a
  * layout jump or a fresh network fetch. Only the first render loads up front
  * so it isn't competing for bandwidth; once it has loaded its neighbours mount,
- * then the rest when the browser goes idle. On touch, swiping left or right
- * steps through the shots.
+ * then the rest when the browser goes idle. The first render stays hidden
+ * until it has decoded, then eases in, rather than cutting in or
+ * painting in as it downloads. On touch, swiping left or right steps through the shots.
  */
 export function ZodeGallery(): ReactElement {
   const [active, setActive] = useState(0);
   const [mounted, setMounted] = useState<ReadonlySet<number>>(() => new Set([0]));
+  const [entered, setEntered] = useState(false);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const swiped = useRef(false);
@@ -78,7 +80,9 @@ export function ZodeGallery(): ReactElement {
   const mount = (indices: readonly number[]) =>
     setMounted((prev) => (indices.every((i) => prev.has(i)) ? prev : new Set([...prev, ...indices])));
 
+  /** next/image calls this once the first render has decoded, even if it loaded before hydration. */
   const onFirstLoad = () => {
+    setEntered(true);
     mount([wrap(-1), 1]);
     whenIdle(() => mount(SHOTS.map((_, i) => i)));
   };
@@ -121,6 +125,7 @@ export function ZodeGallery(): ReactElement {
         <button
           type="button"
           className={styles.stage}
+          data-entered={entered || undefined}
           aria-label={`${SHOTS[active].alt}. Show next view.`}
           onPointerDown={(event) => {
             swiped.current = false;

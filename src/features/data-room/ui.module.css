@@ -114,9 +114,13 @@
   padding-right: 6px;
 }
 
-.input:focus-visible,
-.select:focus-visible,
-.textarea:focus-visible,
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border-color: var(--color-text-primary);
+  outline: none;
+}
+
 .button:focus-visible,
 .primary:focus-visible,
 .danger:focus-visible,
