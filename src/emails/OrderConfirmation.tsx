@@ -1,7 +1,7 @@
 import { Column, Heading, Link, Row, Section, Text } from "@react-email/components";
 import type { ReactElement } from "react";
 import type { OrderEmailProps } from "./orderEmailProps";
-import { Layout, Legend, Rows, Rule, color, font, text } from "./ui";
+import { Layout, Legend, Rows, Rule, color, font, greetingName, text } from "./ui";
 
 type Props = OrderEmailProps & { logoSrc?: string };
 
@@ -11,7 +11,7 @@ export const confirmationSubject = ({ mode, reference }: Pick<OrderEmailProps, "
 /** Sent to the customer once their order or rental request is stored. */
 export default function OrderConfirmation(props: Props): ReactElement {
   const { mode, reference, placedAt, contact, headline, secondary, choices, cluster, breakdown, fineprint } = props;
-  const firstName = contact.name.split(" ")[0];
+  const firstName = greetingName(contact.name);
   const placed = mode === "buy" ? "Order placed" : "Request received";
   const thing = mode === "buy" ? "order" : "cluster request";
 

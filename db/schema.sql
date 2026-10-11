@@ -21,6 +21,31 @@ create table if not exists compute_orders (
 
 create index if not exists compute_orders_created_at_idx on compute_orders (created_at desc);
 
+-- The ZOS account that placed the order while signed in. The portal lists
+-- orders by this, never by email, since ZOS doesn't verify addresses.
+alter table compute_orders add column if not exists user_id text;
+create index if not exists compute_orders_user_idx on compute_orders (user_id, created_at desc) where user_id is not null;
+
+-- One row per sign-in. The signed session cookie names a row, so logging out
+-- (or revoking the row) ends the session even if the cookie is kept.
+create table if not exists account_sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id text not null,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  revoked_at timestamptz
+);
+
+create index if not exists account_sessions_user_idx on account_sessions (user_id);
+
+-- Fixed-window request counters for rate limiting (see src/lib/rateLimit.ts).
+create table if not exists rate_limits (
+  key text not null,
+  window_start timestamptz not null,
+  hits integer not null default 1,
+  primary key (key, window_start)
+);
+
 -- Requests from the "Talk to an Engineer" form; the team emails or texts back to book a meeting.
 create table if not exists engineer_requests (
   id uuid primary key default gen_random_uuid(),

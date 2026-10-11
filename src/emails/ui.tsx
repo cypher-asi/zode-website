@@ -18,6 +18,16 @@ import type { EmailRow } from "./orderEmailProps";
 /** Content id of the inline wordmark attachment that `src/lib/email.ts` sends with every email. */
 export const WORDMARK_CID = "zode-wordmark";
 
+/**
+ * The first word of a typed-in name, for greetings in mail sent to an address
+ * the sender chose. Anything that doesn't look like a name (a URL, a phrase,
+ * symbols) is dropped, so the form can't put arbitrary text in a ZODE email.
+ */
+export function greetingName(name: string): string {
+  const first = name.trim().split(/\s+/)[0] ?? "";
+  return /^[\p{L}\p{M}][\p{L}\p{M}'’-]{0,29}$/u.test(first) ? first : "";
+}
+
 export const color = {
   ink: "#0c0c0d",
   body: "#3a3a3e",

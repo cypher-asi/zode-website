@@ -32,6 +32,7 @@ import {
 } from "./rentConfig";
 import { db } from "@/lib/db";
 import { HONEYPOT_FIELD } from "@/lib/leads";
+import { isEmail, multiLine, singleLine } from "@/lib/validation";
 
 export interface OrderContact {
   name: string;
@@ -49,14 +50,18 @@ export type ParsedOrder =
   | { ok: true; spam: true }
   | { ok: false; error: string };
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 const CONTACT_FIELDS = [
-  { key: "name", label: "Name", required: true, max: 120 },
-  { key: "email", label: "Work email", required: true, max: 200 },
-  { key: "company", label: "Company", required: false, max: 160 },
-  { key: "notes", label: "Notes", required: false, max: 2000 },
-] as const satisfies readonly { key: keyof OrderContact; label: string; required: boolean; max: number }[];
+  { key: "name", label: "Name", required: true, max: 120, multiline: false },
+  { key: "email", label: "Work email", required: true, max: 200, multiline: false },
+  { key: "company", label: "Company", required: false, max: 160, multiline: false },
+  { key: "notes", label: "Notes", required: false, max: 2000, multiline: true },
+] as const satisfies readonly {
+  key: keyof OrderContact;
+  label: string;
+  required: boolean;
+  max: number;
+  multiline: boolean;
+}[];
 
 /** The id of an offered, enabled choice equal to `value`. */
 const choiceId = <Id extends string>(list: readonly Choice<Id, unknown>[], value: unknown): Id | undefined =>
@@ -112,12 +117,12 @@ export function parseOrder(formData: FormData): ParsedOrder {
   const contact: OrderContact = { name: "", email: "", company: "", notes: "" };
   for (const field of CONTACT_FIELDS) {
     const raw = formData.get(field.key);
-    const value = typeof raw === "string" ? raw.trim() : "";
+    const value = typeof raw === "string" ? (field.multiline ? multiLine(raw) : singleLine(raw)) : "";
     if (field.required && !value) return { ok: false, error: `${field.label} is required.` };
     if (value.length > field.max) return { ok: false, error: `${field.label} is too long.` };
     contact[field.key] = value;
   }
-  if (!EMAIL_RE.test(contact.email)) {
+  if (!isEmail(contact.email)) {
     return { ok: false, error: "Work email is not a valid email." };
   }
 
@@ -146,9 +151,10 @@ const cents = (n: number) => Math.round(n * 100) / 100;
 
 /**
  * Stores the order with a quote priced here from its configuration, never
- * one sent by the browser, and returns its short reference.
+ * one sent by the browser, and returns its short reference. `userId` is the
+ * signed-in ZOS account, if any; only then does the order show in its portal.
  */
-export async function createOrder(order: Order): Promise<string> {
+export async function createOrder(order: Order, userId: string | null): Promise<string> {
   let priced: Quote | RentQuote;
   let total: number | null = null;
   if (order.mode === "buy") {
@@ -161,10 +167,10 @@ export async function createOrder(order: Order): Promise<string> {
 
   const { name, email, company, notes } = order.contact;
   const [row] = await db()`
-    insert into compute_orders (mode, name, email, company, notes, config, quote, monthly_usd, total_usd)
+    insert into compute_orders (mode, name, email, company, notes, config, quote, monthly_usd, total_usd, user_id)
     values (
       ${order.mode}, ${name}, ${email}, ${company || null}, ${notes || null},
-      ${JSON.stringify(order.config)}, ${JSON.stringify(priced)}, ${cents(priced.monthly)}, ${total}
+      ${JSON.stringify(order.config)}, ${JSON.stringify(priced)}, ${cents(priced.monthly)}, ${total}, ${userId}
     )
     returning id
   `;
@@ -189,12 +195,16 @@ export interface OrderSummary {
 const choiceLabel = (choices: readonly Choice<string, unknown>[], id: unknown): string =>
   choices.find((c) => c.id === id)?.label.replace(/^NVIDIA /, "") ?? String(id ?? "");
 
-/** Orders placed with this email at checkout, newest first. */
-export async function listOrdersByEmail(email: string): Promise<OrderSummary[]> {
+/**
+ * Orders this account placed while signed in, newest first. Never matched by
+ * email: ZOS doesn't verify addresses, so anyone could register with a
+ * customer's email.
+ */
+export async function listOrdersByUser(userId: string): Promise<OrderSummary[]> {
   const rows = await db()`
     select id, created_at, mode, status, monthly_usd, total_usd, config, quote
     from compute_orders
-    where lower(email) = ${email.trim().toLowerCase()}
+    where user_id = ${userId}
     order by created_at desc
   `;
   return rows.map((row) => {

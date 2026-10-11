@@ -2,7 +2,6 @@ import "server-only";
 import {
   CONTACT_FIELDS,
   DEPLOYMENT_SIZES,
-  EMAIL_RE,
   INTERESTS,
   PHONE_RE,
   phoneDigits,
@@ -12,6 +11,7 @@ import {
 } from "./options";
 import { db } from "@/lib/db";
 import { HONEYPOT_FIELD } from "@/lib/leads";
+import { isEmail, singleLine } from "@/lib/validation";
 import { referenceFor } from "@/features/configurator/orders";
 
 export type EngineerRequest = Record<ContactKey, string> & {
@@ -36,12 +36,12 @@ export function parseEngineerRequest(formData: FormData): ParsedEngineerRequest 
   const contact = {} as Record<ContactKey, string>;
   for (const field of CONTACT_FIELDS) {
     const raw = formData.get(field.key);
-    const value = typeof raw === "string" ? raw.trim() : "";
+    const value = typeof raw === "string" ? singleLine(raw) : "";
     if (field.required && !value) return { ok: false, error: `${field.label} is required.` };
     if (value.length > field.max) return { ok: false, error: `${field.label} is too long.` };
     contact[field.key] = value;
   }
-  if (!EMAIL_RE.test(contact.email)) return { ok: false, error: "That email doesn't look right." };
+  if (!isEmail(contact.email)) return { ok: false, error: "That email doesn't look right." };
   const digits = phoneDigits(contact.phone);
   if (!PHONE_RE.test(contact.phone) || digits < 7 || digits > 15) {
     return { ok: false, error: "That phone number doesn't look right." };

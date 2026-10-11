@@ -2,8 +2,12 @@
 
 import { after } from "next/server";
 import { sendOrderEmails } from "@/emails/send";
+import { getAccount } from "@/features/account/session";
 import { RECIPIENT_EMAIL } from "@/lib/leads";
+import { RATE_LIMITED, clientIp, withinLimits } from "@/lib/rateLimit";
 import { createOrder, parseOrder, referenceFor } from "./orders";
+
+const HOUR = 60 * 60;
 
 export type OrderState =
   | { readonly status: "idle" }
@@ -21,9 +25,17 @@ export async function placeOrder(_prevState: OrderState, formData: FormData): Pr
   }
 
   const { order } = parsed;
+  // Each order emails the address typed in, so both the sender and the recipient are capped.
+  const allowed = await withinLimits([
+    { key: `order:ip:${await clientIp()}`, max: 5, windowSeconds: HOUR },
+    { key: `order:email:${order.contact.email.toLowerCase()}`, max: 3, windowSeconds: HOUR },
+  ]);
+  if (!allowed) return { status: "error", error: RATE_LIMITED };
+
+  const account = await getAccount();
   let reference: string;
   try {
-    reference = await createOrder(order);
+    reference = await createOrder(order, account?.userId ?? null);
   } catch (err) {
     console.error(`[orders] could not store ${order.mode} order:`, err);
     return {

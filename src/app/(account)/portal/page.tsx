@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
+import { initials } from "@/features/account/initials";
 import { requireAccount } from "@/features/account/session";
-import { listOrdersByEmail, type OrderSummary } from "@/features/configurator/orders";
+import { listOrdersByUser, type OrderSummary } from "@/features/configurator/orders";
 import { LogoutButton } from "@/features/account/LogoutButton";
 import { Icon } from "@/features/data-room/icons";
 import { NewRoomForm } from "@/features/data-room/NewRoomForm";
@@ -17,11 +18,6 @@ export const metadata: Metadata = {
 
 const usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 const date = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  return (parts.length > 1 ? parts[0][0] + parts[parts.length - 1][0] : (parts[0] ?? "?").slice(0, 2)).toUpperCase();
-}
 
 function OrderRow({ order }: { order: OrderSummary }): ReactElement {
   return (
@@ -72,11 +68,11 @@ function RoomCard({ room }: { room: RoomSummary }): ReactElement {
   );
 }
 
-/** Signed-in home for ZOS accounts: who you are, your data rooms, and the compute orders placed with your email. */
+/** Signed-in home for ZOS accounts: who you are, your data rooms, and the compute orders placed while signed in. */
 export default async function PortalPage(): Promise<ReactElement> {
   const account = await requireAccount("/portal");
   const [orders, rooms] = await Promise.all([
-    listOrdersByEmail(account.email).catch((error: unknown) => {
+    listOrdersByUser(account.userId).catch((error: unknown) => {
       console.error("Failed to load portal orders", error);
       return null;
     }),
@@ -149,7 +145,7 @@ export default async function PortalPage(): Promise<ReactElement> {
             </ul>
           ) : (
             <div className={styles.empty}>
-              <p>No orders yet for {account.email}.</p>
+              <p>No orders yet. Orders you place while logged in appear here.</p>
               <Link href="/buy-compute">Configure a ZODE</Link>
             </div>
           )}

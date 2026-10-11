@@ -36,7 +36,6 @@ export type ContactKey = (typeof CONTACT_FIELDS)[number]["key"];
 export const phoneDigits = (phone: string): number => phone.replace(/\D/g, "").length;
 
 export const PHONE_RE = /^\+?[\d\s().-]+$/;
-export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const interestLabel = (id: string): string => INTERESTS.find((i) => i.id === id)?.label ?? id;
 export const sizeLabel = (id: string): string => DEPLOYMENT_SIZES.find((s) => s.id === id)?.label ?? id;

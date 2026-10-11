@@ -3,7 +3,7 @@ import type { ReactElement } from "react";
 import { SITE_URL } from "@/lib/site";
 import type { AccountEmailProps } from "./accountEmailProps";
 import type { EmailRow } from "./orderEmailProps";
-import { Layout, Legend, Rows, Rule, color, text } from "./ui";
+import { Layout, Legend, Rows, Rule, color, greetingName, text } from "./ui";
 
 type Props = AccountEmailProps & { logoSrc?: string };
 
@@ -18,7 +18,7 @@ const NEXT_STEPS = [
 /** Sent to someone as soon as they create a ZODE account. */
 export default function Welcome(props: Props): ReactElement {
   const { name, email, zid } = props;
-  const firstName = name.split(" ")[0];
+  const firstName = greetingName(name);
 
   const account: EmailRow[] = [{ label: "Email", value: email }, ...(zid ? [{ label: "ZID", value: zid }] : [])];
 

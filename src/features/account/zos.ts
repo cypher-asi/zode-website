@@ -136,12 +136,15 @@ export async function zosRegister(input: {
   return toAccount(await fetchUser(accessToken), email);
 }
 
-/** A message safe to show in the login and register forms. */
-export function describeZosError(error: unknown, fallback: string): string {
-  if (!(error instanceof ZosError)) return fallback;
-  if (error.code === "INVALID_EMAIL_PASSWORD" || error.status === 401) {
-    return "Incorrect email or password.";
-  }
-  if (error.status >= 400 && error.status < 500 && error.message) return error.message;
-  return fallback;
+/**
+ * A message safe to show in the login and register forms. Every login
+ * rejection reads the same, so the form can't be used to probe which emails
+ * have accounts; registration passes ZOS's reason through (bad invite, weak
+ * password), since the user can't fix it otherwise.
+ */
+export function describeZosError(error: unknown, form: "login" | "register", fallback: string): string {
+  if (!(error instanceof ZosError) || error.status < 400 || error.status >= 500) return fallback;
+  if (error.status === 429) return "Too many attempts. Please wait a while and try again.";
+  if (form === "login") return "Incorrect email or password.";
+  return error.message.slice(0, 200) || fallback;
 }
