@@ -1,15 +1,18 @@
 /*
  * Band under the landscape (see FooterReveal.tsx): the wordmark centred
- * between two equal side columns, the right one holding the sideways
- * copyright. The band is as tall as the larger of the two, so the copyright
- * never spills out on narrow screens. The circuit frame draws a trace along
- * the band's top edge, right on the photo's bottom edge. The photo above is
- * full bleed, so the band carries the inset that keeps it 6px inside the rails.
+ * between two equal side columns, the left one holding the sideways MENU
+ * button and the right one the sideways copyright. The band is as tall as
+ * the largest of them, so the rails never spill out on narrow screens. The
+ * circuit frame draws a trace along the band's top edge, right on the
+ * photo's bottom edge. The photo above is full bleed, so the band carries
+ * the inset that keeps it 6px inside the rails.
  */
 .root {
   --rail-inset: clamp(14px, 1.6vw, 20px);
   --rail: calc(16px + var(--rail-inset));
   --mark-opacity: 0.2;
+  /* Time FooterNav takes to erase its lines on close; the wordmark waits it out. */
+  --menu-erase: 340ms;
   flex: 1 0 auto;
   display: grid;
   grid-template-columns: var(--rail) minmax(0, 1fr) var(--rail);
@@ -17,21 +20,91 @@
   padding: 0 calc(var(--frame-inset) + 6px) calc(var(--frame-inset) + 6px);
 }
 
+/*
+ * The wordmark and the links share one cell, so the band is sized by the
+ * taller of the two whichever is showing, and toggling never shifts layout.
+ * Opening fades the wordmark out quickly before the links type in; closing
+ * keeps the links up while they erase, then fades the wordmark back.
+ */
+.mark,
+.nav {
+  grid-area: 1 / 2;
+}
+
 /* The shared footer's watermark, drawn stronger here; sized to the screen height too. */
 .mark {
-  grid-column: 2;
   display: block;
-  width: min(94%, 1100px, 120dvh);
+  width: min(94%, 1100px, 120svh);
   height: auto;
-  margin: clamp(24px, 5dvh, 80px) auto;
+  margin: clamp(24px, 5svh, 80px) auto;
   opacity: var(--mark-opacity);
   pointer-events: none;
   user-select: none;
+  transition:
+    opacity 300ms ease var(--menu-erase),
+    visibility 0s var(--menu-erase);
+}
+
+/* Same pinned dark-palette tokens as the shared footer, whatever the theme. */
+.nav {
+  --color-text-primary: #f4f4f5;
+  --color-text-secondary: #8a8a92;
+  justify-self: center;
+  min-width: 0;
+  margin: clamp(24px, 5svh, 80px) 0;
+  visibility: hidden;
+  transition: visibility 0s var(--menu-erase);
+}
+
+/* The shared columns' wide desktop gaps would overflow the band between the rails. */
+.nav nav {
+  column-gap: clamp(40px, 6vw, 120px);
+}
+
+.root[data-open] .mark {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 150ms ease,
+    visibility 0s 150ms;
+}
+
+.root[data-open] .nav {
+  visibility: visible;
+  transition: none;
+}
+
+/* Bottom of the left rail, mirroring the copyright opposite: reads bottom-to-top. */
+.menuButton {
+  grid-area: 1 / 1;
+  justify-self: start;
+  align-self: end;
+  margin: 12px 0 12px var(--rail-inset);
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ffffff;
+  opacity: 0.4;
+  cursor: pointer;
+  transition: opacity 120ms ease;
+}
+
+.menuButton:hover,
+.menuButton:focus-visible,
+.root[data-open] .menuButton {
+  opacity: 1;
 }
 
 /* Reads bottom-to-top, like a book spine. */
 .copyright {
-  grid-column: 3;
+  grid-area: 1 / 3;
   justify-self: end;
   align-self: center;
   margin: 12px var(--rail-inset) 12px 0;
@@ -43,4 +116,51 @@
   text-transform: uppercase;
   color: #ffffff;
   opacity: 0.4;
+}
+
+/* No room for side rails on phones: the button and copyright run level in a row under the wordmark. */
+@media (max-width: 900px) {
+  .root {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .mark,
+  .nav {
+    grid-area: 1 / 1 / 2 / 3;
+    margin-bottom: 20px;
+  }
+
+  /* Two columns rather than the shared footer's single stack, so the band stays short. */
+  .nav nav {
+    grid-template-columns: repeat(2, max-content);
+    gap: 24px 48px;
+  }
+
+  .menuButton {
+    grid-area: 2 / 1;
+    align-self: center;
+    margin: 0 0 16px;
+    padding: 6px 0;
+    writing-mode: horizontal-tb;
+    transform: none;
+    font-size: 11px;
+  }
+
+  .copyright {
+    grid-area: 2 / 2;
+    align-self: center;
+    margin: 0 0 16px;
+    writing-mode: horizontal-tb;
+    transform: none;
+    font-size: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mark,
+  .nav,
+  .root[data-open] .mark,
+  .menuButton {
+    transition: none;
+  }
 }

@@ -1,28 +1,9 @@
 "use client";
 
-import type { ReactElement } from "react";
+import type { CSSProperties, KeyboardEvent, ReactElement } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { INVEST_ENABLED } from "@/lib/flags";
 import styles from "./SiteFooter.module.css";
-
-// Scroll containers used by the two shells the footer renders inside:
-// the (site) layout and the /deck OuterShell.
-const SCROLL_ROOT_IDS = ["site-scroll", "grid-scroll"] as const;
-
-// When a footer link points at the page we're already on, the route won't
-// change (so no navigation/scroll reset fires). Smooth-scroll the active
-// shell's scroll container back to the top instead.
-function scrollToTopIfCurrent(pathname: string, href: string): void {
-  if (href !== pathname) return;
-  for (const id of SCROLL_ROOT_IDS) {
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
-  }
-}
 
 interface FooterLink {
   readonly label: string;
@@ -35,23 +16,17 @@ interface FooterColumn {
   readonly links: readonly FooterLink[];
 }
 
-// Toggle the X / LinkedIn social row. Kept off until real profile links exist;
-// set to true to bring the icons back in their original footer position.
-const SOCIAL_LINKS_READY = false;
-
 const COLUMNS: readonly FooterColumn[] = [
   {
-    heading: "Product",
-    links: [{ label: "Overview", href: "/" }],
-  },
-  {
-    heading: "Deployments",
-    links: [{ label: "Overview", href: "/deployments" }],
+    heading: "Compute",
+    links: [
+      { label: "Buy compute", href: "/buy-compute" },
+      { label: "Rent compute", href: "/buy-compute?mode=rent" },
+    ],
   },
   {
     heading: "Network",
     links: [
-      { label: "THE GRID", href: "/network" },
       {
         label: "Whitepaper",
         href: "https://cypher.net/research/the-grid",
@@ -59,24 +34,16 @@ const COLUMNS: readonly FooterColumn[] = [
       },
     ],
   },
-  // The investor column is hidden while INVEST_ENABLED is false; the deck
-  // still lives publicly at /deck, the flag only gates this discovery link.
-  ...(INVEST_ENABLED
-    ? [
-        {
-          heading: "Invest",
-          links: [
-            { label: "Learn More", href: "/deck" },
-            { label: "Contact", href: "/contact" },
-          ],
-        },
-      ]
-    : []),
   {
-    heading: "Compute",
+    heading: "Company",
+    links: [{ label: "Contact", href: "/contact" }],
+  },
+  {
+    heading: "Account",
     links: [
-      { label: "Buy compute", href: "/buy-compute" },
-      { label: "Give compute", href: "/give-compute" },
+      { label: "Portal", href: "/portal" },
+      { label: "Login", href: "/login" },
+      { label: "Register", href: "/register" },
     ],
   },
   {
@@ -88,121 +55,97 @@ const COLUMNS: readonly FooterColumn[] = [
   },
 ];
 
-function XIcon(): ReactElement {
-  return (
-    <svg className={styles.icon} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.66l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z" />
-    </svg>
-  );
+/** Every heading and link is one typed line, numbered column by column; this is each heading's number. */
+const COLUMN_START = COLUMNS.map((_, c) =>
+  COLUMNS.slice(0, c).reduce((n, column) => n + 1 + column.links.length, 0),
+);
+const LINE_COUNT = COLUMN_START.at(-1)! + 1 + COLUMNS.at(-1)!.links.length;
+
+/** Position in the typing order and length, which drive the per-line timing in CSS. */
+const line = (index: number, text: string) =>
+  ({ "--i": index, "--chars": text.length }) as CSSProperties;
+
+/** Moves focus between all the links with the arrow keys, wrapping at the ends. */
+function onNavKey(event: KeyboardEvent<HTMLElement>): void {
+  const step = event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0;
+  if (!step) return;
+
+  const links = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(`.${styles.link}`));
+  const at = links.indexOf(document.activeElement as HTMLElement);
+  const next = at === -1 ? (step > 0 ? 0 : links.length - 1) : (at + step + links.length) % links.length;
+
+  event.preventDefault();
+  links[next]?.focus();
 }
 
-function LinkedInIcon(): ReactElement {
-  return (
-    <svg className={styles.icon} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286ZM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065Zm1.782 13.019H3.555V9h3.564v11.452ZM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003Z" />
-    </svg>
-  );
+export interface FooterNavProps {
+  /** Types the lines in one after another; going false erases them in reverse. */
+  open: boolean;
 }
 
-/** The footer's link columns, shared with surfaces that reveal them on demand. */
-export function FooterNav(): ReactElement {
+/**
+ * The site's link columns, revealed by the footer's MENU button as a
+ * terminal-style menu: each line types in behind a block cursor, and the
+ * hovered or focused link gets a caret and a blinking cursor.
+ */
+export function FooterNav({ open }: FooterNavProps): ReactElement {
   const pathname = usePathname() ?? "/";
 
   return (
-    <nav className={styles.columns} aria-label="Footer navigation">
-      {COLUMNS.map((column) => (
+    <nav
+      className={styles.columns}
+      aria-label="Footer navigation"
+      data-open={open || undefined}
+      style={{ "--n": LINE_COUNT } as CSSProperties}
+      onKeyDown={onNavKey}
+    >
+      {COLUMNS.map((column, c) => (
         <div key={column.heading} className={styles.column}>
-          <h2 className={styles.heading}>{column.heading}</h2>
+          <h2 className={styles.heading} style={line(COLUMN_START[c], column.heading)}>
+            <span className={styles.text}>{column.heading}</span>
+            <span className={styles.cursor} aria-hidden="true" />
+          </h2>
           <ul className={styles.links}>
-            {column.links.map((link) => (
-              <li key={link.label}>
-                {link.external ? (
-                  <a
-                    className={styles.link}
-                    href={link.href}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                  >
-                    {link.label}
-                  </a>
-                ) : (
-                  <Link
-                    className={styles.link}
-                    href={link.href}
-                    onClick={() => scrollToTopIfCurrent(pathname, link.href)}
-                  >
-                    {link.label}
-                  </Link>
-                )}
-              </li>
-            ))}
+            {column.links.map((link, l) => {
+              const i = COLUMN_START[c] + 1 + l;
+              const row = {
+                className: styles.link,
+                style: line(i, link.label),
+                "data-last": i === LINE_COUNT - 1 || undefined,
+              };
+              const content = (
+                <>
+                  <span className={styles.caret} aria-hidden="true">
+                    &gt;
+                  </span>
+                  <span className={styles.text}>{link.label}</span>
+                  <span className={styles.cursor} aria-hidden="true" />
+                </>
+              );
+              return (
+                <li key={link.label}>
+                  {link.external ? (
+                    <a {...row} href={link.href} target="_blank" rel="noreferrer noopener">
+                      {content}
+                    </a>
+                  ) : (
+                    <Link
+                      {...row}
+                      href={link.href}
+                      // Same-page links don't navigate, so scroll back up instead.
+                      onClick={() => {
+                        if (link.href === pathname) window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                    >
+                      {content}
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
       ))}
     </nav>
-  );
-}
-
-/**
- * Site-wide marketing footer: uppercase section headers with link lists, a
- * large faded ZODE wordmark centered behind the columns, social links, and a
- * copyright line. Rendered at the end of the scrollable content area in each
- * shell so it appears on every gated page.
- */
-// Routes whose page provides its own full-height layout and should not
-// render the shared site footer below the fold.
-const HIDDEN_FOOTER_ROUTES = ["/rent-compute", "/give-compute"] as const;
-
-interface SiteFooterProps {
-  /** Draw the large faded wordmark along the bottom edge. */
-  readonly watermark?: boolean;
-}
-
-export function SiteFooter({ watermark = true }: SiteFooterProps): ReactElement | null {
-  const pathname = usePathname() ?? "/";
-
-  if (HIDDEN_FOOTER_ROUTES.includes(pathname as (typeof HIDDEN_FOOTER_ROUTES)[number])) {
-    return null;
-  }
-
-  return (
-    <footer className={styles.footer} aria-label="Site footer" data-watermark={watermark || undefined}>
-      {/* Decorative watermark: ships white on transparency and inverts to match
-          the surface via the shared --logo-invert token. */}
-      {watermark ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img className={styles.brandMark} src="/wordmark.png" alt="" aria-hidden="true" />
-      ) : null}
-
-      <div className={styles.inner}>
-        <FooterNav />
-
-        <div className={styles.bottom}>
-          {/* Social links are hidden until real destinations are ready; flip
-              SOCIAL_LINKS_READY to true to restore them in place. */}
-          {SOCIAL_LINKS_READY ? (
-            <div className={styles.social}>
-              <a
-                className={styles.socialLink}
-                href="https://x.com/zode_org"
-                target="_blank"
-                rel="noreferrer noopener"
-                aria-label="ZODE on X"
-              >
-                <XIcon />
-              </a>
-              <a
-                className={styles.socialLink}
-                href="#"
-                aria-label="ZODE on LinkedIn"
-              >
-                <LinkedInIcon />
-              </a>
-            </div>
-          ) : null}
-          <p className={styles.copyright}>Copyright &copy; 2026 Cypher, Inc.</p>
-        </div>
-      </div>
-    </footer>
   );
 }
