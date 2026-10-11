@@ -151,6 +151,9 @@ export function CircuitFrame(): ReactElement {
     const observer = new ResizeObserver(schedule);
     observer.observe(page);
     for (const block of page.querySelectorAll(":scope > [data-circuit]")) observer.observe(block);
+    // The hero split moves without resizing its block (see HeroSplitter).
+    const seam = page.querySelector("[data-circuit-seam]");
+    if (seam) observer.observe(seam);
     schedule();
     return () => {
       cancelAnimationFrame(frame);

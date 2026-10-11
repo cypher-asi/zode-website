@@ -121,8 +121,8 @@ function row(surfaces: readonly Surface[], y: number, from: number, to: number):
 /**
  * Lays out the page frame as a straight grid: a rail `inset` px in from each
  * side, a full-width trace at each row in `rules` plus one closing the bottom,
- * a trace down the hero split along the white panel's last column, and a pad
- * wherever a row meets a rail or the split.
+ * a trace down the hero split along the white panel's last column, a pad
+ * wherever a row meets a rail or the split, and one capping the top of each.
  *
  * Pulses run down the rails and the split, and both ways along each row.
  */
@@ -170,9 +170,19 @@ export function buildCircuit(
     [...new Set(verticals.filter((v) => y > v.top && y <= v.end).map((v) => v.x))].sort(
       (a, b) => a - b,
     );
-  const pads: Pad[] = rows.flatMap((y) =>
-    crossings(y).map((x) => ({ x, y, tone: toneAt(surfaces, x, y), node: node(x, y) })),
-  );
+  // Pads span 2px either side of centre and the overlay clips at the page top, so caps sit 2px down to show whole.
+  const caps: Pad[] = [...new Map(verticals.map((v) => [v.x, v.top])).entries()].map(([x, top]) => ({
+    x,
+    y: top + 2,
+    tone: toneAt(surfaces, x, top),
+    node: node(x, top),
+  }));
+  const pads: Pad[] = [
+    ...caps,
+    ...rows.flatMap((y) =>
+      crossings(y).map((x) => ({ x, y, tone: toneAt(surfaces, x, y), node: node(x, y) })),
+    ),
+  ];
 
   const edges: Edge[] = [];
   const page = (tone: Tone): Band => ({ tone, top: 0, bottom: height, left: 0, right: width });

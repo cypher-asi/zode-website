@@ -5,6 +5,7 @@ import { TerminalMenu, type TerminalMenuItem } from "@/components/ui/TerminalMen
 import { AssemblyLine } from "@/features/home/assembly/AssemblyLine";
 import { CircuitFrame } from "@/features/home/circuit/CircuitFrame";
 import { ClosingCta } from "@/features/home/closing-cta/ClosingCta";
+import { HeroSplitter } from "@/features/home/hero/HeroSplitter";
 import { TypedLine } from "@/features/home/hero/TypedLine";
 import { WordLoop } from "@/features/home/hero/WordLoop";
 import { ZodeGallery } from "@/features/home/hero/ZodeGallery";
@@ -39,7 +40,7 @@ export default function HomePage() {
       <CircuitFrame />
       <PinnedHeader />
 
-      <div className={styles.hero} data-circuit>
+      <div className={styles.hero} data-circuit data-hero>
         <section className={styles.left} data-surface="light" data-circuit-seam>
           <div className={styles.copy} data-top-fade>
             <h1 className={styles.headline}>
@@ -53,6 +54,8 @@ export default function HomePage() {
             <TypedLine className={styles.helper} text="The fastest deployable AI data center." />
             <WordLoop />
           </div>
+
+          <HeroSplitter />
         </section>
 
         <section

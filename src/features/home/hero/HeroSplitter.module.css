@@ -1,0 +1,53 @@
+/*
+ * 12px hit area centred on the hero seam. The seam itself is the circuit
+ * frame's trace, so the divider only shows its grip while hovered, focused,
+ * or dragged.
+ */
+.splitter {
+  position: absolute;
+  top: 0;
+  right: -6px;
+  bottom: 0;
+  z-index: 2;
+  width: 12px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.splitter::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 40px;
+  border-radius: 3px;
+  background: #85858a;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
+  content: "";
+  opacity: 0;
+  translate: -50% -50%;
+  transition: opacity 140ms ease;
+}
+
+.splitter:hover::after,
+.splitter:focus-visible::after,
+:global(html[data-resizing]) .splitter::after {
+  opacity: 1;
+}
+
+.splitter:focus-visible {
+  outline: 0;
+}
+
+/* The hero stacks into one column here, so there's no seam to drag. */
+@media (max-width: 900px) {
+  .splitter {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splitter::after {
+    transition: none;
+  }
+}

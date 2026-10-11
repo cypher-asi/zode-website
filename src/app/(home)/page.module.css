@@ -26,9 +26,10 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* `--hero-split` is written by HeroSplitter; the headline panel never shrinks below its content. */
 .hero {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(min-content, var(--hero-split, 50%)) minmax(0, 1fr);
   height: 100svh;
   overflow: hidden;
 }
