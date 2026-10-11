@@ -1,0 +1,462 @@
+/*
+ * Light "full stack" section. Sits inside `.stack` in app/(home)/page.module.css and
+ * inherits its `--edge`, `--off-white`, `--off-black` and font variables.
+ */
+.root {
+  --ink: #0c0c0d;
+  --muted: #8a8a8f;
+
+  padding: 96px var(--edge) 104px;
+  font-family: var(--font-text), system-ui, sans-serif;
+}
+
+/*
+ * The intro and the figure share one full-width grid cell so the art stays
+ * centred and the labels keep the whole right half; the intro fills the left
+ * half up to the art. `--lead` is the leader line's shortest run from plate
+ * to label.
+ */
+.layout {
+  --art-max: 352px;
+  --art: min(var(--art-max), 40%);
+  --lead: 56px;
+
+  display: grid;
+  align-items: center;
+}
+
+.intro,
+.figure {
+  grid-area: 1 / 1;
+}
+
+/* Above the figure, whose full-width box would otherwise swallow clicks and text selection. */
+.intro {
+  z-index: 1;
+  justify-self: start;
+  width: calc(50% - var(--art) / 2 - var(--lead));
+  max-width: 440px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: var(--h2-size);
+  font-weight: 300;
+  line-height: var(--h2-leading);
+  letter-spacing: var(--h2-tracking);
+}
+
+.lede {
+  margin: 20px 0 0;
+  font-size: 16px;
+  line-height: 1.55;
+  letter-spacing: -0.005em;
+  color: #4a4a4f;
+}
+
+/*
+ * The SVG is the only in-flow child, so label `top` percentages track its
+ * height. `--lift` is how far a hovered plate rises, in viewBox units.
+ */
+.figure {
+  --gap: 30;
+  --lift: 8;
+
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.art {
+  display: block;
+  width: var(--art);
+  height: auto;
+  overflow: visible;
+}
+
+.figure[data-exploded] .art {
+  --gap: var(--gap-open);
+}
+
+.layer {
+  transform: translateY(calc(var(--o) * var(--gap) * 1px));
+  transition:
+    transform 1100ms cubic-bezier(0.2, 0.7, 0.2, 1) calc(var(--i) * 60ms),
+    opacity 200ms ease;
+}
+
+/* Only the static `.hit` outlines take the pointer; a moving target under the cursor makes hover flip-flop. */
+.hit {
+  fill: transparent;
+}
+
+.lift {
+  pointer-events: none;
+  transition: transform 220ms ease;
+}
+
+.layer[data-on] .lift {
+  transform: translateY(calc(var(--lift) * -1px));
+}
+
+/* Must stay pointer-transparent so hit-testing still lands on the real plates underneath. */
+.layer[data-raised] {
+  pointer-events: none;
+  transition: none;
+}
+
+.layer[data-raised] .lift {
+  animation: raise 220ms ease;
+}
+
+@keyframes raise {
+  from {
+    transform: none;
+  }
+}
+
+/*
+ * Per-plate hover loops (groups tagged in StackArt.tsx). Each group starts
+ * `--k` x `--step` late; keep `--step` x the largest `--k` within one
+ * `--period` so a sweep never overlaps the next.
+ */
+.flash {
+  --step: 110ms;
+}
+
+.dim {
+  --step: 40ms;
+  --period: 1440ms;
+}
+
+.shade {
+  --step: 90ms;
+}
+
+.hop {
+  --step: 100ms;
+}
+
+.ripple {
+  --step: 140ms;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .layer[data-raised]
+    :is(.flash .ring, .dim .ink, .shade .top, .hop, .ripple path) {
+    animation-duration: var(--period, 1600ms);
+    animation-timing-function: ease-in-out;
+    animation-delay: calc(var(--k) * var(--step));
+    animation-iteration-count: infinite;
+  }
+
+  .layer[data-raised] .flow polyline {
+    stroke-dasharray: 3 3;
+    animation: dash-flow 600ms linear infinite;
+  }
+
+  .layer[data-raised] .flash .ring {
+    animation-name: fill-ink;
+  }
+
+  .layer[data-raised] .dim .ink {
+    animation-name: fade-out;
+  }
+
+  .layer[data-raised] .shade .top {
+    animation-name: fill-shade;
+  }
+
+  .layer[data-raised] .hop {
+    animation-name: hop-up;
+  }
+
+  .layer[data-raised] .ripple path {
+    animation-name: stroke-ink;
+  }
+}
+
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -6;
+  }
+}
+
+@keyframes fill-ink {
+  50% {
+    fill: var(--ink);
+  }
+}
+
+@keyframes fade-out {
+  50% {
+    opacity: 0.12;
+  }
+}
+
+@keyframes fill-shade {
+  50% {
+    fill: #c4c4be;
+  }
+}
+
+@keyframes hop-up {
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes stroke-ink {
+  50% {
+    stroke: var(--ink);
+  }
+}
+
+.figure[data-active] .layer:not([data-on]) {
+  opacity: 0.28;
+}
+
+/* Drawing primitives (see StackArt.tsx). */
+.art polygon,
+.art polyline,
+.art path,
+.art ellipse {
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.top,
+.sideR,
+.sideL {
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
+.top {
+  fill: #ffffff;
+}
+
+.sideL {
+  fill: #f0f0ec;
+}
+
+.sideR {
+  fill: #e4e4df;
+}
+
+.edge {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
+.fine {
+  fill: none;
+  stroke: #77777d;
+  stroke-width: 0.6;
+}
+
+.ink {
+  fill: var(--ink);
+}
+
+.ring {
+  fill: #ffffff;
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
+.flag {
+  fill: var(--ink);
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
+.labels {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+
+/*
+ * Spans from the plate's anchor point to 24px short of the viewport edge
+ * (spilling into the section padding). Columns: leader line, text, spacer;
+ * the two flexible columns split what's left so the text sits centred.
+ * `--anchor-in` is the anchor's inset from the SVG's right edge, as a
+ * fraction of its width.
+ */
+.label {
+  position: absolute;
+  top: var(--y);
+  left: calc(50% + var(--art) * (0.5 - var(--anchor-in)));
+  right: calc(24px - var(--edge));
+  display: grid;
+  grid-template-columns: minmax(var(--lead), 1fr) minmax(0, 400px) minmax(
+      0,
+      1fr
+    );
+  transform: translateY(-50%);
+  font-size: 14px;
+  line-height: 1.45;
+  letter-spacing: -0.005em;
+  color: var(--muted);
+  opacity: 0;
+  translate: 0 8px;
+  transition:
+    opacity 600ms ease calc(400ms + var(--i) * 60ms),
+    translate 600ms ease calc(400ms + var(--i) * 60ms),
+    transform 220ms ease,
+    color 200ms ease;
+}
+
+/* Rises with its plate (see `.lift`). Side labels only show where the art is at `--art-max`. */
+.label[data-on] {
+  transform: translateY(
+    calc(-50% - var(--art-max) / var(--view-w) * var(--lift))
+  );
+}
+
+/* Leader line from the plate's anchor point. */
+.label::before {
+  content: "";
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+  height: 1px;
+  margin-right: 12px;
+  background: #c9c9c4;
+  transition:
+    background-color 200ms ease,
+    opacity 200ms ease;
+}
+
+.label[data-on]::before {
+  background: var(--ink);
+}
+
+.labelText {
+  display: block;
+  grid-column: 2;
+  grid-row: 1;
+  pointer-events: auto;
+  transition: opacity 200ms ease;
+}
+
+.labelHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  line-height: 20px;
+}
+
+/* Matches the "Fig. 0n" captions in ../why-zode/Features.module.css. */
+.labelIndex {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.labelTitle {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.labelBody {
+  display: block;
+  margin-top: 4px;
+}
+
+.figure[data-exploded] .label {
+  opacity: 1;
+  translate: 0 0;
+}
+
+/* Fades the parts rather than the label, whose own opacity carries the slow scroll-in reveal. */
+.figure[data-active] .label:not([data-on]) .labelText,
+.figure[data-active] .label:not([data-on])::before {
+  opacity: 0;
+}
+
+.label[data-on] {
+  color: #4a4a4f;
+}
+
+/* Below this the side column gets narrow enough that labels wrap into their neighbours. */
+@media (max-width: 1200px) {
+  .layout {
+    display: block;
+  }
+
+  .intro {
+    width: auto;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  .figure {
+    --art: min(340px, 100%);
+
+    flex-direction: column;
+    align-items: center;
+    margin-top: 36px;
+  }
+
+  .labels {
+    position: static;
+    display: grid;
+    gap: 14px;
+    width: 100%;
+    max-width: 560px;
+    margin-top: 28px;
+  }
+
+  .label,
+  .label[data-on] {
+    position: static;
+    display: block;
+    transform: none;
+  }
+
+  .label::before {
+    content: none;
+  }
+
+  /* Stacked labels leave gaps if hidden outright, so they only dim. */
+  .figure[data-active] .label:not([data-on]) .labelText {
+    opacity: 0.3;
+  }
+}
+
+@media (max-width: 900px) {
+  .root {
+    padding: 64px var(--edge) 76px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .figure .art {
+    --gap: var(--gap-open);
+  }
+
+  .layer,
+  .lift,
+  .label {
+    transition: none;
+  }
+
+  .layer[data-raised] .lift {
+    animation: none;
+  }
+
+  .label {
+    opacity: 1;
+    translate: none;
+  }
+}

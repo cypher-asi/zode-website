@@ -1,19 +1,18 @@
 import type { Metadata } from "next";
-import { Inter, Newsreader } from "next/font/google";
-import { COMPUTE_ACTIONS } from "./actions";
-import { AssemblyLine } from "./assembly/AssemblyLine";
-import { CircuitFrame } from "./circuit/CircuitFrame";
-import { ClosingCta } from "./cta/ClosingCta";
-import { Features } from "./features/Features";
-import { FooterReveal } from "./footer/FooterReveal";
-import { FooterScene } from "./footer/FooterScene";
-import { Network } from "./network/Network";
-import { PinnedHeader } from "./PinnedHeader";
-import { PodTour } from "./pod/PodTour";
-import { FullStack } from "./stack/FullStack";
-import { TerminalMenu, type TerminalMenuItem } from "@/components/TerminalMenu";
-import { WordLoop } from "./WordLoop";
-import { ZodeGallery } from "./ZodeGallery";
+import { PinnedHeader } from "@/components/layout/PinnedHeader";
+import { FooterReveal, FooterScene } from "@/components/layout/SiteFooter";
+import { TerminalMenu, type TerminalMenuItem } from "@/components/ui/TerminalMenu";
+import { AssemblyLine } from "@/features/home/assembly/AssemblyLine";
+import { CircuitFrame } from "@/features/home/circuit/CircuitFrame";
+import { ClosingCta } from "@/features/home/closing-cta/ClosingCta";
+import { WordLoop } from "@/features/home/hero/WordLoop";
+import { ZodeGallery } from "@/features/home/hero/ZodeGallery";
+import { Network } from "@/features/home/network/Network";
+import { PodTour } from "@/features/home/pod-tour/PodTour";
+import { FullStack } from "@/features/home/stack/FullStack";
+import { Features } from "@/features/home/why-zode/Features";
+import { display, text } from "@/lib/fonts";
+import { COMPUTE_ACTIONS } from "@/lib/navigation";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
@@ -25,17 +24,6 @@ const HERO_ACTIONS: readonly TerminalMenuItem[] = [
   ...COMPUTE_ACTIONS,
   { id: "learn", label: "Learn More", href: "#learn-more" },
 ];
-
-const display = Newsreader({
-  variable: "--font-display",
-  subsets: ["latin"],
-  axes: ["opsz"],
-});
-
-const text = Inter({
-  variable: "--font-text",
-  subsets: ["latin"],
-});
 
 /**
  * Home page: a full-viewport split with the headline on a white panel and a

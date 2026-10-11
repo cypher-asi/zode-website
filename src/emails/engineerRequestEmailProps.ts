@@ -1,4 +1,4 @@
-import { interestLabel, sizeLabel } from "../app/(site)/talk-to-an-engineer/options";
+import { interestLabel, sizeLabel } from "@/features/engineer-request/options";
 import type { EngineerRequestEmailProps } from "./EngineerRequestNotification";
 
 /** Minimal shape of a stored request, so the /dev/emails preview needn't import server-only code. */

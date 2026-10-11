@@ -1,6 +1,6 @@
 import { Button, Heading, Link, Text } from "@react-email/components";
 import type { ReactElement } from "react";
-import { SITE_URL } from "../lib/site";
+import { SITE_URL } from "@/lib/site";
 import type { AccountEmailProps } from "./accountEmailProps";
 import type { EmailRow } from "./orderEmailProps";
 import { Layout, Legend, Rows, Rule, color, text } from "./ui";

@@ -7,13 +7,13 @@
  */
 .page {
   position: relative;
-  /* How far the circuit frame's rails sit in from the screen edges (see circuit/). */
+  /* How far the circuit frame's rails sit in from the screen edges (see features/home/circuit). */
   --frame-inset: clamp(8px, 1vw, 16px);
   --off-white: #f6f6f3;
   --off-black: #0c0c0d;
   --edge: clamp(32px, 6vw, 96px);
   --bar-height: 52px;
-  /* Twice the pinned header's centre line (see PinnedHeader.module.css), so the header sits centred in it. */
+  /* Twice the pinned header's centre line (see components/layout/PinnedHeader), so the header sits centred in it. */
   --header-band: 86px;
   --button-radius: 3px;
   /* Heading scale: H1 is the hero headline, H2 every section title. */
@@ -34,14 +34,14 @@
   overflow: hidden;
 }
 
-/* White pod explorer below the hero (see pod/); clips the drawing where it spills past the screen edges. */
+/* White pod explorer below the hero (see features/home/pod-tour); clips the drawing where it spills past the screen edges. */
 .tour {
   background: #ffffff;
   color: var(--off-black);
   overflow-x: clip;
 }
 
-/* Slightly taller-than-viewport assembly-line scene below the stack (see assembly/). */
+/* Slightly taller-than-viewport assembly-line scene below the stack (see features/home/assembly). */
 .assembly {
   position: relative;
   height: 112svh;
@@ -50,25 +50,25 @@
   color: var(--off-white);
 }
 
-/* Light exploded-stack section below the pod explorer (see stack/). */
+/* Light exploded-stack section below the pod explorer (see features/home/stack). */
 .stack {
   background: var(--off-white);
   color: var(--off-black);
 }
 
-/* White features grid below the assembly line (see features/). */
+/* White features grid below the assembly line (see features/home/why-zode). */
 .features {
   background: #ffffff;
   color: var(--off-black);
 }
 
-/* Dark network map below the features (see network/). */
+/* Dark network map below the features (see features/home/network). */
 .network {
   background: var(--off-black);
   color: var(--off-white);
 }
 
-/* Closing call to action between the network and the footer (see cta/). */
+/* Closing call to action between the network and the footer (see features/home/closing-cta). */
 .closing {
   background: #000000;
   color: var(--off-white);
@@ -76,7 +76,7 @@
 
 /*
  * Full-bleed landscape below a band the pinned header sits centred in, then
- * the wordmark and sideways copyright band (see footer/). Exactly one screen:
+ * the wordmark and sideways copyright band (see components/layout/SiteFooter). Exactly one screen:
  * the landscape gives up height first so the whole footer fits, and the
  * wordmark band takes any spare.
  */

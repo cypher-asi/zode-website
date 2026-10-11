@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { Inter, Newsreader } from "next/font/google";
-import { PinnedHeader } from "../(home)/PinnedHeader";
-import { Configurator } from "./Configurator";
+import { PinnedHeader } from "@/components/layout/PinnedHeader";
+import { Configurator } from "@/features/configurator/Configurator";
+import { display, text } from "@/lib/fonts";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
@@ -9,17 +9,6 @@ export const metadata: Metadata = {
   description:
     "Configure your own ZODE, or rent a cluster: compute, networking, storage and CPUs, with live pricing.",
 };
-
-const display = Newsreader({
-  variable: "--font-display",
-  subsets: ["latin"],
-  axes: ["opsz"],
-});
-
-const text = Inter({
-  variable: "--font-text",
-  subsets: ["latin"],
-});
 
 /**
  * Build-your-own ZODE configurator, laid out like a car maker's build page:

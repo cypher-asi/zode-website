@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
-import { EngineerCard } from "./EngineerCard";
+import { EngineerCard } from "@/features/engineer-request/EngineerCard";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {

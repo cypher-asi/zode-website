@@ -1,5 +1,5 @@
-import { DEFAULT_CONFIG } from "../app/buy-compute/config";
-import { DEFAULT_RENT_CONFIG } from "../app/buy-compute/rentConfig";
+import { DEFAULT_CONFIG } from "@/features/configurator/buyConfig";
+import { DEFAULT_RENT_CONFIG } from "@/features/configurator/rentConfig";
 import { accountEmailProps } from "./accountEmailProps";
 import { engineerRequestEmailProps } from "./engineerRequestEmailProps";
 import { orderEmailProps } from "./orderEmailProps";

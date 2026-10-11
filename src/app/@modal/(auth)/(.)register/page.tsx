@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { redirect } from "next/navigation";
-import { getAccount, safeNext } from "@/lib/account-session";
-import { AuthPanel } from "../../../login/AuthPanel";
+import { getAccount, safeNext } from "@/features/account/session";
+import { AuthPanel } from "@/features/account/AuthPanel";
 
 /** Register opened from a link on the site: the panel over the current page. */
 export default async function RegisterModal({

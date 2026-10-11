@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { LegalDocument, type LegalSection } from "../_components/LegalDocument";
+import { LegalDocument, type LegalSection } from "@/features/legal/LegalDocument";
 
 const COMPANY = "ZODE Inc.";
 const STATE = "Delaware";

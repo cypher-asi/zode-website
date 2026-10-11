@@ -1,0 +1,333 @@
+/*
+ * Overlay for the assembly-line scene. Sits inside `.assembly` in
+ * app/(home)/page.module.css and inherits its `--edge`, `--bar-height`,
+ * `--off-white` and `--off-black` variables.
+ */
+.root {
+  --accent: #ffa45c;
+  --strip-top: var(--bar-height, 52px);
+
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0 0 var(--strip-top);
+}
+
+.canvas canvas {
+  display: block;
+}
+
+/* Top and bottom fades keep the heading and callout legible over line work. */
+.root::before,
+.root::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  left: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.root::before {
+  top: 0;
+  height: 180px;
+  background: linear-gradient(180deg, var(--off-black) 0%, rgba(12, 12, 13, 0.8) 50%, rgba(12, 12, 13, 0) 100%);
+}
+
+.root::after {
+  bottom: var(--strip-top);
+  height: 220px;
+  background: linear-gradient(0deg, var(--off-black) 0%, rgba(12, 12, 13, 0.8) 45%, rgba(12, 12, 13, 0) 100%);
+}
+
+/* Left-edge fade behind the heading. */
+.sideFade {
+  position: absolute;
+  top: 0;
+  bottom: var(--strip-top);
+  left: 0;
+  z-index: 1;
+  width: min(620px, 50%);
+  background: linear-gradient(90deg, var(--off-black) 0%, rgba(12, 12, 13, 0.75) 45%, rgba(12, 12, 13, 0) 100%);
+  pointer-events: none;
+}
+
+/* Bottom-left heading, on the same baseline band as the bottom-right callout. */
+.intro {
+  position: absolute;
+  bottom: calc(var(--strip-top) + 72px);
+  left: var(--edge);
+  z-index: 2;
+  max-width: 520px;
+  pointer-events: none;
+}
+
+/* Same display type as the hero headline and the stack section title. */
+.title {
+  margin: 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: var(--h2-size);
+  font-weight: 300;
+  line-height: var(--h2-leading);
+  letter-spacing: var(--h2-tracking);
+  color: var(--off-white);
+}
+
+/* Bottom-right callout, after the "PLAY 1 / LEVELS" product-diagram labels. */
+.callout {
+  position: absolute;
+  right: var(--edge);
+  bottom: calc(var(--strip-top) + 32px);
+  z-index: 2;
+  width: min(360px, calc(100% - 2 * var(--edge)));
+  pointer-events: none;
+}
+
+.phase {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.35;
+  animation: phase-in 360ms ease both;
+}
+
+@keyframes phase-in {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+
+.phaseLabel {
+  color: var(--off-white);
+}
+
+/* One segment per step: done steps full, the active one filling, the rest empty. Click to jump. */
+.segments {
+  display: flex;
+  gap: 4px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: auto;
+}
+
+.segmentItem {
+  flex: 1 1 0;
+}
+
+/* Tall transparent hit area; the 2px track and fill are drawn by the pseudo-elements. */
+.segment {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.segment::before,
+.segment::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 0;
+  height: 2px;
+  transition: height 160ms ease, top 160ms ease;
+}
+
+.segment::before {
+  right: 0;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.segment:focus-visible::before {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+@media (hover: hover) {
+  .segment:hover::before {
+    background: rgba(255, 255, 255, 0.4);
+  }
+
+  .segment:hover::before,
+  .segment:hover::after {
+    top: 7px;
+    height: 4px;
+  }
+}
+
+/* Taller hit area for fingers; the track stays centred in it. */
+@media (pointer: coarse) {
+  .segment {
+    height: 28px;
+  }
+
+  .segment::before,
+  .segment::after {
+    top: 13px;
+  }
+}
+
+.segment:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.segment::after {
+  width: 0;
+  background: var(--off-white);
+}
+
+.segment[data-state="done"]::after {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.segment[data-state="active"]::after {
+  width: calc(var(--step-p, 0) * 100%);
+  background: var(--accent);
+}
+
+/* Stage strip; same height as the hero's bottom bar. */
+.bar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  height: var(--bar-height, 52px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--off-black);
+}
+
+.cell {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  color: rgba(255, 255, 255, 0.4);
+  transition: color 240ms ease;
+}
+
+.cell[data-state="active"] {
+  color: var(--off-white);
+}
+
+.cell[data-state="done"] {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.cellButton {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 0 16px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: inherit;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+@media (hover: hover) {
+  .cellButton:hover {
+    color: var(--off-white);
+    background: rgba(255, 255, 255, 0.04);
+  }
+}
+
+.cellButton:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.cellNo {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.6;
+}
+
+.cellTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--off-white);
+}
+
+.cell[data-state="active"] .fill {
+  width: calc(var(--p, 0) * 100%);
+}
+
+.cell[data-state="done"] .fill {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+@media (max-width: 900px) {
+  .root::before {
+    height: 240px;
+  }
+
+  .sideFade {
+    display: none;
+  }
+
+  /* Too narrow for a side heading: sit top-left, clear of the wordmark's fade zone. */
+  .intro {
+    top: 120px;
+    right: var(--edge);
+    bottom: auto;
+  }
+
+  .callout {
+    bottom: calc(var(--strip-top) + 20px);
+  }
+
+  .cellButton {
+    padding: 0;
+  }
+
+  .cellTitle {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phase {
+    animation: none;
+  }
+
+  .cell,
+  .cellButton,
+  .segment::before,
+  .segment::after {
+    transition: none;
+  }
+}

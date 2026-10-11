@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
-import { requireAccount } from "@/lib/account-session";
-import { listOrdersByEmail, type OrderSummary } from "@/lib/orders";
-import { LogoutButton } from "./LogoutButton";
-import styles from "./portal.module.css";
+import { requireAccount } from "@/features/account/session";
+import { listOrdersByEmail, type OrderSummary } from "@/features/configurator/orders";
+import { LogoutButton } from "@/features/account/LogoutButton";
+import styles from "./page.module.css";
 
 export const metadata: Metadata = {
   title: "Portal | ZODE",

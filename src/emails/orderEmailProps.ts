@@ -1,6 +1,6 @@
-import { buyPriceView, quote, usd, type PriceView } from "../app/buy-compute/config";
-import { rentPriceView, rentQuote } from "../app/buy-compute/rentConfig";
-import type { Order, OrderContact } from "../lib/orders";
+import { buyPriceView, quote, usd, type PriceView } from "@/features/configurator/buyConfig";
+import { rentPriceView, rentQuote } from "@/features/configurator/rentConfig";
+import type { Order, OrderContact } from "@/features/configurator/orders";
 
 export interface EmailStat {
   label: string;

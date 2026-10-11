@@ -1,0 +1,200 @@
+/*
+ * Shared line-art palette and primitives for the ZODE drawings (see
+ * CabinArt.tsx and lineArt.tsx). The host sets `--ink` and `--accent`.
+ */
+.art {
+  --line: var(--ink);
+  --soft: #77777d;
+  --faint: #b4b4b9;
+  --frame: #4c4d53;
+  --band: #77787e;
+  --led: var(--accent);
+
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.layer {
+  transition: opacity 200ms ease;
+}
+
+.layer:not([data-zone]) {
+  pointer-events: none;
+}
+
+.layer[data-zone] {
+  cursor: pointer;
+}
+
+/* The hovered part warms up; everything else stays as drawn. */
+.layer[data-on] {
+  --top: #fff5ec;
+  --left: #fde6d3;
+  --right: #f8d8bd;
+  --band: #eeb88e;
+  --frame: #c98a5e;
+}
+
+.enter {
+  animation: enter 500ms ease both;
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Drawing primitives (see CabinArt.tsx). */
+.art :is(polygon, polyline, path, rect):not(.run) {
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.top,
+.sideL,
+.sideR,
+.ring,
+.roof {
+  stroke: var(--line);
+  stroke-width: 1;
+  transition:
+    stroke 200ms ease,
+    fill 200ms ease;
+}
+
+.top,
+.ring {
+  fill: var(--top, #ffffff);
+}
+
+.sideL {
+  fill: var(--left, #f1f1ed);
+}
+
+.sideR {
+  fill: var(--right, #e5e5e0);
+}
+
+.roof {
+  fill: var(--top, #ececea);
+}
+
+/* The roof's second tone: the darker band over the eave, below the light panels. */
+.band {
+  fill: var(--band);
+  stroke: var(--line);
+  stroke-width: 1;
+  transition:
+    fill 200ms ease,
+    stroke 200ms ease;
+}
+
+.edge {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.fine {
+  fill: none;
+  stroke: var(--soft);
+  stroke-width: 0.6;
+}
+
+.hair {
+  fill: none;
+  stroke: var(--faint);
+  stroke-width: 0.5;
+}
+
+.ink {
+  fill: var(--line);
+}
+
+/* Charcoal steel frame, the cabin's defining line. */
+.frame {
+  fill: var(--frame);
+  stroke: var(--line);
+  stroke-width: 1;
+  transition:
+    fill 200ms ease,
+    stroke 200ms ease;
+}
+
+.shadow {
+  fill: #f3f3f1;
+}
+
+.wall {
+  fill: #f6f6f3;
+  stroke: var(--soft);
+  stroke-width: 0.6;
+}
+
+.wallEnd {
+  fill: #efefeb;
+  stroke: var(--soft);
+  stroke-width: 0.6;
+}
+
+/* Timber lining of the operations room. */
+.wood {
+  fill: #f3ebe1;
+  stroke: var(--soft);
+  stroke-width: 0.6;
+}
+
+.led {
+  fill: var(--led);
+  transition: fill 200ms ease;
+}
+
+.under {
+  fill: #ebebe6;
+  stroke: var(--soft);
+  stroke-width: 0.6;
+}
+
+/* Glazing tints what is behind it; CabinArt's hit test looks through it to any solid part first. */
+.glass {
+  fill: rgba(206, 216, 222, 0.16);
+  stroke: var(--soft);
+  stroke-width: 0.6;
+}
+
+/*
+ * Packets stream along the fiber's floor runs toward the equipment. Lengths
+ * are in viewBox units, so these strokes scale with the drawing.
+ */
+.run {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 0.6;
+  stroke-dasharray: 1.4 5.6;
+  stroke-linecap: round;
+  /* The host can hold the packets back (e.g. until the drawing is shown) by setting these. */
+  opacity: var(--run-opacity, 0.7);
+  pointer-events: none;
+  animation: flow 0.22s linear infinite;
+  animation-play-state: var(--run-state, running);
+}
+
+@keyframes flow {
+  to {
+    stroke-dashoffset: -7;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enter {
+    animation: none;
+  }
+
+  .run {
+    display: none;
+  }
+}

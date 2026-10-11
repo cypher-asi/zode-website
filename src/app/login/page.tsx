@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import { redirect } from "next/navigation";
-import { getAccount, safeNext } from "@/lib/account-session";
-import { AuthPanel } from "./AuthPanel";
-import styles from "./auth.module.css";
+import { getAccount, safeNext } from "@/features/account/session";
+import { AuthPanel } from "@/features/account/AuthPanel";
+import styles from "@/features/account/auth.module.css";
 
 export const metadata: Metadata = {
   title: "Log in | ZODE",
