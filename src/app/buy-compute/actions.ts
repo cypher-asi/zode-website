@@ -4,18 +4,12 @@ import { after } from "next/server";
 import { sendOrderEmails } from "@/lib/email";
 import { RECIPIENT_EMAIL } from "@/lib/leads";
 import { createOrder, parseOrder, referenceFor } from "@/lib/orders";
-import { isAuthenticated } from "@/lib/session";
-
 export type OrderState =
   | { readonly status: "idle" }
   | { readonly status: "error"; readonly error: string }
   | { readonly status: "placed"; readonly reference: string };
 
 export async function placeOrder(_prevState: OrderState, formData: FormData): Promise<OrderState> {
-  if (!(await isAuthenticated())) {
-    return { status: "error", error: "Your session has expired. Please sign in again." };
-  }
-
   const parsed = parseOrder(formData);
   if (!parsed.ok) {
     return { status: "error", error: parsed.error };

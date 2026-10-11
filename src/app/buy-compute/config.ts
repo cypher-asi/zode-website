@@ -68,7 +68,7 @@ export const LOCATIONS: readonly Choice<LocationId>[] = [
 ];
 
 /** Price per node, by platform. */
-export const NODE_PRICE: Record<PlatformId, number> = {
+const NODE_PRICE: Record<PlatformId, number> = {
   b300: 425_000,
   "vera-rubin": 0,
 };
@@ -94,7 +94,7 @@ export const COOLING: Choice<"dtc"> = {
 };
 
 /** Added cost per node. */
-export const WORKLOAD_PRICE: Record<WorkloadId, number> = { training: 18_000, inference: 6_000 };
+const WORKLOAD_PRICE: Record<WorkloadId, number> = { training: 18_000, inference: 6_000 };
 
 export const WORKLOADS: readonly Choice<WorkloadId>[] = [
   {
@@ -114,7 +114,7 @@ export const WORKLOADS: readonly Choice<WorkloadId>[] = [
 ];
 
 /** Added cost per node. */
-export const DEPLOYMENT_PRICE: Record<DeploymentId, number> = { "bare-metal": 0, virtualized: 9_000 };
+const DEPLOYMENT_PRICE: Record<DeploymentId, number> = { "bare-metal": 0, virtualized: 9_000 };
 
 export const DEPLOYMENTS: readonly Choice<DeploymentId>[] = [
   {
@@ -134,7 +134,7 @@ export const DEPLOYMENTS: readonly Choice<DeploymentId>[] = [
 ];
 
 /** Added cost per node. */
-export const NETWORK_PRICE: Record<NetworkId, number> = { infiniband: 38_000, roce: 28_000 };
+const NETWORK_PRICE: Record<NetworkId, number> = { infiniband: 38_000, roce: 28_000 };
 
 export const NETWORKS: readonly Choice<NetworkId>[] = [
   {
@@ -265,7 +265,7 @@ export interface Quote {
 }
 
 /** The offered size closest to `n`. */
-export const snapNodes = (n: number): number =>
+const snapNodes = (n: number): number =>
   NODE_SIZES.reduce((best, size) => (Math.abs(size - n) < Math.abs(best - n) ? size : best), NODE_SIZES[0]);
 
 export const label = <Id extends string, F>(list: readonly Choice<Id, F>[], id: Id) =>
@@ -350,7 +350,7 @@ export interface Summary {
 }
 
 /** The price panel's two rows of figures; both are five long so they share columns. */
-export function summarize(config: Config, quote: Quote): Summary {
+function summarize(config: Config, quote: Quote): Summary {
   return {
     choices: [
       { label: "Location", value: label(LOCATIONS, config.location) },

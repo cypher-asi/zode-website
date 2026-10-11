@@ -4,8 +4,6 @@ import { after } from "next/server";
 import { sendEngineerRequestEmail } from "@/lib/email";
 import { createEngineerRequest, parseEngineerRequest } from "@/lib/engineer-requests";
 import { RECIPIENT_EMAIL } from "@/lib/leads";
-import { isAuthenticated } from "@/lib/session";
-
 export type EngineerRequestState =
   | { readonly status: "idle" }
   | { readonly status: "error"; readonly error: string }
@@ -15,10 +13,6 @@ export async function requestEngineer(
   _prevState: EngineerRequestState,
   formData: FormData,
 ): Promise<EngineerRequestState> {
-  if (!(await isAuthenticated())) {
-    return { status: "error", error: "Your session has expired. Please sign in again." };
-  }
-
   const parsed = parseEngineerRequest(formData);
   if (!parsed.ok) {
     return { status: "error", error: parsed.error };

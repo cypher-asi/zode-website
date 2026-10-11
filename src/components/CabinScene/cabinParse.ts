@@ -38,7 +38,7 @@ export interface CategoryDef {
   subs: SubLayerDef[];
 }
 
-export const CATEGORIES: ReadonlyArray<CategoryDef> = [
+const CATEGORIES: ReadonlyArray<CategoryDef> = [
   {
     id: "roof",
     label: "Roof",
@@ -75,12 +75,12 @@ export const CATEGORIES: ReadonlyArray<CategoryDef> = [
   },
 ];
 
-export const SUB_LAYER_IDS: ReadonlyArray<string> = CATEGORIES.flatMap((c) =>
+const SUB_LAYER_IDS: ReadonlyArray<string> = CATEGORIES.flatMap((c) =>
   c.subs.map((s) => s.id),
 );
 
 /** Maps a sub-layer id back to its category id (the text before the dot). */
-export function categoryOf(subId: string): string {
+function categoryOf(subId: string): string {
   return subId.slice(0, subId.indexOf("."));
 }
 
@@ -101,7 +101,7 @@ export interface ParsedCabin {
   eaveY: number;
 }
 
-export const MODEL_URL = "/zode_3D.obj";
+const MODEL_URL = "/zode_3D.obj";
 const TARGET_HEIGHT = 33; // matches the former parametric ridge height
 
 // An edge is drawn when adjacent faces differ by more than this, or when it
@@ -196,7 +196,7 @@ export function cabinBuffers(cabin: ParsedCabin): ArrayBuffer[] {
   return buffers;
 }
 
-export function parseCabin(text: string): ParsedCabin {
+function parseCabin(text: string): ParsedCabin {
   const { positions, faces } = parseObj(text);
 
   // --- Recenter (X/Z to origin, base at y = 0) and scale to TARGET_HEIGHT ---

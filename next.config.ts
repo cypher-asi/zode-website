@@ -7,8 +7,8 @@ const isDev = process.env.NODE_ENV === "development";
 // calls are same-origin Server Actions. External URLs in content are plain
 // anchors, so nothing here needs a cross-origin allowance.
 //
-// 'unsafe-inline' for scripts is required by Next's inline RSC bootstrap and the
-// theme-init snippet. Replacing it with nonces would force every page to render
+// 'unsafe-inline' for scripts is required by Next's inline RSC bootstrap.
+// Replacing it with nonces would force every page to render
 // dynamically and lose CDN caching, so it stays; `script-src-attr 'none'` blocks
 // the inline-handler (onclick=) attack surface that 'unsafe-inline' would
 // otherwise open. Dev additionally needs eval for HMR and React Refresh.

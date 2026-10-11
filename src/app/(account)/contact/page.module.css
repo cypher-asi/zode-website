@@ -41,8 +41,7 @@
   color: var(--color-text-secondary);
 }
 
-.emailBlock,
-.connect {
+.emailBlock {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -70,38 +69,6 @@
 
 .emailLink:hover {
   opacity: 0.7;
-}
-
-.socialRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.socialLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  text-decoration: none;
-  background: var(--color-bg-elevated);
-  transition:
-    color 200ms ease,
-    border-color 200ms ease;
-}
-
-.socialLink:hover {
-  color: var(--color-text-primary);
-  border-color: var(--color-border-strong);
-}
-
-.externalIcon {
-  color: var(--color-text-secondary);
 }
 
 .backRow {

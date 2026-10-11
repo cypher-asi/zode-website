@@ -1,18 +1,12 @@
 import type { ReactNode } from "react";
-import { redirect } from "next/navigation";
-import { isAuthenticated } from "@/lib/session";
 import { display, text } from "@/lib/fonts";
 import { PinnedHeader } from "../(home)/PinnedHeader";
 import styles from "../(site)/SiteShell.module.css";
 
 /** Signed-in account and contact pages: the `(site)` shell's pinned header, without the landscape footer. */
-export default async function AccountLayout({
+export default function AccountLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
-  if (!(await isAuthenticated())) {
-    redirect("/unlock");
-  }
-
   return (
     <div className={`${styles.shell} ${display.variable} ${text.variable}`}>
       <PinnedHeader />

@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { SIGNED_IN_COOKIE } from "./account-cookie";
 import type { Account } from "./zos";
 
-export const ACCOUNT_COOKIE = "zode_account";
+const ACCOUNT_COOKIE = "zode_account";
 const ACCOUNT_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 
 function sign(payload: string): string {

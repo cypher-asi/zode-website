@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       // Keep the API and the auth and account pages out of search.
-      disallow: ["/api/", "/unlock", "/login", "/register", "/portal"],
+      disallow: ["/api/", "/login", "/register", "/portal"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };

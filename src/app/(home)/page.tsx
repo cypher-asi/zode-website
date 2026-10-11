@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { Inter, Newsreader } from "next/font/google";
-import { redirect } from "next/navigation";
-import { isAuthenticated } from "@/lib/session";
 import { COMPUTE_ACTIONS } from "./actions";
 import { AssemblyLine } from "./assembly/AssemblyLine";
 import { CircuitFrame } from "./circuit/CircuitFrame";
@@ -46,11 +44,7 @@ const text = Inter({
  * rotating landscape band above the wordmark and a sideways copyright line;
  * the `(site)` pages reuse its pinned header and that footer.
  */
-export default async function HomePage() {
-  if (!(await isAuthenticated())) {
-    redirect("/unlock");
-  }
-
+export default function HomePage() {
   return (
     <main className={`${styles.page} ${display.variable} ${text.variable}`}>
       <CircuitFrame />

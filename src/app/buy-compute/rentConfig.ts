@@ -55,7 +55,7 @@ const MGMT_PRICE = 650;
 export const RENT_LOCATIONS: readonly RentChoice<LocationId>[] = LOCATIONS.map((c) => ({ ...c, focus: "gpu" as const }));
 
 /** Base rate, $ per GPU-hour. */
-export const GPU_HOUR: Record<PlatformId, number> = { b300: 3.2, "vera-rubin": 0 };
+const GPU_HOUR: Record<PlatformId, number> = { b300: 3.2, "vera-rubin": 0 };
 
 export const RENT_PLATFORMS: readonly RentChoice<PlatformId>[] = [
   { id: "b300", label: "NVIDIA B300", detail: "8 GPUs per node", note: "$3.20 / GPU/hr", focus: "gpu" },
@@ -72,7 +72,7 @@ export const RENT_PLATFORMS: readonly RentChoice<PlatformId>[] = [
 export const RENT_COOLING: RentChoice<"dtc"> = { ...COOLING, focus: "gpu" };
 
 /** Added $ per GPU-hour. */
-export const FABRIC_HOUR: Record<NetworkId, number> = { infiniband: 0.18, roce: 0.1 };
+const FABRIC_HOUR: Record<NetworkId, number> = { infiniband: 0.18, roce: 0.1 };
 
 export const FABRICS: readonly RentChoice<NetworkId>[] = [
   {
@@ -92,7 +92,7 @@ export const FABRICS: readonly RentChoice<NetworkId>[] = [
 ];
 
 /** Added $ per GPU-hour. */
-export const FRONT_END_HOUR: Record<FrontEndId, number> = { "200g": 0, "400g": 0.04 };
+const FRONT_END_HOUR: Record<FrontEndId, number> = { "200g": 0, "400g": 0.04 };
 
 export const FRONT_ENDS: readonly RentChoice<FrontEndId>[] = [
   { id: "200g", label: "200 GbE", detail: "Per node, for storage and management traffic", note: "Included", focus: "network" },
@@ -100,7 +100,7 @@ export const FRONT_ENDS: readonly RentChoice<FrontEndId>[] = [
 ];
 
 /** $ per month for the whole cluster. */
-export const UPLINK_PRICE: Record<UplinkId, number> = { "10g": 0, "100g": 4_500, "400g": 15_000 };
+const UPLINK_PRICE: Record<UplinkId, number> = { "10g": 0, "100g": 4_500, "400g": 15_000 };
 
 export const UPLINKS: readonly RentChoice<UplinkId>[] = [
   { id: "10g", label: "10 Gbps", note: "Included", focus: "network" },
@@ -147,10 +147,10 @@ export const STORAGE_TIERS: readonly RentChoice<StorageTierId>[] = [
 ];
 
 /** Added $ per GPU-hour. */
-export const HOST_CPU_HOUR: Record<HostCpuId, number> = { xeon: 0, epyc: 0.03 };
+const HOST_CPU_HOUR: Record<HostCpuId, number> = { xeon: 0, epyc: 0.03 };
 
 /** CPU cores in each GPU node. */
-export const HOST_CPU_CORES: Record<HostCpuId, number> = { xeon: 128, epyc: 192 };
+const HOST_CPU_CORES: Record<HostCpuId, number> = { xeon: 128, epyc: 192 };
 
 export const HOST_CPUS: readonly RentChoice<HostCpuId>[] = [
   { id: "xeon", label: "Intel Xeon 6", detail: "2 sockets · 128 cores per node", note: "Included", focus: "gpu" },
@@ -160,7 +160,7 @@ export const HOST_CPUS: readonly RentChoice<HostCpuId>[] = [
 /** $ per machine-hour. */
 export const CPU_MACHINE_HOUR: Record<CpuMachineId, number> = { "epyc-192": 4.1, "xeon-128": 3.4 };
 
-export const CPU_MACHINE_CORES: Record<CpuMachineId, number> = { "epyc-192": 192, "xeon-128": 128 };
+const CPU_MACHINE_CORES: Record<CpuMachineId, number> = { "epyc-192": 192, "xeon-128": 128 };
 
 export const CPU_MACHINES: readonly RentChoice<CpuMachineId>[] = [
   {
@@ -230,13 +230,13 @@ export interface RentQuote {
 }
 
 /** The offered size closest to `n`. */
-export const snapRentNodes = (n: number): number =>
+const snapRentNodes = (n: number): number =>
   RENT_NODE_SIZES.reduce(
     (best, size) => (Math.abs(size - n) < Math.abs(best - n) ? size : best),
     RENT_NODE_SIZES[0] as number,
   );
 
-export function rackCounts(config: RentConfig): RackCounts {
+function rackCounts(config: RentConfig): RackCounts {
   const r = RENT_ASSUMPTIONS;
   const nodes = snapRentNodes(config.nodes);
   return {
@@ -327,7 +327,7 @@ export const mgmtNote = (count: number): string => {
 const STORAGE_SHORT: Record<StorageTierId, string> = { parallel: "Parallel FS", file: "File", object: "Object" };
 
 /** The price panel's two rows of figures; both are five long so they share columns. */
-export function summarizeRent(config: RentConfig, quote: RentQuote): Summary {
+function summarizeRent(config: RentConfig, quote: RentQuote): Summary {
   return {
     choices: [
       { label: "Location", value: label(RENT_LOCATIONS, config.location) },

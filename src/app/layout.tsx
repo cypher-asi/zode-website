@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ThemeProvider } from "@/lib/theme/ThemeProvider";
-import { themeInitScript } from "@/lib/theme/theme-script";
 import { SITE_URL } from "@/lib/site";
 import { ShellBackdrop } from "@/components/ShellBackdrop";
 import "./globals.css";
@@ -42,16 +40,11 @@ export default function RootLayout({
   modal,
 }: Readonly<{ children: React.ReactNode; modal: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable}`}>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-      </head>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
         <ShellBackdrop />
-        <ThemeProvider>
-          {children}
-          {modal}
-        </ThemeProvider>
+        {children}
+        {modal}
       </body>
     </html>
   );

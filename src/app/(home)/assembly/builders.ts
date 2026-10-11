@@ -71,7 +71,7 @@ export class Kit {
   }
 }
 
-export class Segs {
+class Segs {
   readonly struct: number[] = [];
   readonly detail: number[] = [];
 
@@ -87,7 +87,7 @@ const BOX_EDGES: [number, number][] = [
 ];
 
 /** Box from centre + size, optionally rotated about X. Appends edges and returns the fill geometry. */
-export function boxPiece(
+function boxPiece(
   segs: Segs,
   center: THREE.Vector3,
   size: THREE.Vector3,
@@ -131,7 +131,7 @@ const BASES: Record<Axis, { U: THREE.Vector3; V: THREE.Vector3; A: THREE.Vector3
 };
 
 /** Profile (u, v) extents and extrusion length of an axis-aligned box extruded along `axis`. */
-export function boxDims(size: THREE.Vector3, axis: Axis): [number, number, number] {
+function boxDims(size: THREE.Vector3, axis: Axis): [number, number, number] {
   if (axis === "x") return [size.y, size.z, size.x];
   if (axis === "y") return [size.x, size.z, size.y];
   return [size.x, size.y, size.z];
@@ -154,7 +154,7 @@ function arc(out: Profile, cx: number, cy: number, r: number, a0: number, a1: nu
 }
 
 /** w x h rectangle centred on the origin with corner radius r. */
-export function roundRectProfile(w: number, h: number, r: number, seg = 6): Profile {
+function roundRectProfile(w: number, h: number, r: number, seg = 6): Profile {
   const rr = Math.min(Math.max(r, 0), w / 2, h / 2);
   const x = w / 2 - rr;
   const y = h / 2 - rr;
@@ -178,7 +178,7 @@ const CORNERS = [
  * w x h rectangle centred on the origin with its own radius per corner,
  * ordered (+u,-v), (+u,+v), (-u,+v), (-u,-v); straight chamfers when `bevel`.
  */
-export function cornerProfile(w: number, h: number, radii: readonly number[], bevel = false, seg = 6): Profile {
+function cornerProfile(w: number, h: number, radii: readonly number[], bevel = false, seg = 6): Profile {
   const pts: Profile = [];
   CORNERS.forEach(([su, sv], i) => {
     const r = Math.min(Math.max(radii[i] ?? 0, 0), w / 2, h / 2);
@@ -197,7 +197,7 @@ function upCorners(axis: Axis): boolean[] {
 }
 
 /** w x h rectangle centred on the origin with 45-degree chamfers of size c. */
-export function chamferProfile(w: number, h: number, c: number): Profile {
+function chamferProfile(w: number, h: number, c: number): Profile {
   const cc = Math.min(Math.max(c, 0), w / 2 - 1e-4, h / 2 - 1e-4);
   const x = w / 2;
   const y = h / 2;
@@ -208,7 +208,7 @@ export function chamferProfile(w: number, h: number, c: number): Profile {
   ]);
 }
 
-export function circleProfile(r: number, n = 32): Profile {
+function circleProfile(r: number, n = 32): Profile {
   const pts: Profile = [];
   arc(pts, 0, 0, r, 0, Math.PI * 2 * (1 - 1 / n), n - 1);
   return tidy(pts);
@@ -218,7 +218,7 @@ export function circleProfile(r: number, n = 32): Profile {
  * Capsule from a circle of radius r0 at the origin to one of radius r1 at
  * (len, 0), joined by their outer tangent lines (a tapered robot-arm link).
  */
-export function capsuleProfile(len: number, r0: number, r1 = r0): Profile {
+function capsuleProfile(len: number, r0: number, r1 = r0): Profile {
   const beta = Math.acos(Math.min(Math.max((r0 - r1) / len, -0.95), 0.95));
   const step = Math.PI / 14;
   const pts: Profile = [];
@@ -262,7 +262,7 @@ export interface PrismOpts {
  * lines where the surface turns away from the viewer. Silhouettes depend on
  * the view direction, so pieces that rotate can recompute them per frame.
  */
-export class Prism {
+class Prism {
   readonly U: THREE.Vector3;
   readonly V: THREE.Vector3;
   readonly A: THREE.Vector3;
@@ -392,7 +392,7 @@ export interface PieceOpts extends PrismOpts {
 }
 
 /** Extruded profile with static silhouettes. Appends edges and returns the fill geometry. */
-export function prismPiece(
+function prismPiece(
   segs: Segs,
   center: THREE.Vector3,
   axis: Axis,
@@ -417,7 +417,7 @@ export interface RoundBoxOpts extends PieceOpts {
 }
 
 /** Box from centre + size whose edges along `axis` are filleted or chamfered. */
-export function roundBoxPiece(
+function roundBoxPiece(
   segs: Segs,
   center: THREE.Vector3,
   size: THREE.Vector3,
@@ -434,7 +434,7 @@ export function roundBoxPiece(
 }
 
 /** Cylinder from centre, axis, radius and length: cap circles plus view-facing silhouettes. */
-export function cylPiece(
+function cylPiece(
   segs: Segs,
   center: THREE.Vector3,
   axis: Axis,
@@ -469,7 +469,7 @@ const LOFT_STEPS = 5;
  * outlines, thin shoulder lines where a rounding meets the walls, and profile
  * lines through every ring at plan corners and silhouettes.
  */
-export function loftPiece(segs: Segs, spec: LoftSpec, fill = true): THREE.BufferGeometry | null {
+function loftPiece(segs: Segs, spec: LoftSpec, fill = true): THREE.BufferGeometry | null {
   const n = spec.plan.length;
   const P = spec.plan.slice();
   let wT = spec.top ? spec.top.w.slice() : new Array<number>(n).fill(0);

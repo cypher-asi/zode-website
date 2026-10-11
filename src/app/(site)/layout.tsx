@@ -1,6 +1,4 @@
 import type { ReactNode } from "react";
-import { redirect } from "next/navigation";
-import { isAuthenticated } from "@/lib/session";
 import { display, text } from "@/lib/fonts";
 import { FooterReveal } from "../(home)/footer/FooterReveal";
 import { FooterScene } from "../(home)/footer/FooterScene";
@@ -12,15 +10,9 @@ import styles from "./SiteShell.module.css";
  * and Buy Compute menu over a light content area that scrolls with the
  * window, closing with the home page's landscape footer.
  */
-export default async function SiteLayout({
+export default function SiteLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
-  // Defense in depth: proxy.ts already gates these routes, but re-check
-  // here so content is never rendered without a valid session.
-  if (!(await isAuthenticated())) {
-    redirect("/unlock");
-  }
-
   return (
     <div className={`${styles.shell} ${display.variable} ${text.variable}`}>
       <PinnedHeader />

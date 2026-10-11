@@ -1,6 +1,6 @@
 // One-off: embed the white wordmark in code for the order emails, sized for a
 // 120px-wide header at 2x. Emails attach it inline (cid:) rather than linking
-// to zode.org, which the password gate and same-origin CORP header would block.
+// to zode.org, which the same-origin CORP header would block.
 // Kept in code, not read from public/, so it ships with the serverless function.
 const fs = require("fs");
 const path = require("path");

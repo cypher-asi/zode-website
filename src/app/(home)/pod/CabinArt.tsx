@@ -703,7 +703,7 @@ export const VIEW: Bounds = {
   h: round(extent.y1 - extent.y0 + 2 * PAD),
 };
 
-export const LAYERS: Record<PodId, Layer[]> = {
+const LAYERS: Record<PodId, Layer[]> = {
   compute: [SHELL_BACK, ...INTERIOR.compute, ...SHELL_FRONT],
   electrical: [SHELL_BACK, ...INTERIOR.electrical, ...SHELL_FRONT],
   cooling: [SHELL_BACK, ...INTERIOR.cooling, ...SHELL_FRONT],

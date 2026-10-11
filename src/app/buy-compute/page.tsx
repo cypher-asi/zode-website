@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { Inter, Newsreader } from "next/font/google";
-import { redirect } from "next/navigation";
-import { isAuthenticated } from "@/lib/session";
 import { PinnedHeader } from "../(home)/PinnedHeader";
 import { Configurator } from "./Configurator";
 import styles from "./page.module.css";
@@ -35,10 +33,6 @@ export default async function BuyComputePage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  if (!(await isAuthenticated())) {
-    redirect("/unlock");
-  }
-
   const { mode } = await searchParams;
 
   return (

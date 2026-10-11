@@ -22,7 +22,7 @@ const PAD = 8;
 /** Front row first, left to right; the GPU racks fill everything after. */
 const ORDER: readonly RackKind[] = ["mgmt", "network", "storage", "cpu", "gpu"];
 
-export const RACK_LABELS: Record<RackKind, string> = {
+const RACK_LABELS: Record<RackKind, string> = {
   gpu: "GPU",
   network: "Network",
   storage: "Storage",

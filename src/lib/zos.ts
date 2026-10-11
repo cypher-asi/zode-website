@@ -13,7 +13,7 @@ export interface Account {
   primaryZid: string;
 }
 
-export class ZosError extends Error {
+class ZosError extends Error {
   constructor(
     readonly status: number,
     readonly code: string,
@@ -40,7 +40,7 @@ interface ZosUser {
 
 const baseUrl = () => process.env.ZOS_API_URL || DEFAULT_ZOS_API_URL;
 
-export const normalizeEmail = (email: string): string => email.trim().toLowerCase();
+const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 
 async function zos<T>(path: string, init: { method?: string; token?: string; body?: unknown }): Promise<T> {
   const headers: Record<string, string> = {};

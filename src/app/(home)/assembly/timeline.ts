@@ -14,8 +14,8 @@ import { PODS, POD, partBounds, type Motion, type Part, type Tool } from "./podS
 export type Vec3 = [number, number, number];
 
 export const BELT_TOP = 0.5;
-export const POD_L = POD.length / 1000;
-export const POD_W = POD.width / 1000;
+const POD_L = POD.length / 1000;
+const POD_W = POD.width / 1000;
 export const POD_PITCH = (POD.length + POD.joint) / 1000;
 
 /** Where a pod's floor enters the line, how far each finished pod indexes forward, and the shell centre. */
@@ -63,7 +63,7 @@ export interface Framing {
   height: number;
 }
 
-export const FRAMINGS: Record<FramingKey, Framing> = {
+const FRAMINGS: Record<FramingKey, Framing> = {
   overview: { target: [0, 3.2, 0], width: 46, height: 16 },
   bay: { target: [0, 4.8, 0], width: 30, height: 20 },
   outbound: { target: [3, 4.4, 0], width: 36, height: 20 },
@@ -139,7 +139,7 @@ interface CameraKey {
   from: Framing;
 }
 
-export const SHELL_GROUPS = ["Foundation + floor deck", "Steel walls", "Glazed gables", "Roof"] as const;
+const SHELL_GROUPS = ["Foundation + floor deck", "Steel walls", "Glazed gables", "Roof"] as const;
 
 const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
 const smooth = (x: number) => {
