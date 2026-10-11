@@ -69,11 +69,9 @@ const nextConfig: NextConfig = {
   // browsers without it. AVIF's first encode is slower; the result is cached.
   images: {
     formats: ["image/avif", "image/webp"],
-  },
-  // Lets navigations drive React's <ViewTransition>, e.g. the pinned wordmark
-  // sliding between the home page and /buy-compute.
-  experimental: {
-    viewTransition: true,
+    // The optimizer only serves the site's own photography; every other path,
+    // and any query string, is refused.
+    localPatterns: [{ pathname: "/images/**", search: "" }],
   },
   async redirects() {
     return [
