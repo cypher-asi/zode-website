@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactElement } from "react";
+import { blockUnsafeLinks, defuseLinks } from "./safeLinks";
 import { fetchFile, type ViewerProps } from "./types";
 import { fitWidth, usePanelSize } from "./useFit";
 import styles from "../Viewer.module.css";
@@ -34,6 +35,7 @@ export default function DocxViewer({ url, zoom, onFitScale }: ViewerProps): Reac
           experimental: true,
         });
         if (controller.signal.aborted) return;
+        defuseLinks(content);
         const first = content.querySelector<HTMLElement>("section.docx");
         setPageWidth(first ? first.offsetWidth : content.scrollWidth);
         setState("ready");
@@ -52,7 +54,12 @@ export default function DocxViewer({ url, zoom, onFitScale }: ViewerProps): Reac
   const scale = zoom === "fit" ? fit : zoom;
 
   return (
-    <div ref={panelRef} className={styles.document} onContextMenu={(event) => event.preventDefault()}>
+    <div
+      ref={panelRef}
+      className={styles.document}
+      onClickCapture={blockUnsafeLinks}
+      onContextMenu={(event) => event.preventDefault()}
+    >
       {state === "loading" ? <div className={styles.status}>Rendering document…</div> : null}
       {state === "error" ? (
         <div className={styles.status}>This document couldn&apos;t be previewed. Download it to open it in Word.</div>

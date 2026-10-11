@@ -1,14 +1,15 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { roomBlobPrefix } from "@/features/data-room/blob";
 import { isSameOrigin, notFoundResponse } from "@/features/data-room/http";
-import { roomAccess } from "@/features/data-room/rooms";
+import { ROOM_QUOTA_BYTES, roomAccess, roomUsage } from "@/features/data-room/rooms";
 
 const MAX_UPLOAD_BYTES = 5 * 1024 ** 3;
 
 /**
  * Issues short-lived client tokens so admins' browsers upload straight to the
  * private Blob store, past the function body size limit. Tokens only cover this
- * room's prefix; the file is recorded afterwards by `registerUploadAction`.
+ * room's prefix, and no file may exceed the room's remaining quota; the file
+ * is recorded afterwards by `registerUploadAction`.
  */
 export async function POST(request: Request, ctx: RouteContext<"/api/data-rooms/[roomId]/upload">) {
   if (!isSameOrigin(request)) return new Response("Forbidden", { status: 403 });
@@ -27,9 +28,11 @@ export async function POST(request: Request, ctx: RouteContext<"/api/data-rooms/
         if (!pathname.startsWith(roomBlobPrefix(roomId)) || pathname.includes("..")) {
           throw new Error("Uploads must go into this room.");
         }
+        const remaining = ROOM_QUOTA_BYTES - (await roomUsage(roomId));
+        if (remaining <= 0) throw new Error("This room is full. Delete some files to make space.");
         return {
           addRandomSuffix: true,
-          maximumSizeInBytes: MAX_UPLOAD_BYTES,
+          maximumSizeInBytes: Math.min(MAX_UPLOAD_BYTES, remaining),
           validUntil: Date.now() + 60 * 60 * 1000,
         };
       },

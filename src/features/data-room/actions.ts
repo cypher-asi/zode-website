@@ -6,12 +6,15 @@ import { after } from "next/server";
 import { sendDataRoomInvite } from "@/emails/send";
 import { getAccount } from "@/features/account/session";
 import { db } from "@/lib/db";
+import { RATE_LIMITED, withinLimits } from "@/lib/rateLimit";
+import { isEmail } from "@/lib/validation";
 import { recordEvent, recordEvents } from "./audit";
 import { blobInfo, deleteBlobs, deleteRoomBlobs, roomBlobPrefix } from "./blob";
 import { acceptInvite, inviteUrl, issueInvite, reissueInvite, type IssuedInvite } from "./invites";
 import {
-  EMAIL_RE,
   MAX_NAME_LENGTH,
+  ROOM_QUOTA_BYTES,
+  canCreateRooms,
   countOtherAdmins,
   createRoom,
   deleteRoom,
@@ -21,6 +24,7 @@ import {
   isUuid,
   renameRoom,
   roomAccess,
+  roomUsage,
   type RoomAccess,
 } from "./rooms";
 import { ROLES, type ActionState, type RoomRole } from "./types";
@@ -66,6 +70,7 @@ function emailInvite(access: RoomAccess, invite: IssuedInvite): void {
 export async function createRoomAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const account = await getAccount();
   if (!account) return { error: "Your session has expired. Log in again." };
+  if (!canCreateRooms(account)) return { error: "Your account can't create data rooms. Ask the ZODE team." };
   const name = cleanName(formData.get("name"));
   if (typeof name !== "string") return name;
 
@@ -293,6 +298,11 @@ export async function registerUploadAction(
 
   const info = await blobInfo(pathname);
   if (!info) return { error: "The upload didn't finish. Try again." };
+  // The upload token was sized to the space left, but parallel uploads can still overshoot together.
+  if ((await roomUsage(roomId)) + info.size > ROOM_QUOTA_BYTES) {
+    await deleteBlobs([pathname]);
+    return { error: "This room is full. Delete some files to make space." };
+  }
 
   const [row] = await db()`
     insert into data_room_files (room_id, folder_id, name, content_type, size_bytes, blob_pathname, uploaded_by_email)
@@ -318,6 +328,15 @@ export async function registerUploadAction(
 
 const MAX_INVITES = 50;
 
+const DAY = 24 * 60 * 60;
+
+/** Every invite emails an address the admin typed, so sends are capped per admin and per room. */
+const withinInviteLimits = (roomId: string, access: RoomAccess, count: number): Promise<boolean> =>
+  withinLimits([
+    { key: `invite:user:${access.account.userId}`, max: 100, windowSeconds: DAY, cost: count },
+    { key: `invite:room:${roomId}`, max: 50, windowSeconds: DAY, cost: count },
+  ]);
+
 export async function inviteMembersAction(roomId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
   const access = await roomAccess(roomId, "admin");
   if (!access) return NO_ACCESS;
@@ -334,8 +353,9 @@ export async function inviteMembersAction(roomId: string, _prev: ActionState, fo
   ];
   if (!emails.length) return { error: "Enter at least one email." };
   if (emails.length > MAX_INVITES) return { error: `Invite up to ${MAX_INVITES} people at a time.` };
-  const invalid = emails.find((e) => !EMAIL_RE.test(e) || e.length > 200);
+  const invalid = emails.find((e) => !isEmail(e));
   if (invalid) return { error: `${invalid} is not a valid email.` };
+  if (!(await withinInviteLimits(roomId, access, emails.length))) return { error: RATE_LIMITED };
 
   const invited: string[] = [];
   const existing: string[] = [];
@@ -360,6 +380,7 @@ export async function inviteMembersAction(roomId: string, _prev: ActionState, fo
 export async function resendInviteAction(roomId: string, memberId: string): Promise<ActionState> {
   const access = await roomAccess(roomId, "admin");
   if (!access) return NO_ACCESS;
+  if (!(await withinInviteLimits(roomId, access, 1))) return { error: RATE_LIMITED };
   const invite = isUuid(memberId) ? await reissueInvite(roomId, memberId, access.account.email.toLowerCase()) : null;
   if (!invite) return { error: "That invite was already accepted or removed." };
 

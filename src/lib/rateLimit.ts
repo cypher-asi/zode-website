@@ -8,6 +8,8 @@ export interface Limit {
   key: string;
   max: number;
   windowSeconds: number;
+  /** Hits this request counts for, e.g. one per invite in a batch. Defaults to 1. */
+  cost?: number;
 }
 
 export const RATE_LIMITED = "Too many attempts. Please wait a while and try again.";
@@ -22,21 +24,21 @@ export async function clientIp(): Promise<string> {
 }
 
 /**
- * Counts one hit against each limit and reports whether all are still within
- * their max. Fails open: if the database is unreachable the request is allowed
- * and the error logged, so an outage doesn't lock everyone out.
+ * Counts this request against each limit and reports whether all are still
+ * within their max. Fails open: if the database is unreachable the request is
+ * allowed and the error logged, so an outage doesn't lock everyone out.
  */
 export async function withinLimits(limits: readonly Limit[]): Promise<boolean> {
   const now = Date.now();
   let hits: number[];
   try {
     hits = await Promise.all(
-      limits.map(async ({ key, windowSeconds }) => {
+      limits.map(async ({ key, windowSeconds, cost = 1 }) => {
         const windowMs = windowSeconds * 1000;
         const windowStart = new Date(Math.floor(now / windowMs) * windowMs);
         const [row] = await db()`
-          insert into rate_limits (key, window_start) values (${key}, ${windowStart})
-          on conflict (key, window_start) do update set hits = rate_limits.hits + 1
+          insert into rate_limits (key, window_start, hits) values (${key}, ${windowStart}, ${cost})
+          on conflict (key, window_start) do update set hits = rate_limits.hits + excluded.hits
           returning hits
         `;
         return Number(row.hits);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactElement } from "react";
+import { blockUnsafeLinks, defuseLinks } from "./safeLinks";
 import { fetchFile, type ViewerProps } from "./types";
 import { fitWidth, usePanelSize } from "./useFit";
 import styles from "../Viewer.module.css";
@@ -26,7 +27,9 @@ export default function PptxViewer({ url, zoom, onFitScale }: ViewerProps): Reac
         const previewer = init(content, { width: SLIDE_WIDTH, height: SLIDE_HEIGHT, mode: "list" });
         destroy = () => previewer.destroy();
         await previewer.preview(buffer);
-        if (!controller.signal.aborted) setState("ready");
+        if (controller.signal.aborted) return;
+        defuseLinks(content);
+        setState("ready");
       } catch {
         if (!controller.signal.aborted) setState("error");
       }
@@ -43,7 +46,12 @@ export default function PptxViewer({ url, zoom, onFitScale }: ViewerProps): Reac
   const scale = zoom === "fit" ? fit : zoom;
 
   return (
-    <div ref={panelRef} className={styles.document} onContextMenu={(event) => event.preventDefault()}>
+    <div
+      ref={panelRef}
+      className={styles.document}
+      onClickCapture={blockUnsafeLinks}
+      onContextMenu={(event) => event.preventDefault()}
+    >
       {state === "loading" ? <div className={styles.status}>Rendering slides…</div> : null}
       {state === "error" ? (
         <div className={styles.status}>This presentation couldn&apos;t be previewed. Download it to open it in PowerPoint.</div>

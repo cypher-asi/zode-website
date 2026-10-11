@@ -8,7 +8,7 @@ import { LogoutButton } from "@/features/account/LogoutButton";
 import { Icon } from "@/features/data-room/icons";
 import { NewRoomForm } from "@/features/data-room/NewRoomForm";
 import roomStyles from "@/features/data-room/portal.module.css";
-import { listRoomsForUser } from "@/features/data-room/rooms";
+import { canCreateRooms, listRoomsForUser } from "@/features/data-room/rooms";
 import type { RoomSummary } from "@/features/data-room/types";
 import styles from "./page.module.css";
 
@@ -71,6 +71,7 @@ function RoomCard({ room }: { room: RoomSummary }): ReactElement {
 /** Signed-in home for ZOS accounts: who you are, your data rooms, and the compute orders placed while signed in. */
 export default async function PortalPage(): Promise<ReactElement> {
   const account = await requireAccount("/portal");
+  const canCreate = canCreateRooms(account);
   const [orders, rooms] = await Promise.all([
     listOrdersByUser(account.userId).catch((error: unknown) => {
       console.error("Failed to load portal orders", error);
@@ -105,7 +106,7 @@ export default async function PortalPage(): Promise<ReactElement> {
             <h2 id="rooms-heading" className={styles.heading}>
               Data rooms
             </h2>
-            <NewRoomForm />
+            {canCreate ? <NewRoomForm /> : null}
           </div>
           {rooms === null ? (
             <div className={styles.empty}>
@@ -119,7 +120,11 @@ export default async function PortalPage(): Promise<ReactElement> {
             </ul>
           ) : (
             <div className={styles.empty}>
-              <p>Share documents privately, with views and downloads tracked. Rooms shared with you appear here too.</p>
+              <p>
+                {canCreate
+                  ? "Share documents privately, with views and downloads tracked. Rooms shared with you appear here too."
+                  : "Data rooms shared with you appear here."}
+              </p>
             </div>
           )}
         </section>

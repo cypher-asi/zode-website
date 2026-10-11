@@ -13,9 +13,32 @@ export const isUuid = (value: unknown): value is string => typeof value === "str
 
 export const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 
-export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 export const MAX_NAME_LENGTH = 200;
+
+/** Live bytes a room may hold; uploads past this are refused. */
+export const ROOM_QUOTA_BYTES = 50 * 1024 ** 3;
+
+/**
+ * Who may open new rooms: the ZOS user ids in DATA_ROOM_CREATORS (comma
+ * separated). Ids rather than emails, because ZOS registration is open and
+ * doesn't verify addresses. Unset allows everyone in local development only.
+ */
+export function canCreateRooms(account: Account): boolean {
+  const creators = (process.env.DATA_ROOM_CREATORS ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+  if (!creators.length) return process.env.NODE_ENV === "development";
+  return creators.includes(account.userId);
+}
+
+/** Bytes held by a room's live files. */
+export async function roomUsage(roomId: string): Promise<number> {
+  const [row] = await db()`
+    select coalesce(sum(size_bytes), 0) as used from data_room_files where room_id = ${roomId} and deleted_at is null
+  `;
+  return Number(row.used);
+}
 
 const iso = (value: unknown): string => new Date(value as string | Date).toISOString();
 
