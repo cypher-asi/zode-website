@@ -4,6 +4,11 @@ import Link from "next/link";
 import { requireAccount } from "@/features/account/session";
 import { listOrdersByEmail, type OrderSummary } from "@/features/configurator/orders";
 import { LogoutButton } from "@/features/account/LogoutButton";
+import { Icon } from "@/features/data-room/icons";
+import { NewRoomForm } from "@/features/data-room/NewRoomForm";
+import roomStyles from "@/features/data-room/portal.module.css";
+import { listRoomsForUser } from "@/features/data-room/rooms";
+import type { RoomSummary } from "@/features/data-room/types";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
@@ -49,13 +54,37 @@ function OrderRow({ order }: { order: OrderSummary }): ReactElement {
   );
 }
 
-/** Signed-in home for ZOS accounts: who you are, and the compute orders placed with your email. */
+function RoomCard({ room }: { room: RoomSummary }): ReactElement {
+  return (
+    <li>
+      <Link className={roomStyles.room} href={`/portal/data-rooms/${room.id}`}>
+        <span className={roomStyles.roomTop}>
+          <Icon name="folder" className={roomStyles.roomIcon} />
+          <span className={roomStyles.roomName}>{room.name}</span>
+          <span className={roomStyles.role}>{room.role === "admin" ? "Admin" : "Viewer"}</span>
+        </span>
+        <p className={roomStyles.roomMeta}>
+          {room.fileCount.toLocaleString("en-US")} file{room.fileCount === 1 ? "" : "s"} · Created{" "}
+          {date.format(new Date(room.createdAt))}
+        </p>
+      </Link>
+    </li>
+  );
+}
+
+/** Signed-in home for ZOS accounts: who you are, your data rooms, and the compute orders placed with your email. */
 export default async function PortalPage(): Promise<ReactElement> {
   const account = await requireAccount("/portal");
-  const orders = await listOrdersByEmail(account.email).catch((error: unknown) => {
-    console.error("Failed to load portal orders", error);
-    return null;
-  });
+  const [orders, rooms] = await Promise.all([
+    listOrdersByEmail(account.email).catch((error: unknown) => {
+      console.error("Failed to load portal orders", error);
+      return null;
+    }),
+    listRoomsForUser(account.userId).catch((error: unknown) => {
+      console.error("Failed to load data rooms", error);
+      return null;
+    }),
+  ]);
 
   return (
     <div className={styles.page}>
@@ -73,6 +102,30 @@ export default async function PortalPage(): Promise<ReactElement> {
             </p>
           </div>
           <LogoutButton className={styles.logout} />
+        </section>
+
+        <section aria-labelledby="rooms-heading">
+          <div className={roomStyles.header}>
+            <h2 id="rooms-heading" className={styles.heading}>
+              Data rooms
+            </h2>
+            <NewRoomForm />
+          </div>
+          {rooms === null ? (
+            <div className={styles.empty}>
+              <p>Your data rooms couldn&apos;t be loaded right now. Please try again shortly.</p>
+            </div>
+          ) : rooms.length ? (
+            <ul className={roomStyles.rooms}>
+              {rooms.map((room) => (
+                <RoomCard key={room.id} room={room} />
+              ))}
+            </ul>
+          ) : (
+            <div className={styles.empty}>
+              <p>Share documents privately, with views and downloads tracked. Rooms shared with you appear here too.</p>
+            </div>
+          )}
         </section>
 
         <section className={styles.orders} aria-labelledby="orders-heading">

@@ -1,0 +1,134 @@
+/* The room frame: a bar with the room's name and tabs over a panel that fills the viewport. */
+.frame {
+  display: flex;
+  flex-direction: column;
+  height: calc(100svh - var(--header-band));
+  min-height: 480px;
+  padding: 0 clamp(12px, 2vw, 24px) clamp(12px, 2vw, 20px);
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  padding: 4px 0 14px;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 10px 0 6px;
+  border-radius: 8px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.back:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.back svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.titleGroup {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  overflow: hidden;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.role {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-surface-tint);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+  padding: 3px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+
+.tab {
+  padding: 6px 12px;
+  border-radius: 7px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.tab:hover {
+  color: var(--color-text-primary);
+}
+
+.tab[aria-current="page"] {
+  background: var(--color-text-primary);
+  color: var(--color-bg);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Members and Activity scroll inside the frame. */
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+}
+
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 28px clamp(16px, 3vw, 32px) 48px;
+}

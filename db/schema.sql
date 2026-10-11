@@ -38,3 +38,77 @@ create table if not exists engineer_requests (
 );
 
 create index if not exists engineer_requests_created_at_idx on engineer_requests (created_at desc);
+
+-- Data rooms: private file shares in the portal. File bytes live in a private
+-- Vercel Blob store under data-rooms/<room id>/; these tables hold the rest.
+create table if not exists data_rooms (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  name text not null,
+  created_by_user_id text not null,
+  created_by_email text not null
+);
+
+-- One row per invited email. A row grants access only once its invite link has
+-- been accepted by a signed-in ZOS account with that email, which binds user_id.
+create table if not exists data_room_members (
+  id uuid primary key default gen_random_uuid(),
+  room_id uuid not null references data_rooms (id) on delete cascade,
+  email text not null,
+  role text not null check (role in ('admin', 'viewer')),
+  user_id text,
+  invited_by_email text,
+  invited_at timestamptz not null default now(),
+  accepted_at timestamptz,
+  -- sha256 of the emailed token; cleared once accepted.
+  invite_token_hash text unique,
+  invite_expires_at timestamptz,
+  unique (room_id, email)
+);
+
+create unique index if not exists data_room_members_room_user_idx
+  on data_room_members (room_id, user_id) where user_id is not null;
+create index if not exists data_room_members_user_idx on data_room_members (user_id) where user_id is not null;
+
+create table if not exists data_room_folders (
+  id uuid primary key default gen_random_uuid(),
+  room_id uuid not null references data_rooms (id) on delete cascade,
+  parent_id uuid references data_room_folders (id) on delete cascade,
+  name text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists data_room_folders_room_idx on data_room_folders (room_id);
+
+-- Deleted files keep their row (deleted_at set) so the audit trail still names them.
+create table if not exists data_room_files (
+  id uuid primary key default gen_random_uuid(),
+  room_id uuid not null references data_rooms (id) on delete cascade,
+  folder_id uuid references data_room_folders (id) on delete set null,
+  name text not null,
+  content_type text not null,
+  size_bytes bigint not null,
+  blob_pathname text not null unique,
+  uploaded_by_email text not null,
+  created_at timestamptz not null default now(),
+  deleted_at timestamptz
+);
+
+create index if not exists data_room_files_room_idx on data_room_files (room_id) where deleted_at is null;
+
+-- Audit trail, visible to the room's admins only.
+create table if not exists data_room_events (
+  id bigint generated always as identity primary key,
+  room_id uuid not null references data_rooms (id) on delete cascade,
+  file_id uuid references data_room_files (id) on delete set null,
+  actor_user_id text,
+  actor_email text not null,
+  action text not null,
+  -- Snapshot of what the event touched (file name, invitee, role), since rows change later.
+  detail jsonb not null default '{}',
+  ip text,
+  user_agent text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists data_room_events_room_created_idx on data_room_events (room_id, created_at desc);

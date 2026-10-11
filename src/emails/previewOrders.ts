@@ -43,5 +43,14 @@ export const PREVIEW_ACCOUNT = accountEmailProps(
   placedAt,
 );
 
+export const PREVIEW_DATA_ROOM_INVITE = {
+  roomName: "Project Atlas",
+  inviterName: "Ada Lovelace",
+  inviterEmail: "ada@example.com",
+  roleLabel: "Viewer",
+  inviteUrl: "https://zode.org/data-rooms/invite/preview-token",
+  expiresOn: "October 25, 2026",
+};
+
 /** The preview server can't resolve the `cid:` attachment that sent mail uses. */
 export const PREVIEW_LOGO = `data:image/png;base64,${WORDMARK_PNG_BASE64}`;

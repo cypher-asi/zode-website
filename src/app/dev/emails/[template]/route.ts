@@ -1,9 +1,17 @@
 import { render } from "@react-email/render";
 import { createElement, type ReactElement } from "react";
+import DataRoomInvite from "@/emails/DataRoomInvite";
 import EngineerRequestNotification from "@/emails/EngineerRequestNotification";
 import OrderConfirmation from "@/emails/OrderConfirmation";
 import OrderNotification from "@/emails/OrderNotification";
-import { PREVIEW_ACCOUNT, PREVIEW_BUY, PREVIEW_ENGINEER, PREVIEW_LOGO, PREVIEW_RENT } from "@/emails/previewOrders";
+import {
+  PREVIEW_ACCOUNT,
+  PREVIEW_BUY,
+  PREVIEW_DATA_ROOM_INVITE,
+  PREVIEW_ENGINEER,
+  PREVIEW_LOGO,
+  PREVIEW_RENT,
+} from "@/emails/previewOrders";
 import RegistrationNotification from "@/emails/RegistrationNotification";
 import Welcome from "@/emails/Welcome";
 
@@ -15,12 +23,14 @@ const TEMPLATES: Record<string, (search: URLSearchParams) => ReactElement> = {
   engineer: () => createElement(EngineerRequestNotification, { ...PREVIEW_ENGINEER, logoSrc: PREVIEW_LOGO }),
   welcome: () => createElement(Welcome, { ...PREVIEW_ACCOUNT, logoSrc: PREVIEW_LOGO }),
   registration: () => createElement(RegistrationNotification, { ...PREVIEW_ACCOUNT, logoSrc: PREVIEW_LOGO }),
+  "data-room-invite": () => createElement(DataRoomInvite, { ...PREVIEW_DATA_ROOM_INVITE, logoSrc: PREVIEW_LOGO }),
 };
 
 /**
  * Development only: an email rendered with sample data, e.g.
  * /dev/emails/confirmation, /dev/emails/notification?mode=rent,
  * /dev/emails/engineer, /dev/emails/welcome, /dev/emails/registration,
+ * /dev/emails/data-room-invite,
  * or add `&text` for the plain-text part.
  */
 export async function GET(request: Request, { params }: { params: Promise<{ template: string }> }): Promise<Response> {

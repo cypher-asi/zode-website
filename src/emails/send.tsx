@@ -7,6 +7,7 @@ import type { Order } from "@/features/configurator/orders";
 import type { EngineerRequest } from "@/features/engineer-request/engineerRequests";
 import { RECIPIENT_EMAIL } from "@/lib/leads";
 import { accountEmailProps } from "./accountEmailProps";
+import DataRoomInvite, { dataRoomInviteSubject, type DataRoomInviteProps } from "./DataRoomInvite";
 import EngineerRequestNotification, { engineerRequestSubject } from "./EngineerRequestNotification";
 import { engineerRequestEmailProps } from "./engineerRequestEmailProps";
 import OrderConfirmation, { confirmationSubject } from "./OrderConfirmation";
@@ -165,4 +166,23 @@ export async function sendRegistrationEmails(account: Account, inviteCode: strin
       console.error(`[email] ${which} for new account ${account.userId} failed:`, result.reason);
     }
   });
+}
+
+/**
+ * Emails a data room invite link; replies go to whoever sent it. `key` is
+ * unique per issued token, so a resend isn't swallowed by idempotency.
+ * Never throws: the invite already exists and can be resent.
+ */
+export async function sendDataRoomInvite(to: string, props: DataRoomInviteProps, key: string): Promise<void> {
+  try {
+    await send({
+      to,
+      replyTo: props.inviterEmail,
+      subject: dataRoomInviteSubject(props),
+      email: <DataRoomInvite {...props} />,
+      idempotencyKey: `data-room-invite-${key}`,
+    });
+  } catch (err) {
+    console.error(`[email] data room invite to ${to} failed:`, err);
+  }
 }

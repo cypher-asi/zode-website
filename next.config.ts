@@ -3,9 +3,10 @@ import type { NextConfig } from "next";
 const isDev = process.env.NODE_ENV === "development";
 
 // Every asset this site loads is same-origin: `next/font/google` self-hosts at
-// build time, the 3D model and images come from /public, and the only network
-// calls are same-origin Server Actions. External URLs in content are plain
-// anchors, so nothing here needs a cross-origin allowance.
+// build time, the 3D model and images come from /public, and data room files
+// stream through the site's own access-checked routes. External URLs in content
+// are plain anchors. The one cross-origin call is data room uploads, which go
+// from the browser straight to Vercel Blob (see `connect-src`).
 //
 // 'unsafe-inline' for scripts is required by Next's inline RSC bootstrap.
 // Replacing it with nonces would force every page to render
@@ -19,7 +20,7 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
   "font-src 'self'",
-  "connect-src 'self'",
+  "connect-src 'self' https://vercel.com https://*.blob.vercel-storage.com",
   "media-src 'self'",
   "manifest-src 'self'",
   "worker-src 'self'",
