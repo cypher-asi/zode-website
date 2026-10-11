@@ -1,0 +1,35 @@
+"use server";
+
+import { RECIPIENT_EMAIL } from "@/lib/leads";
+import { createOrder, parseOrder, referenceFor } from "@/lib/orders";
+import { isAuthenticated } from "@/lib/session";
+
+export type OrderState =
+  | { readonly status: "idle" }
+  | { readonly status: "error"; readonly error: string }
+  | { readonly status: "placed"; readonly reference: string };
+
+export async function placeOrder(_prevState: OrderState, formData: FormData): Promise<OrderState> {
+  if (!(await isAuthenticated())) {
+    return { status: "error", error: "Your session has expired. Please sign in again." };
+  }
+
+  const parsed = parseOrder(formData);
+  if (!parsed.ok) {
+    return { status: "error", error: parsed.error };
+  }
+  // Honeypot tripped: look placed so the bot gets no signal, but store nothing.
+  if (parsed.spam) {
+    return { status: "placed", reference: referenceFor(crypto.randomUUID()) };
+  }
+
+  try {
+    return { status: "placed", reference: await createOrder(parsed.order) };
+  } catch (err) {
+    console.error(`[orders] could not store ${parsed.order.mode} order:`, err);
+    return {
+      status: "error",
+      error: `We couldn't place your order just now. Please try again, or email ${RECIPIENT_EMAIL}.`,
+    };
+  }
+}

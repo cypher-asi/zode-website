@@ -1,0 +1,26 @@
+/* Rack drawing for the rent configurator (see RackPreview.tsx); layout comes from ZodePreview.module.css. */
+
+.art {
+  height: 100%;
+}
+
+.floor {
+  pointer-events: none;
+}
+
+.countUnit {
+  font-size: 13px;
+  font-weight: 400;
+  color: #8a8a8f;
+}
+
+.countDetail {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: #8a8a8f;
+}
+
+.chipCount {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}

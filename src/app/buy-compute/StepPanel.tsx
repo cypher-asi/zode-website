@@ -3,7 +3,6 @@
 import { useId, type ReactElement } from "react";
 import {
   NODE_SIZES,
-  snapNodes,
   usdShort,
   type Choice,
   type Focus,
@@ -47,10 +46,42 @@ export function StepTabs({
   );
 }
 
-type Preview = (focus: Focus | null) => void;
+/** Two or more mutually exclusive modes as one pill-shaped segmented control. */
+export function Segmented<Id extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: readonly { id: Id; label: string }[];
+  value: Id;
+  onChange: (id: Id) => void;
+}): ReactElement {
+  const name = useId();
+  return (
+    <div className={styles.segmented} role="radiogroup" aria-label={label}>
+      {options.map((option) => (
+        <label key={option.id} className={styles.segment} data-checked={option.id === value || undefined}>
+          <input
+            className={styles.input}
+            type="radio"
+            name={name}
+            value={option.id}
+            checked={option.id === value}
+            onChange={() => onChange(option.id)}
+          />
+          {option.label}
+        </label>
+      ))}
+    </div>
+  );
+}
+
+type Preview<F = Focus> = (focus: F | null) => void;
 
 /** Hover and keyboard focus both preview an option's part of the drawing. */
-const previewHandlers = (focus: Focus | undefined, onPreview: Preview) => ({
+const previewHandlers = <F,>(focus: F | undefined, onPreview: Preview<F>) => ({
   onMouseEnter: () => focus && onPreview(focus),
   onMouseLeave: () => onPreview(null),
   onFocus: () => focus && onPreview(focus),
@@ -58,7 +89,7 @@ const previewHandlers = (focus: Focus | undefined, onPreview: Preview) => ({
 });
 
 /** Radio cards for one exclusive choice; `inline` sets them side by side instead of stacked. */
-export function ChoiceGroup<Id extends string>({
+export function ChoiceGroup<Id extends string, F = Focus>({
   legend,
   choices,
   value,
@@ -67,10 +98,10 @@ export function ChoiceGroup<Id extends string>({
   inline = false,
 }: {
   legend: string;
-  choices: readonly Choice<Id>[];
+  choices: readonly Choice<Id, F>[];
   value: Id;
   onChange: (id: Id) => void;
-  onPreview: Preview;
+  onPreview: Preview<F>;
   inline?: boolean;
 }): ReactElement {
   const name = useId();
@@ -109,14 +140,14 @@ export function ChoiceGroup<Id extends string>({
 }
 
 /** A card that is always selected and cannot be changed. */
-export function IncludedCard({
+export function IncludedCard<F = Focus>({
   legend,
   choice,
   onPreview,
 }: {
   legend: string;
-  choice: Choice<string>;
-  onPreview: Preview;
+  choice: Choice<string, F>;
+  onPreview: Preview<F>;
 }): ReactElement {
   return (
     <div className={styles.group}>
@@ -137,16 +168,22 @@ export function IncludedCard({
   );
 }
 
+/** The entry in `sizes` closest to `n`. */
+const nearest = (sizes: readonly number[], n: number) =>
+  sizes.reduce((best, size) => (Math.abs(size - n) < Math.abs(best - n) ? size : best), sizes[0]);
+
 /** Node count, limited to the offered sizes: +/- step between them, or pick one directly. */
 export function NodeStepper({
   value,
   onChange,
+  sizes = NODE_SIZES,
 }: {
   value: number;
   onChange: (nodes: number) => void;
+  sizes?: readonly number[];
 }): ReactElement {
   const labelId = useId();
-  const at = NODE_SIZES.indexOf(snapNodes(value) as (typeof NODE_SIZES)[number]);
+  const at = sizes.indexOf(nearest(sizes, value));
 
   return (
     <div className={styles.group} role="group" aria-labelledby={labelId}>
@@ -159,7 +196,7 @@ export function NodeStepper({
           className={styles.stepButton}
           aria-label="Smaller cluster"
           disabled={at <= 0}
-          onClick={() => onChange(NODE_SIZES[at - 1])}
+          onClick={() => onChange(sizes[at - 1])}
         >
           −
         </button>
@@ -171,25 +208,78 @@ export function NodeStepper({
           type="button"
           className={styles.stepButton}
           aria-label="Larger cluster"
-          disabled={at >= NODE_SIZES.length - 1}
-          onClick={() => onChange(NODE_SIZES[at + 1])}
+          disabled={at >= sizes.length - 1}
+          onClick={() => onChange(sizes[at + 1])}
         >
           +
         </button>
       </div>
-      <div className={styles.presets} role="group" aria-label="Cluster sizes">
-        {NODE_SIZES.map((n) => (
-          <button
-            key={n}
-            type="button"
-            className={styles.chip}
-            aria-pressed={n === value}
-            onClick={() => onChange(n)}
-          >
-            {n.toLocaleString("en-US")}
-          </button>
-        ))}
+      <Chips label="Cluster sizes" options={sizes} value={value} onChange={onChange} />
+    </div>
+  );
+}
+
+function Chips({
+  label,
+  options,
+  value,
+  onChange,
+  format = (n) => n.toLocaleString("en-US"),
+  flush = false,
+}: {
+  label: string;
+  options: readonly number[];
+  value: number;
+  onChange: (n: number) => void;
+  format?: (n: number) => string;
+  flush?: boolean;
+}): ReactElement {
+  return (
+    <div className={styles.presets} data-flush={flush || undefined} role="group" aria-label={label}>
+      {options.map((n) => (
+        <button key={n} type="button" className={styles.chip} aria-pressed={n === value} onClick={() => onChange(n)}>
+          {format(n)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** One number from a short list of presets, with an optional price or note beside the legend. */
+export function ChipPicker<F = Focus>({
+  legend,
+  options,
+  value,
+  onChange,
+  format,
+  note,
+  focus,
+  onPreview,
+}: {
+  legend: string;
+  options: readonly number[];
+  value: number;
+  onChange: (n: number) => void;
+  format?: (n: number) => string;
+  note?: string;
+  focus?: F;
+  onPreview?: Preview<F>;
+}): ReactElement {
+  const labelId = useId();
+  return (
+    <div
+      className={styles.group}
+      role="group"
+      aria-labelledby={labelId}
+      {...(onPreview ? previewHandlers(focus, onPreview) : {})}
+    >
+      <div className={styles.groupHead}>
+        <p id={labelId} className={styles.legend}>
+          {legend}
+        </p>
+        {note ? <span className={styles.groupNote}>{note}</span> : null}
       </div>
+      <Chips label={legend} options={options} value={value} onChange={onChange} format={format} flush />
     </div>
   );
 }

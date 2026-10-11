@@ -1,21 +1,20 @@
-/* Light drawing panel on the configurator's right (see ZodePreview.tsx). */
+/* Light drawing panel on the configurator's left (see ZodePreview.tsx). */
 
 .root {
   /* `--price-panel-h` is the floating price panel's live height (see PriceBar.tsx). */
   --price-top: calc(var(--price-panel-h, 134px) + 20px);
-  /*
-   * The drawing sits midway between the top of the screen and the price
-   * panel: equal insets from each, clear of the header above and the pod
-   * picker below.
-   */
+  /* Clears the pinned wordmark above the head, level with the steps panel's heading. */
+  --head-top: 92px;
+  /* The drawing's box starts this far below the top of the head, clear of it... */
+  --figure-top: calc(var(--head-top) + 96px);
+  /* ...and ends this far above the price panel, clear of the pod picker. */
   --figure-inset: 128px;
 
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
-  /* Top aligns with the pinned wordmark. */
-  padding: 32px var(--edge) calc(var(--price-top) + 18px);
+  padding: var(--head-top) var(--edge) calc(var(--price-top) + 18px);
 }
 
 .head {
@@ -88,7 +87,7 @@
 
 .figure {
   position: absolute;
-  inset: var(--figure-inset) var(--edge) calc(var(--price-top) + var(--figure-inset));
+  inset: var(--figure-top) var(--edge) calc(var(--price-top) + var(--figure-inset));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -122,8 +121,10 @@
     color 160ms ease;
 }
 
-.pod:hover {
-  color: var(--off-black);
+@media (hover: hover) {
+  .pod:hover {
+    color: var(--off-black);
+  }
 }
 
 .pod[aria-pressed="true"] {
@@ -144,13 +145,21 @@
     padding: 84px var(--edge) 28px;
   }
 
+  /* Kept short so the steps start within the first screen. */
   .figure {
     position: static;
-    height: min(46vh, 360px);
+    height: min(36svh, 300px);
   }
 
   .pods {
+    flex-wrap: wrap;
     margin-top: 0;
+  }
+}
+
+@media (pointer: coarse) {
+  .pod {
+    padding: 10px 14px;
   }
 }
 

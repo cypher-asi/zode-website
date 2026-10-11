@@ -2,7 +2,8 @@
 
 .tabs {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
   gap: 4px;
   margin: 0;
   padding: 0;
@@ -27,8 +28,10 @@
     color 200ms ease;
 }
 
-.tab:hover {
-  color: var(--off-black);
+@media (hover: hover) {
+  .tab:hover {
+    color: var(--off-black);
+  }
 }
 
 .tab[data-state="done"] {
@@ -56,6 +59,76 @@
   font-weight: 500;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+/*
+ * Phones: the tabs shrink to a bare, still tappable progress line, with the
+ * current step named between Back and Next instead (see Configurator.tsx).
+ * The labels stay in the accessibility tree.
+ */
+@media (max-width: 900px) {
+  .tab {
+    position: relative;
+    height: 16px;
+    padding: 0;
+  }
+
+  .tabNo,
+  .tabTitle {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 900px) and (pointer: coarse) {
+  .tab {
+    height: 22px;
+  }
+}
+
+.segmented {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid #d9d9d4;
+  border-radius: 999px;
+  background: #ffffff;
+}
+
+.segment {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #8a8a8f;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.segment:hover {
+  color: var(--off-black);
+}
+
+.segment[data-checked] {
+  background: var(--off-black);
+  color: #ffffff;
+}
+
+.segment:has(.input:focus-visible) {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
 }
 
 .group {
@@ -115,8 +188,10 @@
     box-shadow 160ms ease;
 }
 
-.card:hover {
-  border-color: #a5a5a0;
+@media (hover: hover) {
+  .card:hover {
+    border-color: #a5a5a0;
+  }
 }
 
 .card[data-checked] {
@@ -199,6 +274,13 @@
   grid-row: auto;
   grid-column: 1;
   margin-top: 6px;
+}
+
+/* Too narrow for two cards abreast; stack them like the other groups. */
+@media (max-width: 400px) {
+  .cards[data-inline] {
+    grid-auto-flow: row;
+  }
 }
 
 .badge {
@@ -305,6 +387,17 @@
   margin-top: 10px;
 }
 
+/* Directly under a legend, which already leaves the gap. */
+.presets[data-flush] {
+  margin-top: 0;
+}
+
+.groupNote {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .chip {
   height: 28px;
   padding: 0 12px;
@@ -322,8 +415,17 @@
     color 160ms ease;
 }
 
-.chip:hover {
-  border-color: #a5a5a0;
+@media (hover: hover) {
+  .chip:hover {
+    border-color: #a5a5a0;
+  }
+}
+
+@media (pointer: coarse) {
+  .chip {
+    height: 36px;
+    padding: 0 14px;
+  }
 }
 
 .chip[aria-pressed="true"] {

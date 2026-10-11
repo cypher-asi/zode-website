@@ -9,8 +9,9 @@
   --button-radius: 3px;
 
   position: relative;
-  min-height: 100dvh;
+  min-height: 100svh;
   background: #ffffff;
+  -webkit-tap-highlight-color: transparent;
   color: var(--off-black);
   font-family: var(--font-text), system-ui, sans-serif;
 }

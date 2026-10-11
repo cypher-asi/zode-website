@@ -97,7 +97,7 @@
   animation: flash 1100ms ease;
 }
 
-.monthly {
+.headline {
   font-size: 28px;
 }
 
@@ -262,12 +262,16 @@
   }
 }
 
-/* The page scrolls as a whole here, so the panel pins to the bottom of the screen instead. */
+/*
+ * The page scrolls as a whole here, so the panel pins to the bottom of the
+ * screen instead, stacked on the steps footer (`--nav-h`, see Configurator.tsx)
+ * so the two read as one dock.
+ */
 @media (max-width: 900px) {
   .dock {
     position: fixed;
     right: 0;
-    bottom: 0;
+    bottom: var(--nav-h, 0px);
     left: 0;
   }
 
@@ -275,53 +279,114 @@
     padding-inline: var(--edge);
     border-width: 1px 0 0;
     border-radius: 0;
-    box-shadow: none;
+    box-shadow: 0 -8px 24px rgba(12, 12, 13, 0.06);
   }
 
   .breakdown {
     right: var(--edge);
     width: min(400px, calc(100% - 2 * var(--edge)));
+    max-height: calc(100svh - var(--price-panel-h, 64px) - var(--nav-h, 80px) - 96px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
-}
 
-/* Phones show the choices in the steps right above, so only the cluster figures stay. */
-@container price-bar (max-width: 440px) {
+  /* The choices are in the steps right above. */
   .spec {
     display: none;
   }
 
   .stats {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    column-gap: 12px;
+  }
+}
+
+/* Cluster figures in the breakdown; only shown when the bar itself has no room for them (below). */
+.breakdownStats {
+  display: none;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 16px;
+  margin: 0 0 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e6e6e2;
+}
+
+/* Landscape phones: every pixel of height counts, so the bar drops to one row as on narrow ones (below). */
+@media (max-width: 900px) and (max-height: 520px) {
+  .bar {
+    grid-template-columns: minmax(0, 1fr);
+    padding-block: 10px;
   }
 
-  .statValue {
-    font-size: 15px;
-  }
-
-  .statLabel {
-    font-size: 10px;
+  .stats {
+    display: none;
   }
 
   .figures {
-    gap: 14px;
+    justify-content: space-between;
+    padding: 0;
+    border: 0;
+  }
+
+  .figure {
+    align-items: flex-start;
   }
 
   .amount {
+    margin: 0 0 0 -6px;
+  }
+
+  .breakdownStats {
+    display: grid;
+  }
+}
+
+/*
+ * Phones: the choices are in the steps right above and the cluster figures
+ * move into the breakdown, so the bar is one row, the prices and the chevron.
+ */
+@container price-bar (max-width: 440px) {
+  .bar {
+    padding-block: 10px;
+  }
+
+  .stats {
+    display: none;
+  }
+
+  .figures {
+    justify-content: space-between;
+    gap: 14px;
+    padding: 0;
+    border-top: 0;
+  }
+
+  .figure {
+    align-items: flex-start;
+  }
+
+  .amount {
+    margin: 0 0 0 -6px;
     font-size: 17px;
   }
 
-  .monthly {
-    font-size: 20px;
+  .headline {
+    font-size: 22px;
   }
 
   .unit {
-    font-size: 12px;
+    font-size: 13px;
   }
 
   .caption {
-    font-size: 10px;
+    font-size: 11px;
   }
 
+  .breakdownStats {
+    display: grid;
+  }
+}
+
+@container price-bar (max-width: 360px) {
   .terms {
     display: none;
   }

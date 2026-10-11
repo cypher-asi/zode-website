@@ -12,7 +12,8 @@ export interface Focus {
   zone: string | null;
 }
 
-export interface Choice<Id extends string> {
+/** `F` is what hovering the option points at in the drawing: a cabin `Focus` when buying, a rack kind when renting. */
+export interface Choice<Id extends string, F = Focus> {
   id: Id;
   label: string;
   detail?: string;
@@ -20,7 +21,7 @@ export interface Choice<Id extends string> {
   note?: string;
   disabled?: boolean;
   badge?: string;
-  focus?: Focus;
+  focus?: F;
 }
 
 export const ASSUMPTIONS = {
@@ -267,7 +268,8 @@ export interface Quote {
 export const snapNodes = (n: number): number =>
   NODE_SIZES.reduce((best, size) => (Math.abs(size - n) < Math.abs(best - n) ? size : best), NODE_SIZES[0]);
 
-const label = <Id extends string>(list: readonly Choice<Id>[], id: Id) => list.find((c) => c.id === id)?.label ?? id;
+export const label = <Id extends string, F>(list: readonly Choice<Id, F>[], id: Id) =>
+  list.find((c) => c.id === id)?.label ?? id;
 
 /** Fixed monthly payment that pays `principal` off over `months` at `apr`. */
 function amortize(principal: number, apr: number, months: number): number {
@@ -377,4 +379,61 @@ export function usdShort(n: number): string {
   if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
   if (n >= 1e3) return `$${Math.round(n / 1e3)}k`;
   return usd(n);
+}
+
+export interface PriceRow {
+  label: string;
+  detail?: string;
+  value: string;
+  /** Ruled off above, in bold. */
+  total?: boolean;
+}
+
+/** What the price panel shows, whichever way the compute is paid for. */
+export interface PriceView {
+  /** The big tweened figure. */
+  headline: {
+    value: number;
+    format: (n: number) => string;
+    unit: string;
+    caption: string;
+    /** Trails the caption; the first thing dropped when the panel narrows. */
+    terms?: string;
+  };
+  /** A smaller fixed figure set before the headline. */
+  secondary?: { value: string; unit: string; caption: string };
+  breakdown: {
+    title: string;
+    total: string;
+    rows: LineItem[];
+    /** Rows after the line items, such as the total and payment terms. */
+    footer: PriceRow[];
+    fineprint: string;
+  };
+  summary: Summary;
+}
+
+export function buyPriceView(config: Config, quote: Quote): PriceView {
+  const { downPayment: down, apr, months } = ASSUMPTIONS.financing;
+  return {
+    headline: {
+      value: quote.monthly,
+      format: usd,
+      unit: "/mo",
+      caption: "Est. monthly",
+      terms: `${Math.round(down * 100)}% down · ${months} mo · ${(apr * 100).toFixed(1)}% APR`,
+    },
+    breakdown: {
+      title: "Est. total cost",
+      total: usd(quote.total),
+      rows: quote.lineItems,
+      footer: [
+        { label: "Total", value: usd(quote.total), total: true },
+        { label: `Due at signing (${Math.round(down * 100)}%)`, value: usd(quote.downPayment) },
+        { label: "Monthly", detail: `${months} mo at ${(apr * 100).toFixed(1)}% APR`, value: usd(quote.monthly) },
+      ],
+      fineprint: "Placeholder estimates for planning only. Excludes site work, taxes, power and shipping.",
+    },
+    summary: summarize(config, quote),
+  };
 }

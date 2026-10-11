@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactElement } from "react";
-import { ASSUMPTIONS, usd, type Quote, type Stat, type Summary } from "./config";
+import { usd, type PriceView, type Stat } from "./config";
 import styles from "./PriceBar.module.css";
 
 const TWEEN_MS = 450;
@@ -32,9 +32,6 @@ function useTweened(target: number): number {
   return shown;
 }
 
-const { downPayment, months, apr } = ASSUMPTIONS.financing;
-const TERMS = `${Math.round(downPayment * 100)}% down · ${months} mo · ${(apr * 100).toFixed(1)}% APR`;
-
 function Stats({ label, stats, className }: { label: string; stats: Stat[]; className: string }): ReactElement {
   return (
     <dl className={className} aria-label={label}>
@@ -49,22 +46,26 @@ function Stats({ label, stats, className }: { label: string; stats: Stat[]; clas
 }
 
 /**
- * Floating price panel: the configured choices above the cluster's GPU,
- * node, ZODE and power figures, sharing one column grid, with the estimated
- * monthly payment beside them, flashing when it changes. The total cost
- * stays out of the panel until the chevron opens it, with the itemized
- * breakdown, above.
+ * Floating price panel: the configured choices above the cluster figures,
+ * sharing one column grid, with the headline price (the monthly payment when
+ * buying, the all-in GPU-hour rate when renting) beside them, flashing when
+ * it changes. The itemized breakdown stays out of the panel until the
+ * chevron opens it above. On phones the panel narrows to the prices alone
+ * and the cluster figures move into the breakdown.
  */
-export function PriceBar({ quote, summary }: { quote: Quote; summary: Summary }): ReactElement {
-  const monthly = useTweened(quote.monthly);
+export function PriceBar({ view }: { view: PriceView }): ReactElement {
+  const { headline, secondary, breakdown, summary } = view;
+  const shown = useTweened(headline.value);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
 
-  // The drawing panel keeps its contents clear of however tall this panel lays out.
+  // The drawing panel keeps its contents clear of however tall this panel lays out, and on
+  // phones the page leaves room for it at the bottom, so the height goes on the shared
+  // `data-price-host` ancestor where both can read it.
   useLayoutEffect(() => {
     const dock = rootRef.current;
-    const host = dock?.parentElement;
+    const host = dock?.closest<HTMLElement>("[data-price-host]") ?? dock?.parentElement;
     if (!dock || !host) return;
     const bar = dock.firstElementChild as HTMLElement;
     const observer = new ResizeObserver(() => host.style.setProperty("--price-panel-h", `${bar.offsetHeight}px`));
@@ -100,20 +101,31 @@ export function PriceBar({ quote, summary }: { quote: Quote; summary: Summary })
         </div>
 
         <div className={styles.figures} aria-live="polite">
+          {secondary ? (
+            <div className={styles.figure}>
+              <span key={secondary.value} className={styles.amount}>
+                {secondary.value}
+                <span className={styles.unit}> {secondary.unit}</span>
+              </span>
+              <span className={styles.caption}>{secondary.caption}</span>
+            </div>
+          ) : null}
+
           <div className={styles.figure}>
-            <span key={quote.monthly} className={`${styles.amount} ${styles.monthly}`}>
-              {usd(monthly)}
-              <span className={styles.unit}> /mo</span>
+            <span key={headline.value} className={`${styles.amount} ${styles.headline}`}>
+              {headline.format(shown)}
+              <span className={styles.unit}> {headline.unit}</span>
             </span>
             <span className={styles.caption}>
-              Est. monthly<span className={styles.terms}> · {TERMS}</span>
+              {headline.caption}
+              {headline.terms ? <span className={styles.terms}> · {headline.terms}</span> : null}
             </span>
           </div>
 
           <button
             type="button"
             className={styles.toggle}
-            aria-label={open ? "Hide total cost and breakdown" : "Show total cost and breakdown"}
+            aria-label={open ? "Hide price breakdown" : "Show price breakdown"}
             aria-expanded={open}
             aria-controls={panelId}
             onClick={() => setOpen((v) => !v)}
@@ -127,10 +139,11 @@ export function PriceBar({ quote, summary }: { quote: Quote; summary: Summary })
 
       {open ? (
         <div id={panelId} className={styles.breakdown} role="region" aria-label="Price breakdown">
-          <p className={styles.breakdownTitle}>Est. total cost</p>
-          <p className={styles.total}>{usd(quote.total)}</p>
+          <p className={styles.breakdownTitle}>{breakdown.title}</p>
+          <p className={styles.total}>{breakdown.total}</p>
+          <Stats label="Cluster" stats={summary.cluster} className={styles.breakdownStats} />
           <dl className={styles.rows}>
-            {quote.lineItems.map((item) => (
+            {breakdown.rows.map((item) => (
               <div key={item.label} className={styles.row}>
                 <dt>
                   {item.label}
@@ -139,27 +152,17 @@ export function PriceBar({ quote, summary }: { quote: Quote; summary: Summary })
                 <dd>{item.amount ? usd(item.amount) : "Included"}</dd>
               </div>
             ))}
-            <div className={`${styles.row} ${styles.rowTotal}`}>
-              <dt>Total</dt>
-              <dd>{usd(quote.total)}</dd>
-            </div>
-            <div className={styles.row}>
-              <dt>Due at signing ({Math.round(downPayment * 100)}%)</dt>
-              <dd>{usd(quote.downPayment)}</dd>
-            </div>
-            <div className={styles.row}>
-              <dt>
-                Monthly
-                <span className={styles.rowDetail}>
-                  {months} mo at {(apr * 100).toFixed(1)}% APR
-                </span>
-              </dt>
-              <dd>{usd(quote.monthly)}</dd>
-            </div>
+            {breakdown.footer.map((row) => (
+              <div key={row.label} className={row.total ? `${styles.row} ${styles.rowTotal}` : styles.row}>
+                <dt>
+                  {row.label}
+                  {row.detail ? <span className={styles.rowDetail}>{row.detail}</span> : null}
+                </dt>
+                <dd>{row.value}</dd>
+              </div>
+            ))}
           </dl>
-          <p className={styles.fineprint}>
-            Placeholder estimates for planning only. Excludes site work, taxes, power and shipping.
-          </p>
+          <p className={styles.fineprint}>{breakdown.fineprint}</p>
         </div>
       ) : null}
     </div>

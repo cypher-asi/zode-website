@@ -1,13 +1,13 @@
 /*
- * Full-height steps panel on the left, drawing on the right with the pricing
- * bar floating over its foot, all inside one viewport; the panel scrolls on
- * its own.
+ * Drawing on the left with the pricing bar floating over its foot, full-height
+ * steps panel on the right, all inside one viewport; the panel scrolls on its
+ * own.
  */
 .root {
   display: grid;
-  grid-template-columns: minmax(360px, 460px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 460px);
   grid-template-rows: minmax(0, 1fr);
-  grid-template-areas: "panel preview";
+  grid-template-areas: "preview panel";
   height: 100dvh;
 }
 
@@ -17,8 +17,59 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  border-right: 1px solid #e6e6e2;
+  border-left: 1px solid #e6e6e2;
   background: #ffffff;
+}
+
+/* Fixed head of the steps panel: the Buy / Rent switch and the close button, mirroring the footer. */
+.top {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  padding: 16px var(--edge);
+  border-bottom: 1px solid #e6e6e2;
+  background: #ffffff;
+}
+
+.top > :first-child {
+  flex: 1;
+}
+
+.close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid #d9d9d4;
+  border-radius: 999px;
+  color: var(--off-black);
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.close svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+@media (hover: hover) {
+  .close:hover {
+    border-color: #a5a5a0;
+    background: var(--off-white);
+  }
+}
+
+.close:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
 }
 
 /* Positioned parent the overlay scrollbar draws into, so it never runs over the footer. */
@@ -45,16 +96,16 @@
   height: 0;
 }
 
-/* Solid band under the pinned wordmark that scrolled steps slide beneath. */
+/* Fade under the top bar that scrolled steps slide beneath. */
 .panel::before {
   content: "";
   position: sticky;
   top: 0;
   z-index: 2;
   flex: none;
-  height: 92px;
+  height: 28px;
   margin-inline: calc(-1 * var(--edge));
-  background: linear-gradient(to bottom, #ffffff 72px, rgba(255, 255, 255, 0));
+  background: linear-gradient(to bottom, #ffffff 8px, rgba(255, 255, 255, 0));
   pointer-events: none;
 }
 
@@ -137,8 +188,10 @@
   color: #ffffff;
 }
 
-.primary:hover {
-  background: #2a2a2d;
+@media (hover: hover) {
+  .primary:hover {
+    background: #2a2a2d;
+  }
 }
 
 .secondary {
@@ -146,8 +199,10 @@
   color: var(--off-black);
 }
 
-.secondary:hover {
-  background: var(--off-white);
+@media (hover: hover) {
+  .secondary:hover {
+    background: var(--off-white);
+  }
 }
 
 .secondary:disabled {
@@ -166,18 +221,31 @@
   transition: translate 160ms ease;
 }
 
-.primary:hover:not(:disabled) .arrow {
-  translate: 2px 0;
-}
+@media (hover: hover) {
+  .primary:hover:not(:disabled) .arrow {
+    translate: 2px 0;
+  }
 
-.secondary:hover:not(:disabled) .arrow {
-  translate: -2px 0;
+  .secondary:hover:not(:disabled) .arrow {
+    translate: -2px 0;
+  }
 }
 
 .primary:focus-visible,
 .secondary:focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
+}
+
+/* Current step between Back and Next; phones only (see the media query below). */
+.stepLabel {
+  display: none;
+}
+
+.stepCount {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  color: #8a8a8f;
 }
 
 .disclaimer {
@@ -195,19 +263,62 @@
       "preview"
       "panel";
     height: auto;
-    min-height: 100dvh;
-    /* Room for the price bar, pinned to the bottom of the screen here. */
-    padding-bottom: 128px;
+    min-height: 100svh;
+    /* Room for the dock pinned to the bottom of the screen: the price panel stacked on the footer. */
+    padding-bottom: calc(var(--price-panel-h, 64px) + var(--nav-h, 80px));
   }
 
   .panelFrame {
-    border-right: 0;
+    border-left: 0;
   }
 
   .panel {
     height: auto;
     padding-top: 32px;
     overflow: visible;
+    /* Clears the band under the pinned wordmark when a step change scrolls back up to it. */
+    scroll-margin-top: 64px;
+  }
+
+  /* The bottom of the dock, under the price panel (see PriceBar.module.css), with no rule between. */
+  .footer {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 5;
+    gap: 6px;
+    padding: 0 var(--edge) calc(12px + env(safe-area-inset-bottom, 0px));
+    border-top: 0;
+  }
+
+  /* Back, the step label, Next; the label stays centred on the last step, which has no Next. */
+  .nav {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+  }
+
+  .secondary {
+    justify-self: start;
+  }
+
+  .stepLabel {
+    display: block;
+    grid-column: 2;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .primary {
+    grid-column: 3;
+    justify-self: end;
+    margin-left: 0;
   }
 
   .panel::before {
