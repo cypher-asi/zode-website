@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import type { ReactElement } from "react";
-import { GridLogo } from "@/components/ui/GridLogo";
 import { useModalClose } from "@/components/ui/RouteModal";
 import { RegisterForm } from "./RegisterForm";
 import { LoginForm } from "./LoginForm";
@@ -45,10 +44,8 @@ export function AuthPanel({ mode, next }: { mode: AuthMode; next: string }): Rea
     </svg>
   );
   const brand = (
-    <>
-      <GridLogo showWordmark={false} />
-      <span className={styles.wordmark}>ZODE</span>
-    </>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img className={styles.wordmark} src="/wordmark.png" alt="" aria-hidden="true" />
   );
 
   return (
@@ -63,7 +60,9 @@ export function AuthPanel({ mode, next }: { mode: AuthMode; next: string }): Rea
         </Link>
       )}
       {close ? (
-        <div className={styles.brand}>{brand}</div>
+        <div className={styles.brand} role="img" aria-label="ZODE">
+          {brand}
+        </div>
       ) : (
         <Link className={styles.brand} href="/" aria-label="ZODE — home">
           {brand}

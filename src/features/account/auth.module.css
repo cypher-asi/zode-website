@@ -83,18 +83,16 @@
 
 .brand {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  color: var(--color-text-primary);
+  justify-content: center;
   text-decoration: none;
 }
 
+/* The source PNG is white on transparency; `--logo-invert` renders it black on the light card. */
 .wordmark {
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
+  display: block;
+  height: 22px;
+  width: auto;
+  filter: invert(var(--logo-invert, 1));
 }
 
 .title {
