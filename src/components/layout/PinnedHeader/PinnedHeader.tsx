@@ -47,27 +47,25 @@ const SIDE_PAD = 24;
 /** ...and blend back to opaque over this much more. */
 const SIDE_FEATHER = 64;
 
-/** Surface tone (`data-surface`) of whatever sits under the center of `el`. */
-function sampleTone(el: HTMLElement): Tone | null {
-  const rect = el.getBoundingClientRect();
+/**
+ * What sits under the center of `el`: the surface tone (`data-surface`) and
+ * whether it's photography (`data-media`), whose tone varies shot to shot.
+ */
+function sampleUnder(el: HTMLElement, rect: DOMRect): { tone: Tone | null; media: boolean } {
   const x = rect.left + rect.width / 2;
   const y = rect.top + rect.height / 2;
+  let tone: Tone | null = null;
+  let media = false;
   for (const node of document.elementsFromPoint(x, y)) {
     if (el.contains(node)) continue;
-    const surface = node.closest<HTMLElement>("[data-surface]")?.dataset.surface;
-    if (surface === "light" || surface === "dark") return surface;
+    if (!media && node.closest("[data-media]")) media = true;
+    if (!tone) {
+      const surface = node.closest<HTMLElement>("[data-surface]")?.dataset.surface;
+      if (surface === "light" || surface === "dark") tone = surface;
+    }
+    if (tone && media) break;
   }
-  return null;
-}
-
-/** Whether `el` sits over photography (`data-media`), whose tone varies shot to shot. */
-function overMedia(el: HTMLElement): boolean {
-  const rect = el.getBoundingClientRect();
-  const x = rect.left + rect.width / 2;
-  const y = rect.top + rect.height / 2;
-  return document
-    .elementsFromPoint(x, y)
-    .some((node) => !el.contains(node) && node.closest("[data-media]") !== null);
+  return { tone, media };
 }
 
 /**
@@ -147,33 +145,75 @@ export function PinnedHeader({
 
   useEffect(() => {
     let frame = 0;
+    // Faded nodes near the top of the viewport. Only these are measured each
+    // frame; the margins are generous so a node is tracked well before it
+    // reaches the fade band, even on a fast fling.
+    const observed = new WeakSet<HTMLElement>();
+    const near = new Set<HTMLElement>();
+    // Last mask written per node, so unchanged masks aren't rewritten (each write repaints the node).
+    const masks = new WeakMap<HTMLElement, string>();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const node = entry.target as HTMLElement;
+          if (entry.isIntersecting) near.add(node);
+          else near.delete(node);
+        }
+        schedule();
+      },
+      { rootMargin: "50% 0px -25% 0px" },
+    );
+
+    const setMask = (node: HTMLElement, mask: string) => {
+      if (masks.get(node) === mask) return;
+      masks.set(node, mask);
+      node.style.maskImage = mask;
+    };
 
     const sample = () => {
       frame = 0;
       const brand = brandRef.current;
       const action = actionRef.current;
       if (!brand) return;
+
+      // Reads first: interleaving them with the mask writes below would force a style recalc per node.
       const brandRect = brand.getBoundingClientRect();
       const actionRect = action?.getBoundingClientRect();
+      const measured: [HTMLElement, DOMRect][] = [];
+      // Re-queried every frame because sections such as the assembly line mount late.
+      for (const node of document.querySelectorAll<HTMLElement>("[data-top-fade]")) {
+        if (!observed.has(node)) {
+          // Treated as near until the observer's first report says otherwise.
+          observed.add(node);
+          near.add(node);
+          io.observe(node);
+        }
+        if (near.has(node)) {
+          measured.push([node, node.getBoundingClientRect()]);
+        } else {
+          setMask(node, "");
+        }
+      }
+      const brandUnder = sampleUnder(brand, brandRect);
+      const actionUnder = action && actionRect ? sampleUnder(action, actionRect) : null;
 
       const clear = Math.max(brandRect.bottom, actionRect?.bottom ?? 0) + FADE_GAP;
       const solid = clear + FADE_LENGTH;
       const leftEdge = brandRect.right + SIDE_PAD;
       const rightEdge = actionRect ? actionRect.left - SIDE_PAD : Infinity;
-      for (const node of document.querySelectorAll<HTMLElement>("[data-top-fade]")) {
-        const { top, left, right } = node.getBoundingClientRect();
+      for (const [node, { top, left, right }] of measured) {
         const sides = node.dataset.topFade;
         const fadeLeft = sides !== "right" && left < leftEdge;
         const fadeRight = sides !== "left" && right > rightEdge;
         if (solid - top <= 0 || (!fadeLeft && !fadeRight)) {
-          node.style.maskImage = "";
+          setMask(node, "");
           continue;
         }
 
         const vertical = `linear-gradient(to bottom, transparent ${clear - top}px, #000 ${solid - top}px)`;
         // On narrow screens the two corners meet, so the whole top band fades.
         if (fadeLeft && fadeRight && rightEdge - leftEdge < 2 * SIDE_FEATHER) {
-          node.style.maskImage = vertical;
+          setMask(node, vertical);
           continue;
         }
         const stops = [
@@ -185,15 +225,13 @@ export function PinnedHeader({
             : ["#000 100%"]),
         ];
         // Mask layers composite with `add`, so content hides only in the top band at the sides.
-        node.style.maskImage = `${vertical}, linear-gradient(to right, ${stops.join(", ")})`;
+        setMask(node, `${vertical}, linear-gradient(to right, ${stops.join(", ")})`);
       }
 
-      const nextBrandTone = sampleTone(brand);
-      if (nextBrandTone) setBrandTone(nextBrandTone);
-      if (action) {
-        const nextActionTone = sampleTone(action);
-        if (nextActionTone) setActionTone(nextActionTone);
-        setActionOverMedia(overMedia(action));
+      if (brandUnder.tone) setBrandTone(brandUnder.tone);
+      if (actionUnder) {
+        if (actionUnder.tone) setActionTone(actionUnder.tone);
+        setActionOverMedia(actionUnder.media);
       }
     };
 
@@ -206,6 +244,7 @@ export function PinnedHeader({
     window.addEventListener("resize", schedule);
     return () => {
       cancelAnimationFrame(frame);
+      io.disconnect();
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
     };

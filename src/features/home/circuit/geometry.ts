@@ -50,7 +50,12 @@ export interface Band {
  * `top`/`bottom` bound the stretch vertically, for on-screen checks.
  */
 export interface Edge {
-  readonly d: string;
+  /** Start of the run at the trace's pixel centre, in page px. */
+  readonly x: number;
+  readonly y: number;
+  /** Direction of travel: one of the four axis-aligned unit vectors. */
+  readonly dx: number;
+  readonly dy: number;
   readonly length: number;
   readonly from: string;
   readonly to: string;
@@ -181,7 +186,10 @@ export function buildCircuit(
         .filter((s) => s.y < b && s.y + s.height > a - PULSE_LENGTH)
         .map((s) => ({ tone: s.tone, top: s.y, bottom: s.y + s.height, left: 0, right: width }));
       edges.push({
-        d: `M${x + 0.5} ${a + 0.5}V${b + 0.5}`,
+        x: x + 0.5,
+        y: a + 0.5,
+        dx: 0,
+        dy: 1,
         length: b - a,
         from: node(x, a),
         to: node(x, b),
@@ -206,10 +214,9 @@ export function buildCircuit(
       const [a, b] = [stops[i - 1], stops[i]];
       const near = strip.filter((s) => s.left < b + PULSE_LENGTH && s.right > a - PULSE_LENGTH);
       const bands = near.length > 0 ? near : [page(toneAt(surfaces, a, y))];
-      const there = `M${a + 0.5} ${y + 0.5}H${b + 0.5}`;
-      const back = `M${b + 0.5} ${y + 0.5}H${a + 0.5}`;
-      edges.push({ d: there, length: b - a, from: node(a, y), to: node(b, y), top: y, bottom: y, bands });
-      edges.push({ d: back, length: b - a, from: node(b, y), to: node(a, y), top: y, bottom: y, bands });
+      const run = { y: y + 0.5, dy: 0, length: b - a, top: y, bottom: y, bands };
+      edges.push({ ...run, x: a + 0.5, dx: 1, from: node(a, y), to: node(b, y) });
+      edges.push({ ...run, x: b + 0.5, dx: -1, from: node(b, y), to: node(a, y) });
     }
   }
 

@@ -1,6 +1,5 @@
 /*
- * Fixed off-white/black split, independent of the site theme. Opaque
- * panels cover the animated ShellBackdrop rendered by the root layout. `--edge`
+ * Fixed off-white/black split, independent of the site theme. `--edge`
  * is the shared horizontal inset (logo, headline, and word loop all align to
  * it) and `--bar-height` keeps the bottom boxes on both halves the same height
  * so they read as one strip; ZodeGallery.module.css inherits all of these.

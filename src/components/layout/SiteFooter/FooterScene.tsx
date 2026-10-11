@@ -18,10 +18,12 @@ const SCENES = ["city", "field", "mountain", "desert", "coast", "snow"] as const
  * Closing band of the page: a ZODE that never moves while the landscape
  * around it rotates. Rotation runs only while the band is on screen and the
  * tab is visible; under `prefers-reduced-motion` the first scene stays put.
+ * Scenes mount one step ahead of the rotation (up to `reach`), so each photo
+ * has a full interval to load instead of all six downloading at once.
  */
 export function FooterScene(): ReactElement {
   const ref = useRef<HTMLDivElement>(null);
-  const [{ active, prev }, setShown] = useState({ active: 0, prev: -1 });
+  const [{ active, prev, reach }, setShown] = useState({ active: 0, prev: -1, reach: 1 });
 
   useEffect(() => {
     const el = ref.current;
@@ -33,7 +35,11 @@ export function FooterScene(): ReactElement {
       const run = visible && !document.hidden;
       if (run && !timer) {
         timer = window.setInterval(
-          () => setShown(({ active: a }) => ({ active: (a + 1) % SCENES.length, prev: a })),
+          () =>
+            setShown(({ active: a, reach: r }) => {
+              const next = (a + 1) % SCENES.length;
+              return { active: next, prev: a, reach: Math.max(r, next + 1) };
+            }),
           INTERVAL,
         );
       } else if (!run && timer) {
@@ -57,18 +63,20 @@ export function FooterScene(): ReactElement {
 
   return (
     <div ref={ref} className={styles.root} data-surface="dark" aria-hidden="true">
-      {SCENES.map((scene, i) => (
-        <Image
-          key={scene}
-          className={styles.image}
-          data-active={i === active || undefined}
-          data-prev={i === prev || undefined}
-          src={`/images/future-home/footer/${scene}-wide.jpg`}
-          alt=""
-          fill
-          sizes="100vw"
-        />
-      ))}
+      {SCENES.map((scene, i) =>
+        i <= reach ? (
+          <Image
+            key={scene}
+            className={styles.image}
+            data-active={i === active || undefined}
+            data-prev={i === prev || undefined}
+            src={`/images/future-home/footer/${scene}-wide.jpg`}
+            alt=""
+            fill
+            sizes="100vw"
+          />
+        ) : null,
+      )}
     </div>
   );
 }

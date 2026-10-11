@@ -16,7 +16,7 @@
   font-family: var(--font-text), system-ui, sans-serif;
 }
 
-/* Opaque so the animated ShellBackdrop doesn't show through; clears the pinned header. */
+/* Opaque over the <html> fallback colour; clears the pinned header. */
 .main {
   min-height: 100svh;
   padding-top: var(--header-band);

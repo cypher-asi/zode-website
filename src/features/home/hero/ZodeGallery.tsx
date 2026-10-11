@@ -51,21 +51,41 @@ const SHOTS: readonly Shot[] = [
 /** How far a touch must travel sideways, in px, to count as a swipe rather than a tap. */
 const SWIPE_MIN = 40;
 
+const wrap = (index: number) => (index + SHOTS.length) % SHOTS.length;
+
+/** Runs `callback` once the browser is idle (Safari lacks requestIdleCallback). */
+function whenIdle(callback: () => void): void {
+  if (typeof window.requestIdleCallback === "function") window.requestIdleCallback(callback, { timeout: 3000 });
+  else window.setTimeout(callback, 1000);
+}
+
 /**
  * One ZODE render at a time, advanced only by the user, with dot indicators
- * along the bottom. Every image stays mounted and stacked so switching
- * cross-fades without a layout jump or a fresh network fetch. On touch,
- * swiping left or right steps through the shots.
+ * along the bottom. Images are stacked so switching cross-fades without a
+ * layout jump or a fresh network fetch. Only the first render loads up front
+ * so it isn't competing for bandwidth; once it has loaded its neighbours mount,
+ * then the rest when the browser goes idle. On touch, swiping left or right
+ * steps through the shots.
  */
 export function ZodeGallery(): ReactElement {
   const [active, setActive] = useState(0);
+  const [mounted, setMounted] = useState<ReadonlySet<number>>(() => new Set([0]));
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const swiped = useRef(false);
   const baseId = useId();
 
+  const mount = (indices: readonly number[]) =>
+    setMounted((prev) => (indices.every((i) => prev.has(i)) ? prev : new Set([...prev, ...indices])));
+
+  const onFirstLoad = () => {
+    mount([wrap(-1), 1]);
+    whenIdle(() => mount(SHOTS.map((_, i) => i)));
+  };
+
   const select = (index: number, focus = false) => {
-    const next = (index + SHOTS.length) % SHOTS.length;
+    const next = wrap(index);
+    mount([wrap(next - 1), next, wrap(next + 1)]);
     setActive(next);
     if (focus) tabRefs.current[next]?.focus();
   };
@@ -126,19 +146,22 @@ export function ZodeGallery(): ReactElement {
             select(active + 1);
           }}
         >
-          {SHOTS.map((shot, index) => (
-            <Image
-              key={shot.src}
-              className={styles.image}
-              data-active={index === active ? "" : undefined}
-              src={shot.src}
-              alt=""
-              fill
-              sizes="(max-width: 900px) 100vw, 50vw"
-              loading={index === 0 ? "eager" : "lazy"}
-              fetchPriority={index === 0 ? "high" : undefined}
-            />
-          ))}
+          {SHOTS.map((shot, index) =>
+            mounted.has(index) ? (
+              <Image
+                key={shot.src}
+                className={styles.image}
+                data-active={index === active ? "" : undefined}
+                src={shot.src}
+                alt=""
+                fill
+                sizes="(max-width: 900px) 100vw, 50vw"
+                loading={index === 0 ? "eager" : "lazy"}
+                fetchPriority={index === 0 ? "high" : undefined}
+                onLoad={index === 0 ? onFirstLoad : undefined}
+              />
+            ) : null,
+          )}
         </button>
       </div>
 

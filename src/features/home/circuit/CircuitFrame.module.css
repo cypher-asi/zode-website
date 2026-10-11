@@ -48,7 +48,7 @@
 
 /*
  * Shows a pulse only within its route's band of the page; the stage inside
- * shifts back so the pulse's `offset-path` stays in page coordinates.
+ * shifts back so the pulse's transform stays in page coordinates.
  */
 .clip {
   position: absolute;
@@ -59,20 +59,18 @@
   position: absolute;
 }
 
-/* Head at the leading end; `offset-rotate` turns it to face along the route. */
+/* Head at the leading end; the animation rotates it about the head to face along the route. */
 .pulse {
   position: absolute;
   top: 0;
   left: 0;
-  height: 1.5px;
   border-radius: 1px;
   background: linear-gradient(to right, rgba(255, 255, 255, 0), #ffffff 70%);
   box-shadow:
     0 0 4px rgba(255, 255, 255, 0.6),
     0 0 10px rgba(255, 255, 255, 0.25);
   opacity: 0;
-  offset-anchor: 100% 50%;
-  offset-rotate: auto;
+  transform-origin: 100% 50%;
 }
 
 .pulse[data-tone="light"] {

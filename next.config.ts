@@ -64,6 +64,11 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: import.meta.dirname,
   },
+  // AVIF first (roughly 20% smaller than WebP at the same quality), WebP for
+  // browsers without it. AVIF's first encode is slower; the result is cached.
+  images: {
+    formats: ["image/avif", "image/webp"],
+  },
   // Lets navigations drive React's <ViewTransition>, e.g. the pinned wordmark
   // sliding between the home page and /buy-compute.
   experimental: {

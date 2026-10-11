@@ -6,6 +6,7 @@ import {
   PULSE_SPEED,
   buildCircuit,
   type Circuit,
+  type Edge,
   type Split,
   type Surface,
   type Tone,
@@ -18,6 +19,8 @@ const PAD_GLOW = 260;
 const PEAK = 0.75;
 /** Distance over which a run's pulse fades in and out, in px. */
 const FADE = 18;
+/** Thickness of the pulse in px; its length is PULSE_LENGTH. */
+const PULSE_THICKNESS = 1.5;
 
 function toTone(value: string | undefined): Tone {
   return value === "light" ? "light" : "dark";
@@ -69,15 +72,22 @@ const pick = <T,>(items: readonly T[]): T => items[Math.floor(Math.random() * it
 
 /**
  * The pulse fades in only at the start of a run and out only at its end; in
- * between, consecutive stretches hand it over at full strength.
+ * between, consecutive stretches hand it over at full strength. It moves by
+ * `transform` alone so the animation runs on the compositor: each frame puts
+ * the head (the `transform-origin`, mid-way down the leading end) on the run,
+ * turned to face along it.
  */
-function pulseFrames(length: number, fadeIn: boolean, fadeOut: boolean): Keyframe[] {
+function pulseFrames(edge: Edge, fadeIn: boolean, fadeOut: boolean): Keyframe[] {
+  const { length } = edge;
   const ramp = Math.min(FADE, length / 2) / length;
+  const angle = (Math.atan2(edge.dy, edge.dx) * 180) / Math.PI;
+  const at = (distance: number) =>
+    `translate(${edge.x + edge.dx * distance - PULSE_LENGTH}px, ${edge.y + edge.dy * distance - PULSE_THICKNESS / 2}px) rotate(${angle}deg)`;
   return [
-    { offset: 0, offsetDistance: "0px", opacity: fadeIn ? 0 : PEAK },
-    { offset: ramp, offsetDistance: `${ramp * length}px`, opacity: PEAK },
-    { offset: 1 - ramp, offsetDistance: `${(1 - ramp) * length}px`, opacity: PEAK },
-    { offset: 1, offsetDistance: `${length}px`, opacity: fadeOut ? 0 : PEAK },
+    { offset: 0, transform: at(0), opacity: fadeIn ? 0 : PEAK },
+    { offset: ramp, transform: at(ramp * length), opacity: PEAK },
+    { offset: 1 - ramp, transform: at((1 - ramp) * length), opacity: PEAK },
+    { offset: 1, transform: at(length), opacity: fadeOut ? 0 : PEAK },
   ];
 }
 
@@ -170,7 +180,7 @@ export function CircuitFrame(): ReactElement {
         (next) => !(edges[next].to === edge.from && edges[next].from === edge.to) && onScreen(next),
       );
       const next = hopsLeft > 1 && onward.length > 0 ? pick(onward) : null;
-      const frames = pulseFrames(edge.length, fadeIn, next === null);
+      const frames = pulseFrames(edge, fadeIn, next === null);
       const duration = edge.length / PULSE_SPEED;
       running = pulses[index].map((el) => el.animate(frames, { duration }));
       running[0]?.addEventListener("finish", () => {
@@ -251,7 +261,7 @@ export function CircuitFrame(): ReactElement {
                 className={styles.pulse}
                 data-edge={index}
                 data-tone={band.tone}
-                style={{ width: PULSE_LENGTH, offsetPath: `path("${edge.d}")` }}
+                style={{ width: PULSE_LENGTH, height: PULSE_THICKNESS }}
               />
             </div>
           </div>

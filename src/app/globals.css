@@ -20,7 +20,7 @@
   --color-focus-ring: #2563eb;
   --logo-invert: 1;
 
-  /* Static base/fallback behind the animated ShellBackdrop. */
+  /* Page base; the /login and /register ShellBackdrop animates over it. */
   --shell-outer-bg: #eef0f2;
 }
 

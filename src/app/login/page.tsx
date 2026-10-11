@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import { redirect } from "next/navigation";
+import { ShellBackdrop } from "@/components/layout/ShellBackdrop";
 import { getAccount, safeNext } from "@/features/account/session";
 import { AuthPanel } from "@/features/account/AuthPanel";
 import styles from "@/features/account/auth.module.css";
@@ -23,6 +24,7 @@ export default async function LoginPage({
 
   return (
     <main className={styles.shell}>
+      <ShellBackdrop />
       <AuthPanel mode="login" next={destination} />
     </main>
   );

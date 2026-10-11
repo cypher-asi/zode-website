@@ -3,8 +3,9 @@
  * line drawing, as plain typed arrays. Free of three.js so it can run in a
  * worker (see cabinModel.worker.ts) and hand its buffers back as transferables.
  *
- * The OBJ is parsed directly (rather than via OBJLoader) so we keep the
- * original polygon faces. That lets us:
+ * The model is read from a compact binary of the OBJ's positions and polygon
+ * faces (built by scripts/make-model.cjs) rather than via OBJLoader, so we
+ * keep the original polygon faces. That lets us:
  *   - Build the hidden-line edges from real polygon perimeters, so triangle-
  *     fan diagonals never show up as spurious diagonal lines on flat panels.
  *   - Compute connected components (discrete physical parts) from the shared
@@ -101,7 +102,7 @@ export interface ParsedCabin {
   eaveY: number;
 }
 
-const MODEL_URL = "/zode_3D.obj";
+const MODEL_URL = "/zode_3D.bin";
 const TARGET_HEIGHT = 33; // matches the former parametric ridge height
 
 // An edge is drawn when adjacent faces differ by more than this, or when it
@@ -142,47 +143,33 @@ function classify(
   return nx < 0 ? "walls.left" : "walls.right";
 }
 
-interface ParsedObj {
-  positions: Float32Array; // xyz per vertex (already transformed)
-  faces: number[][]; // polygon vertex indices (0-based)
+interface ParsedModel {
+  positions: Float32Array; // xyz per vertex
+  faces: Uint32Array[]; // polygon vertex indices (0-based)
 }
 
-function parseObj(text: string): ParsedObj {
-  const pos: number[] = [];
-  const faces: number[][] = [];
-  let start = 0;
-  const len = text.length;
-  while (start < len) {
-    let end = text.indexOf("\n", start);
-    if (end === -1) end = len;
-    // Cheap per-line dispatch on the first two characters.
-    if (text.charCodeAt(start) === 118 /* v */) {
-      const c1 = text.charCodeAt(start + 1);
-      if (c1 === 32 /* space */) {
-        const parts = text.slice(start + 2, end).trim().split(/\s+/);
-        pos.push(+parts[0], +parts[1], +parts[2]);
-      }
-    } else if (
-      text.charCodeAt(start) === 102 /* f */ &&
-      text.charCodeAt(start + 1) === 32
-    ) {
-      const parts = text.slice(start + 2, end).trim().split(/\s+/);
-      const face: number[] = [];
-      for (const p of parts) {
-        const slash = p.indexOf("/");
-        face.push(parseInt(slash === -1 ? p : p.slice(0, slash), 10) - 1);
-      }
-      faces.push(face);
-    }
-    start = end + 1;
+/** Reads the layout written by scripts/make-model.cjs. */
+function readModel(buffer: ArrayBuffer): ParsedModel {
+  const [vertexCount, faceCount, indexCount] = new Uint32Array(buffer, 0, 3);
+  let offset = 12;
+  const positions = new Float32Array(buffer, offset, vertexCount * 3);
+  offset += positions.byteLength;
+  const indices = new Uint32Array(buffer, offset, indexCount);
+  offset += indices.byteLength;
+  const sizes = new Uint8Array(buffer, offset, faceCount);
+
+  const faces: Uint32Array[] = new Array(faceCount);
+  for (let fi = 0, start = 0; fi < faceCount; fi++) {
+    faces[fi] = indices.subarray(start, start + sizes[fi]);
+    start += sizes[fi];
   }
-  return { positions: new Float32Array(pos), faces };
+  return { positions, faces };
 }
 
 export async function fetchCabin(): Promise<ParsedCabin> {
   const res = await fetch(MODEL_URL);
   if (!res.ok) throw new Error(`Failed to fetch ${MODEL_URL}: ${res.status}`);
-  return parseCabin(await res.text());
+  return parseCabin(await res.arrayBuffer());
 }
 
 /** Every buffer in a parsed cabin, for transferring it out of a worker without a copy. */
@@ -196,8 +183,8 @@ export function cabinBuffers(cabin: ParsedCabin): ArrayBuffer[] {
   return buffers;
 }
 
-function parseCabin(text: string): ParsedCabin {
-  const { positions, faces } = parseObj(text);
+function parseCabin(buffer: ArrayBuffer): ParsedCabin {
+  const { positions, faces } = readModel(buffer);
 
   // --- Recenter (X/Z to origin, base at y = 0) and scale to TARGET_HEIGHT ---
   let minX = Infinity,

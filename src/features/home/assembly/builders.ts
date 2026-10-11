@@ -953,7 +953,7 @@ export function buildGantry(kit: Kit, mats: LineMats): Gantry {
 }
 
 // ---------------------------------------------------------------------------
-// Outer shell (the gabled ZODE chassis from /zode_3D.obj)
+// Outer shell (the gabled ZODE chassis from /zode_3D.bin)
 // ---------------------------------------------------------------------------
 
 /**
