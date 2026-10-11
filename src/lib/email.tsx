@@ -20,10 +20,15 @@ function resend(): Resend | undefined {
   return client;
 }
 
-/** Resend's shared test sender only delivers to the Resend account owner, which suits local testing. */
-const sender = (): string =>
-  process.env.EMAIL_FROM ||
-  (process.env.NODE_ENV === "production" ? "ZODE <orders@zode.org>" : "ZODE <onboarding@resend.dev>");
+/**
+ * RESEND_EMAIL_DOMAIN is the verified domain the Vercel integration sets. Without
+ * it, Resend's shared test sender only delivers to the account owner.
+ */
+function sender(): string {
+  if (process.env.EMAIL_FROM) return process.env.EMAIL_FROM;
+  const domain = process.env.RESEND_EMAIL_DOMAIN;
+  return domain ? `ZODE <orders@${domain}>` : "ZODE <onboarding@resend.dev>";
+}
 
 const teamInbox = (): string => process.env.ORDERS_NOTIFY_EMAIL || RECIPIENT_EMAIL;
 
