@@ -3,7 +3,7 @@
 import { useCallback, useSyncExternalStore, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { logout } from "./actions";
-import { hasSignedInCookie } from "./signedInCookie";
+import { readSignedInCookie } from "./signedInCookie";
 
 /** Pages that need a signed-in account; logging out on one returns home. */
 const ACCOUNT_ONLY_PATHS = ["/portal"];
@@ -48,15 +48,23 @@ function showLogoutToast(): void {
   ];
 }
 
-/** Signed in per the hint cookie; `false` on the server and during hydration, since pages render statically. */
-export function useSignedIn(): boolean {
-  return useSyncExternalStore(
-    subscribe,
-    () => hasSignedInCookie(document.cookie),
-    () => false,
-  );
+/** Whether `pathname` is in the signed-in portal. */
+export function isPortalPath(pathname: string): boolean {
+  return ACCOUNT_ONLY_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
+/**
+ * The signed-in account's initials per the hint cookie (empty for older
+ * sessions), or `null` when signed out. Always `null` on the server and during
+ * hydration, since pages render statically.
+ */
+export function useAccountInitials(): string | null {
+  return useSyncExternalStore(
+    subscribe,
+    () => readSignedInCookie(document.cookie),
+    () => null,
+  );
+}
 export function useLogoutToast(): LogoutToast {
   return useSyncExternalStore(
     subscribe,
@@ -80,7 +88,7 @@ export function useLogout(): { logOut: (onDone?: () => void) => void; pending: b
         await logout();
         onDone?.();
         showLogoutToast();
-        if (ACCOUNT_ONLY_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
+        if (isPortalPath(pathname)) {
           router.replace("/");
         }
       });

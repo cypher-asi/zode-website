@@ -3,6 +3,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { initials } from "./initials";
 import { SIGNED_IN_COOKIE } from "./signedInCookie";
 import type { Account } from "./zos";
 
@@ -58,7 +59,7 @@ export async function createAccountSession(account: Account): Promise<void> {
     maxAge: ACCOUNT_MAX_AGE_SECONDS,
   } as const;
   cookieStore.set(ACCOUNT_COOKIE, encode(account), { ...options, httpOnly: true });
-  cookieStore.set(SIGNED_IN_COOKIE, "1", options);
+  cookieStore.set(SIGNED_IN_COOKIE, initials(account.displayName), options);
 }
 
 export async function deleteAccountSession(): Promise<void> {

@@ -11,7 +11,7 @@ import {
   type KeyboardEvent,
   type ReactElement,
 } from "react";
-import { useLogout, useLogoutToast, useSignedIn } from "@/features/account/useAccount";
+import { isPortalPath, useAccountInitials, useLogout, useLogoutToast } from "@/features/account/useAccount";
 import { COMPUTE_ACTIONS, ENGINEER_ACTION } from "@/lib/navigation";
 import styles from "./PinnedHeader.module.css";
 
@@ -20,6 +20,12 @@ type Tone = "light" | "dark";
 const ACTION_MENU = [
   ...COMPUTE_ACTIONS,
   ENGINEER_ACTION,
+];
+
+/** In the portal the menu leads back to the public site first. */
+const PORTAL_ACTION_MENU = [
+  { id: "home", label: "Home", href: "/" },
+  ...ACTION_MENU,
 ];
 
 const SIGNED_OUT_MENU = [
@@ -86,6 +92,7 @@ export function PinnedHeader({
 }): ReactElement {
   const pathname = usePathname();
   const brandRef = useRef<HTMLAnchorElement>(null);
+  const avatarRef = useRef<HTMLAnchorElement>(null);
   const actionRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLUListElement>(null);
@@ -93,7 +100,12 @@ export function PinnedHeader({
   const [actionTone, setActionTone] = useState<Tone>("light");
   const [actionOverMedia, setActionOverMedia] = useState(false);
   const [open, setOpen] = useState(false);
-  const signedIn = useSignedIn();
+  const accountInitials = useAccountInitials();
+  const signedIn = accountInitials !== null;
+  const inPortal = isPortalPath(pathname ?? "/");
+  // The portal page already shows who you are, so the avatar only appears on the public site.
+  const showAvatar = showAction && signedIn && !inPortal;
+  const menu = inPortal ? PORTAL_ACTION_MENU : ACTION_MENU;
   const { logOut, pending: loggingOut } = useLogout();
   const menuId = useId();
 
@@ -179,6 +191,7 @@ export function PinnedHeader({
       // Reads first: interleaving them with the mask writes below would force a style recalc per node.
       const brandRect = brand.getBoundingClientRect();
       const actionRect = action?.getBoundingClientRect();
+      const avatarRect = avatarRef.current?.getBoundingClientRect();
       const measured: [HTMLElement, DOMRect][] = [];
       // Re-queried every frame because sections such as the assembly line mount late.
       for (const node of document.querySelectorAll<HTMLElement>("[data-top-fade]")) {
@@ -200,7 +213,7 @@ export function PinnedHeader({
       const clear = Math.max(brandRect.bottom, actionRect?.bottom ?? 0) + FADE_GAP;
       const solid = clear + FADE_LENGTH;
       const leftEdge = brandRect.right + SIDE_PAD;
-      const rightEdge = actionRect ? actionRect.left - SIDE_PAD : Infinity;
+      const rightEdge = actionRect ? (avatarRect ?? actionRect).left - SIDE_PAD : Infinity;
       for (const [node, { top, left, right }] of measured) {
         const sides = node.dataset.topFade;
         const fadeLeft = sides !== "right" && left < leftEdge;
@@ -248,7 +261,7 @@ export function PinnedHeader({
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
     };
-  }, [showAction]);
+  }, [showAction, showAvatar]);
 
   return (
     <>
@@ -278,6 +291,16 @@ export function PinnedHeader({
           data-media={actionOverMedia || undefined}
           data-open={open || undefined}
         >
+          {showAvatar ? (
+            <Link ref={avatarRef} className={styles.avatar} href="/portal" aria-label="Your portal">
+              {accountInitials || (
+                <svg className={styles.avatarGlyph} viewBox="0 0 16 16" aria-hidden="true">
+                  <circle cx="8" cy="5.5" r="2.75" />
+                  <path d="M2.75 14c.6-2.9 2.7-4.5 5.25-4.5s4.65 1.6 5.25 4.5" />
+                </svg>
+              )}
+            </Link>
+          ) : null}
           <div ref={actionRef} className={styles.split}>
             <Link className={styles.primary} href="/buy-compute">
               Buy Compute
@@ -307,7 +330,7 @@ export function PinnedHeader({
               className={styles.menu}
               onKeyDown={onMenuKey}
             >
-              {ACTION_MENU.map((item) => (
+              {menu.map((item) => (
                 <li key={item.id} role="none">
                   <Link
                     role="menuitem"

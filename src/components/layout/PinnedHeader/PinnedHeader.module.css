@@ -98,6 +98,7 @@
   right: max(var(--edge), env(safe-area-inset-right, 0px));
   z-index: 10;
   display: inline-flex;
+  gap: 8px;
   font-family: var(--font-text), system-ui, sans-serif;
   font-size: 12px;
   font-weight: 500;
@@ -110,6 +111,60 @@
 .action[data-media] {
   --ink: #fff;
   --paper: #000;
+}
+
+/*
+ * Signed-in initials, left of the split button and linking to the portal. A
+ * circle the button's height in the same outline-and-wipe style.
+ */
+.avatar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  background: linear-gradient(var(--ink), var(--ink)) no-repeat bottom / 100% 0%;
+  color: var(--ink);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  transition:
+    border-color 200ms ease,
+    background-size 280ms cubic-bezier(0.65, 0, 0.35, 1),
+    background-color 200ms ease,
+    box-shadow 200ms ease,
+    color 200ms ease 80ms;
+}
+
+.action[data-media] .avatar {
+  background-color: var(--paper);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.avatarGlyph {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+.avatar:focus-visible {
+  background-size: 100% 100%;
+  color: var(--paper);
+  outline: 2px solid #2563eb;
+  outline-offset: 4px;
+}
+
+@media (hover: hover) {
+  .avatar:hover {
+    background-size: 100% 100%;
+    color: var(--paper);
+  }
 }
 
 .split {
@@ -362,6 +417,12 @@ button.menuItem:disabled {
     height: 28px;
   }
 
+  .avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 10px;
+  }
+
   .primary {
     padding: 0 11px;
   }
@@ -384,6 +445,7 @@ button.menuItem:disabled {
 @media (prefers-reduced-motion: reduce) {
   .brand::before,
   .wordmark,
+  .avatar,
   .split,
   .primary,
   .toggle,
