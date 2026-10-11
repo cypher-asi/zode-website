@@ -1,13 +1,9 @@
 @import "tailwindcss";
 
 /*
- * Theme tokens. The outer shell (frame + top bar + bottom taskbar) is a
- * constant WHITE surface with dark chrome in both themes — so `:root` holds
- * the light/white-surface palette. Only the inner content panel
- * (`[data-shell-body]`) re-themes: a dark "screen" by default (dark mode is
- * the default) and a light panel in light mode. `--logo-invert` keeps the
- * mark legible: black on the white shell, white inside the dark panel, black
- * inside a light panel.
+ * Light-surface tokens shared by every page. Dark surfaces (the footer)
+ * re-pin the text tokens locally. `--logo-invert` keeps the white-on-clear
+ * mark legible: 1 renders it black on light surfaces.
  */
 :root {
   --color-bg: #ffffff;
@@ -22,54 +18,11 @@
   --color-focus-ring: #2563eb;
   --logo-invert: 1;
 
-  /* Brand accent — tan, inherited across both themes. */
+  /* Brand accent — tan. */
   --color-accent: #ffd6a0;
 
-  /*
-   * Categorical chart palette — a warm tan cluster anchored on the accent.
-   * Kept in sync with `src/lib/theme/chartPalette.ts` (the source of truth used
-   * by Recharts); these tokens let CSS-based graphs/tables match the same set.
-   */
-  --chart-1: #ffd6a0; /* brand tan accent */
-  --chart-2: #ffe8c9; /* pale cream */
-  --chart-3: #f4be7c; /* warm amber */
-  --chart-4: #e3a155; /* honey / gold */
-  --chart-5: #9e6526; /* deep bronze */
-  --chart-6: #c6843c; /* toffee */
-
-  /* Soft white/gray frame around the inner content "screen". Used as the
-   * static base/fallback behind the animated WebGL ShellBackdrop. */
+  /* Static base/fallback behind the animated WebGL ShellBackdrop. */
   --shell-outer-bg: #eef0f2;
-}
-
-/* Inner content panel — dark "screen" by default (dark mode). */
-[data-shell-body] {
-  --color-bg: #161616;
-  --color-bg-elevated: #1e1e1e;
-  --color-text-primary: #f4f4f5;
-  --color-text-secondary: #8a8a92;
-  --color-border: rgba(255, 255, 255, 0.12);
-  --color-border-strong: rgba(255, 255, 255, 0.18);
-  --color-surface-tint: rgba(255, 255, 255, 0.06);
-  --color-surface-hover: rgba(255, 255, 255, 0.08);
-  --color-overlay-focus: rgba(255, 255, 255, 0.4);
-  --color-focus-ring: #6aa6ff;
-  --logo-invert: 0;
-}
-
-/* Inner content panel in light mode — light panel on the same white shell. */
-[data-theme="light"] [data-shell-body] {
-  --color-bg: #ffffff;
-  --color-bg-elevated: #ffffff;
-  --color-text-primary: #0a0a0a;
-  --color-text-secondary: #6b6b72;
-  --color-border: rgba(0, 0, 0, 0.12);
-  --color-border-strong: rgba(0, 0, 0, 0.16);
-  --color-surface-tint: rgba(0, 0, 0, 0.05);
-  --color-surface-hover: rgba(0, 0, 0, 0.06);
-  --color-overlay-focus: rgba(0, 0, 0, 0.35);
-  --color-focus-ring: #2563eb;
-  --logo-invert: 1;
 }
 
 @theme inline {
@@ -131,8 +84,30 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/*
+ * View transitions: the page itself swaps instantly as before; only named
+ * elements (the pinned wordmark, see PinnedHeader) animate between routes.
+ */
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-group(zode-wordmark) {
+  z-index: 100;
+  animation-duration: 550ms;
+  animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }

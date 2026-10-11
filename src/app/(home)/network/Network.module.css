@@ -17,7 +17,7 @@
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
   gap: 64px;
-  min-height: 100dvh;
+  min-height: 100svh;
   padding: 128px var(--edge) 72px;
   overflow: hidden;
   font-family: var(--font-text), system-ui, sans-serif;
@@ -379,9 +379,11 @@
 }
 
 @media (max-width: 900px) {
+  /* Stretch, not the desktop `end`: the size-contained stage has no width of its own. */
   .root {
     display: flex;
     flex-direction: column;
+    align-items: stretch;
     gap: 0;
     min-height: 0;
     padding: 104px var(--edge) 72px;

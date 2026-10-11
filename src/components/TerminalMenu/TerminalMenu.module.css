@@ -59,22 +59,63 @@
 }
 
 .item[data-selected],
-.item:hover,
-.item:focus-visible,
-.menu:not(:hover, :focus-within) .item[data-current] {
+.item:focus-visible {
   color: var(--ink);
 }
 
-.item:hover .caret,
-.item:focus-visible .caret,
-.menu:not(:hover, :focus-within) .item[data-current] .caret {
+.item:focus-visible .caret {
   opacity: 1;
 }
 
-.item:hover .cursor,
-.item:focus-visible .cursor,
-.menu:not(:hover, :focus-within) .item[data-current] .cursor {
+.item:focus-visible .cursor {
   animation: cursor 1s steps(1) infinite;
+}
+
+@media (hover: hover) {
+  .item:hover,
+  .menu:not(:hover, :focus-within) .item[data-current] {
+    color: var(--ink);
+  }
+
+  .item:hover .caret,
+  .menu:not(:hover, :focus-within) .item[data-current] .caret {
+    opacity: 1;
+  }
+
+  .item:hover .cursor,
+  .menu:not(:hover, :focus-within) .item[data-current] .cursor {
+    animation: cursor 1s steps(1) infinite;
+  }
+}
+
+/* Touch has no hover, and a tap focuses without `:focus-visible`, so the caret rests on `current`. */
+@media (hover: none) {
+  .menu:not(:has(:focus-visible)) .item[data-current] {
+    color: var(--ink);
+  }
+
+  .menu:not(:has(:focus-visible)) .item[data-current] .caret {
+    opacity: 1;
+  }
+
+  .menu:not(:has(:focus-visible)) .item[data-current] .cursor {
+    animation: cursor 1s steps(1) infinite;
+  }
+}
+
+@media (pointer: coarse) {
+  .items,
+  .menu[data-size="sm"] .items {
+    gap: 0;
+  }
+
+  .item {
+    padding: 10px 0;
+  }
+
+  .menu[data-size="sm"] .item {
+    padding: 9px 0;
+  }
 }
 
 .item:focus-visible {
@@ -97,8 +138,25 @@
 @media (prefers-reduced-motion: reduce) {
   .item:hover .cursor,
   .item:focus-visible .cursor,
-  .menu:not(:hover, :focus-within) .item[data-current] .cursor {
+  .menu:not(:hover, :focus-within) .item[data-current] .cursor,
+  .menu:not(:has(:focus-visible)) .item[data-current] .cursor {
     animation: none;
+  }
+
+  .item:focus-visible .cursor {
     opacity: 1;
+  }
+
+  @media (hover: hover) {
+    .item:hover .cursor,
+    .menu:not(:hover, :focus-within) .item[data-current] .cursor {
+      opacity: 1;
+    }
+  }
+
+  @media (hover: none) {
+    .menu:not(:has(:focus-visible)) .item[data-current] .cursor {
+      opacity: 1;
+    }
   }
 }

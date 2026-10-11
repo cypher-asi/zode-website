@@ -10,6 +10,7 @@
 }
 
 .panel {
+  position: relative;
   width: 100%;
   max-width: 380px;
   padding: 32px 28px;
@@ -17,6 +18,67 @@
   border-radius: 16px;
   background: var(--color-bg);
   box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.5);
+  /* Restated for the modal, whose dialog sets its own font. */
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Width of the RouteModal panel around the card. */
+.modal {
+  --modal-width: 380px;
+}
+
+/* The modal's panel supplies the shadow and, on phones, the bottom sheet's shape. */
+.inModal {
+  max-width: none;
+  border: 0;
+  border-radius: inherit;
+  box-shadow: none;
+}
+
+@media (max-width: 700px) {
+  .inModal {
+    padding: 36px 20px calc(28px + env(safe-area-inset-bottom));
+  }
+}
+
+.close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    rotate 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.close svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+@media (hover: hover) {
+  .close:hover {
+    background: var(--color-surface-hover);
+    rotate: 90deg;
+  }
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
 }
 
 .brand {
@@ -95,6 +157,115 @@
   margin: 0;
   font-size: 12px;
   color: #ef4444;
+}
+
+/* Live password strength under the register form's password field. */
+.passwordFeedback {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.meter {
+  --meter-color: #ef4444;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.meter[data-strength="fair"] {
+  --meter-color: #f59e0b;
+}
+
+.meter[data-strength="good"] {
+  --meter-color: #84cc16;
+}
+
+.meter[data-strength="strong"] {
+  --meter-color: #16a34a;
+}
+
+.meter span {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-border-strong);
+  transition: background-color 160ms ease;
+}
+
+.meter span[data-filled] {
+  background: var(--meter-color);
+}
+
+.strength {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.strength[data-strength="too-short"],
+.strength[data-strength="weak"] {
+  color: #dc2626;
+}
+
+.strength[data-strength="fair"] {
+  color: #b45309;
+}
+
+.strength[data-strength="good"],
+.strength[data-strength="strong"] {
+  color: #15803d;
+}
+
+.checks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.checks li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  transition: color 160ms ease;
+}
+
+.checks li[data-met] {
+  color: #15803d;
+}
+
+/* An unmet hard requirement reads as an error, not a suggestion. */
+.checks li[data-required]:not([data-met]) {
+  color: #dc2626;
+}
+
+.checkMark {
+  flex: none;
+  width: 10px;
+  text-align: center;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .close,
+  .meter span,
+  .checks li {
+    transition: none;
+  }
 }
 
 .submit {

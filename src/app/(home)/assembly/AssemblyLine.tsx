@@ -12,8 +12,6 @@ const AssemblyScene = dynamic(() => import("./AssemblyScene").then((mod) => mod.
   ssr: false,
 });
 
-const pad = (n: number) => String(n).padStart(2, "0");
-
 /**
  * "How a ZODE is built" section: the autoplaying assembly-line scene, a
  * bottom-right callout showing the current step of the current stage with a
@@ -53,15 +51,14 @@ export function AssemblyLine(): ReactElement {
 
       <header className={styles.intro}>
         <h2 className={styles.title}>
-          Built by robots.
+          Built by robots
+          <br />
+          in North America.
         </h2>
       </header>
 
       <div ref={calloutRef} className={styles.callout}>
         <div key={`${cursor.stage}-${cursor.step}`} className={styles.phase}>
-          <span className={styles.phaseCount}>
-            {pad(cursor.step + 1)} / {pad(stage.steps.length)}
-          </span>
           <span className={styles.phaseLabel}>{stage.steps[cursor.step]}</span>
         </div>
 

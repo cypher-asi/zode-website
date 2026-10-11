@@ -1,8 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { createAccountSession, safeNext } from "@/lib/account-session";
+import { sendRegistrationEmails } from "@/lib/email";
 import { describeZosError, zosRegister, type Account } from "@/lib/zos";
+import { MIN_PASSWORD_LENGTH } from "./password";
 
 export interface RegisterState {
   readonly error?: string;
@@ -11,7 +14,6 @@ export interface RegisterState {
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MIN_PASSWORD_LENGTH = 8;
 
 export async function register(_prevState: RegisterState, formData: FormData): Promise<RegisterState> {
   const values = {
@@ -35,6 +37,7 @@ export async function register(_prevState: RegisterState, formData: FormData): P
     return { error: describeZosError(error, "Couldn't create your account right now. Please try again."), values };
   }
 
+  after(() => sendRegistrationEmails(account, values.inviteCode));
   await createAccountSession(account);
   redirect(safeNext(formData.get("next")));
 }

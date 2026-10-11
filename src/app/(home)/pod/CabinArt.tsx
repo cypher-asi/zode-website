@@ -761,15 +761,23 @@ function zoneAt(svg: SVGSVGElement, x: number, y: number): string | null {
   return glass;
 }
 
-/** The cabin drawing; hovering any hotspot layer reports its zone. */
+/** The cabin drawing; hovering any hotspot layer reports its zone, or on touch, tapping toggles it. */
 export function CabinArt({ pod, active, onActive }: CabinArtProps): ReactElement {
   return (
     <svg
       className={styles.art}
       viewBox={`${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`}
       aria-hidden="true"
-      onPointerMove={(event) => onActive(zoneAt(event.currentTarget, event.clientX, event.clientY))}
-      onPointerLeave={() => onActive(null)}
+      onPointerMove={(event) => {
+        if (event.pointerType !== "mouse") return;
+        onActive(zoneAt(event.currentTarget, event.clientX, event.clientY));
+      }}
+      onPointerLeave={(event) => event.pointerType === "mouse" && onActive(null)}
+      onPointerUp={(event) => {
+        if (event.pointerType === "mouse") return;
+        const zone = zoneAt(event.currentTarget, event.clientX, event.clientY);
+        onActive(zone === active ? null : zone);
+      }}
     >
       {LAYERS[pod].map((l) => (
         <g

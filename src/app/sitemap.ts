@@ -3,11 +3,9 @@ import { SITE_URL } from "@/lib/site";
 
 const PUBLIC_ROUTES = [
   "",
-  "/network",
   "/buy-compute",
-  "/rent-compute",
-  "/give-compute",
   "/contact",
+  "/talk-to-an-engineer",
   "/privacy",
   "/terms",
 ] as const;

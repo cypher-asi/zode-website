@@ -1,1 +1,0 @@
-export { ProductSpecs } from "./ProductSpecs";

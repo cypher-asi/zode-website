@@ -3,6 +3,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { SIGNED_IN_COOKIE } from "./account-cookie";
 import type { Account } from "./zos";
 
 export const ACCOUNT_COOKIE = "zode_account";
@@ -50,18 +51,20 @@ function decode(token: string | undefined): Account | null {
 
 export async function createAccountSession(account: Account): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.set(ACCOUNT_COOKIE, encode(account), {
-    httpOnly: true,
+  const options = {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: ACCOUNT_MAX_AGE_SECONDS,
-  });
+  } as const;
+  cookieStore.set(ACCOUNT_COOKIE, encode(account), { ...options, httpOnly: true });
+  cookieStore.set(SIGNED_IN_COOKIE, "1", options);
 }
 
 export async function deleteAccountSession(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(ACCOUNT_COOKIE);
+  cookieStore.delete(SIGNED_IN_COOKIE);
 }
 
 /** The signed-in ZOS account, or `null`. */

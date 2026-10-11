@@ -17,6 +17,8 @@
   border: 0;
   background: transparent;
   cursor: pointer;
+  /* Horizontal drags are swipes (see ZodeGallery.tsx); vertical ones still scroll the page. */
+  touch-action: pan-y;
 }
 
 .stage:focus-visible {
@@ -82,8 +84,21 @@
     background-color 300ms ease;
 }
 
-.dot:hover::before {
-  background: rgba(255, 255, 255, 0.7);
+@media (hover: hover) {
+  .dot:hover::before {
+    background: rgba(255, 255, 255, 0.7);
+  }
+}
+
+@media (pointer: coarse) {
+  .bar {
+    gap: 0;
+  }
+
+  .dot {
+    width: 36px;
+    height: 36px;
+  }
 }
 
 .dot[aria-selected="true"]::before {

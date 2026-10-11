@@ -1,6 +1,8 @@
 .loop {
   display: inline-flex;
   flex: none;
+  font-size: 14px;
+  color: #85858a;
 }
 
 .track {

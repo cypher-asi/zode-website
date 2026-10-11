@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Newsreader } from "next/font/google";
 import { redirect } from "next/navigation";
 import { isAuthenticated } from "@/lib/session";
+import { COMPUTE_ACTIONS } from "./actions";
 import { AssemblyLine } from "./assembly/AssemblyLine";
 import { CircuitFrame } from "./circuit/CircuitFrame";
 import { ClosingCta } from "./cta/ClosingCta";
@@ -18,13 +19,12 @@ import { ZodeGallery } from "./ZodeGallery";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
-  title: "ZODE — Sovereign Super Intelligence",
-  description: "The fastest deployable data center.",
+  title: "ZODE: Sovereign Superintelligence.",
+  description: "The fastest deployable AI data center.",
 };
 
 const HERO_ACTIONS: readonly TerminalMenuItem[] = [
-  { id: "buy", label: "Buy Compute", href: "/buy-compute" },
-  { id: "rent", label: "Rent Compute", href: "/rent-compute" },
+  ...COMPUTE_ACTIONS,
   { id: "learn", label: "Learn More", href: "#learn-more" },
 ];
 
@@ -42,10 +42,9 @@ const text = Inter({
 /**
  * Home page: a full-viewport split with the headline on a white panel and a
  * clickable ZODE render gallery on a black panel, followed by a hoverable pod
- * explorer and an autoplaying assembly-line build of a ZODE. Lives in its own
- * `(home)` group, outside `(site)`, so it renders without the shared nav and
- * taskbar; it closes with a rotating landscape band above the wordmark and
- * a sideways copyright line. The previous home page lives at `/legacy`.
+ * explorer and an autoplaying assembly-line build of a ZODE. It closes with a
+ * rotating landscape band above the wordmark and a sideways copyright line;
+ * the `(site)` pages reuse its pinned header and that footer.
  */
 export default async function HomePage() {
   if (!(await isAuthenticated())) {
@@ -62,13 +61,13 @@ export default async function HomePage() {
           <div className={styles.copy} data-top-fade>
             <h1 className={styles.headline}>
               <span className={styles.line}>Sovereign</span>{" "}
-              <span className={styles.line}>Super Intelligence</span>
+              <span className={styles.line}>Superintelligence</span>
             </h1>
             <TerminalMenu items={HERO_ACTIONS} label="Get started" className={styles.menu} />
           </div>
 
           <div className={styles.bar} data-top-fade data-circuit-rule>
-            <p className={styles.helper}>The fastest deployable data center.</p>
+            <p className={styles.helper}>The fastest deployable AI data center.</p>
             <WordLoop />
           </div>
         </section>

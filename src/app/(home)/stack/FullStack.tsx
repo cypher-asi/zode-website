@@ -10,7 +10,8 @@ import styles from "./FullStack.module.css";
  * "Full stack" section: the intro copy on the left, and an exploded line
  * drawing of the six layers with labels to its right, each joined to its
  * plate by a leader line. The plates spread apart once the figure scrolls
- * into view, and hovering a plate highlights it and its label.
+ * into view, and hovering a plate highlights it and its label; on touch,
+ * tapping a plate or a label toggles the highlight.
  */
 export function FullStack(): ReactElement {
   const figureRef = useRef<HTMLDivElement>(null);
@@ -21,7 +22,11 @@ export function FullStack(): ReactElement {
     <div className={styles.root} data-top-fade>
       <div className={styles.layout}>
         <div className={styles.intro}>
-          <h2 className={styles.title}>From dirt to tokens.</h2>
+          <h2 className={styles.title}>
+            Vertically integrated,
+            <br />
+            from dirt to tokens.
+          </h2>
           <p className={styles.lede}>
             ZODE builds every layer itself, from the land and power to the
             network that delivers your tokens.
@@ -53,6 +58,9 @@ export function FullStack(): ReactElement {
                 key={layer.id}
                 className={styles.label}
                 data-on={active === layer.id || undefined}
+                onPointerUp={(event) =>
+                  event.pointerType !== "mouse" && setActive(active === layer.id ? null : layer.id)
+                }
                 style={
                   {
                     "--y": `${(((labelY(i) - VIEW.y) / VIEW.h) * 100).toFixed(2)}%`,

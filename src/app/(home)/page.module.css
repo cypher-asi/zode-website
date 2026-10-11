@@ -23,12 +23,14 @@
   --h2-size: clamp(29px, 2.55vw, 40px);
   --h2-leading: 1.1;
   --h2-tracking: -0.02em;
+
+  -webkit-tap-highlight-color: transparent;
 }
 
 .hero {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  height: 100dvh;
+  height: 100svh;
   overflow: hidden;
 }
 
@@ -42,7 +44,7 @@
 /* Slightly taller-than-viewport assembly-line scene below the stack (see assembly/). */
 .assembly {
   position: relative;
-  height: 112dvh;
+  height: 112svh;
   min-height: 630px;
   background: var(--off-black);
   color: var(--off-white);
@@ -81,9 +83,9 @@
 .footer {
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  min-height: 100svh;
   /* Floor keeps the header band, the landscape's min-height, and the band's sideways copyright inside the cap. */
-  max-height: max(100dvh, calc(452px + var(--header-band)));
+  max-height: max(100svh, calc(452px + var(--header-band)));
   padding-top: var(--header-band);
   background: #000000;
 }
@@ -168,11 +170,11 @@
     --h1-size: clamp(32px, 8vw, 46px);
   }
 
+  /* Copy first, then the gallery peeking up from below it, sized by its own aspect ratio. */
   .hero {
     grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(420px, 1fr);
+    grid-template-rows: auto auto;
     height: auto;
-    min-height: 100dvh;
     overflow: visible;
   }
 
@@ -184,7 +186,7 @@
   .bar {
     height: auto;
     min-height: var(--bar-height);
-    padding-block: 10px;
+    padding: 10px var(--edge);
   }
 
   .helper {
@@ -192,6 +194,19 @@
   }
 
   .right {
-    min-height: 110vw;
+    aspect-ratio: 4 / 5;
+    max-height: 72svh;
+  }
+
+  /* One screen tall would leave a phone mostly empty black under the landscape; size to the content instead. */
+  .footer {
+    min-height: 0;
+    max-height: none;
+  }
+
+  /* Portrait screens crop the scene's sides, so a shorter band loses little and saves a long scroll. */
+  .assembly {
+    height: max(560px, 88svh);
+    min-height: 0;
   }
 }

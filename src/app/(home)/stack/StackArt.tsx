@@ -281,6 +281,7 @@ export interface StackArtProps {
 /**
  * Exploded line drawing of the stack; plates are painted bottom-up so upper ones occlude lower.
  * SVG has no z-index, so the hovered plate is repainted last as a pointer-transparent copy.
+ * Touch has no hover, so a tap toggles the plate instead.
  */
 export function StackArt({ active, onActive }: StackArtProps): ReactElement {
   const order = LAYERS.map((layer, i) => ({ layer, i })).reverse();
@@ -298,8 +299,11 @@ export function StackArt({ active, onActive }: StackArtProps): ReactElement {
           className={styles.layer}
           data-on={active === layer.id || undefined}
           style={{ "--o": i - MID, "--i": i } as CSSProperties}
-          onPointerEnter={() => onActive(layer.id)}
-          onPointerLeave={() => onActive(null)}
+          onPointerEnter={(event) => event.pointerType === "mouse" && onActive(layer.id)}
+          onPointerLeave={(event) => event.pointerType === "mouse" && onActive(null)}
+          onPointerUp={(event) =>
+            event.pointerType !== "mouse" && onActive(active === layer.id ? null : layer.id)
+          }
         >
           <polygon className={styles.hit} points={HIT[layer.id]} />
           <g className={styles.lift}>{ART[layer.id]}</g>

@@ -41,6 +41,7 @@ export function PodTour(): ReactElement {
   const tour = POD_TOURS.find((t) => t.id === pod) ?? POD_TOURS[0];
   const hotspots = [...tour.hotspots, ...SHELL_HOTSPOTS];
   const leave = (id: string) => setActive((on) => (on === id ? null : on));
+  const toggle = (id: string) => setActive((on) => (on === id ? null : id));
 
   const choosePod = (id: string) => {
     const next = POD_TOURS.find((t) => t.id === id);
@@ -111,8 +112,9 @@ export function PodTour(): ReactElement {
                 className={styles.spot}
                 data-on={active === spot.id || undefined}
                 tabIndex={0}
-                onMouseEnter={() => setActive(spot.id)}
-                onMouseLeave={() => leave(spot.id)}
+                onPointerEnter={(event) => event.pointerType === "mouse" && setActive(spot.id)}
+                onPointerLeave={(event) => event.pointerType === "mouse" && leave(spot.id)}
+                onPointerUp={(event) => event.pointerType !== "mouse" && toggle(spot.id)}
                 onFocus={() => setActive(spot.id)}
                 onBlur={() => leave(spot.id)}
               >

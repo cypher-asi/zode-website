@@ -23,6 +23,11 @@ const FLOOR_IN_FROM = -14;
 const INDEX_STEP = 8;
 export const SHELL_X = 40;
 
+/** Seconds for the whole scene to fade in, each infra group to reveal (they overlap), and a camera move. */
+const SCENE_FADE = 0.35;
+const INFRA_FADE = 1;
+const CAMERA_MOVE = 2.6;
+
 /** Belt runs reach well past every framing's edges, even on ultrawide screens. */
 export const BELT = {
   inbound: [-90, 3.4] as const,
@@ -124,10 +129,43 @@ export interface Timeline {
   parts: PartTrack[];
   moves: MoveTrack[];
   podStart: number[];
-  cameraKeys: { time: number; key: FramingKey }[];
+  cameraKeys: CameraKey[];
+}
+
+interface CameraKey {
+  time: number;
+  key: FramingKey;
+  /** Where the camera actually is at `time`, so a key that interrupts a move eases on from there. */
+  from: Framing;
 }
 
 export const SHELL_GROUPS = ["Foundation + floor deck", "Steel walls", "Glazed gables", "Roof"] as const;
+
+const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
+const smooth = (x: number) => {
+  const c = clamp01(x);
+  return c * c * (3 - 2 * c);
+};
+const easeInOut = (x: number) => {
+  const c = clamp01(x);
+  return c < 0.5 ? 4 * c * c * c : 1 - Math.pow(-2 * c + 2, 3) / 2;
+};
+const span = (p: number, a: number, b: number) => clamp01((p - a) / (b - a));
+const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
+
+function lerp3(out: Vec3, a: Readonly<Vec3>, b: Readonly<Vec3>, k: number): Vec3 {
+  out[0] = lerp(a[0], b[0], k);
+  out[1] = lerp(a[1], b[1], k);
+  out[2] = lerp(a[2], b[2], k);
+  return out;
+}
+
+function lerpFraming(out: Framing, a: Framing, b: Framing, k: number): Framing {
+  lerp3(out.target, a.target, b.target, k);
+  out.width = lerp(a.width, b.width, k);
+  out.height = lerp(a.height, b.height, k);
+  return out;
+}
 
 function buildTimeline(): Timeline {
   const stages: StageInfo[] = [];
@@ -135,7 +173,7 @@ function buildTimeline(): Timeline {
   const parts: PartTrack[] = [];
   const moves: MoveTrack[] = [];
   const podStart: number[] = [];
-  const cameraKeys: { time: number; key: FramingKey }[] = [];
+  const cameraKeys: CameraKey[] = [];
   let t = 0;
 
   const stage = (id: string, title: string, summary: string): number => {
@@ -163,7 +201,13 @@ function buildTimeline(): Timeline {
       ...rest,
     };
     if (!hidden) stages[stageIndex].steps.push(label);
-    if (track.camera) cameraKeys.push({ time: t, key: track.camera });
+    if (track.camera && track.camera !== cameraKeys[cameraKeys.length - 1]?.key) {
+      const prev = cameraKeys[cameraKeys.length - 1];
+      const from: Framing = { target: [0, 0, 0], width: 0, height: 0 };
+      if (prev) lerpFraming(from, prev.from, FRAMINGS[prev.key], easeInOut((t - prev.time) / CAMERA_MOVE));
+      else lerpFraming(from, FRAMINGS[track.camera], FRAMINGS[track.camera], 0);
+      cameraKeys.push({ time: t, key: track.camera, from });
+    }
     steps.push(track);
     t += seconds;
     return track;
@@ -174,10 +218,10 @@ function buildTimeline(): Timeline {
 
   // 01 — the line itself draws in and starts running.
   const line = stage("line", "Assembly Line", "Conveyor, robot welding cells and an overhead gantry come online.");
-  step(line, "infra", "Conveyor sections", 1.6, { slot: 0, camera: "overview" });
-  step(line, "infra", "Robot welding cells", 1.4, { slot: 1 });
-  step(line, "infra", "Overhead gantry crane", 1.4, { slot: 2 });
-  const run = step(line, "index", "Line running", 2, { camera: "bay" });
+  step(line, "infra", "Conveyor sections", 1, { slot: 0, camera: "overview" });
+  step(line, "infra", "Robot welding cells", 0.8, { slot: 1 });
+  step(line, "infra", "Overhead gantry crane", 0.8, { slot: 2 });
+  const run = step(line, "index", "Line running", 1.8, { camera: "bay" });
   move(run.start, run.end, 6, [], true, true);
 
   // 02–04 — one stage per pod, built at the bay then indexed to staging.
@@ -331,25 +375,6 @@ export function createSample(tl: Timeline = TIMELINE): Sample {
   };
 }
 
-const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
-const smooth = (x: number) => {
-  const c = clamp01(x);
-  return c * c * (3 - 2 * c);
-};
-const easeInOut = (x: number) => {
-  const c = clamp01(x);
-  return c < 0.5 ? 4 * c * c * c : 1 - Math.pow(-2 * c + 2, 3) / 2;
-};
-const span = (p: number, a: number, b: number) => clamp01((p - a) / (b - a));
-const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
-
-function lerp3(out: Vec3, a: Readonly<Vec3>, b: Readonly<Vec3>, k: number): Vec3 {
-  out[0] = lerp(a[0], b[0], k);
-  out[1] = lerp(a[1], b[1], k);
-  out[2] = lerp(a[2], b[2], k);
-  return out;
-}
-
 function copy3(out: Vec3, a: Readonly<Vec3>): Vec3 {
   out[0] = a[0];
   out[1] = a[1];
@@ -405,13 +430,13 @@ export function sampleTimeline(tl: Timeline, time: number, out: Sample): Sample 
   out.stepProgress = clamp01((t - current.start) / (current.end - current.start));
 
   // Fade in at the top of the loop, out over the reset step.
-  out.fade = t < 0.8 ? t / 0.8 : t >= reset.start ? 1 - span(t, reset.start, reset.end) : 1;
+  out.fade = t < SCENE_FADE ? smooth(t / SCENE_FADE) : t >= reset.start ? 1 - span(t, reset.start, reset.end) : 1;
 
   // Infrastructure reveal and shell layers.
   out.infra[0] = out.infra[1] = out.infra[2] = 0;
   out.shell.fill(0);
   for (const s of tl.steps) {
-    if (s.kind === "infra") out.infra[s.slot as 0 | 1 | 2] = smooth((t - s.start) / (s.end - s.start));
+    if (s.kind === "infra") out.infra[s.slot as 0 | 1 | 2] = smooth((t - s.start) / INFRA_FADE);
     if (s.kind === "shell") out.shell[s.slot] = easeInOut((t - s.start) / (s.end - s.start));
   }
 
@@ -539,15 +564,11 @@ export function sampleTimeline(tl: Timeline, time: number, out: Sample): Sample 
     out.parts[o + 4] = scale;
   }
 
-  // Camera: ease from the previous framing to the latest keyed one.
+  // Camera: ease from where it was at the latest key to that key's framing.
   let ki = 0;
   for (let i = 0; i < tl.cameraKeys.length; i++) if (tl.cameraKeys[i].time <= t) ki = i;
-  const to = FRAMINGS[tl.cameraKeys[ki].key];
-  const from = FRAMINGS[tl.cameraKeys[Math.max(0, ki - 1)].key];
-  const k = easeInOut((t - tl.cameraKeys[ki].time) / 2.6);
-  lerp3(out.camera.target, from.target, to.target, k);
-  out.camera.width = lerp(from.width, to.width, k);
-  out.camera.height = lerp(from.height, to.height, k);
+  const key = tl.cameraKeys[ki];
+  lerpFraming(out.camera, key.from, FRAMINGS[key.key], easeInOut((t - key.time) / CAMERA_MOVE));
 
   return out;
 }

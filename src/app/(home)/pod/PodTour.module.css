@@ -19,7 +19,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  min-height: 100svh;
   padding: 88px var(--edge) 24px;
   font-family: var(--font-text), system-ui, sans-serif;
 }
@@ -102,7 +102,7 @@
   grid-area: figure;
   grid-column: 1 / -1;
   justify-self: center;
-  width: min(calc((100% - 2 * (var(--side) + var(--gap))) * var(--grow)), calc((100dvh - var(--chrome)) * var(--ratio)));
+  width: min(calc((100% - 2 * (var(--side) + var(--gap))) * var(--grow)), calc((100svh - var(--chrome)) * var(--ratio)));
   opacity: 0;
   translate: 0 16px;
   transition:
@@ -370,7 +370,7 @@
 .side {
   --drawing: min(
     calc((100% - 2 * var(--edge) - 2 * (var(--side) + var(--gap))) * var(--grow)),
-    calc((100dvh - var(--chrome)) * var(--ratio))
+    calc((100svh - var(--chrome)) * var(--ratio))
   );
 
   grid-area: side;
@@ -404,9 +404,14 @@
   transition: color 200ms ease;
 }
 
-.spot:hover,
 .spot[data-on] {
   color: var(--ink);
+}
+
+@media (hover: hover) {
+  .spot:hover {
+    color: var(--ink);
+  }
 }
 
 .spot:focus-visible {
@@ -489,6 +494,25 @@
   .root {
     min-height: 0;
     padding: 72px var(--edge) 56px;
+  }
+}
+
+/* Too narrow for the pod picker and hover points side by side. */
+@media (max-width: 600px) {
+  .panel {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "title"
+      "figure"
+      "pods"
+      "side";
+    row-gap: 28px;
+  }
+}
+
+@media (pointer: coarse) {
+  .spot {
+    padding-block: 9px;
   }
 }
 

@@ -1,8 +1,9 @@
 "use client";
 
-import { Fragment, useRef, type CSSProperties, type ReactElement } from "react";
+import { Fragment, useEffect, useRef, type CSSProperties, type ReactElement } from "react";
 import { useInView } from "@/lib/useInView";
 import { TerminalMenu, type TerminalMenuItem } from "@/components/TerminalMenu";
+import { COMPUTE_ACTIONS, ENGINEER_ACTION } from "../actions";
 import { FeatureArt } from "./FeatureArt";
 import { FEATURES } from "./features";
 import styles from "./Features.module.css";
@@ -10,22 +11,32 @@ import styles from "./Features.module.css";
 /** Desktop reading order of the grid areas, used to stagger the reveal. */
 const ORDER = ["t1", "f2", "t2", "f1", "t3", "f3", "t4", "f5", "t5", "f4", "cta"];
 
-const ACTIONS: readonly TerminalMenuItem[] = [
-  { id: "rent", label: "Rent Compute", href: "/rent-compute" },
-  { id: "own", label: "Own Compute", href: "/buy-compute" },
-  { id: "meet", label: "Schedule Meeting", href: "/contact" },
-];
+const ACTIONS: readonly TerminalMenuItem[] = [...COMPUTE_ACTIONS, ENGINEER_ACTION];
 
 const area = (name: string) => ({ gridArea: name, "--i": ORDER.indexOf(name) }) as CSSProperties;
 
 /**
  * Checkerboard of feature cells and numbered line drawings. Each feature's
  * figure sits beside or below its text; grid areas in Features.module.css
- * place them per breakpoint.
+ * place them per breakpoint. Drawings animate on hover, or on touch screens,
+ * while they sit in the middle of the viewport.
  */
 export function Features(): ReactElement {
   const ref = useRef<HTMLDivElement>(null);
   const shown = useInView(ref, "0px 0px -20% 0px");
+
+  useEffect(() => {
+    const grid = ref.current;
+    if (!grid || !window.matchMedia("(hover: none)").matches) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) entry.target.toggleAttribute("data-playing", entry.isIntersecting);
+      },
+      { rootMargin: "-35% 0px -35% 0px" },
+    );
+    for (const figure of grid.querySelectorAll(`.${styles.figure}`)) observer.observe(figure);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div className={styles.root}>
@@ -47,7 +58,7 @@ export function Features(): ReactElement {
 
         <div className={styles.cta} style={area("cta")}>
           <h1 className={styles.ctaTitle}>From order to tokens in 90 days.</h1>
-          <TerminalMenu items={ACTIONS} label="Get compute" />
+          <TerminalMenu items={ACTIONS} label="Get started" />
         </div>
       </div>
     </div>

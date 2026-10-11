@@ -1,13 +1,66 @@
 "use client";
 
-import { useActionState, type ReactElement } from "react";
+import { useActionState, useId, useState, type ReactElement } from "react";
 import { register, type RegisterState } from "./actions";
+import {
+  MIN_PASSWORD_LENGTH,
+  STRENGTH_LABELS,
+  checkPassword,
+  passwordStrength,
+  type PasswordCheck,
+  type PasswordStrength,
+} from "./password";
 import styles from "../login/auth.module.css";
 
 const INITIAL_STATE: RegisterState = {};
 
+const METER_SEGMENTS = 4;
+const FILLED: Record<PasswordStrength, number> = { "too-short": 0, weak: 1, fair: 2, good: 3, strong: 4 };
+
+function PasswordFeedback({
+  id,
+  checks,
+  strength,
+}: {
+  id: string;
+  checks: readonly PasswordCheck[];
+  strength: PasswordStrength;
+}): ReactElement {
+  return (
+    <div id={id} className={styles.passwordFeedback}>
+      <div className={styles.meter} data-strength={strength} aria-hidden="true">
+        {Array.from({ length: METER_SEGMENTS }, (_, i) => (
+          <span key={i} data-filled={i < FILLED[strength] || undefined} />
+        ))}
+      </div>
+      <p className={styles.strength} data-strength={strength} aria-live="polite">
+        Strength: {STRENGTH_LABELS[strength]}
+      </p>
+      <ul className={styles.checks}>
+        {checks.map((check) => (
+          <li key={check.id} data-met={check.met || undefined} data-required={check.required || undefined}>
+            <span className={styles.checkMark} aria-hidden="true">
+              {check.met ? "✓" : "•"}
+            </span>
+            {check.label}
+            {check.required ? <span className={styles.visuallyHidden}> (required)</span> : null}
+            <span className={styles.visuallyHidden}>{check.met ? ", met" : ", not met"}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function RegisterForm({ next }: { next?: string }): ReactElement {
   const [state, action, pending] = useActionState(register, INITIAL_STATE);
+  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState(state.values?.email ?? "");
+  const feedbackId = useId();
+
+  const checks = checkPassword(password, email);
+  const strength = passwordStrength(checks);
+  const tooShort = strength === "too-short";
 
   return (
     <form action={action} className={styles.form}>
@@ -38,6 +91,7 @@ export function RegisterForm({ next }: { next?: string }): ReactElement {
           autoComplete="email"
           required
           defaultValue={state.values?.email}
+          onChange={(event) => setEmail(event.target.value)}
           className={styles.input}
         />
       </div>
@@ -51,9 +105,14 @@ export function RegisterForm({ next }: { next?: string }): ReactElement {
           type="password"
           autoComplete="new-password"
           required
-          minLength={8}
+          minLength={MIN_PASSWORD_LENGTH}
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
           className={styles.input}
+          aria-invalid={password && tooShort ? "true" : undefined}
+          aria-describedby={password ? feedbackId : undefined}
         />
+        {password ? <PasswordFeedback id={feedbackId} checks={checks} strength={strength} /> : null}
       </div>
       <div className={styles.field}>
         <label className={styles.label} htmlFor="inviteCode">

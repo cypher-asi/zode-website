@@ -48,14 +48,20 @@ const SHOTS: readonly Shot[] = [
   },
 ];
 
+/** How far a touch must travel sideways, in px, to count as a swipe rather than a tap. */
+const SWIPE_MIN = 40;
+
 /**
  * One ZODE render at a time, advanced only by the user, with dot indicators
  * along the bottom. Every image stays mounted and stacked so switching
- * cross-fades without a layout jump or a fresh network fetch.
+ * cross-fades without a layout jump or a fresh network fetch. On touch,
+ * swiping left or right steps through the shots.
  */
 export function ZodeGallery(): ReactElement {
   const [active, setActive] = useState(0);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const swiped = useRef(false);
   const baseId = useId();
 
   const select = (index: number, focus = false) => {
@@ -96,7 +102,29 @@ export function ZodeGallery(): ReactElement {
           type="button"
           className={styles.stage}
           aria-label={`${SHOTS[active].alt}. Show next view.`}
-          onClick={() => select(active + 1)}
+          onPointerDown={(event) => {
+            swiped.current = false;
+            swipeStart.current = event.pointerType === "mouse" ? null : { x: event.clientX, y: event.clientY };
+          }}
+          onPointerUp={(event) => {
+            const start = swipeStart.current;
+            swipeStart.current = null;
+            if (!start) return;
+            const dx = event.clientX - start.x;
+            if (Math.abs(dx) < SWIPE_MIN || Math.abs(dx) < Math.abs(event.clientY - start.y)) return;
+            swiped.current = true;
+            select(active + (dx < 0 ? 1 : -1));
+          }}
+          onPointerCancel={() => {
+            swipeStart.current = null;
+          }}
+          onClick={() => {
+            if (swiped.current) {
+              swiped.current = false;
+              return;
+            }
+            select(active + 1);
+          }}
         >
           {SHOTS.map((shot, index) => (
             <Image

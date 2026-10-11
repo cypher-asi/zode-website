@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { GridLogo } from "@/components/GridLogo";
 import { getAccount, safeNext } from "@/lib/account-session";
-import { LoginForm } from "./LoginForm";
+import { AuthPanel } from "./AuthPanel";
 import styles from "./auth.module.css";
 
 export const metadata: Metadata = {
   title: "Log in | ZODE",
 };
 
+/** Direct visits and refreshes; links on the site open the same panel as a modal (see app/@modal). */
 export default async function LoginPage({
   searchParams,
 }: {
@@ -22,22 +21,9 @@ export default async function LoginPage({
     redirect(destination);
   }
 
-  const registerHref = destination === "/portal" ? "/register" : `/register?next=${encodeURIComponent(destination)}`;
-
   return (
     <main className={styles.shell}>
-      <div className={styles.panel}>
-        <Link className={styles.brand} href="/" aria-label="ZODE — home">
-          <GridLogo showWordmark={false} />
-          <span className={styles.wordmark}>ZODE</span>
-        </Link>
-        <h1 className={styles.title}>Log in</h1>
-        <p className={styles.prompt}>Use your ZOS account.</p>
-        <LoginForm next={destination} />
-        <p className={styles.switch}>
-          No account? <Link href={registerHref}>Register</Link>
-        </p>
-      </div>
+      <AuthPanel mode="login" next={destination} />
     </main>
   );
 }

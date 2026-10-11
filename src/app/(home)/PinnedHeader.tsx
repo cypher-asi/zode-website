@@ -1,22 +1,42 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactElement } from "react";
+import { usePathname } from "next/navigation";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  ViewTransition,
+  type KeyboardEvent,
+  type ReactElement,
+} from "react";
+import { useLogout, useLogoutToast, useSignedIn } from "@/lib/account-client";
+import { COMPUTE_ACTIONS, ENGINEER_ACTION } from "./actions";
 import styles from "./PinnedHeader.module.css";
 
 type Tone = "light" | "dark";
 
 const ACTION_MENU = [
-  { id: "buy", label: "Buy Compute", href: "/buy-compute" },
-  { id: "rent", label: "Rent Compute", href: "/rent-compute" },
-  { id: "give", label: "Give Compute", href: "/give-compute" },
-  { id: "meet", label: "Schedule Meeting", href: "/contact" },
-] as const;
-
-const ACCOUNT_MENU = [
-  { id: "register", label: "Register", href: "/register" },
-  { id: "login", label: "Login", href: "/login" },
+  ...COMPUTE_ACTIONS,
+  ENGINEER_ACTION,
 ];
+
+const SIGNED_OUT_MENU = [
+  { id: "login", label: "Login", href: "/login" },
+  { id: "register", label: "Register", href: "/register" },
+];
+
+/** Bottom-centre notice after logging out, fading in and out. */
+function LogoutNotice(): ReactElement | null {
+  const toast = useLogoutToast();
+  if (toast === "hidden") return null;
+  return (
+    <p className={styles.notice} role="status" data-leaving={toast === "leaving" || undefined}>
+      You&apos;re logged out
+    </p>
+  );
+}
 
 /** Content is fully transparent this far below the wordmark and button... */
 const FADE_GAP = 8;
@@ -66,6 +86,7 @@ export function PinnedHeader({
   /** Set false to leave out the top-right action, e.g. on the page it links to. */
   showAction?: boolean;
 }): ReactElement {
+  const pathname = usePathname();
   const brandRef = useRef<HTMLAnchorElement>(null);
   const actionRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -74,6 +95,8 @@ export function PinnedHeader({
   const [actionTone, setActionTone] = useState<Tone>("light");
   const [actionOverMedia, setActionOverMedia] = useState(false);
   const [open, setOpen] = useState(false);
+  const signedIn = useSignedIn();
+  const { logOut, pending: loggingOut } = useLogout();
   const menuId = useId();
 
   useEffect(() => {
@@ -190,16 +213,25 @@ export function PinnedHeader({
 
   return (
     <>
-      <Link
-        ref={brandRef}
-        className={styles.brand}
-        href="/"
-        aria-label="ZODE — home"
-        data-tone={brandTone}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className={styles.wordmark} src="/wordmark.png" alt="" aria-hidden="true" />
-      </Link>
+      {/* Pages set their own `--edge`, so the wordmark sits at a different spot on
+          each; the shared name slides it across instead of jumping. */}
+      <ViewTransition name="zode-wordmark" share="auto" default="none">
+        <Link
+          ref={brandRef}
+          className={styles.brand}
+          href="/"
+          aria-label="ZODE — home"
+          data-tone={brandTone}
+          onClick={(event) => {
+            if (pathname !== "/" || event.metaKey || event.ctrlKey || event.shiftKey) return;
+            event.preventDefault();
+            window.scrollTo({ top: 0 });
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className={styles.wordmark} src="/wordmark.png" alt="" aria-hidden="true" />
+        </Link>
+      </ViewTransition>
       {showAction ? (
         <div
           className={styles.action}
@@ -242,6 +274,7 @@ export function PinnedHeader({
                     role="menuitem"
                     className={styles.menuItem}
                     href={item.href}
+                    scroll={"scroll" in item ? item.scroll : undefined}
                     onClick={() => setOpen(false)}
                   >
                     {item.label}
@@ -249,22 +282,37 @@ export function PinnedHeader({
                 </li>
               ))}
               <li role="separator" className={styles.separator} />
-              {ACCOUNT_MENU.map((item) => (
-                <li key={item.id} role="none">
-                  <Link
+              {signedIn ? (
+                <li role="none">
+                  <button
+                    type="button"
                     role="menuitem"
                     className={styles.menuItem}
-                    href={item.href}
-                    onClick={() => setOpen(false)}
+                    disabled={loggingOut}
+                    onClick={() => logOut(() => setOpen(false))}
                   >
-                    {item.label}
-                  </Link>
+                    {loggingOut ? "Logging out…" : "Logout"}
+                  </button>
                 </li>
-              ))}
+              ) : (
+                SIGNED_OUT_MENU.map((item) => (
+                  <li key={item.id} role="none">
+                    <Link
+                      role="menuitem"
+                      className={styles.menuItem}
+                      href={item.href}
+                      onClick={() => setOpen(false)}
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))
+              )}
             </ul>
           )}
         </div>
       ) : null}
+      <LogoutNotice />
     </>
   );
 }

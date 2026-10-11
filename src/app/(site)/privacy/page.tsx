@@ -1,20 +1,19 @@
 import type { Metadata } from "next";
 import { LegalDocument, type LegalSection } from "../_components/LegalDocument";
 
-const COMPANY = "Cypher, Inc.";
-const EMAIL = "hello@cypher.net";
+const COMPANY = "ZODE Inc.";
+const EMAIL = "hello@zode.org";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | ZODE",
-  description:
-    "How Cypher, Inc. handles your information when you use the ZODE website.",
+  description: `How ${COMPANY} handles your information when you use the ZODE website.`,
 };
 
 const sections: LegalSection[] = [
   {
     heading: "1. Scope",
     body: [
-      `This Privacy Policy explains how ${COMPANY} ("${COMPANY}", "we", "us", or "our") collects, uses, and shares information when you visit our website and our related informational pages (collectively, the "Site").`,
+      `This Privacy Policy explains how ${COMPANY}, a Delaware corporation ("${COMPANY}", "we", "us", or "our") collects, uses, and shares information when you visit our website and our related informational pages (collectively, the "Site").`,
       "It does not apply to third-party websites, products, or services that we link to or that you choose to use, which are governed by their own privacy policies.",
     ],
   },
@@ -87,8 +86,8 @@ export default function PrivacyPage() {
     <LegalDocument
       title="Privacy Policy"
       description="How we handle your data, and the privacy-first principles behind ZODE."
-      effectiveDate="Effective date: June 27, 2026"
-      intro={`This Privacy Policy explains how ${COMPANY} collects, uses, and shares information when you use the ZODE website. We are committed to a privacy-first approach: we collect only what we need and never sell your personal information.`}
+      effectiveDate="Effective date: October 11, 2026"
+      intro={`This Privacy Policy explains how ${COMPANY}, a Delaware corporation, collects, uses, and shares information when you use the ZODE website. We are committed to a privacy-first approach: we collect only what we need and never sell your personal information.`}
       sections={sections}
       contactBody={`If you have questions about this Privacy Policy or your personal information, contact ${COMPANY} at ${EMAIL}.`}
       email={EMAIL}

@@ -9,6 +9,8 @@ export interface TerminalMenuItem {
   label: string;
   /** Renders the row as a link; rows without one are buttons that report through `onSelect`. */
   href?: string;
+  /** Set false to keep the scroll position, e.g. for a link that opens a modal. */
+  scroll?: boolean;
 }
 
 export interface TerminalMenuProps {
@@ -97,7 +99,7 @@ export function TerminalMenu({
           return (
             <li key={item.id}>
               {item.href ? (
-                <Link {...row} href={item.href}>
+                <Link {...row} href={item.href} scroll={item.scroll}>
                   {content}
                 </Link>
               ) : (

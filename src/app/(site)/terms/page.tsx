@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { LegalDocument, type LegalSection } from "../_components/LegalDocument";
 
-const COMPANY = "Cypher, Inc.";
-const STATE = "Nevada";
-const EMAIL = "hello@cypher.net";
+const COMPANY = "ZODE Inc.";
+const STATE = "Delaware";
+const EMAIL = "hello@zode.org";
 
 export const metadata: Metadata = {
   title: "Terms | ZODE",
@@ -14,7 +14,7 @@ const sections: LegalSection[] = [
   {
     heading: "1. Acceptance of Terms",
     body: [
-      `These Terms (the "Terms") form a binding agreement between you and ${COMPANY} ("${COMPANY}", "we", "us", or "our") and govern your access to and use of the ZODE website and related informational pages (collectively, the "Site").`,
+      `These Terms (the "Terms") form a binding agreement between you and ${COMPANY}, a ${STATE} corporation ("${COMPANY}", "we", "us", or "our") and govern your access to and use of the ZODE website and related informational pages (collectively, the "Site").`,
       "By accessing or using the Site, you confirm that you have read, understood, and agree to be bound by these Terms and our Privacy Policy. If you do not agree, you may not use the Site.",
     ],
   },
@@ -87,8 +87,8 @@ export default function TermsPage() {
     <LegalDocument
       title="Terms"
       description="The terms that govern your access to and use of the ZODE website."
-      effectiveDate="Effective date: June 27, 2026"
-      intro={`These Terms form a binding agreement between you and ${COMPANY} and govern your access to and use of the ZODE website. Please read them carefully. By accessing or using the Site, you agree to be bound by these Terms.`}
+      effectiveDate="Effective date: October 11, 2026"
+      intro={`These Terms form a binding agreement between you and ${COMPANY}, a ${STATE} corporation, and govern your access to and use of the ZODE website. Please read them carefully. By accessing or using the Site, you agree to be bound by these Terms.`}
       sections={sections}
       contactBody={`If you have questions about these Terms, contact ${COMPANY} at ${EMAIL}.`}
       email={EMAIL}

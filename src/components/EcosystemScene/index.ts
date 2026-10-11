@@ -1,1 +1,0 @@
-export { EcosystemScene } from "./EcosystemScene";

@@ -1,19 +1,16 @@
 import type { ReactElement } from "react";
 import { TerminalMenu, type TerminalMenuItem } from "@/components/TerminalMenu";
+import { COMPUTE_ACTIONS, ENGINEER_ACTION } from "../actions";
 import styles from "./ClosingCta.module.css";
 
-const ACTIONS: readonly TerminalMenuItem[] = [
-  { id: "rent", label: "Rent Compute", href: "/rent-compute" },
-  { id: "own", label: "Own Compute", href: "/buy-compute" },
-  { id: "meet", label: "Schedule Meeting", href: "/contact" },
-];
+const ACTIONS: readonly TerminalMenuItem[] = [...COMPUTE_ACTIONS, ENGINEER_ACTION];
 
 /** Closing call to action between the network map and the footer landscape. */
 export function ClosingCta(): ReactElement {
   return (
     <div className={styles.root} data-top-fade>
       <h2 className={styles.title}>Reclaim your sovereignty.</h2>
-      <TerminalMenu items={ACTIONS} label="Start building" className={styles.menu} />
+      <TerminalMenu items={ACTIONS} label="Get started" className={styles.menu} />
     </div>
   );
 }

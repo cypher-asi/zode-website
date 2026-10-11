@@ -208,7 +208,8 @@
 }
 
 /*
- * Hover loops (groups tagged in FeatureArt.tsx), mirroring the stack plates
+ * Hover loops (groups tagged in FeatureArt.tsx; `data-playing` stands in for
+ * hover on touch screens, see Features.tsx), mirroring the stack plates
  * in ../stack/FullStack.module.css. Each group starts `--k` x `--step` late;
  * keep `--step` x the largest `--k` within one `--period` so a sweep never
  * overlaps the next.
@@ -251,7 +252,7 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .figure:hover
+  .figure:is(:hover, [data-playing])
     :is(.flash .ring, .dim .ink, .shade :is(.top, .sideL), .hop, .ripple > *, .whirl > *, .pulse) {
     animation-duration: var(--period, 1600ms);
     animation-timing-function: ease-in-out;
@@ -259,32 +260,32 @@
     animation-iteration-count: infinite;
   }
 
-  .figure:hover .flow :is(line, polyline, circle) {
+  .figure:is(:hover, [data-playing]) .flow :is(line, polyline, circle) {
     stroke-dasharray: 3 3;
     animation: dash-flow 600ms linear infinite;
   }
 
-  .figure:hover .spin {
+  .figure:is(:hover, [data-playing]) .spin {
     animation: spin 9s linear infinite;
   }
 
-  .figure:hover .flash .ring {
+  .figure:is(:hover, [data-playing]) .flash .ring {
     animation-name: fill-ink;
   }
 
-  .figure:hover :is(.dim .ink, .pulse) {
+  .figure:is(:hover, [data-playing]) :is(.dim .ink, .pulse) {
     animation-name: fade-out;
   }
 
-  .figure:hover .shade :is(.top, .sideL) {
+  .figure:is(:hover, [data-playing]) .shade :is(.top, .sideL) {
     animation-name: fill-shade;
   }
 
-  .figure:hover .hop {
+  .figure:is(:hover, [data-playing]) .hop {
     animation-name: hop-up;
   }
 
-  .figure:hover :is(.ripple, .whirl) > * {
+  .figure:is(:hover, [data-playing]) :is(.ripple, .whirl) > * {
     animation-name: stroke-ink;
   }
 }
@@ -364,7 +365,7 @@
   }
 
   .figure {
-    min-height: 300px;
+    min-height: 240px;
     padding: 32px 20px 48px;
   }
 }

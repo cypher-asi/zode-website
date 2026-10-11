@@ -75,7 +75,9 @@ export function AssemblyScene({ onStep, onTick, seek }: AssemblySceneProps): Rea
     } catch {
       return;
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Phones and tablets have dense screens but little GPU headroom to spare.
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, coarse ? 1.5 : 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.localClippingEnabled = true;
     renderer.domElement.setAttribute("aria-hidden", "true");
@@ -293,16 +295,55 @@ export function AssemblyScene({ onStep, onTick, seek }: AssemblySceneProps): Rea
       renderer.render(scene, camera);
     };
 
+    // Objects upload their geometry (and compile shaders) on the first frame they're drawn; doing
+    // that up front, off-screen, keeps parts from hitching the frame they first appear.
+    const warm = (roots: THREE.Object3D[]) => {
+      const culled: THREE.Object3D[] = [];
+      for (const root of roots) {
+        root.traverse((o) => {
+          o.visible = true;
+          if (o.frustumCulled) {
+            o.frustumCulled = false;
+            culled.push(o);
+          }
+        });
+      }
+      renderer.render(scene, camera);
+      for (const o of culled) o.frustumCulled = true;
+      renderOnce();
+    };
+
+    // The shell isn't on screen until stage 5, so its load waits until the opening has played.
+    let shellRequested = false;
+    const requestShell = () => {
+      if (shellRequested) return;
+      shellRequested = true;
+      loadCabinLayers()
+        .then((model) => {
+          if (disposed) return;
+          shell = buildShell(kit, model, shellMats, shellFills);
+          scene.add(shell.group);
+          for (const plane of planes) plane.constant = 1e4;
+          warm([shell.group]);
+        })
+        .catch(() => {
+          // The pods still build and slide in without the outer shell.
+        });
+    };
+    const introEnd = TIMELINE.stageSpans[0][1];
+
     const tick = (now: number) => {
       frame = requestAnimationFrame(tick);
       const dt = last ? Math.min((now - last) / 1000, 0.1) : 0;
       last = now;
       t = (t + dt) % TIMELINE.duration;
       if (blend < 1) blend = Math.min(1, blend + dt / SEEK_BLEND);
+      if (t >= introEnd) requestShell();
       renderOnce();
     };
 
     seekToRef.current = (time: number) => {
+      requestShell();
       blendFrom.target[0] = shown.target[0];
       blendFrom.target[1] = shown.target[1];
       blendFrom.target[2] = shown.target[2];
@@ -336,6 +377,8 @@ export function AssemblyScene({ onStep, onTick, seek }: AssemblySceneProps): Rea
       if (!running) renderOnce();
     };
     resize();
+    warm([...infraGroups, ...podGroups, ...sparks]);
+    if (reduced) requestShell();
     const resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(container);
 
@@ -343,17 +386,6 @@ export function AssemblyScene({ onStep, onTick, seek }: AssemblySceneProps): Rea
       threshold: 0.05,
     });
     io.observe(container);
-
-    loadCabinLayers()
-      .then((model) => {
-        if (disposed) return;
-        shell = buildShell(kit, model, shellMats, shellFills);
-        scene.add(shell.group);
-        if (!running) renderOnce();
-      })
-      .catch(() => {
-        // The pods still build and slide in without the outer shell.
-      });
 
     return () => {
       disposed = true;

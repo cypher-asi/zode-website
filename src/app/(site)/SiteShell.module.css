@@ -1,36 +1,35 @@
+/*
+ * Same insets as the home page (see (home)/page.module.css). PinnedHeader and
+ * the footer inherit `--edge`, `--button-radius`, `--frame-inset` and
+ * `--header-band`.
+ */
 .shell {
+  --off-white: #f6f6f3;
+  --off-black: #0c0c0d;
+  --edge: clamp(32px, 6vw, 96px);
+  --frame-inset: clamp(8px, 1vw, 16px);
+  --header-band: 86px;
+  --button-radius: 3px;
+
   position: relative;
+  -webkit-tap-highlight-color: transparent;
+  font-family: var(--font-text), system-ui, sans-serif;
+}
+
+/* Opaque so the animated ShellBackdrop doesn't show through; clears the pinned header. */
+.main {
+  min-height: 100svh;
+  padding-top: var(--header-band);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+/* The home page's closing footer: a band for the pinned header, the landscape, then the wordmark band. */
+.footer {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
-  min-height: 0;
-  /* Transparent so the animated ShellBackdrop shows through the frame. */
-  background: transparent;
-}
-
-/* Rounded, bordered inner panel floating on the white outer shell,
- * matching the deck's frame so marketing pages feel cohesive. */
-.body {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  margin: 0 6px;
-  border-radius: 12px;
-  background: var(--color-bg);
-  overflow: hidden;
-}
-
-.scroll {
-  height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  /* Keep edge overscroll from chaining into an iOS page/body bounce. */
-  overscroll-behavior: contain;
-  /* Native bar hidden; OverlayScrollbar draws a floating custom one. */
-  scrollbar-width: none;
-}
-
-.scroll::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+  min-height: 100svh;
+  max-height: max(100svh, calc(452px + var(--header-band)));
+  padding-top: var(--header-band);
+  background: #000000;
 }

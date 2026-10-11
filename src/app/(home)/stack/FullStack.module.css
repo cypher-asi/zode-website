@@ -330,7 +330,9 @@
   height: 1px;
   margin-right: 12px;
   background: #c9c9c4;
-  transition: background-color 200ms ease;
+  transition:
+    background-color 200ms ease,
+    opacity 200ms ease;
 }
 
 .label[data-on]::before {
@@ -342,6 +344,7 @@
   grid-column: 2;
   grid-row: 1;
   pointer-events: auto;
+  transition: opacity 200ms ease;
 }
 
 .labelHead {
@@ -375,16 +378,10 @@
   translate: 0 0;
 }
 
-.figure[data-exploded][data-active] .label {
-  transition:
-    opacity 200ms ease,
-    translate 600ms ease,
-    transform 220ms ease,
-    color 200ms ease;
-}
-
-.figure[data-exploded][data-active] .label:not([data-on]) {
-  opacity: 0.3;
+/* Fades the parts rather than the label, whose own opacity carries the slow scroll-in reveal. */
+.figure[data-active] .label:not([data-on]) .labelText,
+.figure[data-active] .label:not([data-on])::before {
+  opacity: 0;
 }
 
 .label[data-on] {
@@ -429,6 +426,11 @@
 
   .label::before {
     content: none;
+  }
+
+  /* Stacked labels leave gaps if hidden outright, so they only dim. */
+  .figure[data-active] .label:not([data-on]) .labelText {
+    opacity: 0.3;
   }
 }
 

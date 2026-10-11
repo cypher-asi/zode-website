@@ -104,15 +104,6 @@
   }
 }
 
-.phaseCount {
-  flex: none;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  font-variant-numeric: tabular-nums;
-  color: var(--accent);
-}
-
 .phaseLabel {
   color: var(--off-white);
 }
@@ -158,15 +149,32 @@
   background: rgba(255, 255, 255, 0.14);
 }
 
-.segment:hover::before,
 .segment:focus-visible::before {
   background: rgba(255, 255, 255, 0.4);
 }
 
-.segment:hover::before,
-.segment:hover::after {
-  top: 7px;
-  height: 4px;
+@media (hover: hover) {
+  .segment:hover::before {
+    background: rgba(255, 255, 255, 0.4);
+  }
+
+  .segment:hover::before,
+  .segment:hover::after {
+    top: 7px;
+    height: 4px;
+  }
+}
+
+/* Taller hit area for fingers; the track stays centred in it. */
+@media (pointer: coarse) {
+  .segment {
+    height: 28px;
+  }
+
+  .segment::before,
+  .segment::after {
+    top: 13px;
+  }
 }
 
 .segment:focus-visible {
@@ -242,9 +250,11 @@
   transition: background-color 160ms ease;
 }
 
-.cellButton:hover {
-  color: var(--off-white);
-  background: rgba(255, 255, 255, 0.04);
+@media (hover: hover) {
+  .cellButton:hover {
+    color: var(--off-white);
+    background: rgba(255, 255, 255, 0.04);
+  }
 }
 
 .cellButton:focus-visible {

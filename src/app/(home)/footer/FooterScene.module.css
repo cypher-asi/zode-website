@@ -36,6 +36,14 @@
   opacity: 1;
 }
 
+/* Taller crop on phones, where 16:5 would be a thin strip; capped so a landscape phone still sees it whole. */
+@media (max-width: 900px) {
+  .root {
+    aspect-ratio: 4 / 3;
+    max-height: 75svh;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .image {
     transition: none;

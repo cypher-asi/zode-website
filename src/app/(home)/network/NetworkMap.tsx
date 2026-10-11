@@ -18,7 +18,7 @@ type Props = {
  * Dark network section: a line-art North America with live and pipeline
  * sites, plus the headline capacity figures. The coastline sweeps in west to
  * east once the section scrolls into view and each dot lands as the sweep
- * passes it. Hovering or focusing a dot brightens it and its label.
+ * passes it. Hovering, focusing or tapping a dot brightens it and its label.
  */
 export function NetworkMap({ view, land, borders, graticule, sites, links }: Props): ReactElement {
   const ref = useRef<HTMLDivElement>(null);
@@ -74,8 +74,12 @@ export function NetworkMap({ view, land, borders, graticule, sites, links }: Pro
                   type="button"
                   className={styles.hit}
                   aria-label={`${site.city}: ${site.mw} MW ${site.status === "live" ? "in production" : "in the pipeline"}`}
-                  onMouseEnter={() => setActive(site.id)}
-                  onMouseLeave={() => leave(site.id)}
+                  onPointerEnter={(event) => event.pointerType === "mouse" && setActive(site.id)}
+                  onPointerLeave={(event) => event.pointerType === "mouse" && leave(site.id)}
+                  onPointerUp={(event) =>
+                    event.pointerType !== "mouse" &&
+                    setActive((current) => (current === site.id ? null : site.id))
+                  }
                   onFocus={() => setActive(site.id)}
                   onBlur={() => leave(site.id)}
                 >

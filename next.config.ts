@@ -4,7 +4,7 @@ const isDev = process.env.NODE_ENV === "development";
 
 // Every asset this site loads is same-origin: `next/font/google` self-hosts at
 // build time, the 3D model and images come from /public, and the only network
-// call is the same-origin /api/leads POST. External URLs in content are plain
+// calls are same-origin Server Actions. External URLs in content are plain
 // anchors, so nothing here needs a cross-origin allowance.
 //
 // 'unsafe-inline' for scripts is required by Next's inline RSC bootstrap and the
@@ -64,8 +64,22 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: import.meta.dirname,
   },
+  // Lets navigations drive React's <ViewTransition>, e.g. the pinned wordmark
+  // sliding between the home page and /buy-compute.
+  experimental: {
+    viewTransition: true,
+  },
   async redirects() {
-    return [{ source: "/future-home", destination: "/", permanent: false }];
+    return [
+      { source: "/future-home", destination: "/", permanent: false },
+      // Pages retired when the site moved to the home page's structure.
+      { source: "/rent-compute", destination: "/buy-compute?mode=rent", permanent: true },
+      { source: "/give-compute", destination: "/", permanent: true },
+      { source: "/legacy", destination: "/", permanent: true },
+      { source: "/network", destination: "/", permanent: true },
+      { source: "/deck", destination: "/", permanent: true },
+      { source: "/deployments/:path*", destination: "/", permanent: true },
+    ];
   },
   async rewrites() {
     return [

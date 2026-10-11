@@ -1,1 +1,0 @@
-export { NetworkHero } from "./NetworkHero";

@@ -2,13 +2,20 @@ import "server-only";
 import { render } from "@react-email/render";
 import type { ReactElement } from "react";
 import { Resend } from "resend";
+import { accountEmailProps } from "@/emails/accountEmailProps";
+import EngineerRequestNotification, { engineerRequestSubject } from "@/emails/EngineerRequestNotification";
+import { engineerRequestEmailProps } from "@/emails/engineerRequestEmailProps";
 import OrderConfirmation, { confirmationSubject } from "@/emails/OrderConfirmation";
 import OrderNotification, { notificationSubject } from "@/emails/OrderNotification";
 import { orderEmailProps } from "@/emails/orderEmailProps";
+import RegistrationNotification, { registrationSubject } from "@/emails/RegistrationNotification";
 import { WORDMARK_CID } from "@/emails/ui";
+import Welcome, { welcomeSubject } from "@/emails/Welcome";
 import { WORDMARK_PNG_BASE64 } from "@/emails/wordmark";
+import type { EngineerRequest } from "./engineer-requests";
 import { RECIPIENT_EMAIL } from "./leads";
 import type { Order } from "./orders";
+import type { Account } from "./zos";
 
 let client: Resend | undefined;
 
@@ -104,6 +111,58 @@ export async function sendOrderEmails(order: Order, reference: string): Promise<
     if (result.status === "rejected") {
       const which = i === 0 ? "customer confirmation" : "team notification";
       console.error(`[email] ${which} for order ${reference} failed:`, result.reason);
+    }
+  });
+}
+
+/**
+ * Emails the team a Talk to an Engineer request; replies go to the requester.
+ * Never throws: the request is already stored, so a failed send is only logged.
+ */
+export async function sendEngineerRequestEmail(request: EngineerRequest, reference: string): Promise<void> {
+  const props = engineerRequestEmailProps(request, reference);
+  try {
+    await send({
+      to: teamInbox(),
+      replyTo: request.email,
+      subject: engineerRequestSubject(props),
+      email: <EngineerRequestNotification {...props} />,
+      idempotencyKey: `engineer-${reference}-team`,
+    });
+  } catch (err) {
+    console.error(`[email] team notification for engineer request ${reference} failed:`, err);
+  }
+}
+
+/**
+ * Welcomes a new account holder and tells the team who signed up.
+ * Never throws: the account already exists, so a failed send is only logged.
+ */
+export async function sendRegistrationEmails(account: Account, inviteCode: string): Promise<void> {
+  const props = accountEmailProps(account, inviteCode);
+  const team = teamInbox();
+
+  const results = await Promise.allSettled([
+    send({
+      to: account.email,
+      replyTo: team,
+      subject: welcomeSubject(),
+      email: <Welcome {...props} />,
+      idempotencyKey: `register-${account.userId}-welcome`,
+    }),
+    send({
+      to: team,
+      replyTo: account.email,
+      subject: registrationSubject(props),
+      email: <RegistrationNotification {...props} />,
+      idempotencyKey: `register-${account.userId}-team`,
+    }),
+  ]);
+
+  results.forEach((result, i) => {
+    if (result.status === "rejected") {
+      const which = i === 0 ? "welcome email" : "team notification";
+      console.error(`[email] ${which} for new account ${account.userId} failed:`, result.reason);
     }
   });
 }

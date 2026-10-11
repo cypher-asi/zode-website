@@ -1,15 +1,27 @@
 import { render } from "@react-email/render";
-import { createElement } from "react";
+import { createElement, type ReactElement } from "react";
+import EngineerRequestNotification from "@/emails/EngineerRequestNotification";
 import OrderConfirmation from "@/emails/OrderConfirmation";
 import OrderNotification from "@/emails/OrderNotification";
-import { PREVIEW_BUY, PREVIEW_LOGO, PREVIEW_RENT } from "@/emails/previewOrders";
+import { PREVIEW_ACCOUNT, PREVIEW_BUY, PREVIEW_ENGINEER, PREVIEW_LOGO, PREVIEW_RENT } from "@/emails/previewOrders";
+import RegistrationNotification from "@/emails/RegistrationNotification";
+import Welcome from "@/emails/Welcome";
 
-const TEMPLATES = { confirmation: OrderConfirmation, notification: OrderNotification };
+const TEMPLATES: Record<string, (search: URLSearchParams) => ReactElement> = {
+  confirmation: (search) =>
+    createElement(OrderConfirmation, { ...(search.get("mode") === "rent" ? PREVIEW_RENT : PREVIEW_BUY), logoSrc: PREVIEW_LOGO }),
+  notification: (search) =>
+    createElement(OrderNotification, { ...(search.get("mode") === "rent" ? PREVIEW_RENT : PREVIEW_BUY), logoSrc: PREVIEW_LOGO }),
+  engineer: () => createElement(EngineerRequestNotification, { ...PREVIEW_ENGINEER, logoSrc: PREVIEW_LOGO }),
+  welcome: () => createElement(Welcome, { ...PREVIEW_ACCOUNT, logoSrc: PREVIEW_LOGO }),
+  registration: () => createElement(RegistrationNotification, { ...PREVIEW_ACCOUNT, logoSrc: PREVIEW_LOGO }),
+};
 
 /**
- * Development only: an order email rendered with a sample order, e.g.
- * /dev/emails/confirmation, /dev/emails/notification?mode=rent, or add
- * `&text` for the plain-text part.
+ * Development only: an email rendered with sample data, e.g.
+ * /dev/emails/confirmation, /dev/emails/notification?mode=rent,
+ * /dev/emails/engineer, /dev/emails/welcome, /dev/emails/registration,
+ * or add `&text` for the plain-text part.
  */
 export async function GET(request: Request, { params }: { params: Promise<{ template: string }> }): Promise<Response> {
   const { template } = await params;
@@ -18,8 +30,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ temp
   }
 
   const search = new URL(request.url).searchParams;
-  const order = search.get("mode") === "rent" ? PREVIEW_RENT : PREVIEW_BUY;
-  const email = createElement(TEMPLATES[template as keyof typeof TEMPLATES], { ...order, logoSrc: PREVIEW_LOGO });
+  const email = TEMPLATES[template](search);
   const plainText = search.has("text");
   const body = plainText ? await render(email, { plainText: true }) : await render(email);
 

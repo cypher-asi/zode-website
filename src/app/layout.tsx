@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "ZODE",
+  title: "ZODE: Sovereign Superintelligence.",
   description:
     "ZODE — the connective layer for a distributed, secure compute network.",
   openGraph: {
@@ -39,7 +39,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({
   children,
-}: Readonly<{ children: React.ReactNode }>) {
+  modal,
+}: Readonly<{ children: React.ReactNode; modal: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable}`}>
       <head>
@@ -47,7 +48,10 @@ export default function RootLayout({
       </head>
       <body>
         <ShellBackdrop />
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          {children}
+          {modal}
+        </ThemeProvider>
       </body>
     </html>
   );
