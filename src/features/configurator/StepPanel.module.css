@@ -482,6 +482,7 @@
 }
 
 .readoutDetail {
+  min-height: calc(var(--detail-lines, 0) * 1lh);
   font-size: var(--text-2xs);
   color: var(--color-text-secondary);
 }

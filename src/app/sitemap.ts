@@ -5,6 +5,7 @@ const PUBLIC_ROUTES = [
   "",
   "/buy-compute",
   "/cluster-configurator",
+  "/compute-model",
   "/contact",
   "/talk-to-an-engineer",
   "/styleguide",

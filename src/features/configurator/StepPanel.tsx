@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, type ReactElement } from "react";
+import { useId, type CSSProperties, type ReactElement } from "react";
 import {
   NODE_SIZES,
   usdShort,
@@ -287,11 +287,17 @@ export function ChipPicker<F = Focus>({
 /** Read-only values derived from the configuration. */
 export function Readouts({
   items,
+  detailLines,
 }: {
   items: readonly { label: string; value: string; detail: string }[];
+  /** Lines held for each detail, so values that change live never resize the cards. */
+  detailLines?: number;
 }): ReactElement {
   return (
-    <div className={styles.readouts}>
+    <div
+      className={styles.readouts}
+      style={detailLines ? ({ "--detail-lines": detailLines } as CSSProperties) : undefined}
+    >
       {items.map((item) => (
         <div key={item.label} className={styles.readout}>
           <span className={styles.readoutLabel}>

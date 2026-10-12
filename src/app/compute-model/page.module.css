@@ -1,0 +1,10 @@
+/* Fixed light palette; PinnedHeader and the model inherit the tight `--edge`. */
+.page {
+  --edge: clamp(24px, 2.5vw, 40px);
+
+  position: relative;
+  min-height: 100svh;
+  background: var(--color-white);
+  -webkit-tap-highlight-color: transparent;
+  color: var(--color-ink);
+}

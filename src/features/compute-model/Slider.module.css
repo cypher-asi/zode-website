@@ -1,0 +1,240 @@
+/* Model input controls (see Slider.tsx). */
+
+.slider {
+  --thumb: 16px;
+
+  padding: 14px 0 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 24px;
+}
+
+.label {
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  color: var(--color-ink);
+}
+
+.value,
+.edit {
+  flex: none;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: none;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink);
+}
+
+.value {
+  margin-right: -6px;
+  cursor: text;
+  transition:
+    background-color var(--duration-base) ease,
+    border-color var(--duration-base) ease;
+}
+
+/* Shaded once moved off the default. */
+.value[data-changed] {
+  background: var(--color-surface-tint);
+}
+
+@media (hover: hover) {
+  .value:hover {
+    border-color: var(--color-border-strong);
+  }
+}
+
+.edit {
+  width: 112px;
+  margin-right: -6px;
+  border-color: var(--color-ink);
+  background: var(--color-white);
+  text-align: right;
+  outline: none;
+}
+
+.value:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.track {
+  position: relative;
+  height: 24px;
+  margin-top: 4px;
+}
+
+/* Track and fill drawn as one gradient so the fill tracks the thumb in every engine. */
+.range {
+  --fill-at: calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--fill));
+
+  display: block;
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+}
+
+.range::-webkit-slider-runnable-track {
+  height: 2px;
+  border-radius: 1px;
+  background: linear-gradient(
+    to right,
+    var(--color-ink) var(--fill-at),
+    var(--color-border-strong) var(--fill-at)
+  );
+}
+
+.range::-moz-range-track {
+  height: 2px;
+  border-radius: 1px;
+  background: linear-gradient(
+    to right,
+    var(--color-ink) var(--fill-at),
+    var(--color-border-strong) var(--fill-at)
+  );
+}
+
+.range::-webkit-slider-thumb {
+  width: var(--thumb);
+  height: var(--thumb);
+  margin-top: calc(1px - var(--thumb) / 2);
+  border: 2px solid var(--color-ink);
+  border-radius: 50%;
+  background: var(--color-white);
+  appearance: none;
+  transition: scale var(--duration-fast) ease;
+}
+
+.range::-moz-range-thumb {
+  box-sizing: border-box;
+  width: var(--thumb);
+  height: var(--thumb);
+  border: 2px solid var(--color-ink);
+  border-radius: 50%;
+  background: var(--color-white);
+}
+
+.range:active::-webkit-slider-thumb {
+  scale: 1.15;
+}
+
+.range:focus-visible {
+  outline: none;
+}
+
+.range:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.range:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* The default value, under the track; clicking it resets the input. */
+.tick {
+  position: absolute;
+  bottom: -2px;
+  left: calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--default));
+  width: 9px;
+  height: 7px;
+  padding: 0;
+  border: 0;
+  background: var(--color-text-tertiary);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  translate: -50% 0;
+  cursor: pointer;
+}
+
+.tick:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.note {
+  margin: 6px 0 0;
+  font-size: var(--text-2xs);
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+}
+
+.switch {
+  position: relative;
+  flex: none;
+  width: 36px;
+  height: 20px;
+  margin: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-border-strong);
+  cursor: pointer;
+  appearance: none;
+  transition: background-color var(--duration-base) ease;
+}
+
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-white);
+  transition: translate var(--duration-base) ease;
+}
+
+.switch:checked {
+  background: var(--color-ink);
+}
+
+.switch:checked::after {
+  translate: 16px 0;
+}
+
+.switch:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .slider {
+    --thumb: 22px;
+  }
+
+  .track,
+  .range {
+    height: 32px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .range::-webkit-slider-thumb,
+  .switch,
+  .switch::after {
+    transition: none;
+  }
+}

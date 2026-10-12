@@ -1,0 +1,359 @@
+/*
+ * Results on the left, scrolling on their own under the pinned wordmark;
+ * the inputs panel on the right, full height, as on the buy page.
+ */
+.root {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 440px);
+  grid-template-areas: "main panel";
+  height: 100dvh;
+}
+
+.main {
+  grid-area: main;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 0;
+  padding: 84px var(--edge) 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--color-paper);
+}
+
+/* Title on the left, the checks row on the right, aligned to the heading's baseline area. */
+.intro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.intro > :first-child {
+  flex: none;
+}
+
+.intro > :last-child {
+  min-width: 0;
+  margin-bottom: 4px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  font-size: var(--eyebrow-size);
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.heading {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: clamp(28px, 2.4vw, 38px);
+  font-weight: 300;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+/*
+ * Takes whatever height the figures and notes leave, so the page fits one
+ * screen; it never shrinks below its toolbar plus the plot's minimum.
+ */
+.chart {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  padding: 16px 16px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-white);
+}
+
+.chart > * {
+  flex: 1;
+}
+
+/* Scrolling inputs between a fixed scenario bar and a fixed Back / Next footer. */
+.panelFrame {
+  grid-area: panel;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--color-border);
+  background: var(--color-white);
+}
+
+.top {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  padding: 16px var(--edge);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.top > :first-child {
+  flex: 1;
+}
+
+.close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--color-ink);
+  transition:
+    background-color var(--duration-base) ease,
+    border-color var(--duration-base) ease;
+}
+
+.close svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+@media (hover: hover) {
+  .close:hover {
+    border-color: var(--color-border-hover);
+    background: var(--color-paper);
+  }
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.scrollFrame {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Native bar hidden so sections that scroll keep the same width; OverlayScrollbar floats over it. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 24px var(--edge) 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.panel::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.panelHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.panelTitle {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: clamp(24px, 1.8vw, 28px);
+  font-weight: 300;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+}
+
+.panelActions {
+  display: flex;
+  gap: 14px;
+}
+
+.textButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--text-xs);
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.textButton:disabled {
+  color: var(--color-text-faint);
+  cursor: default;
+}
+
+.textButton:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.stepBody {
+  flex: 1;
+  animation: step var(--duration-slow) ease both;
+}
+
+@keyframes step {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+
+.fields {
+  border-top: 1px solid var(--color-border);
+}
+
+.choice {
+  padding: 14px 0 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.choiceLabel {
+  margin: 0 0 10px;
+  font-size: var(--text-sm);
+}
+
+.disclaimer {
+  margin: 0;
+  padding: 20px 0;
+  font-size: var(--text-2xs);
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+}
+
+.footer {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px var(--edge);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-white);
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.primary {
+  composes: primary from "../../components/ui/Button/Button.module.css";
+  margin-left: auto;
+}
+
+.secondary {
+  composes: secondary from "../../components/ui/Button/Button.module.css";
+}
+
+.arrow {
+  width: 12px;
+  height: 10px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: translate var(--duration-base) ease;
+}
+
+@media (hover: hover) {
+  .primary:hover:not(:disabled) .arrow {
+    translate: 2px 0;
+  }
+
+  .secondary:hover:not(:disabled) .arrow {
+    translate: -2px 0;
+  }
+}
+
+/* Phones and small tablets: the page scrolls as one, results first, then the inputs. */
+@media (max-width: 900px) {
+  .root {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "main"
+      "panel";
+    height: auto;
+    min-height: 100svh;
+  }
+
+  .main {
+    padding-top: 88px;
+    overflow: visible;
+  }
+
+  .intro {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .chart {
+    min-height: 340px;
+    padding: 12px 8px 4px;
+  }
+
+  .panelFrame {
+    border-top: 1px solid var(--color-border);
+    border-left: 0;
+  }
+
+  .panel {
+    height: auto;
+    overflow: visible;
+    scroll-margin-top: 16px;
+  }
+
+  .footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+  }
+
+  /* The page scrolls as a whole here, so a band keeps the pinned wordmark legible. */
+  .root::before {
+    content: "";
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 4;
+    height: 76px;
+    background: linear-gradient(to bottom, var(--color-paper) 56px, rgba(246, 246, 243, 0));
+    pointer-events: none;
+  }
+}
+
+/* Laptop windows: tighter spacing so the figures, chart and notes still fit without scrolling. */
+@media (min-width: 901px) and (max-height: 820px) {
+  .main {
+    gap: 14px;
+    padding-top: 72px;
+    padding-bottom: 16px;
+  }
+
+  .eyebrow {
+    display: none;
+  }
+
+  .heading {
+    font-size: clamp(26px, 2vw, 32px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stepBody {
+    animation: none;
+  }
+}
