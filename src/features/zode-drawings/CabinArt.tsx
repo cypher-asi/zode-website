@@ -270,7 +270,7 @@ const CREST = OUTER.apex[7];
 const ROOF: P2[] = facingRun([BAND_TOP, ...OUTER.apex, ...OUTER.left]);
 /** Underside of the far roof slope, from the ridge down round the eave to the back wall. */
 const CEILING: P2[] = [...OUTER.apex.filter(([x]) => x <= 1e-9), ...OUTER.left].map(([x, z]): P2 => [x, z - ROOF_T]);
-/** The light panels left over the hall once the near slope is cut away, from just past the ridge, where the ceiling starts. */
+/** The light panels left once the near slope is cut away, from just past the ridge, where the ceiling starts. */
 const ROOF_BACK: P2[] = ROOF.filter(([x]) => x <= 1e-9);
 /** A rafter's outer edge, from the bullnose crest up the near slope to the cut. */
 const RAFTER: P2[] = [...OUTER.right.slice(NOSE), ...OUTER.apex.slice(0, OUTER.apex.indexOf(ROOF_BACK[0]) + 1)];
@@ -443,33 +443,33 @@ function facade(s: Sketch): void {
   gableFrame(s, HL);
 }
 
-/** Roof that stays in the cutaway: the far slope's crown and the cut along the ridge over the hall, then the whole roof over the operations room. */
+/** Panel seams along the roof, each over a rafter. */
+const SEAMS = [-HL / 3, HL / 3];
+
+/** Roof that stays in the cutaway: the far slope's crown and the cut along the ridge. */
 function roof(s: Sketch): void {
-  extrude(s, ROOF_BACK, -HL, NOC, styles.roof);
-  s.line(ROOF_BACK.map(at(-HL / 3)), styles.edge);
+  extrude(s, ROOF_BACK, -HL, HL, styles.roof);
+  for (const y of SEAMS) s.line(ROOF_BACK.map(at(y)), styles.edge);
   const [x, z] = ROOF_BACK[0];
-  rectX(s, x, -HL, NOC, z - ROOF_T, z, styles.band);
-
-  extrude(s, EAVE_BAND, NOC, HL, styles.band);
-  extrude(s, ROOF, NOC, HL, styles.roof);
-  s.line(ROOF.map(at(NOC)), styles.edge);
-  s.line([at(NOC)(CREST), at(HL)(CREST)]);
+  rectX(s, x, -HL, HL, z - ROOF_T, z, styles.band);
 }
 
-/** The near slope's rafter on the hall's middle frame line, only seen with the skin off. */
-function rafter(s: Sketch): void {
-  const [y, w] = [-HL / 3, 0.8];
+/** The near slope's rafters under the panel seams, only seen with the skin off. */
+function rafters(s: Sketch): void {
+  const w = 0.8;
   const under = RAFTER.map(([x, z]): P2 => [x, z - ROOF_T]).reverse();
-  s.face([...RAFTER, ...under].map(at(y + w)), styles.frame);
-  extrude(s, RAFTER, y - w, y + w, styles.frame);
+  for (const y of SEAMS) {
+    s.face([...RAFTER, ...under].map(at(y + w)), styles.frame);
+    extrude(s, RAFTER, y - w, y + w, styles.frame);
+  }
 }
 
-/** Near slope over the hall, lifted off in the cutaway view; its eave band runs on over the operations room so the band shows no seam. */
+/** The near roof slope, lifted off in the cutaway view. */
 function roofNear(s: Sketch): void {
   extrude(s, EAVE_BAND, -HL, HL, styles.band);
-  extrude(s, ROOF, -HL, NOC, styles.roof);
-  s.line(ROOF.map(at(-HL / 3)), styles.edge);
-  s.line([at(-HL)(CREST), at(NOC)(CREST)]);
+  extrude(s, ROOF, -HL, HL, styles.roof);
+  for (const y of SEAMS) s.line(ROOF.map(at(y)), styles.edge);
+  s.line([at(-HL)(CREST), at(HL)(CREST)]);
 }
 
 /** Deck off the glazed gable: solid charcoal side walls with a frameless glass balustrade across the end. */
@@ -775,7 +775,7 @@ const SHELL_FRONT = [
   layer("noc", "noc", noc),
   layer("facade", "facade", facade),
   layer("roof", "roof", roof),
-  layer("rafter", "roof", rafter, false, "show"),
+  layer("rafters", "roof", rafters, false, "show"),
   layer("roof-near", "roof", roofNear, false, "hide"),
   layer("deck", "deck", deck),
 ];
@@ -803,7 +803,7 @@ const fraction = ([sx, sy]: [number, number]) => ({ x: (sx - VIEW.x) / VIEW.w, y
 export const DROP = fraction(view([HW, DROP_Y, 0]));
 
 const ANCHOR_POINTS: Record<string, P3> = {
-  roof: [27, 80, RIDGE - SLOPE * 27],
+  roof: at(80)(ROOF_BACK[Math.floor(ROOF_BACK.length / 2)]),
   facade: [HW, -90, (GLASS + EAVE) / 2],
   noc: [-20, 89, BASE + 26],
   deck: [10, HL + 30, 2],
@@ -830,7 +830,7 @@ export const ANCHORS: Record<string, { x: number; y: number }> = Object.fromEntr
 
 export interface CabinArtProps {
   pod: PodId;
-  /** Lifts the near roof slope off the hall to show the overhead services. */
+  /** Lifts the near roof slope off to show the overhead services. */
   cutaway?: boolean;
   active: string | null;
   onActive: (zone: string | null) => void;

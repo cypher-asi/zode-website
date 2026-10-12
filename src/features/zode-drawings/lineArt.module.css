@@ -30,7 +30,7 @@
   cursor: pointer;
 }
 
-/* The roof's near slope over the hall lifts off in the cutaway view (see CabinArt.tsx). */
+/* The roof's near slope lifts off in the cutaway view (see CabinArt.tsx). */
 .art[data-cut] .layer[data-cutaway="hide"],
 .art:not([data-cut]) .layer[data-cutaway="show"] {
   opacity: 0;

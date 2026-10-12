@@ -16,7 +16,7 @@ const POD_ITEMS: readonly TerminalMenuItem[] = POD_TOURS.map(({ id, label }) => 
  * highlights on hover, wired by two diverse fiber routes that drop from its
  * middle into the page's circuit grid below. The heading and a terminal menu
  * that picks the pod on display sit in the left column, over a switch that
- * lifts the roof off the hall; the list on the right mirrors the drawing's
+ * lifts the near roof slope off; the list on the right mirrors the drawing's
  * hover points.
  */
 export function PodTour(): ReactElement {
