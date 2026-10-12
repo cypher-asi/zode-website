@@ -2,6 +2,7 @@ import { render } from "@react-email/render";
 import { createElement, type ReactElement } from "react";
 import DataRoomInvite from "@/emails/DataRoomInvite";
 import EngineerRequestNotification from "@/emails/EngineerRequestNotification";
+import MailingListConfirm from "@/emails/MailingListConfirm";
 import MndaExecuted from "@/emails/MndaExecuted";
 import OrderConfirmation from "@/emails/OrderConfirmation";
 import OrderNotification from "@/emails/OrderNotification";
@@ -26,6 +27,12 @@ const TEMPLATES: Record<string, (search: URLSearchParams) => ReactElement> = {
   welcome: () => createElement(Welcome, { ...PREVIEW_ACCOUNT, logoSrc: PREVIEW_LOGO }),
   registration: () => createElement(RegistrationNotification, { ...PREVIEW_ACCOUNT, logoSrc: PREVIEW_LOGO }),
   "data-room-invite": () => createElement(DataRoomInvite, { ...PREVIEW_DATA_ROOM_INVITE, logoSrc: PREVIEW_LOGO }),
+  "mailing-list-confirm": () =>
+    createElement(MailingListConfirm, {
+      name: "Ada Lovelace",
+      confirmUrl: "http://localhost:3000/mailing-list/confirm/preview-token",
+      logoSrc: PREVIEW_LOGO,
+    }),
   mnda: (search) =>
     createElement(MndaExecuted, {
       ...PREVIEW_MNDA,
@@ -38,7 +45,7 @@ const TEMPLATES: Record<string, (search: URLSearchParams) => ReactElement> = {
  * Development only: an email rendered with sample data, e.g.
  * /dev/emails/confirmation, /dev/emails/notification?mode=rent,
  * /dev/emails/engineer, /dev/emails/welcome, /dev/emails/registration,
- * /dev/emails/data-room-invite, /dev/emails/mnda?audience=team,
+ * /dev/emails/data-room-invite, /dev/emails/mailing-list-confirm, /dev/emails/mnda?audience=team,
  * or add `&text` for the plain-text part.
  */
 export async function GET(request: Request, { params }: { params: Promise<{ template: string }> }): Promise<Response> {

@@ -59,6 +59,12 @@ const ADMIN_SECTIONS = [
     exact: false,
     glyph: <path d="M13.25 3.25 16.75 6.75 7.5 16H4v-3.5zM11.25 5.25l3.5 3.5M4 17.25h12" />,
   },
+  {
+    href: "/portal/subscribers",
+    label: "Subscribers",
+    exact: false,
+    glyph: <path d="M3.25 5.25h13.5v9.5H3.25zM3.75 5.75 10 10.75l6.25-5" />,
+  },
 ] as const;
 
 /** The portal's sections as a column of desktop-style icons under the wordmark; a row on phones. */

@@ -3,6 +3,8 @@ import { listOrdersByUser, type OrderSummary } from "@/features/configurator/ord
 import { listAllContracts, listContractsForUser, type Contract } from "@/features/contracts/contracts";
 import { listRoomsForUser } from "@/features/data-room/rooms";
 import type { RoomSummary } from "@/features/data-room/types";
+import { listSubscribers } from "@/features/mailing-list/subscribers";
+import type { Subscriber } from "@/features/mailing-list/types";
 import { listAllPosts } from "@/features/posts/posts";
 import type { Post } from "@/features/posts/types";
 
@@ -42,6 +44,14 @@ export function loadAllPosts(): Promise<Post[] | null> {
 export function loadAllContracts(): Promise<Contract[] | null> {
   return listAllContracts().catch((error: unknown) => {
     console.error("Failed to load all contracts", error);
+    return null;
+  });
+}
+
+/** The whole mailing list, for ZODE admins, or `null` when it couldn't be loaded. */
+export function loadSubscribers(): Promise<Subscriber[] | null> {
+  return listSubscribers().catch((error: unknown) => {
+    console.error("Failed to load mailing list subscribers", error);
     return null;
   });
 }

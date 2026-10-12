@@ -11,6 +11,7 @@ import { executedFileName } from "@/features/mnda/agreement";
 import type { ExecutedMnda } from "@/features/mnda/mndas";
 import DataRoomInvite, { dataRoomInviteSubject, type DataRoomInviteProps } from "./DataRoomInvite";
 import EngineerRequestNotification, { engineerRequestSubject } from "./EngineerRequestNotification";
+import MailingListConfirm, { mailingListConfirmSubject, type MailingListConfirmProps } from "./MailingListConfirm";
 import { engineerRequestEmailProps } from "./engineerRequestEmailProps";
 import MndaExecuted, { mndaExecutedSubject, type MndaExecutedProps } from "./MndaExecuted";
 import OrderConfirmation, { confirmationSubject } from "./OrderConfirmation";
@@ -189,6 +190,28 @@ export async function sendDataRoomInvite(to: string, props: DataRoomInviteProps,
     });
   } catch (err) {
     console.error(`[email] data room invite to ${to} failed:`, err);
+  }
+}
+
+/**
+ * Emails a mailing list confirmation link. `key` is unique per issued token,
+ * so asking again sends a fresh link. Never throws: they can sign up again.
+ */
+export async function sendMailingListConfirmation(
+  to: string,
+  props: MailingListConfirmProps,
+  key: string,
+): Promise<void> {
+  try {
+    await send({
+      to,
+      replyTo: teamInbox(),
+      subject: mailingListConfirmSubject(),
+      email: <MailingListConfirm {...props} />,
+      idempotencyKey: `mailing-list-confirm-${key}`,
+    });
+  } catch (err) {
+    console.error(`[email] mailing list confirmation to ${to} failed:`, err);
   }
 }
 

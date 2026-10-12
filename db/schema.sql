@@ -222,3 +222,29 @@ create table if not exists posts (
 );
 
 create index if not exists posts_published_idx on posts (kind, published_at desc) where status = 'published';
+
+-- The mailing list: one row per email. Signing up is double opt-in, since
+-- anyone can type any address: a row is 'pending' until the emailed link is
+-- followed. user_id links the ZOS account that signed up while logged in with
+-- this same email. ip and user_agent record where consent was given.
+create table if not exists mailing_list_subscribers (
+  id uuid primary key default gen_random_uuid(),
+  email text not null unique,
+  name text,
+  status text not null default 'pending' check (status in ('pending', 'subscribed', 'unsubscribed')),
+  -- Where they signed up, e.g. 'news', 'changelog', 'settings'.
+  source text,
+  user_id text,
+  -- sha256 of the emailed confirmation token; cleared once confirmed.
+  confirm_token_hash text unique,
+  confirm_expires_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  confirmed_at timestamptz,
+  unsubscribed_at timestamptz,
+  ip text,
+  user_agent text
+);
+
+create index if not exists mailing_list_subscribers_user_idx on mailing_list_subscribers (user_id) where user_id is not null;
+create index if not exists mailing_list_subscribers_status_idx on mailing_list_subscribers (status, created_at desc);

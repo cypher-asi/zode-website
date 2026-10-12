@@ -4,6 +4,7 @@ import { LogoutButton } from "@/features/account/LogoutButton";
 import { avatarUrl, loadProfile } from "@/features/account/profile";
 import { requireAccount } from "@/features/account/session";
 import ui from "@/features/data-room/ui.module.css";
+import { SettingsSubscription } from "@/features/mailing-list/SettingsSubscription";
 import { PageHeader } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
 import { AvatarField } from "@/features/settings/AvatarField";
@@ -52,6 +53,17 @@ export default async function SettingsPage(): Promise<ReactElement> {
             <dd>{account.primaryZid || "—"}</dd>
           </dl>
           <p className={settings.hint}>Your email and ZID belong to your ZOS account and can&apos;t be changed here.</p>
+        </div>
+      </section>
+
+      <section className={styles.section} aria-labelledby="settings-mailing-list">
+        <div className={styles.sectionHead}>
+          <h2 id="settings-mailing-list" className={styles.sectionTitle}>
+            Mailing list
+          </h2>
+        </div>
+        <div className={settings.card}>
+          <SettingsSubscription account={account} />
         </div>
       </section>
     </div>

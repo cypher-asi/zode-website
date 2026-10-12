@@ -26,7 +26,15 @@ export function Byline({ post, minutes }: { post: Post; minutes?: number }): Rea
 }
 
 /** One post in full: date and kind, title, byline, cover and body, in the narrow column of cursor.com/blog. */
-export function PostArticle({ post, banner }: { post: Post; banner?: ReactNode }): ReactElement {
+export function PostArticle({
+  post,
+  banner,
+  footer,
+}: {
+  post: Post;
+  banner?: ReactNode;
+  footer?: ReactNode;
+}): ReactElement {
   return (
     <article className={styles.article}>
       {banner}
@@ -52,6 +60,7 @@ export function PostArticle({ post, banner }: { post: Post; banner?: ReactNode }
         <img className={styles.cover} src={mediaUrl(post.coverPathname)} alt="" />
       ) : null}
       <PostBody markdown={post.bodyMd} />
+      {footer}
       <p className={styles.back}>
         <Link className={styles.backLink} href={`/${post.kind}`}>
           ← All {post.kind === "news" ? "news" : "changelog entries"}

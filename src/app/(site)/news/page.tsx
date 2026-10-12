@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
+import { SubscribeForm } from "@/features/mailing-list/SubscribeForm";
 import { IndexHeader, NewsList } from "@/features/posts/PostArticle";
 import { loadPublished } from "@/features/posts/pages";
 import styles from "@/features/posts/Posts.module.css";
@@ -25,6 +26,9 @@ export default async function NewsPage(): Promise<ReactElement> {
       ) : (
         <p className={styles.empty}>Nothing here yet. Check back soon.</p>
       )}
+      <div className={styles.subscribe}>
+        <SubscribeForm source="news" />
+      </div>
     </div>
   );
 }

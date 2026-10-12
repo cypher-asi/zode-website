@@ -3,7 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import type { Account } from "@/features/account/zos";
 import { hasSignedMnda } from "@/features/mnda/mndas";
 import { db } from "@/lib/db";
-import { SITE_URL } from "@/lib/site";
+import { siteOrigin } from "@/lib/site";
 import { normalizeEmail } from "./rooms";
 import type { RoomRole } from "./types";
 
@@ -18,13 +18,6 @@ function newToken(): { token: string; hash: string; expiresAt: Date } {
 
 /** Where an invite link points; only the emailed copy of the token exists, the database keeps its hash. */
 export const inviteUrl = (token: string, origin = siteOrigin()): string => `${origin}/data-rooms/invite/${token}`;
-
-/** Links in email point at the deployment that sent them, so preview and local invites stay testable. */
-function siteOrigin(): string {
-  if (process.env.VERCEL_ENV === "production") return SITE_URL;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return process.env.NODE_ENV === "development" ? `http://localhost:${process.env.PORT || 3000}` : SITE_URL;
-}
 
 export interface IssuedInvite {
   memberId: string;

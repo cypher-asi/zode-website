@@ -2,6 +2,7 @@ import "server-only";
 import type { Metadata } from "next";
 import { cache, type ReactElement } from "react";
 import { notFound } from "next/navigation";
+import { SubscribeForm } from "@/features/mailing-list/SubscribeForm";
 import { PostArticle } from "./PostArticle";
 import { getPublishedBySlug, listPublished } from "./posts";
 import { kindLabel, mediaUrl, postHref, type Post, type PostKind } from "./types";
@@ -47,7 +48,7 @@ export async function PublishedPostPage({ kind, slug }: { kind: PostKind; slug: 
   if (!post) notFound();
   return (
     <div className={styles.page}>
-      <PostArticle post={post} />
+      <PostArticle post={post} footer={<SubscribeForm source="post" />} />
     </div>
   );
 }

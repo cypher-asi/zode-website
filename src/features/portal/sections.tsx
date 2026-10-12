@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { OrderSummary } from "@/features/configurator/orders";
 import type { Contract } from "@/features/contracts/contracts";
 import type { RoomSummary } from "@/features/data-room/types";
+import { SUBSCRIBER_STATUSES, type Subscriber } from "@/features/mailing-list/types";
 import { kindLabel, type Post } from "@/features/posts/types";
 import styles from "./portal.module.css";
 
@@ -162,6 +163,61 @@ export function PostList({ posts }: { posts: Post[] }): ReactElement {
           </Link>
         </li>
       ))}
+    </ul>
+  );
+}
+
+const SOURCE_LABELS: Record<string, string> = {
+  news: "News page",
+  changelog: "Changelog page",
+  post: "A post",
+  settings: "Portal settings",
+};
+
+function subscriberDate(subscriber: Subscriber): string {
+  if (subscriber.status === "subscribed" && subscriber.confirmedAt) return `Confirmed ${date.format(subscriber.confirmedAt)}`;
+  if (subscriber.status === "unsubscribed" && subscriber.unsubscribedAt) {
+    return `Unsubscribed ${date.format(subscriber.unsubscribedAt)}`;
+  }
+  return `Signed up ${date.format(subscriber.createdAt)}`;
+}
+
+/** The mailing list, for ZODE admins: each address, whether it's confirmed, and the account it belongs to. */
+export function SubscriberList({ subscribers }: { subscribers: Subscriber[] }): ReactElement {
+  return (
+    <ul className={styles.list}>
+      {subscribers.map((subscriber) => {
+        const name = subscriber.accountName || subscriber.name;
+        return (
+          <li key={subscriber.id}>
+            <div className={styles.row}>
+              <span className={styles.rowIcon}>
+                <svg viewBox="0 0 20 20" aria-hidden="true">
+                  {subscriber.userId ? (
+                    <path d="M10 9.75a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM4.25 16.75c.6-2.9 2.9-4.5 5.75-4.5s5.15 1.6 5.75 4.5" />
+                  ) : (
+                    <path d="M3.25 5.25h13.5v9.5H3.25zM3.75 5.75 10 10.75l6.25-5" />
+                  )}
+                </svg>
+              </span>
+              <span className={styles.rowMain}>
+                <span className={styles.rowTitle}>{subscriber.email}</span>
+                <span className={styles.rowMeta}>
+                  {name ? `${name} · ` : ""}
+                  {subscriber.source ? `${SOURCE_LABELS[subscriber.source] ?? subscriber.source} · ` : ""}
+                  {subscriberDate(subscriber)}
+                </span>
+              </span>
+              <span className={styles.rowEnd}>
+                {subscriber.userId ? <span className={styles.pill}>Account</span> : null}
+                <span className={styles.pill} data-strong={subscriber.status === "subscribed" ? "" : undefined}>
+                  {SUBSCRIBER_STATUSES.find((status) => status.id === subscriber.status)?.label ?? subscriber.status}
+                </span>
+              </span>
+            </div>
+          </li>
+        );
+      })}
     </ul>
   );
 }
