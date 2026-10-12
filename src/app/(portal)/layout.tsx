@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { SiteShell } from "@/components/layout/SiteShell";
+import { devDbSwitchAvailable, devDbTarget } from "@/lib/db";
+import { DevDbSwitch } from "@/features/portal/DevDbSwitch";
 import { PortalNav } from "@/features/portal/PortalNav";
 import styles from "@/features/portal/shell.module.css";
 
@@ -12,6 +14,7 @@ export default function PortalLayout({
       <div className={styles.content}>
         <div className={styles.panel}>{children}</div>
       </div>
+      {devDbSwitchAvailable() ? <DevDbSwitch current={devDbTarget()} /> : null}
     </SiteShell>
   );
 }

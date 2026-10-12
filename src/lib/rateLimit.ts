@@ -1,7 +1,7 @@
 import "server-only";
 import { headers } from "next/headers";
 import { after } from "next/server";
-import { db } from "./db";
+import { homeDb } from "./db";
 
 export interface Limit {
   /** What is being counted, e.g. `login:ip:203.0.113.7`. */
@@ -36,7 +36,7 @@ export async function withinLimits(limits: readonly Limit[]): Promise<boolean> {
       limits.map(async ({ key, windowSeconds, cost = 1 }) => {
         const windowMs = windowSeconds * 1000;
         const windowStart = new Date(Math.floor(now / windowMs) * windowMs);
-        const [row] = await db()`
+        const [row] = await homeDb()`
           insert into rate_limits (key, window_start, hits) values (${key}, ${windowStart}, ${cost})
           on conflict (key, window_start) do update set hits = rate_limits.hits + excluded.hits
           returning hits
@@ -52,7 +52,7 @@ export async function withinLimits(limits: readonly Limit[]): Promise<boolean> {
   // Occasional cleanup keeps the table small without a cron job.
   if (Math.random() < 0.02) {
     after(() =>
-      db()`delete from rate_limits where window_start < now() - make_interval(secs => ${MAX_WINDOW_SECONDS * 2})`.catch(
+      homeDb()`delete from rate_limits where window_start < now() - make_interval(secs => ${MAX_WINDOW_SECONDS * 2})`.catch(
         (error: unknown) => console.error("[rate-limit] prune failed", error),
       ),
     );

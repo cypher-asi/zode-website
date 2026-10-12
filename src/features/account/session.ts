@@ -3,7 +3,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { db } from "@/lib/db";
+import { homeDb } from "@/lib/db";
 import { SITE_URL } from "@/lib/site";
 import { initials } from "./initials";
 import { REMEMBER_COOKIE } from "./rememberedAccounts";
@@ -66,7 +66,7 @@ function decode(token: string | undefined): Session | null {
 
 export async function createAccountSession(account: Account): Promise<void> {
   const exp = Math.floor(Date.now() / 1000) + ACCOUNT_MAX_AGE_SECONDS;
-  const [row] = await db()`
+  const [row] = await homeDb()`
     insert into account_sessions (user_id, expires_at) values (${account.userId}, ${new Date(exp * 1000)})
     returning id
   `;
@@ -94,7 +94,7 @@ export async function deleteAccountSession(): Promise<void> {
   cookieStore.delete(ACCOUNT_COOKIE);
   cookieStore.delete(SIGNED_IN_COOKIE);
   if (session) {
-    await db()`update account_sessions set revoked_at = now() where id = ${session.sid} and revoked_at is null`;
+    await homeDb()`update account_sessions set revoked_at = now() where id = ${session.sid} and revoked_at is null`;
   }
 }
 
@@ -104,7 +104,7 @@ export const getAccount = cache(async (): Promise<Account | null> => {
   const session = decode(cookieStore.get(ACCOUNT_COOKIE)?.value);
   if (!session) return null;
   try {
-    const [row] = await db()`
+    const [row] = await homeDb()`
       select 1 from account_sessions
       where id = ${session.sid} and user_id = ${session.account.userId}
         and revoked_at is null and expires_at > now()

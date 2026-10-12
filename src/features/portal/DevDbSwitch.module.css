@@ -1,0 +1,64 @@
+/* Sits in the gap under the portal panel, bottom right, so it never covers a section. */
+.switch {
+  position: fixed;
+  right: max(var(--edge, 16px), env(safe-area-inset-right, 0px));
+  bottom: calc(4px + env(safe-area-inset-bottom, 0px));
+  z-index: 20;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-sm);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+}
+
+.switch[data-target="prod"] {
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-bg);
+}
+
+.switch[aria-busy] {
+  opacity: 0.6;
+}
+
+.option {
+  padding: 3px 10px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease;
+}
+
+.option[aria-checked="true"] {
+  background: var(--color-text-primary);
+  color: var(--color-bg);
+  cursor: default;
+}
+
+.switch[data-target="prod"] .option[aria-checked="true"] {
+  background: var(--color-danger);
+  color: var(--color-white);
+}
+
+.option:disabled {
+  cursor: progress;
+}
+
+.option:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .option {
+    transition: none;
+  }
+}
