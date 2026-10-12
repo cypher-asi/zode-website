@@ -13,7 +13,7 @@ import { formatBytes } from "./fileKinds";
 import { FileTree, ancestorsOf, folderPath, indexTree, type TreeAction } from "./FileTree";
 import { Icon } from "./icons";
 import { Splitter } from "./Splitter";
-import type { RoomFile, RoomTree } from "./types";
+import { MAX_ARCHIVE_BYTES, type RoomFile, type RoomTree } from "./types";
 import { useUploads } from "./useUploads";
 import { Viewer } from "./Viewer";
 import styles from "./DataRoomApp.module.css";
@@ -189,12 +189,33 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId }: DataRoomAp
     else expandTo(target);
   };
 
+  /** Bytes a zip of the checked files and folders would hold, counting each file once. */
+  const selectedBytes = () => {
+    const folders = new Set(checkedRefs.filter((item) => item.kind === "folder").map((item) => item.id));
+    const files = new Set(checkedRefs.filter((item) => item.kind === "file").map((item) => item.id));
+    return tree.files
+      .filter(
+        (file) =>
+          files.has(file.id) ||
+          (file.folderId !== null && [...ancestorsOf(index, file.folderId), file.folderId].some((id) => folders.has(id))),
+      )
+      .reduce((sum, file) => sum + file.sizeBytes, 0);
+  };
+
   const downloadSelected = () => {
     if (checkedRefs.length === 1 && checkedRefs[0].kind === "file") {
       window.location.assign(`/api/data-rooms/${roomId}/files/${checkedRefs[0].id}?download=1`);
-    } else {
-      archiveRef.current?.requestSubmit();
+      return;
     }
+    const bytes = selectedBytes();
+    if (bytes > MAX_ARCHIVE_BYTES) {
+      setNotice(
+        `That selection is ${formatBytes(bytes)}; zip downloads are limited to ${formatBytes(MAX_ARCHIVE_BYTES)}. ` +
+          "Download fewer folders at a time, or large files individually.",
+      );
+      return;
+    }
+    archiveRef.current?.requestSubmit();
   };
 
   const activeUploads = uploads.items.filter((item) => item.status === "uploading" || item.status === "queued").length;

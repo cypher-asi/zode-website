@@ -119,6 +119,9 @@ create table if not exists data_room_files (
   deleted_at timestamptz
 );
 
+-- Diligence tags from a bulk import's file index (date, doctype, status, md5, ...).
+alter table data_room_files add column if not exists metadata jsonb;
+
 create index if not exists data_room_files_room_idx on data_room_files (room_id) where deleted_at is null;
 
 -- Audit trail, visible to the room's admins only.

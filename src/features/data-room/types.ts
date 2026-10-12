@@ -29,6 +29,12 @@ export interface RoomFile {
   createdAt: string;
 }
 
+/**
+ * Largest selection one zip download may hold. The zip streams through a
+ * function that must finish within its time limit; bigger selections go by folder.
+ */
+export const MAX_ARCHIVE_BYTES = 1024 ** 3;
+
 export interface RoomTree {
   folders: RoomFolder[];
   files: RoomFile[];

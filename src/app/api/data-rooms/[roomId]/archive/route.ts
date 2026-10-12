@@ -1,10 +1,15 @@
 import { downloadZip } from "client-zip";
 import { recordEvents } from "@/features/data-room/audit";
 import { readBlob } from "@/features/data-room/blob";
+import { formatBytes } from "@/features/data-room/fileKinds";
 import { contentDisposition, fileHeaders, isSameOrigin, notFoundResponse } from "@/features/data-room/http";
 import { isUuid, resolveSelection, roomAccess } from "@/features/data-room/rooms";
+import { MAX_ARCHIVE_BYTES } from "@/features/data-room/types";
 
 const MAX_ARCHIVE_FILES = 5000;
+
+/** The zip streams through this function, so it must finish within this many seconds. */
+export const maxDuration = 300;
 
 /** Gives repeated paths a " (2)" suffix before the extension, as a file manager would. */
 function uniquePaths(paths: string[]): string[] {
@@ -36,6 +41,14 @@ export async function POST(request: Request, ctx: RouteContext<"/api/data-rooms/
   if (!files.length) return notFoundResponse();
   if (files.length > MAX_ARCHIVE_FILES) {
     return new Response(`Select at most ${MAX_ARCHIVE_FILES} files per download.`, { status: 413 });
+  }
+  const totalBytes = files.reduce((sum, file) => sum + file.sizeBytes, 0);
+  if (totalBytes > MAX_ARCHIVE_BYTES) {
+    return new Response(
+      `That selection is ${formatBytes(totalBytes)}; zip downloads are limited to ${formatBytes(MAX_ARCHIVE_BYTES)}. ` +
+        "Download fewer folders at a time, or large files individually.",
+      { status: 413 },
+    );
   }
 
   await recordEvents(
