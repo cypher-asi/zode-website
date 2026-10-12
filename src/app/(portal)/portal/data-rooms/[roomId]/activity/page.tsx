@@ -179,7 +179,7 @@ export default async function DataRoomActivityPage({
                           subject
                         )}
                         {event.fileId && liveFiles.has(event.fileId) ? (
-                          <Link className={styles.open} href={`/portal/data-rooms/${roomId}/files?file=${event.fileId}`}>
+                          <Link className={styles.open} href={`/portal/data-rooms/${roomId}?file=${event.fileId}`}>
                             Open
                           </Link>
                         ) : null}

@@ -25,6 +25,7 @@
   fill: none;
   stroke: currentColor;
   stroke-width: 1.2;
+  stroke-linecap: round;
   stroke-linejoin: round;
 }
 
@@ -92,6 +93,14 @@
   min-height: 0;
   background: color-mix(in srgb, var(--color-paper), var(--color-border));
   outline: 0;
+}
+
+.summary {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 20px clamp(16px, 2.5vw, 28px) 40px;
+  background: var(--color-bg);
 }
 
 .empty {

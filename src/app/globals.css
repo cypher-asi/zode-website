@@ -124,10 +124,13 @@
    * and footer align to; `--header-band` is twice the pinned header's centre
    * line, so content padded by it clears the header with the header centred
    * in the band; `--frame-inset` is how far the circuit rails sit in.
+   * `--header-top` is the wordmark's distance from the top of the window,
+   * which the portal's rail shares.
    */
   --edge: clamp(32px, 6vw, 96px);
   --frame-inset: clamp(8px, 1vw, 16px);
   --header-band: 86px;
+  --header-top: 32px;
 
   --logo-invert: 1;
 
@@ -139,6 +142,7 @@
   :root {
     --edge: 24px;
     --header-band: 66px;
+    --header-top: 24px;
     --h1-size: clamp(32px, 8vw, 46px);
   }
 }

@@ -1,17 +1,21 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactElement, type RefObject } from "react";
-import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist";
+import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist/legacy/build/pdf.mjs";
 import type { ViewerProps } from "./types";
 import styles from "../Viewer.module.css";
 
-type PdfJs = typeof import("pdfjs-dist");
+type PdfJs = typeof import("pdfjs-dist/legacy/build/pdf.mjs");
 
 let pdfjsPromise: Promise<PdfJs> | undefined;
 
-/** pdf.js and one shared worker, loaded on first use. */
+/**
+ * pdf.js and one shared worker, loaded on first use. The legacy build, because
+ * the modern one calls APIs (Uint8Array#toHex and others) that browsers only
+ * shipped recently, and fails every document without them.
+ */
 function loadPdfJs(): Promise<PdfJs> {
-  pdfjsPromise ??= import("pdfjs-dist").then((pdfjs) => {
+  pdfjsPromise ??= import("pdfjs-dist/legacy/build/pdf.mjs").then((pdfjs) => {
     pdfjs.GlobalWorkerOptions.workerPort = new Worker(new URL("./pdf.worker.ts", import.meta.url), { type: "module" });
     return pdfjs;
   });

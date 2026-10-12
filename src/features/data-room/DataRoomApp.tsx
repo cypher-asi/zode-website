@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, type ReactElement } from "react";
+import { Fragment, useMemo, useRef, useState, type ReactElement } from "react";
 import {
   createFolderAction,
   deleteItemsAction,
@@ -15,7 +15,7 @@ import { Icon } from "./icons";
 import { Splitter } from "./Splitter";
 import { MAX_ARCHIVE_BYTES, type RoomFile, type RoomTree } from "./types";
 import { useUploads } from "./useUploads";
-import { Viewer } from "./Viewer";
+import { SummaryPanel, Viewer, type RoomSummary } from "./Viewer";
 import styles from "./DataRoomApp.module.css";
 import ui from "./ui.module.css";
 
@@ -24,15 +24,23 @@ interface DataRoomAppProps {
   isAdmin: boolean;
   tree: RoomTree;
   initialFileId: string | null;
+  summary: RoomSummary | null;
 }
 
-/** The data room itself: the file tree on the left, a resizable divider, and the viewer on the right. */
-export function DataRoomApp({ roomId, isAdmin, tree, initialFileId }: DataRoomAppProps): ReactElement {
+/**
+ * The data room itself: the file tree on the left, a resizable divider, and
+ * the viewer on the right. The summary, when written, is pinned atop the tree
+ * and open until a file is.
+ */
+export function DataRoomApp({ roomId, isAdmin, tree, initialFileId, summary }: DataRoomAppProps): ReactElement {
   const index = useMemo(() => indexTree(tree), [tree]);
   const filesById = useMemo(() => new Map(tree.files.map((file) => [file.id, file])), [tree]);
 
   const [openFileId, setOpenFileId] = useState<string | null>(() =>
     initialFileId && filesById.has(initialFileId) ? initialFileId : null,
+  );
+  const [summaryOpen, setSummaryOpen] = useState(
+    () => Boolean(summary) && !(initialFileId && filesById.has(initialFileId)),
   );
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(() => {
@@ -52,6 +60,7 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId }: DataRoomAp
 
   const openFile = openFileId ? (filesById.get(openFileId) ?? null) : null;
   const folderId = activeFolderId && index.folders.has(activeFolderId) ? activeFolderId : null;
+  const trail = folderId ? [...ancestorsOf(index, folderId), folderId] : [];
 
   // Drop selections whose items were deleted or moved out from under us.
   const checked = useMemo(
@@ -70,12 +79,20 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId }: DataRoomAp
 
   const open = (file: RoomFile) => {
     setOpenFileId(file.id);
+    setSummaryOpen(false);
     setActiveFolderId(file.folderId);
     window.history.replaceState(null, "", `?file=${file.id}`);
   };
 
+  const openSummary = () => {
+    setOpenFileId(null);
+    setSummaryOpen(true);
+    window.history.replaceState(null, "", window.location.pathname);
+  };
+
   const closeViewer = () => {
     setOpenFileId(null);
+    setSummaryOpen(false);
     window.history.replaceState(null, "", window.location.pathname);
   };
 
@@ -90,6 +107,13 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId }: DataRoomAp
   const expandTo = (id: string | null) => {
     if (!id) return;
     setExpanded((current) => new Set([...current, ...ancestorsOf(index, id), id]));
+  };
+
+  const openById = (fileId: string) => {
+    const file = filesById.get(fileId);
+    if (!file) return;
+    expandTo(file.folderId);
+    open(file);
   };
 
   const toggleCheck = (key: string) =>
@@ -221,7 +245,7 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId }: DataRoomAp
   const activeUploads = uploads.items.filter((item) => item.status === "uploading" || item.status === "queued").length;
 
   return (
-    <div ref={containerRef} className={styles.app} data-view={openFile ? "viewer" : "tree"}>
+    <div ref={containerRef} className={styles.app} data-view={openFile || summaryOpen ? "viewer" : "tree"}>
       <section className={styles.side} aria-label="Files">
         <div className={styles.toolbar}>
           <label className={styles.search}>
@@ -256,16 +280,29 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId }: DataRoomAp
             </>
           ) : null}
         </div>
-        {isAdmin ? (
-          <p className={styles.location}>
-            Uploading to <strong>{folderPath(index, folderId)}</strong>
-            {folderId ? (
-              <button type="button" onClick={() => setActiveFolderId(null)}>
-                Top level
+        <nav className={styles.location} aria-label="Current folder">
+          <button
+            type="button"
+            onClick={() => setActiveFolderId(null)}
+            aria-current={folderId ? undefined : "location"}
+            aria-label="All files"
+            title="All files"
+          >
+            /
+          </button>
+          {trail.map((id, i) => (
+            <Fragment key={id}>
+              {i > 0 ? <span aria-hidden="true">/</span> : null}
+              <button
+                type="button"
+                onClick={() => setActiveFolderId(id)}
+                aria-current={id === folderId ? "location" : undefined}
+              >
+                {index.folders.get(id)?.name}
               </button>
-            ) : null}
-          </p>
-        ) : null}
+            </Fragment>
+          ))}
+        </nav>
 
         <FileTree
           index={index}
@@ -282,6 +319,7 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId }: DataRoomAp
           onAction={(action, item) => runAction(action, [item])}
           onDropFiles={startUpload}
           onMove={move}
+          summary={summary ? { open: summaryOpen, onOpen: openSummary } : undefined}
         />
 
         {uploads.items.length ? (
@@ -361,7 +399,11 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId }: DataRoomAp
       <Splitter containerRef={containerRef} storageKey="zode:data-room:tree-share" />
 
       <section className={styles.main} aria-label="Viewer">
-        <Viewer key={openFile?.id ?? "none"} roomId={roomId} file={openFile} onBack={closeViewer} />
+        {summary && summaryOpen ? (
+          <SummaryPanel summary={summary} onBack={closeViewer} onOpenFile={openById} />
+        ) : (
+          <Viewer key={openFile?.id ?? "none"} roomId={roomId} file={openFile} onBack={closeViewer} />
+        )}
       </section>
 
       {dialog ? <Dialog {...dialog} onClose={() => setDialog(null)} /> : null}

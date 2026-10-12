@@ -89,7 +89,7 @@ export async function createRoomAction(_prev: ActionState, formData: FormData): 
 
   const roomId = await createRoom(name, account);
   await recordEvent({ roomId, account, action: "room_create", detail: { name } });
-  redirect(`/portal/data-rooms/${roomId}/files`);
+  redirect(`/portal/data-rooms/${roomId}`);
 }
 
 export async function renameRoomAction(roomId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {

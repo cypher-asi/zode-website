@@ -1,10 +1,7 @@
-/* Sits in the gap under the portal panel, bottom right, so it never covers a section. */
+/* A segmented control in the admin-only Database card on the settings page. */
 .switch {
-  position: fixed;
-  right: max(var(--edge, 16px), env(safe-area-inset-right, 0px));
-  bottom: calc(4px + env(safe-area-inset-bottom, 0px));
-  z-index: 20;
   display: flex;
+  align-self: flex-start;
   gap: 2px;
   padding: 2px;
   border: 1px solid var(--color-border);

@@ -1,125 +1,207 @@
 /*
- * The portal's frame: a fixed column of icons under the pinned wordmark,
- * aligned to its left edge, and one fixed panel to the right that every
- * section renders into. Inherits `--edge` from SiteShell. The page itself
- * never scrolls, so the header's top fade is off here.
+ * The portal's frame: a fixed black rail of section icons down the left edge,
+ * the pinned wordmark just right of it, and one fixed panel that every section
+ * renders into. Inherits `--edge` from SiteShell. The page itself never
+ * scrolls, so the header's top fade is off here.
  *
- * Spacing is even all the way down: the wordmark sits `--portal-gap` from the
- * top of the window, the rail and panel start `--portal-gap` below the header
- * (the Buy Compute button's bottom edge, `--header-bottom`), and the panel
- * ends `--portal-gap` above the bottom.
+ * Spacing is even all the way down: the rail's top lines up with the
+ * wordmark's (`--header-top`, globals.css), the panel starts `--portal-gap`
+ * below the header (the Buy Compute button's bottom edge, `--header-bottom`),
+ * and the rail and panel both end `--portal-gap` above the bottom.
+ *
+ * The variables live on `.frame`, around the whole shell, so `--brand-inset`
+ * also reaches PinnedHeader's wordmark.
  */
-.rail,
-.content {
-  --tile: 48px;
+.frame {
+  --rail-width: 56px;
+  --rail-item: 40px;
   --portal-gap: 32px;
   --header-bottom: calc(59px + env(safe-area-inset-top, 0px));
   --portal-top: calc(var(--header-bottom) + var(--portal-gap));
+  --brand-inset: calc(var(--rail-width) + var(--portal-gap));
 }
 
 .rail {
   position: fixed;
-  top: var(--portal-top);
+  top: calc(var(--header-top) + env(safe-area-inset-top, 0px));
+  bottom: calc(var(--portal-gap) + env(safe-area-inset-bottom, 0px));
   left: max(var(--edge), env(safe-area-inset-left, 0px));
   z-index: 10;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+  width: var(--rail-width);
+  padding: 8px 0;
+  border-radius: var(--radius-panel);
+  background: var(--color-black);
+  box-shadow: 0 24px 48px -28px rgba(0, 0, 0, 0.45);
 }
 
-/* As wide as its tile, so the tile lines up with the wordmark's left edge; wider labels spill evenly to both sides. */
-.item {
+.group {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 7px;
-  width: var(--tile);
-  color: var(--color-text-secondary);
+  gap: 4px;
+}
+
+.item,
+.avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
 }
 
-.tile {
-  display: grid;
-  place-items: center;
-  width: var(--tile);
-  height: var(--tile);
-  border: 1px solid var(--color-border);
+.item {
+  width: var(--rail-item);
+  height: var(--rail-item);
   border-radius: var(--radius-card);
-  background: var(--color-bg);
-  color: var(--color-text-primary);
-  box-shadow: var(--shadow-sm);
+  color: color-mix(in srgb, var(--color-white) 55%, transparent);
   transition:
     background-color var(--duration-base) ease,
-    border-color var(--duration-base) ease,
-    box-shadow var(--duration-base) ease,
-    color var(--duration-base) ease,
-    transform var(--duration-base) ease;
+    color var(--duration-base) ease;
 }
 
-.tile svg {
+.icon {
   width: 20px;
   height: 20px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.label {
-  font-size: var(--text-2xs);
-  font-weight: 500;
-  line-height: 1.2;
-  text-align: center;
-  white-space: nowrap;
-  transition: color var(--duration-base) ease;
 }
 
 .item[aria-current="page"] {
-  color: var(--color-text-primary);
+  background: color-mix(in srgb, var(--color-white) 14%, transparent);
+  color: var(--color-white);
 }
 
-.item[aria-current="page"] .tile {
-  border-color: var(--color-text-primary);
-  background: var(--color-text-primary);
-  color: var(--color-bg);
-  box-shadow: 0 6px 16px -8px rgba(0, 0, 0, 0.45);
+/*
+ * Signed-in initials, read from the `<html>` flags set by `markSignedIn`
+ * (signedInCookie.ts), with the person glyph for sessions without them.
+ */
+.avatar {
+  width: 32px;
+  height: 32px;
+  margin: 6px 0 4px;
+  border: 1px solid color-mix(in srgb, var(--color-white) 35%, transparent);
+  border-radius: 50%;
+  color: var(--color-white);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  transition:
+    background-color var(--duration-base) ease,
+    border-color var(--duration-base) ease,
+    color var(--duration-base) ease;
 }
 
-@media (hover: hover) {
-  .item:hover {
-    color: var(--color-text-primary);
-  }
-
-  .item:not([aria-current="page"]):hover .tile {
-    border-color: var(--color-border-strong);
-    box-shadow: 0 6px 16px -10px rgba(0, 0, 0, 0.3);
-    transform: translateY(-1px);
-  }
+.avatar::before {
+  content: var(--account-initials);
 }
 
-.item:focus-visible {
-  outline: none;
+.avatarGlyph {
+  width: 16px;
+  height: 16px;
 }
 
-.item:focus-visible .tile {
+:root[data-signed-in="initials"] .avatarGlyph {
+  display: none;
+}
+
+/* The label, shown beside the icon on hover or keyboard focus; always there for screen readers. */
+.tooltip {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 16px);
+  padding: 5px 9px;
+  border-radius: var(--radius-inset);
+  background: var(--color-ink);
+  color: var(--color-text-inverse);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: normal;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  translate: -4px -50%;
+  pointer-events: none;
+  transition:
+    opacity var(--duration-fast) ease,
+    translate var(--duration-fast) ease;
+}
+
+/* The avatar is narrower than the items, so its label starts further out to line up with theirs. */
+.avatar .tooltip {
+  left: calc(100% + 20px);
+}
+
+.item:focus-visible .tooltip,
+.avatar:focus-visible .tooltip {
+  opacity: 1;
+  translate: 0 -50%;
+}
+
+.item:focus-visible,
+.avatar:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
 
+/* Each stroke has `pathLength={1}`, so a dash of 1 traces the icon in from nothing. */
+@keyframes trace {
+  from {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+  }
+}
+
+.item:focus-visible .icon > * {
+  animation: trace 450ms var(--ease-out);
+}
+
+@media (hover: hover) {
+  .item:hover {
+    color: var(--color-white);
+  }
+
+  .item:not([aria-current="page"]):hover {
+    background: color-mix(in srgb, var(--color-white) 8%, transparent);
+  }
+
+  .item:hover .icon > * {
+    animation: trace 450ms var(--ease-out);
+  }
+
+  .avatar:hover {
+    border-color: var(--color-white);
+    background: var(--color-white);
+    color: var(--color-black);
+  }
+
+  .item:hover .tooltip,
+  .avatar:hover .tooltip {
+    opacity: 1;
+    translate: 0 -50%;
+  }
+}
+
 /*
  * The panel keeps the same size and place as you move between sections;
- * sections scroll inside it. It runs from `--portal-gap` past the icon tiles
- * to the header's right edge, under the avatar.
+ * sections scroll inside it. It runs from `--portal-gap` past the rail to the
+ * header's right edge, under the Buy Compute button.
  */
 .panel {
   position: fixed;
   top: var(--portal-top);
   right: max(var(--edge), env(safe-area-inset-right, 0px));
   bottom: calc(var(--portal-gap) + env(safe-area-inset-bottom, 0px));
-  left: calc(max(var(--edge), env(safe-area-inset-left, 0px)) + var(--tile) + var(--portal-gap));
+  left: calc(max(var(--edge), env(safe-area-inset-left, 0px)) + var(--rail-width) + var(--portal-gap));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -133,37 +215,77 @@
 
 /* PinnedHeader tightens up here: the wordmark sits 24px down and the button ends at 47px. */
 @media (max-width: 900px) {
-  .rail,
-  .content {
+  .frame {
+    --rail-width: 52px;
+    --rail-item: 38px;
     --portal-gap: 24px;
     --header-bottom: calc(47px + env(safe-area-inset-top, 0px));
   }
 }
 
-/* Phones: the icons run across under the wordmark, with the panel a gap below them. */
+/*
+ * Phones: the rail becomes a bar along the bottom, the wordmark returns to the
+ * edge, and the panel ends a gap above the bar. Labels pop up above the icons.
+ */
 @media (max-width: 700px) {
+  .frame {
+    --bar-height: 56px;
+    --rail-item: 36px;
+    --brand-inset: 0px;
+  }
+
   .rail {
-    --tile: 44px;
-
+    top: auto;
+    right: max(var(--edge), env(safe-area-inset-right, 0px));
     flex-direction: row;
-    gap: 22px;
+    width: auto;
+    height: var(--bar-height);
+    padding: 0 10px;
   }
 
-  .tile {
-    border-radius: var(--radius-card);
+  .group {
+    flex-direction: row;
+    gap: 2px;
   }
 
-  /* 65px is the row of icons: a 44px tile, the 7px gap and the label. */
+  .avatar {
+    margin: 0 2px 0 6px;
+  }
+
+  .tooltip,
+  .avatar .tooltip {
+    top: auto;
+    bottom: calc(100% + 14px);
+    left: 50%;
+    translate: -50% 4px;
+  }
+
+  .item:focus-visible .tooltip,
+  .avatar:focus-visible .tooltip {
+    translate: -50% 0;
+  }
+
   .panel {
-    top: calc(var(--portal-top) + 65px + var(--portal-gap));
+    bottom: calc(2 * var(--portal-gap) + var(--bar-height) + env(safe-area-inset-bottom, 0px));
     left: max(var(--edge), env(safe-area-inset-left, 0px));
-    border-radius: var(--radius-panel);
+  }
+}
+
+@media (max-width: 700px) and (hover: hover) {
+  .item:hover .tooltip,
+  .avatar:hover .tooltip {
+    translate: -50% 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tile,
-  .label {
+  .item,
+  .avatar,
+  .tooltip {
     transition: none;
+  }
+
+  .item .icon > * {
+    animation: none !important;
   }
 }

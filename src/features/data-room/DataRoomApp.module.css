@@ -67,27 +67,48 @@
   font-size: var(--text-sm);
 }
 
+/* The active folder as a path; uploads and new folders land there. */
 .location {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 4px 8px;
   margin: 0;
   padding: 0 14px 8px;
+  color: var(--color-text-tertiary);
   font-size: var(--text-xs);
-  color: var(--color-text-secondary);
+  line-height: 1.5;
 }
 
-.location strong {
-  overflow: hidden;
+.location button {
+  min-width: 0;
   max-width: 100%;
-  color: var(--color-text-primary);
-  font-weight: 600;
+  overflow: hidden;
+  padding: 0 1px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: none;
+  color: var(--color-text-secondary);
+  font: inherit;
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: pointer;
 }
 
-.location button,
+.location button:hover {
+  color: var(--color-text-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.location button[aria-current] {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.location button:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+}
+
 .linkButton {
   padding: 0;
   border: 0;
@@ -105,8 +126,7 @@
   font-size: var(--text-sm);
 }
 
-.linkButton:hover,
-.location button:hover {
+.linkButton:hover {
   color: var(--color-text-primary);
 }
 

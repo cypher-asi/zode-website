@@ -1,27 +1,33 @@
 import type { ReactElement } from "react";
-import { redirect } from "next/navigation";
-import { requireRoomRole } from "@/features/data-room/rooms";
+import { DataRoomApp } from "@/features/data-room/DataRoomApp";
+import { getRoomTree, requireRoomRole } from "@/features/data-room/rooms";
 import { getDiligenceSummary } from "@/features/data-room/summary";
 import { SummaryView } from "@/features/data-room/SummaryView";
-import styles from "@/features/data-room/room.module.css";
 
-/** The room's landing page: its diligence summary and site economics. Links to `?file=` predate the Files tab. */
-export default async function DataRoomSummaryPage({
+/**
+ * The room's landing page and its files: browse on the left, preview on the
+ * right, the diligence summary open first. `?file=` opens a file instead.
+ */
+export default async function DataRoomPage({
   params,
   searchParams,
 }: PageProps<"/portal/data-rooms/[roomId]">): Promise<ReactElement> {
   const { roomId } = await params;
   const { file } = await searchParams;
-  if (typeof file === "string") redirect(`/portal/data-rooms/${roomId}/files?file=${encodeURIComponent(file)}`);
-
-  await requireRoomRole(roomId);
-  const summary = await getDiligenceSummary(roomId);
+  const { role } = await requireRoomRole(roomId);
+  const [tree, summary] = await Promise.all([getRoomTree(roomId), getDiligenceSummary(roomId)]);
 
   return (
-    <div className={styles.scroll}>
-      <div className={styles.page}>
-        <SummaryView roomId={roomId} summary={summary} />
-      </div>
-    </div>
+    <DataRoomApp
+      roomId={roomId}
+      isAdmin={role === "admin"}
+      tree={tree}
+      initialFileId={typeof file === "string" ? file : null}
+      summary={
+        summary
+          ? { updatedAt: summary.updatedAt, content: <SummaryView roomId={roomId} summary={summary} /> }
+          : null
+      }
+    />
   );
 }

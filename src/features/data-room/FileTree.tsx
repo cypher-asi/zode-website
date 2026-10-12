@@ -19,6 +19,7 @@ import styles from "./DataRoomApp.module.css";
 
 export const fileKey = (id: string): string => `f:${id}`;
 export const folderKey = (id: string): string => `d:${id}`;
+const SUMMARY_KEY = "summary";
 
 const DRAG_TYPE = "application/x-zode-data-room-items";
 
@@ -29,6 +30,8 @@ interface Row {
   depth: number;
   folder?: RoomFolder;
   file?: RoomFile;
+  /** The room's diligence summary, pinned above the files. It can't be selected, moved or renamed. */
+  summary?: boolean;
   /** Last row under an open top-level folder; the group gets space after it. */
   groupEnd?: boolean;
 }
@@ -138,6 +141,8 @@ export interface FileTreeProps {
   onAction: (action: TreeAction, item: ItemRef) => void;
   onDropFiles: (files: File[], folderId: string | null) => void;
   onMove: (items: ItemRef[], folderId: string | null) => void;
+  /** Pins a Summary row above the files; hidden while searching. */
+  summary?: { open: boolean; onOpen: () => void };
 }
 
 export function FileTree({
@@ -155,10 +160,22 @@ export function FileTree({
   onAction,
   onDropFiles,
   onMove,
+  summary,
 }: FileTreeProps): ReactElement {
-  const rows = useMemo(
+  const fileRows = useMemo(
     () => visibleRows(index, expanded, query),
     [index, expanded, query],
+  );
+  const hasSummary = Boolean(summary) && !query.trim();
+  const rows = useMemo<Row[]>(
+    () =>
+      hasSummary
+        ? [
+            { key: SUMMARY_KEY, depth: 0, summary: true, groupEnd: true },
+            ...fileRows,
+          ]
+        : fileRows,
+    [hasSummary, fileRows],
   );
   const [focusKey, setFocusKey] = useState<string | null>(null);
   const [menuKey, setMenuKey] = useState<string | null>(null);
@@ -178,6 +195,14 @@ export function FileTree({
     document.addEventListener("pointerdown", close);
     return () => document.removeEventListener("pointerdown", close);
   }, [menuKey]);
+
+  // A file opened from elsewhere, such as a summary source, scrolls into view once its folders open.
+  useEffect(() => {
+    if (!openFileId) return;
+    listRef.current
+      ?.querySelector(`[data-key="${fileKey(openFileId)}"]`)
+      ?.scrollIntoView({ block: "nearest" });
+  }, [openFileId]);
 
   /** Checked directly, or inside a checked folder. */
   const isChecked = (row: Row): { on: boolean; inherited: boolean } => {
@@ -206,7 +231,9 @@ export function FileTree({
   };
 
   const activate = (row: Row) => {
-    if (row.folder) {
+    if (row.summary) {
+      summary?.onOpen();
+    } else if (row.folder) {
       onToggleExpand(row.folder.id);
       onSelectFolder(row.folder.id);
     } else if (row.file) {
@@ -220,6 +247,7 @@ export function FileTree({
     i: number,
   ) => {
     if (event.target !== event.currentTarget) return;
+    if (row.summary && [" ", "F2", "Delete"].includes(event.key)) return;
     const folderOpen = row.folder
       ? query.trim() !== "" || expanded.has(row.folder.id)
       : false;
@@ -347,7 +375,7 @@ export function FileTree({
           if (event.target === event.currentTarget) onSelectFolder(null);
         }}
       >
-        {rows.length === 0 ? (
+        {fileRows.length === 0 ? (
           <div className={styles.treeEmpty}>
             {query.trim() ? (
               <p>No files match “{query.trim()}”.</p>
@@ -359,6 +387,32 @@ export function FileTree({
           </div>
         ) : null}
         {rows.map((row, i) => {
+          if (row.summary) {
+            return (
+              <div
+                key={row.key}
+                data-key={row.key}
+                role="treeitem"
+                aria-level={1}
+                aria-selected={false}
+                aria-current={summary?.open ? "true" : undefined}
+                tabIndex={row.key === currentFocus ? 0 : -1}
+                className={styles.row}
+                data-group-end=""
+                style={{ paddingLeft: 10 }}
+                onClick={() => {
+                  setFocusKey(row.key);
+                  activate(row);
+                }}
+                onFocus={() => setFocusKey(row.key)}
+                onKeyDown={(event) => onKeyDown(event, row, i)}
+              >
+                <Icon name="summary" className={styles.folderGlyph} />
+                <span className={styles.rowName}>Summary</span>
+                <span className={styles.rowMeta}>Diligence</span>
+              </div>
+            );
+          }
           const { on, inherited } = isChecked(row);
           const name = row.folder?.name ?? row.file!.name;
           const folderOpen = row.folder

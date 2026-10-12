@@ -5,6 +5,7 @@ import type { Contract } from "@/features/contracts/contracts";
 import type { RoomSummary } from "@/features/data-room/types";
 import { SUBSCRIBER_STATUSES, type Subscriber } from "@/features/mailing-list/types";
 import { kindLabel, type Post } from "@/features/posts/types";
+import { PortalIcon } from "./icons";
 import styles from "./portal.module.css";
 
 const usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -73,9 +74,7 @@ export function RoomList({ rooms }: { rooms: RoomSummary[] }): ReactElement {
         <li key={room.id}>
           <Link className={styles.row} href={`/portal/data-rooms/${room.id}`} data-room="">
             <span className={styles.rowIcon}>
-              <svg viewBox="0 0 20 20" aria-hidden="true">
-                <path d="M2.75 6A1.75 1.75 0 0 1 4.5 4.25h3.1l1.8 2h6.1A1.75 1.75 0 0 1 17.25 8v6.25A1.75 1.75 0 0 1 15.5 16h-11a1.75 1.75 0 0 1-1.75-1.75z" />
-              </svg>
+              <PortalIcon name="rooms" />
             </span>
             <span className={styles.rowMain}>
               <span className={styles.rowTitle}>{room.name}</span>
@@ -100,9 +99,7 @@ export function OrderList({ orders }: { orders: OrderSummary[] }): ReactElement 
       {orders.map((order) => (
         <li key={order.reference} className={styles.row} data-order="">
           <span className={styles.rowIcon}>
-            <svg viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M6.25 5.25h7.5a1 1 0 0 1 1 1v7.5a1 1 0 0 1-1 1h-7.5a1 1 0 0 1-1-1v-7.5a1 1 0 0 1 1-1zM8.25 8.25h3.5v3.5h-3.5zM7.5 2.75v2.5M10 2.75v2.5M12.5 2.75v2.5M7.5 14.75v2.5M10 14.75v2.5M12.5 14.75v2.5M2.75 7.5h2.5M2.75 10h2.5M2.75 12.5h2.5M14.75 7.5h2.5M14.75 10h2.5M14.75 12.5h2.5" />
-            </svg>
+            <PortalIcon name="orders" />
           </span>
           <span className={styles.rowMain}>
             <span className={styles.rowTitle}>
@@ -137,9 +134,7 @@ export function PostList({ posts }: { posts: Post[] }): ReactElement {
         <li key={post.id}>
           <Link className={styles.row} href={`/portal/posts/${post.id}`}>
             <span className={styles.rowIcon}>
-              <svg viewBox="0 0 20 20" aria-hidden="true">
-                <path d="M13.25 3.25 16.75 6.75 7.5 16H4v-3.5zM11.25 5.25l3.5 3.5M4 17.25h12" />
-              </svg>
+              <PortalIcon name="posts" />
             </span>
             <span className={styles.rowMain}>
               <span className={styles.rowTitle}>
@@ -192,13 +187,7 @@ export function SubscriberList({ subscribers }: { subscribers: Subscriber[] }): 
           <li key={subscriber.id}>
             <div className={styles.row}>
               <span className={styles.rowIcon}>
-                <svg viewBox="0 0 20 20" aria-hidden="true">
-                  {subscriber.userId ? (
-                    <path d="M10 9.75a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM4.25 16.75c.6-2.9 2.9-4.5 5.75-4.5s5.15 1.6 5.75 4.5" />
-                  ) : (
-                    <path d="M3.25 5.25h13.5v9.5H3.25zM3.75 5.75 10 10.75l6.25-5" />
-                  )}
-                </svg>
+                <PortalIcon name={subscriber.userId ? "person" : "subscribers"} />
               </span>
               <span className={styles.rowMain}>
                 <span className={styles.rowTitle}>{subscriber.email}</span>
@@ -236,9 +225,7 @@ export function ContractList({
         <li key={contract.id}>
           <a className={styles.row} href={`/api/contracts/${contract.id}/pdf`} download>
             <span className={styles.rowIcon}>
-              <svg viewBox="0 0 20 20" aria-hidden="true">
-                <path d="M5.25 2.75h6.5l3.5 3.5v11h-10zM11.75 2.75v3.5h3.5M7.75 10.25h4.5M7.75 13.25h4.5" />
-              </svg>
+              <PortalIcon name="contracts" />
             </span>
             <span className={styles.rowMain}>
               <span className={styles.rowTitle}>Mutual NDA · {contract.counterparty}</span>

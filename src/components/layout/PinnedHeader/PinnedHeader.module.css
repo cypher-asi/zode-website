@@ -1,5 +1,6 @@
 /*
- * Fixed top-left wordmark, inset by `--edge` (globals.css; some pages tighten it).
+ * Fixed top-left wordmark, inset by `--edge` (globals.css; some pages tighten it)
+ * plus `--brand-inset`, which the portal sets to clear its rail.
  * The source PNG is white on transparency, so it inverts to black by default
  * and drops the filter over dark surfaces.
  *
@@ -11,8 +12,8 @@
 .brand {
   position: fixed;
   /* The insets keep it clear of the notch when the page runs edge to edge. */
-  top: calc(32px + env(safe-area-inset-top, 0px));
-  left: max(var(--edge), env(safe-area-inset-left, 0px));
+  top: calc(var(--header-top) + env(safe-area-inset-top, 0px));
+  left: calc(max(var(--edge), env(safe-area-inset-left, 0px)) + var(--brand-inset, 0px));
   z-index: 10;
   display: inline-flex;
   isolation: isolate;
@@ -155,6 +156,11 @@
 
 :root[data-signed-in] .avatar {
   display: inline-flex;
+}
+
+/* The portal's rail carries the avatar instead. */
+:root[data-signed-in] .action[data-portal] .avatar {
+  display: none;
 }
 
 .avatar::before {
@@ -630,10 +636,6 @@ button.menuItem:disabled {
 }
 
 @media (max-width: 900px) {
-  .brand {
-    top: calc(24px + env(safe-area-inset-top, 0px));
-  }
-
   .brand::before {
     inset: -8px -11px;
   }

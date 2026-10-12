@@ -1,23 +1,11 @@
-import type { ReactElement } from "react";
-import { DataRoomApp } from "@/features/data-room/DataRoomApp";
-import { getRoomTree, requireRoomRole } from "@/features/data-room/rooms";
+import { redirect } from "next/navigation";
 
-/** The room's files: browse on the left, preview on the right. `?file=` opens one directly. */
+/** Files moved to the room's landing page; links to `/files?file=` predate that. */
 export default async function DataRoomFilesPage({
   params,
   searchParams,
-}: PageProps<"/portal/data-rooms/[roomId]/files">): Promise<ReactElement> {
+}: PageProps<"/portal/data-rooms/[roomId]/files">): Promise<never> {
   const { roomId } = await params;
   const { file } = await searchParams;
-  const { role } = await requireRoomRole(roomId);
-  const tree = await getRoomTree(roomId);
-
-  return (
-    <DataRoomApp
-      roomId={roomId}
-      isAdmin={role === "admin"}
-      tree={tree}
-      initialFileId={typeof file === "string" ? file : null}
-    />
-  );
+  redirect(`/portal/data-rooms/${roomId}${typeof file === "string" ? `?file=${encodeURIComponent(file)}` : ""}`);
 }

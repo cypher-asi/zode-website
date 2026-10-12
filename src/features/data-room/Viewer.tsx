@@ -1,6 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ComponentType, type ReactElement } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentType,
+  type MouseEvent,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import dynamic from "next/dynamic";
 import { fileKind, formatBytes, typeLabel, type FileKind } from "./fileKinds";
 import { FileGlyph, Icon } from "./icons";
@@ -29,6 +38,53 @@ const ZOOMABLE = new Set<FileKind>(["pdf", "image", "text", "csv", "docx", "xlsx
 const STEPS = [0.25, 0.33, 0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5];
 
 const uploaded = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
+const updated = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "UTC" });
+
+export interface RoomSummary {
+  updatedAt: string;
+  /** The rendered summary; its source links carry `data-file-id`. */
+  content: ReactNode;
+}
+
+/**
+ * The room's diligence summary in the viewer's place. Plain clicks on a
+ * source link open that file here instead of navigating.
+ */
+export function SummaryPanel({
+  summary,
+  onBack,
+  onOpenFile,
+}: {
+  summary: RoomSummary;
+  onBack: () => void;
+  onOpenFile: (fileId: string) => void;
+}): ReactElement {
+  const onClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const link = (event.target as Element).closest<HTMLElement>("a[data-file-id]");
+    if (!link?.dataset.fileId) return;
+    event.preventDefault();
+    onOpenFile(link.dataset.fileId);
+  };
+
+  return (
+    <div className={styles.viewer}>
+      <header className={styles.header}>
+        <button type="button" className={`${ui.iconButton} ${styles.back}`} onClick={onBack} aria-label="Back to files">
+          <Icon name="back" />
+        </button>
+        <Icon name="summary" className={styles.glyph} />
+        <div className={styles.titles}>
+          <h2 className={styles.name}>Summary</h2>
+          <p className={styles.meta}>Diligence summary · Updated {updated.format(new Date(summary.updatedAt))}</p>
+        </div>
+      </header>
+      <div className={styles.summary} onClickCapture={onClick}>
+        {summary.content}
+      </div>
+    </div>
+  );
+}
 
 export function Viewer({ roomId, file, onBack }: { roomId: string; file: RoomFile | null; onBack: () => void }): ReactElement {
   if (!file) {

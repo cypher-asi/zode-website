@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
+import { isZodeAdmin } from "@/features/account/admin";
 import { LogoutButton } from "@/features/account/LogoutButton";
 import { avatarUrl, loadProfile } from "@/features/account/profile";
 import { requireAccount } from "@/features/account/session";
 import ui from "@/features/data-room/ui.module.css";
 import { SettingsSubscription } from "@/features/mailing-list/SettingsSubscription";
+import { DevDbSwitch } from "@/features/portal/DevDbSwitch";
 import { PageHeader } from "@/features/portal/sections";
+import { devDbSwitchAvailable, devDbTarget } from "@/lib/db";
 import styles from "@/features/portal/portal.module.css";
 import { AvatarField } from "@/features/settings/AvatarField";
 import { NameForm } from "@/features/settings/NameForm";
@@ -20,6 +23,7 @@ export default async function SettingsPage(): Promise<ReactElement> {
   const account = await requireAccount("/portal/settings");
   const profile = await loadProfile(account.userId);
   const photo = profile?.avatarPathname ? avatarUrl(account.userId, profile.avatarPathname) : null;
+  const showDbSwitch = devDbSwitchAvailable() && isZodeAdmin(account);
 
   return (
     <div className={styles.page}>
@@ -66,6 +70,23 @@ export default async function SettingsPage(): Promise<ReactElement> {
           <SettingsSubscription account={account} />
         </div>
       </section>
+
+      {showDbSwitch ? (
+        <section className={styles.section} aria-labelledby="settings-database">
+          <div className={styles.sectionHead}>
+            <h2 id="settings-database" className={styles.sectionTitle}>
+              Database
+            </h2>
+          </div>
+          <div className={settings.card}>
+            <DevDbSwitch current={devDbTarget()} />
+            <p className={settings.hint}>
+              Local development only. Points the whole server at the dev or prod database; sessions stay in the dev
+              database.
+            </p>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

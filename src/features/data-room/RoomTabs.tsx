@@ -9,8 +9,7 @@ export function RoomTabs({ roomId, isAdmin }: { roomId: string; isAdmin: boolean
   const pathname = usePathname();
   const base = `/portal/data-rooms/${roomId}`;
   const tabs = [
-    { href: base, label: "Summary" },
-    { href: `${base}/files`, label: "Files" },
+    { href: base, label: "Files" },
     ...(isAdmin
       ? [
           { href: `${base}/members`, label: "Members" },

@@ -477,6 +477,7 @@ export function PinnedHeader({
           data-tone={actionTone}
           data-media={actionOverMedia || undefined}
           data-open={open || undefined}
+          data-portal={inPortal || undefined}
         >
           <div ref={anchorRef} className={styles.menuAnchor}>
             <div ref={actionRef} className={styles.split}>
