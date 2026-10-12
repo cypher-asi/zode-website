@@ -9,6 +9,11 @@ export interface Principle {
 /** In card order: the nth principle is numbered 0n. */
 export const PRINCIPLES: readonly Principle[] = [
   {
+    id: "sovereign",
+    title: "Sovereign",
+    body: "Rapidly deployable AI, owned by the companies, communities, and countries that deploy it.",
+  },
+  {
     id: "distributed",
     title: "Distributed",
     body: "Many smaller sites instead of one giant campus, close to their users, with no single point of failure.",
@@ -17,11 +22,6 @@ export const PRINCIPLES: readonly Principle[] = [
     id: "sustainable",
     title: "Sustainable",
     body: "Sited beside renewable and stranded power. Factory-built pods move instead of being torn down.",
-  },
-  {
-    id: "sovereign",
-    title: "Sovereign",
-    body: "Rapidly deployable AI, owned by the companies, communities, and countries that deploy it.",
   },
   {
     id: "open",
