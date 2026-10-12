@@ -26,18 +26,22 @@ export interface Choice<Id extends string, F = Focus> {
 
 export const ASSUMPTIONS = {
   gpusPerNode: 8,
-  /** 8 compute racks x 4 HGX nodes in each ZODE compute pod. */
-  nodesPerZode: 32,
-  /** IT draw of one HGX B300 node, kW. */
-  nodeKw: 14.3,
-  /** Facility overhead with direct-to-chip liquid cooling. */
-  pue: 1.15,
-  /** Electrical, cooling and compute pods, delivered and commissioned, per ZODE. */
-  zodeInfrastructure: 1_800_000,
+  /** 8 compute racks x 8 HGX nodes in each ZODE compute pod. */
+  nodesPerZode: 64,
+  /** Critical IT load per HGX B300 node, kW, with its share of the network racks. */
+  nodeKw: 15.625,
+  /** Facility overhead with direct-to-chip liquid cooling and chiller trim. */
+  pue: 1.3,
+  /** Electrical, cooling and compute pods per ZODE, equipment only: excludes freight, install and engineering. */
+  zodeInfrastructure: 2_616_094,
+  /** Non-revenue spare equipment, a share of node and IT cost. */
+  spareShare: 0.01,
+  /** Deployment and setup, once per cluster. */
+  setupCost: 250_000,
   financing: {
-    downPayment: 0.1,
+    downPayment: 0.2,
     months: 36,
-    apr: 0.095,
+    apr: 0.12,
   },
 } as const;
 
@@ -52,7 +56,6 @@ export type NetworkId = "infiniband" | "roce";
 export type RedundancyId =
   | "gensets"
   | "cooling"
-  | "pumps"
   | "utility"
   | "fiber"
   | "ups"
@@ -69,12 +72,12 @@ export const LOCATIONS: readonly Choice<LocationId>[] = [
 
 /** Price per node, by platform. */
 const NODE_PRICE: Record<PlatformId, number> = {
-  b300: 425_000,
+  b300: 550_000,
   "vera-rubin": 0,
 };
 
 export const PLATFORMS: readonly Choice<PlatformId>[] = [
-  { id: "b300", label: "NVIDIA B300", detail: "8 GPUs per node", note: "$425k / node", focus: RACKS },
+  { id: "b300", label: "NVIDIA B300", detail: "8 GPUs per node", note: "$550k / node", focus: RACKS },
   {
     id: "vera-rubin",
     label: "NVIDIA Vera Rubin",
@@ -94,21 +97,21 @@ export const COOLING: Choice<"dtc"> = {
 };
 
 /** Added cost per node. */
-const WORKLOAD_PRICE: Record<WorkloadId, number> = { training: 18_000, inference: 6_000 };
+const WORKLOAD_PRICE: Record<WorkloadId, number> = { training: 28_000, inference: 9_000 };
 
 export const WORKLOADS: readonly Choice<WorkloadId>[] = [
   {
     id: "training",
     label: "Training",
     detail: "High-throughput parallel storage for datasets and checkpoints",
-    note: "+$18k / node",
+    note: "+$28k / node",
     focus: RACKS,
   },
   {
     id: "inference",
     label: "Inference",
     detail: "Low-latency serving with local NVMe on every node",
-    note: "+$6k / node",
+    note: "+$9k / node",
     focus: RACKS,
   },
 ];
@@ -134,21 +137,21 @@ export const DEPLOYMENTS: readonly Choice<DeploymentId>[] = [
 ];
 
 /** Added cost per node. */
-const NETWORK_PRICE: Record<NetworkId, number> = { infiniband: 38_000, roce: 28_000 };
+const NETWORK_PRICE: Record<NetworkId, number> = { infiniband: 60_000, roce: 44_000 };
 
 export const NETWORKS: readonly Choice<NetworkId>[] = [
   {
     id: "infiniband",
     label: "InfiniBand",
     detail: "NVIDIA Quantum-X800 · 800 Gb/s per GPU",
-    note: "+$38k / node",
+    note: "+$60k / node",
     focus: { pod: "compute", zone: "spine" },
   },
   {
     id: "roce",
     label: "RoCE v2",
     detail: "NVIDIA Spectrum-X Ethernet · 800 Gb/s per GPU",
-    note: "+$28k / node",
+    note: "+$44k / node",
     focus: { pod: "compute", zone: "spine" },
   },
 ];
@@ -164,23 +167,16 @@ export const REDUNDANCY: readonly RedundancyChoice[] = [
   {
     id: "gensets",
     label: "Gensets",
-    detail: "A standby generator beyond what full load needs",
-    price: 420_000,
+    detail: "Standby generation for the full facility load",
+    price: 750_000,
     focus: { pod: "electrical", zone: "switchboard" },
   },
   {
     id: "cooling",
     label: "Cooling",
     detail: "Spare dry-cooler and heat-exchanger capacity",
-    price: 160_000,
+    price: 134_000,
     focus: { pod: "cooling", zone: "hx" },
-  },
-  {
-    id: "pumps",
-    label: "Pumps",
-    detail: "A standby pump on each coolant loop",
-    price: 45_000,
-    focus: { pod: "cooling", zone: "pumps" },
   },
   {
     id: "utility",
@@ -200,14 +196,14 @@ export const REDUNDANCY: readonly RedundancyChoice[] = [
     id: "ups",
     label: "UPS + Battery",
     detail: "An extra UPS module and battery string",
-    price: 140_000,
+    price: 95_000,
     focus: { pod: "electrical", zone: "ups" },
   },
   {
     id: "transformer",
     label: "Transformer",
     detail: "Spare medium-voltage transformer capacity",
-    price: 180_000,
+    price: 183_000,
     focus: { pod: "electrical", zone: "transformer" },
   },
   {
@@ -244,7 +240,7 @@ export const DEFAULT_CONFIG: Config = {
   workload: "training",
   deployment: "bare-metal",
   network: "infiniband",
-  redundancy: ["pumps", "fiber"],
+  redundancy: ["fiber"],
 };
 
 export interface LineItem {
@@ -294,6 +290,8 @@ export function quote(config: Config): Quote {
   const perZode = zodes === 1 ? "1 ZODE" : `${zodes} ZODEs`;
 
   const redundant = activeRedundancy(config);
+  const hardware =
+    nodes * (NODE_PRICE[config.platform] + WORKLOAD_PRICE[config.workload] + NETWORK_PRICE[config.network]);
 
   const lineItems: LineItem[] = [
     {
@@ -318,10 +316,16 @@ export function quote(config: Config): Quote {
       amount: nodes * NETWORK_PRICE[config.network],
     },
     {
+      label: "Spare equipment",
+      detail: `${Math.round(ASSUMPTIONS.spareShare * 100)}% of nodes, storage and fabric`,
+      amount: hardware * ASSUMPTIONS.spareShare,
+    },
+    {
       label: "ZODE infrastructure",
       detail: perZode,
       amount: zodes * ASSUMPTIONS.zodeInfrastructure,
     },
+    { label: "Deployment and setup", detail: "Per cluster", amount: ASSUMPTIONS.setupCost },
     {
       label: `N+1 redundancy (${redundant.length})`,
       detail: redundant.length ? perZode : "None selected",
@@ -432,7 +436,8 @@ export function buyPriceView(config: Config, quote: Quote): PriceView {
         { label: `Due at signing (${Math.round(down * 100)}%)`, value: usd(quote.downPayment) },
         { label: "Monthly", detail: `${months} mo at ${(apr * 100).toFixed(1)}% APR`, value: usd(quote.monthly) },
       ],
-      fineprint: "Placeholder estimates for planning only. Excludes site work, taxes, power and shipping.",
+      fineprint:
+        "Placeholder estimates for planning only. Excludes site work, sales and use tax, power and freight.",
     },
     summary: summarize(config, quote),
   };
