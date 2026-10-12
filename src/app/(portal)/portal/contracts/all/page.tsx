@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 /** Every MNDA anyone has signed, including those signed while logged out. ZODE admins only. */
 export default async function AllContractsPage(): Promise<ReactElement> {
   const account = await requireAccount("/portal/contracts/all");
-  if (!isZodeAdmin(account)) notFound();
+  if (!(await isZodeAdmin(account))) notFound();
   const contracts = await loadAllContracts();
 
   return (

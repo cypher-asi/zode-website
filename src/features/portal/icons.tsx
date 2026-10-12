@@ -7,6 +7,7 @@ export type PortalIconName =
   | "contracts"
   | "posts"
   | "subscribers"
+  | "users"
   | "settings"
   | "person";
 
@@ -55,6 +56,13 @@ const GLYPHS: Record<PortalIconName, ReactElement> = {
     <>
       <rect pathLength={1} x="3" y="5.5" width="18" height="13" rx="3" />
       <path pathLength={1} d="M6.75 9.25 10.8 12.1a2 2 0 0 0 2.4 0l4.05-2.85" />
+    </>
+  ),
+  users: (
+    <>
+      <circle pathLength={1} cx="9" cy="8.5" r="3.25" />
+      <path pathLength={1} d="M3.25 19.5a5.75 5.5 0 0 1 11.5 0" />
+      <path pathLength={1} d="M15.25 5.35a3.25 3.25 0 0 1 0 6.3M17.25 14.4a5.75 5.5 0 0 1 3.5 5.1" />
     </>
   ),
   settings: (

@@ -25,7 +25,7 @@ export async function searchPeople(account: Account, roomId: string, rawQuery: s
   const prefix = `${escapeLike(query)}%`;
   const sql = db();
 
-  const rows = isZodeAdmin(account)
+  const rows = (await isZodeAdmin(account))
     ? await sql`
         with candidates as (
           select lower(d.email) as email, coalesce(p.display_name, d.display_name) as name

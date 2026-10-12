@@ -11,7 +11,7 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/contracts/[
   const account = await getAccount();
   if (!account) return notFoundResponse();
   const file = await getContractFile(contractId);
-  if (!file || (file.userId !== account.userId && !isZodeAdmin(account))) return notFoundResponse();
+  if (!file || (file.userId !== account.userId && !(await isZodeAdmin(account)))) return notFoundResponse();
 
   let blob: Awaited<ReturnType<typeof readBlob>>;
   try {

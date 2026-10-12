@@ -21,7 +21,7 @@ export default async function ContractsPage(): Promise<ReactElement> {
   return (
     <div className={styles.page}>
       <PageHeader title="Contracts" subtitle="Agreements you've signed with ZODE.">
-        {isZodeAdmin(account) ? <ContractTabs current="mine" /> : null}
+        {(await isZodeAdmin(account)) ? <ContractTabs current="mine" /> : null}
       </PageHeader>
       {contracts === null ? (
         <Empty>Your contracts couldn&apos;t be loaded right now. Please try again shortly.</Empty>

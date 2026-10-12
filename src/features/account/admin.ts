@@ -1,17 +1,24 @@
 import "server-only";
+import { cache } from "react";
+import { db } from "@/lib/db";
 import type { Account } from "./zos";
 
+const loadIsSuperAdmin = cache(async (zosUserId: string): Promise<boolean> => {
+  try {
+    const [row] = await db()`select 1 from users where zos_user_id = ${zosUserId} and role = 'super_admin'`;
+    return Boolean(row);
+  } catch (error) {
+    console.error("[admin] role lookup failed; treating as a member", error);
+    return false;
+  }
+});
+
 /**
- * ZODE staff who see every account's records in the portal: the ZOS user ids
- * in ZODE_ADMINS (comma separated). Ids rather than emails, because ZOS
- * registration is open and doesn't verify addresses. Unset makes everyone an
- * admin in local development only.
+ * ZODE super admins, who see every account's records in the portal and grant
+ * or revoke super admin for others on the Users page: `users.role`, keyed by
+ * ZOS user id rather than email, because ZOS registration is open and doesn't
+ * verify addresses.
  */
-export function isZodeAdmin(account: Account): boolean {
-  const admins = (process.env.ZODE_ADMINS ?? "")
-    .split(",")
-    .map((id) => id.trim())
-    .filter(Boolean);
-  if (!admins.length) return process.env.NODE_ENV === "development";
-  return admins.includes(account.userId);
+export function isZodeAdmin(account: Account): Promise<boolean> {
+  return loadIsSuperAdmin(account.userId);
 }

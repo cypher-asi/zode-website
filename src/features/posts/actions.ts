@@ -28,7 +28,7 @@ const FAILED: SaveResult = { error: "Couldn't save right now. Please try again."
 
 async function adminAccount(): Promise<Account | null> {
   const account = await getAccount();
-  return account && isZodeAdmin(account) ? account : null;
+  return account && (await isZodeAdmin(account)) ? account : null;
 }
 
 const text = (value: unknown): string => (typeof value === "string" ? value.trim() : "");

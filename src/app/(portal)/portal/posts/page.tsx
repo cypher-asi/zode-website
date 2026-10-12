@@ -26,7 +26,7 @@ const TABS = [{ id: "all", label: "All", href: "/portal/posts" }, ...POST_KINDS.
 /** News and changelog posts, drafts included. ZODE admins only. */
 export default async function PostsPage({ searchParams }: PageProps<"/portal/posts">): Promise<ReactElement> {
   const account = await requireAccount("/portal/posts");
-  if (!isZodeAdmin(account)) notFound();
+  if (!(await isZodeAdmin(account))) notFound();
   const { kind } = await searchParams;
   const filter = isPostKind(kind) ? kind : null;
   const posts = await loadAllPosts();

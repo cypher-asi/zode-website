@@ -19,7 +19,7 @@ export default async function PreviewPostPage({
 }: PageProps<"/portal/posts/[postId]/preview">): Promise<ReactElement> {
   const { postId } = await params;
   const account = await requireAccount(`/portal/posts/${postId}/preview`);
-  if (!isZodeAdmin(account)) notFound();
+  if (!(await isZodeAdmin(account))) notFound();
   const post = await getPost(postId);
   if (!post) notFound();
 

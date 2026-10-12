@@ -281,3 +281,31 @@ select distinct on (user_id) user_id, lower(email), null, coalesce(accepted_at, 
 from data_room_members where user_id is not null
 order by user_id, coalesce(accepted_at, invited_at) desc
 on conflict (user_id) do nothing;
+
+-- The site's own record of each ZOS account. `id` is the ZODE user id,
+-- numbered in the order accounts arrived; other tables still key by ZOS id.
+-- `role` is site-wide: super admins see every account's records and grant or
+-- revoke super admin on the portal's Users page. A row is added at sign-in.
+create table if not exists users (
+  id bigint generated always as identity primary key,
+  zos_user_id text not null unique,
+  role text not null default 'member' check (role in ('member', 'super_admin')),
+  role_updated_at timestamptz,
+  role_updated_by bigint references users (id),
+  created_at timestamptz not null default now()
+);
+
+-- Inserts below skip existing rows with `not exists` rather than `on conflict`,
+-- which would spend an id on every row it skips, at every build.
+
+-- Bootstrap: n3o (n3o@zero.tech) is user 1 and the first super admin. Only
+-- inserted once, so a later change to the role sticks.
+insert into users (zos_user_id, role, role_updated_at)
+select 'f977959f-08db-4e09-b730-b5d7a6577481', 'super_admin', now()
+where not exists (select 1 from users where zos_user_id = 'f977959f-08db-4e09-b730-b5d7a6577481');
+
+-- Every account seen before this table existed, or whose sign-in couldn't add its row.
+insert into users (zos_user_id)
+select d.user_id from account_directory d
+where not exists (select 1 from users u where u.zos_user_id = d.user_id)
+order by d.last_seen_at;

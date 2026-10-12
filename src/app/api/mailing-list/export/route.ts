@@ -17,7 +17,7 @@ function cell(value: string | Date | null): string {
 /** The mailing list as CSV for ZODE admins, optionally one status only (`?status=subscribed`). */
 export async function GET(request: Request) {
   const account = await getAccount();
-  if (!account || !isZodeAdmin(account)) return notFoundResponse();
+  if (!account || !(await isZodeAdmin(account))) return notFoundResponse();
   const status = new URL(request.url).searchParams.get("status");
 
   let subscribers;

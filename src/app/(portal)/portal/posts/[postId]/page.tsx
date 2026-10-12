@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default async function EditPostPage({ params }: PageProps<"/portal/posts/[postId]">): Promise<ReactElement> {
   const { postId } = await params;
   const account = await requireAccount(`/portal/posts/${postId}`);
-  if (!isZodeAdmin(account)) notFound();
+  if (!(await isZodeAdmin(account))) notFound();
   const post = await getPost(postId);
   if (!post) notFound();
 

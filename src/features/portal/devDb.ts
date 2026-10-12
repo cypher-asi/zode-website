@@ -11,7 +11,7 @@ export async function setDevDb(target: DbTarget): Promise<void> {
     throw new Error("Unknown database");
   }
   const account = await getAccount();
-  if (!account || !isZodeAdmin(account)) {
+  if (!account || !(await isZodeAdmin(account))) {
     throw new Error("Only ZODE admins can switch databases");
   }
   setDevDbTarget(target);

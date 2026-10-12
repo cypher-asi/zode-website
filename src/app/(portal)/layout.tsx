@@ -20,7 +20,7 @@ export default async function PortalLayout({
         footer={false}
         fade={false}
         edge="tight"
-        nav={<PortalNav admin={account ? isZodeAdmin(account) : false} />}
+        nav={<PortalNav admin={account ? await isZodeAdmin(account) : false} />}
       >
         <div className={styles.panel}>{children}</div>
       </SiteShell>

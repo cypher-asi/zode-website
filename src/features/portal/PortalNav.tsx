@@ -15,10 +15,11 @@ const SECTIONS: readonly Section[] = [
   { href: "/portal/contracts", label: "Contracts", exact: false, icon: "contracts" },
 ];
 
-/** Sections only ZODE admins see. */
+/** Sections only ZODE super admins see. */
 const ADMIN_SECTIONS: readonly Section[] = [
   { href: "/portal/posts", label: "Posts", exact: false, icon: "posts" },
   { href: "/portal/subscribers", label: "Subscribers", exact: false, icon: "subscribers" },
+  { href: "/portal/users", label: "Users", exact: false, icon: "users" },
 ];
 
 const SETTINGS: Section = { href: "/portal/settings", label: "Settings", exact: false, icon: "settings" };

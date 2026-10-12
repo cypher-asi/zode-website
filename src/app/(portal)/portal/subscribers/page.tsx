@@ -25,7 +25,7 @@ const TABS = [
 /** Everyone on the mailing list, and which of them have ZODE accounts. ZODE admins only. */
 export default async function SubscribersPage({ searchParams }: PageProps<"/portal/subscribers">): Promise<ReactElement> {
   const account = await requireAccount("/portal/subscribers");
-  if (!isZodeAdmin(account)) notFound();
+  if (!(await isZodeAdmin(account))) notFound();
   const { status } = await searchParams;
   const filter = isSubscriberStatus(status) ? status : null;
   const subscribers = await loadSubscribers();

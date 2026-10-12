@@ -5,6 +5,8 @@ import type { Contract } from "@/features/contracts/contracts";
 import type { RoomSummary } from "@/features/data-room/types";
 import { SUBSCRIBER_STATUSES, type Subscriber } from "@/features/mailing-list/types";
 import { kindLabel, type Post } from "@/features/posts/types";
+import { RoleButton } from "@/features/users/RoleButton";
+import type { User } from "@/features/users/types";
 import { PortalIcon } from "./icons";
 import styles from "./portal.module.css";
 
@@ -202,6 +204,45 @@ export function SubscriberList({ subscribers }: { subscribers: Subscriber[] }): 
                 <span className={styles.pill} data-strong={subscriber.status === "subscribed" ? "" : undefined}>
                   {SUBSCRIBER_STATUSES.find((status) => status.id === subscriber.status)?.label ?? subscriber.status}
                 </span>
+              </span>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** Every account by ZODE user id, for super admins, with a control to grant or revoke super admin on everyone else. */
+export function UserList({ users, selfZosUserId }: { users: User[]; selfZosUserId: string }): ReactElement {
+  return (
+    <ul className={styles.list}>
+      {users.map((user) => {
+        const self = user.zosUserId === selfZosUserId;
+        const label = user.name || user.email || `user #${user.id}`;
+        return (
+          <li key={user.id}>
+            <div className={styles.row}>
+              <span className={styles.rowIcon}>
+                <PortalIcon name="person" />
+              </span>
+              <span className={styles.rowMain}>
+                <span className={styles.rowTitle}>
+                  <span className={styles.reference}>#{user.id}</span> · {label}
+                </span>
+                <span className={styles.rowMeta}>
+                  {user.email && user.email !== label ? `${user.email} · ` : ""}
+                  {user.lastSeenAt ? `Last seen ${date.format(user.lastSeenAt)}` : "Not seen yet"}
+                </span>
+              </span>
+              <span className={styles.rowEnd}>
+                {self ? <span className={styles.pill}>You</span> : null}
+                {user.role === "super_admin" ? (
+                  <span className={styles.pill} data-strong="">
+                    Super admin
+                  </span>
+                ) : null}
+                {self ? null : <RoleButton userId={user.id} role={user.role} label={label} />}
               </span>
             </div>
           </li>

@@ -7,6 +7,8 @@ import { listSubscribers } from "@/features/mailing-list/subscribers";
 import type { Subscriber } from "@/features/mailing-list/types";
 import { listAllPosts } from "@/features/posts/posts";
 import type { Post } from "@/features/posts/types";
+import type { User } from "@/features/users/types";
+import { listUsers } from "@/features/users/users";
 
 /** The account's data rooms, or `null` when they couldn't be loaded. */
 export function loadRooms(userId: string): Promise<RoomSummary[] | null> {
@@ -52,6 +54,14 @@ export function loadAllContracts(): Promise<Contract[] | null> {
 export function loadSubscribers(): Promise<Subscriber[] | null> {
   return listSubscribers().catch((error: unknown) => {
     console.error("Failed to load mailing list subscribers", error);
+    return null;
+  });
+}
+
+/** Every account by ZODE user id, for super admins, or `null` when they couldn't be loaded. */
+export function loadUsers(): Promise<User[] | null> {
+  return listUsers().catch((error: unknown) => {
+    console.error("Failed to load users", error);
     return null;
   });
 }

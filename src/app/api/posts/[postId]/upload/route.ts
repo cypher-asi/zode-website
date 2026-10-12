@@ -12,7 +12,7 @@ const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
 export async function POST(request: Request, ctx: RouteContext<"/api/posts/[postId]/upload">) {
   if (!isSameOrigin(request)) return new Response("Forbidden", { status: 403 });
   const account = await getAccount();
-  if (!account || !isZodeAdmin(account)) return notFoundResponse();
+  if (!account || !(await isZodeAdmin(account))) return notFoundResponse();
   const { postId } = await ctx.params;
   if (!(await getPost(postId))) return notFoundResponse();
 

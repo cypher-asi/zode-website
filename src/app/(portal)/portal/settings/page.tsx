@@ -13,6 +13,7 @@ import styles from "@/features/portal/portal.module.css";
 import { AvatarField } from "@/features/settings/AvatarField";
 import { NameForm } from "@/features/settings/NameForm";
 import settings from "@/features/settings/settings.module.css";
+import { userIdFor } from "@/features/users/users";
 
 export const metadata: Metadata = {
   title: "Settings | ZODE",
@@ -21,9 +22,15 @@ export const metadata: Metadata = {
 /** Your profile as the portal shows it, and the ZOS account behind it. */
 export default async function SettingsPage(): Promise<ReactElement> {
   const account = await requireAccount("/portal/settings");
-  const profile = await loadProfile(account.userId);
+  const [profile, zodeUserId] = await Promise.all([
+    loadProfile(account.userId),
+    userIdFor(account.userId).catch((error: unknown) => {
+      console.error("[settings] couldn't load the ZODE user id", error);
+      return null;
+    }),
+  ]);
   const photo = profile?.avatarPathname ? avatarUrl(account.userId, profile.avatarPathname) : null;
-  const showDbSwitch = devDbSwitchAvailable() && isZodeAdmin(account);
+  const showDbSwitch = devDbSwitchAvailable() && (await isZodeAdmin(account));
 
   return (
     <div className={styles.page}>
@@ -51,6 +58,8 @@ export default async function SettingsPage(): Promise<ReactElement> {
         </div>
         <div className={settings.card}>
           <dl className={settings.details}>
+            <dt>User ID</dt>
+            <dd>{zodeUserId ? `#${zodeUserId}` : "—"}</dd>
             <dt>Email</dt>
             <dd>{account.email}</dd>
             <dt>ZID</dt>
