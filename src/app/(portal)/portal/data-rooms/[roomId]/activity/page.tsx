@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
+import { Select } from "@/components/ui/Select";
 import { listActors, listEvents } from "@/features/data-room/audit";
 import { getRoomTree, isUuid, requireRoomRole } from "@/features/data-room/rooms";
 import { AUDIT_ACTION_LABELS, type AuditAction, type AuditEvent } from "@/features/data-room/types";
@@ -90,28 +91,37 @@ export default async function DataRoomActivityPage({
         </div>
 
         <form className={styles.filters} method="get" action={base}>
-          <label className={ui.field}>
-            <span className={ui.label}>Action</span>
-            <select name="action" className={ui.select} defaultValue={action}>
-              <option value="">All actions</option>
-              {Object.entries(AUDIT_ACTION_LABELS).map(([id, label]) => (
-                <option key={id} value={id}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className={ui.field}>
-            <span className={ui.label}>Person</span>
-            <select name="actor" className={ui.select} defaultValue={actor}>
-              <option value="">Everyone</option>
-              {actors.map((email) => (
-                <option key={email} value={email}>
-                  {email}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className={ui.field}>
+            <label id="filter-action-label" htmlFor="filter-action" className={ui.label}>
+              Action
+            </label>
+            <Select
+              id="filter-action"
+              aria-labelledby="filter-action-label"
+              name="action"
+              size="sm"
+              className={styles.filterSelect}
+              defaultValue={action}
+              options={[
+                { value: "", label: "All actions" },
+                ...Object.entries(AUDIT_ACTION_LABELS).map(([value, label]) => ({ value, label })),
+              ]}
+            />
+          </div>
+          <div className={ui.field}>
+            <label id="filter-actor-label" htmlFor="filter-actor" className={ui.label}>
+              Person
+            </label>
+            <Select
+              id="filter-actor"
+              aria-labelledby="filter-actor-label"
+              name="actor"
+              size="sm"
+              className={styles.filterSelect}
+              defaultValue={actor}
+              options={[{ value: "", label: "Everyone" }, ...actors.map((email) => ({ value: email, label: email }))]}
+            />
+          </div>
           {fileId ? <input type="hidden" name="file" value={fileId} /> : null}
           <button type="submit" className={ui.button}>
             Filter

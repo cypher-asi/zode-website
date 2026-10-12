@@ -34,7 +34,7 @@ export function FullStack(): ReactElement {
             <br />
             Owning the stack means fewer
             parts, systems tuned for specific AI workloads, lower costs, and
-            sites that deploy in weeks.
+            sites that deploy in months.
           </p>
         </div>
 

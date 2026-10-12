@@ -3,17 +3,12 @@
 import type { CSSProperties, KeyboardEvent, ReactElement } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { RESOURCE_LINKS, type NavLink } from "@/lib/navigation";
 import styles from "./FooterNav.module.css";
-
-interface FooterLink {
-  readonly label: string;
-  readonly href: string;
-  readonly external?: boolean;
-}
 
 interface FooterColumn {
   readonly heading: string;
-  readonly links: readonly FooterLink[];
+  readonly links: readonly NavLink[];
 }
 
 const COLUMNS: readonly FooterColumn[] = [
@@ -24,19 +19,7 @@ const COLUMNS: readonly FooterColumn[] = [
       { label: "Rent compute", href: "/buy-compute?mode=rent" },
     ],
   },
-  {
-    heading: "Resources",
-    links: [
-      {
-        label: "Whitepaper",
-        href: "https://cypher.net/research/the-grid",
-        external: true,
-      },
-      { label: "Cluster configurator", href: "/cluster-configurator" },
-      { label: "Styleguide", href: "/styleguide" },
-      { label: "Contact", href: "/contact" },
-    ],
-  },
+  { heading: "Resources", links: RESOURCE_LINKS },
   {
     heading: "Account",
     links: [

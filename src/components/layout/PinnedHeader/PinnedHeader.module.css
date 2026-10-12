@@ -342,6 +342,8 @@
  * closed it is hidden, which also keeps its items out of the tab order.
  * Visibility flips on at once when opening so the arrow keys can focus an item
  * straight away; the clip still hides it until the button has widened.
+ * The clip runs as keyframes so that once unrolled it can drop entirely,
+ * letting the Resources flyout hang outside the menu's box.
  */
 .menu {
   /* Typing starts as the menu begins to unroll; the pacing matches FooterNav. */
@@ -365,20 +367,40 @@
   clip-path: inset(0 0 100% 0);
   visibility: hidden;
   transition:
-    clip-path 180ms var(--ease-in-out),
     visibility 0s linear 180ms,
     border-color 200ms ease,
     background-color 200ms ease;
+  animation: menu-roll-up 180ms var(--ease-in-out);
 }
 
 .action[data-open] .menu {
-  clip-path: inset(0);
+  clip-path: none;
   visibility: visible;
   transition:
-    clip-path 260ms var(--ease-out) 200ms,
     visibility 0s,
     border-color 200ms ease,
     background-color 200ms ease;
+  animation: menu-unroll 260ms var(--ease-out) 200ms backwards;
+}
+
+@keyframes menu-unroll {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+
+  to {
+    clip-path: inset(0);
+  }
+}
+
+@keyframes menu-roll-up {
+  from {
+    clip-path: inset(0);
+  }
+
+  to {
+    clip-path: inset(0 0 100% 0);
+  }
 }
 
 .menuItem {
@@ -523,6 +545,90 @@ button.menuItem:disabled {
   opacity: 0.2;
 }
 
+/*
+ * The Resources row and its flyout, which unrolls leftward out of the menu's
+ * left edge with its first row level with this one. Its labels type in when
+ * it opens, rather than with the menu.
+ */
+.resources {
+  position: relative;
+}
+
+.menuItem[aria-expanded="true"] {
+  background-color: var(--ink);
+  color: var(--paper);
+}
+
+/* Appears as the row's label starts typing. */
+.submenuIcon {
+  flex: none;
+  width: 6px;
+  height: 10px;
+  margin-right: 8px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+  transition: opacity 0s linear 180ms;
+}
+
+.action[data-open] .submenuIcon {
+  opacity: 1;
+  transition: opacity 0s calc(var(--type-start) + var(--i) * var(--type-stagger));
+}
+
+/*
+ * Offsets past the menu's 4px padding and 1px border, overlapping the border
+ * so the two read as one line. `--shift` (set from JS) pulls it back over the
+ * menu where the viewport is too narrow to fit it beside.
+ */
+.submenu {
+  --type-start: 80ms;
+
+  position: absolute;
+  top: -5px;
+  right: calc(100% + 4px);
+  z-index: 1;
+  translate: var(--shift, 0px) 0;
+  width: max-content;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-control) 0 var(--radius-control) var(--radius-control);
+  background: var(--paper);
+  clip-path: inset(0 0 0 100%);
+  visibility: hidden;
+  transition:
+    clip-path 140ms var(--ease-in-out),
+    visibility 0s linear 140ms,
+    border-color 200ms ease,
+    background-color 200ms ease;
+}
+
+.submenu[data-open] {
+  clip-path: inset(0);
+  visibility: visible;
+  transition:
+    clip-path 200ms var(--ease-out),
+    visibility 0s,
+    border-color 200ms ease,
+    background-color 200ms ease;
+}
+
+.action[data-open] .submenu:not([data-open]) .text {
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 0s linear 140ms;
+}
+
+.action[data-open] .submenu:not([data-open]) .cursor {
+  left: 0;
+  transition: left 0s linear 140ms;
+  animation: none;
+}
+
 @media (max-width: 900px) {
   .brand {
     top: calc(24px + env(safe-area-inset-top, 0px));
@@ -563,6 +669,48 @@ button.menuItem:disabled {
   }
 }
 
+/*
+ * Phones have no room beside the menu, so the Resources flyout expands in
+ * place below its row instead, indented to line up with the row's label.
+ * Closed, it collapses to no height but keeps its width, so the menu is
+ * already wide enough and doesn't jump when it opens. PinnedHeader checks for
+ * the static position to stop hover opening it here.
+ */
+@media (max-width: 600px) {
+  .submenu {
+    position: static;
+    translate: none;
+    width: auto;
+    height: 0;
+    padding: 0 0 0 14px;
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    clip-path: none;
+    interpolate-size: allow-keywords;
+    transition:
+      height 140ms var(--ease-in-out),
+      visibility 0s linear 140ms;
+  }
+
+  .submenu[data-open] {
+    height: auto;
+    clip-path: none;
+    transition:
+      height 200ms var(--ease-out),
+      visibility 0s;
+  }
+
+  .submenuIcon {
+    rotate: -90deg;
+  }
+
+  .menuItem[aria-expanded="true"] .submenuIcon {
+    rotate: 90deg;
+  }
+}
+
 @media (pointer: coarse) {
   .menuItem {
     height: 40px;
@@ -586,11 +734,19 @@ button.menuItem:disabled {
   .text,
   .action[data-open] .text,
   .cursor,
-  .action[data-open] .cursor {
+  .action[data-open] .cursor,
+  .submenuIcon,
+  .action[data-open] .submenuIcon,
+  .submenu,
+  .submenu[data-open],
+  .action[data-open] .submenu:not([data-open]) .text,
+  .action[data-open] .submenu:not([data-open]) .cursor {
     transition: none;
   }
 
   .split::after,
+  .menu,
+  .action[data-open] .menu,
   .action[data-open] .cursor,
   .notice,
   .notice[data-leaving] {

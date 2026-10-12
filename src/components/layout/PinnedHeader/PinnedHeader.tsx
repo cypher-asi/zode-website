@@ -11,11 +11,13 @@ import {
   ViewTransition,
   type CSSProperties,
   type KeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
   type ReactElement,
 } from "react";
 import { markSignedIn, readSignedInCookie } from "@/features/account/signedInCookie";
 import { isPortalPath, useAccountInitials, useLogout, useLogoutToast } from "@/features/account/useAccount";
-import { COMPUTE_ACTIONS, ENGINEER_ACTION } from "@/lib/navigation";
+import { COMPUTE_ACTIONS, ENGINEER_ACTION, RESOURCE_LINKS } from "@/lib/navigation";
 import styles from "./PinnedHeader.module.css";
 
 type Tone = "light" | "dark";
@@ -35,6 +37,18 @@ const SIGNED_OUT_MENU = [
   { id: "login", label: "Login", href: "/login" },
   { id: "register", label: "Register", href: "/register" },
 ];
+
+/** How long the Resources flyout lingers after the mouse leaves, so it can cut diagonally across into it. */
+const RESOURCES_CLOSE_DELAY = 150;
+/** Closest the flyout comes to the viewport's left edge on narrow screens, overlapping the menu instead. */
+const RESOURCES_VIEWPORT_GAP = 8;
+
+/** Moves focus among `items` by `step`, wrapping at the ends. */
+function focusStep(items: readonly HTMLElement[], step: number): void {
+  const at = items.indexOf(document.activeElement as HTMLElement);
+  const next = at === -1 ? (step > 0 ? 0 : items.length - 1) : (at + step + items.length) % items.length;
+  items[next]?.focus();
+}
 
 /** Bottom-centre notice after logging out, fading in and out. */
 function LogoutNotice(): ReactElement | null {
@@ -68,6 +82,41 @@ const FADE_LENGTH = 64;
 const SIDE_PAD = 24;
 /** ...and blend back to opaque over this much more. */
 const SIDE_FEATHER = 64;
+/** A cover's mask while nothing sits under the corners. */
+const COVER_HIDDEN = "linear-gradient(transparent, transparent)";
+
+/** The fade band under the wordmark and button, in viewport pixels. */
+type FadeBand = { clear: number; solid: number; leftEdge: number; rightEdge: number };
+
+/**
+ * The mask fading content at `rect` out of the top corners, or for a cover the
+ * inverse, showing it only there. `null` when the node sits clear of them.
+ */
+function topFadeMask(
+  { top, left, right }: DOMRect,
+  sides: string | undefined,
+  cover: boolean,
+  { clear, solid, leftEdge, rightEdge }: FadeBand,
+): string | null {
+  const fadeLeft = sides !== "right" && left < leftEdge;
+  const fadeRight = sides !== "left" && right > rightEdge;
+  if (solid - top <= 0 || (!fadeLeft && !fadeRight)) return null;
+
+  const [hidden, shown] = cover ? ["#000", "transparent"] : ["transparent", "#000"];
+  const vertical = `linear-gradient(to bottom, ${hidden} ${clear - top}px, ${shown} ${solid - top}px)`;
+  // On narrow screens the two corners meet, so the whole top band fades.
+  if (fadeLeft && fadeRight && rightEdge - leftEdge < 2 * SIDE_FEATHER) return vertical;
+  const stops = [
+    ...(fadeLeft
+      ? [`${hidden} ${leftEdge - left}px`, `${shown} ${leftEdge - left + SIDE_FEATHER}px`]
+      : [`${shown} 0px`]),
+    ...(fadeRight
+      ? [`${shown} ${rightEdge - left - SIDE_FEATHER}px`, `${hidden} ${rightEdge - left}px`]
+      : [`${shown} 100%`]),
+  ];
+  // Content's layers composite with `add`, hiding it only in the top band at the sides; a cover's must `intersect`.
+  return `${vertical}, linear-gradient(to right, ${stops.join(", ")})`;
+}
 
 /**
  * What sits under the center of `el`: the surface tone (`data-surface`) and
@@ -99,6 +148,11 @@ function sampleUnder(el: HTMLElement, rect: DOMRect): { tone: Tone | null; media
  * set to "left" or "right" limits the fade to that corner (the hero gallery
  * starts under the button, so it only fades under the wordmark). Section
  * backgrounds stay unmarked so the surface behind both remains solid.
+ *
+ * Masking content means rewriting its mask as it scrolls, a frame behind the
+ * scroll itself. Over a plain surface, a `data-top-fade-cover` does the same
+ * job without that lag: a sticky band of the surface colour (with
+ * `mask-composite: intersect`) that's masked down to just the corners.
  */
 export function PinnedHeader({
   showAction = true,
@@ -113,16 +167,28 @@ export function PinnedHeader({
   const growRef = useRef<HTMLSpanElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLUListElement>(null);
+  const resourcesRef = useRef<HTMLButtonElement>(null);
+  const resourcesMenuRef = useRef<HTMLUListElement>(null);
+  const resourcesTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [brandTone, setBrandTone] = useState<Tone>("light");
   const [actionTone, setActionTone] = useState<Tone>("light");
   const [actionOverMedia, setActionOverMedia] = useState(false);
   const [open, setOpen] = useState(false);
+  const [resourcesOpen, setResourcesOpen] = useState(false);
   const accountInitials = useAccountInitials();
   const signedIn = accountInitials !== null;
   const inPortal = isPortalPath(pathname ?? "/");
   const menu = inPortal ? PORTAL_ACTION_MENU : ACTION_MENU;
   const { logOut, pending: loggingOut } = useLogout();
   const menuId = useId();
+  const resourcesMenuId = useId();
+
+  /** Closes the menu along with the Resources flyout, so it reopens collapsed. */
+  const closeMenu = () => {
+    clearTimeout(resourcesTimer.current);
+    setOpen(false);
+    setResourcesOpen(false);
+  };
 
   /**
    * Keeps the avatar's `<html>` flags in step after signing in or out. Reads
@@ -133,17 +199,31 @@ export function PinnedHeader({
     markSignedIn(readSignedInCookie(document.cookie));
   }, [accountInitials]);
 
+  /** Shifts the flyout right by however far it would run off the left edge, written to `--shift`. */
+  useLayoutEffect(() => {
+    const flyout = resourcesMenuRef.current;
+    if (!resourcesOpen || !flyout) return;
+    flyout.style.removeProperty("--shift");
+    const overflow = RESOURCES_VIEWPORT_GAP - flyout.getBoundingClientRect().left;
+    if (overflow > 0) flyout.style.setProperty("--shift", `${Math.ceil(overflow)}px`);
+  }, [resourcesOpen]);
+
   useEffect(() => {
     if (!open) return;
 
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Node;
       if (actionRef.current?.contains(target) || menuRef.current?.contains(target)) return;
+      clearTimeout(resourcesTimer.current);
       setOpen(false);
+      setResourcesOpen(false);
     };
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.key !== "Escape") return;
+      // The Resources flyout handles its own Escape, closing just itself.
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      clearTimeout(resourcesTimer.current);
       setOpen(false);
+      setResourcesOpen(false);
       toggleRef.current?.focus();
     };
 
@@ -178,28 +258,101 @@ export function PinnedHeader({
     return () => observer.disconnect();
   }, [showAction]);
 
-  /** Moves focus between the menu items with the arrow keys, wrapping at the ends. */
+  /** Moves focus between the menu's own items (not the flyout's) with the arrow keys, wrapping at the ends. */
   const onMenuKey = (event: KeyboardEvent<HTMLUListElement>) => {
     const step = event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0;
     if (!step) return;
-    const items = Array.from(event.currentTarget.querySelectorAll<HTMLElement>("[role=menuitem]"));
-    const at = items.indexOf(document.activeElement as HTMLElement);
-    const next = at === -1 ? (step > 0 ? 0 : items.length - 1) : (at + step + items.length) % items.length;
     event.preventDefault();
-    items[next]?.focus();
+    focusStep(
+      Array.from(event.currentTarget.querySelectorAll<HTMLElement>(":scope > li > [role=menuitem]")),
+      step,
+    );
   };
 
   const onToggleKey = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (event.key !== "ArrowDown") return;
     event.preventDefault();
+    const focusFirst = () =>
+      menuRef.current?.querySelector<HTMLElement>(":scope > li > [role=menuitem]")?.focus();
     if (open) {
-      menuRef.current?.querySelector<HTMLElement>("[role=menuitem]")?.focus();
+      focusFirst();
     } else {
       setOpen(true);
-      requestAnimationFrame(() =>
-        menuRef.current?.querySelector<HTMLElement>("[role=menuitem]")?.focus(),
-      );
+      setResourcesOpen(false);
+      requestAnimationFrame(focusFirst);
     }
+  };
+
+  /** Whether the flyout expands in place inside the menu (phones), where hovering shouldn't open it. */
+  const resourcesInline = () =>
+    resourcesMenuRef.current !== null && getComputedStyle(resourcesMenuRef.current).position === "static";
+
+  /** Opens the Resources flyout and moves focus to its first link. */
+  const enterResources = () => {
+    clearTimeout(resourcesTimer.current);
+    setResourcesOpen(true);
+    requestAnimationFrame(() =>
+      resourcesMenuRef.current?.querySelector<HTMLElement>("[role=menuitem]")?.focus(),
+    );
+  };
+
+  /** Closes the Resources flyout and hands focus back to its row. */
+  const leaveResources = () => {
+    clearTimeout(resourcesTimer.current);
+    setResourcesOpen(false);
+    resourcesRef.current?.focus();
+  };
+
+  const onResourcesKey = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== "ArrowLeft") return;
+    event.preventDefault();
+    enterResources();
+  };
+
+  /**
+   * Keyboard clicks (`detail` 0) enter the flyout, mouse clicks keep it open
+   * after hovering, taps (and any click where it expands in place) toggle it.
+   */
+  const onResourcesClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    if (event.detail === 0) {
+      enterResources();
+    } else if ((event.nativeEvent as PointerEvent).pointerType === "mouse" && !resourcesInline()) {
+      clearTimeout(resourcesTimer.current);
+      setResourcesOpen(true);
+    } else {
+      setResourcesOpen((value) => !value);
+    }
+  };
+
+  /**
+   * Arrows move within the flyout; Escape or ArrowRight return to its row.
+   * Stops propagation so the outer menu's arrow handling stays out of it, and
+   * Escape is marked handled so the document listener leaves the menu open.
+   */
+  const onResourcesMenuKey = (event: KeyboardEvent<HTMLUListElement>) => {
+    if (event.key === "Escape" || event.key === "ArrowRight") {
+      event.preventDefault();
+      event.stopPropagation();
+      leaveResources();
+      return;
+    }
+    const step = event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0;
+    if (!step) return;
+    event.preventDefault();
+    event.stopPropagation();
+    focusStep(Array.from(event.currentTarget.querySelectorAll<HTMLElement>("[role=menuitem]")), step);
+  };
+
+  const onResourcesEnter = (event: ReactPointerEvent<HTMLLIElement>) => {
+    if (event.pointerType !== "mouse" || resourcesInline()) return;
+    clearTimeout(resourcesTimer.current);
+    setResourcesOpen(true);
+  };
+
+  const onResourcesLeave = (event: ReactPointerEvent<HTMLLIElement>) => {
+    if (event.pointerType !== "mouse" || resourcesInline()) return;
+    clearTimeout(resourcesTimer.current);
+    resourcesTimer.current = setTimeout(() => setResourcesOpen(false), RESOURCES_CLOSE_DELAY);
   };
 
   useEffect(() => {
@@ -253,38 +406,26 @@ export function PinnedHeader({
           setMask(node, "");
         }
       }
+      // Covers are pinned to the top, so they're always measured; their masks only change on resize.
+      const covers = Array.from(
+        document.querySelectorAll<HTMLElement>("[data-top-fade-cover]"),
+        (node) => [node, node.getBoundingClientRect()] as const,
+      );
       const brandUnder = sampleUnder(brand, brandRect);
       const actionUnder = action && actionRect ? sampleUnder(action, actionRect) : null;
 
       const clear = Math.max(brandRect.bottom, actionRect?.bottom ?? 0) + FADE_GAP;
-      const solid = clear + FADE_LENGTH;
-      const leftEdge = brandRect.right + SIDE_PAD;
-      const rightEdge = actionRect ? actionRect.left - SIDE_PAD : Infinity;
-      for (const [node, { top, left, right }] of measured) {
-        const sides = node.dataset.topFade;
-        const fadeLeft = sides !== "right" && left < leftEdge;
-        const fadeRight = sides !== "left" && right > rightEdge;
-        if (solid - top <= 0 || (!fadeLeft && !fadeRight)) {
-          setMask(node, "");
-          continue;
-        }
-
-        const vertical = `linear-gradient(to bottom, transparent ${clear - top}px, #000 ${solid - top}px)`;
-        // On narrow screens the two corners meet, so the whole top band fades.
-        if (fadeLeft && fadeRight && rightEdge - leftEdge < 2 * SIDE_FEATHER) {
-          setMask(node, vertical);
-          continue;
-        }
-        const stops = [
-          ...(fadeLeft
-            ? [`transparent ${leftEdge - left}px`, `#000 ${leftEdge - left + SIDE_FEATHER}px`]
-            : ["#000 0px"]),
-          ...(fadeRight
-            ? [`#000 ${rightEdge - left - SIDE_FEATHER}px`, `transparent ${rightEdge - left}px`]
-            : ["#000 100%"]),
-        ];
-        // Mask layers composite with `add`, so content hides only in the top band at the sides.
-        setMask(node, `${vertical}, linear-gradient(to right, ${stops.join(", ")})`);
+      const band: FadeBand = {
+        clear,
+        solid: clear + FADE_LENGTH,
+        leftEdge: brandRect.right + SIDE_PAD,
+        rightEdge: actionRect ? actionRect.left - SIDE_PAD : Infinity,
+      };
+      for (const [node, rect] of measured) {
+        setMask(node, topFadeMask(rect, node.dataset.topFade, false, band) ?? "");
+      }
+      for (const [node, rect] of covers) {
+        setMask(node, topFadeMask(rect, undefined, true, band) ?? COVER_HIDDEN);
       }
 
       if (brandUnder.tone) setBrandTone(brandUnder.tone);
@@ -351,7 +492,7 @@ export function PinnedHeader({
                 aria-haspopup="menu"
                 aria-expanded={open}
                 aria-controls={menuId}
-                onClick={() => setOpen((value) => !value)}
+                onClick={() => (open ? closeMenu() : setOpen(true))}
                 onKeyDown={onToggleKey}
               >
                 <svg className={styles.chevron} viewBox="0 0 10 6" aria-hidden="true">
@@ -374,12 +515,67 @@ export function PinnedHeader({
                     className={styles.menuItem}
                     href={item.href}
                     scroll={"scroll" in item ? item.scroll : undefined}
-                    onClick={() => setOpen(false)}
+                    onClick={closeMenu}
                   >
                     <TypedLabel text={item.label} index={i} />
                   </Link>
                 </li>
               ))}
+              <li role="separator" className={styles.separator} />
+              <li
+                role="none"
+                className={styles.resources}
+                onPointerEnter={onResourcesEnter}
+                onPointerLeave={onResourcesLeave}
+              >
+                <button
+                  ref={resourcesRef}
+                  type="button"
+                  role="menuitem"
+                  className={styles.menuItem}
+                  aria-haspopup="menu"
+                  aria-expanded={resourcesOpen}
+                  aria-controls={resourcesMenuId}
+                  style={{ "--i": menu.length } as CSSProperties}
+                  onClick={onResourcesClick}
+                  onKeyDown={onResourcesKey}
+                >
+                  <svg className={styles.submenuIcon} viewBox="0 0 6 10" aria-hidden="true">
+                    <path d="M5 1L1 5l4 4" />
+                  </svg>
+                  <TypedLabel text="Resources" index={menu.length} />
+                </button>
+                <ul
+                  ref={resourcesMenuRef}
+                  id={resourcesMenuId}
+                  role="menu"
+                  aria-label="Resources"
+                  className={styles.submenu}
+                  data-open={resourcesOpen || undefined}
+                  onKeyDown={onResourcesMenuKey}
+                >
+                  {RESOURCE_LINKS.map((link, i) => (
+                    <li key={link.label} role="none">
+                      {link.external ? (
+                        <a
+                          role="menuitem"
+                          className={styles.menuItem}
+                          href={link.href}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          onClick={closeMenu}
+                        >
+                          <TypedLabel text={link.label} index={i} />
+                        </a>
+                      ) : (
+                        <Link role="menuitem" className={styles.menuItem} href={link.href} onClick={closeMenu}>
+                          <TypedLabel text={link.label} index={i} />
+                        </Link>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </li>
               <li role="separator" className={styles.separator} />
               {signedIn ? (
                 <li role="none">
@@ -388,9 +584,9 @@ export function PinnedHeader({
                     role="menuitem"
                     className={styles.menuItem}
                     disabled={loggingOut}
-                    onClick={() => logOut(() => setOpen(false))}
+                    onClick={() => logOut(closeMenu)}
                   >
-                    <TypedLabel text={loggingOut ? "Logging out…" : "Logout"} index={menu.length} />
+                    <TypedLabel text={loggingOut ? "Logging out…" : "Logout"} index={menu.length + 1} />
                   </button>
                 </li>
               ) : (
@@ -400,9 +596,9 @@ export function PinnedHeader({
                       role="menuitem"
                       className={styles.menuItem}
                       href={item.href}
-                      onClick={() => setOpen(false)}
+                      onClick={closeMenu}
                     >
-                      <TypedLabel text={item.label} index={menu.length + i} />
+                      <TypedLabel text={item.label} index={menu.length + 1 + i} />
                     </Link>
                   </li>
                 ))

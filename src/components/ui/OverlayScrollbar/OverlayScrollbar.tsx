@@ -10,6 +10,8 @@ interface OverlayScrollbarProps {
   readonly minThumb?: number;
   /** Idle delay before the bar fades, in ms. */
   readonly hideDelay?: number;
+  /** Also show the bar for as long as the pointer is over the scroll area. */
+  readonly showOnHover?: boolean;
 }
 
 /**
@@ -23,6 +25,7 @@ export function OverlayScrollbar({
   targetId,
   minThumb = 28,
   hideDelay = 1200,
+  showOnHover = false,
 }: OverlayScrollbarProps): ReactElement {
   const trackRef = useRef<HTMLDivElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
@@ -38,11 +41,12 @@ export function OverlayScrollbar({
     let hideTimer: ReturnType<typeof setTimeout> | null = null;
     let frame = 0;
     let dragging = false;
+    let hovering = false;
 
     const armHide = (): void => {
       if (hideTimer !== null) clearTimeout(hideTimer);
       hideTimer = setTimeout(() => {
-        if (!dragging) setVisible(false);
+        if (!dragging && !hovering) setVisible(false);
       }, hideDelay);
     };
 
@@ -110,27 +114,54 @@ export function OverlayScrollbar({
     const resize = new ResizeObserver(schedule);
     resize.observe(el);
     for (const child of Array.from(el.children)) resize.observe(child);
+    // Children added later (rows of an expanded list) change the content height without resizing anything observed.
+    const mutations = new MutationObserver(schedule);
+    mutations.observe(el, { childList: true });
+
+    // The bar's own track sits outside the target, so hovering the thumb counts via the shared parent.
+    const area = el.parentElement ?? el;
+    const onPointerEnter = (): void => {
+      hovering = true;
+      schedule();
+      setVisible(true);
+    };
+    const onPointerLeave = (): void => {
+      hovering = false;
+      armHide();
+    };
+    if (showOnHover) {
+      area.addEventListener("pointerenter", onPointerEnter);
+      area.addEventListener("pointerleave", onPointerLeave);
+    }
 
     el.addEventListener("scroll", onScroll, { passive: true });
     thumb.addEventListener("pointerdown", onPointerDown);
     window.addEventListener("resize", schedule);
 
     render();
-    // Flash the bar on mount so it reads as present, then fade.
-    setVisible(true);
-    armHide();
+    // Flash the bar on mount so it reads as present, then fade; hover mode shows it when it's wanted instead.
+    const flash = showOnHover
+      ? 0
+      : requestAnimationFrame(() => {
+          setVisible(true);
+          armHide();
+        });
 
     return () => {
       if (frame !== 0) cancelAnimationFrame(frame);
+      if (flash !== 0) cancelAnimationFrame(flash);
       if (hideTimer !== null) clearTimeout(hideTimer);
       resize.disconnect();
+      mutations.disconnect();
+      area.removeEventListener("pointerenter", onPointerEnter);
+      area.removeEventListener("pointerleave", onPointerLeave);
       el.removeEventListener("scroll", onScroll);
       thumb.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
       window.removeEventListener("resize", schedule);
     };
-  }, [targetId, minThumb, hideDelay]);
+  }, [targetId, minThumb, hideDelay, showOnHover]);
 
   return (
     <div

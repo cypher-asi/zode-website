@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from "react";
+import { Select } from "@/components/ui/Select";
 import styles from "./ui.module.css";
 
 export interface DialogProps {
@@ -29,6 +30,7 @@ export function Dialog({
   onClose,
 }: DialogProps): ReactElement {
   const ref = useRef<HTMLDialogElement>(null);
+  const id = useId();
   const [value, setValue] = useState(input?.initial ?? choice?.initial ?? "");
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
@@ -79,22 +81,20 @@ export function Dialog({
           </label>
         ) : null}
         {choice ? (
-          <label className={styles.field}>
-            <span className={styles.label}>{choice.label}</span>
-            <select
-              className={styles.select}
-              style={{ width: "100%" }}
+          <div className={styles.field}>
+            <label id={`${id}-label`} htmlFor={id} className={styles.label}>
+              {choice.label}
+            </label>
+            <Select
+              id={id}
+              aria-labelledby={`${id}-label`}
+              size="sm"
+              className={styles.fill}
+              options={choice.options}
               value={value}
-              onChange={(event) => setValue(event.target.value)}
-              autoFocus
-            >
-              {choice.options.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
+              onChange={setValue}
+            />
+          </div>
         ) : null}
         {error ? (
           <p className={styles.error} role="alert">

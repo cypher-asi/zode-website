@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState, useTransition, type ReactElement } from "react";
+import { useActionState, useOptimistic, useState, useTransition, type ReactElement } from "react";
+import { Select } from "@/components/ui/Select";
 import {
   changeRoleAction,
   deleteRoomAction,
@@ -15,6 +16,8 @@ import styles from "./admin.module.css";
 import ui from "./ui.module.css";
 
 const date = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
+
+const ROLE_OPTIONS = ROLES.map((role) => ({ value: role.id, label: role.label, detail: role.detail }));
 
 const STATUS_LABELS: Record<RoomMember["status"], string> = {
   active: "Active",
@@ -34,6 +37,10 @@ export function MembersPanel({ roomId, roomName, members, selfEmail }: MembersPa
   const [renameState, rename, renaming] = useActionState(renameRoomAction.bind(null, roomId), {});
   const [rowState, setRowState] = useState<ActionState>({});
   const [pending, startTransition] = useTransition();
+  const [roles, setRole] = useOptimistic<Partial<Record<string, RoomRole>>, [string, RoomRole]>(
+    {},
+    (state, [id, role]) => ({ ...state, [id]: role }),
+  );
   const [dialog, setDialog] = useState<Omit<DialogProps, "onClose"> | null>(null);
 
   const run = (action: () => Promise<ActionState>) =>
@@ -65,22 +72,21 @@ export function MembersPanel({ roomId, roomName, members, selfEmail }: MembersPa
               : `Invited ${date.format(new Date(member.invitedAt))}${member.invitedBy ? ` by ${member.invitedBy}` : ""}`}
           </span>
         </div>
-        <select
-          className={ui.select}
-          value={member.role}
-          disabled={pending}
+        <Select
+          size="sm"
+          align="end"
+          className={styles.roleSelect}
+          options={ROLE_OPTIONS}
+          value={roles[member.id] ?? member.role}
           aria-label={`Role for ${member.email}`}
-          onChange={(event) => {
-            const role = event.target.value as RoomRole;
-            run(() => changeRoleAction(roomId, member.id, role));
+          onChange={(value) => {
+            const role = value as RoomRole;
+            startTransition(async () => {
+              setRole([member.id, role]);
+              setRowState(await changeRoleAction(roomId, member.id, role));
+            });
           }}
-        >
-          {ROLES.map((role) => (
-            <option key={role.id} value={role.id}>
-              {role.label}
-            </option>
-          ))}
-        </select>
+        />
         <div className={styles.memberActions}>
           {member.status !== "active" ? (
             <button

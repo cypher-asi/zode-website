@@ -6,13 +6,15 @@ import styles from "./DataRoomApp.module.css";
 const MIN_WIDTH = 220;
 /** Room left for the viewer beside the tree. */
 const MIN_REMAINDER = 320;
-const DEFAULT_WIDTH = 340;
+/** Share of the panel the tree takes until it's resized; matches `--tree-width` in the CSS. */
+const DEFAULT_FRACTION = 0.33;
 const STEP = 24;
 
 /**
  * The draggable divider between the file tree and the viewer. It writes
  * `--tree-width` on the container directly, so dragging doesn't re-render, and
- * remembers the width per browser.
+ * remembers the width per browser as a share of the panel, so it holds its
+ * proportion as the window resizes.
  */
 export function Splitter({
   containerRef,
@@ -22,7 +24,8 @@ export function Splitter({
   storageKey: string;
 }): ReactElement {
   const ref = useRef<HTMLDivElement>(null);
-  const width = useRef(DEFAULT_WIDTH);
+  const width = useRef(0);
+  const fraction = useRef(DEFAULT_FRACTION);
 
   const apply = useCallback(
     (next: number) => {
@@ -30,6 +33,7 @@ export function Splitter({
       if (!container) return;
       const max = Math.max(MIN_WIDTH, container.clientWidth - MIN_REMAINDER);
       width.current = Math.round(Math.min(max, Math.max(MIN_WIDTH, next)));
+      fraction.current = container.clientWidth ? width.current / container.clientWidth : DEFAULT_FRACTION;
       container.style.setProperty("--tree-width", `${width.current}px`);
       ref.current?.setAttribute("aria-valuenow", String(width.current));
       ref.current?.setAttribute("aria-valuemax", String(max));
@@ -37,9 +41,15 @@ export function Splitter({
     [containerRef],
   );
 
+  /** Width for a share of the panel, e.g. the default or a saved one. */
+  const applyFraction = useCallback(
+    (share: number) => apply(share * (containerRef.current?.clientWidth ?? 0)),
+    [apply, containerRef],
+  );
+
   const save = useCallback(() => {
     try {
-      localStorage.setItem(storageKey, String(width.current));
+      localStorage.setItem(storageKey, fraction.current.toFixed(4));
     } catch {
       // Storage can be unavailable (private mode); the width just isn't remembered.
     }
@@ -52,11 +62,11 @@ export function Splitter({
     } catch {
       saved = 0;
     }
-    apply(saved || DEFAULT_WIDTH);
-    const onResize = () => apply(width.current);
+    applyFraction(saved > 0 && saved < 1 ? saved : DEFAULT_FRACTION);
+    const onResize = () => applyFraction(fraction.current);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [apply, storageKey]);
+  }, [applyFraction, storageKey]);
 
   return (
     <div
@@ -66,7 +76,6 @@ export function Splitter({
       aria-orientation="vertical"
       aria-label="Resize file list"
       aria-valuemin={MIN_WIDTH}
-      aria-valuenow={DEFAULT_WIDTH}
       tabIndex={0}
       onPointerDown={(event) => {
         if (event.button !== 0) return;
@@ -94,7 +103,7 @@ export function Splitter({
         target.addEventListener("pointercancel", end);
       }}
       onDoubleClick={() => {
-        apply(DEFAULT_WIDTH);
+        applyFraction(DEFAULT_FRACTION);
         save();
       }}
       onKeyDown={(event) => {

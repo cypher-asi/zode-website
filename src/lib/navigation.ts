@@ -13,3 +13,18 @@ export const ENGINEER_ACTION = {
   href: "/talk-to-an-engineer",
   scroll: false,
 } as const satisfies TerminalMenuItem;
+
+export interface NavLink {
+  readonly label: string;
+  readonly href: string;
+  /** Opens in a new tab. */
+  readonly external?: boolean;
+}
+
+/** Shared by the footer's Resources column and the header menu's Resources flyout. */
+export const RESOURCE_LINKS: readonly NavLink[] = [
+  { label: "Whitepaper", href: "https://cypher.net/research/the-grid", external: true },
+  { label: "Cluster configurator", href: "/cluster-configurator" },
+  { label: "Styleguide", href: "/styleguide" },
+  { label: "Contact", href: "/contact" },
+];

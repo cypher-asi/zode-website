@@ -1,6 +1,9 @@
 /* The public brand guide (see Styleguide.tsx); its specimens draw on the live tokens. */
 
 .page {
+  /* Where the contents stick and linked sections land: just below the pinned header's corner fade. */
+  --anchor-top: calc(var(--header-band) + 56px);
+
   max-width: calc(1200px + 2 * var(--edge));
   margin: 0 auto;
   padding: calc(var(--header-band) + 40px) var(--edge) 120px;
@@ -104,7 +107,7 @@
 
 .toc {
   position: sticky;
-  top: calc(var(--header-band) + 16px);
+  top: var(--anchor-top);
   align-self: start;
 }
 
@@ -132,6 +135,15 @@
   font-size: var(--text-2xs);
   line-height: 1.8;
   color: var(--color-text-tertiary);
+  transition: color var(--duration-fast) ease;
+}
+
+.toc a[aria-current] {
+  color: var(--color-text-primary);
+}
+
+.toc a[aria-current] span {
+  color: var(--color-text-primary);
 }
 
 @media (hover: hover) {
@@ -151,7 +163,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  scroll-margin-top: calc(var(--header-band) + 16px);
+  scroll-margin-top: var(--anchor-top);
 }
 
 .list {
@@ -845,6 +857,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .toc a,
+  .toc a span,
   .resources a,
   .renders img {
     transition: none;

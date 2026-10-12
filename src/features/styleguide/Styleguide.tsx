@@ -26,6 +26,7 @@ import {
   VOICE,
   type Token,
 } from "./brand";
+import { Contents } from "./Contents";
 import { CopyButton } from "./CopyButton";
 import { RESOURCES } from "./publish";
 import styles from "./Styleguide.module.css";
@@ -145,18 +146,7 @@ export function Styleguide(): ReactElement {
       </header>
 
       <div className={styles.body}>
-        <nav className={styles.toc} aria-label="On this page">
-          <ol>
-            {SECTIONS.map((s, i) => (
-              <li key={s.id}>
-                <a href={`#${s.id}`}>
-                  <span>{String(i + 1).padStart(2, "0")}</span>
-                  {s.title}
-                </a>
-              </li>
-            ))}
-          </ol>
-        </nav>
+        <Contents sections={SECTIONS} />
 
         <div className={styles.content}>
           <section className={styles.agents} aria-labelledby="agents-title">

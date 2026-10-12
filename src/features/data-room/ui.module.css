@@ -35,10 +35,6 @@
   composes: input from "../../components/ui/Field/Field.module.css";
 }
 
-.select {
-  composes: select sm from "../../components/ui/Field/Field.module.css";
-}
-
 .textarea {
   composes: textarea from "../../components/ui/Field/Field.module.css";
 }
@@ -61,8 +57,10 @@
   color: var(--color-success);
 }
 
+/* `margin: auto` is how a modal <dialog> centres itself; the reset zeroes every margin. */
 .dialog {
   width: min(420px, calc(100vw - 32px));
+  margin: auto;
   padding: 0;
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-card);
@@ -95,6 +93,10 @@
   font-size: var(--text-base);
   line-height: 1.5;
   color: var(--color-text-secondary);
+}
+
+.fill {
+  width: 100%;
 }
 
 .dialogActions {

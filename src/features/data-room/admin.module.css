@@ -223,6 +223,11 @@
   color: var(--color-danger);
 }
 
+.roleSelect {
+  flex: none;
+  width: 96px;
+}
+
 .memberActions {
   display: flex;
   gap: 6px;
@@ -269,7 +274,7 @@
   margin-bottom: 14px;
 }
 
-.filters select {
+.filterSelect {
   min-width: 180px;
 }
 

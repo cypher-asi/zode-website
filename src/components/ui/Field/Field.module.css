@@ -60,10 +60,25 @@
   resize: vertical;
 }
 
+/* The trigger button of components/ui/Select. After `.sm` so its chevron gutter wins over that padding. */
 .select {
   composes: input;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   width: auto;
-  padding-right: 6px;
+  padding-right: 8px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.select:disabled {
+  cursor: default;
+}
+
+.select[aria-expanded="true"] {
+  border-color: var(--color-ink);
+  box-shadow: var(--shadow-focus);
 }
 
 .hint {
@@ -79,7 +94,7 @@
 }
 
 @media (hover: hover) {
-  .input:hover:not(:focus, :disabled) {
+  .input:hover:not(:focus, :disabled, [aria-expanded="true"]) {
     border-color: var(--color-border-hover);
   }
 }

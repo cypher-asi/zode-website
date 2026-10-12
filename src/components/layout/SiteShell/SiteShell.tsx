@@ -30,8 +30,12 @@ export function SiteShell({
       <PinnedHeader />
       {nav}
       <main className={styles.main} data-surface="light">
-        {/* Only the content fades under the header; the white background stays solid. */}
-        <div data-top-fade={fade ? "" : undefined}>{children}</div>
+        {fade ? (
+          <div className={styles.fadeTrack} aria-hidden="true">
+            <div className={styles.fade} data-top-fade-cover />
+          </div>
+        ) : null}
+        <div>{children}</div>
       </main>
       {footer ? (
         <footer className={styles.footer} aria-label="Site footer" data-surface="dark">

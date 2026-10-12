@@ -26,7 +26,7 @@ export const LAYERS: readonly StackLayer[] = [
   {
     id: "pods",
     title: "ZODE Pods",
-    body: "Factory-built modules that ship, stack, and come online in weeks, not years.",
+    body: "Factory-built modules that ship, stack, and come online in months, not years.",
   },
   {
     id: "power",

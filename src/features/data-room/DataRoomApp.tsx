@@ -358,7 +358,7 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId }: DataRoomAp
         </form>
       </section>
 
-      <Splitter containerRef={containerRef} storageKey="zode:data-room:tree-width" />
+      <Splitter containerRef={containerRef} storageKey="zode:data-room:tree-share" />
 
       <section className={styles.main} aria-label="Viewer">
         <Viewer key={openFile?.id ?? "none"} roomId={roomId} file={openFile} onBack={closeViewer} />

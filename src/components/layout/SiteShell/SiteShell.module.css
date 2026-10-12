@@ -17,6 +17,33 @@
   color: var(--color-text-primary);
 }
 
+/*
+ * Fades the content under the pinned header's corners: a band of the page
+ * colour stuck to the top of the viewport, masked down to the corners by
+ * PinnedHeader. It sticks within a track spanning `.main`, so it scrolls
+ * off with the content rather than over the footer. Hidden until
+ * PinnedHeader measures the header.
+ */
+.main:has(> .fadeTrack) {
+  position: relative;
+}
+
+.fadeTrack {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.fade {
+  position: sticky;
+  top: 0;
+  height: calc(2 * var(--header-band));
+  background: var(--color-bg);
+  mask-image: linear-gradient(transparent, transparent);
+  mask-composite: intersect;
+}
+
 /* The home page's closing footer: a band for the pinned header, the landscape, then the wordmark band. */
 .footer {
   display: flex;
