@@ -177,6 +177,150 @@ function hoop(s: Sketch, c: P3, axis: Axis, r: number, d: number): void {
 }
 
 // ---------------------------------------------------------------------------
+// Pipes
+// ---------------------------------------------------------------------------
+
+type S2 = readonly [number, number];
+
+/** Elbow radius, in pipe radii. */
+const BEND = 2.5;
+
+const towards = (p: V3, q: V3): V3 => {
+  const d = [q[0] - p[0], q[1] - p[1], q[2] - p[2]] as const;
+  const n = Math.hypot(...d);
+  return [d[0] / n, d[1] / n, d[2] / n];
+};
+
+const mix = (o: V3, a: V3, ka: number, b: V3, kb: number): V3 => [
+  o[0] + a[0] * ka + b[0] * kb,
+  o[1] + a[1] * ka + b[1] * kb,
+  o[2] + a[2] * ka + b[2] * kb,
+];
+
+const axisOf = (d: V3): Axis => (["x", "y", "z"] as const)[d.findIndex((c) => Math.abs(c) > 0.5)];
+
+/** Screen direction of a model direction. */
+const aim = ([x, y, z]: V3): S2 => [x * SA - y * CA, (x * CA + y * SA) * SE - z * CE];
+
+/** Where segments `ab` and `cd` cross, if they do. */
+function crossing(a: S2, b: S2, c: S2, d: S2): S2 | null {
+  const den = (b[0] - a[0]) * (d[1] - c[1]) - (b[1] - a[1]) * (d[0] - c[0]);
+  if (Math.abs(den) < 1e-9) return null;
+  const t = ((c[0] - a[0]) * (d[1] - c[1]) - (c[1] - a[1]) * (d[0] - c[0])) / den;
+  const u = ((c[0] - a[0]) * (b[1] - a[1]) - (c[1] - a[1]) * (b[0] - a[0])) / den;
+  return t > 0 && t < 1 && u > 0 && u < 1 ? [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])] : null;
+}
+
+/** An offset outline with the loops a foreshortened bend folds into it cut out at their crossings. */
+function unfold(line: S2[]): S2[] {
+  const out = line.slice();
+  for (let i = 0; i < out.length - 2; i++) {
+    for (let j = out.length - 2; j > i + 1; j--) {
+      const x = crossing(out[i], out[i + 1], out[j], out[j + 1]);
+      if (x) {
+        out.splice(i + 1, j - i, x);
+        break;
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Pipe along an axis-aligned `route`, each corner bent round an elbow. The
+ * projection is orthographic at unit scale, so the tube's silhouette is its
+ * projected centreline offset by `r` either side, closed by the visible half
+ * of each end. `flanges` puts a flange on the first and last ends.
+ */
+function pipe(
+  s: Sketch,
+  route: readonly V3[],
+  r: number,
+  body = styles.sideR,
+  flanges: readonly [boolean, boolean] = [true, true],
+): void {
+  const n = route.length;
+  const bend = r * BEND;
+  const centre: { p: V3; t: V3 }[] = [{ p: route[0], t: towards(route[0], route[1]) }];
+  const seams: { p: V3; axis: Axis }[] = [];
+  for (let i = 1; i < n - 1; i++) {
+    const [b, u, v] = [route[i], towards(route[i], route[i - 1]), towards(route[i], route[i + 1])];
+    for (let k = 0; k <= 12; k++) {
+      const q = (Math.PI / 2) * (k / 12);
+      centre.push({
+        p: mix(b, u, bend * (1 - Math.sin(q)), v, bend * (1 - Math.cos(q))),
+        t: mix([0, 0, 0], u, -Math.cos(q), v, Math.sin(q)),
+      });
+    }
+    // From this low camera a level bend is seen nearly edge on, and its seams would pile up into a curl.
+    if (axisOf(u) === "z" || axisOf(v) === "z") {
+      seams.push({ p: mix(b, u, bend, v, 0), axis: axisOf(u) }, { p: mix(b, u, 0, v, bend), axis: axisOf(v) });
+    }
+  }
+  centre.push({ p: route[n - 1], t: towards(route[n - 2], route[n - 1]) });
+
+  const left: S2[] = [];
+  const right: S2[] = [];
+  for (const { p, t } of centre) {
+    const [cx, cy] = view(p);
+    const [dx, dy] = aim(t);
+    const k = r / Math.hypot(dx, dy);
+    left.push([cx - dy * k, cy + dx * k]);
+    right.push([cx + dy * k, cy - dx * k]);
+  }
+
+  /** Half of an end's rim facing away from the tube, starting next to `from`. */
+  const cap = (end: V3, inward: V3, from: S2): S2[] => {
+    const axis = axisOf(inward);
+    const t = facing(axis);
+    const [ex, ey] = view(end);
+    const [ix, iy] = aim(inward);
+    const halves = [t - Math.PI / 2, t + Math.PI / 2].map((a) => arc(end, axis, r, a, a + Math.PI, 12).map(view));
+    const rim = halves.find((h) => (h[6][0] - ex) * ix + (h[6][1] - ey) * iy < 0) ?? halves[0];
+    const gap = (q: S2) => Math.hypot(q[0] - from[0], q[1] - from[1]);
+    return gap(rim[0]) <= gap(rim[rim.length - 1]) ? rim : rim.reverse();
+  };
+
+  const [l, rr] = [unfold(left), unfold(right).reverse()];
+  const [first, last] = [centre[0], centre[centre.length - 1]];
+  const outline = [
+    ...l,
+    ...cap(last.p, [-last.t[0], -last.t[1], -last.t[2]], l[l.length - 1]),
+    ...rr,
+    ...cap(first.p, first.t, rr[rr.length - 1]),
+  ];
+
+  const ends = [
+    { p: route[0], inward: towards(route[0], route[1]) },
+    { p: route[n - 1], inward: towards(route[n - 1], route[n - 2]) },
+  ];
+  /** A flange the pipe runs toward the viewer from sits behind it; one it runs away into, in front. */
+  const flange = (front: boolean) =>
+    ends.forEach(({ p, inward }, k) => {
+      if (flanges[k] && dot(inward, EYE) > 0 !== front) circle(s, p, axisOf(inward), r + 0.7, styles.top);
+    });
+
+  flange(false);
+  for (const [x, y] of outline) s.extend(x, y);
+  s.path(`M${outline.map(([x, y]) => `${round(x)} ${round(y)}`).join("L")}Z`, body);
+  for (const { p, axis } of seams) hoop(s, p, axis, r, 0);
+  flange(true);
+}
+
+/** Near half of the collar where a pipe of radius `r` passes into a surface, painted over the pipe's foot. */
+function sleeve(s: Sketch, c: P3, axis: Axis, r: number, collar: number): void {
+  const t = facing(axis);
+  s.face(
+    [...arc(c, axis, collar, t - Math.PI / 2, t + Math.PI / 2), ...arc(c, axis, r, t - Math.PI / 2, t + Math.PI / 2).reverse()],
+    styles.top,
+  );
+}
+
+/** Steel stand under a pipe, from `z0` up to its underside at `z1`. */
+const stand = (s: Sketch, x: number, y: number, z0: number, z1: number) =>
+  s.box(x - 0.8, y - 0.8, 1.6, 1.6, z0, z1 - z0, FRAMED);
+
+// ---------------------------------------------------------------------------
 // Shell
 // ---------------------------------------------------------------------------
 
@@ -556,6 +700,28 @@ const HEADERS = [
 const HEADER = { r: 1.6, y0: -110 };
 const TRAPEZE = { x0: -45, x1: -16, z: BASE + 59, t: 1.2, at: [0, 2, 4, 6, 8, 10].map((i) => rackY(i) - 0.5) };
 
+/*
+ * The chilled and warm water pair between the pods, the warm one stacked
+ * above so its branches clear the chilled one. In each pod the pair crosses
+ * the hall to a service panel at the foot of the glazing, where both pass
+ * out, bend down and dive into the ground toward the other pods.
+ */
+const LOOPS = [
+  { x: -4, z: BASE + 6 },
+  { x: 2, z: BASE + 12 },
+] as const;
+const LOOP = { r: 2.4, branch: 1.6 };
+/** Where the pair leaves each pod, along the glazed side. */
+const EXIT = { compute: -107, cooling: 30 };
+const PANEL = { half: 5.5, top: BASE + 18 };
+/** How far out past the facade each pipe of the pair turns down into the ground. */
+const REACH = [5.5, 11.5];
+
+const loopBody = (k: number) => (k ? styles.sideL : styles.sideR);
+/** Stand under the pair's `k`th pipe where the two run stacked: the warm one rests on the chilled one. */
+const stackedStand = (s: Sketch, k: number, x: number, y: number) =>
+  stand(s, x, y, k ? LOOPS[0].z + LOOP.r : BASE, LOOPS[k].z - LOOP.r);
+
 function compute(): Layer[] {
   const racks = (from: number, to: number) => (s: Sketch) => {
     for (let i = from; i < to; i++) rack(s, i, false);
@@ -569,6 +735,10 @@ function compute(): Layer[] {
         s.box(x, y, w, d, BASE, h);
         for (let z = BASE + 6; z < BASE + 25; z += 3) s.line([[x + w, y + 3, z], [x + w, y + d - 3, z]], styles.hair);
         rectX(s, x + w, y + 4, y + d - 4, BASE + 29, BASE + 34, styles.sideL);
+        LOOPS.forEach(({ z }, k) => {
+          for (const sx of [8, 32]) stackedStand(s, k, sx, EXIT.compute);
+          pipe(s, [[x + w, EXIT.compute, z], [GX, EXIT.compute, z]], LOOP.r, loopBody(k), [true, false]);
+        });
       },
       true,
     ),
@@ -603,12 +773,17 @@ function compute(): Layer[] {
       "compute-headers",
       "coolant",
       (s) => {
+        const end = RACK_MID(9);
         HEADERS.forEach(({ x, z }, k) => {
-          const body = k ? styles.sideL : styles.sideR;
-          cylinder(s, [x, HEADER.y0, BASE + 38], "z", HEADER.r, z - BASE - 38, body);
-          for (let i = 0; i < 10; i++) s.line([[x, RACK_MID(i), RACK_TOP], [x, RACK_MID(i), z]], styles.edge);
-          for (const y of TRAPEZE.at) s.line([[x, y, z + HEADER.r], [x, y, TRAPEZE.z]]);
-          cylinder(s, [x, HEADER.y0, z], "y", HEADER.r, RUN_END - HEADER.y0, body);
+          for (let i = 0; i < 9; i++) s.line([[x, RACK_MID(i), RACK_TOP], [x, RACK_MID(i), z]], styles.edge);
+          for (const y of TRAPEZE.at) if (y < end) s.line([[x, y, z + HEADER.r], [x, y, TRAPEZE.z]]);
+          const route: V3[] = [
+            [x, HEADER.y0, BASE + 38],
+            [x, HEADER.y0, z],
+            [x, end, z],
+            [x, end, RACK_TOP],
+          ];
+          pipe(s, route, HEADER.r, loopBody(k));
         });
       },
       true,
@@ -752,18 +927,53 @@ function cooling(): Layer[] {
       },
       true,
     ),
+    ...runs("cooling", 30, [16, -104]),
     layer(
       "cooling-headers",
       "headers",
       (s) => {
-        for (const y of [-98, -60, -33, -21, -5, 7, 26]) cylinder(s, [-10, y, BASE + 4], "x", 1.6, 6);
-        cylinder(s, [-4, -116, BASE + 4], "y", 2.4, 150);
-        cylinder(s, [2, -116, BASE + 4], "y", 2.4, 150, styles.sideL);
+        // Branches as [y, x] of the equipment face they run into: the pump casings
+        // and exchanger on the chilled header, the second tank and exchanger on the warm.
+        const taps: [number, number][][] = [
+          [[-33, -20.5], [-21, -20.5], [-5, -20.5], [7, -20.5], [22, -26]],
+          [[-60, -15], [22, -26]],
+        ];
+        const [tank, exit] = [-98, EXIT.cooling];
+        LOOPS.forEach(({ x, z }, k) => {
+          const body = loopBody(k);
+          for (const y of [-80, -45, -13, 12]) stand(s, x, y, BASE, z - LOOP.r);
+          for (const sx of [20, 42]) stackedStand(s, k, sx, exit);
+          for (const [y, tx] of taps[k]) pipe(s, [[tx, y, z], [x, y, z]], LOOP.branch, body, [true, false]);
+          const route: V3[] = [
+            [-15, tank, z],
+            [x, tank, z],
+            [x, exit, z],
+            [GX, exit, z],
+          ];
+          pipe(s, route, LOOP.r, body, [true, false]);
+        });
       },
       true,
     ),
-    ...runs("cooling", 30, [16, -104]),
   ];
+}
+
+/** A pod's coolant pair passing out through a service panel at the foot of the glazing and bending down into the ground. */
+function outfall(pod: PodId, zone: string, y: number): Layer {
+  return layer(
+    `${pod}-outfall`,
+    zone,
+    (s) => {
+      const x0 = GX + 0.3;
+      rectX(s, x0, y - PANEL.half, y + PANEL.half, BASE, PANEL.top, styles.frame);
+      LOOPS.forEach(({ z }, k) => {
+        const x = HW + REACH[k];
+        pipe(s, [[x0, y, z], [x, y, z], [x, y, 0]], LOOP.r, loopBody(k));
+        sleeve(s, [x, y, 0], "z", LOOP.r, LOOP.r + 0.7);
+      });
+    },
+    true,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -782,6 +992,11 @@ const SHELL_FRONT = [
 /** Along the glazed side, where its foot sits below the drawing's middle; the equipment all stays inside the shell's extent. */
 const DROP_Y = round((HW * SA - (extent.x0 + extent.x1) / 2) / CA);
 const INTERIOR: Record<PodId, Layer[]> = { compute: compute(), electrical: electrical(), cooling: cooling() };
+/** Pod parts outside the glazing, painted over the shell. */
+const EXTERIOR = {
+  compute: outfall("compute", "coolant", EXIT.compute),
+  cooling: outfall("cooling", "headers", EXIT.cooling),
+};
 
 const PAD = 10;
 export const VIEW: Bounds = {
@@ -792,9 +1007,9 @@ export const VIEW: Bounds = {
 };
 
 const LAYERS: Record<PodId, Layer[]> = {
-  compute: [SHELL_BACK, ...INTERIOR.compute, ...SHELL_FRONT],
+  compute: [SHELL_BACK, ...INTERIOR.compute, ...SHELL_FRONT, EXTERIOR.compute],
   electrical: [SHELL_BACK, ...INTERIOR.electrical, ...SHELL_FRONT],
-  cooling: [SHELL_BACK, ...INTERIOR.cooling, ...SHELL_FRONT],
+  cooling: [SHELL_BACK, ...INTERIOR.cooling, ...SHELL_FRONT, EXTERIOR.cooling],
 };
 
 const fraction = ([sx, sy]: [number, number]) => ({ x: (sx - VIEW.x) / VIEW.w, y: (sy - VIEW.y) / VIEW.h });
@@ -820,7 +1035,7 @@ const ANCHOR_POINTS: Record<string, P3> = {
   tanks: [-19, -47, 28],
   pumps: [-25, -20, 20],
   hx: [-26, 26, 26],
-  headers: [2, 10, BASE + 6],
+  headers: [LOOPS[1].x, 10, LOOPS[1].z],
 };
 
 /** Hotspot marker positions as fractions of the drawing's width and height. */
