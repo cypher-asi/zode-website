@@ -26,6 +26,6 @@ export const PRINCIPLES: readonly Principle[] = [
   {
     id: "open",
     title: "Open Source",
-    body: "Open standards and open software, from the rack to the orchestration layer. No lock-in.",
+    body: "Open standards and open software, from the rack to the orchestration layer.",
   },
 ];
