@@ -15,8 +15,9 @@ const POD_ITEMS: readonly TerminalMenuItem[] = POD_TOURS.map(({ id, label }) => 
  * "A rapidly deployable supercomputer.": a line drawing of a ZODE cabin whose equipment
  * highlights on hover, wired by two diverse fiber routes that drop from its
  * middle into the page's circuit grid below. The heading and a terminal menu
- * that picks the pod on display sit in the left column; the list on the right
- * mirrors the drawing's hover points.
+ * that picks the pod on display sit in the left column, over a switch that
+ * lifts the roof off the hall; the list on the right mirrors the drawing's
+ * hover points.
  */
 export function PodTour(): ReactElement {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -24,6 +25,7 @@ export function PodTour(): ReactElement {
   const shown = useInView(ref, "0px 0px -20% 0px");
   const [pod, setPod] = useState<PodId>("compute");
   const [active, setActive] = useState<string | null>(null);
+  const [cutaway, setCutaway] = useState(false);
   const [dropTop, setDropTop] = useState<number | null>(null);
 
   // Offsets ignore the figure's slide-in, so the drops start where the cabin comes to rest.
@@ -40,6 +42,7 @@ export function PodTour(): ReactElement {
 
   const tour = POD_TOURS.find((t) => t.id === pod) ?? POD_TOURS[0];
   const hotspots = [...tour.hotspots, ...SHELL_HOTSPOTS];
+  const cut = cutaway || hotspots.some((spot) => spot.overhead && spot.id === active);
   const leave = (id: string) => setActive((on) => (on === id ? null : on));
   const toggle = (id: string) => setActive((on) => (on === id ? null : id));
 
@@ -71,7 +74,7 @@ export function PodTour(): ReactElement {
           data-shown={shown || undefined}
           data-active={active ?? undefined}
         >
-          <CabinArt pod={pod} active={active} onActive={setActive} />
+          <CabinArt pod={pod} cutaway={cut} active={active} onActive={setActive} />
           <ol className={styles.markers} aria-hidden="true">
             {hotspots.map((spot, i) => (
               <li
@@ -100,6 +103,15 @@ export function PodTour(): ReactElement {
               selected={pod}
               onSelect={choosePod}
             />
+            <button
+              type="button"
+              className={styles.cutaway}
+              aria-pressed={cutaway}
+              onClick={() => setCutaway((on) => !on)}
+            >
+              <span className={styles.switch} aria-hidden="true" />
+              Roof cutaway
+            </button>
           </div>
         </div>
 

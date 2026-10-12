@@ -5,6 +5,8 @@ export interface Hotspot {
   id: string;
   title: string;
   body: string;
+  /** Hidden under the roof, so highlighting it lifts the roof off (see CabinArt's cutaway). */
+  overhead?: boolean;
 }
 
 export interface PodTour {
@@ -71,7 +73,14 @@ export const POD_TOURS: readonly PodTour[] = [
       {
         id: "coolant",
         title: "Coolant distribution",
-        body: "A CDU and floor manifold circulate coolant to each rack's cold plates and rear-door heat exchanger.",
+        body: "A CDU feeds overhead supply and return headers that drop to each rack's cold plates and rear-door heat exchanger.",
+        overhead: true,
+      },
+      {
+        id: "busways",
+        title: "A/B busways",
+        body: "Two overhead 1,250 A busways run the row, and every rack draws from both through its own tap-off boxes.",
+        overhead: true,
       },
     ],
   },

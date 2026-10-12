@@ -63,6 +63,8 @@ export interface Layer {
   zone?: string;
   /** Pod-specific equipment, remounted (and faded in) when the pod changes. */
   interior?: boolean;
+  /** Only drawn with the roof on ("hide") or only in the cutaway view ("show"). */
+  cutaway?: "hide" | "show";
   items: ReactElement[];
 }
 
@@ -76,7 +78,13 @@ function grow(x: number, y: number): void {
   extent.y1 = Math.max(extent.y1, y);
 }
 
-function layer(key: string, zone: string | undefined, draw: (s: Sketch) => void, interior = false): Layer {
+function layer(
+  key: string,
+  zone: string | undefined,
+  draw: (s: Sketch) => void,
+  interior = false,
+  cutaway?: Layer["cutaway"],
+): Layer {
   const s = new Sketch(styles, view);
   draw(s);
   const b = s.bounds();
@@ -84,7 +92,7 @@ function layer(key: string, zone: string | undefined, draw: (s: Sketch) => void,
     grow(b.x, b.y);
     grow(b.x + b.w, b.y + b.h);
   }
-  return { key, zone, interior, items: s.items };
+  return { key, zone, interior, cutaway, items: s.items };
 }
 
 const rectX = (s: Sketch, x: number, y0: number, y1: number, z0: number, z1: number, cls: string) =>
@@ -262,6 +270,10 @@ const CREST = OUTER.apex[7];
 const ROOF: P2[] = facingRun([BAND_TOP, ...OUTER.apex, ...OUTER.left]);
 /** Underside of the far roof slope, from the ridge down round the eave to the back wall. */
 const CEILING: P2[] = [...OUTER.apex.filter(([x]) => x <= 1e-9), ...OUTER.left].map(([x, z]): P2 => [x, z - ROOF_T]);
+/** The light panels left over the hall once the near slope is cut away, from just past the ridge, where the ceiling starts. */
+const ROOF_BACK: P2[] = ROOF.filter(([x]) => x <= 1e-9);
+/** A rafter's outer edge, from the bullnose crest up the near slope to the cut. */
+const RAFTER: P2[] = [...OUTER.right.slice(NOSE), ...OUTER.apex.slice(0, OUTER.apex.indexOf(ROOF_BACK[0]) + 1)];
 
 /** A strip of skin swept along y from `y0` to `y1`. */
 const extrude = (s: Sketch, chain: P2[], y0: number, y1: number, cls: string) =>
@@ -431,11 +443,33 @@ function facade(s: Sketch): void {
   gableFrame(s, HL);
 }
 
+/** Roof that stays in the cutaway: the far slope's crown and the cut along the ridge over the hall, then the whole roof over the operations room. */
 function roof(s: Sketch): void {
+  extrude(s, ROOF_BACK, -HL, NOC, styles.roof);
+  s.line(ROOF_BACK.map(at(-HL / 3)), styles.edge);
+  const [x, z] = ROOF_BACK[0];
+  rectX(s, x, -HL, NOC, z - ROOF_T, z, styles.band);
+
+  extrude(s, EAVE_BAND, NOC, HL, styles.band);
+  extrude(s, ROOF, NOC, HL, styles.roof);
+  s.line(ROOF.map(at(NOC)), styles.edge);
+  s.line([at(NOC)(CREST), at(HL)(CREST)]);
+}
+
+/** The near slope's rafter on the hall's middle frame line, only seen with the skin off. */
+function rafter(s: Sketch): void {
+  const [y, w] = [-HL / 3, 0.8];
+  const under = RAFTER.map(([x, z]): P2 => [x, z - ROOF_T]).reverse();
+  s.face([...RAFTER, ...under].map(at(y + w)), styles.frame);
+  extrude(s, RAFTER, y - w, y + w, styles.frame);
+}
+
+/** Near slope over the hall, lifted off in the cutaway view; its eave band runs on over the operations room so the band shows no seam. */
+function roofNear(s: Sketch): void {
   extrude(s, EAVE_BAND, -HL, HL, styles.band);
-  extrude(s, ROOF, -HL, HL, styles.roof);
-  for (const y of [-HL / 3, HL / 3]) s.line(ROOF.map(at(y)), styles.edge);
-  s.line([at(-HL)(CREST), at(HL)(CREST)]);
+  extrude(s, ROOF, -HL, NOC, styles.roof);
+  s.line(ROOF.map(at(-HL / 3)), styles.edge);
+  s.line([at(-HL)(CREST), at(NOC)(CREST)]);
 }
 
 /** Deck off the glazed gable: solid charcoal side walls with a frameless glass balustrade across the end. */
@@ -499,6 +533,29 @@ function rack(s: Sketch, i: number, spine: boolean): void {
   for (let z = BASE + 7; z < BASE + RACK.height - 4; z += 3.5) s.line([[fx, y + 3.2, z], [fx, y + RACK.width - 3.2, z]], styles.hair);
 }
 
+/*
+ * Overhead services, all hung from trapezes every two racks: the A and B
+ * busways high over the rack rears, clear of the water, and the supply and
+ * return coolant headers lower over the fronts. Lanes run far to near, each
+ * stepping down toward the viewer so that from this low camera every lane
+ * clears the one in front of it and the facade's fascia.
+ */
+const RACK_TOP = BASE + RACK.height;
+const RACK_MID = (i: number) => rackY(i) + RACK.width / 2;
+const RUN_END = rackY(9) + RACK.width + 2;
+const BUSWAYS = [
+  { x: -41, z: BASE + 55.5 },
+  { x: -35.5, z: BASE + 52.5 },
+];
+const BUSWAY = { w: 3, h: 2.4, y0: rackY(0) - 4 };
+const TAP = { w: 2.2, d: 3.6, h: 3 };
+const HEADERS = [
+  { x: -26, z: BASE + 52 },
+  { x: -20.5, z: BASE + 49.5 },
+];
+const HEADER = { r: 1.6, y0: -110 };
+const TRAPEZE = { x0: -45, x1: -16, z: BASE + 59, t: 1.2, at: [0, 2, 4, 6, 8, 10].map((i) => rackY(i) - 0.5) };
+
 function compute(): Layer[] {
   const racks = (from: number, to: number) => (s: Sketch) => {
     for (let i = from; i < to; i++) rack(s, i, false);
@@ -527,16 +584,45 @@ function compute(): Layer[] {
     ),
     layer("compute-racks-b", "racks", racks(6, 10), true),
     layer(
-      "compute-manifold",
+      "compute-busways",
+      "busways",
+      (s) => {
+        for (const { x, z } of BUSWAYS) {
+          for (let i = 0; i < 10; i++) {
+            const y = RACK_MID(i);
+            s.line([[x, y, RACK_TOP], [x, y, z - TAP.h]], styles.edge);
+            s.box(x - TAP.w / 2, y - TAP.d / 2, TAP.w, TAP.d, z - TAP.h, TAP.h);
+          }
+          s.box(x - BUSWAY.w / 2, BUSWAY.y0, BUSWAY.w, RUN_END - BUSWAY.y0, z, BUSWAY.h);
+          for (const y of TRAPEZE.at) s.line([[x, y, z + BUSWAY.h], [x, y, TRAPEZE.z]]);
+        }
+      },
+      true,
+    ),
+    layer(
+      "compute-headers",
       "coolant",
       (s) => {
-        for (let i = 0; i < 10; i++) {
-          const y = rackY(i) + RACK.width / 2;
-          s.line([[-16, y, BASE + 3], [-12, y, BASE + 3]], styles.edge);
+        HEADERS.forEach(({ x, z }, k) => {
+          const body = k ? styles.sideL : styles.sideR;
+          cylinder(s, [x, HEADER.y0, BASE + 38], "z", HEADER.r, z - BASE - 38, body);
+          for (let i = 0; i < 10; i++) s.line([[x, RACK_MID(i), RACK_TOP], [x, RACK_MID(i), z]], styles.edge);
+          for (const y of TRAPEZE.at) s.line([[x, y, z + HEADER.r], [x, y, TRAPEZE.z]]);
+          cylinder(s, [x, HEADER.y0, z], "y", HEADER.r, RUN_END - HEADER.y0, body);
+        });
+      },
+      true,
+    ),
+    layer(
+      "compute-trapezes",
+      undefined,
+      (s) => {
+        for (const y of TRAPEZE.at) {
+          for (const x of [TRAPEZE.x0 + 1, TRAPEZE.x1 - 1]) {
+            s.line([[x, y, TRAPEZE.z + TRAPEZE.t], [x, y, ceilingAt(x)]], styles.hair);
+          }
+          s.box(TRAPEZE.x0, y - TRAPEZE.t / 2, TRAPEZE.x1 - TRAPEZE.x0, TRAPEZE.t, TRAPEZE.z, TRAPEZE.t);
         }
-        const len = rackY(9) + RACK.width + 2 + 102;
-        cylinder(s, [-12, -102, BASE + 3], "y", 2, len);
-        cylinder(s, [-7, -102, BASE + 3], "y", 2, len);
       },
       true,
     ),
@@ -689,6 +775,8 @@ const SHELL_FRONT = [
   layer("noc", "noc", noc),
   layer("facade", "facade", facade),
   layer("roof", "roof", roof),
+  layer("rafter", "roof", rafter, false, "show"),
+  layer("roof-near", "roof", roofNear, false, "hide"),
   layer("deck", "deck", deck),
 ];
 /** Along the glazed side, where its foot sits below the drawing's middle; the equipment all stays inside the shell's extent. */
@@ -715,7 +803,7 @@ const fraction = ([sx, sy]: [number, number]) => ({ x: (sx - VIEW.x) / VIEW.w, y
 export const DROP = fraction(view([HW, DROP_Y, 0]));
 
 const ANCHOR_POINTS: Record<string, P3> = {
-  roof: [27, -50, RIDGE - SLOPE * 27],
+  roof: [27, 80, RIDGE - SLOPE * 27],
   facade: [HW, -90, (GLASS + EAVE) / 2],
   noc: [-20, 89, BASE + 26],
   deck: [10, HL + 30, 2],
@@ -724,6 +812,7 @@ const ANCHOR_POINTS: Record<string, P3> = {
   racks: [-16, rackY(1) + 6, 28],
   spine: [-16, rackY(5), 34],
   coolant: [-16, -110, 28],
+  busways: [BUSWAYS[1].x, RACK_MID(8), BUSWAYS[1].z + BUSWAY.h],
   transformer: [-9, -91, 28],
   fans: [30, -HL, 22],
   switchboard: [-22, -32, 30],
@@ -741,6 +830,8 @@ export const ANCHORS: Record<string, { x: number; y: number }> = Object.fromEntr
 
 export interface CabinArtProps {
   pod: PodId;
+  /** Lifts the near roof slope off the hall to show the overhead services. */
+  cutaway?: boolean;
   active: string | null;
   onActive: (zone: string | null) => void;
 }
@@ -762,12 +853,13 @@ function zoneAt(svg: SVGSVGElement, x: number, y: number): string | null {
 }
 
 /** The cabin drawing; hovering any hotspot layer reports its zone, or on touch, tapping toggles it. */
-export function CabinArt({ pod, active, onActive }: CabinArtProps): ReactElement {
+export function CabinArt({ pod, cutaway = false, active, onActive }: CabinArtProps): ReactElement {
   return (
     <svg
       className={styles.art}
       viewBox={`${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`}
       aria-hidden="true"
+      data-cut={cutaway || undefined}
       onPointerMove={(event) => {
         if (event.pointerType !== "mouse") return;
         onActive(zoneAt(event.currentTarget, event.clientX, event.clientY));
@@ -784,6 +876,7 @@ export function CabinArt({ pod, active, onActive }: CabinArtProps): ReactElement
           key={l.key}
           className={l.interior ? `${styles.layer} ${styles.enter}` : styles.layer}
           data-zone={l.zone}
+          data-cutaway={l.cutaway}
           data-on={(l.zone !== undefined && l.zone === active) || undefined}
         >
           {l.items}
