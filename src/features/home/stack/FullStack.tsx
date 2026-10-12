@@ -70,10 +70,10 @@ export function FullStack(): ReactElement {
               >
                 <span className={styles.labelText}>
                   <span className={styles.labelHead}>
-                    <span className={styles.labelTitle}>{layer.title}</span>
                     <span className={styles.labelIndex}>
-                      Layer {String(LAYERS.length - i).padStart(2, "0")}
+                      {String(LAYERS.length - i).padStart(2, "0")}
                     </span>
+                    <span className={styles.labelTitle}>{layer.title}</span>
                   </span>
                   <span className={styles.labelBody}>{layer.body}</span>
                 </span>
