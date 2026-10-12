@@ -13,17 +13,8 @@ export interface ZodeSigner {
   title: string;
 }
 
-/**
- * The officer whose signature ZODE applies to every MNDA, from
- * MNDA_ZODE_SIGNER_NAME and MNDA_ZODE_SIGNER_TITLE. Outside local development
- * an unset signer means nothing can be signed.
- */
-export function zodeSigner(): ZodeSigner | null {
-  const name = process.env.MNDA_ZODE_SIGNER_NAME?.trim();
-  const title = process.env.MNDA_ZODE_SIGNER_TITLE?.trim();
-  if (name && title) return { name, title };
-  return process.env.NODE_ENV === "development" ? { name: "Local Signatory", title: "Development only" } : null;
-}
+/** The officer whose signature ZODE applies to every MNDA. */
+export const ZODE_SIGNER: ZodeSigner = { name: "Matthew Dorey", title: "CEO" };
 
 export interface ExecutedMnda {
   id: string;
@@ -33,15 +24,10 @@ export interface ExecutedMnda {
   pdf: Uint8Array;
 }
 
-/** Thrown when the ZODE countersigner isn't configured, so callers can say so rather than fail generically. */
-export class MndaUnavailableError extends Error {}
-
 /** Logs a failed signing and returns what to tell the signer. */
 export function signFailure(err: unknown): string {
   console.error("[mnda] could not execute agreement:", err);
-  return err instanceof MndaUnavailableError
-    ? `Online signing isn't available right now. Email ${RECIPIENT_EMAIL} and we'll send the MNDA over.`
-    : `We couldn't complete the signing just now. Please try again, or email ${RECIPIENT_EMAIL}.`;
+  return `We couldn't complete the signing just now. Please try again, or email ${RECIPIENT_EMAIL}.`;
 }
 
 /**
@@ -53,9 +39,7 @@ export async function createMnda(
   party: MndaParty,
   context: { userId: string | null; room: { id: string; name: string } | null },
 ): Promise<ExecutedMnda> {
-  const signer = zodeSigner();
-  if (!signer) throw new MndaUnavailableError("MNDA_ZODE_SIGNER_NAME and MNDA_ZODE_SIGNER_TITLE are not set");
-
+  const signer = ZODE_SIGNER;
   const id = randomUUID();
   const signedAt = new Date();
   const { ip, userAgent } = await clientMeta();
