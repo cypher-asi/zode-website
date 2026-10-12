@@ -15,9 +15,9 @@ const POD_ITEMS: readonly TerminalMenuItem[] = POD_TOURS.map(({ id, label }) => 
  * "A rapidly deployable supercomputer.": a line drawing of a ZODE cabin whose equipment
  * highlights on hover, wired by two diverse fiber routes that drop from its
  * middle into the page's circuit grid below. The heading and a terminal menu
- * that picks the pod on display sit in the left column, over a switch that
- * lifts the near roof slope off; the list on the right mirrors the drawing's
- * hover points.
+ * that picks the pod on display sit in the left column; the list on the right
+ * mirrors the drawing's hover points, over a switch that lifts the near roof
+ * slope off.
  */
 export function PodTour(): ReactElement {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -103,15 +103,6 @@ export function PodTour(): ReactElement {
               selected={pod}
               onSelect={choosePod}
             />
-            <button
-              type="button"
-              className={styles.cutaway}
-              aria-pressed={cutaway}
-              onClick={() => setCutaway((on) => !on)}
-            >
-              <span className={styles.switch} aria-hidden="true" />
-              Roof cutaway
-            </button>
           </div>
         </div>
 
@@ -135,6 +126,15 @@ export function PodTour(): ReactElement {
               </li>
             ))}
           </ul>
+          <button
+            type="button"
+            className={styles.cutaway}
+            aria-pressed={cutaway}
+            onClick={() => setCutaway((on) => !on)}
+          >
+            <span className={styles.switch} aria-hidden="true" />
+            Roof cutaway
+          </button>
         </div>
       </div>
     </div>
