@@ -1,0 +1,263 @@
+/* MNDA review and signing (see MndaForm.tsx, AgreementText.tsx, MndaSigner.tsx). */
+
+/* Agreement text */
+
+.agreement {
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 24px 28px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-inset);
+  background: var(--color-paper);
+  overscroll-behavior: contain;
+}
+
+.agreement:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.agreementTitle {
+  margin: 0 0 16px;
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  font-weight: 400;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.agreementParagraph {
+  margin: 0 0 12px;
+  font-family: var(--font-serif);
+  font-size: var(--text-sm);
+  line-height: 1.65;
+  color: var(--color-text-primary);
+  text-align: justify;
+  hyphens: auto;
+}
+
+.agreementParagraph:last-child {
+  margin-bottom: 0;
+}
+
+/* Form */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  container-type: inline-size;
+}
+
+.group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  margin: 0 0 12px;
+  padding: 0;
+  font-size: var(--eyebrow-size);
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px 12px;
+}
+
+@container (min-width: 520px) {
+  .fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .full {
+    grid-column: 1 / -1;
+  }
+}
+
+.field {
+  composes: field from "../../components/ui/Field/Field.module.css";
+  min-width: 0;
+}
+
+.label {
+  composes: label from "../../components/ui/Field/Field.module.css";
+}
+
+.input {
+  composes: input from "../../components/ui/Field/Field.module.css";
+}
+
+.input:read-only {
+  background: var(--color-surface-tint);
+  color: var(--color-text-secondary);
+}
+
+.textarea {
+  composes: textarea from "../../components/ui/Field/Field.module.css";
+  min-height: 0;
+}
+
+.hint {
+  composes: hint from "../../components/ui/Field/Field.module.css";
+}
+
+.signature {
+  composes: input from "../../components/ui/Field/Field.module.css";
+  height: 56px;
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  font-style: italic;
+}
+
+.consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 14px;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.consent input {
+  flex: none;
+  margin: 3px 0 0;
+  accent-color: var(--color-text-primary);
+}
+
+/* Off-screen rather than display:none, which some bots skip. */
+.trap {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px 16px;
+}
+
+.footer > [role="alert"] {
+  flex: 1 1 240px;
+}
+
+.error {
+  composes: error from "../../components/ui/Field/Field.module.css";
+  margin: 0;
+}
+
+.primary {
+  composes: primary lg from "../../components/ui/Button/Button.module.css";
+}
+
+/* Signed */
+
+.done {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 32px 0;
+}
+
+.tick {
+  width: 52px;
+  height: 52px;
+  margin-bottom: 8px;
+  fill: none;
+  stroke: var(--color-ink);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.doneTitle {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: clamp(28px, 3vw, 36px);
+  font-weight: 300;
+  line-height: 1.1;
+}
+
+.doneText {
+  max-width: 520px;
+  margin: 0;
+  font-size: var(--text-md);
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.doneText strong {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+/* The /mnda page */
+
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 96px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.eyebrow {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--eyebrow-size);
+  font-weight: 600;
+  letter-spacing: var(--eyebrow-tracking);
+  color: var(--color-text-secondary);
+}
+
+.heading {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--h1-size);
+  font-weight: 300;
+  letter-spacing: var(--h1-tracking);
+  line-height: var(--h1-leading);
+}
+
+.subtitle {
+  max-width: 620px;
+  margin: 0;
+  font-size: var(--text-md);
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 700px) {
+  .page {
+    padding: 64px 20px;
+    gap: 32px;
+  }
+
+  .agreement {
+    padding: 20px;
+  }
+}

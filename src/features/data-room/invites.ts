@@ -1,6 +1,7 @@
 import "server-only";
 import { createHash, randomBytes } from "node:crypto";
 import type { Account } from "@/features/account/zos";
+import { hasSignedMnda } from "@/features/mnda/mndas";
 import { db } from "@/lib/db";
 import { SITE_URL } from "@/lib/site";
 import { normalizeEmail } from "./rooms";
@@ -29,35 +30,38 @@ export interface IssuedInvite {
   memberId: string;
   email: string;
   role: RoomRole;
+  requiresMnda: boolean;
   token: string;
   expiresAt: Date;
 }
 
 /**
- * Invites `email` (or refreshes a pending invite with a new token and role).
- * Returns `null` when that email is already an active member.
+ * Invites `email` (or refreshes a pending invite with a new token, role and
+ * MNDA requirement). Returns `null` when that email is already an active member.
  */
 export async function issueInvite(
   roomId: string,
   rawEmail: string,
   role: RoomRole,
   invitedBy: string,
+  requiresMnda: boolean,
 ): Promise<IssuedInvite | null> {
   const email = normalizeEmail(rawEmail);
   const { token, hash, expiresAt } = newToken();
   const [row] = await db()`
-    insert into data_room_members (room_id, email, role, invited_by_email, invite_token_hash, invite_expires_at)
-    values (${roomId}, ${email}, ${role}, ${invitedBy}, ${hash}, ${expiresAt})
+    insert into data_room_members (room_id, email, role, invited_by_email, invite_token_hash, invite_expires_at, requires_mnda)
+    values (${roomId}, ${email}, ${role}, ${invitedBy}, ${hash}, ${expiresAt}, ${requiresMnda})
     on conflict (room_id, email) do update set
       role = excluded.role,
       invited_by_email = excluded.invited_by_email,
       invited_at = now(),
       invite_token_hash = excluded.invite_token_hash,
-      invite_expires_at = excluded.invite_expires_at
+      invite_expires_at = excluded.invite_expires_at,
+      requires_mnda = excluded.requires_mnda
     where data_room_members.accepted_at is null
     returning id
   `;
-  return row ? { memberId: String(row.id), email, role, token, expiresAt } : null;
+  return row ? { memberId: String(row.id), email, role, requiresMnda, token, expiresAt } : null;
 }
 
 /** A fresh token for a pending invite; the old link stops working. */
@@ -67,10 +71,17 @@ export async function reissueInvite(roomId: string, memberId: string, invitedBy:
     update data_room_members
     set invite_token_hash = ${hash}, invite_expires_at = ${expiresAt}, invited_at = now(), invited_by_email = ${invitedBy}
     where room_id = ${roomId} and id = ${memberId} and accepted_at is null
-    returning id, email, role
+    returning id, email, role, requires_mnda
   `;
   return row
-    ? { memberId: String(row.id), email: String(row.email), role: row.role as RoomRole, token, expiresAt }
+    ? {
+        memberId: String(row.id),
+        email: String(row.email),
+        role: row.role as RoomRole,
+        requiresMnda: Boolean(row.requires_mnda),
+        token,
+        expiresAt,
+      }
     : null;
 }
 
@@ -82,12 +93,13 @@ export interface InviteDetails {
   role: RoomRole;
   invitedBy: string | null;
   expired: boolean;
+  requiresMnda: boolean;
 }
 
 export async function findInvite(token: string): Promise<InviteDetails | null> {
   if (!/^[A-Za-z0-9_-]{20,100}$/.test(token)) return null;
   const [row] = await db()`
-    select m.id, m.room_id, r.name, m.email, m.role, m.invited_by_email, m.invite_expires_at
+    select m.id, m.room_id, r.name, m.email, m.role, m.invited_by_email, m.invite_expires_at, m.requires_mnda
     from data_room_members m
     join data_rooms r on r.id = m.room_id
     where m.invite_token_hash = ${hashToken(token)} and m.accepted_at is null
@@ -101,17 +113,19 @@ export async function findInvite(token: string): Promise<InviteDetails | null> {
     role: row.role as RoomRole,
     invitedBy: row.invited_by_email == null ? null : String(row.invited_by_email),
     expired: !row.invite_expires_at || new Date(row.invite_expires_at as string).getTime() <= Date.now(),
+    requiresMnda: Boolean(row.requires_mnda),
   };
 }
 
 export type AcceptResult =
   | { ok: true; roomId: string; role: RoomRole; email: string }
-  | { ok: false; reason: "invalid" | "expired" | "email-mismatch" };
+  | { ok: false; reason: "invalid" | "expired" | "email-mismatch" | "mnda-required" };
 
 /**
  * Binds a pending invite to the signed-in account. The token proves the
  * account holder received mail at the invited address, which ZOS registration
- * alone doesn't, so the email must match as well.
+ * alone doesn't, so the email must match as well. An invite that requires the
+ * MNDA can't be accepted until this account has signed one.
  */
 export async function acceptInvite(token: string, account: Account): Promise<AcceptResult> {
   const invite = await findInvite(token);
@@ -129,6 +143,7 @@ export async function acceptInvite(token: string, account: Account): Promise<Acc
     await sql`delete from data_room_members where id = ${invite.memberId}`;
     return { ok: true, roomId: invite.roomId, role: invite.role, email: invite.email };
   }
+  if (invite.requiresMnda && !(await hasSignedMnda(account.userId))) return { ok: false, reason: "mnda-required" };
 
   const [row] = await sql`
     update data_room_members

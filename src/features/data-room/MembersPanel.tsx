@@ -67,6 +67,11 @@ export function MembersPanel({ roomId, roomName, members, selfEmail }: MembersPa
             <span className={styles.status} data-status={member.status}>
               {STATUS_LABELS[member.status]}
             </span>
+            {member.status !== "active" && member.requiresMnda ? (
+              <span className={styles.status} data-status="mnda">
+                MNDA required
+              </span>
+            ) : null}
             {member.status === "active" && member.acceptedAt
               ? `Joined ${date.format(new Date(member.acceptedAt))}`
               : `Invited ${date.format(new Date(member.invitedAt))}${member.invitedBy ? ` by ${member.invitedBy}` : ""}`}
@@ -159,6 +164,16 @@ export function MembersPanel({ roomId, roomName, members, selfEmail }: MembersPa
               </label>
             ))}
           </fieldset>
+          <label className={styles.roleOption}>
+            <input type="checkbox" name="requireMnda" defaultChecked />
+            <span>
+              <strong>Require the mutual NDA</strong>
+              <span>
+                Invitees sign ZODE&apos;s MNDA before they can open the room. Anyone who already signed one isn&apos;t
+                asked again.
+              </span>
+            </span>
+          </label>
           <div className={styles.formFooter}>
             {inviteState.error ? <p className={ui.error}>{inviteState.error}</p> : null}
             {inviteState.ok ? <p className={ui.ok}>{inviteState.ok}</p> : null}

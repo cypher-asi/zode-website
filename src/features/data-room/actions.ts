@@ -3,14 +3,25 @@
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
-import { sendDataRoomInvite } from "@/emails/send";
+import { sendDataRoomInvite, sendMndaEmails } from "@/emails/send";
 import { getAccount } from "@/features/account/session";
+import type { Account } from "@/features/account/zos";
+import { createMnda, hasSignedMnda, signFailure, type ExecutedMnda } from "@/features/mnda/mndas";
+import { parseMnda } from "@/features/mnda/parse";
 import { db } from "@/lib/db";
 import { RATE_LIMITED, withinLimits } from "@/lib/rateLimit";
 import { isEmail } from "@/lib/validation";
 import { recordEvent, recordEvents } from "./audit";
 import { blobInfo, deleteBlobs, deleteRoomBlobs, roomBlobPrefix } from "./blob";
-import { acceptInvite, inviteUrl, issueInvite, reissueInvite, type IssuedInvite } from "./invites";
+import {
+  acceptInvite,
+  findInvite,
+  inviteUrl,
+  issueInvite,
+  reissueInvite,
+  type AcceptResult,
+  type IssuedInvite,
+} from "./invites";
 import {
   MAX_NAME_LENGTH,
   ROOM_QUOTA_BYTES,
@@ -22,6 +33,7 @@ import {
   folderSubtree,
   getMember,
   isUuid,
+  normalizeEmail,
   renameRoom,
   roomAccess,
   roomUsage,
@@ -59,6 +71,7 @@ function emailInvite(access: RoomAccess, invite: IssuedInvite): void {
         roleLabel: roleLabel(invite.role),
         inviteUrl: inviteUrl(invite.token),
         expiresOn: expiresOn.format(invite.expiresAt),
+        requiresMnda: invite.requiresMnda,
       },
       invite.token.slice(0, 16),
     ),
@@ -342,6 +355,7 @@ export async function inviteMembersAction(roomId: string, _prev: ActionState, fo
   if (!access) return NO_ACCESS;
   const role = formData.get("role");
   if (!isRole(role)) return { error: "Choose a role." };
+  const requiresMnda = formData.get("requireMnda") === "on";
 
   const emails = [
     ...new Set(
@@ -360,14 +374,14 @@ export async function inviteMembersAction(roomId: string, _prev: ActionState, fo
   const invited: string[] = [];
   const existing: string[] = [];
   for (const email of emails) {
-    const invite = await issueInvite(roomId, email, role, access.account.email.toLowerCase());
+    const invite = await issueInvite(roomId, email, role, access.account.email.toLowerCase(), requiresMnda);
     if (!invite) {
       existing.push(email);
       continue;
     }
     invited.push(email);
     emailInvite(access, invite);
-    await recordEvent({ roomId, account: access.account, action: "invite", detail: { email, role } });
+    await recordEvent({ roomId, account: access.account, action: "invite", detail: { email, role, requiresMnda } });
   }
 
   refresh();
@@ -436,20 +450,16 @@ export async function removeMemberAction(roomId: string, memberId: string): Prom
 
 // Invites
 
-export async function acceptInviteAction(token: string): Promise<ActionState> {
-  const account = await getAccount();
-  if (!account) return { error: "Log in to accept this invite." };
+const ACCEPT_ERRORS: Record<Extract<AcceptResult, { ok: false }>["reason"], string> = {
+  invalid: "This invite is no longer valid.",
+  expired: "This invite has expired. Ask the room's admin to resend it.",
+  "email-mismatch": "This invite was sent to a different email address.",
+  "mnda-required": "Sign the mutual NDA to open this data room.",
+};
+
+async function joinRoom(token: string, account: Account): Promise<ActionState> {
   const result = await acceptInvite(token, account);
-  if (!result.ok) {
-    return {
-      error:
-        result.reason === "email-mismatch"
-          ? "This invite was sent to a different email address."
-          : result.reason === "expired"
-            ? "This invite has expired. Ask the room's admin to resend it."
-            : "This invite is no longer valid.",
-    };
-  }
+  if (!result.ok) return { error: ACCEPT_ERRORS[result.reason] };
   await recordEvent({
     roomId: result.roomId,
     account,
@@ -457,4 +467,52 @@ export async function acceptInviteAction(token: string): Promise<ActionState> {
     detail: { email: result.email, role: result.role },
   });
   redirect(`/portal/data-rooms/${result.roomId}`);
+}
+
+export async function acceptInviteAction(token: string): Promise<ActionState> {
+  const account = await getAccount();
+  if (!account) return { error: "Log in to accept this invite." };
+  return joinRoom(token, account);
+}
+
+/**
+ * For invites that require the MNDA: signs it as the invited, signed-in
+ * account (its email already proven by the invite link), then joins the room.
+ */
+export async function signMndaAndAcceptInviteAction(
+  token: string,
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const account = await getAccount();
+  if (!account) return { error: "Log in to accept this invite." };
+  const invite = await findInvite(token);
+  if (!invite) return { error: ACCEPT_ERRORS.invalid };
+  if (invite.expired) return { error: ACCEPT_ERRORS.expired };
+  if (normalizeEmail(account.email) !== invite.email) return { error: ACCEPT_ERRORS["email-mismatch"] };
+
+  if (!(await hasSignedMnda(account.userId))) {
+    const parsed = parseMnda(formData, invite.email);
+    if (!parsed.ok) return { error: parsed.error };
+    if (!(await withinLimits([{ key: `mnda:user:${account.userId}`, max: 5, windowSeconds: 60 * 60 }]))) {
+      return { error: RATE_LIMITED };
+    }
+    let mnda: ExecutedMnda;
+    try {
+      mnda = await createMnda(parsed.party, {
+        userId: account.userId,
+        room: { id: invite.roomId, name: invite.roomName },
+      });
+    } catch (err) {
+      return { error: signFailure(err) };
+    }
+    after(() => sendMndaEmails(mnda, invite.roomName));
+    await recordEvent({
+      roomId: invite.roomId,
+      account,
+      action: "mnda_sign",
+      detail: { mndaId: mnda.id, entity: mnda.party.entityName, email: invite.email },
+    });
+  }
+  return joinRoom(token, account);
 }

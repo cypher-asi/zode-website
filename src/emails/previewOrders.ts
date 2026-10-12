@@ -50,6 +50,20 @@ export const PREVIEW_DATA_ROOM_INVITE = {
   roleLabel: "Viewer",
   inviteUrl: "https://zode.org/data-rooms/invite/preview-token",
   expiresOn: "October 25, 2026",
+  requiresMnda: true,
+};
+
+export const PREVIEW_MNDA = {
+  agreementId: "3f1c2a9e-8b7d-4c1e-9f2a-1b2c3d4e5f60",
+  entityName: "Acme Robotics, Inc.",
+  entityType: "Delaware corporation",
+  signerName: "Grace Hopper",
+  signerTitle: "Chief Executive Officer",
+  signerEmail: "grace@example.com",
+  zodeSignerName: "Ada Lovelace",
+  zodeSignerTitle: "Chief Executive Officer",
+  effectiveDate: "October 11, 2026",
+  roomName: "Project Atlas",
 };
 
 /** The preview server can't resolve the `cid:` attachment that sent mail uses. */

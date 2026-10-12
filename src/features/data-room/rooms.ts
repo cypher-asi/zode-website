@@ -235,7 +235,7 @@ export async function folderSubtree(roomId: string, folderId: string): Promise<s
 
 export async function listMembers(roomId: string): Promise<RoomMember[]> {
   const rows = await db()`
-    select id, email, role, invited_by_email, invited_at, accepted_at, invite_expires_at
+    select id, email, role, invited_by_email, invited_at, accepted_at, invite_expires_at, requires_mnda
     from data_room_members
     where room_id = ${roomId}
     order by accepted_at is null, role, email
@@ -253,6 +253,7 @@ export async function listMembers(roomId: string): Promise<RoomMember[]> {
     invitedBy: row.invited_by_email == null ? null : String(row.invited_by_email),
     invitedAt: iso(row.invited_at),
     acceptedAt: row.accepted_at == null ? null : iso(row.accepted_at),
+    requiresMnda: Boolean(row.requires_mnda),
   }));
 }
 

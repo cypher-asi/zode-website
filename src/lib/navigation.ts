@@ -26,5 +26,6 @@ export const RESOURCE_LINKS: readonly NavLink[] = [
   { label: "Whitepaper", href: "https://cypher.net/research/the-grid", external: true },
   { label: "Cluster configurator", href: "/cluster-configurator" },
   { label: "Styleguide", href: "/styleguide" },
+  { label: "Mutual NDA", href: "/mnda" },
   { label: "Contact", href: "/contact" },
 ];

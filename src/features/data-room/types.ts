@@ -48,6 +48,8 @@ export interface RoomMember {
   invitedBy: string | null;
   invitedAt: string;
   acceptedAt: string | null;
+  /** The invite asks for a signed MNDA before joining. */
+  requiresMnda: boolean;
 }
 
 export type AuditAction =
@@ -64,6 +66,7 @@ export type AuditAction =
   | "invite_resend"
   | "invite_revoke"
   | "accept"
+  | "mnda_sign"
   | "role_change"
   | "remove";
 
@@ -81,6 +84,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   invite_resend: "Resent invite",
   invite_revoke: "Revoked invite",
   accept: "Joined",
+  mnda_sign: "Signed MNDA",
   role_change: "Changed role",
   remove: "Removed",
 };

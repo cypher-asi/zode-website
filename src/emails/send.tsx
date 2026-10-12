@@ -7,9 +7,11 @@ import type { Order } from "@/features/configurator/orders";
 import type { EngineerRequest } from "@/features/engineer-request/engineerRequests";
 import { RECIPIENT_EMAIL } from "@/lib/leads";
 import { accountEmailProps } from "./accountEmailProps";
+import type { ExecutedMnda } from "@/features/mnda/mndas";
 import DataRoomInvite, { dataRoomInviteSubject, type DataRoomInviteProps } from "./DataRoomInvite";
 import EngineerRequestNotification, { engineerRequestSubject } from "./EngineerRequestNotification";
 import { engineerRequestEmailProps } from "./engineerRequestEmailProps";
+import MndaExecuted, { mndaExecutedSubject, type MndaExecutedProps } from "./MndaExecuted";
 import OrderConfirmation, { confirmationSubject } from "./OrderConfirmation";
 import OrderNotification, { notificationSubject } from "./OrderNotification";
 import { orderEmailProps } from "./orderEmailProps";
@@ -50,9 +52,10 @@ interface Message {
   subject: string;
   email: ReactElement;
   idempotencyKey: string;
+  attachments?: { filename: string; content: Buffer }[];
 }
 
-async function send({ to, replyTo, subject, email, idempotencyKey }: Message): Promise<void> {
+async function send({ to, replyTo, subject, email, idempotencyKey, attachments = [] }: Message): Promise<void> {
   const redirect = devRecipient();
   if (redirect) {
     subject = `[to ${to}] ${subject}`;
@@ -76,6 +79,7 @@ async function send({ to, replyTo, subject, email, idempotencyKey }: Message): P
       text,
       attachments: [
         { filename: "zode.png", content: Buffer.from(WORDMARK_PNG_BASE64, "base64"), contentId: WORDMARK_CID },
+        ...attachments,
       ],
     },
     { idempotencyKey },
@@ -185,4 +189,55 @@ export async function sendDataRoomInvite(to: string, props: DataRoomInviteProps,
   } catch (err) {
     console.error(`[email] data room invite to ${to} failed:`, err);
   }
+}
+
+const mndaInbox = (): string => process.env.MNDA_NOTIFY_EMAIL || teamInbox();
+
+/**
+ * Emails the executed MNDA to the signer and to the team, PDF attached.
+ * Never throws: the agreement is already stored, so a failed send is only logged.
+ */
+export async function sendMndaEmails(mnda: ExecutedMnda, roomName: string | null): Promise<void> {
+  const { party } = mnda;
+  const team = mndaInbox();
+  const base: Omit<MndaExecutedProps, "audience"> = {
+    agreementId: mnda.id,
+    entityName: party.entityName,
+    entityType: party.entityType,
+    signerName: party.signerName,
+    signerTitle: party.signerTitle,
+    signerEmail: party.signerEmail,
+    zodeSignerName: mnda.zodeSigner.name,
+    zodeSignerTitle: mnda.zodeSigner.title,
+    effectiveDate: new Intl.DateTimeFormat("en-US", { dateStyle: "long", timeZone: "UTC" }).format(mnda.signedAt),
+    roomName,
+  };
+  const safeName = party.entityName.replace(/[^\p{L}\p{N} .,&-]+/gu, "").trim().slice(0, 80) || "Entity";
+  const attachments = [{ filename: `ZODE - MNDA - ${safeName}.pdf`, content: Buffer.from(mnda.pdf) }];
+
+  const results = await Promise.allSettled([
+    send({
+      to: party.signerEmail,
+      replyTo: team,
+      subject: mndaExecutedSubject({ ...base, audience: "signer" }),
+      email: <MndaExecuted {...base} audience="signer" />,
+      idempotencyKey: `mnda-${mnda.id}-signer`,
+      attachments,
+    }),
+    send({
+      to: team,
+      replyTo: party.signerEmail,
+      subject: mndaExecutedSubject({ ...base, audience: "team" }),
+      email: <MndaExecuted {...base} audience="team" />,
+      idempotencyKey: `mnda-${mnda.id}-team`,
+      attachments,
+    }),
+  ]);
+
+  results.forEach((result, i) => {
+    if (result.status === "rejected") {
+      const which = i === 0 ? "signer copy" : "team copy";
+      console.error(`[email] MNDA ${which} for ${mnda.id} failed:`, result.reason);
+    }
+  });
 }

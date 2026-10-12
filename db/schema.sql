@@ -140,3 +140,34 @@ create table if not exists data_room_events (
 );
 
 create index if not exists data_room_events_room_created_idx on data_room_events (room_id, created_at desc);
+
+-- Executed mutual NDAs. The stamped PDF lives in the private Blob store at
+-- blob_pathname; pdf_sha256 fingerprints it, and the row keeps every value
+-- that was stamped so the agreement can be read without the file.
+create table if not exists mndas (
+  id uuid primary key default gen_random_uuid(),
+  signed_at timestamptz not null default now(),
+  template_version text not null,
+  entity_name text not null,
+  entity_type text not null,
+  entity_address text not null,
+  signer_name text not null,
+  signer_title text not null,
+  signer_email text not null,
+  -- The ZOS account that signed while logged in. Only agreements bound to an
+  -- account satisfy a data room's MNDA requirement, since ZOS doesn't verify emails.
+  user_id text,
+  room_id uuid references data_rooms (id) on delete set null,
+  zode_signer_name text not null,
+  zode_signer_title text not null,
+  blob_pathname text not null unique,
+  pdf_sha256 text not null,
+  ip text,
+  user_agent text
+);
+
+create index if not exists mndas_user_idx on mndas (user_id) where user_id is not null;
+create index if not exists mndas_signed_at_idx on mndas (signed_at desc);
+
+-- Invites that require the invitee to sign the MNDA before they can join.
+alter table data_room_members add column if not exists requires_mnda boolean not null default false;

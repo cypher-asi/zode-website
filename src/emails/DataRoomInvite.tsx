@@ -12,6 +12,8 @@ export interface DataRoomInviteProps {
   inviteUrl: string;
   /** e.g. "October 25, 2026". */
   expiresOn: string;
+  /** The invitee signs ZODE's mutual NDA before they can open the room. */
+  requiresMnda: boolean;
 }
 
 type Props = DataRoomInviteProps & { logoSrc?: string };
@@ -21,12 +23,13 @@ export const dataRoomInviteSubject = (props: DataRoomInviteProps): string =>
 
 /** Sent to anyone invited to a data room, with or without a ZODE account. */
 export default function DataRoomInvite(props: Props): ReactElement {
-  const { roomName, inviterName, inviterEmail, roleLabel, inviteUrl, expiresOn } = props;
+  const { roomName, inviterName, inviterEmail, roleLabel, inviteUrl, expiresOn, requiresMnda } = props;
 
   const rows: EmailRow[] = [
     { label: "Data room", value: roomName },
     { label: "Access", value: roleLabel },
     { label: "Invited by", value: inviterEmail },
+    ...(requiresMnda ? [{ label: "Before you enter", value: "Sign the mutual NDA" }] : []),
   ];
 
   return (
@@ -41,6 +44,9 @@ export default function DataRoomInvite(props: Props): ReactElement {
       <Text style={text.paragraph}>
         {inviterName} shared a private data room with you on ZODE. Open the link below and sign in with this email
         address. If you don&apos;t have a ZODE account yet, you can create one from the same page.
+        {requiresMnda
+          ? " Before the room opens, you'll sign ZODE's mutual nondisclosure agreement on that page; it takes a minute, and you get a signed copy by email."
+          : null}
       </Text>
 
       <Rows rows={rows} />

@@ -223,6 +223,11 @@
   color: var(--color-danger);
 }
 
+.status[data-status="mnda"] {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+
 .roleSelect {
   flex: none;
   width: 96px;
@@ -365,6 +370,11 @@
 .action[data-action="view"] {
   background: var(--color-info-bg);
   color: var(--color-info);
+}
+
+.action[data-action="mnda_sign"] {
+  background: var(--color-success-bg);
+  color: var(--color-success);
 }
 
 .action[data-action="download"] {

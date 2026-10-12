@@ -6,6 +6,9 @@ import { getAccount } from "@/features/account/session";
 import { AcceptInvite } from "@/features/data-room/AcceptInvite";
 import { findInvite } from "@/features/data-room/invites";
 import { normalizeEmail } from "@/features/data-room/rooms";
+import { SignMndaToJoin } from "@/features/data-room/SignMndaToJoin";
+import { AgreementText } from "@/features/mnda/AgreementText";
+import { hasSignedMnda } from "@/features/mnda/mndas";
 import styles from "@/features/data-room/invite.module.css";
 import ui from "@/features/data-room/ui.module.css";
 
@@ -27,6 +30,7 @@ export default async function DataRoomInvitePage({
   const here = `/data-rooms/invite/${token}`;
 
   let body: ReactElement;
+  let wide = false;
   if (!invite) {
     body = (
       <>
@@ -89,6 +93,20 @@ export default async function DataRoomInvitePage({
           </div>
         </>
       );
+    } else if (invite.requiresMnda && !(await hasSignedMnda(account.userId))) {
+      wide = true;
+      body = (
+        <>
+          {intro}
+          <p className={styles.text}>
+            Before the room opens, sign ZODE&apos;s mutual nondisclosure agreement for the entity you represent. ZODE
+            countersigns right away and you get the executed copy by email. Views and downloads in data rooms are
+            recorded for the room&apos;s admins.
+          </p>
+          <AgreementText />
+          <SignMndaToJoin token={token} email={invite.email} />
+        </>
+      );
     } else {
       body = (
         <>
@@ -102,7 +120,7 @@ export default async function DataRoomInvitePage({
 
   return (
     <div className={styles.page}>
-      <div className={styles.card}>{body}</div>
+      <div className={wide ? `${styles.card} ${styles.wide}` : styles.card}>{body}</div>
     </div>
   );
 }

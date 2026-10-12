@@ -25,7 +25,9 @@ function describe(event: AuditEvent): { subject: string; detail: string } {
     case "room_rename":
       return { subject: String(d.to ?? ""), detail: `Was “${String(d.from ?? "")}”` };
     case "invite":
-      return { subject: String(d.email ?? ""), detail: `As ${roleName(d.role)}` };
+      return { subject: String(d.email ?? ""), detail: `As ${roleName(d.role)}${d.requiresMnda ? ", MNDA required" : ""}` };
+    case "mnda_sign":
+      return { subject: String(d.entity ?? ""), detail: `Agreement ${String(d.mndaId ?? "")}` };
     case "invite_resend":
     case "invite_revoke":
     case "remove":
