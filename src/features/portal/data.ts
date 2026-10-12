@@ -3,6 +3,8 @@ import { listOrdersByUser, type OrderSummary } from "@/features/configurator/ord
 import { listAllContracts, listContractsForUser, type Contract } from "@/features/contracts/contracts";
 import { listRoomsForUser } from "@/features/data-room/rooms";
 import type { RoomSummary } from "@/features/data-room/types";
+import { listAllPosts } from "@/features/posts/posts";
+import type { Post } from "@/features/posts/types";
 
 /** The account's data rooms, or `null` when they couldn't be loaded. */
 export function loadRooms(userId: string): Promise<RoomSummary[] | null> {
@@ -24,6 +26,14 @@ export function loadOrders(userId: string): Promise<OrderSummary[] | null> {
 export function loadContracts(userId: string): Promise<Contract[] | null> {
   return listContractsForUser(userId).catch((error: unknown) => {
     console.error("Failed to load contracts", error);
+    return null;
+  });
+}
+
+/** Every news and changelog post, drafts included, for ZODE admins, or `null` when they couldn't be loaded. */
+export function loadAllPosts(): Promise<Post[] | null> {
+  return listAllPosts().catch((error: unknown) => {
+    console.error("Failed to load posts", error);
     return null;
   });
 }

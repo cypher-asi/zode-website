@@ -194,3 +194,31 @@ create table if not exists data_room_summaries (
   updated_at timestamptz not null default now(),
   updated_by_email text not null
 );
+
+-- News and changelog posts, written by ZODE admins in the portal. The body is
+-- Markdown, and images live in the private Blob store under posts/, served by
+-- /post-media. The author is a snapshot of the ZOS account that created the
+-- post, since accounts live in ZOS rather than here.
+create table if not exists posts (
+  id uuid primary key default gen_random_uuid(),
+  kind text not null check (kind in ('news', 'changelog')),
+  status text not null default 'draft' check (status in ('draft', 'published')),
+  slug text not null,
+  title text not null default '',
+  summary text not null default '',
+  body_md text not null default '',
+  -- Changelog only, e.g. "1.4".
+  version text,
+  cover_pathname text,
+  author_user_id text not null,
+  author_name text not null,
+  author_email text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  updated_by_email text,
+  -- Set on first publish and kept through later edits, so the post's date doesn't move.
+  published_at timestamptz,
+  unique (kind, slug)
+);
+
+create index if not exists posts_published_idx on posts (kind, published_at desc) where status = 'published';

@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { OrderSummary } from "@/features/configurator/orders";
 import type { Contract } from "@/features/contracts/contracts";
 import type { RoomSummary } from "@/features/data-room/types";
+import { kindLabel, type Post } from "@/features/posts/types";
 import styles from "./portal.module.css";
 
 const usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -121,6 +122,44 @@ export function OrderList({ orders }: { orders: OrderSummary[] }): ReactElement 
             </span>
             <span className={styles.pill}>{order.status}</span>
           </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** News and changelog posts for admins; each row opens the editor. */
+export function PostList({ posts }: { posts: Post[] }): ReactElement {
+  return (
+    <ul className={styles.list}>
+      {posts.map((post) => (
+        <li key={post.id}>
+          <Link className={styles.row} href={`/portal/posts/${post.id}`}>
+            <span className={styles.rowIcon}>
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M13.25 3.25 16.75 6.75 7.5 16H4v-3.5zM11.25 5.25l3.5 3.5M4 17.25h12" />
+              </svg>
+            </span>
+            <span className={styles.rowMain}>
+              <span className={styles.rowTitle}>
+                {post.title || "Untitled"}
+                {post.version ? <span className={styles.reference}> · v{post.version}</span> : null}
+              </span>
+              <span className={styles.rowMeta}>
+                {post.author.name} ·{" "}
+                {post.publishedAt && post.status === "published"
+                  ? `Published ${date.format(post.publishedAt)}`
+                  : `Edited ${date.format(post.updatedAt)}`}
+              </span>
+            </span>
+            <span className={styles.rowEnd}>
+              <span className={styles.pill}>{kindLabel(post.kind)}</span>
+              <span className={styles.pill} data-strong={post.status === "published" ? "" : undefined}>
+                {post.status === "published" ? "Published" : "Draft"}
+              </span>
+              <Chevron />
+            </span>
+          </Link>
         </li>
       ))}
     </ul>

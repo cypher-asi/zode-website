@@ -26,6 +26,7 @@ const COLUMNS: readonly FooterColumn[] = [
       { label: "Portal", href: "/portal" },
       { label: "Login", href: "/login" },
       { label: "Register", href: "/register" },
+      { label: "Contact", href: "/contact" },
     ],
   },
   {

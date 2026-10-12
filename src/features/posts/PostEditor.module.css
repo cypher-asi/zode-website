@@ -1,0 +1,306 @@
+/* The portal's post list controls and the post editor. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter {
+  composes: tabs from "../data-room/room.module.css";
+  width: fit-content;
+  margin-bottom: 16px;
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.bar {
+  position: sticky;
+  z-index: 2;
+  top: -32px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: -32px -36px 0;
+  padding: 16px 36px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.back {
+  margin-right: 4px;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--color-text-primary);
+}
+
+.pill {
+  composes: pill from "../portal/portal.module.css";
+}
+
+.saved {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.error {
+  padding: 10px 14px;
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-inset);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 40px;
+  align-items: start;
+}
+
+.writing {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 760px;
+  min-width: 0;
+}
+
+.title,
+.summary {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text-primary);
+  font: inherit;
+  resize: none;
+  field-sizing: content;
+}
+
+.title:focus,
+.summary:focus {
+  outline: none;
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-size: var(--h2-size);
+  font-weight: 300;
+  letter-spacing: var(--h2-tracking);
+  line-height: var(--h2-leading);
+}
+
+.summary {
+  color: var(--color-text-secondary);
+  font-size: var(--text-md);
+  line-height: 1.6;
+}
+
+.title::placeholder,
+.summary::placeholder {
+  color: var(--color-text-faint);
+}
+
+.toolbar {
+  position: sticky;
+  z-index: 1;
+  top: 33px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  margin-top: 8px;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-inset);
+  background: var(--color-bg);
+}
+
+.tool {
+  display: grid;
+  place-items: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: none;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease;
+}
+
+.tool:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.tool[aria-pressed="true"] {
+  background: var(--color-surface-active);
+  color: var(--color-text-primary);
+}
+
+.tool:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.tool:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
+.tool code {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.tool svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.divider {
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background: var(--color-border);
+}
+
+.body {
+  min-height: 420px;
+}
+
+/* The ProseMirror root; it also carries the `.prose` class from PostBody, so the editor reads like the post. */
+.surface {
+  min-height: 420px;
+  padding: 8px 0 80px;
+  outline: none;
+}
+
+.surface :global(.is-editor-empty:first-child)::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--color-text-faint);
+  pointer-events: none;
+}
+
+.surface :global(.ProseMirror-selectednode) {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.settings {
+  position: sticky;
+  top: 50px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+
+.hint {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+
+.slug {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.slugPrefix {
+  flex: none;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.slug input {
+  height: 32px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.cover {
+  display: block;
+  width: 100%;
+  border-radius: var(--radius-inset);
+}
+
+.coverActions {
+  display: flex;
+  gap: 8px;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+}
+
+.facts dt {
+  color: var(--color-text-tertiary);
+}
+
+.facts dd {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 1000px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings {
+    position: static;
+  }
+}
+
+@media (max-width: 700px) {
+  .bar {
+    top: -22px;
+    margin: -22px -18px 0;
+    padding: 12px 18px;
+  }
+
+  .toolbar {
+    top: 0;
+  }
+}

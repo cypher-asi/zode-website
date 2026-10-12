@@ -51,13 +51,24 @@ const SECTIONS = [
   },
 ] as const;
 
+/** Sections only ZODE admins see. */
+const ADMIN_SECTIONS = [
+  {
+    href: "/portal/posts",
+    label: "Posts",
+    exact: false,
+    glyph: <path d="M13.25 3.25 16.75 6.75 7.5 16H4v-3.5zM11.25 5.25l3.5 3.5M4 17.25h12" />,
+  },
+] as const;
+
 /** The portal's sections as a column of desktop-style icons under the wordmark; a row on phones. */
-export function PortalNav(): ReactElement {
+export function PortalNav({ admin = false }: { admin?: boolean }): ReactElement {
   const pathname = usePathname() ?? "/portal";
+  const sections = admin ? [...SECTIONS, ...ADMIN_SECTIONS] : SECTIONS;
 
   return (
     <nav className={styles.rail} aria-label="Portal">
-      {SECTIONS.map((section) => {
+      {sections.map((section) => {
         const active = section.exact
           ? pathname === section.href
           : pathname === section.href || pathname.startsWith(`${section.href}/`);
