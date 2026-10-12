@@ -1,0 +1,178 @@
+/*
+ * Figures panel floating over the foot of the viewport, like the configurator's
+ * price bar; the parts list opens above it. The dock is the query container.
+ */
+
+.dock {
+  position: absolute;
+  right: var(--edge);
+  bottom: 20px;
+  left: var(--edge);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+  container: stats-bar / inline-size;
+}
+
+.bar,
+.parts {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-white);
+  box-shadow: var(--shadow-md);
+  pointer-events: auto;
+}
+
+.bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 14px 12px 20px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 12px 16px;
+  margin: 0;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column-reverse;
+  min-width: 0;
+  gap: 1px;
+}
+
+.value {
+  overflow: hidden;
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.label {
+  font-size: var(--text-2xs);
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+}
+
+.toggle {
+  composes: secondary sm from "../../components/ui/Button/Button.module.css";
+}
+
+.toggle svg {
+  width: 10px;
+  height: 6px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.parts {
+  max-height: min(52vh, 460px);
+  padding: 6px 20px 14px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  animation: rise var(--duration-slow) var(--ease-out) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.table th,
+.table td {
+  padding: 7px 0;
+  border-bottom: 1px solid var(--color-border);
+  font-weight: 400;
+  text-align: left;
+  vertical-align: baseline;
+}
+
+.table td + td,
+.table th + td {
+  padding-left: 16px;
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  padding-top: 10px;
+  background: var(--color-white);
+  font-size: var(--eyebrow-size);
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.group th {
+  padding-top: 16px;
+  font-family: var(--font-serif);
+  font-size: var(--text-md);
+  font-weight: 300;
+}
+
+.qty {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.detail {
+  display: block;
+  font-size: var(--text-2xs);
+  color: var(--color-text-secondary);
+}
+
+.fineprint {
+  margin: 12px 0 0;
+  font-size: var(--text-2xs);
+  color: var(--color-text-secondary);
+}
+
+@container stats-bar (max-width: 860px) {
+  .stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@container stats-bar (max-width: 420px) {
+  .bar {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stat:nth-child(n + 5) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parts {
+    animation: none;
+  }
+}

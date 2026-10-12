@@ -4,6 +4,7 @@ import { SITE_URL } from "@/lib/site";
 const PUBLIC_ROUTES = [
   "",
   "/buy-compute",
+  "/cluster-configurator",
   "/contact",
   "/talk-to-an-engineer",
   "/styleguide",

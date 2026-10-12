@@ -1,0 +1,184 @@
+/* Layer toggles, rail chips and camera presets over the viewport (see ViewToolbar.tsx). */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: max-content;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.legend {
+  margin: 0;
+  font-size: var(--eyebrow-size);
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.layers {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.layer {
+  --swatch: var(--color-ink);
+
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 4px 6px 4px 2px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: none;
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease;
+}
+
+.layer[data-layer="network"] {
+  --swatch: var(--color-info);
+}
+
+.layer[data-layer="storage"] {
+  --swatch: var(--color-violet);
+}
+
+.layer[data-layer="management"] {
+  --swatch: var(--color-success);
+}
+
+.layer[data-layer="rack"] {
+  --swatch: var(--color-text-secondary);
+}
+
+.layer[data-layer="cables"] {
+  --swatch: var(--color-accent-strong);
+}
+
+.layer[aria-pressed="true"] {
+  color: var(--color-ink);
+}
+
+@media (hover: hover) {
+  .layer:hover {
+    background: var(--color-surface-hover);
+  }
+}
+
+.layer:focus-visible,
+.rail:focus-visible,
+.preset:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Filled when the layer is shown, an outline when it's hidden. */
+.swatch {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--swatch);
+  border-radius: 2px;
+}
+
+.layer[aria-pressed="true"] .swatch {
+  background: var(--swatch);
+}
+
+.rails {
+  display: flex;
+  gap: 5px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+}
+
+.rail {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 2px solid var(--color-white);
+  border-radius: var(--radius-pill);
+  background: var(--rail);
+  box-shadow: 0 0 0 1px var(--color-border-strong);
+  cursor: pointer;
+  transition: box-shadow var(--duration-fast) ease;
+}
+
+.rail[aria-pressed="true"] {
+  box-shadow: 0 0 0 1.5px var(--color-ink);
+}
+
+.presets {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.preset {
+  height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: none;
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease;
+}
+
+/* Phones: one strip of chips under the heading rather than a column over the scene. */
+@media (max-width: 900px) {
+  .panel {
+    width: auto;
+    padding: 8px 10px;
+  }
+
+  .legend {
+    display: none;
+  }
+
+  .layers {
+    flex-flow: row wrap;
+    gap: 2px 8px;
+  }
+
+  .layer {
+    width: auto;
+    font-size: var(--text-xs);
+  }
+
+  .rails {
+    padding-top: 6px;
+  }
+}
+
+@media (hover: hover) {
+  .preset:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-ink);
+  }
+}

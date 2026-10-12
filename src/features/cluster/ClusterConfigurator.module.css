@@ -1,0 +1,314 @@
+/*
+ * The 3D viewport on the left with its panels floating over it, the settings
+ * panel full height on the right; all inside one viewport, and the settings
+ * scroll on their own. Phones stack the viewport over the settings.
+ */
+.root {
+  --head-top: 92px;
+  --stats-h: 96px;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 440px);
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: "viewport panel";
+  height: 100dvh;
+}
+
+/* The scene frames the cluster in the band the floating panels leave clear. */
+.viewport {
+  --scene-inset-top: calc(var(--head-top) + 60px);
+  --scene-inset-bottom: calc(var(--stats-h) + 24px);
+
+  position: relative;
+  grid-area: viewport;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--color-paper);
+}
+
+/* Clears the pinned wordmark above, level with the settings panel's heading. */
+.head {
+  position: absolute;
+  top: var(--head-top);
+  left: var(--edge);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  font-size: var(--eyebrow-size);
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: clamp(24px, 2vw, 32px);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin: 6px 0 0;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+}
+
+.layers {
+  position: absolute;
+  top: calc(var(--head-top) + 104px);
+  left: var(--edge);
+  z-index: 3;
+}
+
+.tools {
+  position: absolute;
+  top: 22px;
+  right: var(--edge);
+  z-index: 3;
+}
+
+.inspector {
+  position: absolute;
+  top: var(--head-top);
+  right: var(--edge);
+  bottom: calc(var(--stats-h) + 32px);
+  z-index: 4;
+  display: flex;
+  align-items: flex-start;
+}
+
+.hoverCard {
+  position: absolute;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: max-content;
+  max-width: 240px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-inset);
+  background: var(--color-white);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+}
+
+.hoverKind {
+  font-size: var(--eyebrow-size);
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.hoverTitle {
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.hoverDetail {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.hint {
+  position: absolute;
+  right: var(--edge);
+  bottom: calc(var(--stats-h) + 30px);
+  z-index: 2;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--caps-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  pointer-events: none;
+}
+
+.inspector ~ .hint {
+  display: none;
+}
+
+/* Scrolling settings under a fixed top bar. */
+.panelFrame {
+  grid-area: panel;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--color-border);
+  background: var(--color-white);
+}
+
+.top {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  padding: 16px var(--edge);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.kicker {
+  flex: 1;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--caps-size);
+  letter-spacing: var(--caps-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.share {
+  composes: secondary from "../../components/ui/Button/Button.module.css";
+  min-width: 112px;
+}
+
+.close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--color-ink);
+  transition:
+    background-color var(--duration-base) ease,
+    border-color var(--duration-base) ease;
+}
+
+.close svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+@media (hover: hover) {
+  .close:hover {
+    border-color: var(--color-border-hover);
+    background: var(--color-paper);
+  }
+}
+
+.close:focus-visible,
+.inlineLink:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Positioned parent the overlay scrollbar draws into. */
+.scrollFrame {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Native bar hidden; OverlayScrollbar floats over it. */
+.panel {
+  height: 100%;
+  padding: 32px var(--edge) 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.panel::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.intro {
+  margin-bottom: 32px;
+}
+
+.heading {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: clamp(28px, 2.2vw, 36px);
+  font-weight: 300;
+  line-height: 1.06;
+  letter-spacing: -0.025em;
+}
+
+.lede {
+  margin: 12px 0 0;
+  font-size: var(--text-base);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.disclaimer {
+  margin: 0;
+  padding: 8px 0 28px;
+  font-size: var(--text-2xs);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.inlineLink {
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 1180px) {
+  .hint {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .root {
+    --head-top: 76px;
+    --stats-h: 128px;
+
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "viewport"
+      "panel";
+    height: auto;
+    min-height: 100svh;
+  }
+
+  .viewport {
+    --scene-inset-top: calc(var(--head-top) + 170px);
+    height: 78svh;
+    min-height: 560px;
+  }
+
+  .layers {
+    top: calc(var(--head-top) + 84px);
+    right: var(--edge);
+  }
+
+  .inspector {
+    inset: var(--head-top) var(--edge) auto;
+    bottom: calc(var(--stats-h) + 32px);
+    justify-content: stretch;
+  }
+
+  .inspector > * {
+    width: 100%;
+  }
+
+  .panelFrame {
+    border-left: 0;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .panel {
+    height: auto;
+    overflow: visible;
+  }
+}

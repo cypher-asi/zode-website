@@ -1,0 +1,14 @@
+.root {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  touch-action: none;
+  /* Not for scrolling: resolves the insets to pixels for the camera to read. */
+  scroll-padding-top: var(--scene-inset-top, 0px);
+  scroll-padding-bottom: var(--scene-inset-bottom, 0px);
+}
+
+.root > canvas {
+  display: block;
+  outline: none;
+}

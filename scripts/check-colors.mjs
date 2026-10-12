@@ -24,6 +24,7 @@ const ALLOWED = new Map([
   ["src/features/home/stack/FullStack.module.css", "diagram artwork"],
   ["src/features/home/network/Network.module.css", "map artwork"],
   ["src/features/data-room/DataRoomApp.module.css", "folder glyph"],
+  ["src/features/cluster/scene/palette.ts", "fabric rail colours, shared by WebGL and the legend"],
 ]);
 
 const HEX = /#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4})\b/gi;
