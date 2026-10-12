@@ -212,6 +212,9 @@
 @media (max-width: 900px) {
   .root {
     --credit-height: 48px;
+    /* Takes the text rows from the band's padding in to the pinned header's wordmark and button. */
+    --text-left: calc(max(var(--edge), env(safe-area-inset-left, 0px)) - var(--frame-inset) - 6px);
+    --text-right: calc(max(var(--edge), env(safe-area-inset-right, 0px)) - var(--frame-inset) - 6px);
     grid-template-columns: auto minmax(0, 1fr);
     grid-template-rows: 1fr auto auto;
   }
@@ -231,7 +234,7 @@
   .menuButton {
     grid-area: 2 / 1;
     align-self: center;
-    margin: 0 0 16px;
+    margin: 0 0 16px var(--text-left);
     padding: 6px 0;
     writing-mode: horizontal-tb;
     transform: none;
@@ -241,16 +244,16 @@
   .copyright {
     grid-area: 2 / 2;
     align-self: center;
-    margin: 0 0 16px;
+    margin: 0 var(--text-right) 16px 0;
     writing-mode: horizontal-tb;
     transform: none;
     font-size: var(--text-2xs);
   }
 
-  /* Edge to edge, like the MENU and copyright row above it. */
+  /* Inset like the MENU and copyright row above it; the circuit trace still spans the band. */
   .credit {
     grid-area: 3 / 1 / 4 / -1;
-    padding: 0;
+    padding: 0 var(--text-right) 0 var(--text-left);
   }
 
   .creditLink,

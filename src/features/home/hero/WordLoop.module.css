@@ -5,14 +5,19 @@
   color: var(--color-text-secondary);
 }
 
+/* As wide as the widest word, which the invisible sizers stacked in its one cell set. */
 .track {
   position: relative;
-  display: inline-block;
-  width: 12ch;
+  display: inline-grid;
   height: 1.4em;
   overflow: hidden;
   white-space: nowrap;
   user-select: none;
+}
+
+.sizer {
+  grid-area: 1 / 1;
+  visibility: hidden;
 }
 
 .wordLeaving,

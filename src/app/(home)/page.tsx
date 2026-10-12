@@ -51,7 +51,14 @@ export default function HomePage() {
           </div>
 
           <div className={styles.bar} data-top-fade data-circuit-rule>
-            <TypedLine className={styles.helper} text="The fastest deployable AI data center." />
+            <TypedLine
+              className={`${styles.helper} ${styles.helperWide}`}
+              text="The fastest deployable AI data center."
+            />
+            <TypedLine
+              className={`${styles.helper} ${styles.helperNarrow}`}
+              text="The fastest deployable compute."
+            />
             <WordLoop />
           </div>
 

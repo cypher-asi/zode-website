@@ -134,6 +134,10 @@
   color: var(--color-text-secondary);
 }
 
+.helperNarrow {
+  display: none;
+}
+
 .bar {
   position: absolute;
   right: 0;
@@ -170,15 +174,27 @@
     padding: 120px var(--edge) calc(var(--bar-height) + 48px);
   }
 
-  /* Single column here, so the bar no longer has to match the gallery's. */
+  /*
+   * Single column here, so the bar no longer has to match the gallery's. The
+   * short tagline and the word loop share one line, their type easing down
+   * on the narrowest phones (together they run about 23.5em, plus the gap).
+   */
   .bar {
+    --text-base: clamp(12px, calc((100vw - 2 * var(--edge) - 16px) / 23.5), 14px);
+    gap: 16px;
     height: auto;
     min-height: var(--bar-height);
     padding: 10px var(--edge);
   }
 
-  .helper {
-    white-space: normal;
+  .helperWide {
+    display: none;
+  }
+
+  /* The typing cursor's room overhangs into the gap rather than taking line width. */
+  .helperNarrow {
+    display: block;
+    margin-right: calc(-0.55em - 3px);
   }
 
   .right {
@@ -192,9 +208,9 @@
     max-height: none;
   }
 
-  /* Portrait screens crop the scene's sides, so a shorter band loses little and saves a long scroll. */
+  /* The scene sits below the heading here (see AssemblyLine.module.css), so the band grows to keep it full size. */
   .assembly {
-    height: max(560px, 88svh);
+    height: max(660px, calc(88svh + 80px));
     min-height: 0;
   }
 }

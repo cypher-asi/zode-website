@@ -312,8 +312,17 @@
 }
 
 @media (max-width: 900px) {
+  /* The scene starts under the heading and flags rather than behind them. */
+  .root {
+    --intro-clear: 236px;
+  }
+
+  .canvas {
+    top: var(--intro-clear);
+  }
+
   .root::before {
-    height: 240px;
+    height: calc(var(--intro-clear) + 72px);
   }
 
   .sideFade {
@@ -322,7 +331,7 @@
 
   /* Too narrow for a side heading: sit top-left, clear of the wordmark's fade zone. */
   .intro {
-    top: 120px;
+    top: 112px;
     right: var(--edge);
     bottom: auto;
   }

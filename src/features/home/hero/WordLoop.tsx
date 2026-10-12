@@ -54,6 +54,11 @@ export function WordLoop(): ReactElement {
     <span ref={ref} className={styles.loop}>
       <span className={styles.srOnly}>{WORDS.join(", ")}</span>
       <span className={styles.track} aria-hidden="true">
+        {WORDS.map((word) => (
+          <span key={word} className={styles.sizer}>
+            {word}
+          </span>
+        ))}
         {tick > 0 ? (
           <span key={`out-${tick}`} className={styles.wordLeaving}>
             {WORDS[prevIndex]}
