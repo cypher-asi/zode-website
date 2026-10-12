@@ -89,6 +89,8 @@ const nextConfig: NextConfig = {
       { source: "/network", destination: "/", permanent: true },
       { source: "/deck", destination: "/", permanent: true },
       { source: "/deployments/:path*", destination: "/", permanent: true },
+      // Renamed; the query string carries over, so shared cluster links still open.
+      { source: "/cluster-configurator", destination: "/cluster-builder", permanent: true },
     ];
   },
   async rewrites() {

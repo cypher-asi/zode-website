@@ -19,6 +19,7 @@ const paths = {
   back: "M10 3 5 8l5 5",
   prev: "M10 3 5 8l5 5",
   next: "M6 3l5 5-5 5",
+  userPlus: "M6.5 7.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM2 13.5c0-2.2 2-4 4.5-4s4.5 1.8 4.5 4M12.5 5v4M10.5 7h4",
 } as const;
 
 export function Icon({ name, className }: { name: keyof typeof paths; className?: string }): ReactElement {

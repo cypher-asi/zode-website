@@ -52,6 +52,12 @@ export interface RoomMember {
   requiresMnda: boolean;
 }
 
+/** Someone the share dialog suggests inviting; `name` is null when only their email is known. */
+export interface PersonSuggestion {
+  email: string;
+  name: string | null;
+}
+
 export type AuditAction =
   | "view"
   | "download"

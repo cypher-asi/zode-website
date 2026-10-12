@@ -125,12 +125,17 @@ export function summaryEconomics(e: SiteEconomics, start = nextMonthStart()): Su
   const purchaseUsd = toUsd(e.purchasePrice, e.fx);
   const conversionUsd = toUsd(e.conversionCost, e.fx);
   const nodes = Math.max(0, Math.floor((e.criticalItMw.value * 1000) / DEFAULT_INPUTS.kwPerNode));
+  // Conversion is charged per MW of the cluster's IT load, so spread the site's total over it.
+  const clusterMw = (nodes * DEFAULT_INPUTS.kwPerNode) / 1000;
   const inputs: ModelInputs = {
     ...DEFAULT_INPUTS,
     nodes,
-    baseLease: 0,
+    siteMode: 1,
     sitePurchase: Math.round(purchaseUsd ?? 0),
-    siteConversion: Math.round(conversionUsd ?? 0),
+    siteConversionPerMw: clusterMw > 0 ? Math.round((conversionUsd ?? 0) / clusterMw) : 0,
+    siteClosingCosts: 0,
+    siteLtv: 0,
+    siteEquityFee: 0,
     siteResidual: e.siteResidual ?? DEFAULT_INPUTS.siteResidual,
   };
   const result = runModel(inputs, start);

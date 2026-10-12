@@ -17,6 +17,7 @@ import { LayersPanel, ViewPresets } from "./ViewToolbar";
 import styles from "./ClusterConfigurator.module.css";
 
 const PANEL_ID = "cluster-settings";
+const LAYERS_ID = "cluster-layers";
 
 interface Hover {
   pick: Pick;
@@ -31,6 +32,7 @@ interface Hover {
  */
 export function ClusterConfigurator({ initialConfig }: { initialConfig: ClusterConfig }): ReactElement {
   const [config, setConfig] = useState(initialConfig);
+  const [layersOpen, setLayersOpen] = useState(false);
   const [hidden, setHidden] = useState<ReadonlySet<Layer>>(() => new Set());
   const [cables, setCables] = useState(true);
   const [rail, setRail] = useState<number | null>(null);
@@ -121,20 +123,30 @@ export function ClusterConfigurator({ initialConfig }: { initialConfig: ClusterC
           </p>
         </header>
 
-        <div className={styles.layers}>
-          <LayersPanel
-            hidden={hidden}
-            onToggle={toggleLayer}
-            onPreview={setFocus}
-            cables={cables}
-            onCables={setCables}
-            rail={rail}
-            onRail={setRail}
-          />
-        </div>
+        {layersOpen ? (
+          <div id={LAYERS_ID} className={styles.layers}>
+            <LayersPanel
+              hidden={hidden}
+              onToggle={toggleLayer}
+              onPreview={setFocus}
+              cables={cables}
+              onCables={setCables}
+              rail={rail}
+              onRail={setRail}
+            />
+          </div>
+        ) : null}
 
         <div className={styles.tools}>
-          <ViewPresets onView={(preset) => sceneRef.current?.setView(preset)} />
+          <ViewPresets
+            onView={(preset) => sceneRef.current?.setView(preset)}
+            layersOpen={layersOpen}
+            onLayers={(open) => {
+              setLayersOpen(open);
+              if (!open) setFocus(null);
+            }}
+            layersId={LAYERS_ID}
+          />
         </div>
 
         {selectedRack ? (
@@ -182,7 +194,7 @@ export function ClusterConfigurator({ initialConfig }: { initialConfig: ClusterC
         <div className={styles.scrollFrame}>
           <div id={PANEL_ID} className={styles.panel} data-surface="light">
             <header className={styles.intro}>
-              <h1 className={styles.heading}>Cluster configurator</h1>
+              <h1 className={styles.heading}>Cluster builder</h1>
               <p className={styles.lede}>
                 Size a GPU cluster rack by rack. Every change rebuilds the racks, the switches and the rail-optimized
                 fabric beside you.

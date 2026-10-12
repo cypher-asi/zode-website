@@ -43,6 +43,10 @@ export function formatValue(format: Format, n: number): string {
       return multiple(n);
     case "months":
       return `${n} mo`;
+    case "years":
+      return `${n} yr`;
+    case "usdPerMw":
+      return `${usdShort(n, 2)} / MW`;
     case "count":
       return n.toLocaleString("en-US");
     case "gpuHour":

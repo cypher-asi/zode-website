@@ -1,4 +1,4 @@
-/* Layer toggles, rail chips and camera presets over the viewport (see ViewToolbar.tsx). */
+/* Layer toggles, rail chips, camera presets and the layers switch over the viewport (see ViewToolbar.tsx). */
 
 .panel {
   display: flex;
@@ -83,7 +83,8 @@
 
 .layer:focus-visible,
 .rail:focus-visible,
-.preset:focus-visible {
+.preset:focus-visible,
+.iconButton:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
@@ -126,12 +127,57 @@
 
 .presets {
   display: flex;
+  align-items: center;
   gap: 2px;
   padding: 3px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
   background: var(--color-white);
   box-shadow: var(--shadow-sm);
+}
+
+.group {
+  display: flex;
+  gap: 2px;
+}
+
+.divider {
+  width: 1px;
+  height: 16px;
+  margin: 0 3px;
+  background: var(--color-border);
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease;
+}
+
+.iconButton svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.iconButton[aria-expanded="true"] {
+  background: var(--color-surface-hover);
+  color: var(--color-ink);
 }
 
 .preset {
@@ -177,7 +223,8 @@
 }
 
 @media (hover: hover) {
-  .preset:hover {
+  .preset:hover,
+  .iconButton:hover {
     background: var(--color-surface-hover);
     color: var(--color-ink);
   }

@@ -101,7 +101,7 @@ export function OrderList({ orders }: { orders: OrderSummary[] }): ReactElement 
         <li key={order.reference} className={styles.row} data-order="">
           <span className={styles.rowIcon}>
             <svg viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M10 2.75 16.75 6.4v7.2L10 17.25 3.25 13.6V6.4zM3.25 6.4 10 10.05l6.75-3.65M10 10.05v7.2" />
+              <path d="M6.25 5.25h7.5a1 1 0 0 1 1 1v7.5a1 1 0 0 1-1 1h-7.5a1 1 0 0 1-1-1v-7.5a1 1 0 0 1 1-1zM8.25 8.25h3.5v3.5h-3.5zM7.5 2.75v2.5M10 2.75v2.5M12.5 2.75v2.5M7.5 14.75v2.5M10 14.75v2.5M12.5 14.75v2.5M2.75 7.5h2.5M2.75 10h2.5M2.75 12.5h2.5M14.75 7.5h2.5M14.75 10h2.5M14.75 12.5h2.5" />
             </svg>
           </span>
           <span className={styles.rowMain}>

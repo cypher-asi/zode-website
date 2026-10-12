@@ -15,7 +15,7 @@ const PRESETS: readonly { id: ViewPreset; label: string }[] = [
   { id: "top", label: "Top" },
 ];
 
-/** Layer visibility and the fabric's rails, beside the viewport's heading. */
+/** Layer visibility and the fabric's rails, dropped from the toolbar's layers switch. */
 export function LayersPanel({
   hidden,
   onToggle,
@@ -82,15 +82,43 @@ export function LayersPanel({
   );
 }
 
-/** Camera presets over the viewport's corner. */
-export function ViewPresets({ onView }: { onView: (preset: ViewPreset) => void }): ReactElement {
+/** Camera presets over the viewport's corner, and the switch that opens the layers panel. */
+export function ViewPresets({
+  onView,
+  layersOpen,
+  onLayers,
+  layersId,
+}: {
+  onView: (preset: ViewPreset) => void;
+  layersOpen: boolean;
+  onLayers: (open: boolean) => void;
+  layersId: string;
+}): ReactElement {
   return (
-    <div className={styles.presets} role="group" aria-label="Camera">
-      {PRESETS.map((p) => (
-        <button key={p.id} type="button" className={styles.preset} onClick={() => onView(p.id)}>
-          {p.label}
-        </button>
-      ))}
+    <div className={styles.presets}>
+      <div className={styles.group} role="group" aria-label="Camera">
+        {PRESETS.map((p) => (
+          <button key={p.id} type="button" className={styles.preset} onClick={() => onView(p.id)}>
+            {p.label}
+          </button>
+        ))}
+      </div>
+      <span className={styles.divider} aria-hidden="true" />
+      <button
+        type="button"
+        className={styles.iconButton}
+        aria-label="Layers"
+        title="Layers"
+        aria-expanded={layersOpen}
+        aria-controls={layersId}
+        onClick={() => onLayers(!layersOpen)}
+      >
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M8 2.5 14 5.75 8 9 2 5.75Z" />
+          <path d="M2 8.6 8 11.85 14 8.6" />
+          <path d="M2 11.35 8 14.6 14 11.35" />
+        </svg>
+      </button>
     </div>
   );
 }

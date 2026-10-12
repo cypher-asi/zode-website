@@ -1,7 +1,7 @@
 import type { ClusterConfig, FabricId, Layer, PartKind, PlatformId } from "./types";
 
 /*
- * Hardware and sizing assumptions behind the cluster configurator, after the
+ * Hardware and sizing assumptions behind the cluster builder, after the
  * OD3N deployment planner's reference architecture. Every power figure, port
  * count and capacity here is a PLACEHOLDER for planning conversations, not a
  * specification; edit them in place.

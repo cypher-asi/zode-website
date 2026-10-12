@@ -300,10 +300,7 @@ export function Readouts({
     >
       {items.map((item) => (
         <div key={item.label} className={styles.readout}>
-          <span className={styles.readoutLabel}>
-            {item.label}
-            <span className={styles.auto}>Auto</span>
-          </span>
+          <span className={styles.readoutLabel}>{item.label}</span>
           <span className={styles.readoutValue}>{item.value}</span>
           <span className={styles.readoutDetail}>{item.detail}</span>
         </div>

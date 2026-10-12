@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { homeDb } from "@/lib/db";
 import { SITE_URL } from "@/lib/site";
+import { recordAccount } from "./directory";
 import { initials } from "./initials";
 import { applyProfile, loadProfile } from "./profile";
 import { REMEMBER_COOKIE } from "./rememberedAccounts";
@@ -74,10 +75,13 @@ function decode(token: string | undefined): Session | null {
 
 export async function createAccountSession(account: Account): Promise<void> {
   const exp = Math.floor(Date.now() / 1000) + ACCOUNT_MAX_AGE_SECONDS;
-  const [row] = await homeDb()`
-    insert into account_sessions (user_id, expires_at) values (${account.userId}, ${new Date(exp * 1000)})
-    returning id
-  `;
+  const [[row]] = await Promise.all([
+    homeDb()`
+      insert into account_sessions (user_id, expires_at) values (${account.userId}, ${new Date(exp * 1000)})
+      returning id
+    `,
+    recordAccount(account),
+  ]);
 
   const cookieStore = await cookies();
   cookieStore.set(ACCOUNT_COOKIE, encode({ sid: String(row.id), account }, exp), { ...COOKIE_OPTIONS, httpOnly: true });

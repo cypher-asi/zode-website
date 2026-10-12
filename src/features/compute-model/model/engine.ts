@@ -67,6 +67,12 @@ export interface ModelResult {
   year1NetProfit: number;
   year1Lease: number;
   year1Electricity: number;
+  /** Purchase price, closing costs and conversion; zero for a leased site. */
+  siteCost: number;
+  siteLoan: number;
+  /** Site cost and financing fees not covered by the bank loan. */
+  siteEquity: number;
+  year1SiteService: number;
   contractNetProfit: number;
   lifetimeNetProfit: number;
 
@@ -145,8 +151,14 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
   const gpus = i.nodes * GPUS_PER_NODE;
   const depreciable =
     (equipCost * (1 + i.spareShare) * (1 + useTax + i.importTax) + i.setupCost) * (1 - i.bookResidual);
-  const siteCost = i.sitePurchase + i.siteConversion;
-  const siteProceeds = i.sitePurchase * i.siteResidual * (1 - i.sellingCosts);
+  // Facility: a leased site pays rent; a purchased one pays its price, closing and conversion at order
+  const purchased = i.siteMode === 1;
+  const sitePrice = purchased ? i.sitePurchase : 0;
+  const siteConversion = purchased ? i.siteConversionPerMw * itMw : 0;
+  const siteCost = sitePrice * (1 + i.siteClosingCosts) + siteConversion;
+  const siteLoan = (sitePrice + siteConversion) * (purchased ? i.siteLtv : 0);
+  const siteFees = siteLoan * i.siteLoanFee + Math.max(0, siteCost - siteLoan) * (purchased ? i.siteEquityFee : 0);
+  const siteProceeds = sitePrice * i.siteResidual * (1 - i.sellingCosts);
 
   // Calendar
   const dates = zeros();
@@ -218,7 +230,8 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
     const a = age[m];
     const fixed = escalation(i.fixedEscalation, a) * op[m];
 
-    const lease = itKw * (i.baseLease + i.nnn + i.operations) * fixed;
+    const rent = purchased ? 0 : i.baseLease * escalation(i.leaseEscalation, a) * op[m];
+    const lease = itKw * (rent + (i.nnn + i.operations) * fixed);
     const share = i.contractedShare * contract[m];
     const load = i.idleLoad + (1 - i.idleLoad) * (share + (1 - share) * merchantUtil[m]);
     const kwh = itKw * i.pue * days[m] * HOURS * load * op[m];
@@ -276,11 +289,38 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
   const admin = zeros().map((_, m) => (i.adminPerYear / 12) * (1 + i.adminEscalation) ** Math.floor(m / 12));
   const legal = zeros().map((_, m) => (m === 0 ? i.legalCosts : 0));
 
+  // Site bank loan: drawn at order, level payments, the balance repaid when the site is sold
+  const siteDraws = zeros();
+  const siteInterest = zeros();
+  const sitePrincipal = zeros();
+  const siteService = zeros();
+  const siteDebt = zeros();
+  const siteFeeExpense = zeros();
+  {
+    const r = i.siteRate / 12;
+    const n = i.siteAmortizationYears * 12;
+    const payment = siteLoan <= 0 ? 0 : r > 0 ? (siteLoan * r) / (1 - (1 + r) ** -n) : siteLoan / n;
+    let balance = 0;
+    for (let m = 0; m < MONTHS; m++) {
+      const open = balance;
+      siteInterest[m] = open * r;
+      const scheduled = Math.min(open, Math.max(0, payment - siteInterest[m]));
+      siteService[m] = siteInterest[m] + scheduled;
+      sitePrincipal[m] = recovery[m] || ending[m] ? open : scheduled;
+      siteDraws[m] = m === order ? siteLoan : 0;
+      siteFeeExpense[m] = m === order ? siteFees : 0;
+      balance = Math.max(0, open + siteDraws[m] - sitePrincipal[m]);
+      siteDebt[m] = balance;
+    }
+  }
+
   // GPU Financing: loan sizing
-  const totalCapex = sum(capex);
+  const totalCapex = sum(capex) - siteCost;
   const eligible = sum(equipment) / (1 + i.itShare) * (1 + i.itShare * i.financeIt) + sum(spares) * i.financeSpares;
   const feeGrossUp = 1 - i.originationFee * i.financeFee;
-  const requestedLoan = Math.min(eligible * (1 - i.deposit), Math.max(0, totalCapex - totalPrepayment)) / feeGrossUp;
+  // As in the workbook, the gap counts site spend too, less what the site's own bank loan covers.
+  const fundingGap = Math.max(0, sum(capex) - siteLoan - totalPrepayment);
+  const requestedLoan = Math.min(eligible * (1 - i.deposit), fundingGap) / feeGrossUp;
 
   const perDollarService = zeros();
   let perDollarOpen = 0;
@@ -296,8 +336,10 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
           : 0;
     perDollarService[m] = perDollarPaid + (perDollarOpen * i.interestRate) / 12;
   }
+  // The site loan's scheduled payments come first, as rent would on a leased site.
   const sizingCash = zeros().map(
-    (_, m) => collections[m] - opex[m] - Math.max(0, incomeBefore[m]) * i.incomeTax - admin[m] - legal[m],
+    (_, m) =>
+      collections[m] - opex[m] - Math.max(0, incomeBefore[m]) * i.incomeTax - admin[m] - legal[m] - siteService[m],
   );
 
   /** Months of the loan quarter ending at `m`, or null when `m` isn't a quarter end. */
@@ -345,16 +387,27 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
   }
   const debtService = zeros().map((_, m) => interest[m] + principal[m]);
 
+  const siteFinancing = zeros().map((_, m) => siteInterest[m] + siteFeeExpense[m]);
   const tax = zeros().map(
-    (_, m) => Math.max(0, incomeBefore[m] - interest[m] - feeAmortization[m]) * i.incomeTax,
+    (_, m) => Math.max(0, incomeBefore[m] - interest[m] - feeAmortization[m] - siteFinancing[m]) * i.incomeTax,
   );
   const taxBenefit = zeros().map((_, m) => Math.max(0, incomeBefore[m]) * i.incomeTax - tax[m]);
   const operatingCash = zeros().map((_, m) => collections[m] - opex[m] - tax[m]);
   const projectCash = zeros().map(
     (_, m) => operatingCash[m] - capex[m] + prepayment[m] + disposalProceeds[m] - refund[m],
   );
-  const portfolioCash = zeros().map((_, m) => projectCash[m] + draws[m] - fees[m] - debtService[m]);
-  const cashForDebt = zeros().map((_, m) => operatingCash[m] - admin[m] - legal[m]);
+  const portfolioCash = zeros().map(
+    (_, m) =>
+      projectCash[m] +
+      draws[m] -
+      fees[m] -
+      debtService[m] +
+      siteDraws[m] -
+      siteFeeExpense[m] -
+      siteInterest[m] -
+      sitePrincipal[m],
+  );
+  const cashForDebt = zeros().map((_, m) => operatingCash[m] - admin[m] - legal[m] - siteService[m]);
 
   let minQuarterlyDscr: number | null = null;
   let dscrBreaches = 0;
@@ -445,13 +498,21 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
   // Portfolio and Summary
   const spvEbitda = zeros().map((_, m) => ebitda[m] - admin[m] - legal[m]);
   const netProfit = zeros().map(
-    (_, m) => spvEbitda[m] - depreciation[m] - tax[m] - interest[m] - feeAmortization[m] + gain[m] - writeOff[m],
+    (_, m) =>
+      spvEbitda[m] -
+      depreciation[m] -
+      tax[m] -
+      interest[m] -
+      feeAmortization[m] -
+      siteFinancing[m] +
+      gain[m] -
+      writeOff[m],
   );
   const contractProfit = zeros().map(
     (_, m) =>
       (incomeBefore[m] - tax[m]) * contract[m] -
-      (m <= lastContract ? admin[m] + legal[m] : 0) -
-      (interest[m] + feeAmortization[m]) * contract[m],
+      (m <= lastContract ? admin[m] + legal[m] + siteFeeExpense[m] : 0) -
+      (interest[m] + feeAmortization[m] + siteInterest[m]) * contract[m],
   );
 
   const year1 = (values: readonly number[]) => sum(values, Math.min(firstOp, MONTHS), Math.min(firstOp + 12, MONTHS));
@@ -504,6 +565,10 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
     year1NetProfit: year1(netProfit),
     year1Lease: year1(leaseCost) / 12,
     year1Electricity: year1(electricity) / 12,
+    siteCost,
+    siteLoan,
+    siteEquity: siteCost + siteFees - siteLoan,
+    year1SiteService: year1(siteService) / 12,
     contractNetProfit: sum(contractProfit),
     lifetimeNetProfit: sum(netProfit),
 
@@ -533,7 +598,7 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
     minMonthlyDscr,
     year1Dscr: year1Service > 0.01 ? year1(cashForDebt) / year1Service : null,
     dscrBreaches,
-    debtAtEnd: debtBalance[LAST_MONTH],
+    debtAtEnd: debtBalance[LAST_MONTH] + siteDebt[LAST_MONTH],
 
     monthly: {
       dates,
@@ -541,8 +606,8 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
       ebitda: spvEbitda,
       netProfit,
       capex,
-      debtBalance,
-      debtService,
+      debtBalance: zeros().map((_, m) => debtBalance[m] + siteDebt[m]),
+      debtService: zeros().map((_, m) => debtService[m] + siteInterest[m] + sitePrincipal[m]),
       netBookValue,
       prefContributions,
       prefDistributions,

@@ -24,7 +24,9 @@ const { DEFAULT_INPUTS, withScenario } = await import("../src/features/compute-m
 const { runModel } = await import("../src/features/compute-model/model/engine.ts");
 
 const EPOCH = { year: 1899, month: 11, day: 30 };
-const r = runModel(DEFAULT_INPUTS, EPOCH);
+// The workbook escalates base rent with the other fixed costs; the site defaults to its own 2.5%.
+const WORKBOOK = { ...DEFAULT_INPUTS, leaseEscalation: DEFAULT_INPUTS.fixedEscalation };
+const r = runModel(WORKBOOK, EPOCH);
 
 const EXPECTED = [
   ["Equipment purchase", r.equipmentPurchase, 163_328_000],
@@ -129,7 +131,7 @@ const SCENARIO_CASES = {
 };
 
 for (const [scenario, expected] of Object.entries(SCENARIO_CASES)) {
-  const result = runModel(withScenario(DEFAULT_INPUTS, scenario), EPOCH);
+  const result = runModel(withScenario(WORKBOOK, scenario), EPOCH);
   for (const [key, value] of Object.entries(expected)) report(`${scenario} ${key}`, result[key], value);
 }
 

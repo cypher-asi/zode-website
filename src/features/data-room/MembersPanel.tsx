@@ -5,7 +5,6 @@ import { Select } from "@/components/ui/Select";
 import {
   changeRoleAction,
   deleteRoomAction,
-  inviteMembersAction,
   removeMemberAction,
   renameRoomAction,
   resendInviteAction,
@@ -33,7 +32,6 @@ interface MembersPanelProps {
 }
 
 export function MembersPanel({ roomId, roomName, members, selfEmail }: MembersPanelProps): ReactElement {
-  const [inviteState, invite, inviting] = useActionState(inviteMembersAction.bind(null, roomId), {});
   const [renameState, rename, renaming] = useActionState(renameRoomAction.bind(null, roomId), {});
   const [rowState, setRowState] = useState<ActionState>({});
   const [pending, startTransition] = useTransition();
@@ -133,57 +131,6 @@ export function MembersPanel({ roomId, roomName, members, selfEmail }: MembersPa
 
   return (
     <div className={styles.stack}>
-      <section className={styles.card} aria-labelledby="invite-heading">
-        <h2 id="invite-heading" className={styles.heading}>
-          Invite people
-        </h2>
-        <p className={styles.lede}>
-          Anyone can be invited by email. They get a personal link and sign in, or create a ZODE account, with that
-          address to get in.
-        </p>
-        <form action={invite} className={styles.inviteForm}>
-          <label className={ui.field}>
-            <span className={ui.label}>Emails</span>
-            <textarea
-              name="emails"
-              className={ui.textarea}
-              placeholder="name@company.com, another@company.com"
-              rows={2}
-              required
-            />
-          </label>
-          <fieldset className={styles.roles}>
-            <legend className={ui.label}>Access</legend>
-            {ROLES.map((role) => (
-              <label key={role.id} className={styles.roleOption}>
-                <input type="radio" name="role" value={role.id} defaultChecked={role.id === "viewer"} />
-                <span>
-                  <strong>{role.label}</strong>
-                  <span>{role.detail}</span>
-                </span>
-              </label>
-            ))}
-          </fieldset>
-          <label className={styles.roleOption}>
-            <input type="checkbox" name="requireMnda" defaultChecked />
-            <span>
-              <strong>Require the mutual NDA</strong>
-              <span>
-                Invitees sign ZODE&apos;s MNDA before they can open the room. Anyone who already signed one isn&apos;t
-                asked again.
-              </span>
-            </span>
-          </label>
-          <div className={styles.formFooter}>
-            {inviteState.error ? <p className={ui.error}>{inviteState.error}</p> : null}
-            {inviteState.ok ? <p className={ui.ok}>{inviteState.ok}</p> : null}
-            <button type="submit" className={ui.primary} disabled={inviting}>
-              {inviting ? "Sending…" : "Send invites"}
-            </button>
-          </div>
-        </form>
-      </section>
-
       <section className={styles.card} aria-labelledby="people-heading">
         <h2 id="people-heading" className={styles.heading}>
           People with access <span className={styles.countBadge}>{active.length}</span>

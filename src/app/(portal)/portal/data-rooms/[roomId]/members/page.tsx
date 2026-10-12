@@ -3,7 +3,7 @@ import { MembersPanel } from "@/features/data-room/MembersPanel";
 import { listMembers, requireRoomRole } from "@/features/data-room/rooms";
 import styles from "@/features/data-room/room.module.css";
 
-/** Admins only: who has access, pending invites, and the room's settings. */
+/** Admins only: who has access, pending invites, and the room's settings. Inviting is in the header's Share dialog. */
 export default async function DataRoomMembersPage({
   params,
 }: PageProps<"/portal/data-rooms/[roomId]/members">): Promise<ReactElement> {

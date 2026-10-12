@@ -9,7 +9,7 @@ import { Buffers, drawRack, partAt, partBox, toObjects, type Palette } from "./g
 import { RAIL_COLORS } from "./palette";
 
 /*
- * The configurator's 3D viewport, kept out of React: one renderer, camera and
+ * The cluster builder's 3D viewport, kept out of React: one renderer, camera and
  * set of orbit controls for the life of the page, and a scene rebuilt from
  * the model whenever it changes. Frames are only drawn while something moves.
  */

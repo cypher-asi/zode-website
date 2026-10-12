@@ -57,9 +57,9 @@
   color: var(--color-success);
 }
 
-/* `margin: auto` is how a modal <dialog> centres itself; the reset zeroes every margin. */
+/* `margin: auto` is how a modal <dialog> centres itself; the reset zeroes every margin. Wider dialogs set --dialog-width. */
 .dialog {
-  width: min(420px, calc(100vw - 32px));
+  width: min(var(--dialog-width, 420px), calc(100vw - 32px));
   margin: auto;
   padding: 0;
   border: 1px solid var(--color-border-strong);

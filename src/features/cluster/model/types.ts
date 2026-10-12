@@ -1,5 +1,5 @@
 /*
- * The cluster as data: what the configurator edits, and the racks, parts and
+ * The cluster as data: what the builder edits, and the racks, parts and
  * fabric that `buildCluster` derives from it. Lengths are in metres.
  */
 

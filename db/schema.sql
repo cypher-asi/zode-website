@@ -248,3 +248,36 @@ create table if not exists mailing_list_subscribers (
 
 create index if not exists mailing_list_subscribers_user_idx on mailing_list_subscribers (user_id) where user_id is not null;
 create index if not exists mailing_list_subscribers_status_idx on mailing_list_subscribers (status, created_at desc);
+
+-- Every ZOS account seen signing in to this site, refreshed at each sign-in, so
+-- the data room share dialog can suggest people. ZOS doesn't verify emails, so
+-- this only feeds suggestions: access is still granted by the emailed invite link.
+-- display_name is null for accounts backfilled from records that carry no name.
+create table if not exists account_directory (
+  user_id text primary key,
+  email text not null,
+  display_name text,
+  last_seen_at timestamptz not null default now()
+);
+
+create index if not exists account_directory_email_idx on account_directory (lower(email));
+
+-- Backfill from accounts that left a record before the directory existed; each
+-- source takes its latest row per account, and earlier sources win.
+insert into account_directory (user_id, email, display_name, last_seen_at)
+select distinct on (user_id) user_id, lower(signer_email), signer_name, signed_at
+from mndas where user_id is not null
+order by user_id, signed_at desc
+on conflict (user_id) do nothing;
+
+insert into account_directory (user_id, email, display_name, last_seen_at)
+select distinct on (user_id) user_id, lower(email), name, created_at
+from compute_orders where user_id is not null
+order by user_id, created_at desc
+on conflict (user_id) do nothing;
+
+insert into account_directory (user_id, email, display_name, last_seen_at)
+select distinct on (user_id) user_id, lower(email), null, coalesce(accepted_at, invited_at)
+from data_room_members where user_id is not null
+order by user_id, coalesce(accepted_at, invited_at) desc
+on conflict (user_id) do nothing;

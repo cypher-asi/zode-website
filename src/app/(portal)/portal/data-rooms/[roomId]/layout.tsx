@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
 import { RoomTabs } from "@/features/data-room/RoomTabs";
-import { requireRoomRole } from "@/features/data-room/rooms";
+import { ShareButton } from "@/features/data-room/ShareDialog";
+import { listMembers, requireRoomRole } from "@/features/data-room/rooms";
 import styles from "@/features/data-room/room.module.css";
 
 export async function generateMetadata({ params }: LayoutProps<"/portal/data-rooms/[roomId]">): Promise<Metadata> {
@@ -11,13 +12,18 @@ export async function generateMetadata({ params }: LayoutProps<"/portal/data-roo
   return { title: `${room.name} | Data room | ZODE`, robots: { index: false, follow: false } };
 }
 
-/** A data room fills the viewport beside the portal's icons, with Summary and Files tabs; admins also get Members and Activity. */
+/**
+ * A data room fills the viewport beside the portal's icons, with Summary and
+ * Files tabs; admins also get Members and Activity, and a Share button.
+ */
 export default async function DataRoomLayout({
   children,
   params,
 }: LayoutProps<"/portal/data-rooms/[roomId]">): Promise<ReactElement> {
   const { roomId } = await params;
-  const { room, role } = await requireRoomRole(roomId);
+  const { room, role, account } = await requireRoomRole(roomId);
+  const isAdmin = role === "admin";
+  const members = isAdmin ? await listMembers(roomId) : [];
 
   return (
     <div className={styles.frame}>
@@ -31,10 +37,20 @@ export default async function DataRoomLayout({
           </Link>
           <div className={styles.titleRow}>
             <h1 className={styles.title}>{room.name}</h1>
-            <span className={styles.role}>{role === "admin" ? "Admin" : "Viewer"}</span>
+            <span className={styles.role}>{isAdmin ? "Admin" : "Viewer"}</span>
           </div>
         </div>
-        <RoomTabs roomId={roomId} isAdmin={role === "admin"} />
+        <div className={styles.headerActions}>
+          <RoomTabs roomId={roomId} isAdmin={isAdmin} />
+          {isAdmin ? (
+            <ShareButton
+              roomId={roomId}
+              roomName={room.name}
+              members={members}
+              selfEmail={account.email.toLowerCase()}
+            />
+          ) : null}
+        </div>
       </header>
       <div className={styles.body}>{children}</div>
     </div>

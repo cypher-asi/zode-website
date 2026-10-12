@@ -1,0 +1,112 @@
+/* Mirrors portal.module.css's page, header and list so content lands where the placeholder was. */
+.page {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 32px 36px 40px;
+  /* Held back briefly so quick navigations swap straight to the content without a flash. */
+  animation: appear var(--duration-base) ease 150ms both;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.title,
+.subtitle,
+.icon,
+.line,
+.meta {
+  display: block;
+  border-radius: var(--radius-inset);
+  background: var(--color-surface-tint);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.title {
+  width: min(280px, 60%);
+  height: 30px;
+}
+
+.subtitle {
+  width: min(360px, 80%);
+  height: 16px;
+}
+
+.list {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 68px;
+  padding: 12px 18px;
+}
+
+.row + .row {
+  border-top: 1px solid var(--color-border);
+}
+
+.icon {
+  flex: none;
+  width: 36px;
+  height: 36px;
+}
+
+.lines {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.line {
+  width: min(240px, 70%);
+  height: 14px;
+}
+
+.meta {
+  width: min(320px, 90%);
+  height: 12px;
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (max-width: 700px) {
+  .page {
+    padding: 22px 18px 28px;
+  }
+
+  .row {
+    padding: 12px 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page,
+  .title,
+  .subtitle,
+  .icon,
+  .line,
+  .meta {
+    animation: none;
+  }
+}

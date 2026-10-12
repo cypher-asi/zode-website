@@ -461,17 +461,8 @@
 }
 
 .readoutLabel {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
-}
-
-.auto {
-  font-size: var(--text-2xs);
-  letter-spacing: var(--caps-tracking);
-  text-transform: uppercase;
 }
 
 .readoutValue {

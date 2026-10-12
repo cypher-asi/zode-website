@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 const RECENT = 3;
 
 /** Signed-in home: who you are, your figures at a glance, and the latest rooms and orders. */
-export default async function DashboardPage(): Promise<ReactElement> {
+export default async function HomePage(): Promise<ReactElement> {
   const account = await requireAccount("/portal");
   const [rooms, orders, contracts] = await Promise.all([
     loadRooms(account.userId),

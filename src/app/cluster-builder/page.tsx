@@ -5,13 +5,13 @@ import { configFromParams } from "@/features/cluster/model/url";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
-  title: "Cluster Configurator | ZODE",
+  title: "Cluster Builder | ZODE",
   description:
     "Design a GPU cluster rack by rack: GPU platform, rack density, InfiniBand or RoCE fabric and storage, in live 3D.",
 };
 
 /**
- * The cluster configurator, a resource linked from the footer menu. Lives
+ * The cluster builder, a resource linked from the footer menu. Lives
  * outside the `(site)` group, like /buy-compute, so the 3D viewport can fill
  * the screen. The configuration is read from the query string so shared
  * links open on the same cluster.

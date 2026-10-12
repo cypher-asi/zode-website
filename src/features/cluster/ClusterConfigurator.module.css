@@ -5,6 +5,7 @@
  */
 .root {
   --head-top: 92px;
+  --tools-top: 22px;
   --stats-h: 96px;
 
   display: grid;
@@ -59,16 +60,18 @@
   color: var(--color-text-secondary);
 }
 
+/* Drops from the toolbar's layers switch, over the inspector when both are open. */
 .layers {
   position: absolute;
-  top: calc(var(--head-top) + 104px);
-  left: var(--edge);
-  z-index: 3;
+  top: calc(var(--tools-top) + 46px);
+  right: var(--edge);
+  z-index: 5;
+  max-width: calc(100% - 2 * var(--edge));
 }
 
 .tools {
   position: absolute;
-  top: 22px;
+  top: var(--tools-top);
   right: var(--edge);
   z-index: 3;
 }
@@ -285,11 +288,6 @@
     --scene-inset-top: calc(var(--head-top) + 170px);
     height: 78svh;
     min-height: 560px;
-  }
-
-  .layers {
-    top: calc(var(--head-top) + 84px);
-    right: var(--edge);
   }
 
   .inspector {

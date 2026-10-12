@@ -87,6 +87,13 @@
 }
 
 /* A quiet segmented control: the current tab lifts out as a white chip. */
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
 .tabs {
   display: flex;
   gap: 2px;

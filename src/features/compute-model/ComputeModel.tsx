@@ -60,11 +60,18 @@ function sectionReadouts(id: SectionId, i: ModelInputs, r: ModelResult) {
         { label: "Contract value", value: usdShort(r.contractValue), detail: `${i.contractMonths}-month term` },
         { label: "Year 1 revenue", value: usdShort(r.year1Revenue), detail: "Net of credits and fees" },
       ];
-    case "facility":
+    case "facility": {
+      const power = { label: "Power / month", value: usdShort(r.year1Electricity), detail: "Year 1 average electricity" };
+      if (i.siteMode === 0) {
+        return [{ label: "Lease / month", value: usdShort(r.year1Lease), detail: "Year 1 average, base + NNN + ops" }, power];
+      }
       return [
-        { label: "Lease / month", value: usdShort(r.year1Lease), detail: "Year 1 average, base + NNN + ops" },
-        { label: "Power / month", value: usdShort(r.year1Electricity), detail: "Year 1 average electricity" },
+        { label: "Site cost", value: usdShort(r.siteCost), detail: "Purchase, closing and conversion" },
+        { label: "Site equity", value: usdShort(r.siteEquity), detail: `After a ${usdShort(r.siteLoan)} bank loan` },
+        { label: "Debt service / month", value: usdShort(r.year1SiteService), detail: "Site loan, year 1 average" },
+        power,
       ];
+    }
     case "operations":
       return [
         { label: "Year 1 EBITDA", value: usdShort(r.year1Ebitda), detail: "After SPV administration" },
