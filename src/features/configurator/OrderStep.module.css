@@ -8,19 +8,19 @@
 .legend {
   display: block;
   margin: 0 0 10px;
-  font-size: 11px;
+  font-size: var(--eyebrow-size);
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: var(--eyebrow-tracking);
   text-transform: uppercase;
-  color: #8a8a8f;
+  color: var(--color-text-secondary);
 }
 
 .summary {
   margin: 0 0 28px;
   padding: 2px 16px;
-  border: 1px solid #d9d9d4;
-  border-radius: 6px;
-  background: #ffffff;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-inset);
+  background: var(--color-white);
 }
 
 .row {
@@ -29,8 +29,8 @@
   justify-content: space-between;
   gap: 16px;
   padding: 10px 0;
-  border-top: 1px solid #efefeb;
-  font-size: 13px;
+  border-top: 1px solid var(--color-border);
+  font-size: var(--text-sm);
 }
 
 .row:first-child {
@@ -38,7 +38,7 @@
 }
 
 .row dt {
-  color: #8a8a8f;
+  color: var(--color-text-secondary);
 }
 
 .row dd {
@@ -49,11 +49,11 @@
 }
 
 .rowTotal {
-  border-top-color: #d9d9d4;
+  border-top-color: var(--color-border-strong);
 }
 
 .rowTotal dd {
-  font-size: 15px;
+  font-size: var(--text-md);
 }
 
 .fields {
@@ -64,8 +64,7 @@
 }
 
 .field {
-  display: grid;
-  gap: 6px;
+  composes: field from "../../components/ui/Field/Field.module.css";
   min-width: 0;
 }
 
@@ -74,47 +73,21 @@
 }
 
 .label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--off-black);
+  composes: label from "../../components/ui/Field/Field.module.css";
 }
 
 .optional {
   margin-left: 4px;
   font-weight: 400;
-  color: #8a8a8f;
+  color: var(--color-text-secondary);
 }
 
 .input {
-  width: 100%;
-  padding: 11px 12px;
-  border: 1px solid #d9d9d4;
-  border-radius: 6px;
-  background: #ffffff;
-  font: inherit;
-  font-size: 14px;
-  color: var(--off-black);
-  transition: border-color 160ms ease;
-}
-
-.input::placeholder {
-  color: #b4b4b9;
-}
-
-@media (hover: hover) {
-  .input:hover {
-    border-color: #a5a5a0;
-  }
-}
-
-.input:focus {
-  border-color: var(--off-black);
-  outline: none;
+  composes: input from "../../components/ui/Field/Field.module.css";
 }
 
 .textarea {
-  min-height: 96px;
-  resize: vertical;
+  composes: textarea from "../../components/ui/Field/Field.module.css";
 }
 
 /* Off-screen rather than display:none, which some bots skip. */
@@ -127,81 +100,46 @@
 }
 
 .error {
-  margin: 0 0 12px;
-  font-size: 13px;
-  color: #b42318;
+  composes: error from "../../components/ui/Field/Field.module.css";
+  margin-bottom: 12px;
 }
 
 .submit {
+  composes: primary lg from "../../components/ui/Button/Button.module.css";
   width: 100%;
-  height: 44px;
-  border: 1px solid var(--off-black);
-  border-radius: var(--button-radius);
-  background: var(--off-black);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 500;
-  color: #ffffff;
-  cursor: pointer;
-  transition:
-    background-color 160ms ease,
-    opacity 160ms ease;
-}
-
-@media (hover: hover) {
-  .submit:hover:not(:disabled) {
-    background: #2a2a2d;
-  }
-}
-
-.submit:disabled {
-  opacity: 0.6;
-  cursor: progress;
-}
-
-.submit:focus-visible {
-  outline: 2px solid #2563eb;
-  outline-offset: 2px;
 }
 
 .fineprint {
   margin: 10px 0 0;
-  font-size: 11px;
+  font-size: var(--text-2xs);
   line-height: 1.5;
-  color: #8a8a8f;
+  color: var(--color-text-secondary);
 }
 
 .placed {
   margin: 0 0 28px;
   padding: 20px 16px;
-  border: 1px solid var(--off-black);
-  border-radius: 6px;
-  background: #ffffff;
-  box-shadow: inset 0 0 0 1px var(--off-black);
+  border: 1px solid var(--color-ink);
+  border-radius: var(--radius-inset);
+  background: var(--color-white);
+  box-shadow: inset 0 0 0 1px var(--color-ink);
 }
 
 .reference {
   margin: 0 0 12px;
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 24px;
-  letter-spacing: 0.08em;
+  font-family: var(--font-mono);
+  font-size: var(--text-xl);
+  letter-spacing: var(--caps-tracking);
 }
 
 .placedText {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--text-sm);
   line-height: 1.5;
-  color: #55555a;
+  color: var(--color-text-secondary);
 }
 
-/* Under 16px, iOS zooms the page into a focused field. */
-@media (pointer: coarse) {
-  .input {
-    font-size: 16px;
-  }
-}
-
-@media (max-width: 400px) {
+@media (max-width: 480px) {
   .fields {
     grid-template-columns: minmax(0, 1fr);
   }

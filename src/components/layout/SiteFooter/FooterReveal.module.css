@@ -45,10 +45,10 @@
     visibility 0s var(--menu-erase);
 }
 
-/* Same pinned dark-palette tokens as the shared footer, whatever the theme. */
+/* The links sit on black, so the text tokens take their inverse values. */
 .nav {
-  --color-text-primary: #f4f4f5;
-  --color-text-secondary: #8a8a92;
+  --color-text-primary: var(--color-text-inverse);
+  --color-text-secondary: var(--color-text-inverse-secondary);
   justify-self: center;
   min-width: 0;
   margin: clamp(24px, 5svh, 80px) 0;
@@ -87,13 +87,13 @@
   transform: rotate(180deg);
   white-space: nowrap;
   font: inherit;
-  font-size: 12px;
-  letter-spacing: 0.06em;
+  font-size: var(--caps-size);
+  letter-spacing: var(--caps-tracking);
   text-transform: uppercase;
-  color: #ffffff;
+  color: var(--color-white);
   opacity: 0.4;
   cursor: pointer;
-  transition: opacity 120ms ease;
+  transition: opacity var(--duration-fast) ease;
 }
 
 .menuButton:hover,
@@ -111,10 +111,10 @@
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   white-space: nowrap;
-  font-size: 12px;
-  letter-spacing: 0.06em;
+  font-size: var(--caps-size);
+  letter-spacing: var(--caps-tracking);
   text-transform: uppercase;
-  color: #ffffff;
+  color: var(--color-white);
   opacity: 0.4;
 }
 
@@ -143,7 +143,7 @@
     padding: 6px 0;
     writing-mode: horizontal-tb;
     transform: none;
-    font-size: 11px;
+    font-size: var(--text-2xs);
   }
 
   .copyright {
@@ -152,7 +152,7 @@
     margin: 0 0 16px;
     writing-mode: horizontal-tb;
     transform: none;
-    font-size: 11px;
+    font-size: var(--text-2xs);
   }
 }
 

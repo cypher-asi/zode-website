@@ -1,31 +1,18 @@
-/*
- * Talk to an Engineer card (see EngineerCard.tsx and EngineerForm.tsx). A
- * fixed light palette, like /buy-compute, since it also renders in the root
- * modal slot outside any page's tokens.
- */
+/* Talk to an Engineer card (see EngineerCard.tsx and EngineerForm.tsx). */
 /* Applied to the RouteModal around the card. */
 .modal {
   --modal-width: 720px;
 }
 
 .card {
-  --ink: #0c0c0d;
-  --muted: #8a8a8f;
-  --body: #55555a;
-  --rule: #e4e4df;
-  --line: #d9d9d4;
-  --focus: #2563eb;
-  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-
   position: relative;
   display: flex;
   min-height: 560px;
-  border-radius: 12px;
-  background: #ffffff;
+  border-radius: var(--radius-card);
+  background: var(--color-white);
   /* `clip`, not `hidden`, so the sticky mobile action bar sticks to the sheet's scroller. */
   overflow: clip;
-  color: var(--ink);
-  font-family: var(--font-text), system-ui, sans-serif;
+  color: var(--color-ink);
 }
 
 .body {
@@ -47,13 +34,13 @@
   height: 36px;
   padding: 0;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
-  color: var(--ink);
+  color: var(--color-ink);
   cursor: pointer;
   transition:
-    background-color 160ms ease,
-    rotate 240ms var(--ease);
+    background-color var(--duration-base) ease,
+    rotate var(--duration-slow) var(--ease-out);
 }
 
 .close svg {
@@ -67,13 +54,13 @@
 
 @media (hover: hover) {
   .close:hover {
-    background: rgba(12, 12, 13, 0.06);
+    background: var(--color-surface-hover);
     rotate: 90deg;
   }
 }
 
 .close:focus-visible {
-  outline: 2px solid var(--focus);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
 
@@ -92,59 +79,59 @@
 
 .eyebrow {
   margin: 0 0 12px;
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: 0.12em;
+  font-family: var(--font-mono);
+  font-size: var(--eyebrow-size);
+  letter-spacing: var(--eyebrow-tracking);
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--color-text-secondary);
 }
 
 .title {
   margin: 0 0 8px;
-  font-family: var(--font-display), Georgia, serif;
+  font-family: var(--font-serif);
   font-size: clamp(28px, 3vw, 36px);
   font-weight: 300;
   line-height: 1.1;
-  letter-spacing: -0.02em;
+  letter-spacing: var(--h2-tracking);
   outline: none;
 }
 
 .lede {
   max-width: 400px;
   margin: 0;
-  font-size: 14.5px;
+  font-size: var(--text-base);
   line-height: 1.55;
-  color: var(--body);
+  color: var(--color-text-secondary);
 }
 
 .lede strong {
   font-weight: 500;
-  color: var(--ink);
+  color: var(--color-ink);
   overflow-wrap: anywhere;
 }
 
 .progress {
   height: 2px;
   margin-top: 22px;
-  border-radius: 2px;
-  background: var(--rule);
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
   overflow: hidden;
 }
 
 .progress span {
   display: block;
   height: 100%;
-  background: var(--ink);
+  background: var(--color-ink);
   transform: scaleX(var(--p));
   transform-origin: left;
-  transition: transform 480ms var(--ease);
+  transition: transform 480ms var(--ease-out);
 }
 
 .step {
   display: flex;
   flex: 1;
   flex-direction: column;
-  animation: step-in 380ms var(--ease) backwards;
+  animation: step-in 380ms var(--ease-out) backwards;
 }
 
 .step[hidden] {
@@ -168,21 +155,21 @@
   gap: 8px;
   margin: 0 0 10px;
   padding: 0;
-  font-size: 11px;
+  font-size: var(--eyebrow-size);
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: var(--eyebrow-tracking);
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--color-text-secondary);
 }
 
 .unit {
   padding: 2px 6px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  color: var(--body);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--caps-tracking);
+  color: var(--color-text-secondary);
 }
 
 /* Visually hidden but still focusable and announced. */
@@ -208,16 +195,16 @@
   gap: 12px;
   align-items: start;
   padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #ffffff;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-inset);
+  background: var(--color-white);
   cursor: pointer;
   user-select: none;
   transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    background-color 160ms ease,
-    transform 160ms var(--ease);
+    border-color var(--duration-base) ease,
+    box-shadow var(--duration-base) ease,
+    background-color var(--duration-base) ease,
+    transform var(--duration-base) var(--ease-out);
 }
 
 .choice:active {
@@ -225,14 +212,14 @@
 }
 
 .choice:has(:checked) {
-  border-color: var(--ink);
-  background: #fbfbf9;
-  box-shadow: inset 0 0 0 1px var(--ink);
+  border-color: var(--color-ink);
+  background: var(--color-paper);
+  box-shadow: inset 0 0 0 1px var(--color-ink);
 }
 
 .choice:has(:focus-visible),
 .chip:has(:focus-visible) {
-  outline: 2px solid var(--focus);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
 
@@ -242,29 +229,29 @@
   width: 18px;
   height: 18px;
   margin-top: 1px;
-  border: 1px solid #a5a5a0;
-  border-radius: 5px;
+  border: 1px solid var(--color-border-hover);
+  border-radius: var(--radius-control);
   transition:
-    background-color 160ms ease,
-    border-color 160ms ease;
+    background-color var(--duration-base) ease,
+    border-color var(--duration-base) ease;
 }
 
 .check svg {
   width: 12px;
   height: 12px;
   fill: none;
-  stroke: #ffffff;
+  stroke: var(--color-white);
   stroke-width: 1.6;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-dasharray: 12;
   stroke-dashoffset: 12;
-  transition: stroke-dashoffset 220ms var(--ease) 40ms;
+  transition: stroke-dashoffset var(--duration-slow) var(--ease-out) 40ms;
 }
 
 .choice:has(:checked) .check {
-  border-color: var(--ink);
-  background: var(--ink);
+  border-color: var(--color-ink);
+  background: var(--color-ink);
 }
 
 .choice:has(:checked) .check svg {
@@ -277,15 +264,15 @@
 }
 
 .choiceLabel {
-  font-size: 15px;
+  font-size: var(--text-md);
   font-weight: 500;
   letter-spacing: -0.005em;
 }
 
 .choiceDetail {
-  font-size: 12.5px;
+  font-size: var(--text-xs);
   line-height: 1.45;
-  color: var(--muted);
+  color: var(--color-text-secondary);
 }
 
 .chips {
@@ -298,24 +285,24 @@
   position: relative;
   cursor: pointer;
   user-select: none;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .chip span {
   display: block;
   padding: 9px 14px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: #ffffff;
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 13px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-white);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
-  color: var(--body);
+  color: var(--color-text-secondary);
   transition:
-    background-color 160ms ease,
-    border-color 160ms ease,
-    color 160ms ease,
-    transform 160ms var(--ease);
+    background-color var(--duration-base) ease,
+    border-color var(--duration-base) ease,
+    color var(--duration-base) ease,
+    transform var(--duration-base) var(--ease-out);
 }
 
 .chip:active span {
@@ -323,15 +310,15 @@
 }
 
 .chip:has(:checked) span {
-  border-color: var(--ink);
-  background: var(--ink);
-  color: #ffffff;
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-white);
 }
 
 @media (hover: hover) {
   .choice:hover:not(:has(:checked)),
   .chip:hover:not(:has(:checked)) span {
-    border-color: #a5a5a0;
+    border-color: var(--color-border-hover);
   }
 }
 
@@ -343,8 +330,7 @@
 }
 
 .field {
-  display: grid;
-  gap: 6px;
+  composes: field from "../../components/ui/Field/Field.module.css";
   min-width: 0;
 }
 
@@ -353,45 +339,17 @@
 }
 
 .label {
-  font-size: 12px;
-  font-weight: 500;
+  composes: label from "../../components/ui/Field/Field.module.css";
 }
 
 .optional {
   margin-left: 6px;
   font-weight: 400;
-  color: var(--muted);
+  color: var(--color-text-secondary);
 }
 
 .input {
-  width: 100%;
-  height: 44px;
-  padding: 0 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #ffffff;
-  font: inherit;
-  font-size: 14px;
-  color: var(--ink);
-  transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease;
-}
-
-.input::placeholder {
-  color: #b4b4b9;
-}
-
-@media (hover: hover) {
-  .input:hover {
-    border-color: #a5a5a0;
-  }
-}
-
-.input:focus {
-  border-color: var(--ink);
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(12, 12, 13, 0.08);
+  composes: input from "../../components/ui/Field/Field.module.css";
 }
 
 /* Off-screen rather than display:none, which some bots skip. */
@@ -411,10 +369,10 @@
 
 .error {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--text-xs);
   line-height: 18px;
-  color: #b42318;
-  animation: nudge 360ms var(--ease);
+  color: var(--color-danger);
+  animation: nudge 360ms var(--ease-out);
 }
 
 .actions {
@@ -424,69 +382,19 @@
   padding-top: 8px;
 }
 
-.primary,
-.secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  height: 48px;
-  padding: 0 22px;
-  border-radius: 8px;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 500;
-  text-decoration: none;
-  cursor: pointer;
-  transition:
-    background-color 160ms ease,
-    border-color 160ms ease,
-    opacity 160ms ease,
-    transform 160ms var(--ease);
-}
-
 .primary {
+  composes: primary lg from "../../components/ui/Button/Button.module.css";
   flex: 1;
-  border: 1px solid var(--ink);
-  background: var(--ink);
-  color: #ffffff;
 }
 
 .secondary {
-  border: 1px solid var(--line);
-  background: #ffffff;
-  color: var(--ink);
-}
-
-.primary:active:not(:disabled),
-.secondary:active:not(:disabled) {
-  transform: scale(0.98);
+  composes: secondary lg from "../../components/ui/Button/Button.module.css";
 }
 
 @media (hover: hover) {
-  .primary:hover:not(:disabled) {
-    background: #2a2a2d;
-  }
-
-  .secondary:hover:not(:disabled) {
-    border-color: #a5a5a0;
-  }
-
   .primary:hover:not(:disabled) .arrow {
     translate: 3px 0;
   }
-}
-
-.primary:disabled,
-.secondary:disabled {
-  opacity: 0.6;
-  cursor: progress;
-}
-
-.primary:focus-visible,
-.secondary:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
 }
 
 .arrow {
@@ -497,15 +405,15 @@
   stroke-width: 1.5;
   stroke-linecap: round;
   stroke-linejoin: round;
-  transition: translate 200ms var(--ease);
+  transition: translate var(--duration-base) var(--ease-out);
 }
 
 .spinner {
   width: 14px;
   height: 14px;
   border: 1.5px solid rgba(255, 255, 255, 0.35);
-  border-top-color: #ffffff;
-  border-radius: 999px;
+  border-top-color: var(--color-white);
+  border-radius: var(--radius-pill);
   animation: spin 700ms linear infinite;
 }
 
@@ -516,7 +424,7 @@
   flex: 1;
   flex-direction: column;
   justify-content: center;
-  animation: step-in 480ms var(--ease) backwards;
+  animation: step-in 480ms var(--ease-out) backwards;
 }
 
 .thanks .actions {
@@ -528,7 +436,7 @@
   height: 52px;
   margin-bottom: 20px;
   fill: none;
-  stroke: var(--ink);
+  stroke: var(--color-ink);
   stroke-width: 1.5;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -537,14 +445,14 @@
 .tick circle {
   stroke-dasharray: 151;
   stroke-dashoffset: 151;
-  animation: draw 700ms var(--ease) 120ms forwards;
+  animation: draw 700ms var(--ease-out) 120ms forwards;
 }
 
 .tick path {
   stroke-width: 2;
   stroke-dasharray: 32;
   stroke-dashoffset: 32;
-  animation: draw 420ms var(--ease) 640ms forwards;
+  animation: draw 420ms var(--ease-out) 640ms forwards;
 }
 
 @keyframes step-in {
@@ -614,7 +522,7 @@
     bottom: 0;
     margin: auto -20px 0;
     padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
-    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #ffffff 18px);
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--color-white) 18px);
   }
 
   .thanks {
@@ -634,13 +542,6 @@
 
   .choice {
     padding: 14px;
-  }
-}
-
-/* Under 16px, iOS zooms the page into a focused field. */
-@media (pointer: coarse) {
-  .input {
-    font-size: 16px;
   }
 }
 

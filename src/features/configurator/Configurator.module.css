@@ -17,8 +17,8 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  border-left: 1px solid #e6e6e2;
-  background: #ffffff;
+  border-left: 1px solid var(--color-border);
+  background: var(--color-white);
 }
 
 /* Fixed head of the steps panel: the Buy / Rent switch and the close button, mirroring the footer. */
@@ -28,8 +28,8 @@
   align-items: center;
   gap: 12px;
   padding: 16px var(--edge);
-  border-bottom: 1px solid #e6e6e2;
-  background: #ffffff;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-white);
 }
 
 .top > :first-child {
@@ -43,12 +43,12 @@
   justify-content: center;
   width: 48px;
   height: 48px;
-  border: 1px solid #d9d9d4;
-  border-radius: 999px;
-  color: var(--off-black);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--color-ink);
   transition:
-    background-color 160ms ease,
-    border-color 160ms ease;
+    background-color var(--duration-base) ease,
+    border-color var(--duration-base) ease;
 }
 
 .close svg {
@@ -62,13 +62,13 @@
 
 @media (hover: hover) {
   .close:hover {
-    border-color: #a5a5a0;
-    background: var(--off-white);
+    border-color: var(--color-border-hover);
+    background: var(--color-paper);
   }
 }
 
 .close:focus-visible {
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
 
@@ -87,7 +87,7 @@
   padding: 0 var(--edge);
   overflow-y: auto;
   overscroll-behavior: contain;
-  background: #ffffff;
+  background: var(--color-white);
   scrollbar-width: none;
 }
 
@@ -105,7 +105,7 @@
   flex: none;
   height: 28px;
   margin-inline: calc(-1 * var(--edge));
-  background: linear-gradient(to bottom, #ffffff 8px, rgba(255, 255, 255, 0));
+  background: linear-gradient(to bottom, var(--color-white) 8px, rgba(255, 255, 255, 0));
   pointer-events: none;
 }
 
@@ -113,7 +113,7 @@
   position: relative;
   grid-area: preview;
   min-height: 0;
-  background: var(--off-white);
+  background: var(--color-paper);
 }
 
 .intro {
@@ -122,7 +122,7 @@
 
 .heading {
   margin: 0;
-  font-family: var(--font-display), Georgia, serif;
+  font-family: var(--font-serif);
   font-size: clamp(24px, 1.8vw, 28px);
   font-weight: 300;
   line-height: 1.08;
@@ -136,7 +136,7 @@
 
 /* Remounted per step so each one fades in; `.step` stays put for the overlay scrollbar's resize observer. */
 .stepBody {
-  animation: step 280ms ease both;
+  animation: step var(--duration-slow) ease both;
 }
 
 @keyframes step {
@@ -153,8 +153,8 @@
   flex-direction: column;
   gap: 16px;
   padding: 16px var(--edge);
-  border-top: 1px solid #e6e6e2;
-  background: #ffffff;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-white);
 }
 
 .nav {
@@ -163,51 +163,13 @@
   gap: 12px;
 }
 
-.primary,
-.secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 40px;
-  padding: 0 18px;
-  border: 1px solid var(--off-black);
-  border-radius: var(--button-radius);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    background-color 160ms ease,
-    color 160ms ease,
-    opacity 160ms ease;
-}
-
 .primary {
+  composes: primary from "../../components/ui/Button/Button.module.css";
   margin-left: auto;
-  background: var(--off-black);
-  color: #ffffff;
-}
-
-@media (hover: hover) {
-  .primary:hover {
-    background: #2a2a2d;
-  }
 }
 
 .secondary {
-  background: #ffffff;
-  color: var(--off-black);
-}
-
-@media (hover: hover) {
-  .secondary:hover {
-    background: var(--off-white);
-  }
-}
-
-.secondary:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
+  composes: secondary from "../../components/ui/Button/Button.module.css";
 }
 
 .arrow {
@@ -218,7 +180,7 @@
   stroke-width: 1.4;
   stroke-linecap: round;
   stroke-linejoin: round;
-  transition: translate 160ms ease;
+  transition: translate var(--duration-base) ease;
 }
 
 @media (hover: hover) {
@@ -231,28 +193,22 @@
   }
 }
 
-.primary:focus-visible,
-.secondary:focus-visible {
-  outline: 2px solid #2563eb;
-  outline-offset: 2px;
-}
-
 /* Current step between Back and Next; phones only (see the media query below). */
 .stepLabel {
   display: none;
 }
 
 .stepCount {
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 11px;
-  color: #8a8a8f;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--color-text-secondary);
 }
 
 .disclaimer {
   margin: 0;
   padding: 8px 0 20px;
-  font-size: 11px;
-  color: #8a8a8f;
+  font-size: var(--text-2xs);
+  color: var(--color-text-secondary);
 }
 
 @media (max-width: 900px) {
@@ -308,7 +264,7 @@
     grid-column: 2;
     min-width: 0;
     overflow: hidden;
-    font-size: 13px;
+    font-size: var(--text-sm);
     font-weight: 500;
     text-align: center;
     white-space: nowrap;
@@ -332,7 +288,7 @@
     inset: 0 0 auto;
     z-index: 4;
     height: 76px;
-    background: linear-gradient(to bottom, var(--off-white) 56px, rgba(246, 246, 243, 0));
+    background: linear-gradient(to bottom, var(--color-paper) 56px, rgba(246, 246, 243, 0));
     pointer-events: none;
   }
 }

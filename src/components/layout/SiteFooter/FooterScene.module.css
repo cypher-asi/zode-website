@@ -10,7 +10,7 @@
   aspect-ratio: 16 / 5;
   min-height: 220px;
   overflow: hidden;
-  background: #0c0c0d;
+  background: var(--color-ink);
 }
 
 /*

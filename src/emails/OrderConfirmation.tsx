@@ -51,19 +51,19 @@ export default function OrderConfirmation(props: Props): ReactElement {
         <Row>
           <Column style={{ verticalAlign: "bottom" }}>
             <Text style={{ ...text.legend, margin: "0 0 6px", color: color.accent }}>{headline.caption}</Text>
-            <Text style={{ margin: 0, fontSize: "26px", lineHeight: "32px", fontWeight: 600, color: "#ffffff" }}>
+            <Text style={{ margin: 0, fontSize: "26px", lineHeight: "32px", fontWeight: 600, color: color.onInk }}>
               {headline.value}
             </Text>
             {headline.terms ? (
-              <Text style={{ margin: "6px 0 0", fontSize: "12px", lineHeight: "18px", color: "#b4b4b9" }}>
+              <Text style={{ margin: "6px 0 0", fontSize: "12px", lineHeight: "18px", color: color.faint }}>
                 {headline.terms}
               </Text>
             ) : null}
           </Column>
           {secondary ? (
             <Column align="right" style={{ verticalAlign: "bottom" }}>
-              <Text style={{ ...text.legend, margin: "0 0 6px", color: "#b4b4b9" }}>{secondary.caption}</Text>
-              <Text style={{ margin: 0, fontSize: "18px", lineHeight: "24px", fontWeight: 500, color: "#ffffff" }}>
+              <Text style={{ ...text.legend, margin: "0 0 6px", color: color.faint }}>{secondary.caption}</Text>
+              <Text style={{ margin: 0, fontSize: "18px", lineHeight: "24px", fontWeight: 500, color: color.onInk }}>
                 {secondary.value}
               </Text>
             </Column>

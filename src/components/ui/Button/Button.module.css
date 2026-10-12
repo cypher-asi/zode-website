@@ -1,0 +1,127 @@
+/*
+ * Shared buttons. Feature modules compose a variant, and optionally a size,
+ * into their own class and add only layout on top (width, margin, flex),
+ * never a property set here, since load order between the files isn't fixed:
+ *
+ *   .submit { composes: primary lg from "../../components/ui/Button/Button.module.css"; width: 100%; }
+ *
+ * Sizes: `sm` 32px, default 40px, `lg` 48px. `icon` is a square ghost button.
+ */
+.base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-base) ease,
+    border-color var(--duration-base) ease,
+    color var(--duration-base) ease,
+    opacity var(--duration-base) ease,
+    transform var(--duration-base) var(--ease-out);
+}
+
+.base:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.base:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.base:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.primary {
+  composes: base;
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-white);
+}
+
+.secondary {
+  composes: base;
+  border-color: var(--color-border-strong);
+  background: var(--color-white);
+  color: var(--color-ink);
+}
+
+.danger {
+  composes: base;
+  border-color: var(--color-danger);
+  background: var(--color-danger);
+  color: var(--color-white);
+}
+
+.ghost {
+  composes: base;
+}
+
+.icon {
+  composes: base;
+  width: 40px;
+  padding: 0;
+}
+
+.sm {
+  height: 32px;
+  padding: 0 12px;
+}
+
+.icon.sm {
+  width: 32px;
+  padding: 0;
+}
+
+.lg {
+  height: 48px;
+  padding: 0 22px;
+  font-size: var(--text-base);
+}
+
+@media (hover: hover) {
+  .primary:hover:not(:disabled) {
+    border-color: var(--color-primary-hover);
+    background: var(--color-primary-hover);
+  }
+
+  .secondary:hover:not(:disabled) {
+    border-color: var(--color-border-hover);
+    background: var(--color-paper);
+  }
+
+  .danger:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--color-danger) 85%, black);
+    background: color-mix(in srgb, var(--color-danger) 85%, black);
+  }
+
+  .ghost:hover:not(:disabled),
+  .icon:hover:not(:disabled) {
+    background: var(--color-surface-hover);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .base {
+    transition: none;
+  }
+
+  .base:active:not(:disabled) {
+    transform: none;
+  }
+}

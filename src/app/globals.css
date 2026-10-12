@@ -1,27 +1,145 @@
 @import "./reset.css";
 
 /*
- * Light-surface tokens shared by every page. Dark surfaces (the footer)
- * re-pin the text tokens locally. `--logo-invert` keeps the white-on-clear
- * mark legible: 1 renders it black on light surfaces.
+ * Design tokens shared by every page; modules should reach for these instead
+ * of raw values. Dark surfaces (the footer, the dark home sections) re-pin
+ * the text tokens locally, usually to the `--color-text-inverse*` pair.
+ * `--logo-invert` keeps the white-on-clear mark legible: 1 renders it black
+ * on light surfaces.
+ *
+ * Breakpoints can't be custom properties, so media queries use this set:
+ *   480px  small phones
+ *   700px  phones (modals become bottom sheets)
+ *   900px  tablets and below (single-column layouts, tighter header)
+ *   1200px small laptops
  */
 :root {
-  --font-sans: var(--font-geist-sans);
+  /* Families; the next/font variables are set on <html> in app/layout.tsx. */
+  --font-sans: var(--font-text);
+  --font-serif: var(--font-display);
   --font-mono: var(--font-geist-mono);
 
-  --color-bg: #ffffff;
-  --color-bg-elevated: #ffffff;
-  --color-text-primary: #0a0a0a;
-  --color-text-secondary: #6b6b72;
-  --color-border: rgba(0, 0, 0, 0.12);
-  --color-border-strong: rgba(0, 0, 0, 0.16);
+  /* Palette */
+  --color-ink: #0c0c0d;
+  --color-paper: #f6f6f3;
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  /* Text. Tertiary fails AA at small sizes: keep it to 18px+ or decorative text. */
+  --color-text-primary: var(--color-ink);
+  --color-text-secondary: #707075;
+  --color-text-tertiary: #8a8a8f;
+  /* Placeholders and disabled text. */
+  --color-text-faint: #b4b4b9;
+  --color-text-inverse: var(--color-paper);
+  --color-text-inverse-secondary: #8a8a8f;
+
+  /* Surfaces */
+  --color-bg: var(--color-white);
+  --color-bg-elevated: var(--color-white);
+  --color-bg-subtle: var(--color-paper);
+  --color-bg-inverse: var(--color-ink);
+  --color-primary-hover: #2a2a2d;
   --color-surface-tint: rgba(0, 0, 0, 0.05);
   --color-surface-hover: rgba(0, 0, 0, 0.06);
+  /* The selected row or pressed item, a step past hover. */
+  --color-surface-active: rgba(0, 0, 0, 0.08);
+  --color-backdrop: rgba(12, 12, 13, 0.46);
+
+  /* Lines */
+  --color-border: #e6e6e1;
+  --color-border-strong: #d9d9d4;
+  --color-border-hover: #a5a5a0;
   --color-focus-ring: #2563eb;
+
+  /* Status */
+  --color-danger: #b42318;
+  --color-danger-bg: #fef3f2;
+  --color-danger-border: #fecdca;
+  --color-success: #067647;
+  --color-success-bg: #ecfdf3;
+  --color-warning: #93370d;
+  --color-warning-bg: #fffaeb;
+  --color-info: #175cd3;
+  --color-info-bg: #eff8ff;
+  /* A second category colour for tags that aren't status, beside info. */
+  --color-violet: #5925dc;
+  --color-violet-bg: #f4f3ff;
+
+  /* Accent: `strong` holds up on light surfaces, the base on dark ones. */
+  --color-accent-soft: #ffd6a0;
+  --color-accent: #ffa45c;
+  --color-accent-strong: #f08a3c;
+
+  /* Type scale */
+  --text-2xs: 11px;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 16px;
+  --text-lg: 20px;
+  --text-xl: 24px;
+  --text-2xl: 28px;
+
+  /* Headings: H1 is a page's lead headline, H2 every section title. */
+  --h1-size: clamp(34px, 3.6vw, 56px);
+  --h1-leading: 1.06;
+  --h1-tracking: -0.025em;
+  --h2-size: clamp(29px, 2.55vw, 40px);
+  --h2-leading: 1.1;
+  --h2-tracking: -0.02em;
+
+  /* Uppercase labels: eyebrows above headings, and caps for nav and bars. */
+  --eyebrow-size: var(--text-2xs);
+  --eyebrow-tracking: 0.16em;
+  --caps-size: var(--text-xs);
+  --caps-tracking: 0.08em;
+
+  /* Radius: controls, boxes nested inside cards, cards, then floating panels. */
+  --radius-control: 3px;
+  --radius-inset: 6px;
+  --radius-card: 12px;
+  --radius-panel: 16px;
+  --radius-pill: 999px;
+
+  /* Elevation: `md` for popovers, `card` for a card resting on the page, `lg` for panels over a backdrop. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 12px 32px -12px rgba(0, 0, 0, 0.35);
+  --shadow-card: 0 24px 60px -32px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 24px 60px -24px rgba(0, 0, 0, 0.5);
+  --shadow-modal: 0 40px 100px -30px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  /* Halo around a focused text field, alongside its ink border. */
+  --shadow-focus: 0 0 0 3px rgba(12, 12, 13, 0.08);
+
+  /* Motion */
+  --duration-fast: 120ms;
+  --duration-base: 160ms;
+  --duration-slow: 280ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /*
+   * Layout. `--edge` is the horizontal inset the pinned header, headlines
+   * and footer align to; `--header-band` is twice the pinned header's centre
+   * line, so content padded by it clears the header with the header centred
+   * in the band; `--frame-inset` is how far the circuit rails sit in.
+   */
+  --edge: clamp(32px, 6vw, 96px);
+  --frame-inset: clamp(8px, 1vw, 16px);
+  --header-band: 86px;
+
   --logo-invert: 1;
 
   /* Page base; the /login and /register ShellBackdrop animates over it. */
   --shell-outer-bg: #eef0f2;
+}
+
+@media (max-width: 900px) {
+  :root {
+    --edge: 24px;
+    --header-band: 66px;
+    --h1-size: clamp(32px, 8vw, 46px);
+  }
 }
 
 * {
@@ -45,7 +163,7 @@
 
 *::-webkit-scrollbar-thumb {
   background: rgba(140, 140, 150, 0.35);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 2px solid transparent;
   background-clip: padding-box;
 }
@@ -90,8 +208,14 @@ body {
 }
 
 ::selection {
-  background: #b6d3d8;
-  color: #0a0a0a;
+  background: var(--color-accent-soft);
+  color: var(--color-ink);
+}
+
+/* Default keyboard ring; zero specificity, so any module's own focus style wins. */
+:where(a, button, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
 }
 
 /*
@@ -109,7 +233,7 @@ body {
 ::view-transition-group(zode-action) {
   z-index: 100;
   animation-duration: 550ms;
-  animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+  animation-timing-function: var(--ease-in-out);
 }
 
 @media (prefers-reduced-motion: reduce) {

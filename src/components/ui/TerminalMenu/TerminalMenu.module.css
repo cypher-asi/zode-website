@@ -4,10 +4,10 @@
  * caller class for dark surfaces.
  */
 .menu {
-  --ink: #0c0c0d;
-  --muted: #8a8a8f;
+  --ink: var(--color-ink);
+  --muted: var(--color-text-secondary);
 
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-family: var(--font-mono);
 }
 
 .items {
@@ -26,13 +26,13 @@
   border: 0;
   background: none;
   font: inherit;
-  font-size: 15px;
+  font-size: var(--text-base);
   text-align: left;
   text-decoration: none;
   white-space: nowrap;
   color: var(--muted);
   cursor: pointer;
-  transition: color 120ms ease;
+  transition: color var(--duration-fast) ease;
 }
 
 .menu[data-size="sm"] .items {
@@ -41,13 +41,13 @@
 
 .menu[data-size="sm"] .item {
   padding: 3px 0;
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .caret {
   width: 2ch;
   opacity: 0;
-  transition: opacity 120ms ease;
+  transition: opacity var(--duration-fast) ease;
 }
 
 .cursor {
@@ -162,8 +162,8 @@
 }
 
 .item:focus-visible {
-  outline: 2px solid #2563eb;
-  outline-offset: 4px;
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
 }
 
 @keyframes cursor {

@@ -25,18 +25,16 @@ const COLUMNS: readonly FooterColumn[] = [
     ],
   },
   {
-    heading: "Network",
+    heading: "Resources",
     links: [
       {
         label: "Whitepaper",
         href: "https://cypher.net/research/the-grid",
         external: true,
       },
+      { label: "Agent styleguide", href: "/styleguide" },
+      { label: "Contact", href: "/contact" },
     ],
-  },
-  {
-    heading: "Company",
-    links: [{ label: "Contact", href: "/contact" }],
   },
   {
     heading: "Account",

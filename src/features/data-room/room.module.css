@@ -30,10 +30,10 @@
   gap: 2px;
   align-self: flex-start;
   color: var(--color-text-secondary);
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 500;
   text-decoration: none;
-  transition: color 160ms ease;
+  transition: color var(--duration-base) ease;
 }
 
 .crumb:hover {
@@ -41,7 +41,7 @@
 }
 
 .crumb:focus-visible {
-  border-radius: 4px;
+  border-radius: var(--radius-control);
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
@@ -66,7 +66,7 @@
 .title {
   margin: 0;
   overflow: hidden;
-  font-size: 24px;
+  font-size: var(--text-xl);
   font-weight: 600;
   line-height: 1.2;
   letter-spacing: -0.02em;
@@ -77,12 +77,12 @@
 .role {
   flex: none;
   padding: 3px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--color-surface-tint);
   color: var(--color-text-secondary);
-  font-size: 10.5px;
+  font-size: var(--text-2xs);
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--caps-tracking);
   text-transform: uppercase;
 }
 
@@ -91,21 +91,21 @@
   display: flex;
   gap: 2px;
   padding: 3px;
-  border-radius: 10px;
+  border-radius: var(--radius-inset);
   background: var(--color-surface-tint);
 }
 
 .tab {
   padding: 6px 12px;
-  border-radius: 7px;
+  border-radius: var(--radius-inset);
   color: var(--color-text-secondary);
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 500;
   text-decoration: none;
   transition:
-    background-color 160ms ease,
-    box-shadow 160ms ease,
-    color 160ms ease;
+    background-color var(--duration-base) ease,
+    box-shadow var(--duration-base) ease,
+    color var(--duration-base) ease;
 }
 
 .tab:hover {

@@ -36,13 +36,13 @@
 .lit {
   position: absolute;
   inset: -1px;
-  background: #ffffff;
+  background: var(--color-white);
   box-shadow: 0 0 5px rgba(255, 255, 255, 0.7);
   opacity: 0;
 }
 
 .pad[data-tone="light"] .lit {
-  background: #0c0c0d;
+  background: var(--color-ink);
   box-shadow: 0 0 4px rgba(12, 12, 13, 0.3);
 }
 
@@ -65,7 +65,7 @@
   top: 0;
   left: 0;
   border-radius: 1px;
-  background: linear-gradient(to right, rgba(255, 255, 255, 0), #ffffff 70%);
+  background: linear-gradient(to right, rgba(255, 255, 255, 0), var(--color-white) 70%);
   box-shadow:
     0 0 4px rgba(255, 255, 255, 0.6),
     0 0 10px rgba(255, 255, 255, 0.25);
@@ -74,7 +74,7 @@
 }
 
 .pulse[data-tone="light"] {
-  background: linear-gradient(to right, rgba(12, 12, 13, 0), #0c0c0d 70%);
+  background: linear-gradient(to right, rgba(12, 12, 13, 0), var(--color-ink) 70%);
   box-shadow:
     0 0 4px rgba(12, 12, 13, 0.22),
     0 0 9px rgba(12, 12, 13, 0.08);

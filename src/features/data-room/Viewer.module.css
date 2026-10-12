@@ -36,7 +36,7 @@
 .name {
   margin: 0;
   overflow: hidden;
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -45,7 +45,7 @@
 .meta {
   margin: 2px 0 0;
   overflow: hidden;
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--color-text-secondary);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -70,11 +70,11 @@
   height: 28px;
   padding: 0 4px;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-inset);
   background: transparent;
   color: var(--color-text-primary);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
@@ -90,7 +90,7 @@
   flex: 1;
   flex-direction: column;
   min-height: 0;
-  background: #eeeeec;
+  background: color-mix(in srgb, var(--color-paper), var(--color-border));
   outline: 0;
 }
 
@@ -102,7 +102,7 @@
   justify-content: center;
   gap: 10px;
   color: var(--color-text-secondary);
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 
 .empty svg {
@@ -123,7 +123,7 @@
   padding: 24px;
   max-width: 420px;
   color: var(--color-text-secondary);
-  font-size: 14px;
+  font-size: var(--text-base);
   text-align: center;
 }
 
@@ -136,7 +136,7 @@
   padding: 32px;
   max-width: 420px;
   color: var(--color-text-secondary);
-  font-size: 14px;
+  font-size: var(--text-base);
   text-align: center;
 }
 
@@ -177,7 +177,7 @@
 
 .pdfPage {
   flex: none;
-  background: #ffffff;
+  background: var(--color-white);
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.06),
     0 2px 10px rgba(0, 0, 0, 0.08);
@@ -196,10 +196,10 @@
   width: max-content;
   margin: -44px auto 14px;
   padding: 5px 12px;
-  border-radius: 999px;
-  background: rgba(12, 12, 13, 0.78);
-  color: #ffffff;
-  font-size: 12px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-ink) 78%, transparent);
+  color: var(--color-white);
+  font-size: var(--text-xs);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   pointer-events: none;
@@ -230,7 +230,7 @@
   display: block;
   max-width: none;
   background:
-    repeating-conic-gradient(#e5e5e2 0% 25%, #f7f7f5 0% 50%) 50% / 16px 16px;
+    repeating-conic-gradient(var(--color-border) 0% 25%, var(--color-paper) 0% 50%) 50% / 16px 16px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   user-select: none;
 }
@@ -243,7 +243,7 @@
   justify-content: center;
   min-height: 0;
   padding: 16px;
-  background: #0c0c0d;
+  background: var(--color-ink);
 }
 
 .media video {
@@ -260,13 +260,13 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  background: #ffffff;
+  background: var(--color-white);
 }
 
 .pre {
   margin: 0;
   padding: 16px 20px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 1em;
   line-height: 1.55;
   white-space: pre-wrap;
@@ -278,9 +278,9 @@
   margin: 0;
   padding: 8px 16px;
   border-bottom: 1px solid var(--color-border);
-  background: #fffaeb;
-  color: #93370d;
-  font-size: 12px;
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  font-size: var(--text-xs);
 }
 
 .table {
@@ -294,7 +294,7 @@
   max-width: 360px;
   padding: 4px 10px;
   overflow: hidden;
-  border: 1px solid #e4e4e0;
+  border: 1px solid var(--color-border);
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -302,7 +302,7 @@
 
 .table th {
   position: sticky;
-  background: #f4f4f2;
+  background: var(--color-paper);
   color: var(--color-text-secondary);
   font-size: 0.85em;
   font-weight: 600;
@@ -324,14 +324,14 @@
   flex: 1;
   flex-direction: column;
   min-height: 0;
-  background: #ffffff;
+  background: var(--color-white);
 }
 
 .sheetGrid {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .sheetTabs {
@@ -341,7 +341,7 @@
   overflow-x: auto;
   padding: 0 8px;
   border-top: 1px solid var(--color-border);
-  background: #f4f4f2;
+  background: var(--color-paper);
 }
 
 .sheetTab {
@@ -352,15 +352,21 @@
   background: transparent;
   color: var(--color-text-secondary);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 600;
   cursor: pointer;
 }
 
 .sheetTab[aria-selected="true"] {
   border-bottom-color: var(--color-text-primary);
-  background: #ffffff;
+  background: var(--color-white);
   color: var(--color-text-primary);
+}
+
+.zoomValue:focus-visible,
+.sheetTab:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
 }
 
 /* Word and PowerPoint, laid out by their libraries and scaled with CSS zoom. */
@@ -405,7 +411,7 @@
   padding: 24px 0;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 700px) {
   .back {
     display: inline-grid;
   }

@@ -1,15 +1,14 @@
 /*
- * Dark network section. Sits inside `.network` in app/(home)/page.module.css and
- * inherits its `--edge`, `--off-white`, `--off-black`, `--button-radius` and
- * font variables. The map covers the section like a background image (sized
- * off the stage's container units) and is centred behind the copy (bottom
- * left) and the figures (right); site markers are HTML positioned in
- * percentages of the map box, so they stay a fixed pixel size however far the
- * map scales.
+ * Dark network section, inside `.network` in app/(home)/page.module.css. The
+ * map covers the section like a background image (sized off the stage's
+ * container units) and is centred behind the copy (bottom left) and the
+ * figures (right); site markers are HTML positioned in percentages of the map
+ * box, so they stay a fixed pixel size however far the map scales. The map's
+ * land, border and glow colours are artwork, not UI tokens.
  */
 .root {
-  --accent: #ffa45c;
-  --muted: rgba(246, 246, 243, 0.5);
+  --accent: var(--color-accent);
+  --muted: var(--color-text-inverse-secondary);
   --sweep: 1800ms;
 
   position: relative;
@@ -20,7 +19,6 @@
   min-height: 100svh;
   padding: 128px var(--edge) 72px;
   overflow: hidden;
-  font-family: var(--font-text), system-ui, sans-serif;
 }
 
 .stage {
@@ -48,7 +46,7 @@
   width: 100%;
   height: 100%;
   clip-path: inset(0 100% 0 0);
-  transition: clip-path var(--sweep) cubic-bezier(0.45, 0, 0.25, 1);
+  transition: clip-path var(--sweep) var(--ease-in-out);
 }
 
 .root[data-shown] .art {
@@ -105,10 +103,10 @@
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(90deg, var(--off-black) 0%, rgba(12, 12, 13, 0.6) 8%, rgba(12, 12, 13, 0) 20%),
-    linear-gradient(270deg, var(--off-black) 0%, rgba(12, 12, 13, 0.6) 8%, rgba(12, 12, 13, 0) 20%),
-    linear-gradient(180deg, var(--off-black) 0%, rgba(12, 12, 13, 0) 12%),
-    linear-gradient(0deg, var(--off-black) 0%, rgba(12, 12, 13, 0.7) 14%, rgba(12, 12, 13, 0) 34%);
+    linear-gradient(90deg, var(--color-ink) 0%, rgba(12, 12, 13, 0.6) 8%, rgba(12, 12, 13, 0) 20%),
+    linear-gradient(270deg, var(--color-ink) 0%, rgba(12, 12, 13, 0.6) 8%, rgba(12, 12, 13, 0) 20%),
+    linear-gradient(180deg, var(--color-ink) 0%, rgba(12, 12, 13, 0) 12%),
+    linear-gradient(0deg, var(--color-ink) 0%, rgba(12, 12, 13, 0.7) 14%, rgba(12, 12, 13, 0) 34%);
 }
 
 .sites {
@@ -197,7 +195,7 @@
   width: 9px;
   height: 9px;
   border: 1px solid rgba(255, 164, 92, 0.65);
-  background: var(--off-black);
+  background: var(--color-ink);
   box-shadow: none;
 }
 
@@ -243,7 +241,7 @@
 }
 
 .site[data-on] .code {
-  color: var(--off-white);
+  color: var(--color-paper);
 }
 
 .site[data-side="e"] .code {
@@ -284,22 +282,22 @@
 
 .eyebrow {
   margin: 0;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  font-size: var(--eyebrow-size);
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--muted);
 }
 
 /* Same display type as the assembly-line and stack section titles. */
 .title {
   margin: 0;
-  font-family: var(--font-display), Georgia, serif;
+  font-family: var(--font-serif);
   font-size: var(--h2-size);
   font-weight: 300;
   line-height: var(--h2-leading);
   letter-spacing: var(--h2-tracking);
-  color: var(--off-white);
+  color: var(--color-paper);
 }
 
 .title span {
@@ -309,10 +307,10 @@
 .helper {
   max-width: 380px;
   margin: 20px 0 0;
-  font-size: 15px;
+  font-size: var(--text-md);
   line-height: 1.55;
   letter-spacing: -0.005em;
-  color: #85858a;
+  color: var(--muted);
 }
 
 .numbers {
@@ -339,7 +337,7 @@
   line-height: 0.9;
   letter-spacing: -0.05em;
   font-variant-numeric: tabular-nums;
-  color: var(--off-white);
+  color: var(--color-paper);
 }
 
 .unit {
@@ -354,9 +352,9 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  font-size: var(--eyebrow-size);
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -413,8 +411,8 @@
 
   .shade {
     background:
-      linear-gradient(180deg, var(--off-black) 0%, rgba(12, 12, 13, 0) 18%),
-      linear-gradient(0deg, var(--off-black) 0%, rgba(12, 12, 13, 0) 18%);
+      linear-gradient(180deg, var(--color-ink) 0%, rgba(12, 12, 13, 0) 18%),
+      linear-gradient(0deg, var(--color-ink) 0%, rgba(12, 12, 13, 0) 18%);
   }
 
   .code {

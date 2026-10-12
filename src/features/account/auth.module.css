@@ -16,11 +16,9 @@
   max-width: 380px;
   padding: 32px var(--panel-pad-x);
   border: 1px solid var(--color-border-strong);
-  border-radius: 16px;
+  border-radius: var(--radius-panel);
   background: var(--color-bg);
-  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.5);
-  /* Restated for the modal, whose dialog sets its own font. */
-  font-family: var(--font-sans), system-ui, sans-serif;
+  box-shadow: var(--shadow-lg);
 }
 
 /* Width of the RouteModal panel around the card. */
@@ -53,13 +51,13 @@
   height: 36px;
   padding: 0;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--color-text-primary);
   cursor: pointer;
   transition:
-    background-color 160ms ease,
-    rotate 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    background-color var(--duration-base) ease,
+    rotate var(--duration-slow) var(--ease-out);
 }
 
 .close svg {
@@ -107,7 +105,7 @@
 .title {
   margin: 28px 0 4px;
   text-align: center;
-  font-size: 18px;
+  font-size: var(--text-lg);
   font-weight: 600;
   color: var(--color-text-primary);
 }
@@ -115,7 +113,7 @@
 .prompt {
   margin: 0 0 24px;
   text-align: center;
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--color-text-secondary);
 }
 
@@ -126,16 +124,11 @@
 }
 
 .field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  composes: field from "../../components/ui/Field/Field.module.css";
 }
 
 .label {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--color-text-secondary);
+  composes: label from "../../components/ui/Field/Field.module.css";
 }
 
 .optional {
@@ -155,7 +148,7 @@
   background: none;
   color: var(--color-text-primary);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -192,9 +185,11 @@
 .pickerTrigger {
   height: 52px;
   border: 1px solid var(--color-border-strong);
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   background: var(--color-bg-elevated);
-  transition: border-color 160ms ease;
+  transition:
+    border-color var(--duration-base) ease,
+    box-shadow var(--duration-base) ease;
 }
 
 .pickerOption:focus-visible,
@@ -205,8 +200,9 @@
 
 /* Stands in for the email field, so it focuses like the other inputs. */
 .pickerTrigger:focus {
-  border-color: var(--color-text-primary);
+  border-color: var(--color-ink);
   outline: none;
+  box-shadow: var(--shadow-focus);
 }
 
 .pickerChevron {
@@ -219,7 +215,7 @@
   stroke-width: 1.5;
   stroke-linecap: round;
   stroke-linejoin: round;
-  transition: rotate 160ms ease;
+  transition: rotate var(--duration-base) ease;
 }
 
 .pickerTrigger[aria-expanded="true"] .pickerChevron {
@@ -233,10 +229,10 @@
   width: 34px;
   height: 34px;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--color-surface-tint);
   color: var(--color-text-primary);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 600;
 }
 
@@ -260,12 +256,12 @@
 }
 
 .accountName {
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 600;
 }
 
 .accountEmail {
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--color-text-secondary);
 }
 
@@ -278,21 +274,21 @@
   margin: 0;
   padding: 4px;
   border: 1px solid var(--color-border-strong);
-  border-radius: 12px;
+  border-radius: var(--radius-control);
   background: var(--color-bg-elevated);
-  box-shadow: 0 16px 40px -16px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-md);
   list-style: none;
 }
 
 .pickerRow {
   display: flex;
   align-items: center;
-  border-radius: 8px;
+  border-radius: var(--radius-control);
 }
 
 .pickerOption {
   height: 48px;
-  border-radius: 8px;
+  border-radius: var(--radius-control);
 }
 
 .pickerOption[aria-current] .accountName::after {
@@ -305,7 +301,7 @@
 }
 
 .pickerAdd .accountAvatar {
-  font-size: 16px;
+  font-size: var(--text-md);
   font-weight: 400;
 }
 
@@ -318,7 +314,7 @@
   margin-right: 6px;
   padding: 0;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--color-text-secondary);
   cursor: pointer;
@@ -334,8 +330,8 @@
 }
 
 @media (hover: hover) {
-  .pickerTrigger:hover {
-    border-color: var(--color-text-secondary);
+  .pickerTrigger:hover:not(:focus) {
+    border-color: var(--color-border-hover);
   }
 
   .pickerOption:hover,
@@ -349,26 +345,11 @@
 }
 
 .input {
-  height: 40px;
-  padding: 0 12px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 10px;
-  background: var(--color-bg-elevated);
-  color: var(--color-text-primary);
-  font-size: 14px;
-  outline: none;
-  transition: border-color 160ms ease;
-}
-
-.input:focus {
-  border-color: var(--color-text-primary);
-  outline: none;
+  composes: input from "../../components/ui/Field/Field.module.css";
 }
 
 .error {
-  margin: 0;
-  font-size: 12px;
-  color: #ef4444;
+  composes: error from "../../components/ui/Field/Field.module.css";
 }
 
 /* Live password strength under the register form's password field. */
@@ -379,30 +360,28 @@
   margin-top: 2px;
 }
 
+/* The filled segment count carries the grade, so good and strong share a colour. */
 .meter {
-  --meter-color: #ef4444;
+  --meter-color: var(--color-danger);
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 4px;
 }
 
 .meter[data-strength="fair"] {
-  --meter-color: #f59e0b;
+  --meter-color: var(--color-accent-strong);
 }
 
-.meter[data-strength="good"] {
-  --meter-color: #84cc16;
-}
-
+.meter[data-strength="good"],
 .meter[data-strength="strong"] {
-  --meter-color: #16a34a;
+  --meter-color: var(--color-success);
 }
 
 .meter span {
   height: 4px;
-  border-radius: 2px;
+  border-radius: var(--radius-pill);
   background: var(--color-border-strong);
-  transition: background-color 160ms ease;
+  transition: background-color var(--duration-base) ease;
 }
 
 .meter span[data-filled] {
@@ -411,23 +390,23 @@
 
 .strength {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--color-text-secondary);
 }
 
 .strength[data-strength="too-short"],
 .strength[data-strength="weak"] {
-  color: #dc2626;
+  color: var(--color-danger);
 }
 
 .strength[data-strength="fair"] {
-  color: #b45309;
+  color: var(--color-warning);
 }
 
 .strength[data-strength="good"],
 .strength[data-strength="strong"] {
-  color: #15803d;
+  color: var(--color-success);
 }
 
 .checks {
@@ -437,7 +416,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--color-text-secondary);
 }
 
@@ -445,16 +424,16 @@
   display: flex;
   align-items: baseline;
   gap: 6px;
-  transition: color 160ms ease;
+  transition: color var(--duration-base) ease;
 }
 
 .checks li[data-met] {
-  color: #15803d;
+  color: var(--color-success);
 }
 
 /* An unmet hard requirement reads as an error, not a suggestion. */
 .checks li[data-required]:not([data-met]) {
-  color: #dc2626;
+  color: var(--color-danger);
 }
 
 .checkMark {
@@ -483,31 +462,14 @@
 }
 
 .submit {
+  composes: primary from "../../components/ui/Button/Button.module.css";
   margin-top: 6px;
-  height: 40px;
-  border: 0;
-  border-radius: 10px;
-  background: var(--color-text-primary);
-  color: var(--color-bg);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 160ms ease;
-}
-
-.submit:hover {
-  opacity: 0.9;
-}
-
-.submit:disabled {
-  opacity: 0.6;
-  cursor: default;
 }
 
 .switch {
   margin: 20px 0 0;
   text-align: center;
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--color-text-secondary);
 }
 

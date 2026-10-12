@@ -1,17 +1,14 @@
 /*
- * White features grid. Sits inside `.features` in app/(home)/page.module.css and
- * inherits its `--edge`, `--off-black` and font variables.
+ * White features grid, inside `.features` in app/(home)/page.module.css.
  * Hairlines are the grid background showing through 1px gaps, so the outer
- * edge stays open.
+ * edge stays open. `--ink` is the host colour the drawings read (see
+ * zode-drawings/lineArt.module.css).
  */
 .root {
-  --ink: #0c0c0d;
-  --muted: #8a8a8f;
-  --rule: rgba(0, 0, 0, 0.12);
+  --ink: var(--color-ink);
   --scale: 0.95;
 
   padding: 120px var(--edge) 140px;
-  font-family: var(--font-text), system-ui, sans-serif;
 }
 
 .grid {
@@ -26,7 +23,7 @@
   gap: 1px;
   max-width: 1400px;
   margin: 0 auto;
-  background: var(--rule);
+  background: var(--color-border);
 }
 
 .text,
@@ -34,12 +31,12 @@
 .cta {
   position: relative;
   margin: 0;
-  background: #ffffff;
+  background: var(--color-white);
   opacity: 0;
   translate: 0 12px;
   transition:
     opacity 700ms ease calc(var(--i) * 70ms),
-    translate 700ms cubic-bezier(0.2, 0.7, 0.2, 1) calc(var(--i) * 70ms);
+    translate 700ms var(--ease-out) calc(var(--i) * 70ms);
 }
 
 .grid[data-shown] :is(.text, .figure, .cta) {
@@ -57,7 +54,7 @@
 
 .title {
   margin: 0;
-  font-family: var(--font-display), Georgia, serif;
+  font-family: var(--font-serif);
   font-size: var(--h2-size);
   font-weight: 300;
   line-height: var(--h2-leading);
@@ -72,10 +69,10 @@
 .body {
   max-width: 360px;
   margin: 0;
-  font-size: 15px;
+  font-size: var(--text-md);
   line-height: 1.55;
   letter-spacing: -0.005em;
-  color: var(--muted);
+  color: var(--color-text-secondary);
 }
 
 .figure {
@@ -89,11 +86,11 @@
   position: absolute;
   bottom: 20px;
   left: 24px;
-  font-size: 10px;
+  font-size: var(--eyebrow-size);
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: var(--eyebrow-tracking);
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--color-text-secondary);
 }
 
 .cta {
@@ -108,7 +105,7 @@
 .ctaTitle {
   max-width: 520px;
   margin: 0;
-  font-family: var(--font-display), Georgia, serif;
+  font-family: var(--font-serif);
   font-size: var(--h2-size);
   font-weight: 300;
   line-height: var(--h2-leading);
@@ -117,7 +114,11 @@
   color: var(--ink);
 }
 
-/* Drawings (see FeatureArt.tsx). `--w` is the figure's viewBox width. */
+/*
+ * Drawings (see FeatureArt.tsx). `--w` is the figure's viewBox width. The
+ * face shades and hairline greys are artwork, matched to the shared line art
+ * rather than to the UI tokens.
+ */
 .art {
   display: block;
   width: min(100%, calc(var(--w) * var(--scale) * 1px));
@@ -201,7 +202,6 @@
 
 .note {
   fill: #6a6a70;
-  font-family: var(--font-text), system-ui, sans-serif;
   font-size: 9px;
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -333,7 +333,7 @@
   }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1200px) {
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows: repeat(5, minmax(clamp(280px, 38vw, 380px), auto)) auto;

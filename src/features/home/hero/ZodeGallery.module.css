@@ -45,7 +45,7 @@
  * transitions outrank animations.
  */
 .image:first-child {
-  animation: enter 1600ms cubic-bezier(0.22, 1, 0.36, 1) paused;
+  animation: enter 1600ms var(--ease-out) paused;
 }
 
 .stage[data-entered] .image:first-child {
@@ -92,18 +92,18 @@
   margin: 0;
   padding: 0;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   cursor: pointer;
   pointer-events: auto;
 }
 
-/* Soft shadow keeps the dots legible over bright parts of the renders. */
+/* Soft shadow keeps the dots legible over bright parts of the renders; the whites over photography stay local. */
 .dot::before {
   content: "";
   width: 6px;
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.4);
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.35);
   transition:

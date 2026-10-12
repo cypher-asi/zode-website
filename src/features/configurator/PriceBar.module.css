@@ -18,10 +18,10 @@
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 28px;
   padding: 14px 16px 14px 22px;
-  border: 1px solid #e6e6e2;
-  border-radius: 10px;
-  background: #ffffff;
-  box-shadow: 0 10px 32px rgba(12, 12, 13, 0.08);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-white);
+  box-shadow: var(--shadow-md);
 }
 
 /* Both rows share these columns, so the choices line up over the cluster figures. */
@@ -42,7 +42,7 @@
 .spec {
   margin-bottom: 10px;
   padding-bottom: 10px;
-  border-bottom: 1px solid #ececea;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .stat {
@@ -55,7 +55,7 @@
 .statValue {
   overflow: hidden;
   margin: 0;
-  font-size: 16px;
+  font-size: var(--text-md);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.015em;
@@ -64,9 +64,9 @@
 }
 
 .statLabel {
-  font-size: 11px;
+  font-size: var(--text-2xs);
   white-space: nowrap;
-  color: #8a8a8f;
+  color: var(--color-text-secondary);
 }
 
 .figures {
@@ -75,7 +75,7 @@
   align-items: center;
   gap: 28px;
   padding-left: 28px;
-  border-left: 1px solid #ececea;
+  border-left: 1px solid var(--color-border);
 }
 
 .figure {
@@ -88,8 +88,8 @@
 .amount {
   margin-right: -6px;
   padding: 0 6px;
-  border-radius: 4px;
-  font-size: 22px;
+  border-radius: var(--radius-control);
+  font-size: var(--text-xl);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
@@ -98,13 +98,13 @@
 }
 
 .headline {
-  font-size: 28px;
+  font-size: var(--text-2xl);
 }
 
 /* Remounted on every new value, so each change replays the flash. */
 @keyframes flash {
   from {
-    background-color: rgba(240, 138, 60, 0.24);
+    background-color: color-mix(in srgb, var(--color-accent-strong) 24%, transparent);
   }
   to {
     background-color: transparent;
@@ -112,15 +112,15 @@
 }
 
 .unit {
-  font-size: 15px;
+  font-size: var(--text-base);
   font-weight: 400;
-  color: #8a8a8f;
+  color: var(--color-text-secondary);
 }
 
 .caption {
-  font-size: 11px;
+  font-size: var(--text-2xs);
   white-space: nowrap;
-  color: #8a8a8f;
+  color: var(--color-text-secondary);
 }
 
 .toggle {
@@ -129,19 +129,22 @@
   width: 36px;
   height: 36px;
   padding: 0;
-  border: 1px solid #d9d9d4;
-  border-radius: 50%;
-  background: #ffffff;
-  color: var(--off-black);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-white);
+  color: var(--color-ink);
   cursor: pointer;
+  transition: border-color var(--duration-base) ease;
 }
 
-.toggle:hover {
-  border-color: #a5a5a0;
+@media (hover: hover) {
+  .toggle:hover {
+    border-color: var(--color-border-hover);
+  }
 }
 
 .toggle:focus-visible {
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
 
@@ -153,7 +156,7 @@
   stroke-width: 1.4;
   stroke-linecap: round;
   stroke-linejoin: round;
-  transition: rotate 200ms ease;
+  transition: rotate var(--duration-base) ease;
 }
 
 .toggle[aria-expanded="true"] .chevron {
@@ -166,10 +169,10 @@
   bottom: calc(100% + 8px);
   width: min(400px, 100%);
   padding: 18px 20px;
-  border: 1px solid #e0e0db;
-  border-radius: 8px;
-  background: #ffffff;
-  box-shadow: 0 12px 40px rgba(12, 12, 13, 0.12);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-white);
+  box-shadow: var(--shadow-md);
   animation: rise 200ms ease both;
 }
 
@@ -182,18 +185,18 @@
 
 .breakdownTitle {
   margin: 0 0 4px;
-  font-size: 11px;
+  font-size: var(--eyebrow-size);
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: var(--eyebrow-tracking);
   text-transform: uppercase;
-  color: #8a8a8f;
+  color: var(--color-text-secondary);
 }
 
 .total {
   margin: 0 0 16px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #e6e6e2;
-  font-size: 28px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-2xl);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
@@ -210,7 +213,7 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 16px;
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .row dt {
@@ -225,21 +228,21 @@
 }
 
 .rowDetail {
-  font-size: 11px;
-  color: #8a8a8f;
+  font-size: var(--text-2xs);
+  color: var(--color-text-secondary);
 }
 
 .rowTotal {
   padding-top: 10px;
-  border-top: 1px solid #e6e6e2;
+  border-top: 1px solid var(--color-border);
   font-weight: 500;
 }
 
 .fineprint {
   margin: 14px 0 0;
-  font-size: 11px;
+  font-size: var(--text-2xs);
   line-height: 1.4;
-  color: #8a8a8f;
+  color: var(--color-text-secondary);
 }
 
 /* Stats above the price. */
@@ -257,7 +260,7 @@
 
   .figures {
     padding: 10px 0 0;
-    border-top: 1px solid #ececea;
+    border-top: 1px solid var(--color-border);
     border-left: 0;
   }
 }
@@ -275,6 +278,7 @@
     left: 0;
   }
 
+  /* Docked to the screen's foot, so its shadow falls upward. */
   .bar {
     padding-inline: var(--edge);
     border-width: 1px 0 0;
@@ -307,7 +311,7 @@
   gap: 12px 16px;
   margin: 0 0 16px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #e6e6e2;
+  border-bottom: 1px solid var(--color-border);
 }
 
 /* Landscape phones: every pixel of height counts, so the bar drops to one row as on narrow ones (below). */
@@ -366,19 +370,15 @@
 
   .amount {
     margin: 0 0 0 -6px;
-    font-size: 17px;
+    font-size: var(--text-md);
   }
 
   .headline {
-    font-size: 22px;
+    font-size: var(--text-xl);
   }
 
   .unit {
-    font-size: 13px;
-  }
-
-  .caption {
-    font-size: 11px;
+    font-size: var(--text-sm);
   }
 
   .breakdownStats {

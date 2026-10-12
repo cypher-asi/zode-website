@@ -14,23 +14,23 @@
   max-width: 460px;
   padding: 32px 28px;
   border: 1px solid var(--color-border-strong);
-  border-radius: 16px;
+  border-radius: var(--radius-panel);
   background: var(--color-bg);
-  box-shadow: 0 24px 60px -32px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-card);
 }
 
 .eyebrow {
   margin: 0 0 -8px;
-  font-size: 11px;
+  font-size: var(--text-2xs);
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--eyebrow-tracking);
   color: var(--color-text-secondary);
   text-transform: uppercase;
 }
 
 .title {
   margin: 0;
-  font-size: 24px;
+  font-size: var(--text-xl);
   font-weight: 600;
   line-height: 1.25;
   word-break: break-word;
@@ -39,7 +39,7 @@
 .text,
 .warning {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--text-base);
   line-height: 1.55;
   color: var(--color-text-secondary);
   word-break: break-word;
@@ -52,9 +52,9 @@
 
 .warning {
   padding: 12px 14px;
-  border-radius: 10px;
-  background: #fffaeb;
-  color: #93370d;
+  border-radius: var(--radius-inset);
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
 }
 
 .actions {

@@ -1,27 +1,12 @@
 /*
- * Fixed off-white/black split, independent of the site theme. `--edge`
- * is the shared horizontal inset (logo, headline, and word loop all align to
- * it) and `--bar-height` keeps the bottom boxes on both halves the same height
- * so they read as one strip; ZodeGallery.module.css inherits all of these.
+ * Fixed off-white/black split, independent of the site theme. `--edge` (from
+ * globals.css) is the shared horizontal inset the logo, headline, and word
+ * loop all align to, and `--bar-height` keeps the bottom boxes on both halves
+ * the same height so they read as one strip; ZodeGallery.module.css inherits it.
  */
 .page {
   position: relative;
-  /* How far the circuit frame's rails sit in from the screen edges (see features/home/circuit). */
-  --frame-inset: clamp(8px, 1vw, 16px);
-  --off-white: #f6f6f3;
-  --off-black: #0c0c0d;
-  --edge: clamp(32px, 6vw, 96px);
   --bar-height: 52px;
-  /* Twice the pinned header's centre line (see components/layout/PinnedHeader), so the header sits centred in it. */
-  --header-band: 86px;
-  --button-radius: 3px;
-  /* Heading scale: H1 is the hero headline, H2 every section title. */
-  --h1-size: clamp(34px, 3.6vw, 56px);
-  --h1-leading: 1.06;
-  --h1-tracking: -0.025em;
-  --h2-size: clamp(29px, 2.55vw, 40px);
-  --h2-leading: 1.1;
-  --h2-tracking: -0.02em;
 
   -webkit-tap-highlight-color: transparent;
 }
@@ -36,8 +21,8 @@
 
 /* White pod explorer below the hero (see features/home/pod-tour); clips the drawing where it spills past the screen edges. */
 .tour {
-  background: #ffffff;
-  color: var(--off-black);
+  background: var(--color-white);
+  color: var(--color-ink);
   overflow-x: clip;
 }
 
@@ -46,32 +31,32 @@
   position: relative;
   height: 112svh;
   min-height: 630px;
-  background: var(--off-black);
-  color: var(--off-white);
+  background: var(--color-ink);
+  color: var(--color-paper);
 }
 
 /* Light exploded-stack section below the pod explorer (see features/home/stack). */
 .stack {
-  background: var(--off-white);
-  color: var(--off-black);
+  background: var(--color-paper);
+  color: var(--color-ink);
 }
 
 /* White features grid below the assembly line (see features/home/why-zode). */
 .features {
-  background: #ffffff;
-  color: var(--off-black);
+  background: var(--color-white);
+  color: var(--color-ink);
 }
 
 /* Dark network map below the features (see features/home/network). */
 .network {
-  background: var(--off-black);
-  color: var(--off-white);
+  background: var(--color-ink);
+  color: var(--color-paper);
 }
 
 /* Closing call to action between the network and the footer (see features/home/closing-cta). */
 .closing {
-  background: #000000;
-  color: var(--off-white);
+  background: var(--color-black);
+  color: var(--color-paper);
 }
 
 /*
@@ -87,7 +72,7 @@
   /* Floor keeps the header band, the landscape's min-height, and the band's sideways copyright inside the cap. */
   max-height: max(100svh, calc(452px + var(--header-band)));
   padding-top: var(--header-band);
-  background: #000000;
+  background: var(--color-black);
 }
 .left {
   position: relative;
@@ -95,16 +80,16 @@
   display: flex;
   align-items: center;
   padding: 96px var(--edge) calc(var(--bar-height) + 48px);
-  background: var(--off-white);
-  color: var(--off-black);
+  background: var(--color-paper);
+  color: var(--color-ink);
 }
 
 /* Matches the left panel, so the gallery's first render fades in from white (see ZodeGallery). */
 .right {
   position: relative;
   min-height: 0;
-  background: var(--off-white);
-  color: var(--off-white);
+  background: var(--color-paper);
+  color: var(--color-paper);
 }
 
 .copy {
@@ -113,7 +98,7 @@
 
 .headline {
   margin: 0;
-  font-family: var(--font-display), Georgia, serif;
+  font-family: var(--font-serif);
   font-size: var(--h1-size);
   font-weight: 300;
   line-height: var(--h1-leading);
@@ -133,15 +118,14 @@
   min-width: 0;
   margin: 0;
   overflow: hidden;
-  font-family: var(--font-text), system-ui, sans-serif;
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 400;
   line-height: 1.4;
   letter-spacing: -0.005em;
   text-transform: none;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #85858a;
+  color: var(--color-text-secondary);
 }
 
 .bar {
@@ -156,19 +140,16 @@
   height: var(--bar-height);
   /* The top rule is a circuit trace (`data-circuit-rule`), drawn across both halves. */
   padding: 0 calc(var(--edge) / 2) 0 var(--edge);
-  font-size: 13px;
+  font-size: var(--caps-size);
   font-weight: 500;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--caps-tracking);
   text-transform: uppercase;
-  color: var(--off-black);
+  color: var(--color-ink);
 }
 
 @media (max-width: 900px) {
   .page {
-    --edge: 24px;
     --bar-height: 48px;
-    --header-band: 66px;
-    --h1-size: clamp(32px, 8vw, 46px);
   }
 
   /* Copy first, then the gallery peeking up from below it, sized by its own aspect ratio. */

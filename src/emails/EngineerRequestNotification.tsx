@@ -74,7 +74,7 @@ export default function EngineerRequestNotification(props: EngineerRequestEmailP
       </Text>
       <Button
         href={`mailto:${email}?subject=${encodeURIComponent(`Scheduling a call with a ZODE engineer (${reference})`)}`}
-        style={{ ...button, backgroundColor: color.ink, color: "#ffffff" }}
+        style={{ ...button, backgroundColor: color.ink, color: color.onInk }}
       >
         Email {firstName}
       </Button>

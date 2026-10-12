@@ -1,5 +1,4 @@
 import type { ReactElement, ReactNode } from "react";
-import { display, text } from "@/lib/fonts";
 import { PinnedHeader } from "@/components/layout/PinnedHeader";
 import { FooterReveal, FooterScene } from "@/components/layout/SiteFooter";
 import styles from "./SiteShell.module.css";
@@ -27,7 +26,7 @@ export function SiteShell({
   nav?: ReactNode;
 }): ReactElement {
   return (
-    <div className={`${styles.shell} ${display.variable} ${text.variable}`} data-edge={edge}>
+    <div className={styles.shell} data-edge={edge}>
       <PinnedHeader />
       {nav}
       <main className={styles.main} data-surface="light">

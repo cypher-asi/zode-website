@@ -24,8 +24,9 @@
   width: min(72vw, 560px);
 }
 
+/* Part of the logo lockup, so its spacing is the mark's, not the caps tokens. */
 .wordmark {
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;

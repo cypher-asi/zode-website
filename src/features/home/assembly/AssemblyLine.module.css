@@ -1,10 +1,9 @@
 /*
  * Overlay for the assembly-line scene. Sits inside `.assembly` in
- * app/(home)/page.module.css and inherits its `--edge`, `--bar-height`,
- * `--off-white` and `--off-black` variables.
+ * app/(home)/page.module.css and inherits its `--bar-height`.
  */
 .root {
-  --accent: #ffa45c;
+  --accent: var(--color-accent);
   --strip-top: var(--bar-height, 52px);
 
   position: absolute;
@@ -35,13 +34,13 @@
 .root::before {
   top: 0;
   height: 180px;
-  background: linear-gradient(180deg, var(--off-black) 0%, rgba(12, 12, 13, 0.8) 50%, rgba(12, 12, 13, 0) 100%);
+  background: linear-gradient(180deg, var(--color-ink) 0%, rgba(12, 12, 13, 0.8) 50%, rgba(12, 12, 13, 0) 100%);
 }
 
 .root::after {
   bottom: var(--strip-top);
   height: 220px;
-  background: linear-gradient(0deg, var(--off-black) 0%, rgba(12, 12, 13, 0.8) 45%, rgba(12, 12, 13, 0) 100%);
+  background: linear-gradient(0deg, var(--color-ink) 0%, rgba(12, 12, 13, 0.8) 45%, rgba(12, 12, 13, 0) 100%);
 }
 
 /* Left-edge fade behind the heading. */
@@ -52,7 +51,7 @@
   left: 0;
   z-index: 1;
   width: min(620px, 50%);
-  background: linear-gradient(90deg, var(--off-black) 0%, rgba(12, 12, 13, 0.75) 45%, rgba(12, 12, 13, 0) 100%);
+  background: linear-gradient(90deg, var(--color-ink) 0%, rgba(12, 12, 13, 0.75) 45%, rgba(12, 12, 13, 0) 100%);
   pointer-events: none;
 }
 
@@ -69,12 +68,12 @@
 /* Same display type as the hero headline and the stack section title. */
 .title {
   margin: 0;
-  font-family: var(--font-display), Georgia, serif;
+  font-family: var(--font-serif);
   font-size: var(--h2-size);
   font-weight: 300;
   line-height: var(--h2-leading);
   letter-spacing: var(--h2-tracking);
-  color: var(--off-white);
+  color: var(--color-paper);
 }
 
 /* Bottom-right callout, after the "PLAY 1 / LEVELS" product-diagram labels. */
@@ -92,7 +91,7 @@
   align-items: baseline;
   justify-content: flex-end;
   gap: 12px;
-  font-size: 13px;
+  font-size: var(--text-sm);
   line-height: 1.35;
   animation: phase-in 360ms ease both;
 }
@@ -105,7 +104,7 @@
 }
 
 .phaseLabel {
-  color: var(--off-white);
+  color: var(--color-paper);
 }
 
 /* One segment per step: done steps full, the active one filling, the rest empty. Click to jump. */
@@ -184,7 +183,7 @@
 
 .segment::after {
   width: 0;
-  background: var(--off-white);
+  background: var(--color-paper);
 }
 
 .segment[data-state="done"]::after {
@@ -208,7 +207,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  background: var(--off-black);
+  background: var(--color-ink);
 }
 
 .cell {
@@ -221,7 +220,7 @@
 }
 
 .cell[data-state="active"] {
-  color: var(--off-white);
+  color: var(--color-paper);
 }
 
 .cell[data-state="done"] {
@@ -239,20 +238,20 @@
   border: 0;
   background: none;
   font: inherit;
-  font-size: 12px;
+  font-size: var(--caps-size);
   font-weight: 500;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--caps-tracking);
   text-align: center;
   text-transform: uppercase;
   white-space: nowrap;
   color: inherit;
   cursor: pointer;
-  transition: background-color 160ms ease;
+  transition: background-color var(--duration-base) ease;
 }
 
 @media (hover: hover) {
   .cellButton:hover {
-    color: var(--off-white);
+    color: var(--color-paper);
     background: rgba(255, 255, 255, 0.04);
   }
 }
@@ -278,7 +277,7 @@
   left: 0;
   width: 0;
   height: 2px;
-  background: var(--off-white);
+  background: var(--color-paper);
 }
 
 .cell[data-state="active"] .fill {

@@ -28,15 +28,20 @@ export function greetingName(name: string): string {
   return /^[\p{L}\p{M}][\p{L}\p{M}'’-]{0,29}$/u.test(first) ? first : "";
 }
 
+// Mail clients can't read CSS variables, so these copy the values of the site
+// tokens named alongside (src/app/globals.css). Keep the two in step.
 export const color = {
-  ink: "#0c0c0d",
+  ink: "#0c0c0d", // --color-ink
+  // Long-form email copy; darker than the site's secondary text for reading in mail clients.
   body: "#3a3a3e",
-  muted: "#8a8a8f",
-  rule: "#e6e6e1",
-  ruleStrong: "#d9d9d4",
-  page: "#f3f3f0",
-  card: "#ffffff",
-  accent: "#ffd6a0",
+  muted: "#707075", // --color-text-secondary
+  faint: "#b4b4b9", // --color-text-faint, also legible on ink
+  rule: "#e6e6e1", // --color-border
+  ruleStrong: "#d9d9d4", // --color-border-strong
+  page: "#f6f6f3", // --color-paper
+  card: "#ffffff", // --color-white
+  onInk: "#ffffff", // --color-white
+  accent: "#ffd6a0", // --color-accent-soft
 } as const;
 
 // Mail clients don't load the site's self-hosted fonts, so these are system stacks.
@@ -84,7 +89,7 @@ export function Layout({ preview, logoSrc = `cid:${WORDMARK_CID}`, children }: L
               padding: "28px 32px 26px",
             }}
           >
-            <Img src={logoSrc} width="120" height="21" alt="ZODE" style={{ display: "block", color: "#ffffff" }} />
+            <Img src={logoSrc} width="120" height="21" alt="ZODE" style={{ display: "block", color: color.onInk }} />
           </Section>
           <Section style={{ backgroundColor: color.accent, height: "3px", lineHeight: "3px", fontSize: "1px" }}>
             &nbsp;

@@ -54,7 +54,7 @@ export default function DataRoomInvite(props: Props): ReactElement {
           borderRadius: "6px",
           fontSize: "14px",
           fontWeight: 500,
-          color: "#ffffff",
+          color: color.onInk,
         }}
       >
         Open data room

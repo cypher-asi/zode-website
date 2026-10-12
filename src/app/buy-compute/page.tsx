@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { PinnedHeader } from "@/components/layout/PinnedHeader";
 import { Configurator } from "@/features/configurator/Configurator";
-import { display, text } from "@/lib/fonts";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
@@ -25,7 +24,7 @@ export default async function BuyComputePage({
   const { mode } = await searchParams;
 
   return (
-    <main className={`${styles.page} ${display.variable} ${text.variable}`}>
+    <main className={styles.page}>
       <PinnedHeader showAction={false} />
       <Configurator initialMode={mode === "rent" ? "rent" : "buy"} />
     </main>

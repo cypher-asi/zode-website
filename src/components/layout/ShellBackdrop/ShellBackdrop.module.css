@@ -2,6 +2,7 @@
  * The animated shell backdrop sits behind everything (z-index -1), pinned to
  * the viewport, and never intercepts pointer events. The transparent shell
  * chrome above it reveals the drifting gradient around the content panel.
+ * Its cool greys are artwork tuned around `--shell-outer-bg`, not UI tokens.
  */
 .backdrop {
   position: fixed;

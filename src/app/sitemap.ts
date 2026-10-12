@@ -6,6 +6,7 @@ const PUBLIC_ROUTES = [
   "/buy-compute",
   "/contact",
   "/talk-to-an-engineer",
+  "/styleguide",
   "/privacy",
   "/terms",
 ] as const;

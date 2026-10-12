@@ -1,6 +1,8 @@
 /*
  * Shared line-art palette and primitives for the ZODE drawings (see
- * CabinArt.tsx and lineArt.tsx). The host sets `--ink` and `--accent`.
+ * CabinArt.tsx and lineArt.tsx). The host sets `--ink` and `--accent`, usually
+ * from the colour tokens; the face shades and warm hover tints here are
+ * artwork and stay local.
  */
 .art {
   --line: var(--ink);

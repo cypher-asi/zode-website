@@ -42,7 +42,7 @@ export default function RegistrationNotification(props: Props): ReactElement {
           borderRadius: "6px",
           fontSize: "13px",
           fontWeight: 500,
-          color: "#ffffff",
+          color: color.onInk,
         }}
       >
         Email {name.split(" ")[0]}

@@ -13,7 +13,6 @@ import { Network } from "@/features/home/network/Network";
 import { PodTour } from "@/features/home/pod-tour/PodTour";
 import { FullStack } from "@/features/home/stack/FullStack";
 import { Features } from "@/features/home/why-zode/Features";
-import { display, text } from "@/lib/fonts";
 import { COMPUTE_ACTIONS } from "@/lib/navigation";
 import styles from "./page.module.css";
 
@@ -36,7 +35,7 @@ const HERO_ACTIONS: readonly TerminalMenuItem[] = [
  */
 export default function HomePage() {
   return (
-    <main className={`${styles.page} ${display.variable} ${text.variable}`}>
+    <main className={styles.page}>
       <CircuitFrame />
       <PinnedHeader />
 
