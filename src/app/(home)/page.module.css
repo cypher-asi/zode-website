@@ -26,6 +26,12 @@
   overflow-x: clip;
 }
 
+/* White row of principle cards between the pod explorer and the stack (see features/home/principles). */
+.principles {
+  background: var(--color-white);
+  color: var(--color-ink);
+}
+
 /* Slightly taller-than-viewport assembly-line scene below the stack (see features/home/assembly). */
 .assembly {
   position: relative;

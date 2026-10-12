@@ -11,6 +11,7 @@ import { WordLoop } from "@/features/home/hero/WordLoop";
 import { ZodeGallery } from "@/features/home/hero/ZodeGallery";
 import { Network } from "@/features/home/network/Network";
 import { PodTour } from "@/features/home/pod-tour/PodTour";
+import { Principles } from "@/features/home/principles/Principles";
 import { FullStack } from "@/features/home/stack/FullStack";
 import { Features } from "@/features/home/why-zode/Features";
 import { COMPUTE_ACTIONS } from "@/lib/navigation";
@@ -75,6 +76,15 @@ export default function HomePage() {
         data-circuit
       >
         <PodTour />
+      </section>
+
+      <section
+        className={styles.principles}
+        aria-label="What ZODE stands for"
+        data-surface="light"
+        data-circuit
+      >
+        <Principles />
       </section>
 
       <section

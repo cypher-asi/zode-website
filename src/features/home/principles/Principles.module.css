@@ -1,0 +1,387 @@
+/*
+ * White principles row, inside `.principles` in app/(home)/page.module.css.
+ * Hairlines are the grid background showing through 1px gaps, as in
+ * ../why-zode/Features.module.css. `--ink` is the host colour the drawings
+ * read.
+ */
+.root {
+  --ink: var(--color-ink);
+  --scale: 0.82;
+  --card-h: clamp(380px, 30vw, 440px);
+
+  padding: 96px var(--edge);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  max-width: 1400px;
+  margin: 0 auto;
+  background: var(--color-border);
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: var(--card-h);
+  padding: 28px 32px 32px;
+  background: var(--color-white);
+  outline: none;
+  opacity: 0;
+  translate: 0 12px;
+  transition:
+    opacity 700ms ease calc(var(--i) * 90ms),
+    translate 700ms var(--ease-out) calc(var(--i) * 90ms);
+}
+
+.grid[data-shown] .card {
+  opacity: 1;
+  translate: 0 0;
+}
+
+.card:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: -1px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.index {
+  font-size: var(--eyebrow-size);
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  color: var(--color-text-secondary);
+}
+
+/* Hairline plus that turns into a cross while the card is open. */
+.plus {
+  position: relative;
+  width: 11px;
+  height: 11px;
+  color: var(--color-text-secondary);
+  transition:
+    rotate 400ms var(--ease-out),
+    color 200ms ease;
+}
+
+.plus::before,
+.plus::after {
+  content: "";
+  position: absolute;
+  inset: 5px 0 auto;
+  height: 1px;
+  background: currentColor;
+}
+
+.plus::after {
+  rotate: 90deg;
+}
+
+/* Shrinks as the description opens; the drawing scales down to stay clear of the copy. */
+.figure {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 20px 0;
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--h2-size);
+  font-weight: 300;
+  line-height: var(--h2-leading);
+  letter-spacing: var(--h2-tracking);
+  color: var(--ink);
+}
+
+/* Animates the description's height from nothing to its content. */
+.reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 500ms var(--ease-out);
+}
+
+.body {
+  min-height: 0;
+  max-width: 340px;
+  margin: 0;
+  overflow: hidden;
+  padding-top: 14px;
+  font-size: var(--text-base);
+  line-height: 1.55;
+  letter-spacing: -0.005em;
+  color: var(--color-text-secondary);
+  opacity: 0;
+  translate: 0 8px;
+  transition:
+    opacity 300ms ease,
+    translate 500ms var(--ease-out);
+}
+
+.card:is(:hover, :focus-visible) .reveal {
+  grid-template-rows: 1fr;
+}
+
+.card:is(:hover, :focus-visible) .body {
+  opacity: 1;
+  translate: 0 0;
+  transition-delay: 80ms;
+}
+
+.card:is(:hover, :focus-visible) .plus {
+  rotate: 45deg;
+  color: var(--ink);
+}
+
+.card:is(:hover, :focus-visible) .art {
+  scale: 0.74;
+  translate: 0 -6px;
+}
+
+/*
+ * Drawings (see PrincipleArt.tsx). `--w` is the shared frame's viewBox width.
+ * The face shades and hairline greys are artwork, matched to the shared line
+ * art rather than to the UI tokens.
+ */
+.art {
+  display: block;
+  width: min(100%, calc(var(--w) * var(--scale) * 1px));
+  height: auto;
+  max-height: 100%;
+  overflow: visible;
+  transition:
+    scale 600ms var(--ease-out),
+    translate 600ms var(--ease-out);
+}
+
+.art :is(polygon, polyline, path, ellipse, rect, circle, line) {
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.top,
+.sideL,
+.sideR,
+.ring {
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
+.top,
+.ring {
+  fill: #ffffff;
+}
+
+.sideL {
+  fill: #f3f3f0;
+}
+
+.sideR {
+  fill: #e6e6e1;
+}
+
+.edge,
+.fine,
+.dash,
+.trace,
+.hidden {
+  fill: none;
+}
+
+.edge {
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
+.fine {
+  stroke: #77777d;
+  stroke-width: 0.6;
+}
+
+.dash {
+  stroke: var(--ink);
+  stroke-width: 0.8;
+  stroke-dasharray: 3 3;
+}
+
+.trace {
+  stroke: #b4b4b9;
+  stroke-width: 0.6;
+  stroke-dasharray: 2 3;
+}
+
+.hidden {
+  stroke: #b4b4b9;
+  stroke-width: 0.6;
+  stroke-dasharray: 2 2;
+}
+
+.ink {
+  fill: var(--ink);
+}
+
+/*
+ * Hover loops (groups tagged in PrincipleArt.tsx; `data-playing` stands in
+ * for hover on touch screens). Each group starts `--k` x `--step` late.
+ */
+.flash {
+  --step: 200ms;
+}
+
+.shade {
+  --step: 120ms;
+}
+
+/* Both rotate or stretch about their own box, so only screen-space or flat drawings can use them. */
+.spin,
+.wave {
+  transform-box: fill-box;
+}
+
+.spin {
+  transform-origin: center;
+}
+
+.wave {
+  transform-origin: left center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card:is(:hover, :focus-visible, [data-playing]) :is(.flash .ring, .shade :is(.top, .sideL)) {
+    animation-duration: 1600ms;
+    animation-timing-function: ease-in-out;
+    animation-delay: calc(var(--k) * var(--step));
+    animation-iteration-count: infinite;
+  }
+
+  .card:is(:hover, :focus-visible, [data-playing]) .flash .ring {
+    animation-name: fill-ink;
+  }
+
+  .card:is(:hover, :focus-visible, [data-playing]) .shade :is(.top, .sideL) {
+    animation-name: fill-shade;
+  }
+
+  .card:is(:hover, :focus-visible, [data-playing]) .flow :is(line, polyline, circle) {
+    stroke-dasharray: 3 3;
+    animation: dash-flow 600ms linear infinite;
+  }
+
+  .card:is(:hover, :focus-visible, [data-playing]) .spin {
+    animation: spin 4s linear infinite;
+  }
+
+  .card:is(:hover, :focus-visible, [data-playing]) .wave {
+    animation: wave 1200ms ease-in-out infinite;
+  }
+}
+
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -6;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fill-ink {
+  50% {
+    fill: var(--ink);
+  }
+}
+
+@keyframes fill-shade {
+  50% {
+    fill: #c4c4be;
+  }
+}
+
+@keyframes wave {
+  50% {
+    transform: scaleX(0.8);
+  }
+}
+
+@media (max-width: 1200px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .root {
+    padding: 72px var(--edge);
+  }
+
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .card {
+    padding: 24px;
+  }
+}
+
+/* No hover to open a card, so every description stays out and the cards size to it. */
+@media (hover: none) {
+  .card {
+    height: auto;
+    min-height: var(--card-h);
+  }
+
+  .figure {
+    min-height: 220px;
+  }
+
+  .reveal {
+    grid-template-rows: 1fr;
+  }
+
+  .body {
+    opacity: 1;
+    translate: none;
+  }
+
+  .plus {
+    display: none;
+  }
+
+  .card:is(:hover, :focus-visible) .art {
+    scale: none;
+    translate: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .reveal,
+  .body,
+  .plus,
+  .art {
+    transition: none;
+  }
+
+  .card {
+    opacity: 1;
+    translate: none;
+  }
+}

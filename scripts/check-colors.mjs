@@ -22,6 +22,7 @@ const ALLOWED = new Map([
   ["src/features/zode-drawings/lineArt.module.css", "drawing shades"],
   ["src/features/home/why-zode/Features.module.css", "diagram artwork"],
   ["src/features/home/stack/FullStack.module.css", "diagram artwork"],
+  ["src/features/home/principles/Principles.module.css", "diagram artwork"],
   ["src/features/home/network/Network.module.css", "map artwork"],
   ["src/features/data-room/DataRoomApp.module.css", "folder glyph"],
   ["src/features/cluster/scene/palette.ts", "fabric rail colours, shared by WebGL and the legend"],
