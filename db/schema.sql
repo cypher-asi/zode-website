@@ -171,3 +171,15 @@ create index if not exists mndas_signed_at_idx on mndas (signed_at desc);
 
 -- Invites that require the invitee to sign the MNDA before they can join.
 alter table data_room_members add column if not exists requires_mnda boolean not null default false;
+
+-- A room's diligence summary, its landing page. `diligence` answers the fixed
+-- questions in src/features/data-room/summary.ts and `economics` holds only the
+-- sourced site facts; revenue and IRR are computed from the compute model on view.
+-- Written by scripts/write-room-summary.mjs.
+create table if not exists data_room_summaries (
+  room_id uuid primary key references data_rooms (id) on delete cascade,
+  diligence jsonb not null,
+  economics jsonb not null,
+  updated_at timestamptz not null default now(),
+  updated_by_email text not null
+);

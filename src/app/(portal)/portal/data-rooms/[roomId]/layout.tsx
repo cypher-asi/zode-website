@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: LayoutProps<"/portal/data-roo
   return { title: `${room.name} | Data room | ZODE`, robots: { index: false, follow: false } };
 }
 
-/** A data room fills the viewport beside the portal's icons; admins also get Members and Activity tabs. */
+/** A data room fills the viewport beside the portal's icons, with Summary and Files tabs; admins also get Members and Activity. */
 export default async function DataRoomLayout({
   children,
   params,
@@ -34,7 +34,7 @@ export default async function DataRoomLayout({
             <span className={styles.role}>{role === "admin" ? "Admin" : "Viewer"}</span>
           </div>
         </div>
-        {role === "admin" ? <RoomTabs roomId={roomId} /> : null}
+        <RoomTabs roomId={roomId} isAdmin={role === "admin"} />
       </header>
       <div className={styles.body}>{children}</div>
     </div>
