@@ -75,8 +75,8 @@
   display: flex;
   flex-direction: column;
   min-height: 100svh;
-  /* Floor keeps the header band, the landscape's min-height, and the band's sideways copyright inside the cap. */
-  max-height: max(100svh, calc(452px + var(--header-band)));
+  /* Floor keeps the header band, the landscape's min-height, the band's sideways copyright, and the credit strip inside the cap. */
+  max-height: max(100svh, calc(504px + var(--header-band)));
   padding-top: var(--header-band);
   background: var(--color-black);
 }

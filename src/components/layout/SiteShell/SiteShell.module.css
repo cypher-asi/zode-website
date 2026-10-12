@@ -49,7 +49,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100svh;
-  max-height: max(100svh, calc(452px + var(--header-band)));
+  max-height: max(100svh, calc(504px + var(--header-band)));
   padding-top: var(--header-band);
   background: var(--color-black);
 }

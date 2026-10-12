@@ -92,6 +92,7 @@ export const COLOR_GROUPS: readonly TokenGroup[] = [
       { token: "--color-danger-border", value: "#fecdca", name: "Danger border", use: "Outline of a danger zone." },
       { token: "--color-success", value: "#067647", name: "Success", use: "Confirmations, healthy states." },
       { token: "--color-success-bg", value: "#ecfdf3", name: "Success background", use: "Success notices." },
+      { token: "--color-success-inverse", value: "#17b26a", name: "Success inverse", use: "Healthy states on dark grounds." },
       { token: "--color-warning", value: "#93370d", name: "Warning", use: "Cautions." },
       { token: "--color-warning-bg", value: "#fffaeb", name: "Warning background", use: "Caution notices." },
       { token: "--color-info", value: "#175cd3", name: "Info", use: "Neutral information tags." },

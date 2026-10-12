@@ -8,7 +8,9 @@ import styles from "./FooterReveal.module.css";
  * Band under the landscape: the faded wordmark, centred, with a sideways
  * copyright line in the right-hand rail. The MENU button in the left rail
  * swaps the wordmark for the site's footer links, in the same spot; Escape
- * closes them again.
+ * closes them again. A full-width strip underneath credits the parent
+ * company, framed by the circuit grid as its own cell, with the network
+ * status at its right end.
  */
 export function FooterReveal(): ReactElement {
   const [open, setOpen] = useState(false);
@@ -50,6 +52,20 @@ export function FooterReveal(): ReactElement {
         <FooterNav open={open} />
       </div>
       <p className={styles.copyright}>Copyright 2026 ZODE, Inc.</p>
+      <div className={styles.credit} data-circuit-rule>
+        <a
+          className={styles.creditLink}
+          href="https://cypher.net"
+          target="_blank"
+          rel="noreferrer noopener"
+        >
+          A Cypher Company
+        </a>
+        <p className={styles.status}>
+          <span className={styles.statusDot} aria-hidden="true" />
+          <span className={styles.statusText}>Network operational</span>
+        </p>
+      </div>
     </div>
   );
 }
