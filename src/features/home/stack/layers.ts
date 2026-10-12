@@ -15,7 +15,7 @@ export const LAYERS: readonly StackLayer[] = [
   },
   {
     id: "routing",
-    title: "Smart Routing",
+    title: "Edge Routing",
     body: "Software that places each workload on the best available pod, balancing latency, cost, and capacity.",
   },
   {

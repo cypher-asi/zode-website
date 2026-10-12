@@ -32,7 +32,7 @@ const COLUMNS: readonly FooterColumn[] = [
         href: "https://cypher.net/research/the-grid",
         external: true,
       },
-      { label: "Agent styleguide", href: "/styleguide" },
+      { label: "Styleguide", href: "/styleguide" },
       { label: "Contact", href: "/contact" },
     ],
   },

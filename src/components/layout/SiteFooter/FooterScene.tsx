@@ -9,8 +9,8 @@ const INTERVAL = 3000;
 
 /**
  * Each photo has the same ZODE composited at the same pixel position (see
- * `.image` for the point it's anchored on), so cross-fading between them
- * changes only the surroundings.
+ * `.image` for how it's centred), so cross-fading between them changes only
+ * the surroundings.
  */
 const SCENES = ["city", "field", "mountain", "desert", "coast", "snow"] as const;
 
@@ -72,8 +72,9 @@ export function FooterScene(): ReactElement {
             data-prev={i === prev || undefined}
             src={`/images/future-home/footer/${scene}-wide.jpg`}
             alt=""
-            fill
-            sizes="100vw"
+            width={1600}
+            height={600}
+            sizes="(max-width: 900px) 300vw, 125vw"
           />
         ) : null,
       )}
