@@ -8,7 +8,7 @@ export interface Account {
   userId: string;
   email: string;
   displayName: string;
-  /** HTTP(S) avatar URL, or empty to fall back to initials. */
+  /** HTTP(S) avatar URL, or a path on this site for a photo set in portal settings; empty falls back to initials. */
   profileImage: string;
   primaryZid: string;
 }

@@ -38,6 +38,17 @@ create table if not exists account_sessions (
 
 create index if not exists account_sessions_user_idx on account_sessions (user_id);
 
+-- What a user has changed about themselves in portal settings, over what ZOS
+-- returns at sign-in (the ZOS token isn't kept, so edits can't go back to ZOS).
+-- Null columns fall back to ZOS. The photo lives in the private Blob store
+-- under avatars/<user id>/, served by /api/account/avatar/<user id>.
+create table if not exists account_profiles (
+  user_id text primary key,
+  display_name text,
+  avatar_pathname text,
+  updated_at timestamptz not null default now()
+);
+
 -- Fixed-window request counters for rate limiting (see src/lib/rateLimit.ts).
 create table if not exists rate_limits (
   key text not null,

@@ -48,6 +48,11 @@ function showLogoutToast(): void {
   ];
 }
 
+/** Re-reads the account cookies, after a profile edit has rewritten the initials in them. */
+export function accountCookiesChanged(): void {
+  notify();
+}
+
 /** Whether `pathname` is in the signed-in portal. */
 export function isPortalPath(pathname: string): boolean {
   return ACCOUNT_ONLY_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));

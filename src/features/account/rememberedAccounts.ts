@@ -15,7 +15,7 @@ export const ACCOUNTS_CHANGED = "zode:accounts-changed";
 export interface RememberedAccount {
   email: string;
   name: string;
-  /** HTTP(S) avatar URL, or empty to fall back to initials. */
+  /** HTTP(S) or this site's avatar route URL, or empty to fall back to initials. */
   image: string;
   /** Epoch milliseconds of the last sign-in. */
   lastUsed: number;
@@ -25,6 +25,8 @@ export type RememberedIdentity = Omit<RememberedAccount, "lastUsed">;
 
 const sameEmail = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase();
 
+const IMAGE_RE = /^(?:https?:\/\/|\/api\/account\/avatar\/)/i;
+
 function toIdentity(value: unknown): RememberedIdentity | null {
   if (typeof value !== "object" || value === null) return null;
   const { email, name, image } = value as Record<string, unknown>;
@@ -32,7 +34,7 @@ function toIdentity(value: unknown): RememberedIdentity | null {
   return {
     email,
     name: typeof name === "string" ? name.slice(0, 120) : "",
-    image: typeof image === "string" && /^https?:\/\//i.test(image) ? image : "",
+    image: typeof image === "string" && IMAGE_RE.test(image) ? image : "",
   };
 }
 

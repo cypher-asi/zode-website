@@ -37,6 +37,18 @@ const SECTIONS = [
     exact: false,
     glyph: <path d="M5.25 2.75h6.5l3.5 3.5v11h-10zM11.75 2.75v3.5h3.5M7.75 10.25h4.5M7.75 13.25h4.5" />,
   },
+  {
+    href: "/portal/settings",
+    label: "Settings",
+    exact: false,
+    glyph: (
+      <>
+        <path d="M3.25 6h7.5M15.25 6h1.5M3.25 14h1.5M9.25 14h7.5" />
+        <circle cx="13" cy="6" r="2.25" />
+        <circle cx="7" cy="14" r="2.25" />
+      </>
+    ),
+  },
 ] as const;
 
 /** The portal's sections as a column of desktop-style icons under the wordmark; a row on phones. */
