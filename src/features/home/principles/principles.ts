@@ -11,21 +11,21 @@ export const PRINCIPLES: readonly Principle[] = [
   {
     id: "sovereign",
     title: "Sovereign",
-    body: "Your models, your data, your hardware, on land you control. A ZODE is owned outright, not rented by the hour.",
+    body: "Rapidly deployable AI, owned by the companies, communities, and countries that deploy it.",
   },
   {
     id: "sustainable",
     title: "Sustainable",
-    body: "Sited beside renewable and stranded power. Factory-built pods cut construction waste and can be moved instead of torn down.",
+    body: "Sited beside renewable and stranded power. Factory-built pods move instead of being torn down.",
   },
   {
     id: "distributed",
     title: "Distributed",
-    body: "Many smaller sites instead of one giant campus. Compute runs close to its users, and no single outage takes the network down.",
+    body: "Many smaller sites instead of one giant campus, close to their users, with no single point of failure.",
   },
   {
     id: "open",
     title: "Open Source",
-    body: "Built on open standards and open software, from the rack to the orchestration layer. Nothing proprietary between you and your compute.",
+    body: "Open standards and open software, from the rack to the orchestration layer. No lock-in.",
   },
 ];
