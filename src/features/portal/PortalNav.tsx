@@ -31,6 +31,12 @@ const SECTIONS = [
     exact: false,
     glyph: <path d="M10 2.75 16.75 6.4v7.2L10 17.25 3.25 13.6V6.4zM3.25 6.4 10 10.05l6.75-3.65M10 10.05v7.2" />,
   },
+  {
+    href: "/portal/contracts",
+    label: "Contracts",
+    exact: false,
+    glyph: <path d="M5.25 2.75h6.5l3.5 3.5v11h-10zM11.75 2.75v3.5h3.5M7.75 10.25h4.5M7.75 13.25h4.5" />,
+  },
 ] as const;
 
 /** The portal's sections as a column of desktop-style icons under the wordmark; a row on phones. */

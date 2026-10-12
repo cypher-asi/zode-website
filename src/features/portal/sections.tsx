@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from "react";
 import Link from "next/link";
 import type { OrderSummary } from "@/features/configurator/orders";
+import type { Contract } from "@/features/contracts/contracts";
 import type { RoomSummary } from "@/features/data-room/types";
 import styles from "./portal.module.css";
 
@@ -68,7 +69,7 @@ export function RoomList({ rooms }: { rooms: RoomSummary[] }): ReactElement {
     <ul className={styles.list}>
       {rooms.map((room) => (
         <li key={room.id}>
-          <Link className={styles.row} href={`/portal/data-rooms/${room.id}`}>
+          <Link className={styles.row} href={`/portal/data-rooms/${room.id}`} data-room="">
             <span className={styles.rowIcon}>
               <svg viewBox="0 0 20 20" aria-hidden="true">
                 <path d="M2.75 6A1.75 1.75 0 0 1 4.5 4.25h3.1l1.8 2h6.1A1.75 1.75 0 0 1 17.25 8v6.25A1.75 1.75 0 0 1 15.5 16h-11a1.75 1.75 0 0 1-1.75-1.75z" />
@@ -120,6 +121,46 @@ export function OrderList({ orders }: { orders: OrderSummary[] }): ReactElement 
             </span>
             <span className={styles.pill}>{order.status}</span>
           </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Executed agreements; each row downloads its PDF. `showSigner` adds who signed, for admins seeing everyone's. */
+export function ContractList({
+  contracts,
+  showSigner = false,
+}: {
+  contracts: Contract[];
+  showSigner?: boolean;
+}): ReactElement {
+  return (
+    <ul className={styles.list}>
+      {contracts.map((contract) => (
+        <li key={contract.id}>
+          <a className={styles.row} href={`/api/contracts/${contract.id}/pdf`} download>
+            <span className={styles.rowIcon}>
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M5.25 2.75h6.5l3.5 3.5v11h-10zM11.75 2.75v3.5h3.5M7.75 10.25h4.5M7.75 13.25h4.5" />
+              </svg>
+            </span>
+            <span className={styles.rowMain}>
+              <span className={styles.rowTitle}>Mutual NDA · {contract.counterparty}</span>
+              <span className={styles.rowMeta}>
+                {showSigner ? `${contract.signerName} (${contract.signerEmail})` : `Signed by ${contract.signerName}`}
+                {" · "}
+                {date.format(contract.signedAt)}
+                {contract.roomName ? <> · via {contract.roomName}</> : null}
+              </span>
+            </span>
+            <span className={styles.rowEnd}>
+              {showSigner && !contract.linked ? <span className={styles.pill}>No account</span> : null}
+              <svg className={styles.chevron} viewBox="0 0 16 16" aria-label="Download PDF" role="img">
+                <path d="M8 2.75v8M4.75 7.75 8 11l3.25-3.25M3.25 13.5h9.5" />
+              </svg>
+            </span>
+          </a>
         </li>
       ))}
     </ul>

@@ -1,5 +1,6 @@
 import "server-only";
 import { listOrdersByUser, type OrderSummary } from "@/features/configurator/orders";
+import { listAllContracts, listContractsForUser, type Contract } from "@/features/contracts/contracts";
 import { listRoomsForUser } from "@/features/data-room/rooms";
 import type { RoomSummary } from "@/features/data-room/types";
 
@@ -15,6 +16,22 @@ export function loadRooms(userId: string): Promise<RoomSummary[] | null> {
 export function loadOrders(userId: string): Promise<OrderSummary[] | null> {
   return listOrdersByUser(userId).catch((error: unknown) => {
     console.error("Failed to load portal orders", error);
+    return null;
+  });
+}
+
+/** Agreements the account signed, newest first, or `null` when they couldn't be loaded. */
+export function loadContracts(userId: string): Promise<Contract[] | null> {
+  return listContractsForUser(userId).catch((error: unknown) => {
+    console.error("Failed to load contracts", error);
+    return null;
+  });
+}
+
+/** Every signed agreement, for ZODE admins, or `null` when they couldn't be loaded. */
+export function loadAllContracts(): Promise<Contract[] | null> {
+  return listAllContracts().catch((error: unknown) => {
+    console.error("Failed to load all contracts", error);
     return null;
   });
 }

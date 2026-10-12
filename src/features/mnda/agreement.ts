@@ -7,6 +7,10 @@ export const TEMPLATE_VERSION = "zode-mnda-v1";
 
 export const ZODE_PARTY = { name: "ZODE INC.", description: "a Delaware corporation" } as const;
 
+/** The executed PDF's file name, as emailed and downloaded. */
+export const executedFileName = (entityName: string): string =>
+  `ZODE - MNDA - ${entityName.replace(/[^\p{L}\p{N} .,&-]+/gu, "").trim().slice(0, 80) || "Entity"}.pdf`;
+
 export interface AgreementSection {
   heading: string;
   body: string;

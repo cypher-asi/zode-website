@@ -4,7 +4,7 @@ import Link from "next/link";
 import { LogoutButton } from "@/features/account/LogoutButton";
 import { requireAccount } from "@/features/account/session";
 import ui from "@/features/data-room/ui.module.css";
-import { loadOrders, loadRooms } from "@/features/portal/data";
+import { loadContracts, loadOrders, loadRooms } from "@/features/portal/data";
 import { Empty, OrderList, PageHeader, RoomList, Section } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
 
@@ -17,7 +17,11 @@ const RECENT = 3;
 /** Signed-in home: who you are, your figures at a glance, and the latest rooms and orders. */
 export default async function DashboardPage(): Promise<ReactElement> {
   const account = await requireAccount("/portal");
-  const [rooms, orders] = await Promise.all([loadRooms(account.userId), loadOrders(account.userId)]);
+  const [rooms, orders, contracts] = await Promise.all([
+    loadRooms(account.userId),
+    loadOrders(account.userId),
+    loadContracts(account.userId),
+  ]);
   const firstName = account.displayName.trim().split(/\s+/)[0] || account.displayName;
   const files = rooms?.reduce((sum, room) => sum + room.fileCount, 0);
   const figure = (value: number | undefined) => (value === undefined ? "—" : value.toLocaleString("en-US"));
@@ -48,6 +52,10 @@ export default async function DashboardPage(): Promise<ReactElement> {
         <Link className={styles.stat} href="/portal/orders">
           <span className={styles.statValue}>{figure(orders?.length)}</span>
           <span className={styles.statLabel}>Orders</span>
+        </Link>
+        <Link className={styles.stat} href="/portal/contracts">
+          <span className={styles.statValue}>{figure(contracts?.length)}</span>
+          <span className={styles.statLabel}>Contracts</span>
         </Link>
       </div>
 

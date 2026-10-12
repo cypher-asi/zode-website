@@ -1,4 +1,4 @@
-/* Shared by the portal's sections: a page header, figures, and hairline lists of rooms and orders. */
+/* Shared by the portal's sections: a page header, figures, and hairline lists of rooms, orders and contracts. */
 .page {
   flex: 1;
   min-height: 0;
@@ -72,7 +72,7 @@
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 40px;
 }
@@ -270,6 +270,7 @@ a.row:focus-visible {
   }
 
   .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
 
@@ -301,7 +302,7 @@ a.row:focus-visible {
   }
 
   /* Room names need the width more; the room itself shows the role. */
-  .row:not([data-order]) .pill {
+  .row[data-room] .pill {
     display: none;
   }
 }

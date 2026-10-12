@@ -7,6 +7,7 @@ import type { Order } from "@/features/configurator/orders";
 import type { EngineerRequest } from "@/features/engineer-request/engineerRequests";
 import { RECIPIENT_EMAIL } from "@/lib/leads";
 import { accountEmailProps } from "./accountEmailProps";
+import { executedFileName } from "@/features/mnda/agreement";
 import type { ExecutedMnda } from "@/features/mnda/mndas";
 import DataRoomInvite, { dataRoomInviteSubject, type DataRoomInviteProps } from "./DataRoomInvite";
 import EngineerRequestNotification, { engineerRequestSubject } from "./EngineerRequestNotification";
@@ -212,8 +213,7 @@ export async function sendMndaEmails(mnda: ExecutedMnda, roomName: string | null
     effectiveDate: new Intl.DateTimeFormat("en-US", { dateStyle: "long", timeZone: "UTC" }).format(mnda.signedAt),
     roomName,
   };
-  const safeName = party.entityName.replace(/[^\p{L}\p{N} .,&-]+/gu, "").trim().slice(0, 80) || "Entity";
-  const attachments = [{ filename: `ZODE - MNDA - ${safeName}.pdf`, content: Buffer.from(mnda.pdf) }];
+  const attachments = [{ filename: executedFileName(party.entityName), content: Buffer.from(mnda.pdf) }];
 
   const results = await Promise.allSettled([
     send({
