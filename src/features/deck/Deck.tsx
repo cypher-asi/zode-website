@@ -85,6 +85,16 @@ function ArrowIcon({ flip = false }: { flip?: boolean }): ReactElement {
  * drawing its own grid, turned by a swipe or a tap on its edge, with the
  * controls always up.
  */
+/** The cover's ground and the header, standing in while the page reads which slide to open. */
+export function DeckGround({ header }: { header: ReactNode }): ReactElement {
+  const { ground } = SLIDES[0];
+  return (
+    <main className={styles.root} data-ground={ground} data-surface={ground === "ink" ? "dark" : "light"}>
+      <div className={styles.header}>{header}</div>
+    </main>
+  );
+}
+
 export function Deck({ initialSlide, header }: { initialSlide: number; header: ReactNode }): ReactElement {
   const rootRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);

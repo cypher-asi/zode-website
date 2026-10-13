@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense, type ReactNode } from "react";
 import { PinnedHeader } from "@/components/layout/PinnedHeader";
-import { Deck } from "@/features/deck/Deck";
+import { Deck, DeckGround } from "@/features/deck/Deck";
 import { SLIDES } from "@/features/deck/slides";
 
 const DESCRIPTION =
@@ -14,22 +15,28 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export const instant = false;
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 /**
  * The investor deck, a resource linked from the footer and header menus.
  * Lives outside the `(site)` group, like /compute-model, so the slides fill
  * the viewport without the landscape footer. `?slide=N` (1-based) opens it on
- * a given slide, so shared links land where they were copied.
+ * a given slide, so shared links land where they were copied. The query is
+ * only known per request, so the deck's ground and header paint first.
  */
-export default async function DeckPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
+export default function DeckPage({ searchParams }: { searchParams: SearchParams }) {
+  const header = <PinnedHeader />;
+  return (
+    <Suspense fallback={<DeckGround header={header} />}>
+      <DeckAtSlide searchParams={searchParams} header={header} />
+    </Suspense>
+  );
+}
+
+async function DeckAtSlide({ searchParams, header }: { searchParams: SearchParams; header: ReactNode }) {
   const { slide } = await searchParams;
   const requested = typeof slide === "string" ? Number.parseInt(slide, 10) : 1;
   const initial = Number.isFinite(requested) ? Math.min(Math.max(requested, 1), SLIDES.length) - 1 : 0;
 
-  return <Deck initialSlide={initial} header={<PinnedHeader />} />;
+  return <Deck initialSlide={initial} header={header} />;
 }
