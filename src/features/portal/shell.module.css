@@ -84,6 +84,12 @@
     0 12px 24px -16px rgba(0, 0, 0, 0.5);
 }
 
+/* Half the tray, or as tall as its icons if there are more. */
+.tray:first-child .bar {
+  flex: none;
+  min-height: 50%;
+}
+
 .group {
   display: flex;
   flex-direction: column;
