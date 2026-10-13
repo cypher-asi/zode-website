@@ -455,14 +455,18 @@ function Stack({ slide, active, compact }: { slide: Of<"stack">; active: boolean
   );
 }
 
-function Steps({ slide }: { slide: Of<"steps"> }): ReactElement {
+/** Numbered cards as the design principles slide's: a drawing over each step, its description always out. */
+function Steps({ slide, active }: { slide: Of<"steps">; active: boolean }): ReactElement {
   return (
     <div className={styles.statsBody}>
       <ol className={styles.steps}>
         {slide.steps.map((step, i) => (
           <li key={step.title} {...rise(2 + i)} className={`${styles.rise} ${styles.step}`}>
-            <span className={styles.label}>Step {String(i + 1).padStart(2, "0")}</span>
-            <h3 className={styles.h3}>{step.title}</h3>
+            <span className={styles.stepIndex}>{String(i + 1).padStart(2, "0")}</span>
+            <div className={styles.stepFigure}>
+              <MacroArt id={step.art} light={slide.ground !== "ink"} playing={active} />
+            </div>
+            <h3 className={`${styles.h3} ${styles.stepTitle}`}>{step.title}</h3>
             <p className={styles.body}>{step.body}</p>
           </li>
         ))}
@@ -805,7 +809,7 @@ function Body({ slide, active, compact }: { slide: Slide; active: boolean; compa
     case "stack":
       return <Stack slide={slide} active={active} compact={compact} />;
     case "steps":
-      return <Steps slide={slide} />;
+      return <Steps slide={slide} active={active} />;
     case "unit":
       return <Unit slide={slide} />;
     case "traction":

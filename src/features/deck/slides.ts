@@ -101,7 +101,11 @@ export type Slide =
   | (Base & { kind: "solution"; facts: readonly Stat[] })
   | (Base & { kind: "principles" })
   | (Base & { kind: "stack"; lede: readonly string[] })
-  | (Base & { kind: "steps"; steps: readonly { title: string; body: string }[]; statement: string })
+  | (Base & {
+      kind: "steps";
+      steps: readonly { title: string; body: string; art: MacroArtId }[];
+      statement: string;
+    })
   | (Base & { kind: "unit"; specs: readonly Stat[]; highlight: number; image: string })
   | (Base & {
       kind: "traction";
@@ -342,10 +346,18 @@ export const SLIDES: readonly Slide[] = [
     title: "Contract first. Build second.",
     ground: "white",
     steps: [
-      { title: "Sign offtake", body: "Take-or-pay GPU-hour contracts, 3–5 years, with 25–30% prepaid." },
-      { title: "Secure power", body: "Lease colocation or convert existing powered buildings." },
-      { title: "Finance the project", body: "One SPV per cluster: prepayment, GPU debt and preferred equity." },
-      { title: "Deliver tokens", body: "Deploy, accept and operate the cluster for the term." },
+      {
+        title: "Sign offtake",
+        body: "Take-or-pay GPU-hour contracts, 3–5 years, with 25–30% prepaid.",
+        art: "offtake",
+      },
+      { title: "Secure power", body: "Lease colocation or convert existing powered buildings.", art: "power" },
+      {
+        title: "Finance the project",
+        body: "One SPV per cluster: prepayment, GPU debt and preferred equity.",
+        art: "capital",
+      },
+      { title: "Deliver tokens", body: "Deploy, accept and operate the cluster for the term.", art: "compute" },
     ],
     statement: "No megawatt is built without a buyer. Every dollar of capex sits behind a signed contract.",
   },
