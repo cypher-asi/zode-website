@@ -578,54 +578,28 @@
   box-shadow: 0 0 0 1px var(--rule);
 }
 
-/* Text left, number over figure and label as a feature's title over its body; the drawing or chart right. */
+/* A feature's figure cell: the drawing centred, its caption small in the bottom-left corner. */
 .macroCard {
-  display: grid;
-  grid-template-columns: minmax(calc(8 * var(--u)), auto) minmax(0, 1fr);
-  gap: calc(1.6 * var(--u));
-  min-height: 0;
-  padding: calc(1.6 * var(--u)) calc(1.8 * var(--u));
-}
-
-.macroText {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  gap: calc(0.5 * var(--u));
-}
-
-.macroText .macroValue {
-  margin-top: auto;
+  min-height: 0;
+  padding: calc(1.6 * var(--u)) calc(1.6 * var(--u)) calc(3 * var(--u));
 }
 
 .macroFigure {
-  display: flex;
-  min-width: 0;
-  min-height: 0;
-}
-
-/* The chart full bleed, the open edges of the quadrant letting it run out, its caption small beneath. */
-.trendCard {
-  display: flex;
-  flex-direction: column;
-  gap: calc(0.8 * var(--u));
-  min-height: 0;
-  padding: calc(1.2 * var(--u)) calc(0.6 * var(--u));
-}
-
-.trendChart {
   display: flex;
   flex: 1;
   min-width: 0;
   min-height: 0;
 }
 
-.trendCaption {
-  display: flex;
-  gap: calc(1.2 * var(--u));
+.macroCaption {
+  position: absolute;
+  bottom: calc(1.1 * var(--u));
+  left: calc(1.3 * var(--u));
   margin: 0;
-  padding-left: calc(1.2 * var(--u));
   font-family: var(--font-mono);
-  font-size: calc(0.62 * var(--u));
+  font-size: calc(0.72 * var(--u));
   font-weight: 500;
   letter-spacing: var(--eyebrow-tracking);
   line-height: 1.4;
@@ -634,24 +608,7 @@
 }
 
 .macroValue {
-  font-family: var(--font-display);
-  font-size: calc(2.6 * var(--u));
-  font-weight: 300;
-  line-height: 1;
-  letter-spacing: -0.03em;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-/*
- * The value sets the text column's width and the label wraps within it;
- * three lines are held for every label, so the values line up across a row.
- */
-.macroCard .statLabel {
-  contain: inline-size;
-  max-width: none;
-  min-height: 4.5em;
-  font-size: calc(0.62 * var(--u));
+  color: var(--fg);
 }
 
 .macroChain {
@@ -1952,40 +1909,18 @@
 }
 
 .slide[data-compact] .macroCard {
-  grid-template-columns: minmax(0, 1fr);
-  gap: 16px;
-  padding: 20px 0;
+  padding: 28px 0 48px;
   background: var(--bg);
-}
-
-.slide[data-compact] .macroCard .statLabel {
-  contain: none;
-  min-height: 0;
 }
 
 .slide[data-compact] .macroFigure {
-  height: 160px;
+  height: 180px;
 }
 
-.slide[data-compact] .trendCard {
-  gap: 12px;
-  padding: 20px 0;
-  background: var(--bg);
-}
-
-.slide[data-compact] .trendChart {
-  flex: none;
-  height: 200px;
-}
-
-.slide[data-compact] .trendCaption {
-  gap: 12px;
-  padding-left: 0;
+.slide[data-compact] .macroCaption {
+  bottom: 18px;
+  left: 0;
   font-size: var(--text-2xs);
-}
-
-.slide[data-compact] .macroValue {
-  font-size: 40px;
 }
 
 .slide[data-compact] .macroChain {

@@ -101,37 +101,32 @@ function Cover({ slide }: { slide: Of<"cover"> }): ReactElement {
 }
 
 /**
- * The macro slide, two thirds and one: on the left a quadrant, a card per
- * figure with its drawing and token growth charted full bleed; on the right the
- * supply chain from capital to offtake as rows, its bottleneck blinking red,
- * then the statement.
+ * The macro slide, two thirds and one: on the left a quadrant of figure
+ * cards, as the home page's features, a drawing (or the token chart) each,
+ * captioned in the fewest words; on the right the supply chain from capital
+ * to offtake as rows, its bottleneck blinking red, then the statement.
  */
 function Stats({ slide, active, compact }: { slide: Of<"stats">; active: boolean; compact: boolean }): ReactElement {
   return (
     <div className={styles.macro}>
       <div className={styles.macroLead}>
         <ul className={styles.macroCards}>
-          {slide.stats.map((stat, i) => (
-            <li key={stat.label} {...rise(2 + i * 0.5)} className={`${styles.rise} ${styles.macroCard}`}>
-              <div className={styles.macroText}>
-                <span className={styles.label}>{String(i + 1).padStart(2, "0")}</span>
-                <span className={styles.macroValue}>{stat.value}</span>
-                <span className={styles.statLabel}>{stat.label}</span>
-              </div>
-              <div className={styles.macroFigure}>
-                <MacroArt id={stat.art} playing={active} />
-              </div>
+          {[
+            ...slide.stats.map((stat) => ({
+              key: stat.art,
+              value: stat.value,
+              label: stat.label,
+              figure: <MacroArt id={stat.art} playing={active} />,
+            })),
+            { key: "tokens", value: "", label: slide.trend, figure: <TokenChart active={active} compact={compact} /> },
+          ].map((card, i) => (
+            <li key={card.key} {...rise(2 + i * 0.5)} className={`${styles.rise} ${styles.macroCard}`}>
+              <div className={styles.macroFigure}>{card.figure}</div>
+              <p className={styles.macroCaption}>
+                {card.value ? <span className={styles.macroValue}>{card.value}</span> : null} {card.label}
+              </p>
             </li>
           ))}
-          <li {...rise(2 + slide.stats.length * 0.5)} className={`${styles.rise} ${styles.trendCard}`}>
-            <div className={styles.trendChart}>
-              <TokenChart active={active} compact={compact} />
-            </div>
-            <p className={styles.trendCaption}>
-              <span>{String(slide.stats.length + 1).padStart(2, "0")}</span>
-              {slide.trend}
-            </p>
-          </li>
         </ul>
       </div>
       <div className={styles.macroChain}>

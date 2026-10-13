@@ -46,7 +46,7 @@ export type Slide =
   | (Base & {
       kind: "stats";
       stats: readonly (Stat & { art: MacroArtId })[];
-      /** The caption under the token growth chart, the last card. */
+      /** The caption on the token growth chart, the last card. */
       trend: string;
       statement: string;
       chain: readonly ChainStep[];
@@ -130,11 +130,11 @@ export const SLIDES: readonly Slide[] = [
     title: "Demand for compute is outrunning powered capacity.",
     ground: "ink",
     stats: [
-      { value: "~$700B", label: "Hyperscaler AI capex, 2026", art: "capital" },
-      { value: "57 GW", label: "US power shortfall to 2028", art: "power" },
-      { value: "$3.75–5", label: "B300 per GPU-hour", art: "compute" },
+      { value: "~$700B", label: "AI capex", art: "capital" },
+      { value: "57 GW", label: "power gap", art: "power" },
+      { value: "$3.75–5", label: "per GPU-hour", art: "compute" },
     ],
-    trend: "AI tokens per month, 2024 to 2030",
+    trend: "AI tokens per month",
     statement: "Capital, GPUs and powered land are available. Converting energy to tokens is the main bottleneck.",
     chain: [
       { label: "Capital", art: "capital" },
