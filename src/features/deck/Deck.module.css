@@ -230,8 +230,12 @@
   translate: 0 var(--name-top, 0px);
   border-left: var(--bar) solid var(--deck-rule-strong);
   background-color: var(--deck-hover);
-  font-size: calc(1.1 * var(--u));
+  font-family: var(--font-mono);
+  font-size: calc(0.78 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
   line-height: 1;
+  text-transform: uppercase;
   white-space: nowrap;
   color: var(--deck-fg-2);
   opacity: 0;
