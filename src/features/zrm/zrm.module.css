@@ -32,6 +32,10 @@
   composes: search from "../data-room/DataRoomApp.module.css";
 }
 
+.searchField {
+  composes: searchField from "../data-room/DataRoomApp.module.css";
+}
+
 .toolbar .filter {
   flex: none;
   min-width: 132px;

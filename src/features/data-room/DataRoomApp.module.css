@@ -55,18 +55,27 @@
   gap: 6px;
   min-width: 0;
   height: 32px;
-  padding: 0 10px;
+  padding: 0 3px 0 10px;
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-inset);
   background: var(--color-bg);
   color: var(--color-text-secondary);
 }
 
-.search:focus-within {
+.search:has(input:focus) {
   border-color: var(--color-text-primary);
 }
 
-.search svg {
+.searchField {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  height: 100%;
+}
+
+.searchField svg {
   flex: none;
   width: 14px;
   height: 14px;
@@ -76,7 +85,7 @@
   stroke-linecap: round;
 }
 
-.search input {
+.searchField input {
   flex: 1;
   min-width: 0;
   height: 100%;

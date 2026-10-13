@@ -1,0 +1,237 @@
+/*
+ * The header's Buy Compute menu as a standalone dropdown (PinnedHeader.module.css
+ * has the original, fused to its split button). Ink on paper in the caps type;
+ * the trigger fills with ink from its bottom edge on hover and while open.
+ */
+.root {
+  --ink: var(--color-black);
+  --paper: var(--color-white);
+
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.trigger {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: linear-gradient(var(--ink), var(--ink)) no-repeat bottom / 100% 0%;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background-size var(--duration-slow) var(--ease-in-out),
+    color 200ms ease 80ms;
+}
+
+.trigger svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.trigger[aria-expanded="true"],
+.trigger:focus-visible {
+  background-size: 100% 100%;
+  color: var(--paper);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .trigger:hover {
+    background-size: 100% 100%;
+    color: var(--paper);
+  }
+}
+
+/*
+ * Unrolls downward from just under the trigger. The clip runs as keyframes,
+ * as in the header, and visibility flips on at once when opening so the arrow
+ * keys can focus a row straight away.
+ */
+.menu {
+  --type-start: 80ms;
+  --type-stagger: 45ms;
+  --type-char: 14ms;
+  --cursor-gap: 4px;
+
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  width: max-content;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-control);
+  background: var(--paper);
+  font-size: var(--caps-size);
+  font-weight: 500;
+  letter-spacing: var(--caps-tracking);
+  text-transform: uppercase;
+  white-space: nowrap;
+  clip-path: inset(0 0 100% 0);
+  visibility: hidden;
+  transition: visibility 0s linear 180ms;
+  animation: menu-roll-up 180ms var(--ease-in-out);
+}
+
+.root[data-align="start"] .menu {
+  right: auto;
+  left: 0;
+}
+
+.root[data-open] .menu {
+  clip-path: none;
+  visibility: visible;
+  transition: visibility 0s;
+  animation: menu-unroll 260ms var(--ease-out) backwards;
+}
+
+@keyframes menu-unroll {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+
+  to {
+    clip-path: inset(0);
+  }
+}
+
+@keyframes menu-roll-up {
+  from {
+    clip-path: inset(0);
+  }
+
+  to {
+    clip-path: inset(0 0 100% 0);
+  }
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.item:focus-visible {
+  background-color: var(--ink);
+  color: var(--paper);
+  outline: none;
+}
+
+@media (hover: hover) {
+  .item:hover {
+    background-color: var(--ink);
+    color: var(--paper);
+  }
+}
+
+/* Labels type in one row after another, a clip uncovering each in `--chars` steps with the cursor in lockstep. */
+.line {
+  position: relative;
+  display: inline-flex;
+}
+
+.text {
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 0s linear 180ms;
+}
+
+.root[data-open] .text {
+  clip-path: inset(0);
+  transition: clip-path calc(var(--chars) * var(--type-char)) steps(var(--chars), end)
+    calc(var(--type-start) + var(--i) * var(--type-stagger));
+}
+
+.cursor {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 0.55em;
+  height: 1.1em;
+  margin-left: var(--cursor-gap);
+  background: currentColor;
+  opacity: 0;
+  translate: 0 -50%;
+  transition: left 0s linear 180ms;
+}
+
+.root[data-open] .cursor {
+  left: 100%;
+  transition: left calc(var(--chars) * var(--type-char)) steps(var(--chars), end)
+    calc(var(--type-start) + var(--i) * var(--type-stagger));
+  animation: type-cursor calc(var(--chars) * var(--type-char))
+    calc(var(--type-start) + var(--i) * var(--type-stagger));
+}
+
+@keyframes type-cursor {
+  from,
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 900px) {
+  .menu {
+    font-size: var(--text-2xs);
+  }
+
+  .item {
+    height: 28px;
+  }
+}
+
+@media (pointer: coarse) {
+  .item {
+    height: 40px;
+    padding-inline: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger,
+  .menu,
+  .root[data-open] .menu,
+  .item,
+  .text,
+  .root[data-open] .text,
+  .cursor,
+  .root[data-open] .cursor {
+    transition: none;
+  }
+
+  .menu,
+  .root[data-open] .menu,
+  .root[data-open] .cursor {
+    animation: none;
+  }
+}

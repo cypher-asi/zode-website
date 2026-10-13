@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useMemo, useRef, useState, type ReactElement } from "react";
+import { Menu } from "@/components/ui/Menu";
 import { Splitter } from "@/components/ui/Splitter";
 import { SidebarDock, useDocked } from "@/features/portal/PortalFrame";
 import {
@@ -252,37 +253,41 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId, summary }: D
       <SidebarDock>
         <section className={styles.side} aria-label="Files" data-docked={docked ? "" : undefined}>
           <div className={styles.toolbar}>
-            <label className={styles.search}>
-              <Icon name="search" />
-              <input
-                type="search"
-                placeholder="Search files"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                aria-label="Search files"
-              />
-            </label>
-            {isAdmin ? (
-              <>
-                <button type="button" className={ui.iconButton} onClick={newFolder} aria-label="New folder" title="New folder">
-                  <Icon name="folderPlus" />
-                </button>
-                <button type="button" className={ui.primary} onClick={() => fileInputRef.current?.click()}>
-                  <Icon name="upload" />
-                  Upload
-                </button>
+            <div className={styles.search}>
+              <label className={styles.searchField}>
+                <Icon name="search" />
                 <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  hidden
-                  onChange={(event) => {
-                    startUpload([...(event.target.files ?? [])], folderId);
-                    event.target.value = "";
-                  }}
+                  type="search"
+                  placeholder="Search files"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  aria-label="Search files"
                 />
-              </>
-            ) : null}
+              </label>
+              {isAdmin ? (
+                <>
+                  <Menu
+                    label="Add files or folder"
+                    items={[
+                      { id: "upload", label: "Upload files", onSelect: () => fileInputRef.current?.click() },
+                      { id: "folder", label: "New folder", onSelect: newFolder },
+                    ]}
+                  >
+                    <Icon name="plus" />
+                  </Menu>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    hidden
+                    onChange={(event) => {
+                      startUpload([...(event.target.files ?? [])], folderId);
+                      event.target.value = "";
+                    }}
+                  />
+                </>
+              ) : null}
+            </div>
           </div>
           <nav className={styles.location} aria-label="Current folder">
             <button
@@ -387,9 +392,7 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId, summary }: D
                 </button>
               </>
             ) : (
-              <span className={styles.count}>
-                {tree.files.length} file{tree.files.length === 1 ? "" : "s"} · {formatBytes(totalBytes)}
-              </span>
+              <span className={styles.count}>{formatBytes(totalBytes)}</span>
             )}
           </div>
 

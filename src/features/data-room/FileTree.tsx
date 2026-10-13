@@ -380,7 +380,7 @@ export function FileTree({
             {query.trim() ? (
               <p>No files match “{query.trim()}”.</p>
             ) : isAdmin ? (
-              <p>This room is empty. Drop files here or use Upload.</p>
+              <p>This room is empty. Drop files here or add them with +.</p>
             ) : (
               <p>No files have been shared in this room yet.</p>
             )}

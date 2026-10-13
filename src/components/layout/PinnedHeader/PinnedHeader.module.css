@@ -593,8 +593,11 @@ button.menuItem:disabled {
 
 /*
  * Offsets past the menu's 4px padding and 1px border, overlapping the border
- * so the two read as one line. `--shift` (set from JS) pulls it back over the
- * menu where the viewport is too narrow to fit it beside.
+ * so the two read as one line. Sized as content-box so its own matching
+ * padding and border add back what the row is inset by, making it exactly
+ * the menu's width even where borders snap to device pixels. `--shift` (set
+ * from JS) pulls it back over the menu where the viewport is too narrow to fit
+ * it beside.
  */
 .submenu {
   --type-start: 80ms;
@@ -604,7 +607,9 @@ button.menuItem:disabled {
   right: calc(100% + 4px);
   z-index: 1;
   translate: var(--shift, 0px) 0;
-  width: max-content;
+  box-sizing: content-box;
+  width: 100%;
+  min-width: max-content;
   margin: 0;
   padding: 4px;
   list-style: none;

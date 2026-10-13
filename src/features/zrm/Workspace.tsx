@@ -147,16 +147,18 @@ function RecordList<T extends ListRow>({
   return (
     <>
       <div className={styles.toolbar}>
-        <label className={styles.search}>
-          <Icon name="search" />
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={`Search ${KIND_LABELS[kind].plural.toLowerCase()}`}
-            aria-label={`Search ${KIND_LABELS[kind].plural.toLowerCase()}`}
-          />
-        </label>
+        <div className={styles.search}>
+          <label className={styles.searchField}>
+            <Icon name="search" />
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={`Search ${KIND_LABELS[kind].plural.toLowerCase()}`}
+              aria-label={`Search ${KIND_LABELS[kind].plural.toLowerCase()}`}
+            />
+          </label>
+        </div>
         {typeOptions.length > 1 ? (
           <Select
             size="sm"
