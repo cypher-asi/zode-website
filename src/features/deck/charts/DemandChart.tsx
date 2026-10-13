@@ -105,7 +105,7 @@ export function DemandChart({ active, compact = false }: { active: boolean; comp
         S&amp;P 2030: {DEMAND.sp2030}+ GW
       </text>
 
-      <path className={styles.dashed} d={path(GRID)} pathLength={1} />
+      <path className={styles.dashed} d={path(GRID)} />
       <path className={styles.line} d={path(DEMAND.forecast)} pathLength={1} />
       <path className={styles.installed} d={path(DEMAND.installed)} pathLength={1} />
 

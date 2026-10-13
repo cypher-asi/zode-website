@@ -72,9 +72,9 @@
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
-  vector-effect: non-scaling-stroke;
 }
 
+/* These scale with the chart: a non-scaling stroke measures its draw-on dash in screen pixels, which falls short of the line when the chart is drawn large. */
 .line {
   stroke: var(--color-ink);
   stroke-width: 2.5;
@@ -85,10 +85,19 @@
   stroke-width: 4;
 }
 
+.chart[data-compact] .line {
+  stroke-width: 4;
+}
+
+.chart[data-compact] .installed {
+  stroke-width: 6;
+}
+
 .dashed {
   stroke: var(--color-text-secondary);
   stroke-width: 2;
   stroke-dasharray: 6 6;
+  vector-effect: non-scaling-stroke;
 }
 
 .gap {
