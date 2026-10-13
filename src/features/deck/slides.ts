@@ -219,9 +219,9 @@ export const SLIDES: readonly Slide[] = [
           hard: true,
         },
         rest: [
-          { title: "Construction varies town to town", art: "localBuild" },
-          { title: "Volatile global supply chains", art: "supplyChain" },
-          { title: "Capital won't fund risky builds", art: "financing" },
+          { title: "Patchwork local builds", art: "localBuild" },
+          { title: "Volatile supply chains", art: "supplyChain" },
+          { title: "Risk capital stays away", art: "financing" },
         ],
       },
       {
@@ -234,7 +234,7 @@ export const SLIDES: readonly Slide[] = [
         rest: [
           { title: "Water drawn for cooling", art: "water" },
           { title: "Higher power bills", art: "powerBill" },
-          { title: "No share of the economics", art: "economics" },
+          { title: "No share of the upside", art: "economics" },
         ],
       },
     ],
