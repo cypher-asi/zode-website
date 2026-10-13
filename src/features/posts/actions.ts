@@ -3,9 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
-import { isZodeAdmin } from "@/features/account/admin";
-import { getAccount } from "@/features/account/session";
-import type { Account } from "@/features/account/zos";
+import { teamAccount } from "@/features/zrm/access";
 import { deletePostBlobs, postBlobPrefix } from "./blob";
 import { createDraft, deletePost, getPost, setStatus, slugTaken, updatePost } from "./posts";
 import {
@@ -25,11 +23,6 @@ import {
 const NO_ACCESS: SaveResult = { error: "You don't have permission to do that. Try reloading the page." };
 const NOT_FOUND: SaveResult = { error: "This post no longer exists." };
 const FAILED: SaveResult = { error: "Couldn't save right now. Please try again." };
-
-async function adminAccount(): Promise<Account | null> {
-  const account = await getAccount();
-  return account && (await isZodeAdmin(account)) ? account : null;
-}
 
 const text = (value: unknown): string => (typeof value === "string" ? value.trim() : "");
 
@@ -76,7 +69,7 @@ function revalidatePublic(...posts: (Post | null | undefined)[]): void {
 }
 
 async function save(postId: string, raw: PostDraft, publishing: boolean): Promise<SaveResult> {
-  const account = await adminAccount();
+  const account = await teamAccount();
   if (!account) return NO_ACCESS;
   const before = await getPost(postId);
   if (!before) return NOT_FOUND;
@@ -101,7 +94,7 @@ async function save(postId: string, raw: PostDraft, publishing: boolean): Promis
 }
 
 export async function createPostAction(formData: FormData): Promise<void> {
-  const account = await adminAccount();
+  const account = await teamAccount();
   if (!account) redirect("/portal");
   const kind = formData.get("kind");
   const id = await createDraft(isPostKind(kind) ? kind : "news", account);
@@ -118,7 +111,7 @@ export async function publishPostAction(postId: string, draft: PostDraft): Promi
 }
 
 export async function unpublishPostAction(postId: string): Promise<SaveResult> {
-  const account = await adminAccount();
+  const account = await teamAccount();
   if (!account) return NO_ACCESS;
   try {
     const post = await setStatus(postId, "draft", account.email);
@@ -132,7 +125,7 @@ export async function unpublishPostAction(postId: string): Promise<SaveResult> {
 }
 
 export async function deletePostAction(postId: string): Promise<SaveResult> {
-  const account = await adminAccount();
+  const account = await teamAccount();
   if (!account) return NO_ACCESS;
   let post: Post | null;
   try {

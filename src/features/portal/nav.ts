@@ -69,15 +69,17 @@ const ZRM: PortalApp = {
   ],
 };
 
+/** News and changelog for the public site, written by the ZODE team. */
+const POSTS: PortalApp = {
+  id: "posts",
+  label: "Posts",
+  icon: "posts",
+  href: "/portal/posts",
+  links: [{ href: "/portal/posts", label: "News and changelog", icon: "posts" }],
+};
+
 /** ZODE super admins only. */
 const ADMIN_APPS: readonly PortalApp[] = [
-  {
-    id: "posts",
-    label: "Posts",
-    icon: "posts",
-    href: "/portal/posts",
-    links: [{ href: "/portal/posts", label: "News and changelog", icon: "posts" }],
-  },
   {
     id: "subscribers",
     label: "Subscribers",
@@ -96,7 +98,7 @@ const ADMIN_APPS: readonly PortalApp[] = [
 
 /**
  * The apps the viewer can open, in rail order, with Settings last for the
- * rail's foot: ZRM and Team for the ZODE team, the admin apps and everyone's
+ * rail's foot: ZRM, Posts and Team for the ZODE team, the admin apps and everyone's
  * contracts for super admins.
  */
 export function portalApps({ admin, team }: NavAccess): PortalApp[] {
@@ -124,7 +126,7 @@ export function portalApps({ admin, team }: NavAccess): PortalApp[] {
     ROOMS,
     ORDERS,
     contracts,
-    ...(team ? [ZRM] : []),
+    ...(team ? [ZRM, POSTS] : []),
     ...(admin ? ADMIN_APPS : []),
     settings,
   ];

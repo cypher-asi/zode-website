@@ -41,7 +41,7 @@ export async function getPublishedBySlug(kind: PostKind, slug: string): Promise<
   return row ? toPost(row) : null;
 }
 
-/** Every post, drafts included, most recently edited first. For ZODE admins only. */
+/** Every post, drafts included, most recently edited first. For the ZODE team only. */
 export async function listAllPosts(): Promise<Post[]> {
   const rows = await db()`
     select id, kind, status, slug, title, summary, '' as body_md, version, cover_pathname,

@@ -130,7 +130,7 @@ export function OrderList({ orders }: { orders: OrderSummary[] }): ReactElement 
   );
 }
 
-/** News and changelog posts for admins; each row opens the editor. */
+/** News and changelog posts for the ZODE team; each row opens the editor. */
 export function PostList({ posts }: { posts: Post[] }): ReactElement {
   return (
     <ul className={styles.list}>

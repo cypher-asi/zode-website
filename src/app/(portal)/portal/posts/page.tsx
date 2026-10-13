@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { isZodeAdmin } from "@/features/account/admin";
-import { requireAccount } from "@/features/account/session";
 import { loadAllPosts } from "@/features/portal/data";
 import { Empty, PageHeader, PostList } from "@/features/portal/sections";
 import { createPostAction } from "@/features/posts/actions";
 import { POST_KINDS, isPostKind } from "@/features/posts/types";
+import { requireTeam } from "@/features/zrm/access";
 import tabs from "@/features/data-room/room.module.css";
 import ui from "@/features/data-room/ui.module.css";
 import styles from "@/features/portal/portal.module.css";
@@ -23,10 +21,9 @@ const TABS = [{ id: "all", label: "All", href: "/portal/posts" }, ...POST_KINDS.
   href: `/portal/posts?kind=${kind.id}`,
 }))];
 
-/** News and changelog posts, drafts included. ZODE admins only. */
+/** News and changelog posts, drafts included. ZODE team only. */
 export default async function PostsPage({ searchParams }: PageProps<"/portal/posts">): Promise<ReactElement> {
-  const account = await requireAccount("/portal/posts");
-  if (!(await isZodeAdmin(account))) notFound();
+  await requireTeam("/portal/posts");
   const { kind } = await searchParams;
   const filter = isPostKind(kind) ? kind : null;
   const posts = await loadAllPosts();

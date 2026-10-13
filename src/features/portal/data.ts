@@ -34,7 +34,7 @@ export function loadContracts(userId: string): Promise<Contract[] | null> {
   });
 }
 
-/** Every news and changelog post, drafts included, for ZODE admins, or `null` when they couldn't be loaded. */
+/** Every news and changelog post, drafts included, for the ZODE team, or `null` when they couldn't be loaded. */
 export function loadAllPosts(): Promise<Post[] | null> {
   return listAllPosts().catch((error: unknown) => {
     console.error("Failed to load posts", error);
