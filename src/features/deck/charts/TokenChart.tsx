@@ -9,9 +9,9 @@ const YEARS = [2024, 2026, 2028, 2030];
 const Y_TICKS = [10, 100, 1_000, 10_000, 100_000];
 const [LOG0, LOG1] = [Math.log10(6), Math.log10(200_000)];
 
-const W = 480;
-const H = 240;
-const PAD = { top: 14, right: 84, bottom: 30, left: 46 };
+const W = 340;
+const H = 250;
+const PAD = { top: 14, right: 76, bottom: 30, left: 46 };
 
 const x = (year: number) => PAD.left + ((year - X0) / (X1 - X0)) * (W - PAD.left - PAD.right);
 const y = (trillions: number) =>

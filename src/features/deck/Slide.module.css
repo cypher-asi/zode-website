@@ -514,11 +514,10 @@
 }
 
 /*
- * Macro, two thirds and one, split by a page-grid rule. Left, a square card
- * per figure, a drawing over its number, and a wide card charting token
- * growth, joined by hairlines as the other card sets are. Right, the supply
- * chain from capital to offtake: rows joined by arrows down, its bottleneck
- * blinking red, then the statement.
+ * Macro, two thirds and one, split by a page-grid rule. Left, a quadrant: a
+ * card per figure with its drawing, and one charting token growth. Right,
+ * the supply chain from capital to offtake: rows joined by arrows down, its
+ * bottleneck blinking red, then the statement.
  */
 .macro {
   --alarm: #f04438;
@@ -559,74 +558,69 @@
   list-style: none;
 }
 
-/* The portrait cards, then the token chart across under them, taking the height the statement leaves. */
+/*
+ * The quadrant, as the home page's features grid: hairlines between the
+ * cells and none round the outside. The cross is drawn behind the cells
+ * rather than shown through gaps, so it holds while they rise in.
+ */
 .macroCards {
   display: grid;
   flex: 1;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 1px;
+  grid-template: repeat(2, minmax(0, 1fr)) / repeat(2, minmax(0, 1fr));
   min-height: 0;
-  padding: 1px;
+  background:
+    linear-gradient(var(--rule), var(--rule)) center / 1px 100% no-repeat,
+    linear-gradient(var(--rule), var(--rule)) center / 100% 1px no-repeat;
 }
 
-.macroCard,
 .chainStep {
   background: var(--card);
   box-shadow: 0 0 0 1px var(--rule);
 }
 
+/* Text left, number over figure and label as a feature's title over its body; the drawing or chart right. */
 .macroCard {
-  display: flex;
-  flex-direction: column;
-  gap: calc(0.5 * var(--u));
-  min-height: 0;
-  aspect-ratio: 1;
-  padding: calc(1 * var(--u)) calc(1.1 * var(--u)) calc(1.2 * var(--u));
-}
-
-.macroCard.trendCard {
   display: grid;
-  grid-column: 1 / -1;
-  grid-template-columns: calc(11 * var(--u)) minmax(0, 1fr);
-  gap: calc(2 * var(--u));
-  aspect-ratio: auto;
+  grid-template-columns: minmax(calc(8 * var(--u)), auto) minmax(0, 1fr);
+  gap: calc(1.6 * var(--u));
+  min-height: 0;
+  padding: calc(1.6 * var(--u)) calc(1.8 * var(--u));
 }
 
-.trendText {
+.macroText {
   display: flex;
   flex-direction: column;
   gap: calc(0.5 * var(--u));
 }
 
-.trendText .macroValue {
+.macroText .macroValue {
   margin-top: auto;
 }
 
-.trendChart {
+.macroFigure {
+  display: flex;
   min-width: 0;
   min-height: 0;
 }
 
-.macroFigure {
-  flex: 1;
-  min-height: 0;
-  padding: calc(0.8 * var(--u)) 0 calc(1 * var(--u));
-}
-
 .macroValue {
+  font-family: var(--font-display);
   font-size: calc(2.6 * var(--u));
-  font-weight: 400;
+  font-weight: 300;
   line-height: 1;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
-/* Two lines held for every label, so the figures line up whichever labels wrap. */
+/*
+ * The value sets the text column's width and the label wraps within it;
+ * three lines are held for every label, so the values line up across a row.
+ */
 .macroCard .statLabel {
+  contain: inline-size;
   max-width: none;
-  min-height: 3em;
+  min-height: 4.5em;
   font-size: calc(0.62 * var(--u));
 }
 
@@ -1920,34 +1914,31 @@
   display: none;
 }
 
+/* Stacked, a rule between each card and the next. */
 .slide[data-compact] .macroCards {
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: none;
+  grid-template: none / minmax(0, 1fr);
+  gap: 1px;
+  background: var(--rule);
 }
 
 .slide[data-compact] .macroCard {
-  aspect-ratio: auto;
-  padding: 14px 16px 16px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  padding: 20px 0;
+  background: var(--bg);
 }
 
 .slide[data-compact] .macroCard .statLabel {
+  contain: none;
   min-height: 0;
 }
 
-.slide[data-compact] .macroCard.trendCard {
-  grid-column: auto;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 16px;
-}
-
-.slide[data-compact] .trendChart {
-  height: 200px;
-}
-
 .slide[data-compact] .macroFigure {
-  flex: none;
-  height: 140px;
-  padding: 12px 0 16px;
+  height: 160px;
+}
+
+.slide[data-compact] .macroCard:last-child .macroFigure {
+  height: 220px;
 }
 
 .slide[data-compact] .macroValue {
