@@ -26,6 +26,8 @@ export interface SelectProps {
   /** Starting value when uncontrolled. Changing it later resets the choice, e.g. after "Clear filters". */
   defaultValue?: string;
   onChange?: (value: string) => void;
+  /** Muted text on the trigger while the value matches no option, e.g. a controlled `""` before anything's picked. */
+  placeholder?: string;
   /** Submits the value with the surrounding form through a hidden input. */
   name?: string;
   size?: "md" | "sm";
@@ -61,6 +63,7 @@ export function Select({
   value,
   defaultValue,
   onChange,
+  placeholder,
   name,
   size = "md",
   align = "start",
@@ -238,8 +241,8 @@ export function Select({
         aria-label={ariaLabel && selected ? `${ariaLabel}: ${selected.label}` : ariaLabel}
         onKeyDown={onTriggerKey}
       >
-        <span id={valueId} className={styles.value}>
-          {selected?.label ?? ""}
+        <span id={valueId} className={styles.value} data-placeholder={(!selected && placeholder) || undefined}>
+          {selected?.label ?? placeholder ?? ""}
         </span>
         <svg className={styles.chevron} viewBox="0 0 16 16" aria-hidden="true">
           <path d="M4 6l4 4 4-4" />

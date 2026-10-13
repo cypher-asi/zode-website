@@ -25,6 +25,11 @@
   white-space: nowrap;
 }
 
+/* Matches Field's input placeholder. */
+.value[data-placeholder] {
+  color: var(--color-text-faint);
+}
+
 .chevron,
 .check {
   flex: none;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, type CSSProperties, type FormEvent, type ReactElement } from "react";
+import { Select } from "@/components/ui/Select";
 import { HONEYPOT_FIELD } from "@/lib/leads";
 import { CHECK_SIZES, CONTACT_FIELDS, INVESTOR_TYPES, NOTE_MAX, OPPORTUNITIES, type ContactKey } from "./options";
 import styles from "@/features/engineer-request/EngineerCard.module.css";
@@ -15,6 +16,8 @@ const INPUTS: Record<ContactKey, { type?: string; inputMode?: "url"; autoComplet
   firmWebsite: { inputMode: "url", autoComplete: "url", placeholder: "acme.vc" },
   phone: { type: "tel", autoComplete: "tel" },
 };
+
+const TYPE_OPTIONS = INVESTOR_TYPES.map((type) => ({ value: type.id, label: type.label }));
 
 const EMPTY: Record<ContactKey, string> = { name: "", email: "", firm: "", title: "", firmWebsite: "", phone: "" };
 
@@ -34,7 +37,7 @@ export function InvestorForm({ action, pending, error }: Props): ReactElement {
   const id = useId();
   const [step, setStep] = useState<Step>(1);
   const [direction, setDirection] = useState<"next" | "back">("next");
-  const [investorType, setInvestorType] = useState<string | null>(null);
+  const [investorType, setInvestorType] = useState("");
   const [opportunities, setOpportunities] = useState<string[]>([]);
   const [checkSize, setCheckSize] = useState<string | null>(null);
   const [contact, setContact] = useState(EMPTY);
@@ -86,27 +89,24 @@ export function InvestorForm({ action, pending, error }: Props): ReactElement {
       </header>
 
       <div className={styles.step} hidden={step !== 1}>
-        <fieldset className={styles.group}>
-          <legend className={styles.legend}>Investor type</legend>
-          <div className={styles.chips}>
-            {INVESTOR_TYPES.map((option) => (
-              <label key={option.id} className={styles.chip}>
-                <input
-                  className={styles.hiddenInput}
-                  type="radio"
-                  name="investorType"
-                  value={option.id}
-                  checked={investorType === option.id}
-                  onChange={() => {
-                    setStepError(null);
-                    setInvestorType(option.id);
-                  }}
-                />
-                <span>{option.label}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
+        <div className={styles.group}>
+          <label id={`${id}-type-label`} className={styles.legend} htmlFor={`${id}-type`}>
+            Investor type
+          </label>
+          <Select
+            id={`${id}-type`}
+            aria-labelledby={`${id}-type-label`}
+            className={styles.select}
+            name="investorType"
+            options={TYPE_OPTIONS}
+            placeholder="Choose one"
+            value={investorType}
+            onChange={(value) => {
+              setStepError(null);
+              setInvestorType(value);
+            }}
+          />
+        </div>
 
         <fieldset className={styles.group}>
           <legend className={styles.legend}>Interested in</legend>

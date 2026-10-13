@@ -356,6 +356,12 @@
   composes: textarea from "../../components/ui/Field/Field.module.css";
 }
 
+/* A components/ui/Select root, as wide as the fields. */
+.select {
+  display: flex;
+  width: 100%;
+}
+
 /* Off-screen rather than display:none, which some bots skip. */
 .trap {
   position: absolute;
