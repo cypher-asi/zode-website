@@ -37,16 +37,8 @@ export function PortalNav({ access }: { access: NavAccess }): ReactElement {
             ))}
           </div>
         </div>
-        <span className={styles.rule} />
-        <span className={styles.caption} aria-hidden="true">
-          ZODE Portal
-        </span>
       </div>
       <div className={styles.tray}>
-        <span className={styles.caption} aria-hidden="true">
-          Settings
-        </span>
-        <span className={styles.rule} />
         <div className={styles.bar}>
           <div className={styles.group}>
             <RailItem app={settings} current={current.id === "settings"} />

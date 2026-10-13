@@ -89,33 +89,6 @@
   min-height: 0;
 }
 
-/* The tray's label, read bottom to top, set off from the bar by a short rule. */
-.caption {
-  flex: none;
-  padding: 12px 0;
-  color: var(--color-text-faint);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.22em;
-  line-height: 1;
-  text-transform: uppercase;
-  white-space: nowrap;
-  writing-mode: vertical-rl;
-  rotate: 180deg;
-}
-
-.rule {
-  flex: none;
-  width: 24px;
-  height: 1px;
-  margin: 8px 0 0;
-  background: var(--glass-border);
-}
-
-.tray:last-child .rule {
-  margin: 0 0 8px;
-}
-
 .group {
   display: flex;
   flex-direction: column;
@@ -297,14 +270,6 @@
     0 24px 48px -32px rgba(0, 0, 0, 0.18);
 }
 
-/* Captions need the height; short windows give it to the icons. */
-@media (max-height: 760px) {
-  .caption,
-  .rule {
-    display: none;
-  }
-}
-
 /* PinnedHeader tightens up here: the wordmark sits 24px down and the button ends at 47px. */
 @media (max-width: 900px) {
   .frame {
@@ -344,11 +309,6 @@
   .tray,
   .bar {
     display: contents;
-  }
-
-  .caption,
-  .rule {
-    display: none;
   }
 
   .group {
