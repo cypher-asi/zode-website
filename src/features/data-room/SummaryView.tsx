@@ -23,21 +23,35 @@ const native = (amount: number, currency: string) =>
 
 const irr = (n: number | null) => (n === null ? "n.a." : pct(n, 1));
 
-const STATUS_ORDER: DiligenceStatus[] = ["confirmed", "claimed", "gap", "risk"];
+/** Diligence rows lead with what needs attention. */
+const SEVERITY: DiligenceStatus[] = ["risk", "gap", "claimed", "confirmed"];
 
-const STATUS_MARKS: Record<DiligenceStatus, string> = {
-  confirmed: "M4.75 8.25 7 10.5l4.25-5",
-  claimed: "M6.1 6.3a1.95 1.95 0 1 1 2.75 1.8c-.5.25-.85.65-.85 1.2v.2M8 11.4h.01",
-  gap: "M5.25 8h5.5",
-  risk: "M8 4.75v3.75M8 11.25h.01",
+const STATUS_HINTS: Record<DiligenceStatus, string> = {
+  confirmed: "Rests on records in the room",
+  claimed: "On the seller's word",
+  gap: "Nothing in the room either way",
+  risk: "A known concern",
 };
 
-function StatusMark({ status }: { status: DiligenceStatus }) {
-  return (
-    <svg viewBox="0 0 16 16" className={styles.mark} data-status={status} aria-hidden="true">
-      <path d={STATUS_MARKS[status]} />
-    </svg>
-  );
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/** "3 of 8 confirmed. 3 risks and 2 gaps to resolve." */
+function diligenceLede(statuses: DiligenceStatus[]): string {
+  const count = (status: DiligenceStatus) => statuses.filter((s) => s === status).length;
+  const confirmed = count("confirmed");
+  if (confirmed === statuses.length) return `All ${statuses.length} confirmed.`;
+  const open = [
+    count("risk") && plural(count("risk"), "risk", "risks"),
+    count("gap") && plural(count("gap"), "gap", "gaps"),
+  ].filter(Boolean);
+  const claimed = count("claimed");
+  return [
+    `${confirmed} of ${statuses.length} confirmed.`,
+    open.length ? `${open.join(" and ")} to resolve.` : "",
+    claimed ? `${claimed} on the seller's word.` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function Sources({ roomId, sources, names }: { roomId: string; sources: DiligenceSource[]; names: Map<string, string> }) {
@@ -112,10 +126,25 @@ function siteFigures(summary: Summary): Figure[] {
   ];
 }
 
+/** What the site costs before it runs: price and conversion for a purchase, the capital contribution for a lease or colo. */
+function upfront(summary: Summary): { usd: number | null; estimate: boolean } {
+  if (summary.kind !== "purchase") {
+    const { capitalContribution, fx } = summary.economics;
+    return { usd: toUsd(capitalContribution, fx), estimate: capitalContribution.estimate };
+  }
+  const { purchasePrice, conversionCost, fx } = summary.economics;
+  const price = toUsd(purchasePrice, fx);
+  const conversion = toUsd(conversionCost, fx);
+  return {
+    usd: price === null || conversion === null ? null : price + conversion,
+    estimate: purchasePrice.estimate || conversionCost.estimate,
+  };
+}
+
 /**
- * The site's economics from the standard compute model, as a purchase or a
- * lease by the room's kind, then the room's diligence answers as a checklist.
- * Each row opens to its reasoning and the room files it rests on.
+ * The deal at a glance: a line and four numbers from the standard compute
+ * model, then the diligence answers, worst first. Every figure's reasoning,
+ * the model's assumptions and each answer's sources sit behind a disclosure.
  */
 export function SummaryView({ roomId, summary }: { roomId: string; summary: Summary }): ReactElement {
   const e = summary.economics;
@@ -164,95 +193,101 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
     `$${i.contractPrice.toFixed(2)} per GPU-hour on a ${i.contractMonths}-month contract, PUE ${i.pue}, ` +
     `power at $${i.electricityRate.toFixed(3)} per kWh. ${site}${fx}`;
 
+  const cost = upfront(summary);
+  const keyFigures = [
+    { label: "Equity IRR", value: irr(r.equityIrr) },
+    { label: "Revenue, year 1", value: usdShort(r.year1Revenue) },
+    { label: "Upfront cost", value: cost.usd === null ? "Not priced" : usdShort(cost.usd), estimate: cost.estimate },
+    { label: "Critical IT", value: `${Number(x.criticalItMw.toFixed(2))} MW`, estimate: e.criticalItMw.estimate },
+  ];
+  const economicsLede = `${plural(x.nodes, "B300 node", "B300 nodes")} on ${
+    summary.kind === "purchase" ? "an owned" : summary.kind === "colo" ? "a colo" : "a leased"
+  } site, base case.`;
+
   const items = DILIGENCE_FIELDS.flatMap(({ key, label }) => {
     const item = summary.diligence[key];
     return item ? [{ key, label, item }] : [];
-  });
-  const tally = STATUS_ORDER.map((status) => ({
-    status,
-    count: items.filter(({ item }) => item.status === status).length,
-  })).filter(({ count }) => count > 0);
+  }).sort((a, b) => SEVERITY.indexOf(a.item.status) - SEVERITY.indexOf(b.item.status));
 
   return (
     <div className={styles.summary}>
-      <p className={styles.meta}>
-        Confirmed answers rest on records in the room, claimed ones on the seller&apos;s word. Open a row for the
-        reasoning and its sources.
-      </p>
-
-      <div className={styles.columns}>
-        <section className={styles.section} aria-labelledby="economics-heading">
-          <div className={styles.sectionHead}>
-            <h2 id="economics-heading" className={styles.heading}>
-              Economics
-            </h2>
-            <Link href={x.modelHref} className={styles.modelLink}>
-              Open in compute model
-            </Link>
-          </div>
-          <ul className={styles.list}>
+      <section className={styles.section} aria-labelledby="economics-heading">
+        <div className={styles.sectionHead}>
+          <h2 id="economics-heading" className={styles.heading}>
+            Economics
+          </h2>
+          <Link href={x.modelHref} className={styles.modelLink}>
+            Compute model
+          </Link>
+        </div>
+        <p className={styles.lede}>{economicsLede}</p>
+        <ul className={styles.keyFigures}>
+          {keyFigures.map((f) => (
+            <li key={f.label} className={styles.keyFigure}>
+              <span className={styles.keyValue}>{f.value}</span>
+              <span className={styles.keyLabel}>
+                {f.label}
+                {f.estimate ? <span className={styles.est}> · est.</span> : null}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <details className={styles.more}>
+          <summary className={styles.moreHead}>
+            Figures and assumptions
+            <Icon name="chevron" className={styles.chevron} />
+          </summary>
+          <ul className={styles.figures}>
             {figures.map((f) => (
-              <li key={f.label}>
-                <details className={styles.row}>
-                  <summary className={`${styles.rowHead} ${styles.figureHead}`}>
-                    <span className={styles.figureLabel}>
-                      <span className={styles.rowLabel}>{f.label}</span>
-                      {f.estimate ? <span className={styles.estimate}>Estimate</span> : null}
-                      {f.note ? <span className={styles.figureNote}>{f.note}</span> : null}
-                    </span>
-                    <span className={styles.figureValue}>{f.value}</span>
-                    <Icon name="chevron" className={styles.chevron} />
-                  </summary>
-                  <div className={`${styles.rowBody} ${styles.figureBody}`}>
-                    <p className={styles.detail}>{f.detail}</p>
-                    {f.sources?.length ? (
-                      <Sources roomId={roomId} sources={f.sources} names={summary.sourceNames} />
-                    ) : null}
-                  </div>
-                </details>
+              <li key={f.label} className={styles.figure}>
+                <div className={styles.figureHead}>
+                  <span className={styles.figureLabel}>
+                    {f.label}
+                    {f.estimate ? <span className={styles.estimate}>Estimate</span> : null}
+                    {f.note ? <span className={styles.figureNote}>{f.note}</span> : null}
+                  </span>
+                  <span className={styles.figureValue}>{f.value}</span>
+                </div>
+                <p className={styles.detail}>{f.detail}</p>
+                {f.sources?.length ? (
+                  <Sources roomId={roomId} sources={f.sources} names={summary.sourceNames} />
+                ) : null}
               </li>
             ))}
           </ul>
           <p className={styles.assumptions}>{assumptions} Planning estimates, not an offer or investment advice.</p>
-        </section>
+        </details>
+      </section>
 
-        <section className={styles.section} aria-labelledby="diligence-heading">
-          <div className={styles.sectionHead}>
-            <h2 id="diligence-heading" className={styles.heading}>
-              Diligence
-            </h2>
-            <ul className={styles.tally} aria-label="Answers by status">
-              {tally.map(({ status, count }) => (
-                <li key={status} data-status={status}>
-                  <StatusMark status={status} />
-                  {count} {STATUS_LABELS[status].toLowerCase()}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <ul className={styles.list}>
-            {items.map(({ key, label, item }) => (
-              <li key={key}>
-                <details className={styles.row}>
-                  <summary className={styles.rowHead}>
-                    <StatusMark status={item.status} />
-                    <span className={styles.rowLabel}>{label}</span>
-                    <span className={styles.rowText}>{item.headline}</span>
-                    <span className={styles.status} data-status={item.status}>
-                      {STATUS_LABELS[item.status]}
-                    </span>
-                    <Icon name="chevron" className={styles.chevron} />
-                  </summary>
-                  <div className={styles.rowBody}>
-                    <p className={styles.detail}>{item.detail}</p>
-                    <Sources roomId={roomId} sources={item.sources} names={summary.sourceNames} />
-                  </div>
-                </details>
-              </li>
-            ))}
-          </ul>
-        </section>
-      </div>
+      <section className={styles.section} aria-labelledby="diligence-heading">
+        <div className={styles.sectionHead}>
+          <h2 id="diligence-heading" className={styles.heading}>
+            Diligence
+          </h2>
+        </div>
+        <p className={styles.lede}>{diligenceLede(items.map(({ item }) => item.status))}</p>
+        <ul className={styles.list}>
+          {items.map(({ key, label, item }) => (
+            <li key={key}>
+              <details className={styles.row}>
+                <summary className={styles.rowHead}>
+                  <span className={styles.dot} data-status={item.status} aria-hidden="true" />
+                  <span className={styles.rowLabel}>{label}</span>
+                  <span className={styles.status} data-status={item.status} title={STATUS_HINTS[item.status]}>
+                    {STATUS_LABELS[item.status]}
+                  </span>
+                  <Icon name="chevron" className={styles.chevron} />
+                </summary>
+                <div className={styles.rowBody}>
+                  <p className={styles.headline}>{item.headline}</p>
+                  <p className={styles.detail}>{item.detail}</p>
+                  <Sources roomId={roomId} sources={item.sources} names={summary.sourceNames} />
+                </div>
+              </details>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }
