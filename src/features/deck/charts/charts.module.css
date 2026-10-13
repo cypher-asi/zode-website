@@ -218,6 +218,38 @@
 }
 
 /*
+ * A phone's story card (`data-compact`) draws each chart about half size, so
+ * its type is set larger against the viewBox to read at 11px and up.
+ */
+.chart[data-compact] :is(.axis, .note) {
+  font-size: 20px;
+}
+
+.chart[data-compact] .value {
+  font-size: 28px;
+}
+
+.chart[data-compact] .gapLabel {
+  font-size: 26px;
+}
+
+.chart[data-compact] .barValue {
+  font-size: 22px;
+}
+
+.chart[data-compact] .barLabel {
+  font-size: 19px;
+}
+
+.chart[data-compact] .unit {
+  font-size: 16px;
+}
+
+.chart[data-compact] .tileLabel {
+  font-size: 21px;
+}
+
+/*
  * Draw-on, once the slide is shown (`data-active`). Screen only, so print
  * and reduced motion get the finished chart.
  */

@@ -2,17 +2,21 @@ import { useId, type CSSProperties, type ReactElement } from "react";
 import { SHORTFALL } from "../research";
 import styles from "./charts.module.css";
 
-const W = 860;
-const H = 480;
-const PAD = { top: 44, right: 8, bottom: 72, left: 8 };
 const Y_MAX = 100;
-const SLOT = (W - PAD.left - PAD.right) / SHORTFALL.steps.length;
-const BAR = SLOT * 0.56;
 
-/** SVG text doesn't wrap; notes break onto lines this many characters long to stay inside their slot. */
+/**
+ * The slide's wide bridge, and a taller one for a phone's story card, where
+ * the type is set larger against the viewBox and the notes under each bar
+ * give way to the caption.
+ */
+const LAYOUTS = {
+  wide: { W: 860, H: 480, pad: { top: 44, right: 8, bottom: 72, left: 8 }, labelY: 26 },
+  compact: { W: 520, H: 520, pad: { top: 52, right: 4, bottom: 72, left: 4 }, labelY: 34 },
+} as const;
+
+/** SVG text doesn't wrap; notes and labels break onto lines this many characters long to stay inside their slot. */
 const NOTE_CHARS = 16;
-
-const y = (gw: number) => H - PAD.bottom - (gw / Y_MAX) * (H - PAD.top - PAD.bottom);
+const LABEL_CHARS = 6;
 
 function wrap(text: string, max: number): string[] {
   const lines: string[] = [];
@@ -40,12 +44,17 @@ const BARS = (() => {
 })();
 
 /** Morgan Stanley's 2026–2028 bridge from demand to the net power gap, in GW. */
-export function ShortfallChart({ active }: { active: boolean }): ReactElement {
+export function ShortfallChart({ active, compact = false }: { active: boolean; compact?: boolean }): ReactElement {
+  const { W, H, pad: PAD, labelY } = LAYOUTS[compact ? "compact" : "wide"];
+  const SLOT = (W - PAD.left - PAD.right) / SHORTFALL.steps.length;
+  const BAR = SLOT * 0.56;
+  const y = (gw: number) => H - PAD.bottom - (gw / Y_MAX) * (H - PAD.top - PAD.bottom);
   return (
     <svg
       className={styles.chart}
       viewBox={`0 0 ${W} ${H}`}
       data-active={active || undefined}
+      data-compact={compact || undefined}
       role="img"
       aria-label="97 GW of 2026–2028 demand, less 21 GW under construction and 19 GW of grid capacity, leaves a 57 GW gross gap; less 24 GW of time-to-power fixes, a 33 GW net gap."
     >
@@ -77,16 +86,24 @@ export function ShortfallChart({ active }: { active: boolean }): ReactElement {
               {bar.kind === "step" ? `−${Math.abs(bar.value)}` : bar.value}
               <tspan className={styles.unit}> GW</tspan>
             </text>
-            <text className={styles.barLabel} x={cx} y={H - PAD.bottom + 26} textAnchor="middle">
-              {bar.label}
+            <text className={styles.barLabel} x={cx} y={H - PAD.bottom + labelY} textAnchor="middle">
+              {compact
+                ? wrap(bar.short, LABEL_CHARS).map((line, n) => (
+                    <tspan key={line} x={cx} dy={n ? "1.15em" : 0}>
+                      {line}
+                    </tspan>
+                  ))
+                : bar.label}
             </text>
-            <text className={styles.barNote} x={cx} y={H - PAD.bottom + 46} textAnchor="middle">
-              {wrap(bar.note, NOTE_CHARS).map((line, n) => (
-                <tspan key={line} x={cx} dy={n ? "1.3em" : 0}>
-                  {line}
-                </tspan>
-              ))}
-            </text>
+            {compact ? null : (
+              <text className={styles.barNote} x={cx} y={H - PAD.bottom + 46} textAnchor="middle">
+                {wrap(bar.note, NOTE_CHARS).map((line, n) => (
+                  <tspan key={line} x={cx} dy={n ? "1.3em" : 0}>
+                    {line}
+                  </tspan>
+                ))}
+              </text>
+            )}
           </g>
         );
       })}
@@ -94,21 +111,25 @@ export function ShortfallChart({ active }: { active: boolean }): ReactElement {
   );
 }
 
-const YW = 300;
-const YH = 480;
-const YPAD = { top: 44, right: 8, bottom: 72, left: 8 };
 const YMAX = 80;
-const YSLOT = (YW - YPAD.left - YPAD.right) / SHORTFALL.byYear.length;
-const ybar = (gw: number) => YH - YPAD.bottom - (gw / YMAX) * (YH - YPAD.top - YPAD.bottom);
+/** A narrow column beside the bridge on the slide; full width and shorter on a story card. */
+const YEAR_LAYOUTS = {
+  wide: { W: 300, H: 480, pad: { top: 44, right: 8, bottom: 72, left: 8 } },
+  compact: { W: 520, H: 340, pad: { top: 52, right: 4, bottom: 52, left: 4 } },
+} as const;
 
 /** The cumulative net gap by year; 2029, an extension of the forecast, is hatched. */
-export function ShortfallByYear({ active }: { active: boolean }): ReactElement {
+export function ShortfallByYear({ active, compact = false }: { active: boolean; compact?: boolean }): ReactElement {
   const hatch = useId();
+  const { W: YW, H: YH, pad: YPAD } = YEAR_LAYOUTS[compact ? "compact" : "wide"];
+  const YSLOT = (YW - YPAD.left - YPAD.right) / SHORTFALL.byYear.length;
+  const ybar = (gw: number) => YH - YPAD.bottom - (gw / YMAX) * (YH - YPAD.top - YPAD.bottom);
   return (
     <svg
       className={styles.chart}
       viewBox={`0 0 ${YW} ${YH}`}
       data-active={active || undefined}
+      data-compact={compact || undefined}
       role="img"
       aria-label="Cumulative net gap: 5 GW in 2026, 12 GW in 2027, 33 GW in 2028 and 72 GW in 2029."
     >

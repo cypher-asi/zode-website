@@ -75,7 +75,7 @@
 .stage {
   --slide-top: var(--header-band);
   --slide-edge: var(--edge);
-  --slide-bottom: var(--bar-h);
+  --slide-bottom: calc(var(--bar-h) + env(safe-area-inset-bottom, 0px));
 
   touch-action: pan-y pinch-zoom;
 }
@@ -266,29 +266,6 @@
   }
 }
 
-.rotate {
-  display: none;
-}
-
-@media (max-width: 700px) and (orientation: portrait) {
-  .rotate {
-    position: absolute;
-    right: 0;
-    bottom: 24px;
-    left: 0;
-    z-index: 2;
-    display: block;
-    margin: 0;
-    padding: 0 var(--edge);
-    font-family: var(--font-mono);
-    font-size: var(--text-2xs);
-    letter-spacing: var(--caps-tracking);
-    text-align: center;
-    text-transform: uppercase;
-    color: var(--deck-fg-2);
-  }
-}
-
 /* ---------- Control bar ---------- */
 
 /*
@@ -305,8 +282,9 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 560px) minmax(0, 1fr);
   gap: 24px;
   align-items: center;
-  height: var(--bar-h);
-  padding: 0 var(--edge);
+  height: calc(var(--bar-h) + env(safe-area-inset-bottom, 0px));
+  padding: 0 max(var(--edge), env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px)
+    max(var(--edge), env(safe-area-inset-left, 0px));
   border-top: 1px solid var(--deck-rule);
   background: var(--deck-bg);
   font-family: var(--font-mono);
@@ -356,13 +334,27 @@
   white-space: nowrap;
 }
 
-.section {
+.section,
+.hint {
   overflow: hidden;
   margin-left: 8px;
   padding-left: 16px;
   border-left: 1px solid var(--deck-rule);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.hint {
+  flex: none;
+  overflow: visible;
+  color: var(--deck-fg);
+  animation: overviewIn var(--duration-slow) var(--ease-out);
+}
+
+.hint .icon {
+  display: inline-block;
+  margin-left: 4px;
+  vertical-align: -1px;
 }
 
 .iconButton,
@@ -569,6 +561,116 @@
   }
 }
 
+/*
+ * Story cards, on a portrait phone (`data-compact`, Deck.tsx). Each slide
+ * reflows and scrolls inside itself (Slide.module.css) and draws its own
+ * grid, so the shared one goes. The controls stay up, with thumb-sized
+ * targets under the segmented progress, and a slide slides in from the side
+ * it was swiped from.
+ */
+.root[data-compact] {
+  --bar-h: 60px;
+}
+
+.root[data-compact] .grid {
+  display: none;
+}
+
+.root[data-compact] .slot {
+  transition:
+    opacity var(--duration-slow) var(--ease-out),
+    translate var(--duration-slow) var(--ease-out),
+    visibility 0s linear var(--duration-slow);
+}
+
+.root[data-compact] .slot[data-state="before"] {
+  translate: -8% 0;
+}
+
+.root[data-compact] .slot[data-state="after"] {
+  translate: 8% 0;
+}
+
+.root[data-compact] .slot[data-state="current"] {
+  transition-delay: 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root[data-compact] .slot[data-state] {
+    translate: none;
+  }
+}
+
+.root[data-compact] .bar {
+  gap: 8px;
+  transition:
+    background-color var(--duration-slow) var(--ease-in-out),
+    border-color var(--duration-slow) var(--ease-in-out);
+}
+
+.root[data-compact] .barStart,
+.root[data-compact] .barEnd {
+  gap: 4px;
+}
+
+.root[data-compact] :is(.iconButton, .textButton) {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  gap: 0;
+  font-size: 0;
+}
+
+.root[data-compact] .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.root[data-compact] .counter {
+  margin-left: 6px;
+}
+
+.root[data-compact] :is(.section, .hint) {
+  display: block;
+  min-width: 0;
+  margin-left: 4px;
+  padding-left: 12px;
+}
+
+.root[data-compact] .progress {
+  right: max(var(--edge), env(safe-area-inset-right, 0px));
+  left: max(var(--edge), env(safe-area-inset-left, 0px));
+  gap: 3px;
+}
+
+.root[data-compact] .tick::after {
+  display: none;
+}
+
+.root[data-compact] .overview {
+  padding-inline: var(--edge);
+}
+
+.root[data-compact] .overviewGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 12px;
+}
+
+.root[data-compact] .thumbLabel {
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.root[data-compact] .thumbLabel span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.root[data-compact] .thumbButton {
+  inset: -4px;
+}
+
 /* ---------- Share menu ---------- */
 
 .shareAnchor {
@@ -580,7 +682,7 @@
   right: 0;
   bottom: calc(100% + 10px);
   z-index: 7;
-  min-width: 260px;
+  min-width: min(260px, calc(100vw - 2 * var(--edge)));
   margin: 0;
   padding: 6px;
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -588,6 +690,9 @@
   background: var(--color-ink);
   box-shadow: var(--shadow-lg);
   color: var(--color-text-inverse);
+  font-size: var(--text-sm);
+  letter-spacing: normal;
+  text-transform: none;
   list-style: none;
   animation: menuIn var(--duration-base) var(--ease-out);
 }
@@ -665,7 +770,7 @@
 /* Between the header band and the bar, so thumbnails never scroll under the header. */
 .overview {
   position: absolute;
-  inset: var(--header-band) 0 var(--bar-h);
+  inset: var(--header-band) 0 calc(var(--bar-h) + env(safe-area-inset-bottom, 0px));
   z-index: 5;
   overflow-y: auto;
   padding: 8px var(--edge) 24px;
@@ -798,7 +903,6 @@
 
   .header,
   .grid,
-  .rotate,
   .bar,
   .overview,
   .srOnly {

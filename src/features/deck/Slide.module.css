@@ -852,9 +852,11 @@
 }
 
 /* Stack: the exploded plates with a label leading off each. */
+/* A definite row, so the figure takes its width from the row's height, not the drawing's 300px intrinsic width. */
 .stack {
   display: grid;
   grid-template-columns: calc(26 * var(--u)) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   gap: calc(4 * var(--u));
 }
 
@@ -876,6 +878,15 @@
   margin-left: calc(6 * var(--u));
 }
 
+/* The home page restacks its figure below 1200px (FullStack.module.css); the slide keeps it filling this box. */
+.stackFigure > :first-child {
+  --art: 100%;
+
+  flex-direction: row;
+  align-items: normal;
+  margin-top: 0;
+}
+
 .stackLabels {
   position: absolute;
   inset: 0;
@@ -887,6 +898,8 @@
 
 .stackLabel {
   position: absolute;
+  top: var(--y);
+  left: var(--x);
   display: grid;
   grid-template-columns: calc(5 * var(--u)) calc(1.8 * var(--u)) max-content;
   grid-template-areas:
@@ -1423,6 +1436,634 @@
 
 .citations + .fine {
   margin-top: calc(1.2 * var(--u));
+}
+
+/* ---------- Story cards ---------- */
+
+/*
+ * A portrait phone's story card (`data-compact`, set by Deck.tsx): the slide
+ * keeps the screen's size and its frame scrolls between the site header and
+ * the deck's controls. Everything stacks into one column. `--u` becomes a
+ * fixed spacing step and type takes the site's mobile sizes, since a
+ * hundredth of a phone's width is too small to read. The rails run down the
+ * slide itself, so they hold still as the content scrolls past.
+ */
+.slide[data-compact] .frame {
+  --u: 8px;
+  --rail: var(--frame-inset);
+  --inset-x: var(--slide-edge, 24px);
+
+  inset: var(--slide-top, 0px) 0 var(--slide-bottom, 0px);
+  grid-template-rows: auto 1fr auto;
+  padding: calc(2.4 * var(--u)) var(--inset-x) 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.slide[data-compact] .frame:not([data-foot]) {
+  padding-bottom: 32px;
+}
+
+.slide[data-compact] .frame[data-grid]::before {
+  display: none;
+}
+
+.slide[data-compact]::after {
+  content: "";
+  position: absolute;
+  inset: 0 var(--frame-inset);
+  z-index: 2;
+  border-inline: 1px solid var(--rule);
+  pointer-events: none;
+}
+
+.slide[data-compact] .frame[data-grid][data-foot]:not([data-head])::after {
+  top: calc(1 * var(--u) - var(--pip) / 2);
+}
+
+.slide[data-compact] .main {
+  min-height: auto;
+  padding-top: 20px;
+}
+
+.slide[data-compact]:is([data-kind="cover"], [data-kind="close"]) .main {
+  padding-top: 0;
+}
+
+.slide[data-compact] .main > * {
+  min-height: auto;
+}
+
+.slide[data-compact] .frame[data-foot] .main {
+  padding-bottom: 32px;
+}
+
+.slide[data-compact] .main > :is(.split, .unit) {
+  margin-block: 0;
+  padding-bottom: 0;
+}
+
+/* Type, at the site's mobile sizes. */
+.slide[data-compact] :is(.eyebrow, .number, .footLabel, .label, .meta, .figLabel, .fine, .statLabel, .statSource) {
+  font-size: var(--text-2xs);
+}
+
+.slide[data-compact] .display {
+  font-size: clamp(32px, 9.4cqw, 44px);
+}
+
+.slide[data-compact] .title {
+  max-width: none;
+  font-size: clamp(26px, 7.2cqw, 34px);
+}
+
+.slide[data-compact] .h3 {
+  font-size: var(--h3-size, 21px);
+}
+
+.slide[data-compact] .body {
+  font-size: 15px;
+}
+
+.slide[data-compact] .lede {
+  font-size: 16px;
+}
+
+.slide[data-compact] .statement {
+  max-width: none;
+  font-size: 22px;
+}
+
+.slide[data-compact] .statValue {
+  font-size: 32px;
+}
+
+.slide[data-compact] .stat[data-size="lg"] .statValue {
+  font-size: 44px;
+}
+
+.slide[data-compact] .stat[data-size="xl"] .statValue {
+  font-size: 64px;
+}
+
+.slide[data-compact] .statLabel {
+  max-width: none;
+}
+
+.slide[data-compact] :is(.newsCard, .fact, .callout, .example, .capitalLayer) {
+  padding: 14px 16px 16px;
+}
+
+/* The foot closes the card: section name, logos, then the sources in full; the bar carries the page number. */
+.slide[data-compact] .foot {
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  min-height: 48px;
+  padding: 12px 0 20px;
+  font-size: var(--text-2xs);
+}
+
+.slide[data-compact] .footLabel {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.slide[data-compact] .sectionName {
+  height: 28px;
+  padding-right: 12px;
+  font-size: var(--text-xs);
+}
+
+.slide[data-compact] .footEnd {
+  display: contents;
+}
+
+.slide[data-compact] .number {
+  display: none;
+}
+
+.slide[data-compact] .footSources {
+  display: flex;
+  flex: 1 1 100%;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.slide[data-compact] .sourcesToggle {
+  text-decoration: none;
+  cursor: auto;
+}
+
+.slide[data-compact] .sources {
+  max-width: none;
+}
+
+.slide[data-compact] .logos {
+  gap: 12px 20px;
+}
+
+.slide[data-compact] .logos img {
+  height: calc(var(--h) * 14px);
+}
+
+/* Cover: the render under the top rule, rail to rail and taking the height the title leaves, then the title. */
+.slide[data-compact] .cover {
+  flex-direction: column;
+  gap: 28px;
+}
+
+.slide[data-compact] .coverText {
+  max-width: none;
+}
+
+.slide[data-compact] .cover::after {
+  display: none;
+}
+
+.slide[data-compact] .cover::after {
+  display: none;
+}
+
+.slide[data-compact] .coverImage {
+  position: relative;
+  inset: auto;
+  flex: 1 1 auto;
+  order: -1;
+  width: auto;
+  min-height: 160px;
+  margin: calc(-1.4 * var(--u)) calc(var(--rail) + 1px - var(--inset-x)) 0;
+  border-bottom: 1px solid var(--rule-strong);
+  border-left: 0;
+}
+
+.slide[data-compact] :is(.coverTitle, .coverLede, .closeTitle) {
+  max-width: none;
+}
+
+.slide[data-compact] .coverTitle {
+  margin-top: 12px;
+}
+
+.slide[data-compact] .coverLede {
+  margin-top: 16px;
+  font-size: 17px;
+}
+
+/* Stats, columns, steps, notes and sources: one column. */
+.slide[data-compact] .statsBody {
+  justify-content: flex-start;
+  gap: 36px;
+}
+
+.slide[data-compact] :is(.statRow, .columns, .steps, .notes, .sourcesBody) {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 28px;
+}
+
+/* Charts: the figure, its key, then the side column. */
+.slide[data-compact] .chartBody {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: none;
+  gap: 28px;
+}
+
+.slide[data-compact] .map {
+  max-width: none;
+}
+
+.slide[data-compact] .side {
+  gap: 18px;
+}
+
+.slide[data-compact] .side .statValue {
+  font-size: 30px;
+}
+
+.slide[data-compact] :is(.legend, .caption) {
+  font-size: var(--text-2xs);
+}
+
+.slide[data-compact] .legend {
+  gap: 8px 16px;
+  margin-top: 12px;
+}
+
+.slide[data-compact] .caption {
+  margin-top: 10px;
+}
+
+.slide[data-compact] .key {
+  gap: 8px;
+}
+
+.slide[data-compact] .status {
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: 14px;
+}
+
+.slide[data-compact] .swatch {
+  width: 12px;
+  height: 12px;
+}
+
+.slide[data-compact] .status[data-status="county"] .swatch {
+  width: 7px;
+  height: 7px;
+}
+
+.slide[data-compact] .count {
+  font-size: var(--text-xs);
+}
+
+/* News: the lead figure, then a card per row. */
+.slide[data-compact] .newsBody {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 28px;
+}
+
+.slide[data-compact] .newsLead {
+  justify-content: flex-start;
+  gap: 16px;
+}
+
+.slide[data-compact] .takeaway {
+  font-size: 18px;
+}
+
+.slide[data-compact] .newsGrid {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: none;
+}
+
+.slide[data-compact] .newsCard {
+  gap: 8px;
+}
+
+.slide[data-compact] .newsCard .h3 {
+  --h3-size: 18px;
+}
+
+.slide[data-compact] :is(.newsPlace, .newsMeta) {
+  font-size: var(--text-2xs);
+}
+
+.slide[data-compact] .newsSummary {
+  font-size: 14px;
+}
+
+/* Solution: the cabin across the card, then the facts and the principle cards stacked. */
+.slide[data-compact] .solution {
+  grid-template-rows: none;
+  gap: 24px;
+}
+
+.slide[data-compact] .cabinRow {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.slide[data-compact] .cabin {
+  height: auto;
+}
+
+.slide[data-compact] .cabinArt {
+  width: 100%;
+  height: auto;
+}
+
+.slide[data-compact] .fact {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.slide[data-compact] .factValue {
+  font-size: 20px;
+}
+
+.slide[data-compact] .factLabel {
+  font-size: var(--text-2xs);
+  text-align: right;
+}
+
+.slide[data-compact] .solution .principles {
+  --card-h: 300px;
+  --card-pad: 18px 20px 20px;
+  --figure-pad: 12px 0;
+  --body-gap: 8px;
+  --h2-size: 22px;
+  --text-base: 14px;
+  --eyebrow-size: var(--text-2xs);
+
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: none;
+  height: auto;
+}
+
+/* Stack: the lede, the plates, then their labels as a list under them. */
+.slide[data-compact] .stack {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: none;
+  gap: 24px;
+}
+
+.slide[data-compact] .stackFigure {
+  display: contents;
+}
+
+/* The home page's figure places itself in the first cell; here it follows the lede. */
+.slide[data-compact] .stackFigure > :first-child {
+  --art: 100%;
+
+  grid-area: auto;
+  justify-self: center;
+  width: min(100%, 200px);
+  margin-top: 0;
+}
+
+.slide[data-compact] .stackLabels {
+  position: static;
+  display: grid;
+}
+
+.slide[data-compact] .stackLabel {
+  position: static;
+  grid-template-columns: 28px minmax(0, 1fr);
+  grid-template-areas:
+    "index title"
+    ". body";
+  row-gap: 2px;
+  padding: 10px 0;
+  border-top: 1px solid var(--rule);
+  transform: none;
+}
+
+.slide[data-compact] .stackLabel::before {
+  display: none;
+}
+
+.slide[data-compact] .stackLabel > .label {
+  font-size: var(--text-2xs);
+}
+
+.slide[data-compact] .stackTitle {
+  font-size: 16px;
+}
+
+.slide[data-compact] .stackBody {
+  font-size: 14px;
+}
+
+/* Unit: the cutaway first, then the specs two up. */
+.slide[data-compact] .unit {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 28px;
+}
+
+.slide[data-compact] .render {
+  order: -1;
+}
+
+.slide[data-compact] .specGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px 20px;
+}
+
+/* Two-column slides stack, the lead first. */
+.slide[data-compact] .split {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 32px;
+}
+
+.slide[data-compact] .splitSide {
+  gap: 20px;
+}
+
+.slide[data-compact] .heroPair {
+  gap: 20px;
+}
+
+.slide[data-compact] .heroPlus {
+  gap: 12px;
+}
+
+.slide[data-compact] .plusSign {
+  padding-top: 6px;
+  font-size: 44px;
+}
+
+.slide[data-compact] .detail {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  padding: 10px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.slide[data-compact] .detail dt {
+  font-size: var(--text-2xs);
+}
+
+.slide[data-compact] .detail dd {
+  font-size: 16px;
+}
+
+/*
+ * Tables become a row per entry. The pipeline sets each site over two
+ * lines, site and MW then path and status; the comparison puts each row's
+ * label over its two cells.
+ */
+.slide[data-compact] .table {
+  display: block;
+  font-size: 15px;
+}
+
+.slide[data-compact] .table :is(thead, tbody, tfoot) {
+  display: block;
+}
+
+.slide[data-compact] .table tr {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.slide[data-compact] .table thead tr {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.slide[data-compact] .table :is(th, td) {
+  padding: 0;
+}
+
+.slide[data-compact] .table thead th {
+  font-size: var(--text-2xs);
+}
+
+.slide[data-compact] .table td:empty {
+  display: none;
+}
+
+.slide[data-compact] .table:not(.compare) :is(th, td):nth-child(1) {
+  grid-area: 1 / 1;
+}
+
+.slide[data-compact] .table:not(.compare) :is(th, td):nth-child(2) {
+  grid-area: 2 / 1;
+}
+
+.slide[data-compact] .table:not(.compare) :is(th, td):nth-child(3) {
+  grid-area: 1 / 2;
+}
+
+.slide[data-compact] .table:not(.compare) :is(th, td):nth-child(4) {
+  grid-area: 2 / 2;
+  text-align: right;
+}
+
+.slide[data-compact] .table:not(.compare) tbody td:is(:nth-child(2), :nth-child(4)) {
+  font-size: 13px;
+  color: var(--fg-2);
+}
+
+.slide[data-compact] .compare tr {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.slide[data-compact] .compare tbody th {
+  grid-column: 1 / -1;
+  width: auto;
+  font-size: var(--text-2xs);
+}
+
+.slide[data-compact] .compare [data-us] {
+  padding-left: 12px;
+  border-left: 1px solid var(--rule);
+}
+
+.slide[data-compact] .calloutValue {
+  font-size: 30px;
+}
+
+/* Finance. */
+.slide[data-compact] .capitalLabel {
+  font-size: 18px;
+}
+
+.slide[data-compact] .capitalValue {
+  font-size: var(--text-2xs);
+  text-align: right;
+}
+
+.slide[data-compact] .example {
+  gap: 12px;
+}
+
+.slide[data-compact] .example .detail {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 8px 0;
+  border-top: 0;
+}
+
+.slide[data-compact] .detail dd.exampleValue {
+  font-size: 22px;
+}
+
+/* Raise and team. */
+.slide[data-compact] .raiseLead {
+  gap: 20px;
+}
+
+.slide[data-compact] :is(.terms, .uses) li {
+  padding: 10px 0;
+  font-size: 16px;
+}
+
+.slide[data-compact] .uses {
+  margin-top: 0;
+}
+
+.slide[data-compact] .person {
+  --h3-size: 34px;
+
+  margin: 8px 0 0;
+}
+
+.slide[data-compact] .credits li {
+  padding: 10px 0;
+  font-size: 16px;
+}
+
+/* Close: the calls to action full width, at a thumb's height. */
+.slide[data-compact] .actions {
+  flex-direction: column;
+  align-self: stretch;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.slide[data-compact] :is(.primary, .secondary) {
+  justify-content: center;
+  height: 48px;
+  padding: 0 20px;
+  border-radius: var(--radius-control);
+  font-size: 15px;
+}
+
+.slide[data-compact] .close .meta {
+  margin-top: 24px;
+}
+
+.slide[data-compact] .citations li {
+  padding: 6px 0;
+  font-size: 13px;
 }
 
 /*

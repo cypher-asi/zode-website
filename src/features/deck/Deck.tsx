@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
@@ -39,10 +40,21 @@ const SWIPE_MIN = 48;
 const REVEAL_PX = 120;
 /** And stay this long after a touch, where there's no pointer to follow. */
 const TOUCH_SHOW_MS = 3000;
+/** On a phone, a touch that barely moves and lifts quickly on a card's outer edge turns the slide, as a story does. */
+const TAP_SLOP = 10;
+const TAP_MS = 400;
+const TAP_EDGE = 0.28;
+/** Portrait phones get story cards: each slide reflowed to the screen, scrolling where it runs long. */
+const COMPACT_MEDIA = "(max-width: 700px) and (orientation: portrait)";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 /** Browser capabilities don't change while the page is open, so there is nothing to subscribe to. */
 const noSubscribe = () => () => {};
+const subscribeCompact = (onChange: () => void) => {
+  const query = window.matchMedia(COMPACT_MEDIA);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+};
 const clamp = (n: number) => Math.min(Math.max(n, 0), TOTAL - 1);
 
 /** Whether a key press belongs to a control rather than the deck: text fields, menus, and Space on buttons. */
@@ -67,14 +79,17 @@ function ArrowIcon({ flip = false }: { flip?: boolean }): ReactElement {
  * and a share menu. The page's ground follows the slide's, so the slide has
  * no visible edge and the header reads its tone from `data-surface`. Every
  * slide stays mounted, inactive ones hidden, so printing (the PDF export)
- * lays them all out one per page.
+ * lays them all out one per page. On a portrait phone (`compact`) each slide
+ * is a story card instead: reflowed to the screen, scrolling inside itself,
+ * drawing its own grid, turned by a swipe or a tap on its edge, with the
+ * controls always up.
  */
 export function Deck({ initialSlide, header }: { initialSlide: number; header: ReactNode }): ReactElement {
   const rootRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const overviewRef = useRef<HTMLDivElement>(null);
-  const swipe = useRef<{ x: number; y: number } | null>(null);
+  const swipe = useRef<{ x: number; y: number; t: number } | null>(null);
   const wheel = useRef({ travel: 0, lockedUntil: 0 });
   const [index, setIndex] = useState(() => clamp(initialSlide));
   const [leaving, setLeaving] = useState<number | null>(null);
@@ -87,10 +102,18 @@ export function Deck({ initialSlide, header }: { initialSlide: number; header: R
     () => document.fullscreenEnabled,
     () => false,
   );
+  const phone = useSyncExternalStore(
+    subscribeCompact,
+    () => window.matchMedia(COMPACT_MEDIA).matches,
+    () => false,
+  );
+  // A printed deck is 16:9 pages wherever it's printed from.
+  const compact = phone && !printing;
   const [nearBottom, setNearBottom] = useState(false);
   const [touched, setTouched] = useState(false);
+  const [moved, setMoved] = useState(false);
   const slide = SLIDES[index];
-  const controls = nearBottom || touched || overview || shareOpen;
+  const controls = compact || nearBottom || touched || overview || shareOpen;
 
   const go = useCallback(
     (target: number) => {
@@ -98,6 +121,7 @@ export function Deck({ initialSlide, header }: { initialSlide: number; header: R
       if (next === index) return;
       setLeaving(index);
       setIndex(next);
+      setMoved(true);
     },
     [index],
   );
@@ -114,11 +138,12 @@ export function Deck({ initialSlide, header }: { initialSlide: number; header: R
   }, [leaving]);
 
   // One page grid for the whole deck: its rules follow the open slide's bands, so they glide from slide to slide.
+  // Story cards scroll, so there each slide draws its own.
   useEffect(() => {
     const grid = gridRef.current;
     const slots = stageRef.current?.children;
     const frame = slots?.[index]?.querySelector<HTMLElement>("[data-frame]");
-    if (!grid || !frame) return;
+    if (!grid || !frame || compact) return;
     const head = frame.querySelector<HTMLElement>("[data-band=head]");
     const foot = frame.querySelector<HTMLElement>("[data-band=foot]");
     const name = slots?.[NAMED[index]]?.querySelector<HTMLElement>("[data-band=name]");
@@ -148,6 +173,12 @@ export function Deck({ initialSlide, header }: { initialSlide: number; header: R
       cancelAnimationFrame(ready);
       observer.disconnect();
     };
+  }, [index, compact]);
+
+  // A story card opens at its top, before it paints, wherever it was left.
+  useLayoutEffect(() => {
+    const frame = stageRef.current?.children[index]?.querySelector<HTMLElement>("[data-frame]");
+    if (frame) frame.scrollTop = 0;
   }, [index]);
 
   // The address bar holds the open slide, so reloading or copying it lands here.
@@ -264,16 +295,27 @@ export function Deck({ initialSlide, header }: { initialSlide: number; header: R
   }, [overview]);
 
   const onPointerDown = (event: ReactPointerEvent) => {
-    swipe.current = event.pointerType === "mouse" ? null : { x: event.clientX, y: event.clientY };
+    swipe.current =
+      event.pointerType === "mouse" ? null : { x: event.clientX, y: event.clientY, t: event.timeStamp };
   };
 
-  const onPointerUp = (event: ReactPointerEvent) => {
+  // A vertical drag scrolls the card, and the browser cancels the pointer, so only horizontal swipes and taps get here.
+  const onPointerUp = (event: ReactPointerEvent<HTMLElement>) => {
     const start = swipe.current;
     swipe.current = null;
     if (!start) return;
     const dx = event.clientX - start.x;
     const dy = event.clientY - start.y;
-    if (Math.abs(dx) > SWIPE_MIN && Math.abs(dx) > Math.abs(dy) * 1.5) go(index + (dx < 0 ? 1 : -1));
+    if (Math.abs(dx) > SWIPE_MIN && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      go(index + (dx < 0 ? 1 : -1));
+      return;
+    }
+    if (!compact || Math.hypot(dx, dy) > TAP_SLOP || event.timeStamp - start.t > TAP_MS) return;
+    if ((event.target as Element).closest("a, button, input, select, textarea, label")) return;
+    const { left, width } = event.currentTarget.getBoundingClientRect();
+    const at = (event.clientX - left) / width;
+    if (at < TAP_EDGE) go(index - 1);
+    else if (at > 1 - TAP_EDGE) go(index + 1);
   };
 
   const choose = (target: number) => {
@@ -288,6 +330,7 @@ export function Deck({ initialSlide, header }: { initialSlide: number; header: R
       data-ground={slide.ground}
       data-surface={slide.ground === "ink" ? "dark" : "light"}
       data-controls={controls || undefined}
+      data-compact={compact || undefined}
       aria-roledescription="presentation"
       aria-label="ZODE investor deck"
     >
@@ -324,7 +367,8 @@ export function Deck({ initialSlide, header }: { initialSlide: number; header: R
                   total={TOTAL}
                   active={current || i === leaving || printing}
                   branded={printing}
-                  grid={printing}
+                  grid={printing || compact}
+                  compact={compact}
                 />
               </section>
             );
@@ -344,8 +388,6 @@ export function Deck({ initialSlide, header }: { initialSlide: number; header: R
           </div>
         </div>
       </div>
-
-      <p className={styles.rotate}>Turn your phone sideways for the full slide.</p>
 
       <nav className={styles.bar} aria-label="Deck controls">
         <div className={styles.barStart}>
@@ -370,7 +412,13 @@ export function Deck({ initialSlide, header }: { initialSlide: number; header: R
           <span className={styles.counter}>
             {pad(index + 1)} / {pad(TOTAL)}
           </span>
-          <span className={styles.section}>{slide.section}</span>
+          {compact && !moved ? (
+            <span className={styles.hint}>
+              Swipe <ArrowIcon />
+            </span>
+          ) : (
+            <span className={styles.section}>{slide.section}</span>
+          )}
         </div>
 
         <ol className={styles.progress}>
@@ -415,7 +463,7 @@ export function Deck({ initialSlide, header }: { initialSlide: number; header: R
             buttonClassName={styles.textButton}
             iconClassName={styles.icon}
           />
-          {canFullscreen ? (
+          {canFullscreen && !compact ? (
             <button
               type="button"
               className={styles.textButton}

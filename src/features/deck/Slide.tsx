@@ -6,7 +6,7 @@ import { PRINCIPLE_GRID_CLASS, PrincipleCard } from "@/features/home/principles/
 import { PRINCIPLES } from "@/features/home/principles/principles";
 import { ANCHOR_X, StackArt, VIEW as STACK_VIEW, labelY } from "@/features/home/stack/StackArt";
 import stackStyles from "@/features/home/stack/FullStack.module.css";
-import { DemandChart } from "./charts/DemandChart";
+import { DEMAND_GAP, DemandChart } from "./charts/DemandChart";
 import { ShortfallByYear, ShortfallChart } from "./charts/ShortfallChart";
 import { StateTileMap } from "./charts/StateTileMap";
 import { BLOCKED, NEWS } from "./news";
@@ -89,7 +89,13 @@ function Cover({ slide }: { slide: Of<"cover"> }): ReactElement {
         </div>
       </div>
       <div className={styles.coverImage} data-media data-surface="light">
-        <Image src={slide.image} alt="A ZODE in a calm, daylit setting" fill sizes="(max-width: 900px) 50vw, 40vw" loading="eager" />
+        <Image
+          src={slide.image}
+          alt="A ZODE in a calm, daylit setting"
+          fill
+          sizes="(max-width: 700px) 100vw, (max-width: 900px) 50vw, 40vw"
+          loading="eager"
+        />
       </div>
     </div>
   );
@@ -112,11 +118,11 @@ function Stats({ slide }: { slide: Of<"stats"> }): ReactElement {
   );
 }
 
-function Demand({ active }: { active: boolean }): ReactElement {
+function Demand({ active, compact }: { active: boolean; compact: boolean }): ReactElement {
   return (
     <div className={styles.chartBody}>
       <figure {...rise(2)} className={`${styles.rise} ${styles.figure}`}>
-        <DemandChart active={active} />
+        <DemandChart active={active} compact={compact} />
         <figcaption className={styles.legend}>
           <span className={styles.key} data-key="line">
             Forecast US data center capacity, BNEF base case
@@ -125,7 +131,7 @@ function Demand({ active }: { active: boolean }): ReactElement {
             Installed base growing at the grid&rsquo;s record 10 GW a year (illustrative, ZODE)
           </span>
           <span className={styles.key} data-key="gap">
-            The gap
+            {compact ? `The gap: ${DEMAND_GAP} GW by 2035` : "The gap"}
           </span>
         </figcaption>
       </figure>
@@ -144,17 +150,17 @@ function Demand({ active }: { active: boolean }): ReactElement {
   );
 }
 
-function Shortfall({ active }: { active: boolean }): ReactElement {
+function Shortfall({ active, compact }: { active: boolean; compact: boolean }): ReactElement {
   return (
     <div className={styles.chartBody} data-split="wide">
       <figure {...rise(2)} className={`${styles.rise} ${styles.figure}`}>
-        <ShortfallChart active={active} />
+        <ShortfallChart active={active} compact={compact} />
         <figcaption className={styles.caption}>
           US data center power, 2026–2028, GW. Fixes are probability-weighted; midpoint case.
         </figcaption>
       </figure>
       <figure {...rise(3)} className={`${styles.rise} ${styles.figure}`}>
-        <ShortfallByYear active={active} />
+        <ShortfallByYear active={active} compact={compact} />
         <figcaption className={styles.caption}>Cumulative net gap, GW. *2029 extends the forecast.</figcaption>
       </figure>
     </div>
@@ -163,7 +169,7 @@ function Shortfall({ active }: { active: boolean }): ReactElement {
 
 const STATUS_ORDER: readonly StateStatus[] = ["enacted", "executive", "introduced", "failed"];
 
-function States({ active }: { active: boolean }): ReactElement {
+function States({ active, compact }: { active: boolean; compact: boolean }): ReactElement {
   const counts = Object.values(STATE_ACTIONS).reduce<Partial<Record<StateStatus, number>>>((acc, { status }) => {
     acc[status] = (acc[status] ?? 0) + 1;
     return acc;
@@ -171,7 +177,7 @@ function States({ active }: { active: boolean }): ReactElement {
   return (
     <div className={styles.chartBody} data-split="map">
       <figure {...rise(2)} className={`${styles.rise} ${styles.figure} ${styles.map}`}>
-        <StateTileMap active={active} />
+        <StateTileMap active={active} compact={compact} />
       </figure>
       <aside className={styles.side}>
         <ul {...rise(3)} className={`${styles.rise} ${styles.statusList}`}>
@@ -195,7 +201,8 @@ function States({ active }: { active: boolean }): ReactElement {
           </div>
         ))}
         <p {...rise(6)} className={`${styles.rise} ${styles.fine}`}>
-          New York&rsquo;s order covers data centers of 50 MW or more. Hover a state for its bill. As of {AS_OF}.
+          New York&rsquo;s order covers data centers of 50 MW or more.{compact ? null : " Hover a state for its bill."}{" "}
+          As of {AS_OF}.
         </p>
       </aside>
     </div>
@@ -302,8 +309,8 @@ function Stack({ slide, active }: { slide: Of<"stack">; active: boolean }): Reac
               style={
                 {
                   "--d": 3 + i * 0.5,
-                  left: `${anchorX}%`,
-                  top: `${((labelY(i) - STACK_VIEW.y) / STACK_VIEW.h) * 100}%`,
+                  "--x": `${anchorX}%`,
+                  "--y": `${((labelY(i) - STACK_VIEW.y) / STACK_VIEW.h) * 100}%`,
                 } as CSSProperties
               }
             >
@@ -349,7 +356,13 @@ function Unit({ slide }: { slide: Of<"unit"> }): ReactElement {
       </div>
       <figure {...rise(3)} className={`${styles.rise} ${styles.render}`}>
         <div className={styles.renderImage} data-media>
-          <Image src={slide.image} alt="A cutaway render of a ZODE's interior" fill sizes="40vw" loading="eager" />
+          <Image
+            src={slide.image}
+            alt="A cutaway render of a ZODE's interior"
+            fill
+            sizes="(max-width: 700px) 100vw, 40vw"
+            loading="eager"
+          />
         </div>
         <figcaption className={styles.figLabel}>FIG. 02 — ZODE, cutaway</figcaption>
       </figure>
@@ -637,18 +650,18 @@ function Sources(): ReactElement {
   );
 }
 
-function Body({ slide, active }: { slide: Slide; active: boolean }): ReactNode {
+function Body({ slide, active, compact }: { slide: Slide; active: boolean; compact: boolean }): ReactNode {
   switch (slide.kind) {
     case "cover":
       return <Cover slide={slide} />;
     case "stats":
       return <Stats slide={slide} />;
     case "demand":
-      return <Demand active={active} />;
+      return <Demand active={active} compact={compact} />;
     case "shortfall":
-      return <Shortfall active={active} />;
+      return <Shortfall active={active} compact={compact} />;
     case "states":
-      return <States active={active} />;
+      return <States active={active} compact={compact} />;
     case "news":
       return <News slide={slide} />;
     case "columns":
@@ -684,7 +697,7 @@ function Body({ slide, active }: { slide: Slide; active: boolean }): ReactNode {
 
 /** Slides that lay out their own title, without the head band. */
 const NO_HEAD = new Set<Slide["kind"]>(["cover", "close"]);
-/** And the close runs full bleed with the rails alone; the cover keeps its foot band for the confidentiality line. */
+/** And the close runs full bleed with the rails alone; the cover keeps its foot band for the company line. */
 const NO_FOOT = new Set<Slide["kind"]>(["close"]);
 
 export const hasHead = (slide: Slide): boolean => !NO_HEAD.has(slide.kind);
@@ -692,11 +705,19 @@ export const hasHead = (slide: Slide): boolean => !NO_HEAD.has(slide.kind);
 /**
  * A slide's sources, folded behind a label at the foot: hovering or focusing
  * it opens them above, and a click pins them open where there's no hover.
- * Printed, they set out in the foot in full.
+ * Printed, and on a story card (`inline`), they set out in the foot in full.
  */
-function FootSources({ ids }: { ids: readonly SourceId[] }): ReactElement {
+function FootSources({ ids, inline }: { ids: readonly SourceId[]; inline: boolean }): ReactElement {
   const id = useId();
   const [open, setOpen] = useState(false);
+  if (inline) {
+    return (
+      <div className={styles.footSources} data-inline="">
+        <span className={styles.sourcesToggle}>Sources</span>
+        <SourceLine ids={ids} />
+      </div>
+    );
+  }
   return (
     <div className={styles.footSources} data-open={open || undefined}>
       <button
@@ -725,7 +746,9 @@ const pad = (n: number) => String(n).padStart(2, "0");
  * `grid` draws the rails and rules on the slide itself; the stage turns it
  * off and draws one shared grid over every slide instead, finding the bands
  * by `data-band`. `active` plays its entrance; `branded` adds the wordmark to
- * its foot for print, where the site header isn't on the page.
+ * its foot for print, where the site header isn't on the page. `compact`
+ * reflows it as a phone's story card: one column at the site's mobile type
+ * sizes, scrolling where it runs long.
  */
 export function SlideView({
   slide,
@@ -734,6 +757,7 @@ export function SlideView({
   active,
   branded = false,
   grid = true,
+  compact = false,
 }: {
   slide: Slide;
   index: number;
@@ -741,6 +765,7 @@ export function SlideView({
   active: boolean;
   branded?: boolean;
   grid?: boolean;
+  compact?: boolean;
 }): ReactElement {
   const head = hasHead(slide);
   const foot = !NO_FOOT.has(slide.kind);
@@ -754,7 +779,13 @@ export function SlideView({
     />
   ) : null;
   return (
-    <div className={styles.slide} data-ground={slide.ground} data-kind={slide.kind} data-active={active || undefined}>
+    <div
+      className={styles.slide}
+      data-ground={slide.ground}
+      data-kind={slide.kind}
+      data-active={active || undefined}
+      data-compact={compact || undefined}
+    >
       <div
         className={styles.frame}
         data-frame=""
@@ -770,7 +801,7 @@ export function SlideView({
           </header>
         ) : null}
         <div className={styles.main}>
-          <Body slide={slide} active={active} />
+          <Body slide={slide} active={active} compact={compact} />
         </div>
         {!foot ? (
           mark && <footer className={styles.foot}>{mark}</footer>
@@ -793,7 +824,7 @@ export function SlideView({
               </ul>
             ) : null}
             <div className={styles.footEnd}>
-              {slide.sources ? <FootSources ids={slide.sources} /> : null}
+              {slide.sources ? <FootSources ids={slide.sources} inline={compact} /> : null}
               <span className={styles.number}>
                 {pad(index + 1)} / {pad(total)}
               </span>

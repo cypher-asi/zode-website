@@ -12,14 +12,16 @@ const H = US_GRID.rows * STEP - GAP;
 /**
  * Statewide data center moratorium actions on a tile map, with a dot where a
  * county has paused approvals. Each tile's title carries the bill or order.
+ * `compact` sets the labels larger, for a phone's story card.
  */
-export function StateTileMap({ active }: { active: boolean }): ReactElement {
+export function StateTileMap({ active, compact = false }: { active: boolean; compact?: boolean }): ReactElement {
   const hatch = useId();
   return (
     <svg
       className={styles.chart}
       viewBox={`0 0 ${W} ${H}`}
       data-active={active || undefined}
+      data-compact={compact || undefined}
       role="img"
       aria-label="US states with data center moratorium actions in 2026: in effect in New York; an executive pause in Oregon; bills introduced in Delaware, Georgia, Michigan, New Jersey, Pennsylvania, South Carolina, Vermont and Virginia; failed or vetoed in Maine, Minnesota, New Hampshire, Oklahoma, South Dakota and Wisconsin."
     >
