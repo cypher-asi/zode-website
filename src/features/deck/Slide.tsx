@@ -364,21 +364,51 @@ function ProblemSolution({ slide, compact }: { slide: Of<"problemSolution">; com
   );
 }
 
-function Columns({ slide }: { slide: Of<"columns"> }): ReactElement {
+/**
+ * The problems, two halves split by a page-grid rule as the macro slide:
+ * building on the left, community on the right. Each half is a grid of
+ * figure cards, as the macro slide's quadrant: its biggest problem as one
+ * large card across the top, titled, and the rest captioned in a row below.
+ */
+function Problems({ slide, active }: { slide: Of<"problems">; active: boolean }): ReactElement {
   return (
-    <div className={styles.statsBody}>
-      <div className={styles.columns}>
-        {slide.columns.map((column, i) => (
-          <div key={column.label} {...rise(2 + i)} className={`${styles.rise} ${styles.column}`}>
-            <p className={styles.label}>{column.label}</p>
-            <h3 className={styles.h3}>{column.title}</h3>
-            <p className={styles.body}>{column.body}</p>
-          </div>
-        ))}
-      </div>
-      <p {...rise(5)} className={`${styles.rise} ${styles.statement}`}>
-        {slide.statement}
-      </p>
+    <div className={styles.problems}>
+      {slide.groups.map((group, g) => (
+        <section key={group.label} className={styles.problemGroup}>
+          <h3 {...rise(1.5 + g)} className={`${styles.rise} ${styles.label}`}>
+            {group.label}
+          </h3>
+          <ul className={styles.problemCards}>
+            <li
+              {...rise(2 + g)}
+              className={`${styles.rise} ${styles.problemCard}`}
+              data-lead=""
+              data-hard={group.lead.hard || undefined}
+            >
+              <div className={styles.problemFigure}>
+                <MacroArt id={group.lead.art} hard={group.lead.hard} playing={active} />
+              </div>
+              <div className={styles.problemLead}>
+                <p className={`${styles.h3} ${styles.problemTitle}`}>{group.lead.title}</p>
+                <p className={styles.body}>{group.lead.body}</p>
+              </div>
+            </li>
+            {group.rest.map((card, i) => (
+              <li
+                key={card.title}
+                {...rise(2.5 + g + i * 0.4)}
+                className={`${styles.rise} ${styles.problemCard}`}
+                data-hard={card.hard || undefined}
+              >
+                <div className={styles.problemFigure}>
+                  <MacroArt id={card.art} hard={card.hard} playing={active} />
+                </div>
+                <p className={styles.problemCaption}>{card.title}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
     </div>
   );
 }
@@ -791,8 +821,8 @@ function Body({ slide, active, compact }: { slide: Slide; active: boolean; compa
       return <News slide={slide} />;
     case "problemSolution":
       return <ProblemSolution slide={slide} compact={compact} />;
-    case "columns":
-      return <Columns slide={slide} />;
+    case "problems":
+      return <Problems slide={slide} active={active} />;
     case "solution":
       return <Solution slide={slide} active={active} />;
     case "stack":

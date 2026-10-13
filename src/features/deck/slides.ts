@@ -9,13 +9,41 @@ export interface Stat {
 }
 
 /** Line drawings for the macro slide's cards (art/MacroArt.tsx). */
-export type MacroArtId = "capital" | "power" | "compute" | "land" | "datacenter" | "offtake";
+export type MacroArtId =
+  | "capital"
+  | "power"
+  | "compute"
+  | "land"
+  | "datacenter"
+  | "offtake"
+  | "regulation"
+  | "localBuild"
+  | "supplyChain"
+  | "financing"
+  | "monolith"
+  | "water"
+  | "powerBill"
+  | "economics";
 
 /** One link in the chain from capital to offtake; `hard` marks the bottleneck. */
 export interface ChainStep {
   readonly label: string;
   readonly art: MacroArtId;
   readonly hard?: boolean;
+}
+
+/** A problem as a figure card: its drawing, captioned; `hard` sets the worst in red. */
+export interface ProblemCard {
+  readonly title: string;
+  readonly art: MacroArtId;
+  readonly hard?: boolean;
+}
+
+/** One side's problems: the biggest as the large card on top, the rest smaller below it. */
+export interface ProblemGroup {
+  readonly label: string;
+  readonly lead: ProblemCard & { readonly body: string };
+  readonly rest: readonly ProblemCard[];
 }
 
 export interface Logo {
@@ -70,11 +98,7 @@ export type Slide =
         solution: { title: string; points: readonly string[] };
       }[];
     })
-  | (Base & {
-      kind: "columns";
-      columns: readonly { label: string; title: string; body: string }[];
-      statement: string;
-    })
+  | (Base & { kind: "problems"; groups: readonly [ProblemGroup, ProblemGroup] })
   | (Base & { kind: "solution"; facts: readonly Stat[] })
   | (Base & {
       kind: "stack";
@@ -180,29 +204,40 @@ export const SLIDES: readonly Slide[] = [
   },
   {
     id: "problem",
-    kind: "columns",
+    kind: "problems",
     section: "Problem",
     eyebrow: "Problem",
-    title: "The constraint is power and time. Not capital.",
+    title: "Data centers are slow to build and hard to host.",
     ground: "ink",
-    columns: [
+    groups: [
       {
-        label: "Power",
-        title: "Energized sites are the scarce input.",
-        body: "Liquid-cooled, high-density space is close to unavailable. New megawatts wait on utilities.",
+        label: "Building",
+        lead: {
+          title: "Regulation moves at a crawl.",
+          body: "Monolithic campuses face years of permits, zoning and hearings, and any one can kill the project.",
+          art: "regulation",
+          hard: true,
+        },
+        rest: [
+          { title: "Construction varies town to town", art: "localBuild" },
+          { title: "Brittle global supply chains", art: "supplyChain" },
+          { title: "Capital won't fund risky builds", art: "financing" },
+        ],
       },
       {
-        label: "Time",
-        title: "Buildings lag the hardware.",
-        body: "GPU nodes ship in 12–18 weeks. InfiniBand in 24–30. A conventional data center takes years.",
-      },
-      {
-        label: "Cost",
-        title: "Capacity is expensive to build.",
-        body: "Market builds run $10–12M per MW. Modular vendor quotes run $9–11M per MW.",
+        label: "Community",
+        lead: {
+          title: "Huge, loud and ugly.",
+          body: "Windowless monoliths that hum day and night next to homes.",
+          art: "monolith",
+        },
+        rest: [
+          { title: "Water drawn for cooling", art: "water" },
+          { title: "Higher power bills", art: "powerBill" },
+          { title: "No share of the economics", art: "economics" },
+        ],
       },
     ],
-    statement: "Buyers already prepay 20–30% to lock capacity. Delivery is the bottleneck.",
   },
   {
     id: "states",

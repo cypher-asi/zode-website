@@ -513,18 +513,12 @@
   color: var(--fg-2);
 }
 
-/* Stats, columns and steps: content up top, the statement at the foot. */
+/* Stats and steps: content up top, the statement at the foot. */
 .statsBody {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: calc(2 * var(--u));
-}
-
-.columns {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: calc(3 * var(--u));
 }
 
 /*
@@ -731,7 +725,6 @@
   }
 }
 
-.column .h3,
 .step .h3 {
   margin: calc(0.9 * var(--u)) 0 calc(0.8 * var(--u));
 }
@@ -979,6 +972,134 @@
   font-size: calc(0.8 * var(--u));
   line-height: 1.45;
   color: var(--fg-2);
+}
+
+/*
+ * Problems: two halves split by a page-grid rule, as the macro slide's, each
+ * a label over a grid of figure cards: one large card across the top, three
+ * below.
+ */
+.problems {
+  --alarm: #f04438;
+  --split-gap: calc(5 * var(--u));
+
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr);
+  column-gap: var(--split-gap);
+}
+
+.problems::after {
+  content: "";
+  position: absolute;
+  top: calc(-1.8 * var(--u) - var(--pip) / 2);
+  bottom: calc(-1.2 * var(--u) - var(--pip) / 2);
+  left: calc(50% - var(--pip) / 2);
+  width: var(--pip);
+  background:
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 top 0 / var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 bottom 0 / var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--rule), var(--rule)) center / 1px 100% no-repeat;
+  pointer-events: none;
+}
+
+.problemGroup {
+  display: flex;
+  flex-direction: column;
+  gap: calc(1 * var(--u));
+  min-height: 0;
+}
+
+.problemGroup > .label:first-child {
+  color: var(--fg);
+}
+
+/*
+ * As the macro quadrant: hairlines between the cells and none round the
+ * outside, drawn behind the cells so they hold while the cells fade in. One
+ * across under the large card, two down between the small ones.
+ */
+.problemCards {
+  /* The small row's share of the 1.5fr + 1fr rows. */
+  --small-h: calc(100% / 2.5);
+
+  display: grid;
+  flex: 1;
+  grid-template: minmax(0, 1.5fr) minmax(0, 1fr) / repeat(3, minmax(0, 1fr));
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background:
+    linear-gradient(var(--rule), var(--rule)) left 0 bottom var(--small-h) / 100% 1px no-repeat,
+    linear-gradient(var(--rule), var(--rule)) left 33.333% bottom 0 / 1px var(--small-h) no-repeat,
+    linear-gradient(var(--rule), var(--rule)) left 66.667% bottom 0 / 1px var(--small-h) no-repeat;
+}
+
+/* A small card: the drawing centred, its caption under it in the bottom-left corner. */
+.problemCard {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.6 * var(--u));
+  min-width: 0;
+  min-height: 0;
+  padding: calc(1 * var(--u)) calc(1.1 * var(--u)) calc(1.1 * var(--u));
+}
+
+.problemFigure {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.problemCard[data-lead] .problemFigure > * {
+  scale: 0.9;
+}
+
+.problemCaption {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: calc(0.64 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+/* The large card: its title and line in the bottom-left corner, the drawing filling the right. */
+.problemCard[data-lead] {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  align-items: end;
+  gap: calc(1.6 * var(--u));
+  padding: calc(1.4 * var(--u)) calc(1.3 * var(--u)) calc(1.6 * var(--u)) 0;
+}
+
+.problemCard[data-lead] .problemFigure {
+  order: 1;
+  align-self: stretch;
+}
+
+.problemLead {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.8 * var(--u));
+}
+
+.problemTitle {
+  --h3-size: calc(1.9 * var(--u));
+}
+
+.problemLead .body {
+  max-width: calc(20 * var(--u));
+}
+
+.problemCard[data-hard] .problemTitle {
+  color: var(--alarm);
 }
 
 /*
@@ -2065,13 +2186,13 @@
   font-size: 17px;
 }
 
-/* Stats, columns, steps, notes and sources: one column. */
+/* Stats, steps, notes and sources: one column. */
 .slide[data-compact] .statsBody {
   justify-content: flex-start;
   gap: 36px;
 }
 
-.slide[data-compact] :is(.columns, .steps, .notes, .sourcesBody) {
+.slide[data-compact] :is(.steps, .notes, .sourcesBody) {
   grid-template-columns: minmax(0, 1fr);
   gap: 28px;
 }
@@ -2234,6 +2355,64 @@
 
 .slide[data-compact] .newsSummary {
   font-size: 14px;
+}
+
+/* Problems: each half stacked, its large card then the small ones, a rule between each card and the next. */
+.slide[data-compact] .problems {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: none;
+  row-gap: 36px;
+}
+
+.slide[data-compact] .problems::after {
+  display: none;
+}
+
+.slide[data-compact] .problemGroup {
+  gap: 12px;
+}
+
+.slide[data-compact] .problemCards {
+  grid-template: none / minmax(0, 1fr);
+  gap: 1px;
+  background: var(--rule);
+}
+
+.slide[data-compact] .problemCard {
+  gap: 12px;
+  padding: 24px 0;
+  background: var(--bg);
+}
+
+.slide[data-compact] .problemCard[data-lead] {
+  grid-template-columns: minmax(0, 1fr);
+  padding-top: 8px;
+}
+
+.slide[data-compact] .problemCard[data-lead] .problemFigure {
+  order: 0;
+  height: 180px;
+}
+
+.slide[data-compact] .problemFigure {
+  height: 120px;
+}
+
+.slide[data-compact] .problemTitle {
+  --h3-size: 24px;
+}
+
+.slide[data-compact] .problemLead {
+  gap: 8px;
+}
+
+.slide[data-compact] .problemLead .body {
+  max-width: none;
+  font-size: 15px;
+}
+
+.slide[data-compact] .problemCaption {
+  font-size: var(--text-2xs);
 }
 
 /* Problem and solution: one column, each problem then ZODE's answer under it. */
