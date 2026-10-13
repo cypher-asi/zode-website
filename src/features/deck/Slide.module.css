@@ -176,10 +176,10 @@
 }
 
 /*
- * Set like a selected nav row: a tinted tab hung off the left rail with a bar
- * on its edge, its text on the content line. On the stage the deck draws one
- * name over every slide and resizes it between them (Deck.tsx), so this one
- * only holds the space.
+ * Set like a selected nav row: a tinted tab with a bar on its edge, the bar
+ * on the content line under the title. On the stage the deck draws one name
+ * over every slide and resizes it between them (Deck.tsx), so this one only
+ * holds the space.
  */
 .sectionName {
   --bar: calc(0.2 * var(--u));
@@ -188,8 +188,7 @@
   flex: none;
   align-items: center;
   height: calc(2.3 * var(--u));
-  margin-left: calc(var(--rail) + 1px - var(--inset-x));
-  padding: 0 calc(1.4 * var(--u)) 0 calc(var(--inset-x) - var(--rail) - 1px - var(--bar));
+  padding: 0 calc(1.4 * var(--u)) 0 calc(1 * var(--u));
   border-left: var(--bar) solid var(--rule-strong);
   background: var(--name-bg, var(--color-surface-hover));
   font-family: var(--font-sans);
@@ -507,11 +506,128 @@
   gap: calc(2 * var(--u));
 }
 
-.statRow,
 .columns {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: calc(3 * var(--u));
+}
+
+/*
+ * Macro: a card per figure, each a drawing over its number, joined by
+ * hairlines as the other card sets are; the statement; then the chain from
+ * capital to offtake, small cards joined by arrows, its bottleneck in red.
+ */
+.macro {
+  --alarm: #f04438;
+
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  gap: calc(2 * var(--u));
+}
+
+.macroCards,
+.chain {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.macroCards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  min-height: 0;
+  padding: 1px;
+}
+
+.macroCard,
+.chainStep {
+  background: var(--card);
+  box-shadow: 0 0 0 1px var(--rule);
+}
+
+.macroCard {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.6 * var(--u));
+  min-height: 0;
+  padding: calc(1 * var(--u)) calc(1.3 * var(--u)) calc(1.2 * var(--u));
+}
+
+.macroFigure {
+  flex: 1;
+  min-height: 0;
+  padding: calc(0.8 * var(--u)) 0 calc(1 * var(--u));
+}
+
+.macroValue {
+  font-size: calc(3.4 * var(--u));
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.macroCard .statLabel {
+  max-width: none;
+}
+
+.macroStatement {
+  max-width: calc(62 * var(--u));
+}
+
+.chain {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: calc(2.4 * var(--u));
+}
+
+.chainStep {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.4 * var(--u));
+  padding: calc(0.8 * var(--u)) calc(1 * var(--u)) calc(0.9 * var(--u));
+}
+
+/* The arrow across the gap to the next step. */
+.chainStep:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 0.5 * var(--u));
+  width: calc(1.4 * var(--u));
+  height: calc(0.7 * var(--u));
+  translate: 0 -50%;
+  background:
+    linear-gradient(var(--rule-strong), var(--rule-strong)) left center / 100% 1px no-repeat,
+    conic-gradient(from 225deg at 100% 50%, var(--rule-strong) 0 90deg, transparent 0) right center /
+      calc(0.35 * var(--u)) 100% no-repeat;
+}
+
+.chainFigure {
+  height: calc(5 * var(--u));
+}
+
+.chainLabel {
+  font-size: calc(1 * var(--u));
+  font-weight: 500;
+}
+
+.chainNote {
+  position: absolute;
+  top: calc(0.8 * var(--u));
+  right: calc(1 * var(--u));
+  font-family: var(--font-mono);
+  font-size: calc(0.6 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+}
+
+.chainStep[data-hard] {
+  box-shadow: 0 0 0 1px var(--alarm);
+  color: var(--alarm);
 }
 
 .column .h3,
@@ -1675,9 +1791,71 @@
   gap: 36px;
 }
 
-.slide[data-compact] :is(.statRow, .columns, .steps, .notes, .sourcesBody) {
+.slide[data-compact] :is(.columns, .steps, .notes, .sourcesBody) {
   grid-template-columns: minmax(0, 1fr);
   gap: 28px;
+}
+
+/* Macro: the cards stacked, then the chain as a list joined by arrows down. */
+.slide[data-compact] .macro {
+  grid-template-rows: none;
+  gap: 28px;
+}
+
+.slide[data-compact] .macroCards {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.slide[data-compact] .macroCard {
+  padding: 14px 16px 16px;
+}
+
+.slide[data-compact] .macroFigure {
+  flex: none;
+  height: 140px;
+  padding: 12px 0 16px;
+}
+
+.slide[data-compact] .macroValue {
+  font-size: 40px;
+}
+
+.slide[data-compact] .chain {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.slide[data-compact] .chainStep {
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+}
+
+.slide[data-compact] .chainStep:not(:last-child)::after {
+  top: 100%;
+  left: 44px;
+  width: 1px;
+  height: 16px;
+  translate: 0 0;
+  background: var(--rule-strong);
+}
+
+.slide[data-compact] .chainFigure {
+  flex: none;
+  width: 56px;
+  height: 44px;
+}
+
+.slide[data-compact] .chainLabel {
+  font-size: 16px;
+}
+
+.slide[data-compact] .chainNote {
+  top: 50%;
+  right: 16px;
+  translate: 0 -50%;
+  font-size: var(--text-2xs);
 }
 
 /* Charts: the figure, its key, then the side column. */

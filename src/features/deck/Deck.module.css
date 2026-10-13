@@ -15,6 +15,8 @@
   --deck-tick: var(--color-border-strong);
   --deck-accent: var(--color-accent-strong);
   --deck-hover: var(--color-surface-hover);
+  /* The slides' content inset (`--inset-x` in Slide.module.css), so the header and controls share its edges. */
+  --content-edge: max(calc(5 * min(1vw, 1vh * 16 / 9)), var(--edge));
 
   position: fixed;
   inset: 0;
@@ -48,12 +50,12 @@
 
 /*
  * Above the slides; the header inside is fixed, so this only orders it. The
- * wordmark and button sit in from the corners at the site's tight inset (as
- * on the configurators), clear of the grid's rails, and the header's shared
- * view transition slides them there from the page before.
+ * wordmark and button sit on the slide content's edges, the wordmark over
+ * the title, and the header's shared view transition slides them there from
+ * the page before.
  */
 .header {
-  --edge: clamp(24px, 2.5vw, 40px);
+  --edge: var(--content-edge);
 
   position: relative;
   z-index: 4;
@@ -74,7 +76,7 @@
  */
 .stage {
   --slide-top: var(--header-band);
-  --slide-edge: var(--edge);
+  --slide-edge: var(--content-edge);
   --slide-bottom: calc(var(--bar-h) + env(safe-area-inset-bottom, 0px));
 
   touch-action: pan-y pinch-zoom;
@@ -210,19 +212,20 @@
 /*
  * The section name, set as the slides' own (Slide.module.css) and laid over
  * the open slide's, which holds its space. Between sections it resizes to
- * the new name as the rules move, and the new name fades in where it sits.
+ * the new name as the rules move, and the new name types in behind a block
+ * cursor once the box has settled.
  */
 .name {
   --bar: calc(0.2 * var(--u));
 
   position: absolute;
   top: 0;
-  left: calc(var(--rail) + 1px);
+  left: var(--inset-x);
   display: flex;
   align-items: center;
   width: var(--name-width, 0px);
   height: var(--name-height, 0px);
-  padding-left: calc(var(--inset-x) - var(--rail) - 1px - var(--bar));
+  padding-left: calc(1 * var(--u));
   overflow: hidden;
   translate: 0 var(--name-top, 0px);
   border-left: var(--bar) solid var(--deck-rule-strong);
@@ -249,13 +252,51 @@
   opacity: 1;
 }
 
-.nameText {
-  animation: name-in var(--duration-slow) var(--ease-out) both;
+/* Typed as the site header's menu rows are: the text unclips a step per character while the cursor steps along its edge. */
+.nameLine {
+  --type-char: 32ms;
+  --type-time: calc(var(--chars) * var(--type-char));
+
+  position: relative;
+  display: inline-flex;
 }
 
-@keyframes name-in {
+.nameText {
+  animation: name-type var(--type-time) steps(var(--chars), end) var(--duration-slow) both;
+}
+
+.nameCursor {
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  width: 0.55em;
+  height: 1.1em;
+  margin-left: 0.15em;
+  background: currentColor;
+  opacity: 0;
+  translate: 0 -50%;
+  animation: name-cursor var(--type-time) steps(var(--chars), end) var(--duration-slow) backwards;
+}
+
+@keyframes name-type {
   from {
-    opacity: 0;
+    clip-path: inset(0 100% 0 0);
+  }
+
+  to {
+    clip-path: inset(0);
+  }
+}
+
+@keyframes name-cursor {
+  from {
+    left: 0;
+    opacity: 1;
+  }
+
+  to {
+    left: 100%;
+    opacity: 1;
   }
 }
 
@@ -263,6 +304,11 @@
   .grid[data-ready] .rule,
   .grid[data-ready] .name {
     transition: opacity var(--duration-slow) var(--ease-in-out);
+  }
+
+  .nameText,
+  .nameCursor {
+    animation: none;
   }
 }
 
@@ -283,8 +329,8 @@
   gap: 24px;
   align-items: center;
   height: calc(var(--bar-h) + env(safe-area-inset-bottom, 0px));
-  padding: 0 max(var(--edge), env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px)
-    max(var(--edge), env(safe-area-inset-left, 0px));
+  padding: 0 max(var(--content-edge), env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px)
+    max(var(--content-edge), env(safe-area-inset-left, 0px));
   border-top: 1px solid var(--deck-rule);
   background: var(--deck-bg);
   font-family: var(--font-mono);
@@ -531,8 +577,8 @@
   .progress {
     position: absolute;
     top: 0;
-    right: var(--edge);
-    left: var(--edge);
+    right: var(--content-edge);
+    left: var(--content-edge);
     height: 8px;
   }
 
@@ -638,8 +684,8 @@
 }
 
 .root[data-compact] .progress {
-  right: max(var(--edge), env(safe-area-inset-right, 0px));
-  left: max(var(--edge), env(safe-area-inset-left, 0px));
+  right: max(var(--content-edge), env(safe-area-inset-right, 0px));
+  left: max(var(--content-edge), env(safe-area-inset-left, 0px));
   gap: 3px;
 }
 
@@ -648,7 +694,7 @@
 }
 
 .root[data-compact] .overview {
-  padding-inline: var(--edge);
+  padding-inline: var(--content-edge);
 }
 
 .root[data-compact] .overviewGrid {
@@ -773,7 +819,7 @@
   inset: var(--header-band) 0 calc(var(--bar-h) + env(safe-area-inset-bottom, 0px));
   z-index: 5;
   overflow-y: auto;
-  padding: 8px var(--edge) 24px;
+  padding: 8px var(--content-edge) 24px;
   background: var(--deck-bg);
   overscroll-behavior: contain;
   animation: overviewIn var(--duration-slow) var(--ease-out);

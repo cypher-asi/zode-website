@@ -1,11 +1,21 @@
 import type { SourceId } from "./research";
 
-/** A slide's background; ink is the one dark ground, never two in a row. */
+/** A slide's background; ink is the one dark ground. */
 export type Ground = "white" | "paper" | "ink";
 
 export interface Stat {
   readonly value: string;
   readonly label: string;
+}
+
+/** Line drawings for the macro slide's cards (art/MacroArt.tsx). */
+export type MacroArtId = "capital" | "power" | "compute" | "land" | "datacenter" | "offtake";
+
+/** One link in the chain from capital to offtake; `hard` marks the bottleneck. */
+export interface ChainStep {
+  readonly label: string;
+  readonly art: MacroArtId;
+  readonly hard?: boolean;
 }
 
 export interface Logo {
@@ -33,7 +43,12 @@ const LOGO_DIR = "/images/deck/logos";
 
 export type Slide =
   | (Base & { kind: "cover"; lede: string; meta: string; image: string })
-  | (Base & { kind: "stats"; stats: readonly Stat[]; highlight?: number; statement: string })
+  | (Base & {
+      kind: "stats";
+      stats: readonly (Stat & { art: MacroArtId })[];
+      statement: string;
+      chain: readonly ChainStep[];
+    })
   | (Base & { kind: "demand" })
   | (Base & { kind: "shortfall" })
   | (Base & { kind: "states" })
@@ -100,7 +115,7 @@ export const SLIDES: readonly Slide[] = [
     section: "Cover",
     eyebrow: "Investor presentation · October 2026",
     title: "Sovereign AI capacity, online in 90 days.",
-    lede: "ZODE builds factory-made AI data centers and sells the capacity on take-or-pay compute contracts.",
+    lede: "ZODE manufactures rapidly deployable data centers and sells the compute.",
     meta: "ZODE Inc.",
     image: "/images/future-home/zode-hero.jpg",
     ground: "ink",
@@ -111,14 +126,20 @@ export const SLIDES: readonly Slide[] = [
     section: "Macro",
     eyebrow: "Macro",
     title: "Demand for compute is outrunning powered capacity.",
-    ground: "white",
+    ground: "ink",
     stats: [
-      { value: "~$700B", label: "2026 AI capex plans of the four largest hyperscalers" },
-      { value: "57 GW", label: "Projected US data center power shortfall through 2028" },
-      { value: "$3.75–5", label: "B300 price per GPU-hour on 24–60 month terms" },
+      { value: "~$700B", label: "Hyperscaler AI capex, 2026", art: "capital" },
+      { value: "57 GW", label: "US power shortfall to 2028", art: "power" },
+      { value: "$3.75–5", label: "B300 per GPU-hour", art: "compute" },
     ],
-    highlight: 1,
-    statement: "Capital is committed. GPUs ship in weeks. Energized sites are what the market cannot produce fast enough.",
+    statement: "Capital, GPUs and powered land are available. Converting energy to tokens is the main bottleneck.",
+    chain: [
+      { label: "Capital", art: "capital" },
+      { label: "Land", art: "land" },
+      { label: "Data center", art: "datacenter", hard: true },
+      { label: "Compute", art: "compute" },
+      { label: "Offtake", art: "offtake" },
+    ],
     sources: ["capex", "morganStanley", "zodePricing"],
   },
   {

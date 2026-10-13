@@ -6,6 +6,7 @@ import { PRINCIPLE_GRID_CLASS, PrincipleCard } from "@/features/home/principles/
 import { PRINCIPLES } from "@/features/home/principles/principles";
 import { ANCHOR_X, StackArt, VIEW as STACK_VIEW, labelY } from "@/features/home/stack/StackArt";
 import stackStyles from "@/features/home/stack/FullStack.module.css";
+import { MacroArt } from "./art/MacroArt";
 import { DEMAND_GAP, DemandChart } from "./charts/DemandChart";
 import { ShortfallByYear, ShortfallChart } from "./charts/ShortfallChart";
 import { StateTileMap } from "./charts/StateTileMap";
@@ -98,19 +99,41 @@ function Cover({ slide }: { slide: Of<"cover"> }): ReactElement {
   );
 }
 
-function Stats({ slide }: { slide: Of<"stats"> }): ReactElement {
+/** The macro slide: a card per figure, the statement, then the chain from capital to offtake with its bottleneck in red. */
+function Stats({ slide, active }: { slide: Of<"stats">; active: boolean }): ReactElement {
   return (
-    <div className={styles.statsBody}>
-      <div className={styles.statRow}>
+    <div className={styles.macro}>
+      <ul className={styles.macroCards}>
         {slide.stats.map((stat, i) => (
-          <div key={stat.label} {...rise(2 + i)}>
-            <StatBlock stat={stat} highlight={i === slide.highlight} size="lg" />
-          </div>
+          <li key={stat.label} {...rise(2 + i * 0.5)} className={`${styles.rise} ${styles.macroCard}`}>
+            <span className={styles.label}>{String(i + 1).padStart(2, "0")}</span>
+            <div className={styles.macroFigure}>
+              <MacroArt id={stat.art} playing={active} />
+            </div>
+            <span className={styles.macroValue}>{stat.value}</span>
+            <span className={styles.statLabel}>{stat.label}</span>
+          </li>
         ))}
-      </div>
-      <p {...rise(5)} className={`${styles.rise} ${styles.statement}`}>
+      </ul>
+      <h3 {...rise(4)} className={`${styles.rise} ${styles.h3} ${styles.macroStatement}`}>
         {slide.statement}
-      </p>
+      </h3>
+      <ol className={styles.chain}>
+        {slide.chain.map((step, i) => (
+          <li
+            key={step.label}
+            {...rise(5 + i * 0.4)}
+            className={`${styles.rise} ${styles.chainStep}`}
+            data-hard={step.hard || undefined}
+          >
+            <div className={styles.chainFigure}>
+              <MacroArt id={step.art} hard={step.hard} playing={active} />
+            </div>
+            <span className={styles.chainLabel}>{step.label}</span>
+            {step.hard ? <span className={styles.chainNote}>Bottleneck</span> : null}
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
@@ -652,7 +675,7 @@ function Body({ slide, active, compact }: { slide: Slide; active: boolean; compa
     case "cover":
       return <Cover slide={slide} />;
     case "stats":
-      return <Stats slide={slide} />;
+      return <Stats slide={slide} active={active} />;
     case "demand":
       return <Demand active={active} compact={compact} />;
     case "shortfall":

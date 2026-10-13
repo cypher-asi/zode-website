@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type CSSProperties,
   type PointerEvent as ReactPointerEvent,
   type ReactElement,
   type ReactNode,
@@ -381,8 +382,13 @@ export function Deck({ initialSlide, header }: { initialSlide: number; header: R
             <span className={styles.rule} data-rule="foot" />
             <span className={styles.rule} data-rule="bottom" />
             <span className={styles.name}>
-              <span key={SLIDES[NAMED[index]].eyebrow} className={styles.nameText}>
-                {SLIDES[NAMED[index]].eyebrow}
+              <span
+                key={SLIDES[NAMED[index]].eyebrow}
+                className={styles.nameLine}
+                style={{ "--chars": SLIDES[NAMED[index]].eyebrow.length } as CSSProperties}
+              >
+                <span className={styles.nameText}>{SLIDES[NAMED[index]].eyebrow}</span>
+                <span className={styles.nameCursor} />
               </span>
             </span>
           </div>
