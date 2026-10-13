@@ -2,7 +2,8 @@
  * Builds the press kit in public/brand from the master artwork: the wordmark
  * (public/wordmark.svg) and the monogram path (src/lib/brandMarks.ts), in ink
  * and white, as SVG and PNG, plus the app icon and a zip of everything with
- * the product renders. Rerun after changing either master:
+ * the product renders, and src/app/favicon.ico. Rerun after changing either
+ * master:
  *
  *   npm run brand:kit
  */
@@ -24,11 +25,15 @@ const { width: mw, height: mh } = MONOGRAM_VIEWBOX;
 const monogram = (fill) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${mw} ${mh}"><path d="${MONOGRAM_PATH}" fill="${fill}"/></svg>\n`;
 
+const tile = (size, markWidth) => {
+  const scale = (size * markWidth) / mw;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}"><rect width="${size}" height="${size}" fill="${INK}"/><path d="${MONOGRAM_PATH}" fill="${WHITE}" transform="translate(${(size - mw * scale) / 2} ${(size - mh * scale) / 2}) scale(${scale})"/></svg>\n`;
+};
+
 // Narrower than the favicon's 75% (app/icon.tsx) so the Z clears circular and
 // rounded-square avatar masks.
 const ICON = 1024;
-const iconScale = (ICON * 0.62) / mw;
-const appIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${ICON} ${ICON}"><rect width="${ICON}" height="${ICON}" fill="${INK}"/><path d="${MONOGRAM_PATH}" fill="${WHITE}" transform="translate(${(ICON - mw * iconScale) / 2} ${(ICON - mh * iconScale) / 2}) scale(${iconScale})"/></svg>\n`;
+const appIcon = tile(ICON, 0.62);
 
 const svgs = {
   "zode-wordmark-black.svg": wordmark.replaceAll('fill="#ffffff"', `fill="${INK}"`),
@@ -78,3 +83,26 @@ const lastModified = new Date("2026-01-01T00:00:00Z");
 const zip = await downloadZip(files.map((file) => ({ ...file, lastModified }))).arrayBuffer();
 await writeFile(join(OUT, "zode-press-kit.zip"), Buffer.from(zip));
 console.log(`public/brand: ${Object.keys(svgs).length * 2} logo files and zode-press-kit.zip (${files.length} entries)`);
+
+// app/favicon.ico, for clients that fetch /favicon.ico without reading the
+// page's icon links. ICO entries may hold PNG data, so each size is a PNG.
+const FAVICON_SIZES = [16, 32, 48];
+const faviconPngs = await Promise.all(
+  FAVICON_SIZES.map((size) => sharp(Buffer.from(tile(size, 0.75)), { density: 300 }).resize(size).png().toBuffer()),
+);
+const icoHeader = Buffer.alloc(6 + 16 * FAVICON_SIZES.length);
+icoHeader.writeUInt16LE(1, 2);
+icoHeader.writeUInt16LE(FAVICON_SIZES.length, 4);
+let icoOffset = icoHeader.length;
+FAVICON_SIZES.forEach((size, i) => {
+  const entry = 6 + 16 * i;
+  icoHeader.writeUInt8(size, entry);
+  icoHeader.writeUInt8(size, entry + 1);
+  icoHeader.writeUInt16LE(1, entry + 4);
+  icoHeader.writeUInt16LE(32, entry + 6);
+  icoHeader.writeUInt32LE(faviconPngs[i].length, entry + 8);
+  icoHeader.writeUInt32LE(icoOffset, entry + 12);
+  icoOffset += faviconPngs[i].length;
+});
+await writeFile(join(ROOT, "src/app/favicon.ico"), Buffer.concat([icoHeader, ...faviconPngs]));
+console.log(`src/app/favicon.ico: ${FAVICON_SIZES.join(", ")}px`);

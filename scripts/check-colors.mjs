@@ -13,7 +13,7 @@ const ROOT = new URL("../", import.meta.url).pathname;
 
 const ALLOWED = new Map([
   ["src/app/globals.css", "the colour tokens"],
-  ["src/app/icon.tsx", "generated favicon"],
+  ["src/lib/monogramImage.tsx", "generated favicon and link-preview image"],
   ["src/emails/ui.tsx", "email palette; mail clients can't read CSS variables"],
   ["src/features/styleguide/brand.ts", "the published palette, checked against globals.css"],
   ["src/features/data-room/icons.tsx", "file-type icon palette"],

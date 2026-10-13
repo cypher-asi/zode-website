@@ -1,6 +1,7 @@
 /**
  * The Z monogram: the first letter of the wordmark (public/wordmark.svg), on
- * its own. Shared by the favicon (app/icon.tsx) and the press-kit generator
+ * its own. Shared by the generated icons and link-preview image
+ * (lib/monogramImage.tsx) and the press-kit generator
  * (scripts/make-brand-kit.mjs), so keep this file free of imports.
  */
 export const MONOGRAM_VIEWBOX = { width: 645, height: 417 } as const;
