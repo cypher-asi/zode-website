@@ -41,15 +41,16 @@ import {
 } from "./types";
 
 /*
- * A deployment as a ZODE-branded PDF: the styleguide's type (Geist Light
- * headlines, Inter text, Geist Mono labels and figures) and palette (ink,
- * paper and hairlines, the accent marking only the next RFS), with the
- * wordmark on an ink band. Fonts are read with fs from this feature's assets
- * and the wordmark from public/; next.config's outputFileTracingIncludes ships
- * both with the PDF route.
+ * A deployment as a ZODE-branded PDF: the styleguide's type (the display face
+ * in Light for headlines, Inter text, Geist Mono labels and figures) and
+ * palette (ink, paper and hairlines, the accent marking only the next RFS),
+ * with the wordmark on an ink band. Fonts are read with fs from this feature's
+ * assets and the shared display face, the wordmark from public/;
+ * next.config's outputFileTracingIncludes ships them with the PDF route.
  */
 
 const ASSETS = path.join(process.cwd(), "src/features/deployments/assets");
+const DISPLAY_FACE = path.join(process.cwd(), "src/assets/fonts/display/light.ttf");
 const WORDMARK = path.join(process.cwd(), "public/wordmark.svg");
 const WORDMARK_VIEWBOX = { width: 2400, height: 416 };
 
@@ -67,12 +68,12 @@ let assets: Promise<Assets> | undefined;
 function loadAssets(): Promise<Assets> {
   assets ??= Promise.all([
     ...[
-      "Inter-Regular.ttf",
-      "Inter-Medium.ttf",
-      "Inter-SemiBold.ttf",
-      "Geist-Light.ttf",
-      "GeistMono-Regular.ttf",
-    ].map((name) => readFile(path.join(ASSETS, name))),
+      path.join(ASSETS, "Inter-Regular.ttf"),
+      path.join(ASSETS, "Inter-Medium.ttf"),
+      path.join(ASSETS, "Inter-SemiBold.ttf"),
+      DISPLAY_FACE,
+      path.join(ASSETS, "GeistMono-Regular.ttf"),
+    ].map((file) => readFile(file)),
     readFile(WORDMARK, "utf8"),
   ]).then(([regular, medium, semibold, display, mono, svg]) => {
     const wordmark = /\sd="([^"]+)"/.exec(svg as string)?.[1];

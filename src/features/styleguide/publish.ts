@@ -5,6 +5,7 @@ import {
   BREAKPOINTS,
   COMPONENTS,
   COMPOSITION,
+  DISPLAY_FONT,
   FORMATS,
   GOOGLE_FONTS_URL,
   IMAGE_ASSETS,
@@ -162,7 +163,7 @@ Font stacks:
 
 ${TYPE_FAMILIES.map((f) => `- ${f.role}: \`${f.stack}\``).join("\n")}
 
-Headlines are Geist Light in sentence case, ending with a period. Eyebrows are Geist Mono or Inter, uppercase, 11px with 0.16em tracking.
+Headlines are ${DISPLAY_FONT} Light in sentence case, ending with a period. Eyebrows are Geist Mono or Inter, uppercase, 11px with 0.16em tracking.
 
 ${tokenTables(["type-scale", "headings"])}
 

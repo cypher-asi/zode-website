@@ -16,7 +16,7 @@
 :root {
   /* Families; the next/font variables are set on <html> in app/layout.tsx. */
   --font-sans: var(--font-text);
-  --font-display: var(--font-geist);
+  --font-display: var(--font-display-face);
   --font-mono: var(--font-geist-mono);
 
   /* Palette */
