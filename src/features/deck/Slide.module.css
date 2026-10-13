@@ -609,7 +609,7 @@
   flex-direction: column;
   gap: calc(0.8 * var(--u));
   min-height: 0;
-  padding: calc(1.2 * var(--u)) 0 calc(1.2 * var(--u)) calc(0.6 * var(--u));
+  padding: calc(1.2 * var(--u)) calc(0.6 * var(--u));
 }
 
 .trendChart {
