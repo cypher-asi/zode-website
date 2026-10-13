@@ -38,6 +38,9 @@ const SIGNED_OUT_MENU = [
   { id: "register", label: "Register", href: "/register" },
 ];
 
+/** The split button's link, unless a page passes its own. */
+const BUY_COMPUTE = { label: "Buy Compute", href: "/buy-compute" };
+
 /** Menu rows that open a flyout of links, in menu order. */
 const SUBMENUS = [
   { id: "tools", label: "Tools", links: TOOL_LINKS },
@@ -148,8 +151,9 @@ function sampleUnder(el: HTMLElement, rect: DOMRect): { tone: Tone | null; media
 }
 
 /**
- * Top-left wordmark and top-right "Buy Compute" split button that stay fixed
- * while the page scrolls. The button's chevron opens a menu of other actions. Each is black over light surfaces and white over dark ones:
+ * Top-left wordmark and top-right split button ("Buy Compute" unless the page
+ * passes `primary`) that stay fixed while the page scrolls. The button's
+ * chevron opens a menu of other actions. Each is black over light surfaces and white over dark ones:
  * it reads the nearest `data-surface` ancestor of whatever sits under its
  * center point. Content marked with `data-top-fade` is masked out as it scrolls
  * up into the top corners, while the top middle stays solid. `data-top-fade`
@@ -164,9 +168,12 @@ function sampleUnder(el: HTMLElement, rect: DOMRect): { tone: Tone | null; media
  */
 export function PinnedHeader({
   showAction = true,
+  primary = BUY_COMPUTE,
 }: {
   /** Set false to leave out the top-right action, e.g. on the page it links to. */
   showAction?: boolean;
+  /** The split button's link; `scroll: false` keeps the page put for links that open a modal. */
+  primary?: { readonly label: string; readonly href: string; readonly scroll?: boolean };
 }): ReactElement {
   const pathname = usePathname();
   const brandRef = useRef<HTMLAnchorElement>(null);
@@ -514,8 +521,8 @@ export function PinnedHeader({
         >
           <div ref={anchorRef} className={styles.menuAnchor}>
             <div ref={actionRef} className={styles.split}>
-              <Link className={styles.primary} href="/buy-compute">
-                Buy Compute
+              <Link className={styles.primary} href={primary.href} scroll={primary.scroll}>
+                {primary.label}
                 <span ref={growRef} className={styles.grow} aria-hidden="true" />
               </Link>
               <button

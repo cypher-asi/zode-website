@@ -244,6 +244,7 @@ ${RESOURCES.map((r) => `- [${r.name}](${url(r.path)}): ${r.use}`).join("\n")}
 - [Home](${url("/")}): What a ZODE is.
 - [Buy compute](${url("/buy-compute")}): Configure and price a ZODE.
 - [Talk to an engineer](${url("/talk-to-an-engineer")}): Sales contact.
+- [Invest](${url("/invest")}): Investor inquiries.
 - [Contact](${url("/contact")}): ${BRAND.email}
 `;
 }

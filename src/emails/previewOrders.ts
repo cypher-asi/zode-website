@@ -2,6 +2,7 @@ import { DEFAULT_CONFIG } from "@/features/configurator/buyConfig";
 import { DEFAULT_RENT_CONFIG } from "@/features/configurator/rentConfig";
 import { accountEmailProps } from "./accountEmailProps";
 import { engineerRequestEmailProps } from "./engineerRequestEmailProps";
+import { investorRequestEmailProps } from "./investorRequestEmailProps";
 import { orderEmailProps } from "./orderEmailProps";
 import { WORDMARK_PNG_BASE64 } from "./wordmark";
 
@@ -34,6 +35,23 @@ export const PREVIEW_ENGINEER = engineerRequestEmailProps(
     email: "ada@example.com",
   },
   "5C20E7D1",
+  placedAt,
+);
+
+export const PREVIEW_INVESTOR = investorRequestEmailProps(
+  {
+    investorType: "infrastructure",
+    opportunities: ["equity", "project"],
+    checkSize: "5m-25m",
+    name: "Ada Lovelace",
+    email: "ada@example.com",
+    firm: "Analytical Capital",
+    title: "Partner",
+    firmWebsite: "analyticalcapital.com",
+    phone: "+1 (555) 010-1843",
+    note: "We back energy and compute infrastructure. Keen to see unit economics per deployment.",
+  },
+  "9E41B2C7",
   placedAt,
 );
 

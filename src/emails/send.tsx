@@ -5,6 +5,7 @@ import { Resend } from "resend";
 import type { Account } from "@/features/account/zos";
 import type { Order } from "@/features/configurator/orders";
 import type { EngineerRequest } from "@/features/engineer-request/engineerRequests";
+import type { InvestorRequest } from "@/features/investor-request/investorRequests";
 import { RECIPIENT_EMAIL } from "@/lib/leads";
 import { accountEmailProps } from "./accountEmailProps";
 import { executedFileName } from "@/features/mnda/agreement";
@@ -13,6 +14,8 @@ import DataRoomInvite, { dataRoomInviteSubject, type DataRoomInviteProps } from 
 import EngineerRequestNotification, { engineerRequestSubject } from "./EngineerRequestNotification";
 import MailingListConfirm, { mailingListConfirmSubject, type MailingListConfirmProps } from "./MailingListConfirm";
 import { engineerRequestEmailProps } from "./engineerRequestEmailProps";
+import InvestorRequestNotification, { investorRequestSubject } from "./InvestorRequestNotification";
+import { investorRequestEmailProps } from "./investorRequestEmailProps";
 import MndaExecuted, { mndaExecutedSubject, type MndaExecutedProps } from "./MndaExecuted";
 import OrderConfirmation, { confirmationSubject } from "./OrderConfirmation";
 import OrderNotification, { notificationSubject } from "./OrderNotification";
@@ -139,6 +142,25 @@ export async function sendEngineerRequestEmail(request: EngineerRequest, referen
     });
   } catch (err) {
     console.error(`[email] team notification for engineer request ${reference} failed:`, err);
+  }
+}
+
+/**
+ * Emails the team an Invest inquiry; replies go to the investor.
+ * Never throws: the request is already stored, so a failed send is only logged.
+ */
+export async function sendInvestorRequestEmail(request: InvestorRequest, reference: string): Promise<void> {
+  const props = investorRequestEmailProps(request, reference);
+  try {
+    await send({
+      to: teamInbox(),
+      replyTo: request.email,
+      subject: investorRequestSubject(props),
+      email: <InvestorRequestNotification {...props} />,
+      idempotencyKey: `investor-${reference}-team`,
+    });
+  } catch (err) {
+    console.error(`[email] team notification for investor request ${reference} failed:`, err);
   }
 }
 

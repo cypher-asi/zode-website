@@ -75,6 +75,27 @@ create table if not exists engineer_requests (
 
 create index if not exists engineer_requests_created_at_idx on engineer_requests (created_at desc);
 
+-- Inquiries from the "Invest" form; the team follows up with materials.
+create table if not exists investor_requests (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  status text not null default 'new',
+  -- Ids from investor-request/options.ts: an investor type, any of 'equity'
+  -- and 'project', and a check-size bucket.
+  investor_type text not null,
+  opportunities text[] not null,
+  check_size text not null,
+  name text not null,
+  email text not null,
+  firm text,
+  title text,
+  website text,
+  phone text,
+  note text
+);
+
+create index if not exists investor_requests_created_at_idx on investor_requests (created_at desc);
+
 -- Data rooms: private file shares in the portal. File bytes live in a private
 -- Vercel Blob store under data-rooms/<room id>/; these tables hold the rest.
 create table if not exists data_rooms (

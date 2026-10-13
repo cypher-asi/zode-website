@@ -11,6 +11,7 @@ const PUBLIC_ROUTES = [
   "/compute-model",
   "/contact",
   "/talk-to-an-engineer",
+  "/invest",
   "/news",
   "/changelog",
   "/styleguide",

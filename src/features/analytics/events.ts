@@ -12,6 +12,7 @@ export const ANALYTICS_EVENTS = {
   newsletter_confirmed: { label: "Newsletter confirmed", client: false },
   account_registered: { label: "Account registered", client: false },
   engineer_requested: { label: "Engineer requested", client: false },
+  investor_requested: { label: "Investor inquiry", client: false },
   outbound_click: { label: "Outbound link", client: true },
   file_download: { label: "File download", client: true },
 } as const satisfies Record<string, { label: string; client: boolean }>;

@@ -2,6 +2,7 @@ import { render } from "@react-email/render";
 import { createElement, type ReactElement } from "react";
 import DataRoomInvite from "@/emails/DataRoomInvite";
 import EngineerRequestNotification from "@/emails/EngineerRequestNotification";
+import InvestorRequestNotification from "@/emails/InvestorRequestNotification";
 import MailingListConfirm from "@/emails/MailingListConfirm";
 import MndaExecuted from "@/emails/MndaExecuted";
 import OrderConfirmation from "@/emails/OrderConfirmation";
@@ -11,6 +12,7 @@ import {
   PREVIEW_BUY,
   PREVIEW_DATA_ROOM_INVITE,
   PREVIEW_ENGINEER,
+  PREVIEW_INVESTOR,
   PREVIEW_LOGO,
   PREVIEW_MNDA,
   PREVIEW_RENT,
@@ -26,6 +28,7 @@ const TEMPLATES: Record<string, (search: URLSearchParams) => ReactElement> = {
   notification: (search) =>
     createElement(OrderNotification, { ...(search.get("mode") === "rent" ? PREVIEW_RENT : PREVIEW_BUY), logoSrc: PREVIEW_LOGO }),
   engineer: () => createElement(EngineerRequestNotification, { ...PREVIEW_ENGINEER, logoSrc: PREVIEW_LOGO }),
+  investor: () => createElement(InvestorRequestNotification, { ...PREVIEW_INVESTOR, logoSrc: PREVIEW_LOGO }),
   welcome: () => createElement(Welcome, { ...PREVIEW_ACCOUNT, logoSrc: PREVIEW_LOGO }),
   registration: () => createElement(RegistrationNotification, { ...PREVIEW_ACCOUNT, logoSrc: PREVIEW_LOGO }),
   "data-room-invite": () => createElement(DataRoomInvite, { ...PREVIEW_DATA_ROOM_INVITE, logoSrc: PREVIEW_LOGO }),
@@ -53,7 +56,7 @@ const TEMPLATES: Record<string, (search: URLSearchParams) => ReactElement> = {
 /**
  * Development only: an email rendered with sample data, e.g.
  * /dev/emails/confirmation, /dev/emails/notification?mode=rent,
- * /dev/emails/engineer, /dev/emails/welcome, /dev/emails/registration,
+ * /dev/emails/engineer, /dev/emails/investor, /dev/emails/welcome, /dev/emails/registration,
  * /dev/emails/data-room-invite, /dev/emails/team-invite?role=member, /dev/emails/mailing-list-confirm?list=changelog, /dev/emails/mnda?audience=team,
  * or add `&text` for the plain-text part.
  */

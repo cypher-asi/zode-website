@@ -1,4 +1,4 @@
-/* Talk to an Engineer card (see EngineerCard.tsx and EngineerForm.tsx). */
+/* Talk to an Engineer card (see EngineerCard.tsx and EngineerForm.tsx), also worn by the Invest card (features/investor-request). */
 /* Applied to the RouteModal around the card. */
 .modal {
   --modal-width: 720px;
@@ -350,6 +350,10 @@
 
 .input {
   composes: input from "../../components/ui/Field/Field.module.css";
+}
+
+.textarea {
+  composes: textarea from "../../components/ui/Field/Field.module.css";
 }
 
 /* Off-screen rather than display:none, which some bots skip. */
