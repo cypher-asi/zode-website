@@ -211,83 +211,85 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
 
   return (
     <div className={styles.summary}>
-      <section className={styles.section} aria-labelledby="economics-heading">
-        <div className={styles.sectionHead}>
-          <h2 id="economics-heading" className={styles.heading}>
-            Economics
-          </h2>
-          <Link href={x.modelHref} className={styles.modelLink}>
-            Compute model
-          </Link>
-        </div>
-        <p className={styles.lede}>{economicsLede}</p>
-        <ul className={styles.keyFigures}>
-          {keyFigures.map((f) => (
-            <li key={f.label} className={styles.keyFigure}>
-              <span className={styles.keyValue}>{f.value}</span>
-              <span className={styles.keyLabel}>
-                {f.label}
-                {f.estimate ? <span className={styles.est}> · est.</span> : null}
-              </span>
-            </li>
-          ))}
-        </ul>
-        <details className={styles.more}>
-          <summary className={styles.moreHead}>
-            Figures and assumptions
-            <Icon name="chevron" className={styles.chevron} />
-          </summary>
-          <ul className={styles.figures}>
-            {figures.map((f) => (
-              <li key={f.label} className={styles.figure}>
-                <div className={styles.figureHead}>
-                  <span className={styles.figureLabel}>
-                    {f.label}
-                    {f.estimate ? <span className={styles.estimate}>Estimate</span> : null}
-                    {f.note ? <span className={styles.figureNote}>{f.note}</span> : null}
-                  </span>
-                  <span className={styles.figureValue}>{f.value}</span>
-                </div>
-                <p className={styles.detail}>{f.detail}</p>
-                {f.sources?.length ? (
-                  <Sources roomId={roomId} sources={f.sources} names={summary.sourceNames} />
-                ) : null}
+      <div className={styles.columns}>
+        <section className={styles.section} aria-labelledby="economics-heading">
+          <div className={styles.sectionHead}>
+            <h2 id="economics-heading" className={styles.heading}>
+              Economics
+            </h2>
+            <Link href={x.modelHref} className={styles.modelLink}>
+              Compute model
+            </Link>
+          </div>
+          <p className={styles.lede}>{economicsLede}</p>
+          <ul className={styles.keyFigures}>
+            {keyFigures.map((f) => (
+              <li key={f.label} className={styles.keyFigure}>
+                <span className={styles.keyValue}>{f.value}</span>
+                <span className={styles.keyLabel}>
+                  {f.label}
+                  {f.estimate ? <span className={styles.est}> · est.</span> : null}
+                </span>
               </li>
             ))}
           </ul>
-          <p className={styles.assumptions}>{assumptions} Planning estimates, not an offer or investment advice.</p>
-        </details>
-      </section>
+          <details className={styles.more}>
+            <summary className={styles.moreHead}>
+              Figures and assumptions
+              <Icon name="chevron" className={styles.chevron} />
+            </summary>
+            <ul className={styles.figures}>
+              {figures.map((f) => (
+                <li key={f.label} className={styles.figure}>
+                  <div className={styles.figureHead}>
+                    <span className={styles.figureLabel}>
+                      {f.label}
+                      {f.estimate ? <span className={styles.estimate}>Estimate</span> : null}
+                      {f.note ? <span className={styles.figureNote}>{f.note}</span> : null}
+                    </span>
+                    <span className={styles.figureValue}>{f.value}</span>
+                  </div>
+                  <p className={styles.detail}>{f.detail}</p>
+                  {f.sources?.length ? (
+                    <Sources roomId={roomId} sources={f.sources} names={summary.sourceNames} />
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+            <p className={styles.assumptions}>{assumptions} Planning estimates, not an offer or investment advice.</p>
+          </details>
+        </section>
 
-      <section className={styles.section} aria-labelledby="diligence-heading">
-        <div className={styles.sectionHead}>
-          <h2 id="diligence-heading" className={styles.heading}>
-            Diligence
-          </h2>
-        </div>
-        <p className={styles.lede}>{diligenceLede(items.map(({ item }) => item.status))}</p>
-        <ul className={styles.list}>
-          {items.map(({ key, label, item }) => (
-            <li key={key}>
-              <details className={styles.row}>
-                <summary className={styles.rowHead}>
-                  <span className={styles.dot} data-status={item.status} aria-hidden="true" />
-                  <span className={styles.rowLabel}>{label}</span>
-                  <span className={styles.status} data-status={item.status} title={STATUS_HINTS[item.status]}>
-                    {STATUS_LABELS[item.status]}
-                  </span>
-                  <Icon name="chevron" className={styles.chevron} />
-                </summary>
-                <div className={styles.rowBody}>
-                  <p className={styles.headline}>{item.headline}</p>
-                  <p className={styles.detail}>{item.detail}</p>
-                  <Sources roomId={roomId} sources={item.sources} names={summary.sourceNames} />
-                </div>
-              </details>
-            </li>
-          ))}
-        </ul>
-      </section>
+        <section className={styles.section} aria-labelledby="diligence-heading">
+          <div className={styles.sectionHead}>
+            <h2 id="diligence-heading" className={styles.heading}>
+              Diligence
+            </h2>
+          </div>
+          <p className={styles.lede}>{diligenceLede(items.map(({ item }) => item.status))}</p>
+          <ul className={styles.list}>
+            {items.map(({ key, label, item }) => (
+              <li key={key}>
+                <details className={styles.row}>
+                  <summary className={styles.rowHead}>
+                    <span className={styles.dot} data-status={item.status} aria-hidden="true" />
+                    <span className={styles.rowLabel}>{label}</span>
+                    <span className={styles.status} data-status={item.status} title={STATUS_HINTS[item.status]}>
+                      {STATUS_LABELS[item.status]}
+                    </span>
+                    <Icon name="chevron" className={styles.chevron} />
+                  </summary>
+                  <div className={styles.rowBody}>
+                    <p className={styles.headline}>{item.headline}</p>
+                    <p className={styles.detail}>{item.detail}</p>
+                    <Sources roomId={roomId} sources={item.sources} names={summary.sourceNames} />
+                  </div>
+                </details>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
     </div>
   );
 }

@@ -38,10 +38,8 @@ const ZOOMABLE = new Set<FileKind>(["pdf", "image", "text", "csv", "docx", "xlsx
 const STEPS = [0.25, 0.33, 0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5];
 
 const uploaded = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
-const updated = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "UTC" });
 
 export interface RoomSummary {
-  updatedAt: string;
   /** The rendered summary; its source links carry `data-file-id`. */
   content: ReactNode;
 }
@@ -69,15 +67,10 @@ export function SummaryPanel({
 
   return (
     <div className={styles.viewer}>
-      <header className={styles.header}>
+      <header className={`${styles.header} ${styles.summaryHeader}`}>
         <button type="button" className={`${ui.iconButton} ${styles.back}`} onClick={onBack} aria-label="Back to files">
           <Icon name="back" />
         </button>
-        <Icon name="summary" className={styles.glyph} />
-        <div className={styles.titles}>
-          <h2 className={styles.name}>Summary</h2>
-          <p className={styles.meta}>Diligence summary · Updated {updated.format(new Date(summary.updatedAt))}</p>
-        </div>
       </header>
       <div className={styles.summary} onClickCapture={onClick}>
         {summary.content}

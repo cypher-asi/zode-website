@@ -25,7 +25,7 @@ export default async function DataRoomPage({
       initialFileId={typeof file === "string" ? file : null}
       summary={
         summary
-          ? { updatedAt: summary.updatedAt, content: <SummaryView roomId={roomId} summary={summary} /> }
+          ? { content: <SummaryView roomId={roomId} summary={summary} /> }
           : null
       }
     />
