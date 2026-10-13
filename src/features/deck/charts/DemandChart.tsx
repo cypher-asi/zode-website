@@ -155,7 +155,7 @@ export function DemandChart({ active, compact = false }: { active: boolean; comp
             dy="0.35em"
             textAnchor="middle"
           >
-            <tspan className={styles.gapValue}>{DEMAND_GAP} GW</tspan> gap
+            <tspan className={styles.gapValue}>{DEMAND_GAP}</tspan> GW gap
           </text>
         </g>
       )}
