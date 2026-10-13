@@ -4,6 +4,7 @@ import { createContext, use, useState, useSyncExternalStore, type ReactElement, 
 import { createPortal } from "react-dom";
 import { SIDEBAR_MEDIA } from "./nav";
 import styles from "./shell.module.css";
+import { PORTAL_THEME_COOKIE, type PortalTheme } from "./theme";
 
 type SidebarContextValue = {
   /** Whether the window is wide enough to show the sidebar at all. */
@@ -15,26 +16,57 @@ type SidebarContextValue = {
 
 const SidebarContext = createContext<SidebarContextValue>({ wide: false, dock: null, setDock: () => {} });
 
+const ThemeContext = createContext<{ theme: PortalTheme; toggle: () => void }>({
+  theme: "light",
+  toggle: () => {},
+});
+
 const subscribeWide = (onChange: () => void) => {
   const query = window.matchMedia(SIDEBAR_MEDIA);
   query.addEventListener("change", onChange);
   return () => query.removeEventListener("change", onChange);
 };
 
-/** Wraps the portal shell, and tracks where pages can dock their explorer in the sidebar. */
-export function PortalFrame({ children }: { children: ReactNode }): ReactElement {
+/**
+ * Wraps the portal shell, tracks where pages can dock their explorer in the
+ * sidebar, and carries the light or dark theme (globals.css) for everything
+ * inside, the pinned header included.
+ */
+export function PortalFrame({
+  initialTheme,
+  children,
+}: {
+  initialTheme: PortalTheme;
+  children: ReactNode;
+}): ReactElement {
   const [dock, setDock] = useState<HTMLElement | null>(null);
+  const [theme, setTheme] = useState(initialTheme);
   const wide = useSyncExternalStore(
     subscribeWide,
     () => window.matchMedia(SIDEBAR_MEDIA).matches,
     () => false,
   );
 
+  const toggle = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.cookie = `${PORTAL_THEME_COOKIE}=${next}; Max-Age=31536000; Path=/; SameSite=Lax`;
+  };
+
   return (
-    <SidebarContext value={{ wide, dock, setDock }}>
-      <div className={styles.frame}>{children}</div>
-    </SidebarContext>
+    <ThemeContext value={{ theme, toggle }}>
+      <SidebarContext value={{ wide, dock, setDock }}>
+        <div className={styles.frame} data-theme={theme}>
+          {children}
+        </div>
+      </SidebarContext>
+    </ThemeContext>
   );
+}
+
+/** The portal's current theme, and a toggle that flips it and remembers the choice. */
+export function usePortalTheme(): { theme: PortalTheme; toggle: () => void } {
+  return use(ThemeContext);
 }
 
 /** The ref callback for the sidebar's dock slot. */

@@ -138,6 +138,71 @@
   --shell-outer-bg: #eef0f2;
 }
 
+/*
+ * The portal's dark theme, set on its frame by PortalFrame: every colour
+ * token inverted. Derived tokens resolve where they're declared, so each one
+ * is restated here rather than following the palette. `--color-white` and
+ * `--color-black` swap too, which turns the black rail and the header's
+ * outlined button white.
+ */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-ink: #f6f6f3;
+  --color-paper: #0c0c0d;
+  --color-white: #1a1a1d;
+  --color-black: #ffffff;
+
+  --color-text-primary: #f6f6f3;
+  --color-text-secondary: #a0a0a6;
+  --color-text-tertiary: #7c7c82;
+  --color-text-faint: #55555b;
+  --color-text-inverse: #0c0c0d;
+  --color-text-inverse-secondary: #707075;
+
+  --color-bg: #121214;
+  --color-bg-elevated: #1a1a1d;
+  --color-bg-subtle: #0c0c0d;
+  --color-bg-inverse: #f6f6f3;
+  --color-primary-hover: #d9d9d4;
+  --color-surface-tint: rgba(255, 255, 255, 0.05);
+  --color-surface-hover: rgba(255, 255, 255, 0.07);
+  --color-surface-active: rgba(255, 255, 255, 0.1);
+  --color-backdrop: rgba(0, 0, 0, 0.62);
+
+  --color-border: #26262a;
+  --color-border-strong: #313136;
+  --color-border-hover: #5c5c62;
+  --color-focus-ring: #60a5fa;
+
+  --color-danger: #f97066;
+  --color-danger-bg: rgba(240, 68, 56, 0.14);
+  --color-danger-border: rgba(240, 68, 56, 0.36);
+  --color-success: #47cd89;
+  --color-success-bg: rgba(23, 178, 106, 0.14);
+  --color-success-inverse: #067647;
+  --color-warning: #fdb022;
+  --color-warning-bg: rgba(247, 144, 9, 0.14);
+  --color-info: #53b1fd;
+  --color-info-bg: rgba(46, 144, 250, 0.14);
+  --color-violet: #a48afb;
+  --color-violet-bg: rgba(122, 90, 248, 0.16);
+
+  --color-accent-strong: var(--color-accent);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-focus: 0 0 0 3px rgba(246, 246, 243, 0.12);
+  --shadow-modal: 0 40px 100px -30px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08);
+
+  --logo-invert: 0;
+}
+
+/* The page behind the portal, which shows in the scrollbar gutter. */
+:root:has([data-theme="dark"]) {
+  --shell-outer-bg: #0c0c0d;
+  color-scheme: dark;
+}
+
 @media (max-width: 900px) {
   :root {
     --edge: 24px;

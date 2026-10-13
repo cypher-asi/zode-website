@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { cookies } from "next/headers";
 import { SiteShell } from "@/components/layout/SiteShell";
 import { isTeam, isZodeAdmin } from "@/features/account/admin";
 import { getAccount } from "@/features/account/session";
@@ -7,6 +8,7 @@ import { PortalFrame } from "@/features/portal/PortalFrame";
 import { PortalNav } from "@/features/portal/PortalNav";
 import { PortalSidebar } from "@/features/portal/PortalSidebar";
 import styles from "@/features/portal/shell.module.css";
+import { PORTAL_THEME_COOKIE, parsePortalTheme } from "@/features/portal/theme";
 
 /**
  * The signed-in portal: a black rail of apps down the left, the sidebar for
@@ -26,9 +28,10 @@ export default async function PortalLayout({
       ])
     : [false, false, null, null, null];
   const access = { admin, team };
+  const theme = parsePortalTheme((await cookies()).get(PORTAL_THEME_COOKIE)?.value);
 
   return (
-    <PortalFrame>
+    <PortalFrame initialTheme={theme}>
       <SiteShell
         footer={false}
         fade={false}

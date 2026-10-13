@@ -44,7 +44,7 @@
   display: block;
   height: 22px;
   width: auto;
-  filter: invert(1);
+  filter: invert(var(--logo-invert, 1));
   transition: filter 200ms ease;
 }
 
@@ -59,7 +59,7 @@
   }
 
   .brand:hover .wordmark {
-    filter: none;
+    filter: invert(calc(1 - var(--logo-invert, 1)));
     transition-delay: 120ms;
   }
 
@@ -74,7 +74,7 @@
 }
 
 .brand:focus-visible .wordmark {
-  filter: none;
+  filter: invert(calc(1 - var(--logo-invert, 1)));
   transition-delay: 120ms;
 }
 
