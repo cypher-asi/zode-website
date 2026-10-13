@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { SiteShell } from "@/components/layout/SiteShell";
 import { isTeam, isZodeAdmin } from "@/features/account/admin";
 import { getAccount } from "@/features/account/session";
-import { loadContracts, loadOrders, loadRooms } from "@/features/portal/data";
+import { loadRooms } from "@/features/portal/data";
 import { PortalFrame } from "@/features/portal/PortalFrame";
 import { PortalNav } from "@/features/portal/PortalNav";
 import { PortalSidebar } from "@/features/portal/PortalSidebar";
@@ -18,15 +18,9 @@ export default async function PortalLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
   const account = await getAccount();
-  const [admin, team, rooms, orders, contracts] = account
-    ? await Promise.all([
-        isZodeAdmin(account),
-        isTeam(account),
-        loadRooms(account.userId),
-        loadOrders(account.userId),
-        loadContracts(account.userId),
-      ])
-    : [false, false, null, null, null];
+  const [admin, team, rooms] = account
+    ? await Promise.all([isZodeAdmin(account), isTeam(account), loadRooms(account.userId)])
+    : [false, false, null];
   const access = { admin, team };
   const theme = parsePortalTheme((await cookies()).get(PORTAL_THEME_COOKIE)?.value);
 
@@ -39,11 +33,7 @@ export default async function PortalLayout({
         nav={
           <>
             <PortalNav access={access} />
-            <PortalSidebar
-              access={access}
-              counts={{ rooms: rooms?.length, orders: orders?.length, contracts: contracts?.length }}
-              rooms={rooms && rooms.map(({ id, name, fileCount }) => ({ id, name, fileCount }))}
-            />
+            <PortalSidebar access={access} rooms={rooms && rooms.map(({ id, name }) => ({ id, name }))} />
           </>
         }
       >

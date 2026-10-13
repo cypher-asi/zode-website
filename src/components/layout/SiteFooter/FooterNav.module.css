@@ -17,7 +17,7 @@
   --cursor-gap: 6px;
 
   display: grid;
-  grid-template-columns: repeat(4, max-content);
+  grid-template-columns: repeat(5, max-content);
   justify-content: center;
   gap: clamp(24px, 3vw, 40px) clamp(84px, 9vw, 168px);
   font-family: var(--font-mono);

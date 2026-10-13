@@ -4,30 +4,18 @@ import { useState, type ReactElement } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PortalIcon } from "./icons";
-import { activeApp, activeHref, portalApps, roomIdIn, type CountKey, type NavAccess, type NavLink } from "./nav";
+import { activeApp, activeHref, portalApps, roomIdIn, type NavAccess, type NavLink } from "./nav";
 import { useDockRef, useExtraRef } from "./PortalFrame";
 import styles from "./sidebar.module.css";
 
-export type SidebarRoom = { id: string; name: string; fileCount: number };
+export type SidebarRoom = { id: string; name: string };
 
 /** Rooms on the Home sidebar; Data rooms lists them all. */
 const RECENT_ROOMS = 5;
 
 const PLACEHOLDER_ROWS = 6;
 
-function Count({ value }: { value: number | undefined }): ReactElement | null {
-  return value === undefined ? null : <span className={styles.count}>{value.toLocaleString("en-US")}</span>;
-}
-
-function Links({
-  links,
-  current,
-  counts,
-}: {
-  links: readonly NavLink[];
-  current: string | null;
-  counts: Partial<Record<CountKey, number>>;
-}): ReactElement {
+function Links({ links, current }: { links: readonly NavLink[]; current: string | null }): ReactElement {
   return (
     <ul className={styles.links}>
       {links.map((link) => (
@@ -35,7 +23,6 @@ function Links({
           <Link href={link.href} className={styles.link} aria-current={link.href === current ? "page" : undefined}>
             <PortalIcon name={link.icon} className={styles.linkIcon} />
             <span className={styles.linkLabel}>{link.label}</span>
-            <Count value={link.count ? counts[link.count] : undefined} />
           </Link>
         </li>
       ))}
@@ -57,7 +44,6 @@ function Rooms({ rooms, current }: { rooms: readonly SidebarRoom[] | null; curre
           >
             <PortalIcon name="rooms" className={styles.linkIcon} />
             <span className={styles.linkLabel}>{room.name}</span>
-            <Count value={room.fileCount} />
           </Link>
         </li>
       ))}
@@ -91,11 +77,9 @@ type Motion = "down" | "up" | "swap";
  */
 export function PortalSidebar({
   access,
-  counts,
   rooms,
 }: {
   access: NavAccess;
-  counts: Partial<Record<CountKey, number>>;
   rooms: readonly SidebarRoom[] | null;
 }): ReactElement {
   const pathname = usePathname() ?? "/portal";
@@ -150,14 +134,14 @@ export function PortalSidebar({
               </section>
               <section className={styles.section} aria-label="Tools">
                 <h3 className={styles.heading}>Tools</h3>
-                <Links links={app.links} current={current} counts={counts} />
+                <Links links={app.links} current={current} />
               </section>
             </>
           ) : app.id === "rooms" ? (
             <Rooms rooms={rooms} current={null} />
           ) : (
             <>
-              <Links links={app.links} current={current} counts={counts} />
+              <Links links={app.links} current={current} />
               <div ref={extraRef} className={styles.extra} />
             </>
           )}

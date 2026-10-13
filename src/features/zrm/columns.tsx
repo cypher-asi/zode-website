@@ -234,6 +234,7 @@ export function sitesConfig(groups: readonly SiteGroup[], statuses: readonly Sit
           return groups.filter((group) => used.has(group.id)).map((group) => ({ value: group.id, label: group.name }));
         },
         test: (s, value) => s.group_id === value,
+        sidebar: true,
       },
     ],
     sections: {

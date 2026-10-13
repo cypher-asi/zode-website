@@ -9,7 +9,6 @@ import { loadOrders } from "@/features/portal/data";
 import { ORDER_MODES } from "@/features/portal/nav";
 import { Empty, OrderList, PageHeader } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
-import settings from "@/features/settings/settings.module.css";
 
 export const metadata: Metadata = {
   title: "Orders | ZODE",
@@ -40,7 +39,7 @@ export default async function OrdersPage({ params }: PageProps<"/portal/orders/[
   return (
     <div className={styles.page}>
       <PageHeader title={mode ? mode.label : "Orders"} subtitle={SUBTITLES[mode?.id ?? "all"]}>
-        <div className={settings.headerActions}>
+        <div className={tabs.headerActions}>
           <nav className={tabs.tabs} aria-label="Order types">
             {TABS.map((tab) => (
               <Link

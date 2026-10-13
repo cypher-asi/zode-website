@@ -1,0 +1,186 @@
+/* The team dashboard: a range switch over a grid of metric cards, each a figure above its trend line. */
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.toolbarTitle {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--caps-size);
+  font-weight: 600;
+  letter-spacing: var(--caps-tracking);
+  text-transform: uppercase;
+}
+
+.ranges {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--color-surface-tint);
+}
+
+.range {
+  padding: 4px 10px;
+  border-radius: 6px;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-decoration: none;
+  transition:
+    background-color var(--duration-base) ease,
+    color var(--duration-base) ease;
+}
+
+.range:hover {
+  color: var(--color-text-primary);
+}
+
+.range[aria-current="page"] {
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+.range:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 18px 20px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color var(--duration-base) ease,
+    box-shadow var(--duration-base) ease;
+}
+
+a.card:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: 0 8px 24px -18px rgba(0, 0, 0, 0.35);
+}
+
+a.card:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cardLabel {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.cardArrow {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: var(--color-text-secondary);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.value {
+  margin: 6px 0 0;
+  color: var(--color-text-primary);
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.detail {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spark {
+  display: block;
+  width: 100%;
+  height: 72px;
+  margin-top: 16px;
+  overflow: visible;
+}
+
+.sparkLine {
+  fill: none;
+  stroke: var(--color-text-primary);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.sparkArea {
+  fill: var(--color-text-primary);
+  fill-opacity: 0.06;
+  stroke: none;
+}
+
+.change {
+  margin: 10px 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+}
+
+.delta {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.change[data-trend="up"] .delta {
+  color: var(--color-success);
+}
+
+.change[data-trend="down"] .delta {
+  color: var(--color-danger);
+}
+
+.note {
+  margin: 16px 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+@media (max-width: 800px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

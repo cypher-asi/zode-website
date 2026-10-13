@@ -15,7 +15,9 @@
   margin-bottom: 32px;
 }
 
+/* A fixed basis, so the actions wrap by viewport width, not subtitle length: long subtitles truncate instead. */
 .heading {
+  flex: 1 1 20rem;
   min-width: 0;
 }
 

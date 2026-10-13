@@ -5,14 +5,10 @@ import type { PortalIconName } from "./icons";
 /** Wide enough for the rail, the sidebar and a usable panel; under it the sidebar hides. Matches shell.module.css. */
 export const SIDEBAR_MEDIA = "(min-width: 1101px)";
 
-export type CountKey = "rooms" | "orders" | "contracts";
-
 export type NavLink = {
   href: string;
   label: string;
   icon: PortalIconName;
-  /** Which of the layout's counts to badge the link with. */
-  count?: CountKey;
 };
 
 export type AppId =
@@ -37,6 +33,8 @@ export type PortalApp = {
   icon: PortalIconName;
   href: string;
   links: readonly NavLink[];
+  /** A ZODE team app, set apart from everyone's apps on the rail. */
+  team?: boolean;
 };
 
 export type NavAccess = { admin: boolean; team: boolean };
@@ -67,12 +65,12 @@ const ORDERS: PortalApp = {
   icon: "orders",
   href: "/portal/orders",
   links: [
-    { href: "/portal/orders", label: "All orders", icon: "orders", count: "orders" },
+    { href: "/portal/orders", label: "All orders", icon: "orders" },
     ...ORDER_MODES.map((mode): NavLink => ({ href: `/portal/orders/${mode.id}`, label: mode.label, icon: mode.icon })),
   ],
 };
 
-const MY_CONTRACTS: NavLink = { href: "/portal/contracts", label: "Your contracts", icon: "contracts", count: "contracts" };
+const MY_CONTRACTS: NavLink = { href: "/portal/contracts", label: "Your contracts", icon: "contracts" };
 
 /** The ZODE team's CRM. */
 const ZRM: PortalApp = {
@@ -80,6 +78,7 @@ const ZRM: PortalApp = {
   label: "ZRM",
   icon: "zrm",
   href: "/portal/zrm",
+  team: true,
   links: [
     { href: "/portal/zrm/people", label: "People", icon: "person" },
     { href: "/portal/zrm/companies", label: "Companies", icon: "rooms" },
@@ -93,6 +92,7 @@ const CAPACITY: PortalApp = {
   label: "Capacity",
   icon: "capacity",
   href: "/portal/capacity",
+  team: true,
   links: [{ href: "/portal/capacity/sites", label: "Sites", icon: "capacity" }],
 };
 
@@ -102,6 +102,7 @@ const POSTS: PortalApp = {
   label: "Posts",
   icon: "posts",
   href: "/portal/posts",
+  team: true,
   links: [
     { href: "/portal/posts", label: "All posts", icon: "posts" },
     { href: "/portal/posts/news", label: "News", icon: "news" },
@@ -118,6 +119,7 @@ const ADMIN_APPS: readonly PortalApp[] = [
     label: "Subscribers",
     icon: "subscribers",
     href: "/portal/subscribers",
+    team: true,
     links: [
       { href: "/portal/subscribers", label: "All lists", icon: "subscribers" },
       ...MAILING_LISTS.map(
@@ -130,6 +132,7 @@ const ADMIN_APPS: readonly PortalApp[] = [
     label: "Users",
     icon: "users",
     href: "/portal/users",
+    team: true,
     links: [
       { href: "/portal/users", label: "All users", icon: "users" },
       ...USER_ROLES.map(
@@ -141,8 +144,8 @@ const ADMIN_APPS: readonly PortalApp[] = [
 
 /**
  * The apps the viewer can open, in rail order, with Settings last for the
- * rail's foot: ZRM, Capacity, Posts and Team for the ZODE team, the admin apps and everyone's
- * contracts for super admins.
+ * rail's foot: ZRM, Capacity, Posts, Team and everyone's contracts for the ZODE team, the
+ * admin apps for super admins.
  */
 export function portalApps({ admin, team }: NavAccess): PortalApp[] {
   const contracts: PortalApp = {
@@ -150,7 +153,7 @@ export function portalApps({ admin, team }: NavAccess): PortalApp[] {
     label: "Contracts",
     icon: "contracts",
     href: "/portal/contracts",
-    links: admin
+    links: team
       ? [MY_CONTRACTS, { href: "/portal/contracts/all", label: "All contracts", icon: "contracts" }]
       : [MY_CONTRACTS],
   };

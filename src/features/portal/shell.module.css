@@ -97,6 +97,16 @@
   gap: 4px;
 }
 
+/* Sets the ZODE team's apps apart from everyone's. */
+.divider {
+  flex: none;
+  width: 20px;
+  height: 1px;
+  margin: 4px 0;
+  border: none;
+  background: color-mix(in srgb, var(--color-white) 18%, transparent);
+}
+
 .item,
 .avatar {
   position: relative;
@@ -315,6 +325,12 @@
   .group {
     flex-direction: row;
     gap: 2px;
+  }
+
+  .divider {
+    width: 1px;
+    height: 20px;
+    margin: 0 4px;
   }
 
   .avatar {

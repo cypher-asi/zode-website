@@ -21,10 +21,10 @@ const TABS: readonly { id: UserRole | "all"; label: string; href: string }[] = [
 ];
 
 const SUBTITLES: Record<UserRole | "all", string> = {
-  all: "Everyone who has signed in, numbered by ZODE user id. Accounts are Regular unless a super admin puts them on the Team or makes them a super admin.",
+  all: "Everyone who has signed in, by ZODE user id. New accounts start as Regular.",
   member: "Everyone who isn't on the ZODE team: newsletter sign-ups, room guests and customers.",
   team: "The ZODE team, who can open data rooms, ZRM and Posts.",
-  super_admin: "Super admins can do everything the Team can, see every account's records and set anyone's role.",
+  super_admin: "Everything the Team can do, plus every account's records and anyone's role.",
 };
 
 const EMPTY: Record<UserRole | "all", string> = {

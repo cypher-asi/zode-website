@@ -4,6 +4,7 @@ import { isTeam, isZodeAdmin } from "@/features/account/admin";
 import { LogoutButton } from "@/features/account/LogoutButton";
 import { avatarUrl, loadProfile } from "@/features/account/profile";
 import { requireAccount } from "@/features/account/session";
+import tabs from "@/features/data-room/room.module.css";
 import ui from "@/features/data-room/ui.module.css";
 import { SettingsSubscription } from "@/features/mailing-list/SettingsSubscription";
 import { DevDbSwitch } from "@/features/portal/DevDbSwitch";
@@ -37,7 +38,7 @@ export default async function SettingsPage(): Promise<ReactElement> {
   return (
     <div className={styles.page}>
       <PageHeader title="Settings" subtitle="Your profile and account.">
-        <div className={settings.headerActions}>
+        <div className={tabs.headerActions}>
           {team ? <SettingsTabs current="account" /> : null}
           <LogoutButton className={ui.button} />
         </div>

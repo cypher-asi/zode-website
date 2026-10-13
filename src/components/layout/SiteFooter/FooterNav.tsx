@@ -3,7 +3,7 @@
 import type { CSSProperties, KeyboardEvent, ReactElement } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { RESOURCE_LINKS, type NavLink } from "@/lib/navigation";
+import { RESOURCE_LINKS, TOOL_LINKS, type NavLink } from "@/lib/navigation";
 import styles from "./FooterNav.module.css";
 
 interface FooterColumn {
@@ -19,6 +19,7 @@ const COLUMNS: readonly FooterColumn[] = [
       { label: "Rent compute", href: "/buy-compute?mode=rent" },
     ],
   },
+  { heading: "Tools", links: TOOL_LINKS },
   { heading: "Resources", links: RESOURCE_LINKS },
   {
     heading: "Account",

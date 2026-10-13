@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import { notFound } from "next/navigation";
 import { isTeam, isZodeAdmin } from "@/features/account/admin";
+import { LogoutButton } from "@/features/account/LogoutButton";
 import { requireAccount } from "@/features/account/session";
+import tabs from "@/features/data-room/room.module.css";
+import ui from "@/features/data-room/ui.module.css";
 import { Empty, PageHeader } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
 import { SettingsTabs } from "@/features/settings/SettingsTabs";
@@ -46,11 +49,11 @@ export default async function TeamPage(): Promise<ReactElement> {
 
   return (
     <div className={styles.page}>
-      <PageHeader
-        title="Settings"
-        subtitle="The ZODE team can open data rooms. Super admins can do that too, and choose who's on the team."
-      >
-        <SettingsTabs current="team" />
+      <PageHeader title="Settings" subtitle="The ZODE team, who can open data rooms. Super admins choose who's on it.">
+        <div className={tabs.headerActions}>
+          <SettingsTabs current="team" />
+          <LogoutButton className={ui.button} />
+        </div>
       </PageHeader>
 
       {superAdmin ? (

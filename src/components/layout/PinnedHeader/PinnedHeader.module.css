@@ -355,7 +355,7 @@
  * Visibility flips on at once when opening so the arrow keys can focus an item
  * straight away; the clip still hides it until the button has widened.
  * The clip runs as keyframes so that once unrolled it can drop entirely,
- * letting the Resources flyout hang outside the menu's box.
+ * letting the flyouts hang outside the menu's box.
  */
 .menu {
   /* Typing starts as the menu begins to unroll; the pacing matches FooterNav. */
@@ -558,11 +558,11 @@ button.menuItem:disabled {
 }
 
 /*
- * The Resources row and its flyout, which unrolls leftward out of the menu's
- * left edge with its first row level with this one. Its labels type in when
- * it opens, rather than with the menu.
+ * A submenu row (Tools, Resources) and its flyout, which unrolls leftward out
+ * of the menu's left edge with its first row level with this one. Its labels
+ * type in when it opens, rather than with the menu.
  */
-.resources {
+.submenuRow {
   position: relative;
 }
 
@@ -687,7 +687,7 @@ button.menuItem:disabled {
 }
 
 /*
- * Phones have no room beside the menu, so the Resources flyout expands in
+ * Phones have no room beside the menu, so each flyout expands in
  * place below its row instead, indented to line up with the row's label.
  * Closed, it collapses to no height but keeps its width, so the menu is
  * already wide enough and doesn't jump when it opens. PinnedHeader checks for

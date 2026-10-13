@@ -95,12 +95,28 @@
   outline: 0;
 }
 
+/* Positioned parent the overlay scrollbar draws into. */
+.summaryFrame {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Native bar hidden so opening a disclosure doesn't narrow the page; OverlayScrollbar floats over it. */
 .summary {
   flex: 1;
   min-height: 0;
   overflow: auto;
   padding: 20px clamp(16px, 2.5vw, 28px) 40px;
   background: var(--color-bg);
+  scrollbar-width: none;
+}
+
+.summary::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 .empty {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
-import { isZodeAdmin } from "@/features/account/admin";
+import { isTeam } from "@/features/account/admin";
 import { requireAccount } from "@/features/account/session";
 import { ContractTabs } from "@/features/contracts/ContractTabs";
 import { loadContracts } from "@/features/portal/data";
@@ -21,7 +21,7 @@ export default async function ContractsPage(): Promise<ReactElement> {
   return (
     <div className={styles.page}>
       <PageHeader title="Contracts" subtitle="Agreements you've signed with ZODE.">
-        {(await isZodeAdmin(account)) ? <ContractTabs current="mine" /> : null}
+        {(await isTeam(account)) ? <ContractTabs current="mine" /> : null}
       </PageHeader>
       {contracts === null ? (
         <Empty>Your contracts couldn&apos;t be loaded right now. Please try again shortly.</Empty>

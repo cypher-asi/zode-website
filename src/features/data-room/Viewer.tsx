@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useId,
   useRef,
   useState,
   type ComponentType,
@@ -11,6 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import dynamic from "next/dynamic";
+import { OverlayScrollbar } from "@/components/ui/OverlayScrollbar";
 import { fileKind, formatBytes, typeLabel, type FileKind } from "./fileKinds";
 import { FileGlyph, Icon } from "./icons";
 import type { RoomFile } from "./types";
@@ -57,6 +59,7 @@ export function SummaryPanel({
   onBack: () => void;
   onOpenFile: (fileId: string) => void;
 }): ReactElement {
+  const scrollId = useId();
   const onClick = (event: MouseEvent<HTMLDivElement>) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     const link = (event.target as Element).closest<HTMLElement>("a[data-file-id]");
@@ -72,8 +75,11 @@ export function SummaryPanel({
           <Icon name="back" />
         </button>
       </header>
-      <div className={styles.summary} onClickCapture={onClick}>
-        {summary.content}
+      <div className={styles.summaryFrame}>
+        <div id={scrollId} className={styles.summary} onClickCapture={onClick}>
+          {summary.content}
+        </div>
+        <OverlayScrollbar targetId={scrollId} />
       </div>
     </div>
   );

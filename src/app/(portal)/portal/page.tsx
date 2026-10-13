@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
+import { isTeam } from "@/features/account/admin";
 import { LogoutButton } from "@/features/account/LogoutButton";
 import { requireAccount } from "@/features/account/session";
 import ui from "@/features/data-room/ui.module.css";
 import { loadContracts, loadOrders, loadRooms } from "@/features/portal/data";
 import { Empty, OrderList, PageHeader, RoomList, Section } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
+import dash from "@/features/team-dashboard/dashboard.module.css";
+import { HomeTabs } from "@/features/team-dashboard/HomeTabs";
 
 export const metadata: Metadata = {
   title: "Portal | ZODE",
@@ -17,10 +20,11 @@ const RECENT = 3;
 /** Signed-in home: who you are, your figures at a glance, and the latest rooms and orders. */
 export default async function HomePage(): Promise<ReactElement> {
   const account = await requireAccount("/portal");
-  const [rooms, orders, contracts] = await Promise.all([
+  const [rooms, orders, contracts, team] = await Promise.all([
     loadRooms(account.userId),
     loadOrders(account.userId),
     loadContracts(account.userId),
+    isTeam(account),
   ]);
   const firstName = account.displayName.trim().split(/\s+/)[0] || account.displayName;
   const files = rooms?.reduce((sum, room) => sum + room.fileCount, 0);
@@ -37,7 +41,14 @@ export default async function HomePage(): Promise<ReactElement> {
           </>
         }
       >
-        <LogoutButton className={ui.button} />
+        {team ? (
+          <div className={dash.headerActions}>
+            <HomeTabs current="mine" />
+            <LogoutButton className={ui.button} />
+          </div>
+        ) : (
+          <LogoutButton className={ui.button} />
+        )}
       </PageHeader>
 
       <div className={styles.stats}>

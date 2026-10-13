@@ -1,7 +1,7 @@
 import type { ReactElement, ReactNode } from "react";
 import Link from "next/link";
 import type { OrderSummary } from "@/features/configurator/orders";
-import type { Contract } from "@/features/contracts/contracts";
+import type { ComputeContract, Contract } from "@/features/contracts/contracts";
 import { roleLabel, roomKindLabel, type RoomSummary } from "@/features/data-room/types";
 import { SUBSCRIBER_STATUSES, mailingList, type Subscriber } from "@/features/mailing-list/types";
 import { kindLabel, type Post } from "@/features/posts/types";
@@ -263,7 +263,22 @@ export function UserList({ users, selfZosUserId }: { users: User[]; selfZosUserI
   );
 }
 
-/** Executed agreements; each row downloads its PDF. `showSigner` adds who signed, for admins seeing everyone's. */
+const mw = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
+
+function computeMeta(contract: ComputeContract): string {
+  return [
+    contract.itMw != null ? `${mw.format(contract.itMw)} MW` : null,
+    contract.valueUsd != null ? `${usd.format(contract.valueUsd)} total` : null,
+    contract.monthlyUsd != null ? `${usd.format(contract.monthlyUsd)} /mo` : null,
+    contract.termMonths != null ? plural(contract.termMonths, "month") : null,
+    date.format(contract.signedAt),
+    contract.siteName ? `at ${contract.siteName}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+/** Executed agreements; each row downloads its PDF. `showSigner` adds who signed, for the team seeing everyone's. */
 export function ContractList({
   contracts,
   showSigner = false,
@@ -277,19 +292,35 @@ export function ContractList({
         <li key={contract.id}>
           <a className={styles.row} href={`/api/contracts/${contract.id}/pdf`} download>
             <span className={styles.rowIcon}>
-              <PortalIcon name="contracts" />
+              <PortalIcon name={contract.kind === "compute" ? "cluster" : "contracts"} />
             </span>
             <span className={styles.rowMain}>
-              <span className={styles.rowTitle}>Mutual NDA · {contract.counterparty}</span>
+              <span className={styles.rowTitle}>
+                {contract.kind === "compute" ? "Compute contract" : "Mutual NDA"} · {contract.counterparty}
+              </span>
               <span className={styles.rowMeta}>
-                {showSigner ? `${contract.signerName} (${contract.signerEmail})` : `Signed by ${contract.signerName}`}
-                {" · "}
-                {date.format(contract.signedAt)}
-                {contract.roomName ? <> · via {contract.roomName}</> : null}
+                {contract.kind === "compute" ? (
+                  computeMeta(contract)
+                ) : (
+                  <>
+                    {showSigner
+                      ? `${contract.signerName} (${contract.signerEmail})`
+                      : `Signed by ${contract.signerName}`}
+                    {" · "}
+                    {date.format(contract.signedAt)}
+                    {contract.roomName ? <> · via {contract.roomName}</> : null}
+                  </>
+                )}
               </span>
             </span>
             <span className={styles.rowEnd}>
-              {showSigner && !contract.linked ? <span className={styles.pill}>No account</span> : null}
+              {contract.kind === "compute" ? (
+                <span className={styles.pill} data-strong="">
+                  {contract.mode === "rent" ? "Rent" : "Buy"}
+                </span>
+              ) : showSigner && !contract.linked ? (
+                <span className={styles.pill}>No account</span>
+              ) : null}
               <svg className={styles.chevron} viewBox="0 0 16 16" aria-label="Download PDF" role="img">
                 <path d="M8 2.75v8M4.75 7.75 8 11l3.25-3.25M3.25 13.5h9.5" />
               </svg>

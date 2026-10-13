@@ -32,16 +32,12 @@ export async function PostsIndex({ kind }: { kind: PostKind | null }): Promise<R
     <div className={styles.page}>
       <PageHeader title={kind ? kindLabel(kind) : "Posts"} subtitle={SUBTITLES[kind ?? "all"]}>
         <form action={createPostAction} className={admin.actions}>
-          {kind !== "news" ? (
-            <button className={kind ? ui.primary : ui.button} type="submit" name="kind" value="changelog">
-              New changelog entry
-            </button>
-          ) : null}
-          {kind !== "changelog" ? (
-            <button className={ui.primary} type="submit" name="kind" value="news">
-              New news post
-            </button>
-          ) : null}
+          <button className={kind === "changelog" ? ui.primary : ui.button} type="submit" name="kind" value="changelog">
+            New changelog entry
+          </button>
+          <button className={kind === "changelog" ? ui.button : ui.primary} type="submit" name="kind" value="news">
+            New news post
+          </button>
         </form>
       </PageHeader>
       <nav className={admin.filter} aria-label="Post kinds">

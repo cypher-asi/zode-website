@@ -10,6 +10,7 @@ import ui from "@/features/data-room/ui.module.css";
 import { Icon } from "./bits";
 import { NEW_LABELS, companiesConfig, opportunitiesConfig, peopleConfig, sitesConfig, type ListConfig } from "./columns";
 import { KIND_LABELS, listHref, recordHref, type RecordKind } from "./types";
+import { GroupNav } from "./GroupNav";
 import { TypeNav } from "./TypeNav";
 import { goOnClick, useZrm, ZrmLink } from "./ZrmProvider";
 import styles from "./zrm.module.css";
@@ -321,6 +322,9 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
       break;
     case "sites":
       list = <RecordList key={kind} kind={kind} rows={data.sites} config={configs.sites} {...common} />;
+      types = (
+        <GroupNav rows={data.sites} groups={data.groups} value={filterValues.group ?? ""} onChange={(value) => setFilter("group", value)} />
+      );
       break;
   }
 

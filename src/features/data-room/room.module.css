@@ -90,10 +90,19 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
-/* A quiet segmented control: the current tab lifts out as a white chip. */
+/* Buttons beside the tabs take the track's height, radius and type. Out-specifies the shared button sizes. */
+.headerActions > :is(a, button) {
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font-size: var(--text-base);
+  letter-spacing: -0.01em;
+}
+
+/* A quiet segmented control: the current tab lifts out as a white chip. 44px tall with its 36px tabs. */
 .tabs {
   display: flex;
   gap: 2px;
@@ -105,7 +114,10 @@
 
 /* Radius is the track's less its padding, so the chip sits concentrically. */
 .tab {
-  padding: 7px 16px;
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 16px;
   border-radius: 7px;
   color: var(--color-text-tertiary);
   font-size: var(--text-base);

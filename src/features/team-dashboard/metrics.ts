@@ -1,0 +1,94 @@
+import "server-only";
+import { db } from "@/lib/db";
+
+/**
+ * Every figure the team dashboard tracks, as stored in team_metric_snapshots.
+ * Renaming one orphans its history, so add new names rather than reuse old ones.
+ */
+export const METRICS = [
+  "capacity_contracted_mw",
+  "capacity_pipeline_mw",
+  "opportunities_open",
+  "opportunities_pipeline_usd",
+  "contracts_total",
+  "contracts_compute",
+  "contracts_compute_mw",
+  "subscribers_confirmed",
+  "subscribers_news",
+  "subscribers_changelog",
+] as const;
+
+export type MetricKey = (typeof METRICS)[number];
+
+export type MetricValues = Record<MetricKey, number>;
+
+export interface MetricPoint {
+  /** The UTC day, `YYYY-MM-DD`. */
+  day: string;
+  value: number;
+}
+
+export interface TeamMetrics {
+  current: MetricValues;
+  /** Each metric's daily values over the range, oldest first. Days without a snapshot are absent. */
+  series: Record<MetricKey, MetricPoint[]>;
+  rangeDays: number;
+}
+
+/**
+ * Computes every metric now and writes it as today's snapshot, replacing an
+ * earlier one from today. Capacity counts Contracted and Live sites as
+ * contracted and every site not Passed as pipeline; an opportunity is open
+ * until it reaches the last pipeline stage.
+ */
+export async function recordTeamSnapshot(): Promise<MetricValues> {
+  const rows = await db()`
+    with m (metric, value) as (
+      values
+        ('capacity_contracted_mw',
+          (select coalesce(sum(s.total_it_mw), 0) from capacity_sites s
+           join capacity_statuses st on st.id = s.status_id where st.name in ('Contracted', 'Live'))),
+        ('capacity_pipeline_mw',
+          (select coalesce(sum(s.total_it_mw), 0) from capacity_sites s
+           join capacity_statuses st on st.id = s.status_id where st.name <> 'Passed')),
+        ('opportunities_open',
+          (select count(*) from zrm_opportunities o join zrm_stages g on g.id = o.stage_id
+           where g.position < (select max(position) from zrm_stages))),
+        ('opportunities_pipeline_usd',
+          (select coalesce(sum(o.value), 0) from zrm_opportunities o join zrm_stages g on g.id = o.stage_id
+           where g.position < (select max(position) from zrm_stages))),
+        ('contracts_total', (select count(*) from mndas) + (select count(*) from compute_contracts)),
+        ('contracts_compute', (select count(*) from compute_contracts)),
+        ('contracts_compute_mw', (select coalesce(sum(it_mw), 0) from compute_contracts)),
+        ('subscribers_confirmed', (select count(distinct email) from mailing_list_subscribers where status = 'subscribed')),
+        ('subscribers_news', (select count(*) from mailing_list_subscribers where list = 'news' and status = 'subscribed')),
+        ('subscribers_changelog',
+          (select count(*) from mailing_list_subscribers where list = 'changelog' and status = 'subscribed'))
+    )
+    insert into team_metric_snapshots (day, metric, value)
+    select current_date, metric, value from m
+    on conflict (day, metric) do update set value = excluded.value, taken_at = now()
+    returning metric, value
+  `;
+  const values = Object.fromEntries(METRICS.map((key) => [key, 0])) as MetricValues;
+  for (const row of rows) {
+    if ((METRICS as readonly string[]).includes(String(row.metric))) values[row.metric as MetricKey] = Number(row.value);
+  }
+  return values;
+}
+
+/** The dashboard's figures: refreshes today's snapshot, then reads the last `rangeDays` days of history. */
+export async function loadTeamMetrics(rangeDays: number): Promise<TeamMetrics> {
+  const current = await recordTeamSnapshot();
+  const rows = await db()`
+    select day::text as day, metric, value
+    from team_metric_snapshots
+    where day > current_date - ${rangeDays}::int
+    order by day
+  `;
+  const series = Object.fromEntries(METRICS.map((key) => [key, [] as MetricPoint[]])) as Record<MetricKey, MetricPoint[]>;
+  for (const row of rows) {
+    series[row.metric as MetricKey]?.push({ day: String(row.day), value: Number(row.value) });
+  }
+  return { current, series, rangeDays };
+}

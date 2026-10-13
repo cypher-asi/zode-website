@@ -7,7 +7,7 @@ const TABS = [
   { id: "all", href: "/portal/contracts/all", label: "All agreements" },
 ] as const;
 
-/** Shown to ZODE admins only, who can switch between their own agreements and everyone's. */
+/** Shown to the ZODE team only, who can switch between their own agreements and everyone's. */
 export function ContractTabs({ current }: { current: (typeof TABS)[number]["id"] }): ReactElement {
   return (
     <nav className={styles.tabs} aria-label="Contracts">

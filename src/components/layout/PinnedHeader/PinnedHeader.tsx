@@ -17,7 +17,7 @@ import {
 } from "react";
 import { markSignedIn, readSignedInCookie } from "@/features/account/signedInCookie";
 import { isPortalPath, useAccountInitials, useLogout, useLogoutToast } from "@/features/account/useAccount";
-import { COMPUTE_ACTIONS, ENGINEER_ACTION, RESOURCE_LINKS } from "@/lib/navigation";
+import { COMPUTE_ACTIONS, ENGINEER_ACTION, RESOURCE_LINKS, TOOL_LINKS } from "@/lib/navigation";
 import styles from "./PinnedHeader.module.css";
 
 type Tone = "light" | "dark";
@@ -38,10 +38,18 @@ const SIGNED_OUT_MENU = [
   { id: "register", label: "Register", href: "/register" },
 ];
 
-/** How long the Resources flyout lingers after the mouse leaves, so it can cut diagonally across into it. */
-const RESOURCES_CLOSE_DELAY = 150;
-/** Closest the flyout comes to the viewport's left edge on narrow screens, overlapping the menu instead. */
-const RESOURCES_VIEWPORT_GAP = 8;
+/** Menu rows that open a flyout of links, in menu order. */
+const SUBMENUS = [
+  { id: "tools", label: "Tools", links: TOOL_LINKS },
+  { id: "resources", label: "Resources", links: RESOURCE_LINKS },
+] as const;
+
+type SubmenuId = (typeof SUBMENUS)[number]["id"];
+
+/** How long a flyout lingers after the mouse leaves, so it can cut diagonally across into it. */
+const SUBMENU_CLOSE_DELAY = 150;
+/** Closest a flyout comes to the viewport's left edge on narrow screens, overlapping the menu instead. */
+const SUBMENU_VIEWPORT_GAP = 8;
 
 /** Moves focus among `items` by `step`, wrapping at the ends. */
 function focusStep(items: readonly HTMLElement[], step: number): void {
@@ -167,27 +175,27 @@ export function PinnedHeader({
   const growRef = useRef<HTMLSpanElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLUListElement>(null);
-  const resourcesRef = useRef<HTMLButtonElement>(null);
-  const resourcesMenuRef = useRef<HTMLUListElement>(null);
-  const resourcesTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const submenuRowRefs = useRef<Partial<Record<SubmenuId, HTMLButtonElement | null>>>({});
+  const flyoutRefs = useRef<Partial<Record<SubmenuId, HTMLUListElement | null>>>({});
+  const submenuTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [brandTone, setBrandTone] = useState<Tone>("light");
   const [actionTone, setActionTone] = useState<Tone>("light");
   const [actionOverMedia, setActionOverMedia] = useState(false);
   const [open, setOpen] = useState(false);
-  const [resourcesOpen, setResourcesOpen] = useState(false);
+  const [submenu, setSubmenu] = useState<SubmenuId | null>(null);
   const accountInitials = useAccountInitials();
   const signedIn = accountInitials !== null;
   const inPortal = isPortalPath(pathname ?? "/");
   const menu = inPortal ? PORTAL_ACTION_MENU : ACTION_MENU;
   const { logOut, pending: loggingOut } = useLogout();
   const menuId = useId();
-  const resourcesMenuId = useId();
+  const flyoutIdPrefix = useId();
 
-  /** Closes the menu along with the Resources flyout, so it reopens collapsed. */
+  /** Closes the menu along with any open flyout, so it reopens collapsed. */
   const closeMenu = () => {
-    clearTimeout(resourcesTimer.current);
+    clearTimeout(submenuTimer.current);
     setOpen(false);
-    setResourcesOpen(false);
+    setSubmenu(null);
   };
 
   /**
@@ -199,14 +207,14 @@ export function PinnedHeader({
     markSignedIn(readSignedInCookie(document.cookie));
   }, [accountInitials]);
 
-  /** Shifts the flyout right by however far it would run off the left edge, written to `--shift`. */
+  /** Shifts the open flyout right by however far it would run off the left edge, written to `--shift`. */
   useLayoutEffect(() => {
-    const flyout = resourcesMenuRef.current;
-    if (!resourcesOpen || !flyout) return;
+    const flyout = submenu ? flyoutRefs.current[submenu] : null;
+    if (!flyout) return;
     flyout.style.removeProperty("--shift");
-    const overflow = RESOURCES_VIEWPORT_GAP - flyout.getBoundingClientRect().left;
+    const overflow = SUBMENU_VIEWPORT_GAP - flyout.getBoundingClientRect().left;
     if (overflow > 0) flyout.style.setProperty("--shift", `${Math.ceil(overflow)}px`);
-  }, [resourcesOpen]);
+  }, [submenu]);
 
   useEffect(() => {
     if (!open) return;
@@ -214,16 +222,16 @@ export function PinnedHeader({
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Node;
       if (actionRef.current?.contains(target) || menuRef.current?.contains(target)) return;
-      clearTimeout(resourcesTimer.current);
+      clearTimeout(submenuTimer.current);
       setOpen(false);
-      setResourcesOpen(false);
+      setSubmenu(null);
     };
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      // The Resources flyout handles its own Escape, closing just itself.
+      // A flyout handles its own Escape, closing just itself.
       if (event.key !== "Escape" || event.defaultPrevented) return;
-      clearTimeout(resourcesTimer.current);
+      clearTimeout(submenuTimer.current);
       setOpen(false);
-      setResourcesOpen(false);
+      setSubmenu(null);
       toggleRef.current?.focus();
     };
 
@@ -278,49 +286,51 @@ export function PinnedHeader({
       focusFirst();
     } else {
       setOpen(true);
-      setResourcesOpen(false);
+      setSubmenu(null);
       requestAnimationFrame(focusFirst);
     }
   };
 
-  /** Whether the flyout expands in place inside the menu (phones), where hovering shouldn't open it. */
-  const resourcesInline = () =>
-    resourcesMenuRef.current !== null && getComputedStyle(resourcesMenuRef.current).position === "static";
+  /** Whether flyouts expand in place inside the menu (phones), where hovering shouldn't open them. */
+  const submenuInline = (id: SubmenuId) => {
+    const flyout = flyoutRefs.current[id];
+    return flyout != null && getComputedStyle(flyout).position === "static";
+  };
 
-  /** Opens the Resources flyout and moves focus to its first link. */
-  const enterResources = () => {
-    clearTimeout(resourcesTimer.current);
-    setResourcesOpen(true);
+  /** Opens a flyout and moves focus to its first link. */
+  const enterSubmenu = (id: SubmenuId) => {
+    clearTimeout(submenuTimer.current);
+    setSubmenu(id);
     requestAnimationFrame(() =>
-      resourcesMenuRef.current?.querySelector<HTMLElement>("[role=menuitem]")?.focus(),
+      flyoutRefs.current[id]?.querySelector<HTMLElement>("[role=menuitem]")?.focus(),
     );
   };
 
-  /** Closes the Resources flyout and hands focus back to its row. */
-  const leaveResources = () => {
-    clearTimeout(resourcesTimer.current);
-    setResourcesOpen(false);
-    resourcesRef.current?.focus();
+  /** Closes a flyout and hands focus back to its row. */
+  const leaveSubmenu = (id: SubmenuId) => {
+    clearTimeout(submenuTimer.current);
+    setSubmenu(null);
+    submenuRowRefs.current[id]?.focus();
   };
 
-  const onResourcesKey = (event: KeyboardEvent<HTMLButtonElement>) => {
+  const onSubmenuRowKey = (id: SubmenuId, event: KeyboardEvent<HTMLButtonElement>) => {
     if (event.key !== "ArrowLeft") return;
     event.preventDefault();
-    enterResources();
+    enterSubmenu(id);
   };
 
   /**
    * Keyboard clicks (`detail` 0) enter the flyout, mouse clicks keep it open
    * after hovering, taps (and any click where it expands in place) toggle it.
    */
-  const onResourcesClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
+  const onSubmenuClick = (id: SubmenuId, event: ReactMouseEvent<HTMLButtonElement>) => {
     if (event.detail === 0) {
-      enterResources();
-    } else if ((event.nativeEvent as PointerEvent).pointerType === "mouse" && !resourcesInline()) {
-      clearTimeout(resourcesTimer.current);
-      setResourcesOpen(true);
+      enterSubmenu(id);
+    } else if ((event.nativeEvent as PointerEvent).pointerType === "mouse" && !submenuInline(id)) {
+      clearTimeout(submenuTimer.current);
+      setSubmenu(id);
     } else {
-      setResourcesOpen((value) => !value);
+      setSubmenu((value) => (value === id ? null : id));
     }
   };
 
@@ -329,11 +339,11 @@ export function PinnedHeader({
    * Stops propagation so the outer menu's arrow handling stays out of it, and
    * Escape is marked handled so the document listener leaves the menu open.
    */
-  const onResourcesMenuKey = (event: KeyboardEvent<HTMLUListElement>) => {
+  const onFlyoutKey = (id: SubmenuId, event: KeyboardEvent<HTMLUListElement>) => {
     if (event.key === "Escape" || event.key === "ArrowRight") {
       event.preventDefault();
       event.stopPropagation();
-      leaveResources();
+      leaveSubmenu(id);
       return;
     }
     const step = event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0;
@@ -343,16 +353,21 @@ export function PinnedHeader({
     focusStep(Array.from(event.currentTarget.querySelectorAll<HTMLElement>("[role=menuitem]")), step);
   };
 
-  const onResourcesEnter = (event: ReactPointerEvent<HTMLLIElement>) => {
-    if (event.pointerType !== "mouse" || resourcesInline()) return;
-    clearTimeout(resourcesTimer.current);
-    setResourcesOpen(true);
+  /**
+   * Swapping out another open flyout waits the close delay too, so cutting
+   * diagonally down into a tall flyout across the next row doesn't swap it.
+   */
+  const onSubmenuEnter = (id: SubmenuId, event: ReactPointerEvent<HTMLLIElement>) => {
+    if (event.pointerType !== "mouse" || submenuInline(id)) return;
+    clearTimeout(submenuTimer.current);
+    if (submenu === null || submenu === id) setSubmenu(id);
+    else submenuTimer.current = setTimeout(() => setSubmenu(id), SUBMENU_CLOSE_DELAY);
   };
 
-  const onResourcesLeave = (event: ReactPointerEvent<HTMLLIElement>) => {
-    if (event.pointerType !== "mouse" || resourcesInline()) return;
-    clearTimeout(resourcesTimer.current);
-    resourcesTimer.current = setTimeout(() => setResourcesOpen(false), RESOURCES_CLOSE_DELAY);
+  const onSubmenuLeave = (id: SubmenuId, event: ReactPointerEvent<HTMLLIElement>) => {
+    if (event.pointerType !== "mouse" || submenuInline(id)) return;
+    clearTimeout(submenuTimer.current);
+    submenuTimer.current = setTimeout(() => setSubmenu(null), SUBMENU_CLOSE_DELAY);
   };
 
   useEffect(() => {
@@ -523,60 +538,72 @@ export function PinnedHeader({
                 </li>
               ))}
               <li role="separator" className={styles.separator} />
-              <li
-                role="none"
-                className={styles.resources}
-                onPointerEnter={onResourcesEnter}
-                onPointerLeave={onResourcesLeave}
-              >
-                <button
-                  ref={resourcesRef}
-                  type="button"
-                  role="menuitem"
-                  className={styles.menuItem}
-                  aria-haspopup="menu"
-                  aria-expanded={resourcesOpen}
-                  aria-controls={resourcesMenuId}
-                  style={{ "--i": menu.length } as CSSProperties}
-                  onClick={onResourcesClick}
-                  onKeyDown={onResourcesKey}
-                >
-                  <svg className={styles.submenuIcon} viewBox="0 0 6 10" aria-hidden="true">
-                    <path d="M5 1L1 5l4 4" />
-                  </svg>
-                  <TypedLabel text="Resources" index={menu.length} />
-                </button>
-                <ul
-                  ref={resourcesMenuRef}
-                  id={resourcesMenuId}
-                  role="menu"
-                  aria-label="Resources"
-                  className={styles.submenu}
-                  data-open={resourcesOpen || undefined}
-                  onKeyDown={onResourcesMenuKey}
-                >
-                  {RESOURCE_LINKS.map((link, i) => (
-                    <li key={link.label} role="none">
-                      {link.external ? (
-                        <a
-                          role="menuitem"
-                          className={styles.menuItem}
-                          href={link.href}
-                          target="_blank"
-                          rel="noreferrer noopener"
-                          onClick={closeMenu}
-                        >
-                          <TypedLabel text={link.label} index={i} />
-                        </a>
-                      ) : (
-                        <Link role="menuitem" className={styles.menuItem} href={link.href} onClick={closeMenu}>
-                          <TypedLabel text={link.label} index={i} />
-                        </Link>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </li>
+              {SUBMENUS.map((sub, s) => {
+                const index = menu.length + s;
+                const flyoutId = `${flyoutIdPrefix}-${sub.id}`;
+                const expanded = submenu === sub.id;
+                return (
+                  <li
+                    key={sub.id}
+                    role="none"
+                    className={styles.submenuRow}
+                    onPointerEnter={(event) => onSubmenuEnter(sub.id, event)}
+                    onPointerLeave={(event) => onSubmenuLeave(sub.id, event)}
+                  >
+                    <button
+                      ref={(node) => {
+                        submenuRowRefs.current[sub.id] = node;
+                      }}
+                      type="button"
+                      role="menuitem"
+                      className={styles.menuItem}
+                      aria-haspopup="menu"
+                      aria-expanded={expanded}
+                      aria-controls={flyoutId}
+                      style={{ "--i": index } as CSSProperties}
+                      onClick={(event) => onSubmenuClick(sub.id, event)}
+                      onKeyDown={(event) => onSubmenuRowKey(sub.id, event)}
+                    >
+                      <svg className={styles.submenuIcon} viewBox="0 0 6 10" aria-hidden="true">
+                        <path d="M5 1L1 5l4 4" />
+                      </svg>
+                      <TypedLabel text={sub.label} index={index} />
+                    </button>
+                    <ul
+                      ref={(node) => {
+                        flyoutRefs.current[sub.id] = node;
+                      }}
+                      id={flyoutId}
+                      role="menu"
+                      aria-label={sub.label}
+                      className={styles.submenu}
+                      data-open={expanded || undefined}
+                      onKeyDown={(event) => onFlyoutKey(sub.id, event)}
+                    >
+                      {sub.links.map((link, i) => (
+                        <li key={link.label} role="none">
+                          {link.external ? (
+                            <a
+                              role="menuitem"
+                              className={styles.menuItem}
+                              href={link.href}
+                              target="_blank"
+                              rel="noreferrer noopener"
+                              onClick={closeMenu}
+                            >
+                              <TypedLabel text={link.label} index={i} />
+                            </a>
+                          ) : (
+                            <Link role="menuitem" className={styles.menuItem} href={link.href} onClick={closeMenu}>
+                              <TypedLabel text={link.label} index={i} />
+                            </Link>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                );
+              })}
               <li role="separator" className={styles.separator} />
               {signedIn ? (
                 <li role="none">
@@ -587,7 +614,10 @@ export function PinnedHeader({
                     disabled={loggingOut}
                     onClick={() => logOut(closeMenu)}
                   >
-                    <TypedLabel text={loggingOut ? "Logging out…" : "Logout"} index={menu.length + 1} />
+                    <TypedLabel
+                      text={loggingOut ? "Logging out…" : "Logout"}
+                      index={menu.length + SUBMENUS.length}
+                    />
                   </button>
                 </li>
               ) : (
@@ -599,7 +629,7 @@ export function PinnedHeader({
                       href={item.href}
                       onClick={closeMenu}
                     >
-                      <TypedLabel text={item.label} index={menu.length + 1 + i} />
+                      <TypedLabel text={item.label} index={menu.length + SUBMENUS.length + i} />
                     </Link>
                   </li>
                 ))

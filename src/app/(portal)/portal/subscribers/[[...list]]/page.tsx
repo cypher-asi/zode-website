@@ -18,7 +18,6 @@ import tabs from "@/features/data-room/room.module.css";
 import ui from "@/features/data-room/ui.module.css";
 import styles from "@/features/portal/portal.module.css";
 import admin from "@/features/posts/PostEditor.module.css";
-import settings from "@/features/settings/settings.module.css";
 
 export const metadata: Metadata = {
   title: "Subscribers | ZODE",
@@ -74,10 +73,10 @@ export default async function SubscribersPage({
         subtitle={
           list
             ? `The ${mailingList(list).label} mailing list. Only subscribed addresses have confirmed by email.`
-            : "The News and Changelog mailing lists, with a row for each list an address is on. Only subscribed addresses have confirmed by email."
+            : "Both mailing lists, a row per list. Only subscribed addresses have confirmed by email."
         }
       >
-        <div className={settings.headerActions}>
+        <div className={tabs.headerActions}>
           <nav className={tabs.tabs} aria-label="Mailing lists">
             {LIST_TABS.map((tab) => (
               <Link

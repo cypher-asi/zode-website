@@ -650,3 +650,72 @@ alter table zrm_notes drop constraint if exists zrm_notes_one_parent;
 alter table zrm_notes add constraint zrm_notes_one_parent check (num_nonnulls(person_id, company_id, opportunity_id, site_id) = 1);
 
 create index if not exists zrm_notes_site_idx on zrm_notes (site_id) where site_id is not null;
+
+-- Executed compute contracts, the second kind of contract beside MNDAs. The
+-- team records them from a PDF signed elsewhere, so unlike an MNDA there is no
+-- template: the row holds the deal's figures and the PDF lives in the private
+-- Blob store under contracts/compute/. The company is the opportunity's, or
+-- else the site's customer, kept so it survives either link being cleared.
+create table if not exists compute_contracts (
+  id uuid primary key default gen_random_uuid(),
+  signed_at date not null,
+  counterparty text not null,
+  mode text not null check (mode in ('buy', 'rent')),
+  company_id uuid references zrm_companies (id) on delete set null,
+  opportunity_id uuid references zrm_opportunities (id) on delete set null,
+  site_id uuid references capacity_sites (id) on delete set null,
+  it_mw numeric(10, 2),
+  -- The total contract value, and the monthly payment or bill.
+  value_usd numeric(16, 2),
+  monthly_usd numeric(14, 2),
+  term_months integer,
+  notes text,
+  blob_pathname text not null unique,
+  recorded_by bigint references users (id),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists compute_contracts_signed_at_idx on compute_contracts (signed_at desc);
+
+-- The team dashboard's figures, one row per metric per UTC day, written by the
+-- daily cron and on each dashboard view (the day's latest wins). The metric
+-- names are defined in src/features/team-dashboard/metrics.ts.
+create table if not exists team_metric_snapshots (
+  day date not null,
+  metric text not null,
+  value numeric not null,
+  taken_at timestamptz not null default now(),
+  primary key (day, metric)
+);
+
+-- Fills the past year from the timestamps that allow it, never over a real
+-- snapshot. Opportunities count by when they were created at their current
+-- stage, since stage changes aren't recorded. Capacity can't be rebuilt, as
+-- site statuses keep no history, so its line starts at the first snapshot.
+insert into team_metric_snapshots (day, metric, value, taken_at)
+select d.day, m.metric, m.value, d.day + 1
+from (select current_date - n as day from generate_series(1, 365) as n) as d
+cross join lateral (
+  values
+    ('contracts_total',
+      (select count(*) from mndas where signed_at < d.day + 1)
+      + (select count(*) from compute_contracts where signed_at <= d.day)),
+    ('contracts_compute', (select count(*) from compute_contracts where signed_at <= d.day)),
+    ('contracts_compute_mw', (select coalesce(sum(it_mw), 0) from compute_contracts where signed_at <= d.day)),
+    ('subscribers_confirmed',
+      (select count(distinct email) from mailing_list_subscribers
+       where confirmed_at < d.day + 1 and (status = 'subscribed' or unsubscribed_at >= d.day + 1))),
+    ('subscribers_news',
+      (select count(*) from mailing_list_subscribers
+       where list = 'news' and confirmed_at < d.day + 1 and (status = 'subscribed' or unsubscribed_at >= d.day + 1))),
+    ('subscribers_changelog',
+      (select count(*) from mailing_list_subscribers
+       where list = 'changelog' and confirmed_at < d.day + 1 and (status = 'subscribed' or unsubscribed_at >= d.day + 1))),
+    ('opportunities_open',
+      (select count(*) from zrm_opportunities o join zrm_stages g on g.id = o.stage_id
+       where o.created_at < d.day + 1 and g.position < (select max(position) from zrm_stages))),
+    ('opportunities_pipeline_usd',
+      (select coalesce(sum(o.value), 0) from zrm_opportunities o join zrm_stages g on g.id = o.stage_id
+       where o.created_at < d.day + 1 and g.position < (select max(position) from zrm_stages)))
+) as m (metric, value)
+on conflict (day, metric) do nothing;
