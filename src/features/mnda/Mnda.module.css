@@ -19,7 +19,7 @@
 
 .agreementTitle {
   margin: 0 0 16px;
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: var(--text-lg);
   font-weight: 400;
   text-align: center;
@@ -29,7 +29,7 @@
 
 .agreementParagraph {
   margin: 0 0 12px;
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: var(--text-sm);
   line-height: 1.65;
   color: var(--color-text-primary);
@@ -113,7 +113,7 @@
 .signature {
   composes: input from "../../components/ui/Field/Field.module.css";
   height: 56px;
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: var(--text-xl);
   font-style: italic;
 }
@@ -188,7 +188,7 @@
 
 .doneTitle {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: clamp(28px, 3vw, 36px);
   font-weight: 300;
   line-height: 1.1;
@@ -236,7 +236,7 @@
 
 .heading {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: var(--h1-size);
   font-weight: 300;
   letter-spacing: var(--h1-tracking);

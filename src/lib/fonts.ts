@@ -1,10 +1,9 @@
-import { Inter, Newsreader } from "next/font/google";
+import { Geist, Inter } from "next/font/google";
 
-/** Headline serif, exposed as `--font-display` (aliased to `--font-serif` in globals.css). */
-export const display = Newsreader({
-  variable: "--font-display",
+/** Headline sans, exposed as `--font-geist` (aliased to `--font-display` in globals.css). */
+export const display = Geist({
+  variable: "--font-geist",
   subsets: ["latin"],
-  axes: ["opsz"],
 });
 
 /** Body sans, exposed as `--font-text` (aliased to `--font-sans` in globals.css). */

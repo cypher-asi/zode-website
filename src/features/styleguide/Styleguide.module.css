@@ -33,7 +33,7 @@
 
 .h1 {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: var(--h1-size);
   font-weight: 300;
   line-height: var(--h1-leading);
@@ -42,7 +42,7 @@
 
 .h2 {
   margin: 0 0 8px;
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: var(--h2-size);
   font-weight: 300;
   line-height: var(--h2-leading);
@@ -287,7 +287,7 @@
 
 .quote {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: var(--text-2xl);
   font-weight: 300;
   line-height: 1.2;
@@ -530,7 +530,7 @@
 .specimenH1,
 .specimenH2 {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-weight: 300;
 }
 

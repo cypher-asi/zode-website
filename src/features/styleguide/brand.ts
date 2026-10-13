@@ -122,9 +122,9 @@ export interface TypeFamily {
 export const TYPE_FAMILIES: readonly TypeFamily[] = [
   {
     role: "Display",
-    family: "Newsreader",
-    token: "--font-serif",
-    stack: '"Newsreader", Georgia, "Times New Roman", serif',
+    family: "Geist",
+    token: "--font-display",
+    stack: '"Geist", system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif',
     weights: "300 (Light) for every headline; 400 only below 20px",
     use: "Headlines and section titles. Sentence case, tight tracking, never bold.",
   },
@@ -147,7 +147,7 @@ export const TYPE_FAMILIES: readonly TypeFamily[] = [
 ];
 
 export const GOOGLE_FONTS_URL =
-  "https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,300;6..72,400&display=swap";
+  "https://fonts.googleapis.com/css2?family=Geist:wght@300;400&family=Geist+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap";
 
 export const TYPE_SCALE: readonly Token[] = [
   { token: "--text-2xs", value: "11px", name: "2xs", use: "Eyebrows, figure labels, fine print." },
@@ -322,7 +322,7 @@ export const FORMATS: readonly Format[] = [
     rules: [
       "Load the fonts (Google Fonts URL below) and link /brand/tokens.css, then build with the var(--*) tokens only; no new hex values.",
       "White page, paper for quiet sections, ink for a dark chapter. Content max width around 1200px, inset by --edge.",
-      "H1 once per page in Newsreader Light; H2 for each section; Inter for everything else.",
+      "H1 once per page in Geist Light; H2 for each section; Inter for everything else.",
       "Every interactive element gets a visible :focus-visible ring in --color-focus-ring.",
       "Respect the breakpoints: 480, 700, 900, 1200.",
     ],
@@ -332,7 +332,7 @@ export const FORMATS: readonly Format[] = [
     title: "Documents and PDFs",
     rules: [
       "A4 or US Letter with generous margins (20-25mm). White page, ink text.",
-      "Title in Newsreader Light at 32-40pt; section heads in Newsreader Light at 18-22pt; body in Inter at 10-11pt with 1.5 line spacing, secondary gray for supporting text.",
+      "Title in Geist Light at 32-40pt; section heads in Geist Light at 18-22pt; body in Inter at 10-11pt with 1.5 line spacing, secondary gray for supporting text.",
       "Mono uppercase labels (Geist Mono 7-8pt, 0.16em tracking) above sections and in headers and footers, with the page number.",
       "Wordmark top-left on the cover, small in the running header after that.",
       "Tables: hairline rules in --color-border, no fills except paper for the header row, tabular figures.",
@@ -343,7 +343,7 @@ export const FORMATS: readonly Format[] = [
     title: "Slides",
     rules: [
       "16:9. White or ink backgrounds, paper for a quiet divider. One message per slide.",
-      "Headline in Newsreader Light, large and left-aligned, ending with a period; a mono eyebrow above it.",
+      "Headline in Geist Light, large and left-aligned, ending with a period; a mono eyebrow above it.",
       "One render, drawing or figure per slide, given room; numbers set large in Inter with a mono label.",
       "Wordmark small in a corner; slide number in mono in the opposite corner.",
     ],
@@ -352,7 +352,7 @@ export const FORMATS: readonly Format[] = [
     id: "social",
     title: "Social and marketing",
     rules: [
-      "One render or drawing, one short declarative line in Newsreader Light, the wordmark. Nothing else.",
+      "One render or drawing, one short declarative line in Geist Light, the wordmark. Nothing else.",
       "Use the app icon as the avatar; never the wordmark squeezed into a circle.",
       "Accent orange appears at most once, as a signal, not as a fill.",
     ],

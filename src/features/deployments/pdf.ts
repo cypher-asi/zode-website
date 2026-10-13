@@ -41,7 +41,7 @@ import {
 } from "./types";
 
 /*
- * A deployment as a ZODE-branded PDF: the styleguide's type (Newsreader Light
+ * A deployment as a ZODE-branded PDF: the styleguide's type (Geist Light
  * headlines, Inter text, Geist Mono labels and figures) and palette (ink,
  * paper and hairlines, the accent marking only the next RFS), with the
  * wordmark on an ink band. Fonts are read with fs from this feature's assets
@@ -70,7 +70,7 @@ function loadAssets(): Promise<Assets> {
       "Inter-Regular.ttf",
       "Inter-Medium.ttf",
       "Inter-SemiBold.ttf",
-      "Newsreader-Light.ttf",
+      "Geist-Light.ttf",
       "GeistMono-Regular.ttf",
     ].map((name) => readFile(path.join(ASSETS, name))),
     readFile(WORDMARK, "utf8"),

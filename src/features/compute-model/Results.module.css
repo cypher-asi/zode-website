@@ -32,7 +32,7 @@
 
 .heroValue {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: clamp(24px, 2.4vw, 34px);
   font-weight: 300;
   line-height: 1.05;

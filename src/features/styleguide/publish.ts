@@ -162,7 +162,7 @@ Font stacks:
 
 ${TYPE_FAMILIES.map((f) => `- ${f.role}: \`${f.stack}\``).join("\n")}
 
-Headlines are Newsreader Light in sentence case, ending with a period. Eyebrows are Geist Mono or Inter, uppercase, 11px with 0.16em tracking.
+Headlines are Geist Light in sentence case, ending with a period. Eyebrows are Geist Mono or Inter, uppercase, 11px with 0.16em tracking.
 
 ${tokenTables(["type-scale", "headings"])}
 

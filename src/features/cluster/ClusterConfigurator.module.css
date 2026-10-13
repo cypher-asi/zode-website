@@ -47,7 +47,7 @@
 
 .title {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: clamp(24px, 2vw, 32px);
   font-weight: 300;
   letter-spacing: -0.02em;
@@ -236,7 +236,7 @@
 
 .heading {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: clamp(28px, 2.2vw, 36px);
   font-weight: 300;
   line-height: 1.06;
