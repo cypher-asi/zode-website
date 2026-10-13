@@ -46,6 +46,8 @@ export type Slide =
   | (Base & {
       kind: "stats";
       stats: readonly (Stat & { art: MacroArtId })[];
+      /** The card under the stats, with the token growth chart. */
+      trend: Stat;
       statement: string;
       chain: readonly ChainStep[];
     })
@@ -132,6 +134,7 @@ export const SLIDES: readonly Slide[] = [
       { value: "57 GW", label: "US power shortfall to 2028", art: "power" },
       { value: "$3.75–5", label: "B300 per GPU-hour", art: "compute" },
     ],
+    trend: { value: "24×", label: "AI tokens per month, 2026 to 2030" },
     statement: "Capital, GPUs and powered land are available. Converting energy to tokens is the main bottleneck.",
     chain: [
       { label: "Capital", art: "capital" },
@@ -140,7 +143,7 @@ export const SLIDES: readonly Slide[] = [
       { label: "Compute", art: "compute" },
       { label: "Offtake", art: "offtake" },
     ],
-    sources: ["capex", "morganStanley", "zodePricing"],
+    sources: ["capex", "morganStanley", "zodePricing", "googleTokens", "goldmanTokens"],
   },
   {
     id: "demand",

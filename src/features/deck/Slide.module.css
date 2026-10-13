@@ -515,9 +515,9 @@
 
 /*
  * Macro, in halves. Left, a portrait card per figure, a drawing over its
- * number, joined by hairlines as the other card sets are, with the statement
- * at the foot. Right, the supply chain from capital to offtake: rows joined
- * by arrows down, its bottleneck blinking red.
+ * number, and a wide card charting token growth, joined by hairlines as the
+ * other card sets are. Right, the statement, then the supply chain from
+ * capital to offtake: rows joined by arrows down, its bottleneck blinking red.
  */
 .macro {
   --alarm: #f04438;
@@ -531,8 +531,6 @@
 .macroLead {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: calc(2 * var(--u));
   min-height: 0;
 }
 
@@ -543,9 +541,12 @@
   list-style: none;
 }
 
+/* The portrait cards, then the token chart across under them, taking the height the statement leaves. */
 .macroCards {
   display: grid;
+  flex: 1;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 1px;
   min-height: 0;
   padding: 1px;
@@ -562,8 +563,31 @@
   flex-direction: column;
   gap: calc(0.5 * var(--u));
   min-height: 0;
-  aspect-ratio: 2 / 3;
+  aspect-ratio: 3 / 4;
   padding: calc(1 * var(--u)) calc(1.1 * var(--u)) calc(1.2 * var(--u));
+}
+
+.macroCard.trendCard {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: calc(11 * var(--u)) minmax(0, 1fr);
+  gap: calc(2 * var(--u));
+  aspect-ratio: auto;
+}
+
+.trendText {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.5 * var(--u));
+}
+
+.trendText .macroValue {
+  margin-top: auto;
+}
+
+.trendChart {
+  min-width: 0;
+  min-height: 0;
 }
 
 .macroFigure {
@@ -593,6 +617,10 @@
   flex-direction: column;
   gap: calc(1 * var(--u));
   min-height: 0;
+}
+
+.macroStatement {
+  margin-bottom: calc(0.8 * var(--u));
 }
 
 .chain {
@@ -1863,13 +1891,9 @@
   gap: 36px;
 }
 
-.slide[data-compact] .macroLead {
-  justify-content: flex-start;
-  gap: 28px;
-}
-
 .slide[data-compact] .macroCards {
   grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: none;
 }
 
 .slide[data-compact] .macroCard {
@@ -1879,6 +1903,16 @@
 
 .slide[data-compact] .macroCard .statLabel {
   min-height: 0;
+}
+
+.slide[data-compact] .macroCard.trendCard {
+  grid-column: auto;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.slide[data-compact] .trendChart {
+  height: 200px;
 }
 
 .slide[data-compact] .macroFigure {

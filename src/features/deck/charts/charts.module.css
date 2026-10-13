@@ -111,6 +111,70 @@
   fill: var(--color-ink);
 }
 
+/* Token growth (TokenChart.tsx), in the slide's tones (Slide.module.css), filling the card it sits in. */
+.tokens {
+  height: 100%;
+}
+
+.tokenGrid {
+  stroke: var(--rule);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.tokenAxis,
+.tokenNote {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  fill: var(--fg-2);
+}
+
+.tokenValue {
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  fill: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.tokenLine,
+.tokenForecast {
+  fill: none;
+  stroke: var(--fg);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.tokenLine {
+  stroke-width: 2.5;
+}
+
+.tokenForecast {
+  stroke-width: 2;
+  stroke-dasharray: 6 6;
+}
+
+.tokenDot {
+  fill: var(--fg);
+}
+
+.tokenRing {
+  fill: var(--card, var(--bg));
+  stroke: var(--fg);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.chart[data-compact] :is(.tokenAxis, .tokenNote) {
+  font-size: 18px;
+}
+
+.chart[data-compact] .tokenValue {
+  font-size: 24px;
+}
+
 /* Shortfall bars (ShortfallChart.tsx). */
 .barRect {
   vector-effect: non-scaling-stroke;
@@ -330,6 +394,30 @@
 
   .chart:not([data-active]) .tile {
     opacity: 0;
+    transition-duration: 0ms;
+  }
+
+  .tokenLine {
+    stroke-dasharray: 1;
+    transition: stroke-dashoffset 1200ms var(--ease-in-out) 300ms;
+  }
+
+  .tokenDot {
+    transition: opacity 400ms ease 900ms;
+  }
+
+  .tokenForecast,
+  .tokenLabels {
+    transition: opacity 700ms ease 1400ms;
+  }
+
+  .chart:not([data-active]) .tokenLine {
+    stroke-dashoffset: 1;
+  }
+
+  .chart:not([data-active]) :is(.tokenDot, .tokenForecast, .tokenLabels) {
+    opacity: 0;
+    transition-delay: 0ms;
     transition-duration: 0ms;
   }
 }

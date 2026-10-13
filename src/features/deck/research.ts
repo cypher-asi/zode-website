@@ -88,12 +88,45 @@ export const SOURCES = {
     title: "Market pricing for B300 capacity on 24–60 month terms",
     date: "2026",
   },
+  googleTokens: {
+    publisher: "Google",
+    title: "Google I/O 2026: Sundar Pichai's opening keynote",
+    date: "May 19, 2026",
+    url: "https://blog.google/innovation-and-ai/sundar-pichai-io-2026/",
+  },
+  goldmanTokens: {
+    publisher: "Goldman Sachs Research",
+    title: "AI agents forecast to boost tech cash flow as usage soars",
+    date: "May 2026",
+    url: "https://www.goldmansachs.com/insights/articles/ai-agents-forecast-to-boost-tech-cash-flow-as-usage-soars",
+  },
 } as const satisfies Record<string, Source>;
 
 export type SourceId = keyof typeof SOURCES;
 
-/** A chart point: year and gigawatts. */
-export type Point = readonly [year: number, gw: number];
+/** A chart point: a year (fractional for a month within it) and its value. */
+export type Point = readonly [year: number, value: number];
+
+/** Monthly AI tokens, in trillions, for the token chart. */
+export const TOKENS = {
+  /**
+   * Google's tokens a month across every product, as it has disclosed them:
+   * I/O 2024 and 2025, the Q2 and Q3 2025 earnings calls, and I/O 2026.
+   */
+  google: [
+    [2024.3, 9.7],
+    [2025.3, 480],
+    [2025.55, 980],
+    [2025.8, 1300],
+    [2026.38, 3200],
+  ] as readonly Point[],
+  /** Goldman Sachs' global forecast: about 5 quadrillion a month in 2026 to 120 quadrillion by 2030, 24x. */
+  forecast: [
+    [2026.5, 5000],
+    [2030.5, 120000],
+  ] as readonly Point[],
+  multiple: 24,
+} as const;
 
 /** US data center capacity, in GW, for the demand chart. */
 export const DEMAND = {

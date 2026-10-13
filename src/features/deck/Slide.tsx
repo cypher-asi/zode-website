@@ -10,6 +10,7 @@ import { MacroArt } from "./art/MacroArt";
 import { DEMAND_GAP, DemandChart } from "./charts/DemandChart";
 import { ShortfallByYear, ShortfallChart } from "./charts/ShortfallChart";
 import { StateTileMap } from "./charts/StateTileMap";
+import { TokenChart } from "./charts/TokenChart";
 import { BLOCKED, NEWS } from "./news";
 import {
   AS_OF,
@@ -100,11 +101,11 @@ function Cover({ slide }: { slide: Of<"cover"> }): ReactElement {
 }
 
 /**
- * The macro slide, in halves: a portrait card per figure over the statement,
- * then the supply chain from capital to offtake as rows down the right, its
- * bottleneck blinking red.
+ * The macro slide, in halves: a portrait card per figure and a wide one
+ * charting token growth on the left; on the right the statement, then the
+ * supply chain from capital to offtake as rows, its bottleneck blinking red.
  */
-function Stats({ slide, active }: { slide: Of<"stats">; active: boolean }): ReactElement {
+function Stats({ slide, active, compact }: { slide: Of<"stats">; active: boolean; compact: boolean }): ReactElement {
   return (
     <div className={styles.macro}>
       <div className={styles.macroLead}>
@@ -119,12 +120,22 @@ function Stats({ slide, active }: { slide: Of<"stats">; active: boolean }): Reac
               <span className={styles.statLabel}>{stat.label}</span>
             </li>
           ))}
+          <li {...rise(3.5)} className={`${styles.rise} ${styles.macroCard} ${styles.trendCard}`}>
+            <div className={styles.trendText}>
+              <span className={styles.label}>{String(slide.stats.length + 1).padStart(2, "0")}</span>
+              <span className={styles.macroValue}>{slide.trend.value}</span>
+              <span className={styles.statLabel}>{slide.trend.label}</span>
+            </div>
+            <div className={styles.trendChart}>
+              <TokenChart active={active} compact={compact} />
+            </div>
+          </li>
         </ul>
-        <h3 {...rise(4)} className={`${styles.rise} ${styles.h3}`}>
-          {slide.statement}
-        </h3>
       </div>
       <div className={styles.macroChain}>
+        <h3 {...rise(2.5)} className={`${styles.rise} ${styles.h3} ${styles.macroStatement}`}>
+          {slide.statement}
+        </h3>
         <p {...rise(3)} className={`${styles.rise} ${styles.label}`}>
           Supply chain
         </p>
@@ -629,7 +640,7 @@ function Close({ slide }: { slide: Of<"close"> }): ReactElement {
 }
 
 const SOURCE_GROUPS: readonly { title: string; ids: readonly SourceId[] }[] = [
-  { title: "Demand and supply", ids: ["bnef", "utilityDive", "epri", "morganStanley", "cbre", "jll", "capex", "zodePricing"] },
+  { title: "Demand and supply", ids: ["bnef", "utilityDive", "epri", "morganStanley", "cbre", "jll", "capex", "zodePricing", "googleTokens", "goldmanTokens"] },
   { title: "Policy", ids: ["ncsl", "newYork", "oregon", "dataCenterWatch"] },
 ];
 
@@ -687,7 +698,7 @@ function Body({ slide, active, compact }: { slide: Slide; active: boolean; compa
     case "cover":
       return <Cover slide={slide} />;
     case "stats":
-      return <Stats slide={slide} active={active} />;
+      return <Stats slide={slide} active={active} compact={compact} />;
     case "demand":
       return <Demand active={active} compact={compact} />;
     case "shortfall":
