@@ -107,6 +107,15 @@ export function DetailShell({
           {actions}
           <PinButton kind={kind} id={id} active={active} />
           <DeleteButton kind={kind} id={id} name={name} />
+          <Link
+            href={`/portal/zrm/${kind}`}
+            scroll={false}
+            className={`${ui.iconButton} ${styles.close}`}
+            aria-label="Close"
+            title="Close"
+          >
+            <Icon name="close" />
+          </Link>
         </div>
       </header>
 

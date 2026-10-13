@@ -1,4 +1,4 @@
-/* List | divider | detail. `--list-width` is written by the Splitter. */
+/* List | divider | detail, or the list alone until a record opens. `--list-width` is written by the Splitter. */
 .workspace {
   --list-width: 52%;
   display: grid;
@@ -7,6 +7,10 @@
   min-height: 0;
   overflow: hidden;
   background: var(--color-bg);
+}
+
+.workspace[data-view="list"] {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .listPane {
@@ -283,23 +287,6 @@
   min-width: 0;
   min-height: 0;
   overflow: auto;
-}
-
-.placeholder {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 40px 24px;
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  text-align: center;
-}
-
-.placeholder p {
-  margin: 0;
 }
 
 .detailHeader {
@@ -582,8 +569,8 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .workspace[data-view="list"] .detailPane,
-  .workspace[data-view="detail"] .listPane {
+  .workspace[data-view="detail"] .listPane,
+  .close {
     display: none;
   }
 

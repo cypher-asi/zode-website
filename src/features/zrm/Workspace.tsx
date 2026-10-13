@@ -196,9 +196,10 @@ function RecordList<T extends ListRow>({
 }
 
 /**
- * One ZRM tab: the list of records in the middle, a resizable divider, and
- * the open record (the route's page) on the right. Lives in the tab's layout,
- * so moving between records keeps the list, its search and its scroll.
+ * One ZRM tab: the list of records, and once one is open (or the New form),
+ * a resizable divider and the record (the route's page) on the right. Lives
+ * in the tab's layout, so moving between records keeps the list, its search
+ * and its scroll.
  */
 export function Workspace({ data, types, children }: { data: ListRows; types: ZrmType[]; children: ReactNode }): ReactElement {
   const segment = useSelectedLayoutSegment();
@@ -225,16 +226,20 @@ export function Workspace({ data, types, children }: { data: ListRows; types: Zr
       <section className={styles.listPane} aria-label={KIND_LABELS[data.kind].plural}>
         {list}
       </section>
-      <Splitter
-        containerRef={containerRef}
-        storageKey="zode:zrm:list-share"
-        label="Resize list"
-        cssVar="--list-width"
-        defaultFraction={0.52}
-      />
-      <section className={styles.detailPane} aria-label="Details">
-        {children}
-      </section>
+      {segment ? (
+        <>
+          <Splitter
+            containerRef={containerRef}
+            storageKey="zode:zrm:list-share"
+            label="Resize list"
+            cssVar="--list-width"
+            defaultFraction={0.52}
+          />
+          <section className={styles.detailPane} aria-label="Details">
+            {children}
+          </section>
+        </>
+      ) : null}
     </div>
   );
 }
