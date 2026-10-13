@@ -9,6 +9,13 @@
   border-radius: var(--radius-card);
 }
 
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
 .avatarRow {
   display: flex;
   align-items: center;

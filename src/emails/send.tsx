@@ -18,6 +18,7 @@ import OrderConfirmation, { confirmationSubject } from "./OrderConfirmation";
 import OrderNotification, { notificationSubject } from "./OrderNotification";
 import { orderEmailProps } from "./orderEmailProps";
 import RegistrationNotification, { registrationSubject } from "./RegistrationNotification";
+import TeamInvite, { teamInviteSubject, type TeamInviteProps } from "./TeamInvite";
 import { WORDMARK_CID } from "./ui";
 import Welcome, { welcomeSubject } from "./Welcome";
 import { WORDMARK_PNG_BASE64 } from "./wordmark";
@@ -190,6 +191,25 @@ export async function sendDataRoomInvite(to: string, props: DataRoomInviteProps,
     });
   } catch (err) {
     console.error(`[email] data room invite to ${to} failed:`, err);
+  }
+}
+
+/**
+ * Emails a ZODE team invite link; replies go to whoever sent it. `key` is
+ * unique per issued token, so a resend isn't swallowed by idempotency.
+ * Never throws: the invite already exists and can be resent.
+ */
+export async function sendTeamInvite(to: string, props: TeamInviteProps, key: string): Promise<void> {
+  try {
+    await send({
+      to,
+      replyTo: props.inviterEmail,
+      subject: teamInviteSubject(props),
+      email: <TeamInvite {...props} />,
+      idempotencyKey: `team-invite-${key}`,
+    });
+  } catch (err) {
+    console.error(`[email] team invite to ${to} failed:`, err);
   }
 }
 

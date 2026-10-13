@@ -1,0 +1,23 @@
+/* Settings > Team: the invite and add forms over the roster. */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.formRow {
+  display: flex;
+  gap: 8px;
+}
+
+.formRow > input,
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 700px) {
+  .formRow {
+    flex-direction: column;
+  }
+}

@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { notFound } from "next/navigation";
+import { isTeam } from "@/features/account/admin";
 import { getAccount, requireAccount } from "@/features/account/session";
 import type { Account } from "@/features/account/zos";
 import { db } from "@/lib/db";
@@ -18,18 +19,9 @@ export const MAX_NAME_LENGTH = 200;
 /** Live bytes a room may hold; uploads past this are refused. */
 export const ROOM_QUOTA_BYTES = 50 * 1024 ** 3;
 
-/**
- * Who may open new rooms: the ZOS user ids in DATA_ROOM_CREATORS (comma
- * separated). Ids rather than emails, because ZOS registration is open and
- * doesn't verify addresses. Unset allows everyone in local development only.
- */
-export function canCreateRooms(account: Account): boolean {
-  const creators = (process.env.DATA_ROOM_CREATORS ?? "")
-    .split(",")
-    .map((id) => id.trim())
-    .filter(Boolean);
-  if (!creators.length) return process.env.NODE_ENV === "development";
-  return creators.includes(account.userId);
+/** Who may open new rooms: the ZODE team, super admins included. */
+export function canCreateRooms(account: Account): Promise<boolean> {
+  return isTeam(account);
 }
 
 /** Bytes held by a room's live files. */

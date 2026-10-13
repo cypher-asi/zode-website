@@ -6,7 +6,7 @@ import { roleLabel, type RoomSummary } from "@/features/data-room/types";
 import { SUBSCRIBER_STATUSES, type Subscriber } from "@/features/mailing-list/types";
 import { kindLabel, type Post } from "@/features/posts/types";
 import { RoleButton } from "@/features/users/RoleButton";
-import type { User } from "@/features/users/types";
+import { ROLE_LABELS, type User } from "@/features/users/types";
 import { PortalIcon } from "./icons";
 import styles from "./portal.module.css";
 
@@ -239,11 +239,11 @@ export function UserList({ users, selfZosUserId }: { users: User[]; selfZosUserI
               </span>
               <span className={styles.rowEnd}>
                 {self ? <span className={styles.pill}>You</span> : null}
-                {user.role === "super_admin" ? (
-                  <span className={styles.pill} data-strong="">
-                    Super admin
+                {user.role === "member" ? null : (
+                  <span className={styles.pill} data-strong={user.role === "super_admin" ? "" : undefined}>
+                    {ROLE_LABELS[user.role]}
                   </span>
-                ) : null}
+                )}
                 {self ? null : <RoleButton userId={user.id} role={user.role} label={label} />}
               </span>
             </div>

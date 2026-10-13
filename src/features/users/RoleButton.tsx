@@ -4,29 +4,32 @@ import { useState, type ReactElement } from "react";
 import { Dialog } from "@/features/data-room/Dialog";
 import ui from "@/features/data-room/ui.module.css";
 import { setRoleAction } from "./actions";
-import type { UserRole } from "./types";
+import { ROLE_LABELS, USER_ROLES, type UserRole } from "./types";
 
-/** Grants or revokes super admin for one user, after a confirmation. */
+const OPTIONS = USER_ROLES.map((role) => ({ value: role, label: ROLE_LABELS[role] }));
+
+/** Sets one user's site-wide role, after a confirmation. */
 export function RoleButton({ userId, role, label }: { userId: number; role: UserRole; label: string }): ReactElement {
   const [open, setOpen] = useState(false);
-  const granting = role !== "super_admin";
 
   return (
     <>
-      <button type="button" className={granting ? ui.button : ui.danger} onClick={() => setOpen(true)}>
-        {granting ? "Make super admin" : "Remove super admin"}
+      <button type="button" className={ui.button} onClick={() => setOpen(true)}>
+        Change role
       </button>
       {open ? (
         <Dialog
-          title={granting ? `Make ${label} a super admin?` : `Remove ${label} as a super admin?`}
+          title={`Change ${label}'s role`}
           description={
-            granting
-              ? "They'll see every account's contracts, posts and subscribers, and can make anyone else a super admin, or remove them."
-              : "They'll go back to seeing only their own records."
+            <>
+              Regular accounts see only their own records and the data rooms shared with them. Team can also open data
+              rooms and see the team in Settings. Super admins see every account&apos;s records and set anyone&apos;s
+              role.
+            </>
           }
-          confirmLabel={granting ? "Make super admin" : "Remove super admin"}
-          danger={!granting}
-          onConfirm={async () => (await setRoleAction(userId, granting ? "super_admin" : "member")).error}
+          choice={{ label: "Role", options: OPTIONS, initial: role }}
+          confirmLabel="Save role"
+          onConfirm={async (value) => (value === role ? undefined : (await setRoleAction(userId, value)).error)}
           onClose={() => setOpen(false)}
         />
       ) : null}

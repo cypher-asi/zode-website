@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
-import { isZodeAdmin } from "@/features/account/admin";
+import { isTeam, isZodeAdmin } from "@/features/account/admin";
 import { LogoutButton } from "@/features/account/LogoutButton";
 import { avatarUrl, loadProfile } from "@/features/account/profile";
 import { requireAccount } from "@/features/account/session";
@@ -12,6 +12,7 @@ import { devDbSwitchAvailable, devDbTarget } from "@/lib/db";
 import styles from "@/features/portal/portal.module.css";
 import { AvatarField } from "@/features/settings/AvatarField";
 import { NameForm } from "@/features/settings/NameForm";
+import { SettingsTabs } from "@/features/settings/SettingsTabs";
 import settings from "@/features/settings/settings.module.css";
 import { userIdFor } from "@/features/users/users";
 
@@ -30,12 +31,16 @@ export default async function SettingsPage(): Promise<ReactElement> {
     }),
   ]);
   const photo = profile?.avatarPathname ? avatarUrl(account.userId, profile.avatarPathname) : null;
-  const showDbSwitch = devDbSwitchAvailable() && (await isZodeAdmin(account));
+  const [superAdmin, team] = await Promise.all([isZodeAdmin(account), isTeam(account)]);
+  const showDbSwitch = devDbSwitchAvailable() && superAdmin;
 
   return (
     <div className={styles.page}>
       <PageHeader title="Settings" subtitle="Your profile and account.">
-        <LogoutButton className={ui.button} />
+        <div className={settings.headerActions}>
+          {team ? <SettingsTabs current="account" /> : null}
+          <LogoutButton className={ui.button} />
+        </div>
       </PageHeader>
 
       <section className={styles.section} aria-labelledby="settings-profile">

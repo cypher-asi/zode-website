@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-/** Every account that has signed in, by ZODE user id, and who the super admins are. Super admins only. */
+/** Every account that has signed in, by ZODE user id, and their site-wide role. Super admins only. */
 export default async function UsersPage(): Promise<ReactElement> {
   const account = await requireAccount("/portal/users");
   if (!(await isZodeAdmin(account))) notFound();
@@ -22,7 +22,7 @@ export default async function UsersPage(): Promise<ReactElement> {
     <div className={styles.page}>
       <PageHeader
         title="Users"
-        subtitle="Everyone who has signed in, numbered by ZODE user id. Super admins see every account's records and choose who else is one."
+        subtitle="Everyone who has signed in, numbered by ZODE user id. Accounts are Regular unless a super admin puts them on the Team or makes them a super admin."
       />
       {users === null ? (
         <Empty>Users couldn&apos;t be loaded right now. Please try again shortly.</Empty>

@@ -13,11 +13,14 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-/** Every room you own or that's been shared with you; approved creators can open new ones. */
+/** Every room you own or that's been shared with you; the ZODE team can open new ones. */
 export default async function DataRoomsPage(): Promise<ReactElement> {
   const account = await requireAccount("/portal/data-rooms");
-  const canCreate = canCreateRooms(account);
-  const [rooms, superAdmin] = await Promise.all([loadRooms(account.userId), isZodeAdmin(account)]);
+  const [rooms, superAdmin, canCreate] = await Promise.all([
+    loadRooms(account.userId),
+    isZodeAdmin(account),
+    canCreateRooms(account),
+  ]);
 
   return (
     <div className={styles.page}>

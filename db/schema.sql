@@ -289,16 +289,21 @@ on conflict (user_id) do nothing;
 
 -- The site's own record of each ZOS account. `id` is the ZODE user id,
 -- numbered in the order accounts arrived; other tables still key by ZOS id.
--- `role` is site-wide: super admins see every account's records and grant or
--- revoke super admin on the portal's Users page. A row is added at sign-in.
+-- `role` is site-wide and separate from data room roles: 'member' (shown as
+-- Regular) is everyone who signs up; 'team' is the ZODE team, who can open
+-- data rooms; super admins can do all that, see every account's records and
+-- set anyone's role. A row is added at sign-in.
 create table if not exists users (
   id bigint generated always as identity primary key,
   zos_user_id text not null unique,
-  role text not null default 'member' check (role in ('member', 'super_admin')),
+  role text not null default 'member' check (role in ('member', 'team', 'super_admin')),
   role_updated_at timestamptz,
   role_updated_by bigint references users (id),
   created_at timestamptz not null default now()
 );
+
+alter table users drop constraint if exists users_role_check;
+alter table users add constraint users_role_check check (role in ('member', 'team', 'super_admin'));
 
 -- Inserts below skip existing rows with `not exists` rather than `on conflict`,
 -- which would spend an id on every row it skips, at every build.
@@ -314,3 +319,20 @@ insert into users (zos_user_id)
 select d.user_id from account_directory d
 where not exists (select 1 from users u where u.zos_user_id = d.user_id)
 order by d.last_seen_at;
+
+-- Invites to the ZODE team, sent by super admins from Settings > Team to an
+-- email that may not have an account yet. Accepting needs the emailed link and
+-- a sign-in with the same email, then sets that account's role to 'team'.
+create table if not exists team_invites (
+  id uuid primary key default gen_random_uuid(),
+  email text not null,
+  -- sha256 of the emailed token; cleared once accepted.
+  invite_token_hash text unique,
+  invite_expires_at timestamptz,
+  invited_by bigint references users (id),
+  invited_at timestamptz not null default now(),
+  accepted_at timestamptz,
+  accepted_user_id bigint references users (id)
+);
+
+create unique index if not exists team_invites_pending_email_idx on team_invites (email) where accepted_at is null;

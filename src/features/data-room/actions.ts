@@ -83,7 +83,7 @@ function emailInvite(access: RoomAccess, invite: IssuedInvite): void {
 export async function createRoomAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const account = await getAccount();
   if (!account) return { error: "Your session has expired. Log in again." };
-  if (!canCreateRooms(account)) return { error: "Your account can't create data rooms. Ask the ZODE team." };
+  if (!(await canCreateRooms(account))) return { error: "Your account can't create data rooms. Ask the ZODE team." };
   const name = cleanName(formData.get("name"));
   if (typeof name !== "string") return name;
   const kind = formData.get("kind");

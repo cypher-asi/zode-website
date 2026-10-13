@@ -7,8 +7,9 @@ import { setRole, userIdFor } from "./users";
 import { isUserRole, type RoleResult } from "./types";
 
 /**
- * Grants or revokes super admin. Super admins can't change their own role, so
- * whoever acts always remains one and the site can't be left without any.
+ * Sets anyone's site-wide role: Regular, Team or Super admin. Super admins
+ * can't change their own role, so whoever acts always remains one and the
+ * site can't be left without any.
  */
 export async function setRoleAction(userId: number, role: unknown): Promise<RoleResult> {
   const account = await getAccount();

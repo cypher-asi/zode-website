@@ -53,6 +53,13 @@ export const PREVIEW_DATA_ROOM_INVITE = {
   requiresMnda: true,
 };
 
+export const PREVIEW_TEAM_INVITE = {
+  inviterName: "Ada Lovelace",
+  inviterEmail: "ada@example.com",
+  inviteUrl: "https://zode.org/team/invite/preview-token",
+  expiresOn: "October 25, 2026",
+};
+
 export const PREVIEW_MNDA = {
   agreementId: "3f1c2a9e-8b7d-4c1e-9f2a-1b2c3d4e5f60",
   entityName: "Acme Robotics, Inc.",

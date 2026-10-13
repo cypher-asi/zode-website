@@ -14,8 +14,10 @@ import {
   PREVIEW_LOGO,
   PREVIEW_MNDA,
   PREVIEW_RENT,
+  PREVIEW_TEAM_INVITE,
 } from "@/emails/previewOrders";
 import RegistrationNotification from "@/emails/RegistrationNotification";
+import TeamInvite from "@/emails/TeamInvite";
 import Welcome from "@/emails/Welcome";
 
 const TEMPLATES: Record<string, (search: URLSearchParams) => ReactElement> = {
@@ -27,6 +29,7 @@ const TEMPLATES: Record<string, (search: URLSearchParams) => ReactElement> = {
   welcome: () => createElement(Welcome, { ...PREVIEW_ACCOUNT, logoSrc: PREVIEW_LOGO }),
   registration: () => createElement(RegistrationNotification, { ...PREVIEW_ACCOUNT, logoSrc: PREVIEW_LOGO }),
   "data-room-invite": () => createElement(DataRoomInvite, { ...PREVIEW_DATA_ROOM_INVITE, logoSrc: PREVIEW_LOGO }),
+  "team-invite": () => createElement(TeamInvite, { ...PREVIEW_TEAM_INVITE, logoSrc: PREVIEW_LOGO }),
   "mailing-list-confirm": () =>
     createElement(MailingListConfirm, {
       name: "Ada Lovelace",
@@ -45,7 +48,7 @@ const TEMPLATES: Record<string, (search: URLSearchParams) => ReactElement> = {
  * Development only: an email rendered with sample data, e.g.
  * /dev/emails/confirmation, /dev/emails/notification?mode=rent,
  * /dev/emails/engineer, /dev/emails/welcome, /dev/emails/registration,
- * /dev/emails/data-room-invite, /dev/emails/mailing-list-confirm, /dev/emails/mnda?audience=team,
+ * /dev/emails/data-room-invite, /dev/emails/team-invite, /dev/emails/mailing-list-confirm, /dev/emails/mnda?audience=team,
  * or add `&text` for the plain-text part.
  */
 export async function GET(request: Request, { params }: { params: Promise<{ template: string }> }): Promise<Response> {
