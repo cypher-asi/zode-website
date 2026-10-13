@@ -3,7 +3,7 @@ import Link from "next/link";
 import styles from "@/features/data-room/room.module.css";
 
 const TABS = [
-  { id: "mine", href: "/portal", label: "Mine" },
+  { id: "mine", href: "/portal/mine", label: "Mine" },
   { id: "team", href: "/portal/team", label: "Team" },
 ] as const;
 

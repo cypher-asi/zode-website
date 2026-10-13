@@ -56,7 +56,7 @@ export const PREVIEW_DATA_ROOM_INVITE = {
 export const PREVIEW_TEAM_INVITE = {
   inviterName: "Ada Lovelace",
   inviterEmail: "ada@example.com",
-  inviteUrl: "https://zode.org/team/invite/preview-token",
+  inviteUrl: "https://zode.org/invite/preview-token",
   expiresOn: "October 25, 2026",
 };
 

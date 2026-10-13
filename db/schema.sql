@@ -348,9 +348,10 @@ select d.user_id from account_directory d
 where not exists (select 1 from users u where u.zos_user_id = d.user_id)
 order by d.last_seen_at;
 
--- Invites to the ZODE team, sent by super admins from Settings > Team to an
+-- Invites to ZODE, sent by super admins from Users or Settings > Team to an
 -- email that may not have an account yet. Accepting needs the emailed link and
--- a sign-in with the same email, then sets that account's role to 'team'.
+-- a sign-in with the same email; a 'team' invite then sets that account's role
+-- to 'team', a 'member' invite leaves it Regular.
 create table if not exists team_invites (
   id uuid primary key default gen_random_uuid(),
   email text not null,
@@ -364,6 +365,10 @@ create table if not exists team_invites (
 );
 
 create unique index if not exists team_invites_pending_email_idx on team_invites (email) where accepted_at is null;
+
+alter table team_invites add column if not exists role text not null default 'team';
+alter table team_invites drop constraint if exists team_invites_role_check;
+alter table team_invites add constraint team_invites_role_check check (role in ('member', 'team'));
 
 -- ZRM: the team's CRM in the portal, People, Companies and Opportunities,
 -- with the data model of OD3N (github.com/cypher-asi/oden). `legacy_id` holds

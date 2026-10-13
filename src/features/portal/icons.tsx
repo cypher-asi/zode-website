@@ -11,6 +11,8 @@ export type PortalIconName =
   | "posts"
   | "news"
   | "changelog"
+  | "paper"
+  | "palette"
   | "subscribers"
   | "users"
   | "badge"
@@ -93,6 +95,24 @@ const GLYPHS: Record<PortalIconName, ReactElement> = {
       <circle pathLength={1} cx="7.5" cy="6.75" r="2.25" />
       <circle pathLength={1} cx="7.5" cy="17.25" r="2.25" />
       <path pathLength={1} d="M7.5 9v6M12.75 6.75h6.5M12.75 17.25h6.5" />
+    </>
+  ),
+  paper: (
+    <>
+      <rect pathLength={1} x="5.25" y="2.75" width="13.5" height="18.5" rx="2" />
+      <path pathLength={1} d="M8.75 7.25h6.5M8.75 10.75h6.5M8.75 14.25h6.5M8.75 17.75h3.5" />
+    </>
+  ),
+  palette: (
+    <>
+      <path
+        pathLength={1}
+        d="M12 3.25C7.17 3.25 3.25 7.17 3.25 12s3.92 8.75 8.75 8.75c.81 0 1.45-.65 1.45-1.48 0-.38-.16-.73-.38-.98-.25-.25-.38-.57-.38-.98a1.44 1.44 0 0 1 1.46-1.46h1.75c2.67 0 4.86-2.19 4.86-4.86C20.72 6.76 16.78 3.25 12 3.25z"
+      />
+      <path
+        pathLength={1}
+        d="M9.69 8.06a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zM14.06 7.19a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zM17.56 10.69a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zM7.94 12.44a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0z"
+      />
     </>
   ),
   subscribers: (

@@ -1,5 +1,6 @@
 import { MAILING_LISTS } from "@/features/mailing-list/types";
 import { ROLE_LABELS, ROLE_SLUGS, USER_ROLES, type UserRole } from "@/features/users/types";
+import { RESOURCE_LINKS as SITE_RESOURCE_LINKS } from "@/lib/navigation";
 import type { PortalIconName } from "./icons";
 
 /** Wide enough for the rail, the sidebar and a usable panel; under it the sidebar hides. Matches shell.module.css. */
@@ -12,6 +13,8 @@ export type NavLink = {
   href: string;
   label: string;
   icon: PortalIconName;
+  /** Opens in a new tab. */
+  external?: boolean;
 };
 
 export type AppId =
@@ -51,6 +54,21 @@ export const TOOL_LINKS: readonly NavLink[] = [
   { href: "/cluster-builder", label: "Cluster builder", icon: "cluster" },
   { href: "/compute-model", label: "Compute model", icon: "chart" },
 ];
+
+const RESOURCE_ICONS: Record<string, PortalIconName> = {
+  "/news": "news",
+  "/changelog": "changelog",
+  "https://cypher.net/research/the-grid": "paper",
+  "/styleguide": "palette",
+};
+
+/** The site footer's resources, listed under Home's tools. */
+export const RESOURCE_LINKS: readonly NavLink[] = SITE_RESOURCE_LINKS.map((link) => ({
+  href: link.href,
+  label: link.label,
+  icon: RESOURCE_ICONS[link.href] ?? "site",
+  external: link.external,
+}));
 
 const HOME: PortalApp = {
   id: "home",

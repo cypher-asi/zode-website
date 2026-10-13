@@ -83,52 +83,46 @@ async function Dashboard({ searchParams }: { searchParams: SearchParams }): Prom
       {metrics === null ? (
         <Empty>The team&apos;s figures couldn&apos;t be loaded right now. Please try again shortly.</Empty>
       ) : (
-        <>
-          <div className={dash.grid}>
-            <MetricCard
-              label="Capacity contracted"
-              href="/portal/capacity/sites"
-              value={metrics.current.capacity_contracted_mw}
-              format={megawatts}
-              detail={`${megawatts(metrics.current.capacity_pipeline_mw)} in the pipeline`}
-              points={metrics.series.capacity_contracted_mw}
-              rangeDays={rangeDays}
-            />
-            <MetricCard
-              label="Open opportunities"
-              href="/portal/zrm/opportunities"
-              value={metrics.current.opportunities_open}
-              format={count}
-              detail={`${dollars(metrics.current.opportunities_pipeline_usd)} in open pipeline value`}
-              points={metrics.series.opportunities_open}
-              rangeDays={rangeDays}
-            />
-            <MetricCard
-              label="Contracts"
-              href="/portal/contracts/all"
-              value={metrics.current.contracts_total}
-              format={count}
-              detail={`${count(metrics.current.contracts_compute)} compute · ${megawatts(metrics.current.contracts_compute_mw)} · ${count(
-                metrics.current.contracts_total - metrics.current.contracts_compute,
-              )} MNDA`}
-              points={metrics.series.contracts_total}
-              rangeDays={rangeDays}
-            />
-            <MetricCard
-              label="Subscribers"
-              href={admin ? "/portal/subscribers" : undefined}
-              value={metrics.current.subscribers_confirmed}
-              format={count}
-              detail={`${count(metrics.current.subscribers_news)} news · ${count(metrics.current.subscribers_changelog)} changelog`}
-              points={metrics.series.subscribers_confirmed}
-              rangeDays={rangeDays}
-            />
-          </div>
-          <p className={dash.note}>
-            Capacity contracted counts sites that are Contracted or Live. An opportunity stays open until it reaches the
-            last stage. Subscribers are confirmed emails on either list. Figures are snapshotted every day.
-          </p>
-        </>
+        <div className={dash.grid}>
+          <MetricCard
+            label="Capacity contracted"
+            href="/portal/capacity/sites"
+            value={metrics.current.capacity_contracted_mw}
+            format={megawatts}
+            detail={`${megawatts(metrics.current.capacity_pipeline_mw)} in the pipeline`}
+            points={metrics.series.capacity_contracted_mw}
+            rangeDays={rangeDays}
+          />
+          <MetricCard
+            label="Open opportunities"
+            href="/portal/zrm/opportunities"
+            value={metrics.current.opportunities_open}
+            format={count}
+            detail={`${dollars(metrics.current.opportunities_pipeline_usd)} in open pipeline value`}
+            points={metrics.series.opportunities_open}
+            rangeDays={rangeDays}
+          />
+          <MetricCard
+            label="Contracts"
+            href="/portal/contracts/all"
+            value={metrics.current.contracts_total}
+            format={count}
+            detail={`${count(metrics.current.contracts_compute)} compute · ${megawatts(metrics.current.contracts_compute_mw)} · ${count(
+              metrics.current.contracts_total - metrics.current.contracts_compute,
+            )} MNDA`}
+            points={metrics.series.contracts_total}
+            rangeDays={rangeDays}
+          />
+          <MetricCard
+            label="Subscribers"
+            href={admin ? "/portal/subscribers" : undefined}
+            value={metrics.current.subscribers_confirmed}
+            format={count}
+            detail={`${count(metrics.current.subscribers_news)} news · ${count(metrics.current.subscribers_changelog)} changelog`}
+            points={metrics.series.subscribers_confirmed}
+            rangeDays={rangeDays}
+          />
+        </div>
       )}
     </>
   );

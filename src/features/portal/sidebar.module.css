@@ -4,8 +4,10 @@
  * (shell.module.css); it's hidden under 1100px.
  *
  * `.dock` is where a page renders its own explorer (a data room's files);
- * while it holds anything, the app's default list below it steps aside.
+ * while it's filled, the app's default list below it steps aside.
  * `.extra`, under the app's links, holds a page's own section (ZRM's types).
+ * Both go by `data-filled`, not `:empty`: a page navigation keeps hidden
+ * leaves its hidden nodes behind in them.
  */
 .sidebar {
   /* The crumb's height plus its gap to the title: how far the border moves in and out of a room. */
@@ -98,7 +100,7 @@
   min-height: 0;
 }
 
-.dock:empty {
+.dock:not([data-filled]) {
   display: none;
 }
 
@@ -109,7 +111,7 @@
   overflow-y: auto;
 }
 
-.dock:not(:empty) + .body {
+.dock[data-filled] + .body {
   display: none;
 }
 
@@ -145,7 +147,7 @@
   border-top: 1px solid var(--glass-border);
 }
 
-.extra:empty {
+.extra:not([data-filled]) {
   display: none;
 }
 

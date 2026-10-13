@@ -27,7 +27,7 @@ export function RemoveFromTeamButton({ userId, label }: { userId: number; label:
   );
 }
 
-/** Resend and Revoke for one pending team invite. */
+/** Resend and Revoke for one pending invite, Regular or Team. */
 export function PendingInviteButtons({ inviteId }: { inviteId: string }): ReactElement {
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<{ error?: string; ok?: string }>({});

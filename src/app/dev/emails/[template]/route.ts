@@ -29,7 +29,12 @@ const TEMPLATES: Record<string, (search: URLSearchParams) => ReactElement> = {
   welcome: () => createElement(Welcome, { ...PREVIEW_ACCOUNT, logoSrc: PREVIEW_LOGO }),
   registration: () => createElement(RegistrationNotification, { ...PREVIEW_ACCOUNT, logoSrc: PREVIEW_LOGO }),
   "data-room-invite": () => createElement(DataRoomInvite, { ...PREVIEW_DATA_ROOM_INVITE, logoSrc: PREVIEW_LOGO }),
-  "team-invite": () => createElement(TeamInvite, { ...PREVIEW_TEAM_INVITE, logoSrc: PREVIEW_LOGO }),
+  "team-invite": (search) =>
+    createElement(TeamInvite, {
+      ...PREVIEW_TEAM_INVITE,
+      role: search.get("role") === "member" ? "member" : "team",
+      logoSrc: PREVIEW_LOGO,
+    }),
   "mailing-list-confirm": (search) =>
     createElement(MailingListConfirm, {
       name: "Ada Lovelace",
@@ -49,7 +54,7 @@ const TEMPLATES: Record<string, (search: URLSearchParams) => ReactElement> = {
  * Development only: an email rendered with sample data, e.g.
  * /dev/emails/confirmation, /dev/emails/notification?mode=rent,
  * /dev/emails/engineer, /dev/emails/welcome, /dev/emails/registration,
- * /dev/emails/data-room-invite, /dev/emails/team-invite, /dev/emails/mailing-list-confirm?list=changelog, /dev/emails/mnda?audience=team,
+ * /dev/emails/data-room-invite, /dev/emails/team-invite?role=member, /dev/emails/mailing-list-confirm?list=changelog, /dev/emails/mnda?audience=team,
  * or add `&text` for the plain-text part.
  */
 export async function GET(request: Request, { params }: { params: Promise<{ template: string }> }): Promise<Response> {

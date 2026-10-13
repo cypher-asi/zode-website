@@ -3,7 +3,9 @@
 import {
   createContext,
   use,
+  useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -25,7 +27,17 @@ type SidebarContextValue = {
   /** The sidebar's slot under the app's links, for a page's own section, e.g. ZRM's types. */
   extra: HTMLElement | null;
   setExtra: (element: HTMLElement | null) => void;
+  /**
+   * Whether a showing page fills each slot. A page that navigation keeps
+   * hidden (in an Activity) leaves its hidden nodes in the slot, so the slot
+   * being empty doesn't say.
+   */
+  filled: SlotsFilled;
+  claimDock: () => () => void;
+  claimExtra: () => () => void;
 };
+
+export type SlotsFilled = { dock: boolean; extra: boolean };
 
 const SidebarContext = createContext<SidebarContextValue>({
   wide: false,
@@ -33,7 +45,20 @@ const SidebarContext = createContext<SidebarContextValue>({
   setDock: () => {},
   extra: null,
   setExtra: () => {},
+  filled: { dock: false, extra: false },
+  claimDock: () => () => {},
+  claimExtra: () => () => {},
 });
+
+/** A count of the pages filling a slot; claiming returns the release. */
+function useClaims(): [boolean, () => () => void] {
+  const [count, setCount] = useState(0);
+  const claim = useCallback(() => {
+    setCount((n) => n + 1);
+    return () => setCount((n) => n - 1);
+  }, []);
+  return [count > 0, claim];
+}
 
 const ThemeContext = createContext<{ theme: PortalTheme; toggle: () => void }>({
   theme: "light",
@@ -86,6 +111,8 @@ function InlineScript({ html }: { html: string }): ReactElement {
 export function PortalFrame({ children }: { children: ReactNode }): ReactElement {
   const [dock, setDock] = useState<HTMLElement | null>(null);
   const [extra, setExtra] = useState<HTMLElement | null>(null);
+  const [dockFilled, claimDock] = useClaims();
+  const [extraFilled, claimExtra] = useClaims();
   const theme = useSyncExternalStore(
     subscribeTheme,
     () => readPortalTheme(document.cookie),
@@ -110,7 +137,19 @@ export function PortalFrame({ children }: { children: ReactNode }): ReactElement
   }, [theme]);
 
   const themeValue = useMemo(() => ({ theme, toggle: toggleTheme }), [theme]);
-  const sidebarValue = useMemo(() => ({ wide, dock, setDock, extra, setExtra }), [wide, dock, extra]);
+  const sidebarValue = useMemo(
+    () => ({
+      wide,
+      dock,
+      setDock,
+      extra,
+      setExtra,
+      filled: { dock: dockFilled, extra: extraFilled },
+      claimDock,
+      claimExtra,
+    }),
+    [wide, dock, extra, dockFilled, extraFilled, claimDock, claimExtra],
+  );
 
   return (
     <ThemeContext value={themeValue}>
@@ -134,6 +173,17 @@ export function useDockRef(): (element: HTMLElement | null) => void {
   return use(SidebarContext).setDock;
 }
 
+/** Whether a showing page fills the sidebar's dock and extra slots. */
+export function useSlotsFilled(): SlotsFilled {
+  return use(SidebarContext).filled;
+}
+
+/** Holds a slot while `target` is set; the layout effect's cleanup also runs when Activity hides the page. */
+function useClaim(target: HTMLElement | null, claim: () => () => void): void {
+  const active = target !== null;
+  useLayoutEffect(() => (active ? claim() : undefined), [active, claim]);
+}
+
 /** Whether a page's explorer is docked in the sidebar: the window is wide enough to show it, and its slot is mounted. */
 export function useDocked(): boolean {
   const { wide, dock } = use(SidebarContext);
@@ -146,8 +196,10 @@ export function useDocked(): boolean {
  * way, since a portal keeps its React parent.
  */
 export function SidebarDock({ children }: { children: ReactNode }): ReactNode {
-  const { dock } = use(SidebarContext);
-  return useDocked() && dock ? createPortal(children, dock) : children;
+  const { dock, claimDock } = use(SidebarContext);
+  const target = useDocked() ? dock : null;
+  useClaim(target, claimDock);
+  return target ? createPortal(children, target) : children;
 }
 
 /** The ref callback for the sidebar's slot under the app's links. */
@@ -157,6 +209,8 @@ export function useExtraRef(): (element: HTMLElement | null) => void {
 
 /** Renders `children` in the sidebar under the app's links while it's showing, and nowhere on narrow windows. */
 export function SidebarExtra({ children }: { children: ReactNode }): ReactNode {
-  const { wide, extra } = use(SidebarContext);
-  return wide && extra ? createPortal(children, extra) : null;
+  const { wide, extra, claimExtra } = use(SidebarContext);
+  const target = wide ? extra : null;
+  useClaim(target, claimExtra);
+  return target ? createPortal(children, target) : null;
 }

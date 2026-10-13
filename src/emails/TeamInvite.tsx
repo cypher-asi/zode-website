@@ -9,33 +9,54 @@ export interface TeamInviteProps {
   inviteUrl: string;
   /** e.g. "October 25, 2026". */
   expiresOn: string;
+  /** `member` invites a Regular account; `team` also puts it on the ZODE team. */
+  role: "member" | "team";
 }
 
 type Props = TeamInviteProps & { logoSrc?: string };
 
-export const teamInviteSubject = (props: TeamInviteProps): string => `${props.inviterName} invited you to the ZODE team`;
+const COPY = {
+  member: {
+    destination: "ZODE",
+    legend: "Invite",
+    role: "Regular",
+    body: "invited you to ZODE.",
+    button: "Accept invite",
+  },
+  team: {
+    destination: "the ZODE team",
+    legend: "Team invite",
+    role: "Team",
+    body: "added you to the ZODE team in the portal.",
+    button: "Join the team",
+  },
+} as const;
 
-/** Sent to anyone a super admin invites to the ZODE team, with or without a ZODE account. */
+export const teamInviteSubject = (props: TeamInviteProps): string =>
+  `${props.inviterName} invited you to ${COPY[props.role].destination}`;
+
+/** Sent to anyone a super admin invites to ZODE or its team, with or without a ZODE account. */
 export default function TeamInvite(props: Props): ReactElement {
   const { inviterName, inviterEmail, inviteUrl, expiresOn } = props;
+  const copy = COPY[props.role];
 
   const rows: EmailRow[] = [
-    { label: "Role", value: "Team" },
+    { label: "Role", value: copy.role },
     { label: "Invited by", value: inviterEmail },
   ];
 
   return (
-    <Layout preview={`${inviterName} invited you to join the ZODE team.`} logoSrc={props.logoSrc}>
-      <Legend>Team invite</Legend>
+    <Layout preview={`${inviterName} invited you to join ${copy.destination}.`} logoSrc={props.logoSrc}>
+      <Legend>{copy.legend}</Legend>
       <Heading
         as="h1"
         style={{ margin: "0 0 20px", fontSize: "26px", lineHeight: "32px", fontWeight: 600, color: color.ink }}
       >
-        You&apos;ve been invited to the ZODE team.
+        You&apos;ve been invited to {copy.destination}.
       </Heading>
       <Text style={text.paragraph}>
-        {inviterName} added you to the ZODE team in the portal. Open the link below and sign in with this email
-        address. If you don&apos;t have a ZODE account yet, you can create one from the same page.
+        {inviterName} {copy.body} Open the link below and sign in with this email address. If you don&apos;t have a
+        ZODE account yet, you can create one from the same page.
       </Text>
 
       <Rows rows={rows} />
@@ -52,7 +73,7 @@ export default function TeamInvite(props: Props): ReactElement {
           color: color.onInk,
         }}
       >
-        Join the team
+        {copy.button}
       </Button>
 
       <Rule />

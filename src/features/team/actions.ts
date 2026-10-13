@@ -8,6 +8,7 @@ import { isZodeAdmin } from "@/features/account/admin";
 import { getAccount } from "@/features/account/session";
 import type { Account } from "@/features/account/zos";
 import { isUuid } from "@/features/data-room/rooms";
+import { isInviteRole } from "@/features/users/types";
 import { setRole, userIdFor } from "@/features/users/users";
 import { RATE_LIMITED, withinLimits } from "@/lib/rateLimit";
 import { isEmail } from "@/lib/validation";
@@ -52,15 +53,20 @@ function emailInvite(account: Account, invite: IssuedTeamInvite): void {
         inviterEmail: account.email,
         inviteUrl: teamInviteUrl(invite.token),
         expiresOn: expiresOn.format(invite.expiresAt),
+        role: invite.role,
       },
       invite.token.slice(0, 16),
     ),
   );
 }
 
+/** Emails an invite to each address, as Team unless the form's `role` says Regular (`member`). */
 export async function inviteTeamAction(_prev: TeamActionState, formData: FormData): Promise<TeamActionState> {
   const account = await superAdmin();
   if (!account) return NO_ACCESS;
+
+  const role = formData.get("role") ?? "team";
+  if (!isInviteRole(role)) return { error: "Choose Regular or Team." };
 
   const emails = [
     ...new Set(
@@ -77,7 +83,7 @@ export async function inviteTeamAction(_prev: TeamActionState, formData: FormDat
   if (!(await withinInviteLimits(account, emails.length))) return { error: RATE_LIMITED };
 
   try {
-    for (const email of emails) emailInvite(account, await issueTeamInvite(email, account.userId));
+    for (const email of emails) emailInvite(account, await issueTeamInvite(email, account.userId, role));
   } catch (error) {
     console.error("[team] couldn't issue invites", error);
     return { error: "Couldn't send invites right now. Please try again." };
@@ -151,5 +157,5 @@ export async function acceptTeamInviteAction(token: string): Promise<TeamActionS
   if (!account) return { error: "Log in to accept this invite." };
   const result = await acceptTeamInvite(token, account);
   if (!result.ok) return { error: ACCEPT_ERRORS[result.reason] };
-  redirect("/portal/settings/team");
+  redirect(result.role === "team" ? "/portal/settings/team" : "/portal");
 }

@@ -50,7 +50,7 @@ export function TeamList({
   );
 }
 
-/** Team invites not yet accepted, with Resend and Revoke. */
+/** Invites not yet accepted, with the role each grants, and Resend and Revoke. */
 export function PendingTeamInvites({ invites }: { invites: PendingTeamInvite[] }): ReactElement {
   return (
     <ul className={styles.list}>
@@ -69,6 +69,7 @@ export function PendingTeamInvites({ invites }: { invites: PendingTeamInvite[] }
             </span>
             <span className={styles.rowEnd}>
               <span className={styles.pill}>{invite.expired ? "Expired" : "Pending"}</span>
+              <span className={styles.pill}>{ROLE_LABELS[invite.role]}</span>
               <PendingInviteButtons inviteId={invite.id} />
             </span>
           </div>

@@ -9,7 +9,7 @@ import { kindLabel, type Post } from "@/features/posts/types";
 import { RoleButton } from "@/features/users/RoleButton";
 import { ROLE_LABELS, type User } from "@/features/users/types";
 import { PortalIcon } from "./icons";
-import { TOOL_LINKS } from "./nav";
+import { RESOURCE_LINKS, TOOL_LINKS, type NavLink } from "./nav";
 import styles from "./portal.module.css";
 
 const usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -110,18 +110,16 @@ export function RoomList({ rooms }: { rooms: RoomSummary[] }): ReactElement {
   );
 }
 
-/** The site's tools, for windows too narrow for the sidebar that lists them beside Home. */
-export function ToolList(): ReactElement {
+function SiteLinkList({ title, links }: { title: string; links: readonly NavLink[] }): ReactElement {
   return (
-    <section className={`${styles.section} ${styles.tools}`} aria-label="Tools">
+    <section className={`${styles.section} ${styles.tools}`} aria-label={title}>
       <div className={styles.sectionHead}>
-        <h2 className={styles.sectionTitle}>Tools</h2>
+        <h2 className={styles.sectionTitle}>{title}</h2>
       </div>
       <ul className={styles.list}>
-        {TOOL_LINKS.map((link) => (
-          <li key={link.href}>
-            {/* The site's tools, e.g. the cluster builder's 3D bundle, aren't worth warming up from the portal. */}
-            <Link className={styles.row} href={link.href} prefetch={false}>
+        {links.map((link) => {
+          const content = (
+            <>
               <span className={styles.rowIcon}>
                 <PortalIcon name={link.icon} />
               </span>
@@ -131,11 +129,35 @@ export function ToolList(): ReactElement {
               <span className={styles.rowEnd}>
                 <Chevron />
               </span>
-            </Link>
-          </li>
-        ))}
+            </>
+          );
+          return (
+            <li key={link.href}>
+              {link.external ? (
+                <a className={styles.row} href={link.href} target="_blank" rel="noreferrer noopener">
+                  {content}
+                </a>
+              ) : (
+                /* The site's tools, e.g. the cluster builder's 3D bundle, aren't worth warming up from the portal. */
+                <Link className={styles.row} href={link.href} prefetch={false}>
+                  {content}
+                </Link>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </section>
+  );
+}
+
+/** The site's tools and resources, for windows too narrow for the sidebar that lists them beside Home. */
+export function ToolList(): ReactElement {
+  return (
+    <>
+      <SiteLinkList title="Tools" links={TOOL_LINKS} />
+      <SiteLinkList title="Resources" links={RESOURCE_LINKS} />
+    </>
   );
 }
 

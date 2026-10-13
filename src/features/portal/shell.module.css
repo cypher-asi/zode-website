@@ -7,11 +7,10 @@
  * the wordmark in its corner. Inherits `--edge` from SiteShell. The page
  * itself never scrolls, so the header's top fade is off here.
  *
- * Spacing is even all the way down: the rail, sidebar and panel all start
- * `--portal-gap` below the header (the Buy Compute button's bottom edge,
- * `--header-bottom`) and end `--portal-gap` above the bottom. Side by side,
- * every panel (the two trays, the sidebar and the panel) is
- * `--panel-gap` from the next.
+ * The rail, sidebar and panel all start `--portal-gap` below the header (the
+ * Buy Compute button's bottom edge, `--header-bottom`) and end the same
+ * `--portal-gap` above the bottom. Side by side, every panel (the two trays, the sidebar
+ * and the panel) is `--panel-gap` from the next.
  *
  * `--sidebar-space` is zero under 1100px, where the sidebar is hidden. Under
  * 700px the portal lays out like an app instead; see the phone block below.
@@ -23,7 +22,7 @@
   --sidebar-width: 288px;
   --panel-gap: 12px;
   --sidebar-space: 0px;
-  --portal-gap: 32px;
+  --portal-gap: 20px;
   --header-bottom: calc(59px + env(safe-area-inset-top, 0px));
   --portal-top: calc(var(--header-bottom) + var(--portal-gap));
   --content-inset: calc(var(--tray-width) + var(--sidebar-space) + var(--panel-gap));
@@ -340,7 +339,6 @@
   .frame {
     --tray-width: 60px;
     --rail-item: 38px;
-    --portal-gap: 24px;
     --header-bottom: calc(47px + env(safe-area-inset-top, 0px));
   }
 }

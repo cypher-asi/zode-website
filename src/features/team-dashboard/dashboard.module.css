@@ -173,13 +173,6 @@ a.card:focus-visible {
   color: var(--color-danger);
 }
 
-.note {
-  margin: 16px 0 0;
-  color: var(--color-text-tertiary);
-  font-size: var(--text-xs);
-  line-height: 1.5;
-}
-
 @media (max-width: 800px) {
   .grid {
     grid-template-columns: minmax(0, 1fr);

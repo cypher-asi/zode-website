@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutButton } from "@/features/account/LogoutButton";
 import { PortalIcon } from "./icons";
-import { TOOL_LINKS, type AppId, type PortalApp } from "./nav";
+import { RESOURCE_LINKS, TOOL_LINKS, type AppId, type PortalApp } from "./nav";
 import { usePortalTheme } from "./PortalFrame";
 import styles from "./more.module.css";
 
@@ -175,6 +175,27 @@ export function PortalMoreSheet({
                 <span className={styles.rowLabel}>{link.label}</span>
                 <Chevron />
               </Link>
+            </li>
+          ))}
+        </ul>
+
+        <h2 className={styles.heading}>Resources</h2>
+        <ul className={styles.group}>
+          {RESOURCE_LINKS.map((link) => (
+            <li key={link.href}>
+              {link.external ? (
+                <a href={link.href} target="_blank" rel="noreferrer noopener" className={styles.row}>
+                  <PortalIcon name={link.icon} className={styles.rowIcon} />
+                  <span className={styles.rowLabel}>{link.label}</span>
+                  <Chevron />
+                </a>
+              ) : (
+                <Link href={link.href} prefetch={false} className={styles.row}>
+                  <PortalIcon name={link.icon} className={styles.rowIcon} />
+                  <span className={styles.rowLabel}>{link.label}</span>
+                  <Chevron />
+                </Link>
+              )}
             </li>
           ))}
         </ul>

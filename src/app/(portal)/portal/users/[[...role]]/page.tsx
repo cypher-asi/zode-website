@@ -7,7 +7,17 @@ import { requireAccount } from "@/features/account/session";
 import { loadUsers } from "@/features/portal/data";
 import { PortalLoading } from "@/features/portal/PortalLoading";
 import { Empty, PageHeader, UserList } from "@/features/portal/sections";
-import { ROLE_LABELS, ROLE_SLUGS, USER_ROLES, roleForSlug, type UserRole } from "@/features/users/types";
+import { listPendingTeamInvites, type PendingTeamInvite } from "@/features/team/invites";
+import { PendingTeamInvites } from "@/features/team/TeamList";
+import { InviteUserButton } from "@/features/users/InviteUserButton";
+import {
+  ROLE_LABELS,
+  ROLE_SLUGS,
+  USER_ROLES,
+  roleForSlug,
+  type InviteRole,
+  type UserRole,
+} from "@/features/users/types";
 import tabs from "@/features/data-room/room.module.css";
 import styles from "@/features/portal/portal.module.css";
 
@@ -31,7 +41,7 @@ const SUBTITLES: Record<UserRole | "all", string> = {
 const EMPTY: Record<UserRole | "all", string> = {
   all: "No one has signed in yet.",
   member: "No Regular accounts yet.",
-  team: "No one is on the Team yet. Invite people from Settings › Team.",
+  team: "No one is on the Team yet. Use Invite to add people.",
   super_admin: "No super admins yet.",
 };
 
@@ -52,7 +62,10 @@ async function Users({ params }: { params: PageProps<"/portal/users/[[...role]]"
 
   const account = await requireAccount(role ? `/portal/users/${ROLE_SLUGS[role]}` : "/portal/users");
   if (!(await isZodeAdmin(account))) notFound();
-  const users = await loadUsers();
+  const [users, invites] = await Promise.all([
+    loadUsers(),
+    role === "super_admin" ? Promise.resolve<PendingTeamInvite[]>([]) : loadInvites(role ?? undefined),
+  ]);
   const shown = users && role ? users.filter((user) => user.role === role) : users;
 
   return (
@@ -74,14 +87,35 @@ async function Users({ params }: { params: PageProps<"/portal/users/[[...role]]"
             ))}
           </nav>
         }
+        actions={<InviteUserButton defaultRole={role === "team" ? "team" : "member"} />}
       />
-      {shown === null ? (
-        <Empty>Users couldn&apos;t be loaded right now. Please try again shortly.</Empty>
-      ) : shown.length ? (
-        <UserList users={shown} selfZosUserId={account.userId} />
-      ) : (
-        <Empty>{EMPTY[role ?? "all"]}</Empty>
-      )}
+      <section className={styles.section} aria-label={role ? ROLE_LABELS[role] : "Users"}>
+        {shown === null ? (
+          <Empty>Users couldn&apos;t be loaded right now. Please try again shortly.</Empty>
+        ) : shown.length ? (
+          <UserList users={shown} selfZosUserId={account.userId} />
+        ) : (
+          <Empty>{EMPTY[role ?? "all"]}</Empty>
+        )}
+      </section>
+      {invites?.length ? (
+        <section className={styles.section} aria-labelledby="users-invites">
+          <div className={styles.sectionHead}>
+            <h2 id="users-invites" className={styles.sectionTitle}>
+              Pending invites
+            </h2>
+          </div>
+          <PendingTeamInvites invites={invites} />
+        </section>
+      ) : null}
     </div>
   );
+}
+
+/** Invites not yet accepted, for one role or all; `null` hides the section when they couldn't be loaded. */
+function loadInvites(role: InviteRole | undefined): Promise<PendingTeamInvite[] | null> {
+  return listPendingTeamInvites(role).catch((error: unknown) => {
+    console.error("[users] couldn't load invites", error);
+    return null;
+  });
 }

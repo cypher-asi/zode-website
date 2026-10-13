@@ -52,7 +52,7 @@ async function Team(): Promise<ReactElement> {
 
   const [members, invites, users] = await Promise.all([
     orNull(listTeam(), "the team"),
-    superAdmin ? orNull(listPendingTeamInvites(), "team invites") : Promise.resolve<PendingTeamInvite[]>([]),
+    superAdmin ? orNull(listPendingTeamInvites("team"), "team invites") : Promise.resolve<PendingTeamInvite[]>([]),
     superAdmin ? orNull(listUsers(), "users") : Promise.resolve<User[]>([]),
   ]);
   const candidates = (users ?? [])

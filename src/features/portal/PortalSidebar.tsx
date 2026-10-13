@@ -4,8 +4,8 @@ import { useState, type ReactElement } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PortalIcon } from "./icons";
-import { activeApp, activeHref, portalApps, roomIdIn, type NavAccess, type NavLink } from "./nav";
-import { useDockRef, useExtraRef } from "./PortalFrame";
+import { activeApp, activeHref, portalApps, RESOURCE_LINKS, roomIdIn, type NavAccess, type NavLink } from "./nav";
+import { useDockRef, useExtraRef, useSlotsFilled } from "./PortalFrame";
 import styles from "./sidebar.module.css";
 
 export type SidebarRoom = { id: string; name: string };
@@ -20,20 +20,33 @@ const ROOM_PLACEHOLDER_ROWS = 3;
 function Links({ links, current }: { links: readonly NavLink[]; current: string | null }): ReactElement {
   return (
     <ul className={styles.links}>
-      {links.map((link) => (
-        <li key={link.href}>
-          {/* The site's tools, e.g. the cluster builder's 3D bundle, aren't worth warming up from the portal. */}
-          <Link
-            href={link.href}
-            prefetch={link.href.startsWith("/portal") ? undefined : false}
-            className={styles.link}
-            aria-current={link.href === current ? "page" : undefined}
-          >
+      {links.map((link) => {
+        const content = (
+          <>
             <PortalIcon name={link.icon} className={styles.linkIcon} />
             <span className={styles.linkLabel}>{link.label}</span>
-          </Link>
-        </li>
-      ))}
+          </>
+        );
+        return (
+          <li key={link.href}>
+            {link.external ? (
+              <a href={link.href} target="_blank" rel="noreferrer noopener" className={styles.link}>
+                {content}
+              </a>
+            ) : (
+              /* The site's tools, e.g. the cluster builder's 3D bundle, aren't worth warming up from the portal. */
+              <Link
+                href={link.href}
+                prefetch={link.href.startsWith("/portal") ? undefined : false}
+                className={styles.link}
+                aria-current={link.href === current ? "page" : undefined}
+              >
+                {content}
+              </Link>
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -110,6 +123,7 @@ export function PortalSidebar({
   const pathname = usePathname() ?? "/portal";
   const dockRef = useDockRef();
   const extraRef = useExtraRef();
+  const filled = useSlotsFilled();
   const app = activeApp(pathname, portalApps(access));
   const roomId = app.id === "rooms" ? roomIdIn(pathname) : null;
   const room = roomId ? rooms?.find(({ id }) => id === roomId) : undefined;
@@ -146,7 +160,7 @@ export function PortalSidebar({
       </div>
 
       <div className={styles.content}>
-        <div ref={dockRef} className={styles.dock} />
+        <div ref={dockRef} className={styles.dock} data-filled={filled.dock || undefined} />
 
         <div key={roomId ? "room" : app.id} className={styles.body}>
           {roomId ? (
@@ -161,13 +175,17 @@ export function PortalSidebar({
                 <h3 className={styles.heading}>Tools</h3>
                 <Links links={app.links} current={current} />
               </section>
+              <section className={styles.section} aria-label="Resources">
+                <h3 className={styles.heading}>Resources</h3>
+                <Links links={RESOURCE_LINKS} current={null} />
+              </section>
             </>
           ) : app.id === "rooms" ? (
             <Rooms rooms={rooms} current={null} />
           ) : (
             <>
               <Links links={app.links} current={current} />
-              <div ref={extraRef} className={styles.extra} />
+              <div ref={extraRef} className={styles.extra} data-filled={filled.extra || undefined} />
             </>
           )}
         </div>
