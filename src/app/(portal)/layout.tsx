@@ -11,9 +11,9 @@ import { PortalSidebar } from "@/features/portal/PortalSidebar";
 import styles from "@/features/portal/shell.module.css";
 
 /**
- * The signed-in portal: a black rail of section icons down the left, the
- * labeled sidebar for the rail's current group beside it, and the site's
- * pinned header (wordmark nudged right of both) over the panel.
+ * The signed-in portal: a black rail of apps down the left, the sidebar for
+ * the current app beside it, and the site's pinned header (wordmark nudged
+ * right of both) over the panel.
  */
 export default async function PortalLayout({
   children,
@@ -40,13 +40,9 @@ export default async function PortalLayout({
           <>
             <PortalNav access={access} />
             <PortalSidebar
-              account={
-                account
-                  ? { displayName: account.displayName, email: account.email, profileImage: account.profileImage }
-                  : null
-              }
               access={access}
               counts={{ rooms: rooms?.length, orders: orders?.length, contracts: contracts?.length }}
+              rooms={rooms && rooms.map(({ id, name, fileCount }) => ({ id, name, fileCount }))}
             />
           </>
         }

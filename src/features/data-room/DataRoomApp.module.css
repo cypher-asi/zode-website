@@ -19,6 +19,31 @@
   background: var(--color-paper);
 }
 
+/*
+ * Docked in the portal's sidebar, the list takes the sidebar's glass for its
+ * background and the viewer has the room to itself. The sidebar-open rules
+ * cover the first paint, before the list has moved over.
+ */
+.app[data-docked] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.side[data-docked] {
+  flex: 1;
+  background: none;
+}
+
+@media (min-width: 1101px) {
+  [data-sidebar="open"] .app {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-sidebar="open"] .app > .side,
+  [data-sidebar="open"] .app > [role="separator"] {
+    display: none;
+  }
+}
+
 .toolbar {
   display: flex;
   align-items: center;

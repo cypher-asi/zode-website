@@ -1,14 +1,41 @@
 "use client";
 
-import { createContext, use, useState, type ReactElement, type ReactNode } from "react";
+import {
+  createContext,
+  use,
+  useState,
+  useSyncExternalStore,
+  type ReactElement,
+  type ReactNode,
+} from "react";
+import { createPortal } from "react-dom";
 import { PortalIcon } from "./icons";
-import { SIDEBAR_COOKIE, type SidebarState } from "./nav";
+import { SIDEBAR_COOKIE, SIDEBAR_MEDIA, type SidebarState } from "./nav";
 import styles from "./shell.module.css";
 
-const SidebarContext = createContext<{ state: SidebarState; toggle: () => void }>({
+type SidebarContextValue = {
+  state: SidebarState;
+  toggle: () => void;
+  /** Whether the window is wide enough to show the sidebar at all. */
+  wide: boolean;
+  /** The sidebar's slot for the page's own explorer, e.g. a data room's files. */
+  dock: HTMLElement | null;
+  setDock: (element: HTMLElement | null) => void;
+};
+
+const SidebarContext = createContext<SidebarContextValue>({
   state: "open",
   toggle: () => {},
+  wide: false,
+  dock: null,
+  setDock: () => {},
 });
+
+const subscribeWide = (onChange: () => void) => {
+  const query = window.matchMedia(SIDEBAR_MEDIA);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+};
 
 /**
  * Wraps the portal shell and owns whether the labeled sidebar is open. The
@@ -17,6 +44,12 @@ const SidebarContext = createContext<{ state: SidebarState; toggle: () => void }
  */
 export function PortalFrame({ initial, children }: { initial: SidebarState; children: ReactNode }): ReactElement {
   const [state, setState] = useState(initial);
+  const [dock, setDock] = useState<HTMLElement | null>(null);
+  const wide = useSyncExternalStore(
+    subscribeWide,
+    () => window.matchMedia(SIDEBAR_MEDIA).matches,
+    () => false,
+  );
 
   const toggle = () => {
     const next = state === "open" ? "collapsed" : "open";
@@ -25,12 +58,33 @@ export function PortalFrame({ initial, children }: { initial: SidebarState; chil
   };
 
   return (
-    <SidebarContext value={{ state, toggle }}>
+    <SidebarContext value={{ state, toggle, wide, dock, setDock }}>
       <div className={styles.frame} data-sidebar={state}>
         {children}
       </div>
     </SidebarContext>
   );
+}
+
+/** The ref callback for the sidebar's dock slot. */
+export function useDockRef(): (element: HTMLElement | null) => void {
+  return use(SidebarContext).setDock;
+}
+
+/** Whether a page's explorer is docked in the sidebar: it's open, the window is wide enough, and its slot is mounted. */
+export function useDocked(): boolean {
+  const { state, wide, dock } = use(SidebarContext);
+  return state === "open" && wide && dock !== null;
+}
+
+/**
+ * Renders `children` in the sidebar while it's showing, and in place
+ * otherwise (collapsed, or a narrow window); `useDocked` says which. State
+ * stays with the page either way, since a portal keeps its React parent.
+ */
+export function SidebarDock({ children }: { children: ReactNode }): ReactNode {
+  const { dock } = use(SidebarContext);
+  return useDocked() && dock ? createPortal(children, dock) : children;
 }
 
 /**

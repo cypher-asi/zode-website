@@ -1,7 +1,8 @@
 /*
- * The portal's frame: a fixed rail down the left edge (a black bar of icons
- * in a frosted tray, with Settings in a tray of its own at the foot), the
- * labeled sidebar beside it (sidebar.module.css), the pinned wordmark just
+ * The portal's frame: a fixed rail of apps down the left edge (a black bar
+ * of icons in a frosted tray, with Settings in a tray of its own at the
+ * foot), the sidebar for the current app beside it (sidebar.module.css,
+ * where `SIDEBAR_MEDIA` in nav.ts mirrors the 1100px cut), the pinned wordmark just
  * right of both, and one fixed panel that every section renders into.
  * Inherits `--edge` from SiteShell. The page itself never scrolls, so the
  * header's top fade is off here.
@@ -19,7 +20,7 @@
   --tray-pad: 6px;
   --tray-width: 64px;
   --rail-item: 40px;
-  --sidebar-width: 248px;
+  --sidebar-width: 288px;
   --sidebar-gap: 12px;
   --sidebar-space: 0px;
   --portal-gap: 32px;
@@ -124,21 +125,12 @@
   gap: 4px;
 }
 
-/* Beside the open sidebar the rail switches groups; otherwise it lists every section. */
-.groups,
+/* Brings the sidebar back once it's collapsed; under 1100px there's no room for it. */
 .item.railToggle {
   display: none;
 }
 
 @media (min-width: 1101px) {
-  .frame[data-sidebar="open"] .flat {
-    display: none;
-  }
-
-  .frame[data-sidebar="open"] .groups {
-    display: flex;
-  }
-
   .frame[data-sidebar="collapsed"] .item.railToggle {
     display: grid;
     margin-top: auto;

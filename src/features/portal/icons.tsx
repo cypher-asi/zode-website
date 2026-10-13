@@ -5,13 +5,16 @@ export type PortalIconName =
   | "rooms"
   | "orders"
   | "contracts"
+  | "zrm"
   | "posts"
   | "subscribers"
   | "users"
   | "settings"
   | "person"
   | "admin"
-  | "sidebar";
+  | "sidebar"
+  | "cluster"
+  | "chart";
 
 /*
  * Drawn on a 24px grid inside a 2px margin, with at most three strokes each.
@@ -45,6 +48,13 @@ const GLYPHS: Record<PortalIconName, ReactElement> = {
       <path pathLength={1} d="M18.75 7.5v11.75a2 2 0 0 1-2 2H7.25a2 2 0 0 1-2-2V4.75a2 2 0 0 1 2-2H14z" />
       <path pathLength={1} d="M14 2.75V6a1.5 1.5 0 0 0 1.5 1.5h3.25" />
       <path pathLength={1} d="M8.25 17.5c.9-2 2-2.3 2.6-.9s1.4 1.4 2.3-.2c.6-.9 1.7-.6 2.6.3" />
+    </>
+  ),
+  zrm: (
+    <>
+      <rect pathLength={1} x="3.25" y="4.75" width="17.5" height="14.5" rx="2.5" />
+      <circle pathLength={1} cx="9" cy="10.5" r="2.25" />
+      <path pathLength={1} d="M5.75 16.25a3.5 3.25 0 0 1 6.5 0M14.5 9.75h3.25M14.5 13.25h3.25" />
     </>
   ),
   posts: (
@@ -92,6 +102,19 @@ const GLYPHS: Record<PortalIconName, ReactElement> = {
     <>
       <rect pathLength={1} x="3.25" y="4.75" width="17.5" height="14.5" rx="3" />
       <path pathLength={1} d="M9.25 4.75v14.5" />
+    </>
+  ),
+  cluster: (
+    <>
+      <rect pathLength={1} x="3.75" y="3.75" width="7" height="7" rx="2" />
+      <rect pathLength={1} x="13.25" y="3.75" width="7" height="7" rx="2" />
+      <path pathLength={1} d="M5.75 13.25h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2zm9.5 0h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2z" />
+    </>
+  ),
+  chart: (
+    <>
+      <path pathLength={1} d="M4.75 19.25h14.5" />
+      <path pathLength={1} d="M7.75 15.75v-4M12 15.75v-8.5M16.25 15.75v-6" />
     </>
   ),
 };

@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useMemo, useRef, useState, type ReactElement } from "react";
+import { SidebarDock, useDocked } from "@/features/portal/PortalFrame";
 import {
   createFolderAction,
   deleteItemsAction,
@@ -29,8 +30,9 @@ interface DataRoomAppProps {
 
 /**
  * The data room itself: the file tree on the left, a resizable divider, and
- * the viewer on the right. The summary, when written, is pinned atop the tree
- * and open until a file is.
+ * the viewer on the right. While the portal's sidebar is showing, the tree
+ * docks there instead and the viewer takes the whole panel. The summary,
+ * when written, is pinned atop the tree and open until a file is.
  */
 export function DataRoomApp({ roomId, isAdmin, tree, initialFileId, summary }: DataRoomAppProps): ReactElement {
   const index = useMemo(() => indexTree(tree), [tree]);
@@ -53,6 +55,7 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId, summary }: D
   const [dialog, setDialog] = useState<Omit<DialogProps, "onClose"> | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const uploads = useUploads(roomId);
+  const docked = useDocked();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -245,158 +248,167 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId, summary }: D
   const activeUploads = uploads.items.filter((item) => item.status === "uploading" || item.status === "queued").length;
 
   return (
-    <div ref={containerRef} className={styles.app} data-view={openFile || summaryOpen ? "viewer" : "tree"}>
-      <section className={styles.side} aria-label="Files">
-        <div className={styles.toolbar}>
-          <label className={styles.search}>
-            <Icon name="search" />
-            <input
-              type="search"
-              placeholder="Search files"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              aria-label="Search files"
-            />
-          </label>
-          {isAdmin ? (
-            <>
-              <button type="button" className={ui.iconButton} onClick={newFolder} aria-label="New folder" title="New folder">
-                <Icon name="folderPlus" />
-              </button>
-              <button type="button" className={ui.primary} onClick={() => fileInputRef.current?.click()}>
-                <Icon name="upload" />
-                Upload
-              </button>
+    <div
+      ref={containerRef}
+      className={styles.app}
+      data-view={openFile || summaryOpen ? "viewer" : "tree"}
+      data-docked={docked ? "" : undefined}
+    >
+      <SidebarDock>
+        <section className={styles.side} aria-label="Files" data-docked={docked ? "" : undefined}>
+          <div className={styles.toolbar}>
+            <label className={styles.search}>
+              <Icon name="search" />
               <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                hidden
-                onChange={(event) => {
-                  startUpload([...(event.target.files ?? [])], folderId);
-                  event.target.value = "";
-                }}
+                type="search"
+                placeholder="Search files"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                aria-label="Search files"
               />
-            </>
-          ) : null}
-        </div>
-        <nav className={styles.location} aria-label="Current folder">
-          <button
-            type="button"
-            onClick={() => setActiveFolderId(null)}
-            aria-current={folderId ? undefined : "location"}
-            aria-label="All files"
-            title="All files"
-          >
-            /
-          </button>
-          {trail.map((id, i) => (
-            <Fragment key={id}>
-              {i > 0 ? <span aria-hidden="true">/</span> : null}
-              <button
-                type="button"
-                onClick={() => setActiveFolderId(id)}
-                aria-current={id === folderId ? "location" : undefined}
-              >
-                {index.folders.get(id)?.name}
-              </button>
-            </Fragment>
-          ))}
-        </nav>
-
-        <FileTree
-          index={index}
-          isAdmin={isAdmin}
-          query={query}
-          openFileId={openFileId}
-          activeFolderId={folderId}
-          checked={checked}
-          expanded={expanded}
-          onToggleExpand={toggleExpand}
-          onToggleCheck={toggleCheck}
-          onOpenFile={open}
-          onSelectFolder={setActiveFolderId}
-          onAction={(action, item) => runAction(action, [item])}
-          onDropFiles={startUpload}
-          onMove={move}
-          summary={summary ? { open: summaryOpen, onOpen: openSummary } : undefined}
-        />
-
-        {uploads.items.length ? (
-          <div className={styles.uploads} aria-live="polite">
-            <div className={styles.uploadsHeader}>
-              <span>{activeUploads ? `Uploading ${activeUploads} file${activeUploads === 1 ? "" : "s"}…` : "Uploads"}</span>
-              {activeUploads ? null : (
-                <button type="button" onClick={uploads.dismiss}>
-                  Dismiss
+            </label>
+            {isAdmin ? (
+              <>
+                <button type="button" className={ui.iconButton} onClick={newFolder} aria-label="New folder" title="New folder">
+                  <Icon name="folderPlus" />
                 </button>
-              )}
-            </div>
-            <ul>
-              {uploads.items.map((item) => (
-                <li key={item.id} data-status={item.status}>
-                  <span className={styles.uploadName}>{item.name}</span>
-                  <span className={styles.uploadState}>
-                    {item.status === "error" ? item.error : item.status === "done" ? "Done" : `${item.progress}%`}
-                  </span>
-                  <span className={styles.uploadBar} style={{ width: `${item.progress}%` }} />
-                </li>
-              ))}
-            </ul>
+                <button type="button" className={ui.primary} onClick={() => fileInputRef.current?.click()}>
+                  <Icon name="upload" />
+                  Upload
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  hidden
+                  onChange={(event) => {
+                    startUpload([...(event.target.files ?? [])], folderId);
+                    event.target.value = "";
+                  }}
+                />
+              </>
+            ) : null}
           </div>
-        ) : null}
-
-        {notice ? (
-          <p className={styles.notice} role="alert">
-            {notice}
-            <button type="button" onClick={() => setNotice(null)} aria-label="Dismiss">
-              <Icon name="close" />
+          <nav className={styles.location} aria-label="Current folder">
+            <button
+              type="button"
+              onClick={() => setActiveFolderId(null)}
+              aria-current={folderId ? undefined : "location"}
+              aria-label="All files"
+              title="All files"
+            >
+              /
             </button>
-          </p>
-        ) : null}
+            {trail.map((id, i) => (
+              <Fragment key={id}>
+                {i > 0 ? <span aria-hidden="true">/</span> : null}
+                <button
+                  type="button"
+                  onClick={() => setActiveFolderId(id)}
+                  aria-current={id === folderId ? "location" : undefined}
+                >
+                  {index.folders.get(id)?.name}
+                </button>
+              </Fragment>
+            ))}
+          </nav>
 
-        <div className={styles.footer}>
-          {checked.size ? (
-            <>
-              <span className={styles.count}>{checked.size} selected</span>
-              <button type="button" className={styles.linkButton} onClick={() => setChecked(new Set())}>
-                Clear
-              </button>
-              {isAdmin ? (
-                <>
-                  <button type="button" className={styles.linkButton} onClick={() => runAction("move", checkedRefs)}>
-                    Move
+          <FileTree
+            index={index}
+            isAdmin={isAdmin}
+            query={query}
+            openFileId={openFileId}
+            activeFolderId={folderId}
+            checked={checked}
+            expanded={expanded}
+            onToggleExpand={toggleExpand}
+            onToggleCheck={toggleCheck}
+            onOpenFile={open}
+            onSelectFolder={setActiveFolderId}
+            onAction={(action, item) => runAction(action, [item])}
+            onDropFiles={startUpload}
+            onMove={move}
+            summary={summary ? { open: summaryOpen, onOpen: openSummary } : undefined}
+          />
+
+          {uploads.items.length ? (
+            <div className={styles.uploads} aria-live="polite">
+              <div className={styles.uploadsHeader}>
+                <span>{activeUploads ? `Uploading ${activeUploads} file${activeUploads === 1 ? "" : "s"}…` : "Uploads"}</span>
+                {activeUploads ? null : (
+                  <button type="button" onClick={uploads.dismiss}>
+                    Dismiss
                   </button>
-                  <button
-                    type="button"
-                    className={styles.linkButton}
-                    data-danger=""
-                    onClick={() => runAction("delete", checkedRefs)}
-                  >
-                    Delete
-                  </button>
-                </>
-              ) : null}
-              <button type="button" className={ui.primary} onClick={downloadSelected}>
-                <Icon name="download" />
-                Download
+                )}
+              </div>
+              <ul>
+                {uploads.items.map((item) => (
+                  <li key={item.id} data-status={item.status}>
+                    <span className={styles.uploadName}>{item.name}</span>
+                    <span className={styles.uploadState}>
+                      {item.status === "error" ? item.error : item.status === "done" ? "Done" : `${item.progress}%`}
+                    </span>
+                    <span className={styles.uploadBar} style={{ width: `${item.progress}%` }} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {notice ? (
+            <p className={styles.notice} role="alert">
+              {notice}
+              <button type="button" onClick={() => setNotice(null)} aria-label="Dismiss">
+                <Icon name="close" />
               </button>
-            </>
-          ) : (
-            <span className={styles.count}>
-              {tree.files.length} file{tree.files.length === 1 ? "" : "s"} · {formatBytes(totalBytes)}
-            </span>
-          )}
-        </div>
+            </p>
+          ) : null}
 
-        <form ref={archiveRef} method="post" action={`/api/data-rooms/${roomId}/archive`} hidden>
-          {checkedRefs.map((item) => (
-            <input key={`${item.kind}:${item.id}`} type="hidden" name={item.kind} value={item.id} />
-          ))}
-        </form>
-      </section>
+          <div className={styles.footer}>
+            {checked.size ? (
+              <>
+                <span className={styles.count}>{checked.size} selected</span>
+                <button type="button" className={styles.linkButton} onClick={() => setChecked(new Set())}>
+                  Clear
+                </button>
+                {isAdmin ? (
+                  <>
+                    <button type="button" className={styles.linkButton} onClick={() => runAction("move", checkedRefs)}>
+                      Move
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.linkButton}
+                      data-danger=""
+                      onClick={() => runAction("delete", checkedRefs)}
+                    >
+                      Delete
+                    </button>
+                  </>
+                ) : null}
+                <button type="button" className={ui.primary} onClick={downloadSelected}>
+                  <Icon name="download" />
+                  Download
+                </button>
+              </>
+            ) : (
+              <span className={styles.count}>
+                {tree.files.length} file{tree.files.length === 1 ? "" : "s"} · {formatBytes(totalBytes)}
+              </span>
+            )}
+          </div>
 
-      <Splitter containerRef={containerRef} storageKey="zode:data-room:tree-share" />
+          <form ref={archiveRef} method="post" action={`/api/data-rooms/${roomId}/archive`} hidden>
+            {checkedRefs.map((item) => (
+              <input key={`${item.kind}:${item.id}`} type="hidden" name={item.kind} value={item.id} />
+            ))}
+          </form>
+        </section>
+      </SidebarDock>
+
+      {docked ? null : (
+        <Splitter containerRef={containerRef} storageKey="zode:data-room:tree-share" />
+      )}
 
       <section className={styles.main} aria-label="Viewer">
         {summary && summaryOpen ? (
