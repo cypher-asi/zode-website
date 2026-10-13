@@ -6,6 +6,7 @@ import {
   DILIGENCE_FIELDS,
   STATUS_LABELS,
   summaryEconomics,
+  toUsd,
   type DiligenceSource,
   type DiligenceStatus,
   type DiligenceSummary,
@@ -86,20 +87,44 @@ const moneyFigure = (label: string, money: Money, usd: number | null): Figure =>
   sources: money.sources,
 });
 
+const perKwMonth = (usd: number) => `$${Number(usd.toFixed(2))} / kW-mo`;
+
+/** The figures that differ by deal: what a purchase pays for the site, or what a lease costs. */
+function siteFigures(summary: Summary): Figure[] {
+  if (summary.kind === "lease") {
+    const { rent, capitalContribution, fx } = summary.economics;
+    return [
+      {
+        label: "Base rent",
+        value: perKwMonth(rent.baseLease),
+        note: `${pct(rent.leaseEscalation, 1)} / yr escalation`,
+        detail: rent.note,
+        estimate: rent.estimate,
+        sources: rent.sources,
+      },
+      moneyFigure("Capital contribution", capitalContribution, toUsd(capitalContribution, fx)),
+    ];
+  }
+  const { purchasePrice, conversionCost, fx } = summary.economics;
+  return [
+    moneyFigure("Purchase price", purchasePrice, toUsd(purchasePrice, fx)),
+    moneyFigure("Conversion cost", conversionCost, toUsd(conversionCost, fx)),
+  ];
+}
+
 /**
- * The site's economics from the standard compute model with the site owned,
- * then the room's diligence answers as a checklist. Each row opens to its
- * reasoning and the room files it rests on.
+ * The site's economics from the standard compute model, as a purchase or a
+ * lease by the room's kind, then the room's diligence answers as a checklist.
+ * Each row opens to its reasoning and the room files it rests on.
  */
 export function SummaryView({ roomId, summary }: { roomId: string; summary: Summary }): ReactElement {
   const e = summary.economics;
-  const x = summaryEconomics(e);
+  const x = summaryEconomics(summary);
   const r = x.result;
   const i = x.inputs;
 
   const figures: Figure[] = [
-    moneyFigure("Purchase price", e.purchasePrice, x.purchaseUsd),
-    moneyFigure("Conversion cost", e.conversionCost, x.conversionUsd),
+    ...siteFigures(summary),
     {
       label: "Critical IT power",
       value: `${Number(x.criticalItMw.toFixed(2))} MW`,
@@ -128,11 +153,16 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
   ];
 
   const fx = e.fx.currency === "USD" ? "" : ` ${e.fx.currency} converted at ${e.fx.usdPerUnit} USD (${e.fx.asOf}).`;
+  const site =
+    summary.kind === "lease"
+      ? `Site leased: base rent at $${i.baseLease} per kW-month escalating ${pct(i.leaseEscalation, 1)} a year, ` +
+        `NNN and operations at $${i.nnn + i.operations} per kW-month, the capital contribution funded by equity and not recovered.`
+      : `Site owned: purchase and conversion funded by equity, no base lease, ` +
+        `NNN and operations at $${i.nnn + i.operations} per kW-month, ${pct(i.siteResidual, 0)} of the purchase price recovered at exit.`;
   const assumptions =
     `Standard compute model, base case: ${GPUS_PER_NODE}-GPU B300 nodes at ${usdShort(i.nodeCost * (1 + i.itShare))} with IT, ` +
     `$${i.contractPrice.toFixed(2)} per GPU-hour on a ${i.contractMonths}-month contract, PUE ${i.pue}, ` +
-    `power at $${i.electricityRate.toFixed(3)} per kWh. Site owned: purchase and conversion funded by equity, no base lease, ` +
-    `NNN and operations at $${i.nnn + i.operations} per kW-month, ${pct(i.siteResidual, 0)} of the purchase price recovered at exit.${fx}`;
+    `power at $${i.electricityRate.toFixed(3)} per kWh. ${site}${fx}`;
 
   const items = DILIGENCE_FIELDS.flatMap(({ key, label }) => {
     const item = summary.diligence[key];

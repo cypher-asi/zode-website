@@ -63,7 +63,9 @@ function sectionReadouts(id: SectionId, i: ModelInputs, r: ModelResult) {
     case "facility": {
       const power = { label: "Power / month", value: usdShort(r.year1Electricity), detail: "Year 1 average electricity" };
       if (i.siteMode === 0) {
-        return [{ label: "Lease / month", value: usdShort(r.year1Lease), detail: "Year 1 average, base + NNN + ops" }, power];
+        const lease = { label: "Lease / month", value: usdShort(r.year1Lease), detail: "Year 1 average, base + NNN + ops" };
+        if (r.siteCost <= 0) return [lease, power];
+        return [{ label: "Capital contribution", value: usdShort(r.siteCost), detail: "Paid to the landlord at order" }, lease, power];
       }
       return [
         { label: "Site cost", value: usdShort(r.siteCost), detail: "Purchase, closing and conversion" },

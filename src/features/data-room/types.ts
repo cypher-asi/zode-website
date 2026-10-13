@@ -5,9 +5,20 @@ export const ROLES: readonly { id: RoomRole; label: string; detail: string }[] =
   { id: "admin", label: "Admin", detail: "Can also upload, organize, invite people and see activity." },
 ];
 
+/** Whether the room is for buying a site or leasing one. */
+export type RoomKind = "purchase" | "lease";
+
+export const ROOM_KINDS: readonly { id: RoomKind; label: string; detail: string }[] = [
+  { id: "purchase", label: "Purchase", detail: "ZODE would buy the site." },
+  { id: "lease", label: "Lease", detail: "ZODE would lease the site from a landlord." },
+];
+
+export const isRoomKind = (value: unknown): value is RoomKind => value === "purchase" || value === "lease";
+
 export interface RoomSummary {
   id: string;
   name: string;
+  kind: RoomKind;
   role: RoomRole;
   createdAt: string;
   fileCount: number;

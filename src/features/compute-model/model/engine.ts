@@ -67,7 +67,7 @@ export interface ModelResult {
   year1NetProfit: number;
   year1Lease: number;
   year1Electricity: number;
-  /** Purchase price, closing costs and conversion; zero for a leased site. */
+  /** Purchase price, closing costs and conversion; a leased site's capital contribution. */
   siteCost: number;
   siteLoan: number;
   /** Site cost and financing fees not covered by the bank loan. */
@@ -151,11 +151,13 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
   const gpus = i.nodes * GPUS_PER_NODE;
   const depreciable =
     (equipCost * (1 + i.spareShare) * (1 + useTax + i.importTax) + i.setupCost) * (1 - i.bookResidual);
-  // Facility: a leased site pays rent; a purchased one pays its price, closing and conversion at order
+  // Facility: a leased site pays rent and any capital contribution; a purchased one pays its price,
+  // closing and conversion at order
   const purchased = i.siteMode === 1;
   const sitePrice = purchased ? i.sitePurchase : 0;
   const siteConversion = purchased ? i.siteConversionPerMw * itMw : 0;
-  const siteCost = sitePrice * (1 + i.siteClosingCosts) + siteConversion;
+  const leaseContribution = purchased ? 0 : i.leaseContributionPerMw * itMw;
+  const siteCost = sitePrice * (1 + i.siteClosingCosts) + siteConversion + leaseContribution;
   const siteLoan = (sitePrice + siteConversion) * (purchased ? i.siteLtv : 0);
   const siteFees = siteLoan * i.siteLoanFee + Math.max(0, siteCost - siteLoan) * (purchased ? i.siteEquityFee : 0);
   const siteProceeds = sitePrice * i.siteResidual * (1 - i.sellingCosts);

@@ -8,7 +8,8 @@
  *
  * Create the room in the app first (so its owner is a real ZOS account) and
  * pass its id; or, where room creation isn't allowed yet, pass
- * `--create "<room name>" --owner-user-id <ZOS user id>` instead of `--room`.
+ * `--create "<room name>" --owner-user-id <ZOS user id> [--kind purchase|lease]`
+ * instead of `--room`. The kind defaults to purchase.
  *
  * A "00 Index/File Index.csv" in the tree, if present, supplies each file's
  * metadata (date, doctype, status, md5, ...). Reruns are safe: registered files
@@ -36,6 +37,7 @@ const { values: args } = parseArgs({
     room: { type: "string" },
     create: { type: "string" },
     "owner-user-id": { type: "string" },
+    kind: { type: "string", default: "purchase" },
     as: { type: "string", default: "n3o@zero.tech" },
     concurrency: { type: "string", default: "4" },
     "dry-run": { type: "boolean", default: false },
@@ -53,6 +55,7 @@ const concurrency = Math.max(1, Number.parseInt(args.concurrency, 10) || 4);
 if (!args.dir) fail("--dir is required.");
 if (!args.room && !args.create) fail("Pass --room <id>, or --create <name> with --owner-user-id.");
 if (args.create && !args["owner-user-id"]) fail("--create needs --owner-user-id (the owner's ZOS user id).");
+if (!["purchase", "lease"].includes(args.kind)) fail("--kind is purchase or lease.");
 const root = path.resolve(args.dir.replace(/^~(?=$|\/)/, process.env.HOME ?? "~"));
 
 const formatBytes = (bytes) => {
@@ -215,19 +218,26 @@ let roomId = args.room;
 if (args.create) {
   const name = args.create.trim();
   if (nameProblem(name)) fail(`Room name: ${nameProblem(name)}.`);
+  const [{ exists: hasKind }] = await sql`
+    select exists (
+      select 1 from information_schema.columns where table_name = 'data_rooms' and column_name = 'kind'
+    ) as exists
+  `;
+  if (!hasKind) fail("data_rooms.kind is missing; run scripts/migrate.mjs against this database first.");
   const [existing] = await sql`
-    select id from data_rooms where name = ${name} and created_by_user_id = ${args["owner-user-id"]}
+    select id, kind from data_rooms where name = ${name} and created_by_user_id = ${args["owner-user-id"]}
   `;
   if (existing) {
     roomId = String(existing.id);
+    if (existing.kind !== args.kind) fail(`Room "${name}" (${roomId}) is a ${existing.kind} room, not ${args.kind}.`);
     console.log(`[import] reusing room "${name}" (${roomId})`);
   } else if (dryRun) {
-    console.log(`[import] dry run: would create room "${name}" owned by ${actorEmail}`);
+    console.log(`[import] dry run: would create ${args.kind} room "${name}" owned by ${actorEmail}`);
   } else {
     const [row] = await sql`
       with room as (
-        insert into data_rooms (name, created_by_user_id, created_by_email)
-        values (${name}, ${args["owner-user-id"]}, ${actorEmail})
+        insert into data_rooms (name, kind, created_by_user_id, created_by_email)
+        values (${name}, ${args.kind}, ${args["owner-user-id"]}, ${actorEmail})
         returning id
       )
       insert into data_room_members (room_id, email, role, user_id, invited_by_email, accepted_at)
@@ -237,9 +247,9 @@ if (args.create) {
     roomId = String(row.room_id);
     await sql`
       insert into data_room_events (room_id, actor_user_id, actor_email, action, detail, user_agent)
-      values (${roomId}, ${args["owner-user-id"]}, ${actorEmail}, 'room_create', ${JSON.stringify({ name })}, ${USER_AGENT})
+      values (${roomId}, ${args["owner-user-id"]}, ${actorEmail}, 'room_create', ${JSON.stringify({ name, kind: args.kind })}, ${USER_AGENT})
     `;
-    console.log(`[import] created room "${name}" (${roomId})`);
+    console.log(`[import] created ${args.kind} room "${name}" (${roomId})`);
   }
 }
 

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { getAccount, requireAccount } from "@/features/account/session";
 import type { Account } from "@/features/account/zos";
 import { db } from "@/lib/db";
-import type { RoomFile, RoomFolder, RoomMember, RoomRole, RoomSummary, RoomTree } from "./types";
+import type { RoomFile, RoomFolder, RoomKind, RoomMember, RoomRole, RoomSummary, RoomTree } from "./types";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -44,18 +44,20 @@ const iso = (value: unknown): string => new Date(value as string | Date).toISOSt
 
 export interface RoomAccess {
   account: Account;
-  room: { id: string; name: string };
+  room: { id: string; name: string; kind: RoomKind };
   role: RoomRole;
 }
 
 const loadAccess = cache(async (roomId: string, userId: string): Promise<Omit<RoomAccess, "account"> | null> => {
   const [row] = await db()`
-    select r.id, r.name, m.role
+    select r.id, r.name, r.kind, m.role
     from data_room_members m
     join data_rooms r on r.id = m.room_id
     where m.room_id = ${roomId} and m.user_id = ${userId} and m.accepted_at is not null
   `;
-  return row ? { room: { id: String(row.id), name: String(row.name) }, role: row.role as RoomRole } : null;
+  return row
+    ? { room: { id: String(row.id), name: String(row.name), kind: row.kind as RoomKind }, role: row.role as RoomRole }
+    : null;
 });
 
 const satisfies = (role: RoomRole, minRole: RoomRole): boolean => minRole === "viewer" || role === "admin";
@@ -83,7 +85,7 @@ export async function requireRoomRole(roomId: string, minRole: RoomRole = "viewe
 
 export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
   const rows = await db()`
-    select r.id, r.name, r.created_at, m.role,
+    select r.id, r.name, r.kind, r.created_at, m.role,
       (select count(*) from data_room_files f where f.room_id = r.id and f.deleted_at is null) as file_count
     from data_room_members m
     join data_rooms r on r.id = m.room_id
@@ -93,6 +95,7 @@ export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
   return rows.map((row) => ({
     id: String(row.id),
     name: String(row.name),
+    kind: row.kind as RoomKind,
     role: row.role as RoomRole,
     createdAt: iso(row.created_at),
     fileCount: Number(row.file_count),
@@ -100,12 +103,12 @@ export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
 }
 
 /** Creates a room with its creator as the first, already-active admin. */
-export async function createRoom(name: string, account: Account): Promise<string> {
+export async function createRoom(name: string, kind: RoomKind, account: Account): Promise<string> {
   const email = normalizeEmail(account.email);
   const [row] = await db()`
     with room as (
-      insert into data_rooms (name, created_by_user_id, created_by_email)
-      values (${name}, ${account.userId}, ${email})
+      insert into data_rooms (name, kind, created_by_user_id, created_by_email)
+      values (${name}, ${kind}, ${account.userId}, ${email})
       returning id
     )
     insert into data_room_members (room_id, email, role, user_id, invited_by_email, accepted_at)

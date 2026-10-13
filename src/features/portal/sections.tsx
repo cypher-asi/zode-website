@@ -81,7 +81,8 @@ export function RoomList({ rooms }: { rooms: RoomSummary[] }): ReactElement {
             <span className={styles.rowMain}>
               <span className={styles.rowTitle}>{room.name}</span>
               <span className={styles.rowMeta}>
-                {plural(room.fileCount, "file")} · Created {date.format(new Date(room.createdAt))}
+                {room.kind === "lease" ? "Lease" : "Purchase"} · {plural(room.fileCount, "file")} · Created{" "}
+                {date.format(new Date(room.createdAt))}
               </span>
             </span>
             <span className={styles.rowEnd}>

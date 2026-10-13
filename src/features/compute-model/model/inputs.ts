@@ -94,6 +94,11 @@ export interface ModelInputs {
   baseLease: number;
   /** Escalates base rent only; NNN and operations follow `fixedEscalation`. */
   leaseEscalation: number;
+  /**
+   * A leased site: the tenant's capital contribution to the landlord's build-out,
+   * per MW of critical IT load. Equity-funded capex at order, never recovered.
+   */
+  leaseContributionPerMw: number;
   nnn: number;
   operations: number;
   pue: number;
@@ -224,6 +229,7 @@ export const DEFAULT_INPUTS: ModelInputs = withScenario(
     siteMode: 0,
     baseLease: 170,
     leaseEscalation: 0.025,
+    leaseContributionPerMw: 0,
     nnn: 20,
     operations: 36,
     pue: 1.3,
@@ -345,7 +351,7 @@ export const SECTIONS: readonly SectionDef[] = [
     title: "Cluster",
     tab: "Cluster",
     fields: [
-      { key: "nodes", label: "B300 nodes", kind: "range", format: "count", min: 8, max: 1024, step: 8 },
+      { key: "nodes", label: "B300 nodes", kind: "range", format: "count", min: 8, max: 2048, step: 8 },
       {
         key: "nodeCost",
         label: "Node cost, excluding IT",
@@ -524,6 +530,17 @@ export const SECTIONS: readonly SectionDef[] = [
         min: 0,
         max: 0.06,
         step: 0.0025,
+        visible: leased,
+      },
+      {
+        key: "leaseContributionPerMw",
+        label: "Tenant capital contribution / critical MW",
+        note: "Paid to the landlord toward the build-out at order; not recovered at exit.",
+        kind: "range",
+        format: "usdPerMw",
+        min: 0,
+        max: 5_000_000,
+        step: 50_000,
         visible: leased,
       },
       {

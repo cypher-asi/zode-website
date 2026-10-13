@@ -1,12 +1,15 @@
 "use client";
 
 import { useActionState, useState, type ReactElement } from "react";
+import { Select } from "@/components/ui/Select";
 import { createRoomAction } from "./actions";
-import type { ActionState } from "./types";
+import { ROOM_KINDS, type ActionState } from "./types";
 import ui from "./ui.module.css";
 import styles from "./portal.module.css";
 
-/** "New data room" in the portal; expands into a name field, and the creator becomes its admin. */
+const KIND_OPTIONS = ROOM_KINDS.map(({ id, label, detail }) => ({ value: id, label, detail }));
+
+/** "New data room" in the portal; expands into name and purchase/lease fields, and the creator becomes its admin. */
 export function NewRoomForm(): ReactElement {
   const [open, setOpen] = useState(false);
   const [state, create, pending] = useActionState<ActionState, FormData>(createRoomAction, {});
@@ -30,6 +33,7 @@ export function NewRoomForm(): ReactElement {
         required
         autoFocus
       />
+      <Select name="kind" options={KIND_OPTIONS} defaultValue="purchase" aria-label="Deal type" className={styles.newRoomKind} />
       <button type="submit" className={ui.primary} disabled={pending}>
         {pending ? "Creating…" : "Create"}
       </button>

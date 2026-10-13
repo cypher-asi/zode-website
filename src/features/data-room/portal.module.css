@@ -14,3 +14,7 @@
 .newRoom p {
   flex-basis: 100%;
 }
+
+.newRoomKind {
+  flex: 0 0 140px;
+}

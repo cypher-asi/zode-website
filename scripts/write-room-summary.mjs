@@ -6,11 +6,16 @@
  *     --room <room id> --file ~/Downloads/olds-vdr-work/summary.json [--as n3o@zero.tech] [--dry-run]
  *
  * The file holds `diligence` (headline, detail, status and sources for each
- * question in src/features/data-room/summary.ts) and `economics` (purchase
- * price, conversion cost, critical IT MW and the FX rate). Sources are paths
- * inside the room, such as "05 Power and Electrical/04 .../file.pdf"; each must
- * name one live file, and is stored with that file's id so later renames and
- * moves keep the link.
+ * question in src/features/data-room/summary.ts) and `economics`, whose shape
+ * follows the room's kind:
+ *
+ * - purchase: purchase price, conversion cost, critical IT MW and the FX rate;
+ * - lease: rent terms (USD base rent, escalation, NNN, operations fee, power
+ *   rate and PUE), the capital contribution, critical IT MW and the FX rate.
+ *
+ * Sources are paths inside the room, such as "05 Power and Electrical/04 .../file.pdf";
+ * each must name one live file, and is stored with that file's id so later
+ * renames and moves keep the link.
  */
 import { readFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
@@ -18,6 +23,7 @@ import { neon } from "@neondatabase/serverless";
 
 const KEYS = ["location", "power", "powerNow", "powerScaling", "zoning", "fiber", "moratorium", "conversion"];
 const STATUSES = ["confirmed", "claimed", "gap", "risk"];
+const RENT_NUMBERS = ["baseLease", "leaseEscalation", "nnn", "operations", "electricityRate", "pue"];
 
 const { values: args } = parseArgs({
   options: {
@@ -38,6 +44,11 @@ if (!args.file) fail("--file is required.");
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) fail("DATABASE_URL is not set.");
 
+const sql = neon(databaseUrl);
+const [room] = await sql`select id, name, kind from data_rooms where id = ${args.room}`;
+if (!room) fail(`No room ${args.room}.`);
+const lease = room.kind === "lease";
+
 const input = JSON.parse(await readFile(args.file.replace(/^~(?=$|\/)/, process.env.HOME ?? "~"), "utf8"));
 const problems = [];
 const text = (value, where) => {
@@ -47,6 +58,9 @@ const number = (value, where, nullable = false) => {
   if (!(nullable && value === null) && !(typeof value === "number" && Number.isFinite(value))) {
     problems.push(`${where}: expected a number${nullable ? " or null" : ""}`);
   }
+};
+const flag = (value, where) => {
+  if (typeof value !== "boolean") problems.push(`${where}: expected true or false`);
 };
 const paths = (value, where) => {
   if (!Array.isArray(value) || value.some((p) => typeof p !== "string")) problems.push(`${where}: expected a list of paths`);
@@ -67,32 +81,39 @@ for (const key of KEYS) {
 }
 
 const e = input.economics ?? {};
-for (const key of ["purchasePrice", "conversionCost"]) {
+const MONEY_KEYS = lease ? ["capitalContribution"] : ["purchasePrice", "conversionCost"];
+const ALLOWED = [...MONEY_KEYS, "criticalItMw", "fx", ...(lease ? ["rent"] : ["siteResidual"])];
+const unknown = Object.keys(e).filter((key) => !ALLOWED.includes(key));
+if (unknown.length) problems.push(`economics: unknown for a ${room.kind} room: ${unknown.join(", ")}`);
+for (const key of MONEY_KEYS) {
   const money = e[key] ?? {};
   number(money.amount, `economics.${key}.amount`, true);
   if (!["USD", e.fx?.currency].includes(money.currency)) problems.push(`economics.${key}.currency: USD or the fx currency`);
-  if (typeof money.estimate !== "boolean") problems.push(`economics.${key}.estimate: expected true or false`);
+  flag(money.estimate, `economics.${key}.estimate`);
   text(money.note, `economics.${key}.note`);
   paths(money.sources, `economics.${key}.sources`);
 }
+if (lease) {
+  const rent = e.rent ?? {};
+  for (const key of RENT_NUMBERS) number(rent[key], `economics.rent.${key}`);
+  flag(rent.estimate, "economics.rent.estimate");
+  text(rent.note, "economics.rent.note");
+  paths(rent.sources, "economics.rent.sources");
+}
 number(e.criticalItMw?.value, "economics.criticalItMw.value");
-if (typeof e.criticalItMw?.estimate !== "boolean") problems.push("economics.criticalItMw.estimate: expected true or false");
+flag(e.criticalItMw?.estimate, "economics.criticalItMw.estimate");
 text(e.criticalItMw?.note, "economics.criticalItMw.note");
 paths(e.criticalItMw?.sources, "economics.criticalItMw.sources");
 text(e.fx?.currency, "economics.fx.currency");
 number(e.fx?.usdPerUnit, "economics.fx.usdPerUnit");
 if (!/^\d{4}-\d{2}-\d{2}$/.test(e.fx?.asOf ?? "")) problems.push("economics.fx.asOf: expected YYYY-MM-DD");
 text(e.fx?.source, "economics.fx.source");
-if (e.siteResidual !== undefined) number(e.siteResidual, "economics.siteResidual");
+if (!lease && e.siteResidual !== undefined) number(e.siteResidual, "economics.siteResidual");
 
 if (problems.length) {
   for (const problem of problems) console.error(`  ${problem}`);
-  fail(`${problems.length} problem(s) in ${args.file}.`);
+  fail(`${problems.length} problem(s) in ${args.file} for a ${room.kind} room.`);
 }
-
-const sql = neon(databaseUrl);
-const [room] = await sql`select id, name from data_rooms where id = ${args.room}`;
-if (!room) fail(`No room ${args.room}.`);
 
 // Every live file by its path inside the room.
 const [folders, files] = await Promise.all([
@@ -130,13 +151,13 @@ const diligence = Object.fromEntries(
     return [key, { headline: headline.trim(), detail: detail.trim(), status, sources: resolve(sources, `diligence.${key}`) }];
   }),
 );
-const money = (key) => ({ ...e[key], sources: resolve(e[key].sources, `economics.${key}`) });
+const withSources = (key) => ({ ...e[key], sources: resolve(e[key].sources, `economics.${key}`) });
 const economics = {
-  purchasePrice: money("purchasePrice"),
-  conversionCost: money("conversionCost"),
-  criticalItMw: { ...e.criticalItMw, sources: resolve(e.criticalItMw.sources, "economics.criticalItMw") },
+  ...Object.fromEntries(MONEY_KEYS.map((key) => [key, withSources(key)])),
+  ...(lease ? { rent: withSources("rent") } : {}),
+  criticalItMw: withSources("criticalItMw"),
   fx: e.fx,
-  ...(e.siteResidual === undefined ? {} : { siteResidual: e.siteResidual }),
+  ...(lease || e.siteResidual === undefined ? {} : { siteResidual: e.siteResidual }),
 };
 
 if (unresolved.length) {
@@ -145,11 +166,11 @@ if (unresolved.length) {
 }
 
 const cited = new Set(
-  [...Object.values(diligence), economics.purchasePrice, economics.conversionCost, economics.criticalItMw].flatMap((x) =>
-    x.sources.map((s) => s.fileId),
+  [...Object.values(diligence), ...[...MONEY_KEYS, ...(lease ? ["rent"] : []), "criticalItMw"].map((key) => economics[key])].flatMap(
+    (x) => x.sources.map((s) => s.fileId),
   ),
 ).size;
-console.log(`[summary] "${room.name}": ${KEYS.length} answers, ${cited} cited files, all resolved.`);
+console.log(`[summary] "${room.name}" (${room.kind}): ${KEYS.length} answers, ${cited} cited files, all resolved.`);
 
 if (args["dry-run"]) {
   console.log("[summary] dry run: nothing written.");

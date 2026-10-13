@@ -50,21 +50,75 @@ export interface Money {
   sources: DiligenceSource[];
 }
 
-/** What diligence found; everything else the economics show comes from the compute model. */
-export interface SiteEconomics {
+export interface CriticalIt {
+  value: number;
+  estimate: boolean;
+  note: string;
+  sources: DiligenceSource[];
+}
+
+export interface Fx {
+  currency: string;
+  usdPerUnit: number;
+  asOf: string;
+  source: string;
+}
+
+/** What diligence found for a site ZODE would buy; everything else comes from the compute model. */
+export interface PurchaseEconomics {
   purchasePrice: Money;
   conversionCost: Money;
-  criticalItMw: { value: number; estimate: boolean; note: string; sources: DiligenceSource[] };
-  fx: { currency: string; usdPerUnit: number; asOf: string; source: string };
+  criticalItMw: CriticalIt;
+  fx: Fx;
   /** Share of the purchase price recovered at exit; the model's default when absent. */
   siteResidual?: number;
 }
 
-export interface DiligenceSummary {
+/** The lease's running costs, in USD, as the compute model takes them. */
+export interface LeaseTerms {
+  /** Base rent per critical kW-month. */
+  baseLease: number;
+  /** Annual base rent escalation. */
+  leaseEscalation: number;
+  /** NNN pass-through per critical kW-month. */
+  nnn: number;
+  /** Landlord operations fee per critical kW-month. */
+  operations: number;
+  /** Utility power per kWh. */
+  electricityRate: number;
+  pue: number;
+  estimate: boolean;
+  note: string;
+  sources: DiligenceSource[];
+}
+
+/** What diligence found for a site ZODE would lease; everything else comes from the compute model. */
+export interface LeaseEconomics {
+  rent: LeaseTerms;
+  /** Paid to the landlord toward the build-out. */
+  capitalContribution: Money;
+  criticalItMw: CriticalIt;
+  fx: Fx;
+}
+
+interface SummaryBase {
   diligence: Record<DiligenceKey, DiligenceItem>;
-  economics: SiteEconomics;
   updatedAt: string;
   updatedBy: string;
+}
+
+/** The room's kind decides which economics its summary holds. */
+export type DiligenceSummary = SummaryBase &
+  ({ kind: "purchase"; economics: PurchaseEconomics } | { kind: "lease"; economics: LeaseEconomics });
+
+/** Every file the economics cite. */
+export function economicsSources(summary: DiligenceSummary): DiligenceSource[] {
+  if (summary.kind === "lease") {
+    const e = summary.economics;
+    return [...e.rent.sources, ...e.capitalContribution.sources, ...e.criticalItMw.sources];
+  }
+  const e = summary.economics;
+  return [...e.purchasePrice.sources, ...e.conversionCost.sources, ...e.criticalItMw.sources];
 }
 
 /**
@@ -76,22 +130,23 @@ export async function getDiligenceSummary(
 ): Promise<(DiligenceSummary & { sourceNames: Map<string, string> }) | null> {
   const sql = db();
   const [row] = await sql`
-    select diligence, economics, updated_at, updated_by_email from data_room_summaries where room_id = ${roomId}
+    select s.diligence, s.economics, s.updated_at, s.updated_by_email, r.kind
+    from data_room_summaries s
+    join data_rooms r on r.id = s.room_id
+    where s.room_id = ${roomId}
   `;
   if (!row) return null;
-  const summary: DiligenceSummary = {
-    diligence: row.diligence as DiligenceSummary["diligence"],
-    economics: row.economics as SiteEconomics,
+  const summary = {
+    kind: row.kind,
+    diligence: row.diligence,
+    economics: row.economics,
     updatedAt: new Date(row.updated_at as string).toISOString(),
     updatedBy: String(row.updated_by_email),
-  };
+  } as DiligenceSummary;
 
-  const ids = [
-    ...Object.values(summary.diligence).flatMap((item) => item.sources),
-    ...summary.economics.purchasePrice.sources,
-    ...summary.economics.conversionCost.sources,
-    ...summary.economics.criticalItMw.sources,
-  ].map((source) => source.fileId);
+  const ids = [...Object.values(summary.diligence).flatMap((item) => item.sources), ...economicsSources(summary)].map(
+    (source) => source.fileId,
+  );
   const files = ids.length
     ? await sql`
         select id, name from data_room_files
@@ -102,8 +157,6 @@ export async function getDiligenceSummary(
 }
 
 export interface SummaryEconomics {
-  purchaseUsd: number | null;
-  conversionUsd: number | null;
   criticalItMw: number;
   nodes: number;
   inputs: ModelInputs;
@@ -113,37 +166,56 @@ export interface SummaryEconomics {
   modelHref: string;
 }
 
-const toUsd = (money: Money, fx: SiteEconomics["fx"]): number | null =>
+export const toUsd = (money: Money, fx: Fx): number | null =>
   money.amount === null ? null : money.currency === "USD" ? money.amount : money.amount * fx.usdPerUnit;
 
 /**
- * Runs the standard compute model for the site as owned: as many B300 nodes as
- * its critical IT power carries, purchase and conversion as upfront capex, no
- * base lease. Every other input keeps the model's default.
+ * Runs the standard compute model for the site: as many B300 nodes as its
+ * critical IT power carries. A purchase pays its price and conversion upfront
+ * with no base lease; a lease pays its rent terms and capital contribution.
+ * Every other input keeps the model's default.
  */
-export function summaryEconomics(e: SiteEconomics, start = nextMonthStart()): SummaryEconomics {
-  const purchaseUsd = toUsd(e.purchasePrice, e.fx);
-  const conversionUsd = toUsd(e.conversionCost, e.fx);
+export function summaryEconomics(summary: DiligenceSummary, start = nextMonthStart()): SummaryEconomics {
+  const e = summary.economics;
   const nodes = Math.max(0, Math.floor((e.criticalItMw.value * 1000) / DEFAULT_INPUTS.kwPerNode));
-  // Conversion is charged per MW of the cluster's IT load, so spread the site's total over it.
+  // Upfront site spend is charged per MW of the cluster's IT load, so spread the site's total over it.
   const clusterMw = (nodes * DEFAULT_INPUTS.kwPerNode) / 1000;
-  const inputs: ModelInputs = {
-    ...DEFAULT_INPUTS,
-    nodes,
-    siteMode: 1,
-    sitePurchase: Math.round(purchaseUsd ?? 0),
-    siteConversionPerMw: clusterMw > 0 ? Math.round((conversionUsd ?? 0) / clusterMw) : 0,
-    siteClosingCosts: 0,
-    siteLtv: 0,
-    siteEquityFee: 0,
-    siteResidual: e.siteResidual ?? DEFAULT_INPUTS.siteResidual,
-  };
+  const perMw = (usd: number | null) => (clusterMw > 0 ? Math.round((usd ?? 0) / clusterMw) : 0);
+
+  let inputs: ModelInputs;
+  if (summary.kind === "lease") {
+    const { rent, capitalContribution, fx } = summary.economics;
+    inputs = {
+      ...DEFAULT_INPUTS,
+      nodes,
+      siteMode: 0,
+      baseLease: rent.baseLease,
+      leaseEscalation: rent.leaseEscalation,
+      nnn: rent.nnn,
+      operations: rent.operations,
+      electricityRate: rent.electricityRate,
+      pue: rent.pue,
+      leaseContributionPerMw: perMw(toUsd(capitalContribution, fx)),
+    };
+  } else {
+    const { purchasePrice, conversionCost, fx, siteResidual } = summary.economics;
+    inputs = {
+      ...DEFAULT_INPUTS,
+      nodes,
+      siteMode: 1,
+      sitePurchase: Math.round(toUsd(purchasePrice, fx) ?? 0),
+      siteConversionPerMw: perMw(toUsd(conversionCost, fx)),
+      siteClosingCosts: 0,
+      siteLtv: 0,
+      siteEquityFee: 0,
+      siteResidual: siteResidual ?? DEFAULT_INPUTS.siteResidual,
+    };
+  }
+
   const result = runModel(inputs, start);
   const params = new URLSearchParams();
   writeInputParams(inputs, params);
   return {
-    purchaseUsd,
-    conversionUsd,
     criticalItMw: e.criticalItMw.value,
     nodes,
     inputs,

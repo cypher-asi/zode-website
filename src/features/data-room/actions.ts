@@ -39,7 +39,7 @@ import {
   roomUsage,
   type RoomAccess,
 } from "./rooms";
-import { ROLES, type ActionState, type RoomRole } from "./types";
+import { ROLES, isRoomKind, type ActionState, type RoomRole } from "./types";
 
 const NO_ACCESS: ActionState = { error: "You don't have permission to do that. Try reloading the page." };
 
@@ -86,9 +86,11 @@ export async function createRoomAction(_prev: ActionState, formData: FormData): 
   if (!canCreateRooms(account)) return { error: "Your account can't create data rooms. Ask the ZODE team." };
   const name = cleanName(formData.get("name"));
   if (typeof name !== "string") return name;
+  const kind = formData.get("kind");
+  if (!isRoomKind(kind)) return { error: "Choose whether the room is for a purchase or a lease." };
 
-  const roomId = await createRoom(name, account);
-  await recordEvent({ roomId, account, action: "room_create", detail: { name } });
+  const roomId = await createRoom(name, kind, account);
+  await recordEvent({ roomId, account, action: "room_create", detail: { name, kind } });
   redirect(`/portal/data-rooms/${roomId}`);
 }
 
