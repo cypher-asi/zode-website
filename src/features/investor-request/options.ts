@@ -28,7 +28,6 @@ export const CHECK_SIZES = [
   { id: "5m-25m", label: "$5M–$25M" },
   { id: "25m-100m", label: "$25M–$100M" },
   { id: "100m-plus", label: "$100M+" },
-  { id: "unsure", label: "Not sure yet" },
 ] as const;
 
 export type CheckSizeId = (typeof CHECK_SIZES)[number]["id"];
