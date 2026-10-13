@@ -4,61 +4,88 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PortalIcon, type PortalIconName } from "./icons";
+import { activeGroup, activeHref, navGroups, railLinks, type NavAccess } from "./nav";
+import { SidebarToggle } from "./PortalFrame";
 import styles from "./shell.module.css";
 
-type Section = { href: string; label: string; exact: boolean; icon: PortalIconName };
-
-const SECTIONS: readonly Section[] = [
-  { href: "/portal", label: "Home", exact: true, icon: "home" },
-  { href: "/portal/data-rooms", label: "Data rooms", exact: false, icon: "rooms" },
-  { href: "/portal/orders", label: "Orders", exact: false, icon: "orders" },
-  { href: "/portal/contracts", label: "Contracts", exact: false, icon: "contracts" },
-];
-
-/** Sections only ZODE super admins see. */
-const ADMIN_SECTIONS: readonly Section[] = [
-  { href: "/portal/posts", label: "Posts", exact: false, icon: "posts" },
-  { href: "/portal/subscribers", label: "Subscribers", exact: false, icon: "subscribers" },
-  { href: "/portal/users", label: "Users", exact: false, icon: "users" },
-];
-
-const SETTINGS: Section = { href: "/portal/settings", label: "Settings", exact: false, icon: "settings" };
-
-function isActive(pathname: string, { href, exact }: Section): boolean {
-  return exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
-}
-
-function RailItem({ section, active }: { section: Section; active: boolean }): ReactElement {
+function RailItem({
+  href,
+  label,
+  icon,
+  current,
+}: {
+  href: string;
+  label: string;
+  icon: PortalIconName;
+  current?: "page" | "true";
+}): ReactElement {
   return (
-    <Link href={section.href} className={styles.item} aria-current={active ? "page" : undefined}>
-      <PortalIcon name={section.icon} className={styles.icon} />
-      <span className={styles.tooltip}>{section.label}</span>
+    <Link href={href} className={styles.item} aria-current={current}>
+      <PortalIcon name={icon} className={styles.icon} />
+      <span className={styles.tooltip}>{label}</span>
     </Link>
   );
 }
 
 /**
- * The portal's sections down a black rail on the left, with Settings and the
- * account avatar at its foot; a bar along the bottom on phones.
+ * The portal's rail: a black bar in a frosted tray, with Settings in a tray of
+ * its own at the foot. Beside the open sidebar it switches between groups
+ * (Workspace, Admin), whose links the sidebar lists; with the sidebar hidden,
+ * and on narrow screens, it carries every section itself. A bar along the
+ * bottom on phones.
  */
-export function PortalNav({ admin = false }: { admin?: boolean }): ReactElement {
+export function PortalNav({ access }: { access: NavAccess }): ReactElement {
   const pathname = usePathname() ?? "/portal";
-  const sections = admin ? [...SECTIONS, ...ADMIN_SECTIONS] : SECTIONS;
+  const groups = navGroups(access);
+  const group = activeGroup(pathname, groups);
+  const links = railLinks(groups);
+  const flatHref = activeHref(pathname, links);
+  const settings = groups[groups.length - 1];
+  const inSettings = group.id === "settings";
 
   return (
     <nav className={styles.rail} aria-label="Portal">
-      <div className={styles.group}>
-        {sections.map((section) => (
-          <RailItem key={section.href} section={section} active={isActive(pathname, section)} />
-        ))}
+      <div className={styles.tray}>
+        <div className={styles.bar}>
+          <div className={`${styles.group} ${styles.groups}`}>
+            {groups
+              .filter(({ id }) => id !== "settings")
+              .map(({ id, label, icon, links: [first] }) => (
+                <RailItem key={id} href={first.href} label={label} icon={icon} current={id === group.id ? "true" : undefined} />
+              ))}
+          </div>
+          <div className={`${styles.group} ${styles.flat}`}>
+            {links.map((link) => (
+              <RailItem key={link.href} {...link} current={link.href === flatHref ? "page" : undefined} />
+            ))}
+          </div>
+          <SidebarToggle
+            placement="rail"
+            className={`${styles.item} ${styles.railToggle}`}
+            iconClassName={styles.icon}
+            labelClassName={styles.tooltip}
+          />
+        </div>
+        <span className={styles.rule} />
+        <span className={styles.caption} aria-hidden="true">
+          ZODE Portal
+        </span>
       </div>
-      <div className={styles.group}>
-        <RailItem section={SETTINGS} active={isActive(pathname, SETTINGS)} />
-        {/* Initials come from the `<html>` flags in CSS, as in PinnedHeader, so they never pop in at hydration. */}
-        <Link href={SETTINGS.href} className={styles.avatar}>
-          <PortalIcon name="person" className={styles.avatarGlyph} />
-          <span className={styles.tooltip}>Account</span>
-        </Link>
+      <div className={styles.tray}>
+        <span className={styles.caption} aria-hidden="true">
+          Settings
+        </span>
+        <span className={styles.rule} />
+        <div className={styles.bar}>
+          <div className={styles.group}>
+            <RailItem href={settings.links[0].href} label="Settings" icon="settings" current={inSettings ? "page" : undefined} />
+            {/* Initials come from the `<html>` flags in CSS, as in PinnedHeader, so they never pop in at hydration. */}
+            <Link href={settings.links[0].href} className={`${styles.avatar} ${styles.flat}`}>
+              <PortalIcon name="person" className={styles.avatarGlyph} />
+              <span className={styles.tooltip}>Account</span>
+            </Link>
+          </div>
+        </div>
       </div>
     </nav>
   );

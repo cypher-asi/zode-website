@@ -9,7 +9,9 @@ export type PortalIconName =
   | "subscribers"
   | "users"
   | "settings"
-  | "person";
+  | "person"
+  | "admin"
+  | "sidebar";
 
 /*
  * Drawn on a 24px grid inside a 2px margin, with at most three strokes each.
@@ -78,6 +80,18 @@ const GLYPHS: Record<PortalIconName, ReactElement> = {
     <>
       <circle pathLength={1} cx="12" cy="8.5" r="3.75" />
       <path pathLength={1} d="M5.5 20a6.5 6 0 0 1 13 0" />
+    </>
+  ),
+  admin: (
+    <>
+      <path pathLength={1} d="M12 2.75 19.25 5.5v5.75c0 4.6-3.05 8.15-7.25 9.75-4.2-1.6-7.25-5.15-7.25-9.75V5.5z" />
+      <path pathLength={1} d="m9 12 2.1 2.1L15.25 10" />
+    </>
+  ),
+  sidebar: (
+    <>
+      <rect pathLength={1} x="3.25" y="4.75" width="17.5" height="14.5" rx="3" />
+      <path pathLength={1} d="M9.25 4.75v14.5" />
     </>
   ),
 };

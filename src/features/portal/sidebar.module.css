@@ -1,0 +1,263 @@
+/*
+ * The labeled sidebar between the rail and the panel, on the same frosted
+ * surface as the rail's trays. Its place and the `--glass-*` surface come from
+ * `.frame` (shell.module.css); it's hidden when collapsed and under 1100px,
+ * where the rail lists every section instead.
+ */
+.sidebar {
+  position: fixed;
+  top: calc(var(--header-top) + env(safe-area-inset-top, 0px));
+  bottom: calc(var(--portal-gap) + env(safe-area-inset-bottom, 0px));
+  left: calc(max(var(--edge), env(safe-area-inset-left, 0px)) + var(--tray-width) + var(--sidebar-gap));
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+  width: var(--sidebar-width);
+  padding: 14px 10px 10px;
+  overflow-y: auto;
+  border: 1px solid var(--glass-border);
+  border-radius: calc(var(--radius-panel) + 6px);
+  background: var(--glass-bg);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(20px) saturate(1.4);
+}
+
+[data-sidebar="collapsed"] .sidebar {
+  display: none;
+}
+
+@media (max-width: 1100px) {
+  .sidebar {
+    display: none;
+  }
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 0 0 4px;
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 2px 6px 2px 2px;
+  border-radius: var(--radius-card);
+  color: var(--color-text-primary);
+  text-decoration: none;
+  transition: background-color var(--duration-base) ease;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  overflow: hidden;
+  border: 2px solid var(--color-white);
+  border-radius: 50%;
+  background: var(--color-ink);
+  color: var(--color-text-inverse);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.35);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.who {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.name,
+.email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.name {
+  font-size: var(--text-base);
+  font-weight: 500;
+}
+
+.email {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.toggle {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-inset);
+  background: none;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-base) ease,
+    color var(--duration-base) ease;
+}
+
+.toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.section {
+  margin-top: 24px;
+}
+
+.heading {
+  margin: 0 0 6px 10px;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  font-weight: 400;
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+  padding: 0 8px 0 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-card);
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+  text-decoration: none;
+  transition:
+    background-color var(--duration-base) ease,
+    border-color var(--duration-base) ease,
+    box-shadow var(--duration-base) ease;
+}
+
+.linkIcon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--color-text-secondary);
+}
+
+.linkLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Raised out of the glass: a white pill with a soft halo. */
+.link[aria-current="page"] {
+  border-color: var(--glass-border);
+  background: var(--color-white);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--color-white) 55%, transparent),
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 8px 20px -10px rgba(0, 0, 0, 0.25);
+}
+
+.link[aria-current="page"] .linkIcon {
+  color: var(--color-text-primary);
+}
+
+.count {
+  display: grid;
+  place-items: center;
+  flex: none;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-tint);
+  color: var(--color-text-secondary);
+  font-size: var(--text-2xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.foot {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.logout {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--radius-card);
+  background: none;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-base) ease,
+    color var(--duration-base) ease;
+}
+
+.logout:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.account:focus-visible,
+.toggle:focus-visible,
+.link:focus-visible,
+.logout:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .account:hover,
+  .link:not([aria-current="page"]):hover,
+  .toggle:hover,
+  .logout:not(:disabled):hover {
+    background: var(--color-surface-hover);
+  }
+
+  .toggle:hover,
+  .logout:not(:disabled):hover {
+    color: var(--color-text-primary);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account,
+  .toggle,
+  .link,
+  .logout {
+    transition: none;
+  }
+}

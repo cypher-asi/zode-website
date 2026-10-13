@@ -1,24 +1,46 @@
 /*
- * The portal's frame: a fixed black rail of section icons down the left edge,
- * the pinned wordmark just right of it, and one fixed panel that every section
- * renders into. Inherits `--edge` from SiteShell. The page itself never
- * scrolls, so the header's top fade is off here.
+ * The portal's frame: a fixed rail down the left edge (a black bar of icons
+ * in a frosted tray, with Settings in a tray of its own at the foot), the
+ * labeled sidebar beside it (sidebar.module.css), the pinned wordmark just
+ * right of both, and one fixed panel that every section renders into.
+ * Inherits `--edge` from SiteShell. The page itself never scrolls, so the
+ * header's top fade is off here.
  *
- * Spacing is even all the way down: the rail's top lines up with the
- * wordmark's (`--header-top`, globals.css), the panel starts `--portal-gap`
- * below the header (the Buy Compute button's bottom edge, `--header-bottom`),
- * and the rail and panel both end `--portal-gap` above the bottom.
+ * Spacing is even all the way down: the rail's and sidebar's tops line up
+ * with the wordmark's (`--header-top`, globals.css), the panel starts
+ * `--portal-gap` below the header (the Buy Compute button's bottom edge,
+ * `--header-bottom`), and all three end `--portal-gap` above the bottom.
  *
  * The variables live on `.frame`, around the whole shell, so `--brand-inset`
- * also reaches PinnedHeader's wordmark.
+ * also reaches PinnedHeader's wordmark. `--sidebar-space` is zero wherever
+ * the sidebar is hidden: collapsed, or under 1100px.
  */
 .frame {
-  --rail-width: 56px;
+  --tray-pad: 6px;
+  --tray-width: 64px;
   --rail-item: 40px;
+  --sidebar-width: 248px;
+  --sidebar-gap: 12px;
+  --sidebar-space: 0px;
   --portal-gap: 32px;
   --header-bottom: calc(59px + env(safe-area-inset-top, 0px));
   --portal-top: calc(var(--header-bottom) + var(--portal-gap));
-  --brand-inset: calc(var(--rail-width) + var(--portal-gap));
+  --content-inset: calc(var(--tray-width) + var(--sidebar-space) + var(--portal-gap));
+  --brand-inset: var(--content-inset);
+
+  /* The frosted surface shared by the trays and the sidebar. */
+  --glass-bg: color-mix(in srgb, var(--color-paper) 82%, transparent);
+  --glass-border: color-mix(in srgb, var(--color-ink) 7%, transparent);
+  --glass-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-white) 80%, transparent),
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 24px 48px -32px rgba(0, 0, 0, 0.22);
+}
+
+@media (min-width: 1101px) {
+  .frame[data-sidebar="open"] {
+    --sidebar-space: calc(var(--sidebar-gap) + var(--sidebar-width));
+  }
 }
 
 .rail {
@@ -29,13 +51,70 @@
   z-index: 10;
   display: flex;
   flex-direction: column;
+  gap: 8px;
+  width: var(--tray-width);
+}
+
+.tray {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  width: var(--rail-width);
-  padding: 8px 0;
+  padding: var(--tray-pad);
+  border: 1px solid var(--glass-border);
+  border-radius: calc(var(--radius-panel) + var(--tray-pad));
+  background: var(--glass-bg);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(20px) saturate(1.4);
+}
+
+.tray:first-child {
+  flex: 1;
+  min-height: 0;
+}
+
+.bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-self: stretch;
+  padding: 6px 0;
   border-radius: var(--radius-panel);
   background: var(--color-black);
-  box-shadow: 0 24px 48px -28px rgba(0, 0, 0, 0.45);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-white) 14%, transparent),
+    0 12px 24px -16px rgba(0, 0, 0, 0.5);
+}
+
+.tray:first-child .bar {
+  flex: 1;
+  min-height: 0;
+}
+
+/* The tray's label, read bottom to top, set off from the bar by a short rule. */
+.caption {
+  flex: none;
+  padding: 12px 0;
+  color: var(--color-text-faint);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  writing-mode: vertical-rl;
+  rotate: 180deg;
+}
+
+.rule {
+  flex: none;
+  width: 24px;
+  height: 1px;
+  margin: 8px 0 0;
+  background: var(--glass-border);
+}
+
+.tray:last-child .rule {
+  margin: 0 0 8px;
 }
 
 .group {
@@ -43,6 +122,27 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
+}
+
+/* Beside the open sidebar the rail switches groups; otherwise it lists every section. */
+.groups,
+.item.railToggle {
+  display: none;
+}
+
+@media (min-width: 1101px) {
+  .frame[data-sidebar="open"] .flat {
+    display: none;
+  }
+
+  .frame[data-sidebar="open"] .groups {
+    display: flex;
+  }
+
+  .frame[data-sidebar="collapsed"] .item.railToggle {
+    display: grid;
+    margin-top: auto;
+  }
 }
 
 .item,
@@ -58,8 +158,12 @@
 .item {
   width: var(--rail-item);
   height: var(--rail-item);
+  padding: 0;
+  border: none;
   border-radius: var(--radius-card);
+  background: none;
   color: color-mix(in srgb, var(--color-white) 55%, transparent);
+  cursor: pointer;
   transition:
     background-color var(--duration-base) ease,
     color var(--duration-base) ease;
@@ -70,7 +174,7 @@
   height: 20px;
 }
 
-.item[aria-current="page"] {
+.item[aria-current] {
   background: color-mix(in srgb, var(--color-white) 14%, transparent);
   color: var(--color-white);
 }
@@ -112,7 +216,8 @@
 .tooltip {
   position: absolute;
   top: 50%;
-  left: calc(100% + 16px);
+  left: calc(100% + 22px);
+  z-index: 1;
   padding: 5px 9px;
   border-radius: var(--radius-inset);
   background: var(--color-ink);
@@ -133,7 +238,7 @@
 
 /* The avatar is narrower than the items, so its label starts further out to line up with theirs. */
 .avatar .tooltip {
-  left: calc(100% + 20px);
+  left: calc(100% + 26px);
 }
 
 .item:focus-visible .tooltip,
@@ -170,7 +275,7 @@
     color: var(--color-white);
   }
 
-  .item:not([aria-current="page"]):hover {
+  .item:not([aria-current]):hover {
     background: color-mix(in srgb, var(--color-white) 8%, transparent);
   }
 
@@ -193,15 +298,16 @@
 
 /*
  * The panel keeps the same size and place as you move between sections;
- * sections scroll inside it. It runs from `--portal-gap` past the rail to the
- * header's right edge, under the Buy Compute button.
+ * sections scroll inside it. It runs from `--portal-gap` past the rail (and
+ * the sidebar, when it's open) to the header's right edge, under the Buy
+ * Compute button.
  */
 .panel {
   position: fixed;
   top: var(--portal-top);
   right: max(var(--edge), env(safe-area-inset-right, 0px));
   bottom: calc(var(--portal-gap) + env(safe-area-inset-bottom, 0px));
-  left: calc(max(var(--edge), env(safe-area-inset-left, 0px)) + var(--rail-width) + var(--portal-gap));
+  left: calc(max(var(--edge), env(safe-area-inset-left, 0px)) + var(--content-inset));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -213,10 +319,18 @@
     0 24px 48px -32px rgba(0, 0, 0, 0.18);
 }
 
+/* Captions need the height; short windows give it to the icons. */
+@media (max-height: 760px) {
+  .caption,
+  .rule {
+    display: none;
+  }
+}
+
 /* PinnedHeader tightens up here: the wordmark sits 24px down and the button ends at 47px. */
 @media (max-width: 900px) {
   .frame {
-    --rail-width: 52px;
+    --tray-width: 60px;
     --rail-item: 38px;
     --portal-gap: 24px;
     --header-bottom: calc(47px + env(safe-area-inset-top, 0px));
@@ -224,8 +338,9 @@
 }
 
 /*
- * Phones: the rail becomes a bar along the bottom, the wordmark returns to the
- * edge, and the panel ends a gap above the bar. Labels pop up above the icons.
+ * Phones: the rail becomes a black bar along the bottom (the trays fall away
+ * and their contents join one row), the wordmark returns to the edge, and the
+ * panel ends a gap above the bar. Labels pop up above the icons.
  */
 @media (max-width: 700px) {
   .frame {
@@ -238,9 +353,25 @@
     top: auto;
     right: max(var(--edge), env(safe-area-inset-right, 0px));
     flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0;
     width: auto;
     height: var(--bar-height);
     padding: 0 10px;
+    border-radius: var(--radius-panel);
+    background: var(--color-black);
+    box-shadow: 0 24px 48px -28px rgba(0, 0, 0, 0.45);
+  }
+
+  .tray,
+  .bar {
+    display: contents;
+  }
+
+  .caption,
+  .rule {
+    display: none;
   }
 
   .group {

@@ -1,29 +1,58 @@
 import type { ReactNode } from "react";
+import { cookies } from "next/headers";
 import { SiteShell } from "@/components/layout/SiteShell";
-import { isZodeAdmin } from "@/features/account/admin";
+import { isTeam, isZodeAdmin } from "@/features/account/admin";
 import { getAccount } from "@/features/account/session";
+import { loadContracts, loadOrders, loadRooms } from "@/features/portal/data";
+import { SIDEBAR_COOKIE } from "@/features/portal/nav";
+import { PortalFrame } from "@/features/portal/PortalFrame";
 import { PortalNav } from "@/features/portal/PortalNav";
+import { PortalSidebar } from "@/features/portal/PortalSidebar";
 import styles from "@/features/portal/shell.module.css";
 
 /**
- * The signed-in portal: a black rail of section icons down the left, with the
- * site's pinned header (wordmark nudged right of the rail) over the panel.
+ * The signed-in portal: a black rail of section icons down the left, the
+ * labeled sidebar for the rail's current group beside it, and the site's
+ * pinned header (wordmark nudged right of both) over the panel.
  */
 export default async function PortalLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
-  const account = await getAccount();
+  const [account, cookieStore] = await Promise.all([getAccount(), cookies()]);
+  const [admin, team, rooms, orders, contracts] = account
+    ? await Promise.all([
+        isZodeAdmin(account),
+        isTeam(account),
+        loadRooms(account.userId),
+        loadOrders(account.userId),
+        loadContracts(account.userId),
+      ])
+    : [false, false, null, null, null];
+  const access = { admin, team };
 
   return (
-    <div className={styles.frame}>
+    <PortalFrame initial={cookieStore.get(SIDEBAR_COOKIE)?.value === "collapsed" ? "collapsed" : "open"}>
       <SiteShell
         footer={false}
         fade={false}
         edge="tight"
-        nav={<PortalNav admin={account ? await isZodeAdmin(account) : false} />}
+        nav={
+          <>
+            <PortalNav access={access} />
+            <PortalSidebar
+              account={
+                account
+                  ? { displayName: account.displayName, email: account.email, profileImage: account.profileImage }
+                  : null
+              }
+              access={access}
+              counts={{ rooms: rooms?.length, orders: orders?.length, contracts: contracts?.length }}
+            />
+          </>
+        }
       >
         <div className={styles.panel}>{children}</div>
       </SiteShell>
-    </div>
+    </PortalFrame>
   );
 }
