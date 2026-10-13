@@ -18,8 +18,10 @@ const todayUtc = (): string => new Date().toISOString().slice(0, 10);
 
 /**
  * The metric's line over the range, placed by date so gaps in the history
- * show as straight runs, with the area under it shaded. Flat or single-point
- * series sit on the middle line.
+ * show as straight runs, with the area under it shaded. Before the first
+ * snapshot in the range a dashed lead-in holds its value, so a metric tracked
+ * only since today doesn't read as a year of history. A flat series sits mid
+ * height, or on the floor when it's zero.
  */
 function Sparkline({ points, rangeDays, label }: { points: MetricPoint[]; rangeDays: number; label: string }): ReactElement {
   const end = dayMs(todayUtc());
@@ -30,18 +32,26 @@ function Sparkline({ points, rangeDays, label }: { points: MetricPoint[]; rangeD
   const span = max - min;
 
   const x = (day: string) => ((dayMs(day) - start) / Math.max(end - start, DAY_MS)) * WIDTH;
-  const y = (value: number) => (span === 0 ? HEIGHT / 2 : INSET + (1 - (value - min) / span) * (HEIGHT - INSET * 2));
+  const y = (value: number) =>
+    span === 0
+      ? value === 0
+        ? HEIGHT - INSET
+        : HEIGHT / 2
+      : INSET + (1 - (value - min) / span) * (HEIGHT - INSET * 2);
   const coords = points.map((point) => [x(point.day), y(point.value)] as const);
+  if (coords.length === 1) coords.push([WIDTH, coords[0][1]]);
   const line = coords.map(([px, py], i) => `${i ? "L" : "M"}${px.toFixed(1)},${py.toFixed(1)}`).join(" ");
   const area = coords.length
     ? `${line} L${coords.at(-1)![0].toFixed(1)},${HEIGHT} L${coords[0][0].toFixed(1)},${HEIGHT} Z`
     : "";
+  const [firstX, firstY] = coords[0] ?? [0, 0];
+  const leadIn = firstX > 1 ? `M0,${firstY.toFixed(1)} L${firstX.toFixed(1)},${firstY.toFixed(1)}` : null;
 
   return (
     <svg className={styles.spark} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="none" role="img" aria-label={label}>
-      {coords.length > 1 ? <path className={styles.sparkArea} d={area} /> : null}
-      {coords.length > 1 ? <path className={styles.sparkLine} d={line} /> : null}
-      {coords.length === 1 ? <path className={styles.sparkLine} d={`M0,${HEIGHT / 2} L${WIDTH},${HEIGHT / 2}`} /> : null}
+      {coords.length ? <path className={styles.sparkArea} d={area} /> : null}
+      {leadIn ? <path className={styles.sparkLeadIn} d={leadIn} /> : null}
+      {coords.length ? <path className={styles.sparkLine} d={line} /> : null}
     </svg>
   );
 }

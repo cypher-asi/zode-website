@@ -1,11 +1,3 @@
-/* All contracts' header: Record contract beside the tabs. */
-.headerActions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-}
-
 /* The Record contract form: a grid of fields that wraps by width, notes and the PDF across it. */
 .form {
   display: flex;

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense, type ReactElement } from "react";
 import Link from "next/link";
 import { ContractTabs } from "@/features/contracts/ContractTabs";
-import contractStyles from "@/features/contracts/contracts.module.css";
+import tabs from "@/features/data-room/room.module.css";
 import ui from "@/features/data-room/ui.module.css";
 import { loadAllContracts } from "@/features/portal/data";
 import { PortalLoading } from "@/features/portal/PortalLoading";
@@ -20,7 +20,7 @@ export default function AllContractsPage(): ReactElement {
   return (
     <div className={styles.page}>
       <PageHeader title="Contracts" subtitle="Every agreement signed with ZODE.">
-        <div className={contractStyles.headerActions}>
+        <div className={tabs.headerActions}>
           <Link href="/portal/contracts/new" className={ui.primary}>
             Record contract
           </Link>

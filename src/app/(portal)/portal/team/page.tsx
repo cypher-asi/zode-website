@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import type { ReactElement } from "react";
+import { Suspense, type ReactElement } from "react";
 import Link from "next/link";
 import { isZodeAdmin } from "@/features/account/admin";
+import { PortalLoading } from "@/features/portal/PortalLoading";
 import { Empty, PageHeader } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
 import dash from "@/features/team-dashboard/dashboard.module.css";
@@ -28,15 +29,26 @@ const megawatts = (value: number) => `${value.toLocaleString("en-US", { maximumF
 const dollars = (value: number) =>
   value.toLocaleString("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1 });
 
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
+
 /**
  * The ZODE team's figures at a glance, Home's Team tab: capacity, the
  * opportunity pipeline, contracts and subscribers, each with its history.
  */
-export default async function TeamDashboardPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}): Promise<ReactElement> {
+export default function TeamDashboardPage({ searchParams }: { searchParams: SearchParams }): ReactElement {
+  return (
+    <div className={styles.page}>
+      <PageHeader title="Team dashboard" subtitle="ZODE's capacity, pipeline, contracts and audience, tracked daily.">
+        <HomeTabs current="team" />
+      </PageHeader>
+      <Suspense fallback={<PortalLoading header={false} nested />}>
+        <Dashboard searchParams={searchParams} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function Dashboard({ searchParams }: { searchParams: SearchParams }): Promise<ReactElement> {
   const account = await requireTeam("/portal/team");
   const requested = Number((await searchParams).range);
   const rangeDays = RANGES.some((range) => range.days === requested) ? requested : DEFAULT_RANGE;
@@ -49,11 +61,7 @@ export default async function TeamDashboardPage({
   ]);
 
   return (
-    <div className={styles.page}>
-      <PageHeader title="Team dashboard" subtitle="ZODE's capacity, pipeline, contracts and audience, tracked daily.">
-        <HomeTabs current="team" />
-      </PageHeader>
-
+    <>
       <div className={dash.toolbar}>
         <h2 className={dash.toolbarTitle}>Last {RANGES.find((range) => range.days === rangeDays)?.label}</h2>
         <nav className={dash.ranges} aria-label="Range">
@@ -120,6 +128,6 @@ export default async function TeamDashboardPage({
           </p>
         </>
       )}
-    </div>
+    </>
   );
 }

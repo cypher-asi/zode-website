@@ -107,7 +107,6 @@ export function ComputeContractForm({
             id={`${id}-mode`}
             aria-labelledby={`${id}-mode-label`}
             name="mode"
-            size="sm"
             className={ui.fill}
             options={MODES}
             defaultValue="buy"
@@ -119,7 +118,6 @@ export function ComputeContractForm({
             id={`${id}-opportunity_id`}
             aria-labelledby={`${id}-opportunity_id-label`}
             name="opportunity_id"
-            size="sm"
             className={ui.fill}
             options={[NONE, ...opportunities]}
             defaultValue=""
@@ -132,7 +130,6 @@ export function ComputeContractForm({
             id={`${id}-site_id`}
             aria-labelledby={`${id}-site_id-label`}
             name="site_id"
-            size="sm"
             className={ui.fill}
             options={[NONE, ...sites]}
             defaultValue=""

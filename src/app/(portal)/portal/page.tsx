@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import { Suspense, type ReactElement } from "react";
 import Link from "next/link";
 import { LogoutButton } from "@/features/account/LogoutButton";
+import tabs from "@/features/data-room/room.module.css";
 import ui from "@/features/data-room/ui.module.css";
 import { loadMyHome, orLogIn } from "@/features/portal/mine";
 import { PortalLoading } from "@/features/portal/PortalLoading";
 import { Empty, OrderList, PageHeader, RoomList, Section } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
-import dash from "@/features/team-dashboard/dashboard.module.css";
 import { HomeTabs } from "@/features/team-dashboard/HomeTabs";
 
 export const metadata: Metadata = {
@@ -44,7 +44,7 @@ async function Home(): Promise<ReactElement> {
         }
       >
         {team ? (
-          <div className={dash.headerActions}>
+          <div className={tabs.headerActions}>
             <HomeTabs current="mine" />
             <LogoutButton className={ui.button} />
           </div>
