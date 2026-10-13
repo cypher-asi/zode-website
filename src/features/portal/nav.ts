@@ -5,6 +5,9 @@ import type { PortalIconName } from "./icons";
 /** Wide enough for the rail, the sidebar and a usable panel; under it the sidebar hides. Matches shell.module.css. */
 export const SIDEBAR_MEDIA = "(min-width: 1101px)";
 
+/** How many apps the phone's tab bar holds before the rest move into More. */
+export const TAB_BAR_APPS = 4;
+
 export type NavLink = {
   href: string;
   label: string;
@@ -35,20 +38,25 @@ export type PortalApp = {
   links: readonly NavLink[];
   /** A ZODE team app, set apart from everyone's apps on the rail. */
   team?: boolean;
+  /** A shorter name for the phone's tab bar, where `label` wouldn't fit. */
+  tabLabel?: string;
 };
 
 export type NavAccess = { admin: boolean; team: boolean };
+
+/** The site's tools, listed under Home. */
+export const TOOL_LINKS: readonly NavLink[] = [
+  { href: "/buy-compute", label: "Buy compute", icon: "orders" },
+  { href: "/cluster-builder", label: "Cluster builder", icon: "cluster" },
+  { href: "/compute-model", label: "Compute model", icon: "chart" },
+];
 
 const HOME: PortalApp = {
   id: "home",
   label: "Home",
   icon: "home",
   href: "/portal",
-  links: [
-    { href: "/buy-compute", label: "Buy compute", icon: "orders" },
-    { href: "/cluster-builder", label: "Cluster builder", icon: "cluster" },
-    { href: "/compute-model", label: "Compute model", icon: "chart" },
-  ],
+  links: TOOL_LINKS,
 };
 
 /** Each order type's page in the Orders app, `/portal/orders/<id>`. */
@@ -57,7 +65,14 @@ export const ORDER_MODES: readonly { id: "buy" | "rent"; label: string; icon: Po
   { id: "rent", label: "Rentals", icon: "recurring" },
 ];
 
-const ROOMS: PortalApp = { id: "rooms", label: "Data rooms", icon: "rooms", href: "/portal/data-rooms", links: [] };
+const ROOMS: PortalApp = {
+  id: "rooms",
+  label: "Data rooms",
+  tabLabel: "Rooms",
+  icon: "rooms",
+  href: "/portal/data-rooms",
+  links: [],
+};
 
 const ORDERS: PortalApp = {
   id: "orders",
@@ -197,6 +212,27 @@ export function activeApp(pathname: string, apps: readonly PortalApp[]): PortalA
     apps.map((app) => app.href),
   );
   return apps.find((app) => app.href === href) ?? apps[0];
+}
+
+/**
+ * Where a page's back button leads: the page it sits under in its app, for
+ * pages deeper than the app's own links (a post in the editor, a data room),
+ * or `null` on those links themselves and on pages outside every app.
+ */
+export function parentHref(pathname: string, apps: readonly PortalApp[]): string | null {
+  const appHref = activeHref(
+    pathname,
+    apps.map((app) => app.href),
+  );
+  const app = apps.find((candidate) => candidate.href === appHref);
+  if (!app) return null;
+  if (roomIdIn(pathname)) return app.href;
+  const base =
+    activeHref(
+      pathname,
+      app.links.map(({ href }) => href),
+    ) ?? app.href;
+  return pathname === base ? null : base;
 }
 
 /** The data room the page is in, from `/portal/data-rooms/[roomId]/…`. */

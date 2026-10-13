@@ -3,6 +3,7 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 32px 36px 40px;
 }
 
@@ -43,6 +44,13 @@
   margin-top: 40px;
 }
 
+/* The sidebar lists the tools where it shows (SIDEBAR_MEDIA in nav.ts). */
+@media (min-width: 1101px) {
+  .tools {
+    display: none;
+  }
+}
+
 .sectionHead {
   display: flex;
   align-items: baseline;
@@ -68,8 +76,10 @@
   transition: color var(--duration-base) ease;
 }
 
-.more:hover {
-  color: var(--color-text-primary);
+@media (hover: hover) {
+  .more:hover {
+    color: var(--color-text-primary);
+  }
 }
 
 .stats {
@@ -93,9 +103,15 @@
     box-shadow var(--duration-base) ease;
 }
 
-.stat:hover {
-  border-color: var(--color-border-strong);
-  box-shadow: 0 8px 24px -18px rgba(0, 0, 0, 0.35);
+@media (hover: hover) {
+  .stat:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: 0 8px 24px -18px rgba(0, 0, 0, 0.35);
+  }
+}
+
+.stat:active {
+  background: var(--color-surface-tint);
 }
 
 .statValue {
@@ -138,8 +154,14 @@ a.row {
   transition: background-color var(--duration-base) ease;
 }
 
-a.row:hover {
-  background: var(--color-surface-tint);
+@media (hover: hover) {
+  a.row:hover {
+    background: var(--color-surface-tint);
+  }
+}
+
+a.row:active {
+  background: var(--color-surface-active);
 }
 
 .stat:focus-visible,
@@ -283,14 +305,15 @@ a.row:focus-visible {
     padding: 12px 14px;
   }
 
-  /* Orders carry more on the right than fits beside the title, so it drops to a second line. */
-  .row[data-order] {
+  /* Orders, and rows with pills or buttons, carry more on the right than fits beside the title, so it drops to a second line. */
+  .row:is([data-order], [data-actions]) {
     flex-wrap: wrap;
     row-gap: 8px;
   }
 
-  .row[data-order] .rowEnd {
+  .row:is([data-order], [data-actions]) .rowEnd {
     flex-basis: 100%;
+    flex-wrap: wrap;
     padding-left: 50px;
   }
 

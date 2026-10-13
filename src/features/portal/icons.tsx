@@ -20,7 +20,10 @@ export type PortalIconName =
   | "recurring"
   | "chart"
   | "sun"
-  | "moon";
+  | "moon"
+  | "more"
+  | "back"
+  | "site";
 
 /*
  * Drawn on a 24px grid inside a 2px margin, with at most three strokes each.
@@ -154,6 +157,21 @@ const GLYPHS: Record<PortalIconName, ReactElement> = {
     </>
   ),
   moon: <path pathLength={1} d="M12 3.25a6 6 0 0 0 8.75 8.75 8.75 8.75 0 1 1-8.75-8.75z" />,
+  more: (
+    <>
+      <circle pathLength={1} cx="5.5" cy="12" r="1.5" />
+      <circle pathLength={1} cx="12" cy="12" r="1.5" />
+      <circle pathLength={1} cx="18.5" cy="12" r="1.5" />
+    </>
+  ),
+  back: <path pathLength={1} d="M14.75 5.25 8 12l6.75 6.75" />,
+  site: (
+    <>
+      <circle pathLength={1} cx="12" cy="12" r="8.75" />
+      <path pathLength={1} d="M3.25 12h17.5" />
+      <path pathLength={1} d="M12 3.25c2.4 2.4 3.5 5.3 3.5 8.75s-1.1 6.35-3.5 8.75c-2.4-2.4-3.5-5.3-3.5-8.75S9.6 5.65 12 3.25z" />
+    </>
+  ),
 };
 
 /** The portal's line icons: one 24px grid, one rounded 1.5 stroke, drawn in `currentColor`. */

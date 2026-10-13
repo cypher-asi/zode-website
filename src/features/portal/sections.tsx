@@ -8,6 +8,7 @@ import { kindLabel, type Post } from "@/features/posts/types";
 import { RoleButton } from "@/features/users/RoleButton";
 import { ROLE_LABELS, type User } from "@/features/users/types";
 import { PortalIcon } from "./icons";
+import { TOOL_LINKS } from "./nav";
 import styles from "./portal.module.css";
 
 const usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -96,6 +97,35 @@ export function RoomList({ rooms }: { rooms: RoomSummary[] }): ReactElement {
   );
 }
 
+/** The site's tools, for windows too narrow for the sidebar that lists them beside Home. */
+export function ToolList(): ReactElement {
+  return (
+    <section className={`${styles.section} ${styles.tools}`} aria-label="Tools">
+      <div className={styles.sectionHead}>
+        <h2 className={styles.sectionTitle}>Tools</h2>
+      </div>
+      <ul className={styles.list}>
+        {TOOL_LINKS.map((link) => (
+          <li key={link.href}>
+            {/* The site's tools, e.g. the cluster builder's 3D bundle, aren't worth warming up from the portal. */}
+            <Link className={styles.row} href={link.href} prefetch={false}>
+              <span className={styles.rowIcon}>
+                <PortalIcon name={link.icon} />
+              </span>
+              <span className={styles.rowMain}>
+                <span className={styles.rowTitle}>{link.label}</span>
+              </span>
+              <span className={styles.rowEnd}>
+                <Chevron />
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export function OrderList({ orders }: { orders: OrderSummary[] }): ReactElement {
   return (
     <ul className={styles.list}>
@@ -135,7 +165,7 @@ export function PostList({ posts }: { posts: Post[] }): ReactElement {
     <ul className={styles.list}>
       {posts.map((post) => (
         <li key={post.id}>
-          <Link className={styles.row} href={`/portal/posts/${post.id}`}>
+          <Link className={styles.row} href={`/portal/posts/${post.id}`} data-actions="">
             <span className={styles.rowIcon}>
               <PortalIcon name="posts" />
             </span>
@@ -197,7 +227,7 @@ export function SubscriberList({
         const name = subscriber.accountName || subscriber.name;
         return (
           <li key={subscriber.id}>
-            <div className={styles.row}>
+            <div className={styles.row} data-actions="">
               <span className={styles.rowIcon}>
                 <PortalIcon name={subscriber.userId ? "person" : "subscribers"} />
               </span>
@@ -233,7 +263,7 @@ export function UserList({ users, selfZosUserId }: { users: User[]; selfZosUserI
         const label = user.name || user.email || `user #${user.id}`;
         return (
           <li key={user.id}>
-            <div className={styles.row}>
+            <div className={styles.row} data-actions="">
               <span className={styles.rowIcon}>
                 <PortalIcon name="person" />
               </span>

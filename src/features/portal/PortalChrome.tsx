@@ -7,6 +7,7 @@ import { loadRoomNames } from "./data";
 import type { NavAccess } from "./nav";
 import { PortalNav } from "./PortalNav";
 import { PortalSidebar, type SidebarRoom } from "./PortalSidebar";
+import { PortalTopBar } from "./PortalTopBar";
 
 /**
  * What the rail and sidebar show for this session: which apps, and the rooms.
@@ -26,11 +27,12 @@ async function loadChrome(): Promise<{ access: NavAccess; rooms: SidebarRoom[] |
   return { access: { admin, team }, rooms };
 }
 
-/** The portal's rail and sidebar for the signed-in account. */
+/** The portal's rail, sidebar and phone title bar for the signed-in account. */
 export async function PortalChrome(): Promise<ReactElement> {
   const { access, rooms } = await loadChrome();
   return (
     <>
+      <PortalTopBar access={access} rooms={rooms} />
       <PortalNav access={access} />
       <PortalSidebar access={access} rooms={rooms} />
     </>

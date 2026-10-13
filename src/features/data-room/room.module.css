@@ -103,20 +103,31 @@
 }
 
 /* A quiet segmented control: the current tab lifts out as a white chip. 44px tall with its 36px tabs. */
+/* Scrolls sideways when its tabs outgrow a narrow window, e.g. every user role on a phone. */
 .tabs {
   display: flex;
   gap: 2px;
+  max-width: 100%;
   padding: 3px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
   border: 1px solid rgba(0, 0, 0, 0.04);
   border-radius: 10px;
   background: var(--color-surface-tint);
 }
 
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
 /* Radius is the track's less its padding, so the chip sits concentrically. */
 .tab {
   display: inline-flex;
+  flex: none;
   align-items: center;
   height: 36px;
+  white-space: nowrap;
   padding: 0 16px;
   border-radius: 7px;
   color: var(--color-text-tertiary);
@@ -130,8 +141,10 @@
     color var(--duration-base) ease;
 }
 
-.tab:hover {
-  color: var(--color-text-primary);
+@media (hover: hover) {
+  .tab:hover {
+    color: var(--color-text-primary);
+  }
 }
 
 .tab:focus-visible {
@@ -171,6 +184,20 @@
 @media (max-width: 700px) {
   .bar {
     padding: 16px 18px 14px;
+  }
+
+  /* The tabs fill the row beside any button, each an even share, or take a row of their own and scroll. */
+  .headerActions {
+    width: 100%;
+  }
+
+  .tabs {
+    flex: 1 1 auto;
+  }
+
+  .tab {
+    flex: 1 0 auto;
+    justify-content: center;
   }
 }
 

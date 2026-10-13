@@ -24,7 +24,7 @@ export function TeamList({
         const label = user.name || user.email || `user #${user.id}`;
         return (
           <li key={user.id}>
-            <div className={styles.row}>
+            <div className={styles.row} data-actions="">
               <span className={styles.rowIcon}>
                 <PortalIcon name="person" />
               </span>
@@ -56,7 +56,7 @@ export function PendingTeamInvites({ invites }: { invites: PendingTeamInvite[] }
     <ul className={styles.list}>
       {invites.map((invite) => (
         <li key={invite.id}>
-          <div className={styles.row}>
+          <div className={styles.row} data-actions="">
             <span className={styles.rowIcon}>
               <PortalIcon name="person" />
             </span>

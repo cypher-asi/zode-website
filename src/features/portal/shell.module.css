@@ -10,10 +10,11 @@
  * Spacing is even all the way down: the rail, sidebar and panel all start
  * `--portal-gap` below the header (the Buy Compute button's bottom edge,
  * `--header-bottom`) and end `--portal-gap` above the bottom. Side by side,
- * every panel (the two trays, the sidebar, the panel, and the phone bar) is
+ * every panel (the two trays, the sidebar and the panel) is
  * `--panel-gap` from the next.
  *
- * `--sidebar-space` is zero under 1100px, where the sidebar is hidden.
+ * `--sidebar-space` is zero under 1100px, where the sidebar is hidden. Under
+ * 700px the portal lays out like an app instead; see the phone block below.
  */
 .frame {
   --tray-pad: 6px;
@@ -124,7 +125,7 @@
   border: none;
   border-radius: var(--radius-card);
   background: none;
-  color: color-mix(in srgb, var(--color-white) 55%, transparent);
+  color: color-mix(in srgb, var(--color-white) 65%, transparent);
   cursor: pointer;
   transition:
     background-color var(--duration-base) ease,
@@ -132,13 +133,20 @@
 }
 
 .icon {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
+  stroke-width: 1.6;
 }
 
 .item[aria-current] {
   background: color-mix(in srgb, var(--color-white) 14%, transparent);
   color: var(--color-white);
+}
+
+/* The tab bar's visible labels and its More button, both phone only. */
+.label,
+.more {
+  display: none;
 }
 
 /*
@@ -249,12 +257,6 @@
   }
 }
 
-@keyframes grow-y {
-  from {
-    scale: 1 0;
-  }
-}
-
 @keyframes trace-in {
   from {
     stroke-dasharray: 1;
@@ -344,81 +346,164 @@
 }
 
 /*
- * Phones: the rail becomes a black bar along the bottom (the trays fall away
- * and their contents join one row), and the panel ends a gap above the bar.
- * Labels pop up above the icons.
+ * Phones, laid out like an app: PortalTopBar takes the site header's place,
+ * the rail becomes a frosted tab bar along the bottom edge (the first apps
+ * with their names, then More for the rest, the foot tray and the account),
+ * and the panel fills the space between the two, edge to edge.
  */
 @media (max-width: 700px) {
   .frame {
+    --topbar-height: 52px;
     --bar-height: 56px;
-    --rail-item: 36px;
+    --header-bottom: calc(var(--topbar-height) + env(safe-area-inset-top, 0px));
   }
 
   .rail {
     top: auto;
-    right: max(var(--edge), env(safe-area-inset-right, 0px));
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 11;
     flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
     gap: 0;
     width: auto;
-    height: var(--bar-height);
-    padding: 0 10px;
-    border-radius: var(--radius-panel);
-    background: var(--color-black);
-    box-shadow: 0 24px 48px -28px rgba(0, 0, 0, 0.45);
+    height: calc(var(--bar-height) + env(safe-area-inset-bottom, 0px));
+    padding: 0 max(4px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px)
+      max(4px, env(safe-area-inset-left, 0px));
+    border-top: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
-  .tray,
-  .bar {
+  .tray:first-child,
+  .tray:first-child .bar,
+  .tray:first-child .group {
     display: contents;
   }
 
-  .group {
-    flex-direction: row;
-    gap: 2px;
+  .tray + .tray,
+  .divider,
+  .item.overflow {
+    display: none;
   }
 
-  .divider {
+  /* Each item's name is its visible label here, so the tooltip only names it for screen readers. */
+  .tooltip {
+    position: absolute;
     width: 1px;
-    height: 20px;
-    margin: 0 4px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
   }
 
-  .avatar {
-    margin: 0 2px 0 6px;
+  .item {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    width: auto;
+    min-width: 0;
+    height: auto;
+    padding: 0 2px;
+    border-radius: 0;
+    color: var(--color-text-secondary);
+    isolation: isolate;
   }
 
-  .tooltip,
-  .avatar .tooltip {
-    top: auto;
-    bottom: calc(100% + 14px);
+  .more {
+    display: flex;
+  }
+
+  /* A pill behind the current tab's icon. */
+  .item::before {
+    content: "";
+    position: absolute;
+    top: 6px;
     left: 50%;
-    translate: -50% 4px;
+    z-index: -1;
+    width: 52px;
+    height: 28px;
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-active);
+    opacity: 0;
+    translate: -50% 0;
+    scale: 0.6 1;
+    transition:
+      opacity var(--duration-base) ease,
+      scale var(--duration-slow) var(--ease-out);
   }
 
-  .item:focus-visible .tooltip,
-  .avatar:focus-visible .tooltip {
-    translate: -50% 0;
+  .item[aria-current],
+  .more[data-active] {
+    background: none;
+    color: var(--color-text-primary);
+  }
+
+  .item[aria-current]::before,
+  .more[data-active]::before {
+    opacity: 1;
+    scale: 1;
+  }
+
+  .icon {
+    width: 24px;
+    height: 24px;
+    transition: scale var(--duration-fast) ease;
+  }
+
+  .item:active .icon {
+    scale: 0.88;
+  }
+
+  .label {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    font-size: var(--text-2xs);
+    font-weight: 500;
+    line-height: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .item[aria-current] .label,
+  .more[data-active] .label {
+    font-weight: 600;
+  }
+
+  .item:focus-visible {
+    outline-offset: -4px;
   }
 
   .panel {
-    bottom: calc(var(--portal-gap) + var(--bar-height) + var(--panel-gap) + env(safe-area-inset-bottom, 0px));
-    left: max(var(--edge), env(safe-area-inset-left, 0px));
-  }
-}
-
-@media (max-width: 700px) and (prefers-reduced-motion: no-preference) {
-  .divider.arriving {
-    animation-name: grow-y;
+    top: var(--header-bottom);
+    right: 0;
+    bottom: calc(var(--bar-height) + env(safe-area-inset-bottom, 0px));
+    left: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 }
 
 @media (max-width: 700px) and (hover: hover) {
-  .item:hover .tooltip,
-  .avatar:hover .tooltip {
-    translate: -50% 0;
+  .item:hover {
+    color: var(--color-text-primary);
   }
+
+  .item:not([aria-current]):hover {
+    background: none;
+  }
+}
+
+/* The portal's page never scrolls, so it shouldn't rubber-band either; its panels scroll inside. */
+:global(html):has(.frame) {
+  overscroll-behavior: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

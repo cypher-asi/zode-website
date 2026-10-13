@@ -28,6 +28,11 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
   },
+  appleWebApp: {
+    capable: true,
+    title: "ZODE",
+    statusBarStyle: "default",
+  },
 };
 
 export const viewport: Viewport = {

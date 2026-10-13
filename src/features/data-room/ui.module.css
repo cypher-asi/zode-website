@@ -104,3 +104,49 @@
   justify-content: flex-end;
   gap: 8px;
 }
+
+/* Phones: a sheet rising from the bottom edge, its actions stacked full width with the main one on top. */
+@media (max-width: 700px) {
+  .dialog {
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100dvh - 48px - env(safe-area-inset-top, 0px));
+    margin: auto 0 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    border-width: 1px 0 0;
+    border-radius: var(--radius-panel) var(--radius-panel) 0 0;
+    overscroll-behavior: contain;
+  }
+
+  .dialogActions {
+    flex-direction: column-reverse;
+  }
+
+  /* Out-specifies the shared button sizes. */
+  .dialogActions > :is(a, button) {
+    width: 100%;
+    height: 44px;
+  }
+}
+
+@media (max-width: 700px) and (prefers-reduced-motion: no-preference) {
+  .dialog[open] {
+    animation: sheet-in 320ms var(--ease-out);
+  }
+
+  .dialog[open]::backdrop {
+    animation: backdrop-in 260ms ease;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+}

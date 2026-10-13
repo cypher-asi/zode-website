@@ -6,7 +6,7 @@ import tabs from "@/features/data-room/room.module.css";
 import ui from "@/features/data-room/ui.module.css";
 import { loadMyHome, orLogIn } from "@/features/portal/mine";
 import { PortalLoading } from "@/features/portal/PortalLoading";
-import { Empty, OrderList, PageHeader, RoomList, Section } from "@/features/portal/sections";
+import { Empty, OrderList, PageHeader, RoomList, Section, ToolList } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
 import { HomeTabs } from "@/features/team-dashboard/HomeTabs";
 
@@ -93,6 +93,8 @@ async function Home(): Promise<ReactElement> {
           </Empty>
         )}
       </Section>
+
+      <ToolList />
     </div>
   );
 }

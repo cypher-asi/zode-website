@@ -98,6 +98,17 @@
   font-size: var(--text-sm);
 }
 
+/* iOS zooms into any field under 16px on focus. */
+@media (pointer: coarse) {
+  .search {
+    height: 38px;
+  }
+
+  .searchField input {
+    font-size: var(--text-md);
+  }
+}
+
 /* The active folder as a path; uploads and new folders land there. */
 .location {
   display: flex;
@@ -324,6 +335,15 @@
   opacity: 1;
 }
 
+/* Touch screens can't hover to reveal it, so it's always there, with a fingertip's room. */
+@media (hover: none) {
+  .rowMenuButton {
+    width: 32px;
+    height: 32px;
+    opacity: 1;
+  }
+}
+
 .rowMenuButton:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: -2px;
@@ -494,8 +514,9 @@
 
 .footer {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: 8px 12px;
   min-height: 52px;
   padding: 10px 12px 10px 14px;
   border-top: 1px solid var(--color-border);

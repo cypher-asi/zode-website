@@ -13,11 +13,13 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+/* A container, so the list drops its wide-only columns whenever its pane is narrow, not only on phones. */
 .listPane {
   display: flex;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+  container: zrm-list / inline-size;
   background: var(--color-paper);
 }
 
@@ -320,6 +322,7 @@
 
 /* The detail pane: a header over tabs over sections, scrolling on its own. */
 .detailPane {
+  container: zrm-detail / inline-size;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -354,7 +357,8 @@
   font-weight: 600;
   line-height: 1.25;
   letter-spacing: -0.01em;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  text-wrap: balance;
 }
 
 .detailTitle p {
@@ -380,8 +384,8 @@
 }
 
 .iconButton[aria-pressed="true"] svg {
-  fill: var(--color-accent);
-  stroke: var(--color-accent-strong);
+  fill: var(--color-ink);
+  stroke: var(--color-ink);
 }
 
 .back {
@@ -642,5 +646,53 @@
   .head [data-wide-only],
   .row [data-wide-only] {
     display: none;
+  }
+
+  /* Search takes the first row; the filters share the next with New. */
+  .toolbar {
+    flex-wrap: wrap;
+  }
+
+  .toolbar .search {
+    flex-basis: 100%;
+  }
+
+  .toolbar .filter {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .toolbar > :last-child {
+    margin-left: auto;
+  }
+}
+
+@container zrm-list (max-width: 560px) {
+  .head,
+  .row {
+    grid-template-columns: var(--columns-narrow, var(--columns));
+  }
+
+  .head [data-wide-only],
+  .row [data-wide-only] {
+    display: none;
+  }
+}
+
+/* A narrow pane gives the name and subtitle their own row under the avatar and actions. */
+@container zrm-detail (max-width: 600px) {
+  .detailHeader {
+    flex-wrap: wrap;
+    row-gap: 14px;
+  }
+
+  .detailTitle {
+    flex-basis: 100%;
+    order: 1;
+  }
+
+  .detailActions {
+    align-self: center;
+    margin-left: auto;
   }
 }

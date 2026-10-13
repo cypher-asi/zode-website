@@ -103,6 +103,13 @@ export const COLOR_GROUPS: readonly TokenGroup[] = [
   },
 ];
 
+/** A published colour's value, for places that can't read CSS variables, e.g. the web app manifest. */
+export function brandColor(token: string): string {
+  const found = COLOR_GROUPS.flatMap((group) => group.tokens).find((entry) => entry.token === token);
+  if (!found) throw new Error(`${token} isn't a published colour`);
+  return found.value;
+}
+
 export interface TypeFamily {
   readonly role: string;
   readonly family: string;

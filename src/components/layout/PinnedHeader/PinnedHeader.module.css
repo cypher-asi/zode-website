@@ -732,6 +732,14 @@ button.menuItem:disabled {
   }
 }
 
+/* Phones get the portal's own title bar (PortalTopBar) in place of the header; More in its tab bar holds the menu's links. */
+@media (max-width: 700px) {
+  [data-edge="flush"] .brand,
+  .action[data-portal] {
+    display: none;
+  }
+}
+
 @media (pointer: coarse) {
   .menuItem {
     height: 40px;

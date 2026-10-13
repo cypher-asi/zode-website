@@ -1,6 +1,16 @@
 "use client";
 
-import { createContext, use, useMemo, useState, useSyncExternalStore, type ReactElement, type ReactNode } from "react";
+import {
+  createContext,
+  use,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
 import { SIDEBAR_MEDIA } from "./nav";
 import styles from "./shell.module.css";
@@ -70,7 +80,8 @@ function InlineScript({ html }: { html: string }): ReactElement {
  * Wraps the portal shell, tracks where pages can dock their explorer in the
  * sidebar, and carries the light or dark theme (globals.css) for everything
  * inside, the pinned header included. The server renders light; an inline
- * script switches a hard load to dark before it paints.
+ * script switches a hard load to dark before it paints. The browser's theme
+ * colour (the status bar, in the installed app) follows along.
  */
 export function PortalFrame({ children }: { children: ReactNode }): ReactElement {
   const [dock, setDock] = useState<HTMLElement | null>(null);
@@ -86,13 +97,25 @@ export function PortalFrame({ children }: { children: ReactNode }): ReactElement
     () => false,
   );
 
+  const frameRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    const frame = frameRef.current;
+    if (!meta || !frame) return;
+    const previous = meta.content;
+    meta.content = getComputedStyle(frame).getPropertyValue("--color-bg").trim();
+    return () => {
+      meta.content = previous;
+    };
+  }, [theme]);
+
   const themeValue = useMemo(() => ({ theme, toggle: toggleTheme }), [theme]);
   const sidebarValue = useMemo(() => ({ wide, dock, setDock, extra, setExtra }), [wide, dock, extra]);
 
   return (
     <ThemeContext value={themeValue}>
       <SidebarContext value={sidebarValue}>
-        <div className={styles.frame} data-theme={theme} suppressHydrationWarning>
+        <div ref={frameRef} className={styles.frame} data-theme={theme} suppressHydrationWarning>
           <InlineScript html={PORTAL_THEME_SCRIPT} />
           {children}
         </div>

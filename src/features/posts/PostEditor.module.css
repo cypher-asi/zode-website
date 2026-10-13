@@ -251,6 +251,14 @@
   font-size: var(--text-xs);
 }
 
+/* iOS zooms into any field under 16px on focus. */
+@media (pointer: coarse) {
+  .slug input {
+    height: 40px;
+    font-size: var(--text-md);
+  }
+}
+
 .cover {
   display: block;
   width: 100%;
