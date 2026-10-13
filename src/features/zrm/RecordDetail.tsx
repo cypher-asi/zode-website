@@ -1,105 +1,47 @@
 import "server-only";
 import type { ReactElement } from "react";
-import { notFound } from "next/navigation";
-import type { RefOptions } from "./fieldUi";
 import { CompanyPanel, OpportunityPanel, PersonPanel } from "./panels";
 import {
-  activities,
-  companyPeople,
-  companyTypes,
-  customFields,
-  education,
-  getCompany,
-  getOpportunity,
-  getPerson,
-  listStages,
-  listTypes,
-  notes,
-  referenceOptions,
-  relatedOpportunities,
-  workHistory,
+  getCompanyDetail,
+  getOpportunityDetail,
+  getPersonDetail,
+  type CompanyDetail,
+  type OpportunityDetail,
+  type PersonDetail,
 } from "./queries";
 import type { ZrmKind } from "./types";
 
-export async function loadRefOptions(): Promise<RefOptions> {
-  const [refs, stages] = await Promise.all([referenceOptions(), listStages()]);
-  return { ...refs, stages };
-}
+export type RecordData =
+  | { kind: "people"; detail: PersonDetail }
+  | { kind: "companies"; detail: CompanyDetail }
+  | { kind: "opportunities"; detail: OpportunityDetail };
 
-/** The right pane for one record, or a 404 when there's no such record. */
-export async function RecordDetail({ kind, id }: { kind: ZrmKind; id: string }): Promise<ReactElement> {
+/** Everything the right pane shows for one record, or null when there's no such record. */
+export async function loadRecord(kind: ZrmKind, id: string): Promise<RecordData | null> {
   switch (kind) {
     case "people": {
-      const person = await getPerson(id);
-      if (!person) notFound();
-      const [types, work, schools, custom, opportunities, personNotes, options] = await Promise.all([
-        companyTypes(person.company_id),
-        workHistory(id),
-        education(id),
-        customFields("people", id),
-        relatedOpportunities("person_id", id),
-        notes("people", id),
-        loadRefOptions(),
-      ]);
-      return (
-        <PersonPanel
-          key={id}
-          person={person}
-          types={types}
-          work={work}
-          education={schools}
-          custom={custom}
-          opportunities={opportunities}
-          notes={personNotes}
-          options={options}
-        />
-      );
+      const detail = await getPersonDetail(id);
+      return detail && { kind, detail };
     }
     case "companies": {
-      const company = await getCompany(id);
-      if (!company) notFound();
-      const [types, allTypes, custom, people, opportunities, companyNotes, options] = await Promise.all([
-        companyTypes(id),
-        listTypes(),
-        customFields("companies", id),
-        companyPeople(id),
-        relatedOpportunities("company_id", id),
-        notes("companies", id),
-        loadRefOptions(),
-      ]);
-      return (
-        <CompanyPanel
-          key={id}
-          company={company}
-          types={types}
-          allTypes={allTypes}
-          custom={custom}
-          people={people}
-          opportunities={opportunities}
-          notes={companyNotes}
-          options={options}
-        />
-      );
+      const detail = await getCompanyDetail(id);
+      return detail && { kind, detail };
     }
     case "opportunities": {
-      const opportunity = await getOpportunity(id);
-      if (!opportunity) notFound();
-      const [types, log, opportunityNotes, options] = await Promise.all([
-        companyTypes(opportunity.company_id),
-        activities(id),
-        notes("opportunities", id),
-        loadRefOptions(),
-      ]);
-      return (
-        <OpportunityPanel
-          key={id}
-          opportunity={opportunity}
-          types={types}
-          activities={log}
-          notes={opportunityNotes}
-          options={options}
-        />
-      );
+      const detail = await getOpportunityDetail(id);
+      return detail && { kind, detail };
     }
+  }
+}
+
+/** The right pane for one record. */
+export function RecordDetail({ record }: { record: RecordData }): ReactElement {
+  switch (record.kind) {
+    case "people":
+      return <PersonPanel key={record.detail.person.id} {...record.detail} />;
+    case "companies":
+      return <CompanyPanel key={record.detail.company.id} {...record.detail} />;
+    case "opportunities":
+      return <OpportunityPanel key={record.detail.opportunity.id} {...record.detail} />;
   }
 }

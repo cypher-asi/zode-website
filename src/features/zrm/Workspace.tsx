@@ -1,14 +1,16 @@
 "use client";
 
-import { useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactElement, type ReactNode } from "react";
+import { memo, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactElement, type ReactNode } from "react";
 import Link from "next/link";
-import { useRouter, useSelectedLayoutSegment } from "next/navigation";
+import { useSelectedLayoutSegments } from "next/navigation";
 import { Select } from "@/components/ui/Select";
 import { Splitter } from "@/components/ui/Splitter";
+import { PortalLoading } from "@/features/portal/PortalLoading";
 import ui from "@/features/data-room/ui.module.css";
 import { Icon } from "./bits";
 import { NEW_LABELS, companiesConfig, opportunitiesConfig, peopleConfig, type ListConfig } from "./columns";
-import { KIND_LABELS, recordHref, type ListRows, type ZrmKind, type ZrmType } from "./types";
+import { KIND_LABELS, isKind, recordHref, type ZrmKind, type ZrmType } from "./types";
+import { goOnClick, useZrm, ZrmLink } from "./ZrmProvider";
 import styles from "./zrm.module.css";
 
 interface Sort {
@@ -29,6 +31,44 @@ function compare(a: string | number | null, b: string | number | null): number {
   return a < b ? -1 : 1;
 }
 
+interface RowProps<T> {
+  kind: ZrmKind;
+  row: T;
+  config: ListConfig<T>;
+  style: CSSProperties;
+  selected: boolean;
+  go: (href: string) => void;
+}
+
+/** One record in the list, memoized so moving the selection re-renders only the rows it leaves and lands on. */
+const Row = memo(function Row<T extends ListRow>({ kind, row, config, style, selected, go }: RowProps<T>): ReactElement {
+  const href = recordHref(kind, row.id);
+  return (
+    <Link
+      data-id={row.id}
+      href={href}
+      scroll={false}
+      prefetch={false}
+      onClick={goOnClick(go, href)}
+      className={styles.row}
+      style={style}
+      aria-current={selected ? "page" : undefined}
+    >
+      {config.columns.map((column) => (
+        <span
+          key={column.key}
+          className={column.key === config.columns[0]!.key ? styles.lead : styles.cell}
+          data-align={column.align}
+          data-numeric={column.align === "end" ? "" : undefined}
+          data-wide-only={column.wideOnly ? "" : undefined}
+        >
+          {column.render(row)}
+        </span>
+      ))}
+    </Link>
+  );
+}) as <T extends ListRow>(props: RowProps<T>) => ReactElement;
+
 /** The middle pane: search, a type filter and sortable columns over the records, pinned ones first. */
 function RecordList<T extends ListRow>({
   kind,
@@ -43,7 +83,7 @@ function RecordList<T extends ListRow>({
   types: readonly ZrmType[];
   selectedId: string | null;
 }): ReactElement {
-  const router = useRouter();
+  const { go } = useZrm();
   const [query, setQuery] = useState("");
   const [typeId, setTypeId] = useState("");
   const [sort, setSort] = useState<Sort | null>(null);
@@ -76,13 +116,17 @@ function RecordList<T extends ListRow>({
       .map(({ row }) => row);
   }, [rows, query, typeId, sort, config]);
 
-  const columnsStyle = {
-    "--columns": config.columns.map((c) => c.width).join(" "),
-    "--columns-narrow": config.columns
-      .filter((c) => !c.wideOnly)
-      .map((c) => c.width)
-      .join(" "),
-  } as CSSProperties;
+  const columnsStyle = useMemo(
+    () =>
+      ({
+        "--columns": config.columns.map((c) => c.width).join(" "),
+        "--columns-narrow": config.columns
+          .filter((c) => !c.wideOnly)
+          .map((c) => c.width)
+          .join(" "),
+      }) as CSSProperties,
+    [config],
+  );
 
   const toggleSort = (key: string) =>
     setSort((current) => (current?.key !== key ? { key, dir: 1 } : current.dir === 1 ? { key, dir: -1 } : null));
@@ -94,7 +138,7 @@ function RecordList<T extends ListRow>({
     event.preventDefault();
     const at = shown.findIndex((row) => row.id === selectedId);
     const next = shown[Math.min(shown.length - 1, Math.max(0, at === -1 ? 0 : at + step))]!;
-    router.push(recordHref(kind, next.id), { scroll: false });
+    go(recordHref(kind, next.id));
     listRef.current?.querySelector<HTMLElement>(`[data-id="${next.id}"]`)?.focus();
   };
 
@@ -124,10 +168,10 @@ function RecordList<T extends ListRow>({
             align="end"
           />
         ) : null}
-        <Link href={`/portal/zrm/${kind}/new`} className={ui.primary} aria-label={NEW_LABELS[kind]} title={NEW_LABELS[kind]}>
+        <ZrmLink href={`/portal/zrm/${kind}/new`} className={ui.primary} aria-label={NEW_LABELS[kind]} title={NEW_LABELS[kind]}>
           <Icon name="plus" />
           New
-        </Link>
+        </ZrmLink>
       </div>
 
       <div className={styles.head} style={columnsStyle}>
@@ -158,27 +202,15 @@ function RecordList<T extends ListRow>({
           </p>
         ) : (
           shown.map((row) => (
-            <Link
+            <Row
               key={row.id}
-              data-id={row.id}
-              href={recordHref(kind, row.id)}
-              scroll={false}
-              className={styles.row}
+              kind={kind}
+              row={row}
+              config={config}
               style={columnsStyle}
-              aria-current={row.id === selectedId ? "page" : undefined}
-            >
-              {config.columns.map((column) => (
-                <span
-                  key={column.key}
-                  className={column.key === config.columns[0]!.key ? styles.lead : styles.cell}
-                  data-align={column.align}
-                  data-numeric={column.align === "end" ? "" : undefined}
-                  data-wide-only={column.wideOnly ? "" : undefined}
-                >
-                  {column.render(row)}
-                </span>
-              ))}
-            </Link>
+              selected={row.id === selectedId}
+              go={go}
+            />
           ))
         )}
       </div>
@@ -196,37 +228,46 @@ function RecordList<T extends ListRow>({
 }
 
 /**
- * One ZRM tab: the list of records, and once one is open (or the New form),
- * a resizable divider and the record (the route's page) on the right. Lives
- * in the tab's layout, so moving between records keeps the list, its search
- * and its scroll.
+ * The open ZRM tab: the list of records, and once one is open (or the New
+ * form), a resizable divider and the record (the route's page) on the right.
+ * Lives in the ZRM layout and lists from data already loaded, so switching
+ * tabs shows the new list at once, and moving between records keeps the
+ * list, its search and its scroll.
  */
-export function Workspace({ data, types, children }: { data: ListRows; types: ZrmType[]; children: ReactNode }): ReactElement {
-  const segment = useSelectedLayoutSegment();
+export function Workspace({ children }: { children: ReactNode }): ReactElement {
+  const { data, segments, pending } = useZrm();
+  const [kind, child = null] = segments;
+  const shownChild = useSelectedLayoutSegments()[1] ?? null;
+  /** On its way to another record or form: an empty pane shows a placeholder, an open record dims until it's replaced. */
+  const loading = pending && child !== shownChild;
   const containerRef = useRef<HTMLDivElement>(null);
-  const typeMap = useMemo(() => new Map(types.map((type) => [type.id, type])), [types]);
-  const selectedId = segment && segment !== "new" ? segment : null;
-  const common = { types, selectedId };
+  const configs = useMemo(() => {
+    const typeMap = new Map(data.types.map((type) => [type.id, type]));
+    return { people: peopleConfig(typeMap), companies: companiesConfig(typeMap), opportunities: opportunitiesConfig() };
+  }, [data.types]);
 
+  if (!isKind(kind)) return <>{children}</>;
+
+  const common = { types: data.types, selectedId: child && child !== "new" ? child : null };
   let list: ReactElement;
-  switch (data.kind) {
+  switch (kind) {
     case "people":
-      list = <RecordList kind="people" rows={data.rows} config={peopleConfig(typeMap)} {...common} />;
+      list = <RecordList key={kind} kind={kind} rows={data.people} config={configs.people} {...common} />;
       break;
     case "companies":
-      list = <RecordList kind="companies" rows={data.rows} config={companiesConfig(typeMap)} {...common} />;
+      list = <RecordList key={kind} kind={kind} rows={data.companies} config={configs.companies} {...common} />;
       break;
     case "opportunities":
-      list = <RecordList kind="opportunities" rows={data.rows} config={opportunitiesConfig()} {...common} />;
+      list = <RecordList key={kind} kind={kind} rows={data.opportunities} config={configs.opportunities} {...common} />;
       break;
   }
 
   return (
-    <div ref={containerRef} className={styles.workspace} data-view={segment ? "detail" : "list"}>
-      <section className={styles.listPane} aria-label={KIND_LABELS[data.kind].plural}>
+    <div ref={containerRef} className={styles.workspace} data-view={child ? "detail" : "list"}>
+      <section className={styles.listPane} aria-label={KIND_LABELS[kind].plural}>
         {list}
       </section>
-      {segment ? (
+      {child ? (
         <>
           <Splitter
             containerRef={containerRef}
@@ -235,8 +276,13 @@ export function Workspace({ data, types, children }: { data: ListRows; types: Zr
             cssVar="--list-width"
             defaultFraction={0.52}
           />
-          <section className={styles.detailPane} aria-label="Details">
-            {children}
+          <section
+            className={styles.detailPane}
+            aria-label="Details"
+            aria-busy={loading || undefined}
+            data-pending={loading && shownChild ? "" : undefined}
+          >
+            {loading && !shownChild ? <PortalLoading header={false} /> : children}
           </section>
         </>
       ) : null}

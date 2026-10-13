@@ -1,20 +1,13 @@
 "use client";
 
 import type { ReactElement, ReactNode } from "react";
-import Link from "next/link";
 import { Select } from "@/components/ui/Select";
 import ui from "@/features/data-room/ui.module.css";
 import { Badge } from "./bits";
 import type { FieldSpec } from "./fields";
-import { formatMoney, recordHref, type Option, type Stage } from "./types";
+import { formatMoney, recordHref, type Option } from "./types";
+import { useRefOptions, ZrmLink } from "./ZrmProvider";
 import styles from "./zrm.module.css";
-
-/** Choices for the company, person and stage fields. */
-export interface RefOptions {
-  companies: Option[];
-  people: Option[];
-  stages: Stage[];
-}
 
 const dateFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "UTC" });
 const monthFormat = new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
@@ -70,9 +63,9 @@ export function fieldValue(field: FieldSpec, record: object): ReactNode {
     case "person": {
       const name = field.display ? read(record, field.display) : null;
       return (
-        <Link href={recordHref(field.type === "company" ? "companies" : "people", String(value))}>
+        <ZrmLink href={recordHref(field.type === "company" ? "companies" : "people", String(value))}>
           {String(name ?? "Open")}
-        </Link>
+        </ZrmLink>
       );
     }
     case "stage":
@@ -92,14 +85,13 @@ function inputDefault(field: FieldSpec, value: unknown): string {
 export function FieldInput({
   field,
   record,
-  options,
   idPrefix,
 }: {
   field: FieldSpec;
   record: object | null;
-  options: RefOptions;
   idPrefix: string;
 }): ReactElement {
+  const options = useRefOptions();
   const id = `${idPrefix}-${field.key}`;
   const value = record ? read(record, field.key) : undefined;
   const defaultValue = inputDefault(field, value);

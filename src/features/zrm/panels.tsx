@@ -1,12 +1,11 @@
 "use client";
 
 import { useOptimistic, useTransition, type ReactElement } from "react";
-import Link from "next/link";
 import { Select } from "@/components/ui/Select";
 import { setStageAction } from "./actions";
 import { DetailShell } from "./DetailShell";
 import { SECTIONS } from "./fields";
-import { formatDate, formatSpan, type RefOptions } from "./fieldUi";
+import { formatDate, formatSpan } from "./fieldUi";
 import { ChildSection, FieldSection, RelatedSection, Section, TypeList, TypesSection } from "./sections";
 import {
   formatMoney,
@@ -24,11 +23,12 @@ import {
   type ZrmKind,
   type ZrmType,
 } from "./types";
+import { useZrm, ZrmLink } from "./ZrmProvider";
 import styles from "./zrm.module.css";
 
-function Fields({ kind, record, options }: { kind: ZrmKind; record: { id: string }; options: RefOptions }) {
+function Fields({ kind, record }: { kind: ZrmKind; record: { id: string } }) {
   return SECTIONS[kind].map((section) => (
-    <FieldSection key={section.id} kind={kind} id={record.id} section={section} record={record} options={options} />
+    <FieldSection key={section.id} kind={kind} id={record.id} section={section} record={record} />
   ));
 }
 
@@ -65,7 +65,6 @@ export function PersonPanel({
   custom,
   opportunities,
   notes,
-  options,
 }: {
   person: Person;
   types: ZrmType[];
@@ -74,7 +73,6 @@ export function PersonPanel({
   custom: CustomField[];
   opportunities: Related[];
   notes: Note[];
-  options: RefOptions;
 }): ReactElement {
   const name = personName(person);
   const role = person.title ?? person.headline ?? "";
@@ -89,11 +87,11 @@ export function PersonPanel({
         <>
           {role}
           {role && person.company_id ? " at " : null}
-          {person.company_id ? <Link href={recordHref("companies", person.company_id)}>{person.company_name}</Link> : null}
+          {person.company_id ? <ZrmLink href={recordHref("companies", person.company_id)}>{person.company_name}</ZrmLink> : null}
         </>
       }
     >
-      <Fields kind="people" record={person} options={options} />
+      <Fields kind="people" record={person} />
       {person.company_id ? (
         <Section title="Type">
           <TypeList types={types} />
@@ -147,27 +145,24 @@ export function PersonPanel({
 export function CompanyPanel({
   company,
   types,
-  allTypes,
   custom,
   people,
   opportunities,
   notes,
-  options,
 }: {
   company: Company;
   types: ZrmType[];
-  allTypes: ZrmType[];
   custom: CustomField[];
   people: Related[];
   opportunities: Related[];
   notes: Note[];
-  options: RefOptions;
 }): ReactElement {
+  const { data } = useZrm();
   const subtitle = [company.industry, [company.city, company.country].filter(Boolean).join(", ")].filter(Boolean).join(" · ");
   return (
     <DetailShell kind="companies" id={company.id} name={company.name} active={company.active} notes={notes} subtitle={subtitle}>
-      <Fields kind="companies" record={company} options={options} />
-      <TypesSection companyId={company.id} current={types} all={allTypes} />
+      <Fields kind="companies" record={company} />
+      <TypesSection companyId={company.id} current={types} all={data.types} />
       <CustomFields kind="companies" id={company.id} items={custom} />
       <RelatedSection
         title="People"
@@ -185,7 +180,8 @@ export function CompanyPanel({
   );
 }
 
-function StageSelect({ id, stageId, options }: { id: string; stageId: string; options: RefOptions }): ReactElement {
+function StageSelect({ id, stageId }: { id: string; stageId: string }): ReactElement {
+  const { data } = useZrm();
   const [optimistic, setOptimistic] = useOptimistic(stageId);
   const [, startTransition] = useTransition();
   return (
@@ -194,7 +190,7 @@ function StageSelect({ id, stageId, options }: { id: string; stageId: string; op
       className={styles.stage}
       aria-label="Stage"
       align="end"
-      options={options.stages.map((stage) => ({ value: stage.id, label: stage.name }))}
+      options={data.stages.map((stage) => ({ value: stage.id, label: stage.name }))}
       value={optimistic}
       onChange={(next) =>
         startTransition(async () => {
@@ -211,13 +207,11 @@ export function OpportunityPanel({
   types,
   activities,
   notes,
-  options,
 }: {
   opportunity: Opportunity;
   types: ZrmType[];
   activities: Activity[];
   notes: Note[];
-  options: RefOptions;
 }): ReactElement {
   const o = opportunity;
   return (
@@ -227,17 +221,17 @@ export function OpportunityPanel({
       name={o.title}
       active={o.active}
       notes={notes}
-      actions={<StageSelect id={o.id} stageId={o.stage_id} options={options} />}
+      actions={<StageSelect id={o.id} stageId={o.stage_id} />}
       subtitle={
         <>
-          {o.person_id ? <Link href={recordHref("people", o.person_id)}>{o.person_name}</Link> : null}
+          {o.person_id ? <ZrmLink href={recordHref("people", o.person_id)}>{o.person_name}</ZrmLink> : null}
           {o.person_id && o.company_id ? " · " : null}
-          {o.company_id ? <Link href={recordHref("companies", o.company_id)}>{o.company_name}</Link> : null}
+          {o.company_id ? <ZrmLink href={recordHref("companies", o.company_id)}>{o.company_name}</ZrmLink> : null}
           {o.value != null ? `${o.person_id || o.company_id ? " · " : ""}${formatMoney(o.value)}` : null}
         </>
       }
     >
-      <Fields kind="opportunities" record={o} options={options} />
+      <Fields kind="opportunities" record={o} />
       {o.company_id ? (
         <Section title="Type">
           <TypeList types={types} />

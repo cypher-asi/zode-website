@@ -1,13 +1,13 @@
 "use client";
 
 import { Fragment, useActionState, useId, useState, useTransition, type ReactElement, type ReactNode } from "react";
-import Link from "next/link";
 import ui from "@/features/data-room/ui.module.css";
 import { addChildAction, deleteChildAction, saveFieldsAction, setCompanyTypesAction } from "./actions";
 import { Badge, Icon } from "./bits";
 import { CHILDREN, type ChildKind, type SectionSpec } from "./fields";
-import { FieldInput, fieldValue, type RefOptions } from "./fieldUi";
+import { FieldInput, fieldValue } from "./fieldUi";
 import { recordHref, type ActionState, type Related, type ZrmKind, type ZrmType } from "./types";
+import { ZrmLink } from "./ZrmProvider";
 import styles from "./zrm.module.css";
 
 const INITIAL: ActionState = {};
@@ -59,13 +59,11 @@ export function FieldSection({
   id,
   section,
   record,
-  options,
 }: {
   kind: ZrmKind;
   id: string;
   section: SectionSpec;
   record: object;
-  options: RefOptions;
 }): ReactElement {
   const formId = useId();
   const [editing, setEditing] = useState(false);
@@ -81,7 +79,7 @@ export function FieldSection({
         <form action={action} className={styles.form}>
           <div className={styles.formGrid}>
             {section.fields.map((field) => (
-              <FieldInput key={field.key} field={field} record={record} options={options} idPrefix={formId} />
+              <FieldInput key={field.key} field={field} record={record} idPrefix={formId} />
             ))}
           </div>
           <FormError state={state} />
@@ -172,13 +170,7 @@ export function ChildSection<T extends { id: string }>({
     <form key={formKey} action={action} className={styles.form}>
       <div className={styles.formGrid}>
         {CHILDREN[child].fields.map((field) => (
-          <FieldInput
-            key={field.key}
-            field={field}
-            record={null}
-            options={{ companies: [], people: [], stages: [] }}
-            idPrefix={formId}
-          />
+          <FieldInput key={field.key} field={field} record={null} idPrefix={formId} />
         ))}
       </div>
       <FormError state={state} />
@@ -314,9 +306,9 @@ export function RelatedSection({
       title={`${title} (${items.length})`}
       action={
         addHref ? (
-          <Link href={addHref} className={ui.linkButton}>
+          <ZrmLink href={addHref} className={ui.linkButton}>
             Add
-          </Link>
+          </ZrmLink>
         ) : null
       }
     >
@@ -325,9 +317,9 @@ export function RelatedSection({
           {items.map((item) => (
             <li key={item.id} className={styles.item}>
               <div className={styles.itemBody}>
-                <Link href={recordHref(kind, item.id)} className={styles.relatedName}>
+                <ZrmLink href={recordHref(kind, item.id)} className={styles.relatedName}>
                   {item.label}
-                </Link>
+                </ZrmLink>
                 {item.detail ? <span className={styles.itemMeta}>{item.detail}</span> : null}
               </div>
             </li>

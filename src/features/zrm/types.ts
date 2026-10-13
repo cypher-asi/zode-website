@@ -74,10 +74,13 @@ export interface OpportunityRow {
   type_ids: string[];
 }
 
-export type ListRows =
-  | { kind: "people"; rows: PersonRow[] }
-  | { kind: "companies"; rows: CompanyRow[] }
-  | { kind: "opportunities"; rows: OpportunityRow[] };
+export interface ZrmData {
+  people: PersonRow[];
+  companies: CompanyRow[];
+  opportunities: OpportunityRow[];
+  types: ZrmType[];
+  stages: Stage[];
+}
 
 // Full records, for the detail pane.
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useOptimistic, useState, useTransition, type ReactElement, type ReactNode } from "react";
-import Link from "next/link";
 import { Dialog } from "@/features/data-room/Dialog";
 import ui from "@/features/data-room/ui.module.css";
 import { deleteRecordAction, setActiveAction } from "./actions";
@@ -9,6 +8,7 @@ import { Avatar, Icon } from "./bits";
 import { formatDate } from "./fieldUi";
 import { ChildSection } from "./sections";
 import { KIND_LABELS, type Note, type ZrmKind } from "./types";
+import { ZrmLink } from "./ZrmProvider";
 import styles from "./zrm.module.css";
 
 function PinButton({ kind, id, active }: { kind: ZrmKind; id: string; active: boolean }): ReactElement {
@@ -95,9 +95,9 @@ export function DetailShell({
   return (
     <>
       <header className={styles.detailHeader}>
-        <Link href={`/portal/zrm/${kind}`} className={`${ui.iconButton} ${styles.back}`} aria-label={`Back to ${KIND_LABELS[kind].plural}`}>
+        <ZrmLink href={`/portal/zrm/${kind}`} className={`${ui.iconButton} ${styles.back}`} aria-label={`Back to ${KIND_LABELS[kind].plural}`}>
           <Icon name="back" />
-        </Link>
+        </ZrmLink>
         <Avatar name={name} shape={kind === "companies" ? "square" : "round"} size="lg" />
         <div className={styles.detailTitle}>
           <h2>{name}</h2>
@@ -107,15 +107,14 @@ export function DetailShell({
           {actions}
           <PinButton kind={kind} id={id} active={active} />
           <DeleteButton kind={kind} id={id} name={name} />
-          <Link
+          <ZrmLink
             href={`/portal/zrm/${kind}`}
-            scroll={false}
             className={`${ui.iconButton} ${styles.close}`}
             aria-label="Close"
             title="Close"
           >
             <Icon name="close" />
-          </Link>
+          </ZrmLink>
         </div>
       </header>
 
