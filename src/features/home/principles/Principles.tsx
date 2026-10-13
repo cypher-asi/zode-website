@@ -3,14 +3,62 @@
 import { useEffect, useRef, type CSSProperties, type ReactElement } from "react";
 import { useInView } from "@/hooks/useInView";
 import { PrincipleArt } from "./PrincipleArt";
-import { PRINCIPLES } from "./principles";
+import { PRINCIPLES, type Principle } from "./principles";
 import styles from "./Principles.module.css";
 
+/** The grid's class, for hosts that lay the cards out themselves (the investor deck); `data-shown` fades them in. */
+export const PRINCIPLE_GRID_CLASS = styles.grid;
+
 /**
- * Four numbered principle cards in a row, each a line drawing over its title.
- * Hovering or focusing a card plays its drawing and slides its description up
- * under the title. Touch screens show every description, and play a drawing
- * while its card sits in the middle of the viewport.
+ * One numbered principle card: a line drawing over its title. Hovering or
+ * focusing it plays the drawing and slides the description up under the
+ * title; `open` keeps the description out and `playing` keeps the drawing
+ * looping, for places with no hover (a slide). `headingLevel` drops the
+ * title to an H3 where the card sits under a section's own H2.
+ */
+export function PrincipleCard({
+  principle,
+  index,
+  open = false,
+  playing = false,
+  headingLevel = 2,
+}: {
+  principle: Principle;
+  index: number;
+  open?: boolean;
+  playing?: boolean;
+  headingLevel?: 2 | 3;
+}): ReactElement {
+  const Heading = headingLevel === 3 ? "h3" : "h2";
+  return (
+    <article
+      className={styles.card}
+      tabIndex={open ? undefined : 0}
+      data-open={open || undefined}
+      data-playing={playing || undefined}
+      style={{ "--i": index } as CSSProperties}
+    >
+      <div className={styles.head}>
+        <span className={styles.index}>{String(index + 1).padStart(2, "0")}</span>
+        <span className={styles.plus} aria-hidden="true" />
+      </div>
+      <div className={styles.figure}>
+        <PrincipleArt id={principle.id} />
+      </div>
+      <div className={styles.copy}>
+        <Heading className={styles.title}>{principle.title}</Heading>
+        <div className={styles.reveal}>
+          <p className={styles.body}>{principle.body}</p>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+/**
+ * Four numbered principle cards in a row. Touch screens show every
+ * description, and play a drawing while its card sits in the middle of the
+ * viewport.
  */
 export function Principles(): ReactElement {
   const ref = useRef<HTMLDivElement>(null);
@@ -33,26 +81,7 @@ export function Principles(): ReactElement {
     <div className={styles.root}>
       <div ref={ref} className={styles.grid} data-shown={shown || undefined} data-top-fade>
         {PRINCIPLES.map((principle, i) => (
-          <article
-            key={principle.id}
-            className={styles.card}
-            tabIndex={0}
-            style={{ "--i": i } as CSSProperties}
-          >
-            <div className={styles.head}>
-              <span className={styles.index}>{String(i + 1).padStart(2, "0")}</span>
-              <span className={styles.plus} aria-hidden="true" />
-            </div>
-            <div className={styles.figure}>
-              <PrincipleArt id={principle.id} />
-            </div>
-            <div className={styles.copy}>
-              <h2 className={styles.title}>{principle.title}</h2>
-              <div className={styles.reveal}>
-                <p className={styles.body}>{principle.body}</p>
-              </div>
-            </div>
-          </article>
+          <PrincipleCard key={principle.id} principle={principle} index={i} />
         ))}
       </div>
     </div>

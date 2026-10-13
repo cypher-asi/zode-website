@@ -1,0 +1,303 @@
+/*
+ * The deck's charts, drawn on white or paper slides. Sizes are viewBox units,
+ * so type scales with the slide. Ink carries the data, hairlines the axes,
+ * and one element per chart takes the accent.
+ */
+.chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  font-family: var(--font-sans);
+}
+
+.grid,
+.baseline {
+  stroke: var(--color-border);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.baseline {
+  stroke: var(--color-border-hover);
+}
+
+.axis {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  fill: var(--color-text-secondary);
+}
+
+.note,
+.seriesNote,
+.barNote {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  fill: var(--color-text-secondary);
+}
+
+.series,
+.barLabel {
+  font-size: 16px;
+  font-weight: 500;
+  fill: var(--color-text-primary);
+}
+
+.value,
+.barValue {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  fill: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.unit {
+  font-size: 14px;
+  fill: var(--color-text-secondary);
+}
+
+.gapLabel {
+  font-size: 18px;
+  font-weight: 600;
+  fill: var(--color-text-primary);
+}
+
+/* Demand chart (DemandChart.tsx). */
+.line,
+.installed,
+.dashed {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.line {
+  stroke: var(--color-ink);
+  stroke-width: 2.5;
+}
+
+.installed {
+  stroke: var(--color-ink);
+  stroke-width: 4;
+}
+
+.dashed {
+  stroke: var(--color-text-secondary);
+  stroke-width: 2;
+  stroke-dasharray: 6 6;
+}
+
+.gap {
+  fill: var(--color-accent-soft);
+  opacity: 0.7;
+}
+
+.range {
+  fill: var(--color-surface-active);
+}
+
+.marker {
+  fill: var(--color-white);
+  stroke: var(--color-ink);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.dot {
+  fill: var(--color-ink);
+}
+
+/* Shortfall bars (ShortfallChart.tsx). */
+.barRect {
+  vector-effect: non-scaling-stroke;
+  stroke-width: 1;
+}
+
+.barRect[data-kind="total"] {
+  fill: var(--color-ink);
+  stroke: var(--color-ink);
+}
+
+.barRect[data-kind="step"] {
+  fill: var(--color-white);
+  stroke: var(--color-ink);
+}
+
+.barRect[data-kind="net"] {
+  fill: var(--color-accent-strong);
+  stroke: var(--color-accent-strong);
+}
+
+.connector {
+  stroke: var(--color-border-hover);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.yearRect {
+  fill: var(--color-ink);
+  stroke: var(--color-ink);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.hatchLine {
+  stroke: var(--color-ink);
+  stroke-width: 1.4;
+}
+
+/* State tiles (StateTileMap.tsx). */
+.tileRect {
+  fill: transparent;
+  stroke: var(--color-border-strong);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.tileLabel {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  fill: var(--color-text-faint);
+  paint-order: stroke;
+  stroke: transparent;
+}
+
+.tile[data-status="enacted"] .tileRect {
+  fill: var(--color-accent-strong);
+  stroke: var(--color-accent-strong);
+}
+
+.tile[data-status="executive"] .tileRect {
+  fill: var(--color-ink);
+  stroke: var(--color-ink);
+}
+
+.tile[data-status="introduced"] .tileRect {
+  stroke: var(--color-ink);
+}
+
+.tile[data-status="failed"] .tileRect {
+  fill: var(--color-surface-tint);
+  stroke-dasharray: 3 3;
+}
+
+.tile[data-status] .tileLabel {
+  fill: var(--color-text-primary);
+}
+
+.tile[data-status="executive"] .tileLabel {
+  fill: var(--color-text-inverse);
+}
+
+/* The hatching runs under the label, so it gets a halo in the slide's ground. */
+.tile[data-status="introduced"] .tileLabel {
+  stroke: var(--color-white);
+  stroke-width: 5px;
+}
+
+.tile[data-status="failed"] .tileLabel {
+  fill: var(--color-text-secondary);
+}
+
+.county {
+  fill: var(--color-ink);
+  stroke: var(--color-white);
+  stroke-width: 1.5;
+}
+
+.tile[data-status="executive"] .county {
+  fill: var(--color-white);
+  stroke: var(--color-ink);
+}
+
+/*
+ * Draw-on, once the slide is shown (`data-active`). Screen only, so print
+ * and reduced motion get the finished chart.
+ */
+@media screen and (prefers-reduced-motion: no-preference) {
+  .line,
+  .installed {
+    stroke-dasharray: 1;
+    transition: stroke-dashoffset 1400ms var(--ease-in-out) 250ms;
+  }
+
+  .installed {
+    transition-delay: 100ms;
+    transition-duration: 500ms;
+  }
+
+  .dashed,
+  .gap,
+  .pop,
+  .range,
+  .marker,
+  .note {
+    transition: opacity 600ms ease;
+  }
+
+  .dashed {
+    transition-delay: 600ms;
+  }
+
+  .gap {
+    transition-delay: 1300ms;
+  }
+
+  .pop {
+    transition-delay: calc(700ms + var(--d, 0) * 250ms);
+  }
+
+  .range,
+  .marker,
+  .note {
+    transition-delay: 1100ms;
+  }
+
+  .chart:not([data-active]) :is(.line, .installed) {
+    stroke-dashoffset: 1;
+  }
+
+  .chart:not([data-active]) :is(.dashed, .gap, .pop, .range, .marker, .note) {
+    opacity: 0;
+    transition-delay: 0ms;
+    transition-duration: 0ms;
+  }
+
+  .barRect,
+  .yearRect {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    transition: scale 800ms var(--ease-out) calc(200ms + var(--d, 0) * 140ms);
+  }
+
+  .bar text,
+  .connector {
+    transition: opacity 500ms ease calc(500ms + var(--d, 0) * 140ms);
+  }
+
+  .chart:not([data-active]) :is(.barRect, .yearRect) {
+    scale: 1 0;
+    transition-duration: 0ms;
+  }
+
+  .chart:not([data-active]) .bar :is(text, .connector) {
+    opacity: 0;
+    transition-duration: 0ms;
+  }
+
+  .tile {
+    transition: opacity 500ms ease calc(150ms + var(--d, 0) * 70ms);
+  }
+
+  .chart:not([data-active]) .tile {
+    opacity: 0;
+    transition-duration: 0ms;
+  }
+}

@@ -111,12 +111,6 @@
   letter-spacing: var(--caps-tracking);
   text-transform: uppercase;
   white-space: nowrap;
-  /* Pages set their own `--edge`; joins the wordmark's route transition, so it slides across too. */
-  view-transition-name: zode-action;
-}
-
-.action[data-still] {
-  view-transition-name: none;
 }
 
 .action[data-tone="dark"],
@@ -780,5 +774,14 @@ button.menuItem:disabled {
   .notice,
   .notice[data-leaving] {
     animation: none;
+  }
+}
+
+/* Printed pages carry their own branding (the deck's slides); a fixed header would repeat on every sheet. */
+@media print {
+  .brand,
+  .action,
+  .notice {
+    display: none;
   }
 }

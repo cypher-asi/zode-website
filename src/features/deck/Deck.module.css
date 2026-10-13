@@ -1,0 +1,807 @@
+/*
+ * The deck page: the whole window is the slide, full bleed to every corner.
+ * The site header's wordmark and button sit on top of it, and the control
+ * bar rises over its foot when the pointer nears the bottom. The bar and
+ * overview read the `--deck-*` tones pinned for the slide's ground. Slides
+ * scale their own content to the window (see Slide.module.css).
+ */
+.root {
+  --bar-h: 64px;
+  --deck-bg: var(--color-white);
+  --deck-fg: var(--color-text-primary);
+  --deck-fg-2: var(--color-text-secondary);
+  --deck-rule: var(--color-border);
+  --deck-rule-strong: var(--color-border-hover);
+  --deck-tick: var(--color-border-strong);
+  --deck-accent: var(--color-accent-strong);
+  --deck-hover: var(--color-surface-hover);
+
+  position: fixed;
+  inset: 0;
+  background: var(--deck-bg);
+  color: var(--deck-fg);
+  transition:
+    background-color var(--duration-slow) var(--ease-in-out),
+    color var(--duration-slow) var(--ease-in-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* The deck never scrolls, so the page's reserved scrollbar gutter would only show as a strip down its right edge. */
+:global(html):has(.root) {
+  scrollbar-gutter: auto;
+}
+
+.root[data-ground="paper"] {
+  --deck-bg: var(--color-paper);
+}
+
+.root[data-ground="ink"] {
+  --deck-bg: var(--color-ink);
+  --deck-fg: var(--color-text-inverse);
+  --deck-fg-2: var(--color-text-inverse-secondary);
+  --deck-rule: rgba(255, 255, 255, 0.14);
+  --deck-rule-strong: rgba(255, 255, 255, 0.32);
+  --deck-tick: rgba(255, 255, 255, 0.2);
+  --deck-accent: var(--color-accent);
+  --deck-hover: rgba(255, 255, 255, 0.08);
+}
+
+/*
+ * Above the slides; the header inside is fixed, so this only orders it. The
+ * wordmark and button sit in from the corners at the site's tight inset (as
+ * on the configurators), clear of the grid's rails, and the header's shared
+ * view transition slides them there from the page before.
+ */
+.header {
+  --edge: clamp(24px, 2.5vw, 40px);
+
+  position: relative;
+  z-index: 4;
+}
+
+/* ---------- Stage ---------- */
+
+.viewport,
+.stage {
+  position: absolute;
+  inset: 0;
+}
+
+/*
+ * Slide content clears the header band and lines up with the wordmark and
+ * button, and stops above a band of the controls' height, so they rise
+ * below the foot rather than over it.
+ */
+.stage {
+  --slide-top: var(--header-band);
+  --slide-edge: var(--edge);
+  --slide-bottom: var(--bar-h);
+
+  touch-action: pan-y pinch-zoom;
+}
+
+.slot {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  visibility: hidden;
+  opacity: 0;
+  /* Slides cross-fade in place, so text never moves; only the page grid travels between them. */
+  transition:
+    opacity var(--duration-slow) var(--ease-out),
+    visibility 0s linear var(--duration-slow);
+}
+
+.slot[data-state="current"] {
+  z-index: 1;
+  visibility: visible;
+  opacity: 1;
+  transition-delay: 0s;
+}
+
+/*
+ * The page grid, one for the whole deck: rails down both sides and three
+ * rules across, over the top of the head band, under it, and over the foot
+ * band, with a square pip where each meets a rail. Deck.tsx sets
+ * `--head-top`, `--head-bottom` and `--foot-top` from the open slide, so the
+ * rules glide to each slide's bands as the slides cross-fade beneath. It
+ * reads `--u` as a slide does, so its rails line up with slide content.
+ */
+.grid {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  container-type: size;
+  pointer-events: none;
+}
+
+/* Stronger on the cover, the first thing on the page. */
+.grid[data-strong] {
+  --deck-rule: var(--deck-rule-strong);
+}
+
+.gridLines {
+  --u: min(1cqw, 1cqh * 16 / 9);
+  --rail: calc(1 * var(--u));
+  --pip: calc(0.36 * var(--u));
+  /* The stage's `--slide-edge`, read off the same `--edge`. */
+  --inset-x: max(calc(5 * var(--u)), var(--edge));
+
+  position: absolute;
+  inset: 0;
+}
+
+.gridLines::before {
+  content: "";
+  position: absolute;
+  inset: 0 var(--rail);
+  border-inline: 1px solid var(--deck-rule);
+  transition: border-color var(--duration-slow) var(--ease-in-out);
+}
+
+.rule {
+  position: absolute;
+  top: 0;
+  right: var(--rail);
+  left: var(--rail);
+  height: 1px;
+  translate: 0 calc(var(--y) - 0.5px);
+  background-color: var(--deck-rule);
+  opacity: 0;
+}
+
+/* Pips centred on the 1px rails at either end. */
+.rule::before,
+.rule::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: var(--pip);
+  height: var(--pip);
+  background-color: var(--deck-rule-strong);
+}
+
+.rule::before {
+  left: 0.5px;
+  translate: -50% -50%;
+}
+
+.rule::after {
+  right: 0.5px;
+  translate: 50% -50%;
+}
+
+.rule[data-rule="top"] {
+  --y: calc(var(--head-top, 0px) - 1.4 * var(--u));
+}
+
+.rule[data-rule="head"] {
+  --y: var(--head-bottom, 0px);
+}
+
+.rule[data-rule="foot"] {
+  --y: var(--foot-top, 100cqh);
+}
+
+/* Closes the foot band, where the controls' top edge lands as they rise. */
+.rule[data-rule="bottom"] {
+  --y: var(--foot-bottom, 100cqh);
+}
+
+.grid[data-ready] .rule {
+  transition:
+    translate var(--duration-slow) var(--ease-in-out),
+    opacity var(--duration-slow) var(--ease-in-out),
+    background-color var(--duration-slow) var(--ease-in-out);
+}
+
+.grid[data-ready] .rule::before,
+.grid[data-ready] .rule::after {
+  transition: background-color var(--duration-slow) var(--ease-in-out);
+}
+
+/* Each rule shows while the slide has its band; the top one with either, so the cover keeps it and the close keeps only the rails. */
+.grid[data-ready]:is([data-head], [data-foot]) .rule[data-rule="top"],
+.grid[data-ready][data-head] .rule[data-rule="head"],
+.grid[data-ready][data-foot] .rule:is([data-rule="foot"], [data-rule="bottom"]) {
+  opacity: 1;
+}
+
+/*
+ * The section name, set as the slides' own (Slide.module.css) and laid over
+ * the open slide's, which holds its space. Between sections it resizes to
+ * the new name as the rules move, and the new name fades in where it sits.
+ */
+.name {
+  --bar: calc(0.2 * var(--u));
+
+  position: absolute;
+  top: 0;
+  left: calc(var(--rail) + 1px);
+  display: flex;
+  align-items: center;
+  width: var(--name-width, 0px);
+  height: var(--name-height, 0px);
+  padding-left: calc(var(--inset-x) - var(--rail) - 1px - var(--bar));
+  overflow: hidden;
+  translate: 0 var(--name-top, 0px);
+  border-left: var(--bar) solid var(--deck-rule-strong);
+  background-color: var(--deck-hover);
+  font-size: calc(1.1 * var(--u));
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--deck-fg-2);
+  opacity: 0;
+}
+
+.grid[data-ready] .name {
+  transition:
+    width var(--duration-slow) var(--ease-in-out),
+    height var(--duration-slow) var(--ease-in-out),
+    translate var(--duration-slow) var(--ease-in-out),
+    opacity var(--duration-slow) var(--ease-in-out),
+    background-color var(--duration-slow) var(--ease-in-out),
+    border-color var(--duration-slow) var(--ease-in-out),
+    color var(--duration-slow) var(--ease-in-out);
+}
+
+.grid[data-ready][data-name] .name {
+  opacity: 1;
+}
+
+.nameText {
+  animation: name-in var(--duration-slow) var(--ease-out) both;
+}
+
+@keyframes name-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grid[data-ready] .rule,
+  .grid[data-ready] .name {
+    transition: opacity var(--duration-slow) var(--ease-in-out);
+  }
+}
+
+.rotate {
+  display: none;
+}
+
+@media (max-width: 700px) and (orientation: portrait) {
+  .rotate {
+    position: absolute;
+    right: 0;
+    bottom: 24px;
+    left: 0;
+    z-index: 2;
+    display: block;
+    margin: 0;
+    padding: 0 var(--edge);
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--caps-tracking);
+    text-align: center;
+    text-transform: uppercase;
+    color: var(--deck-fg-2);
+  }
+}
+
+/* ---------- Control bar ---------- */
+
+/*
+ * Over the slide's foot, out of sight until the pointer nears the bottom of
+ * the window (`data-controls`), a touch, or keyboard focus brings it up.
+ */
+.bar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 6;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 560px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: center;
+  height: var(--bar-h);
+  padding: 0 var(--edge);
+  border-top: 1px solid var(--deck-rule);
+  background: var(--deck-bg);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--caps-tracking);
+  text-transform: uppercase;
+  color: var(--deck-fg-2);
+  opacity: 0;
+  translate: 0 100%;
+  pointer-events: none;
+  transition:
+    opacity var(--duration-slow) var(--ease-out),
+    translate var(--duration-slow) var(--ease-out),
+    background-color var(--duration-slow) var(--ease-in-out),
+    border-color var(--duration-slow) var(--ease-in-out);
+}
+
+.root[data-controls] .bar,
+.bar:has(:focus-visible) {
+  opacity: 1;
+  translate: 0 0;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    translate: none;
+  }
+}
+
+.barStart,
+.barEnd {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.barEnd {
+  justify-content: flex-end;
+}
+
+.counter {
+  margin-left: 8px;
+  color: var(--deck-fg);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.section {
+  overflow: hidden;
+  margin-left: 8px;
+  padding-left: 16px;
+  border-left: 1px solid var(--deck-rule);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.iconButton,
+.textButton {
+  display: inline-flex;
+  flex: none;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  border: 1px solid var(--deck-rule);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--deck-fg);
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
+}
+
+.iconButton {
+  width: 32px;
+  padding: 0;
+}
+
+.textButton {
+  padding: 0 12px;
+}
+
+.iconButton:hover:not(:disabled),
+.textButton:hover {
+  border-color: var(--deck-rule-strong);
+  background: var(--deck-hover);
+}
+
+.textButton[aria-pressed="true"],
+.textButton[aria-expanded="true"] {
+  border-color: var(--deck-fg);
+}
+
+.iconButton:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.iconButton:focus-visible,
+.textButton:focus-visible,
+.tick:focus-visible,
+.thumbButton:focus-visible,
+.menuItem:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.icon {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linecap: square;
+}
+
+.icon[data-flip] {
+  scale: -1 1;
+}
+
+.progress {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.progress li {
+  flex: 1;
+  min-width: 0;
+}
+
+.tick {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.tick::before {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 2px;
+  translate: 0 -50%;
+  background: var(--deck-tick);
+  content: "";
+  transition:
+    background-color var(--duration-base) var(--ease-out),
+    height var(--duration-base) var(--ease-out);
+}
+
+.tick[data-state="past"]::before {
+  background: var(--deck-fg-2);
+}
+
+.tick[data-state="current"]::before {
+  height: 4px;
+  background: var(--deck-accent);
+}
+
+.tick:hover::before {
+  height: 4px;
+}
+
+.tick:not([data-state="current"]):hover::before {
+  background: var(--deck-fg);
+}
+
+/* The slide's number and section, raised over the tick on hover. */
+.tick::after {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  padding: 6px 8px;
+  border-radius: var(--radius-control);
+  background: var(--color-ink);
+  box-shadow: 0 0 0 1px var(--deck-rule);
+  color: var(--color-text-inverse);
+  content: attr(data-title);
+  white-space: nowrap;
+  opacity: 0;
+  translate: -50% 4px;
+  pointer-events: none;
+  transition:
+    opacity var(--duration-base) var(--ease-out),
+    translate var(--duration-base) var(--ease-out);
+}
+
+.progress li:first-child .tick::after {
+  left: 0;
+  translate: 0 4px;
+}
+
+.progress li:last-child .tick::after {
+  right: 0;
+  left: auto;
+  translate: 0 4px;
+}
+
+.tick:is(:hover, :focus-visible)::after {
+  opacity: 1;
+  translate: -50% 0;
+}
+
+.progress li:is(:first-child, :last-child) .tick:is(:hover, :focus-visible)::after {
+  translate: 0 0;
+}
+
+@media (max-width: 1100px) {
+  .bar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px;
+  }
+
+  .progress {
+    position: absolute;
+    top: 0;
+    right: var(--edge);
+    left: var(--edge);
+    height: 8px;
+  }
+
+  .tick {
+    height: 12px;
+    margin-top: -2px;
+  }
+}
+
+@media (max-width: 700px) {
+  .section {
+    display: none;
+  }
+
+  .textButton {
+    padding: 0 10px;
+  }
+}
+
+@media (max-width: 520px) {
+  .textButton {
+    width: 32px;
+    padding: 0;
+    font-size: 0;
+    gap: 0;
+  }
+}
+
+/* ---------- Share menu ---------- */
+
+.shareAnchor {
+  position: relative;
+}
+
+.menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  z-index: 7;
+  min-width: 260px;
+  margin: 0;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-inset);
+  background: var(--color-ink);
+  box-shadow: var(--shadow-lg);
+  color: var(--color-text-inverse);
+  list-style: none;
+  animation: menuIn var(--duration-base) var(--ease-out);
+}
+
+@keyframes menuIn {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+  }
+}
+
+.menuItem {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+/* The site's terminal prompt: a caret before the row in hand, a block cursor after. */
+.menuItem::before {
+  width: 1ch;
+  color: var(--color-accent);
+  content: ">";
+  opacity: 0;
+}
+
+.menuItem:is(:hover, :focus-visible) {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.menuItem:is(:hover, :focus-visible)::before,
+.menuItem:is(:hover, :focus-visible) .cursor {
+  opacity: 1;
+}
+
+.cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.1em;
+  background: currentColor;
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .menuItem:is(:hover, :focus-visible) .cursor {
+    animation: blink 1s steps(1) infinite;
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.menuRule {
+  height: 1px;
+  margin: 6px 4px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* ---------- Overview ---------- */
+
+/* Between the header band and the bar, so thumbnails never scroll under the header. */
+.overview {
+  position: absolute;
+  inset: var(--header-band) 0 var(--bar-h);
+  z-index: 5;
+  overflow-y: auto;
+  padding: 8px var(--edge) 24px;
+  background: var(--deck-bg);
+  overscroll-behavior: contain;
+  animation: overviewIn var(--duration-slow) var(--ease-out);
+}
+
+@keyframes overviewIn {
+  from {
+    opacity: 0;
+  }
+}
+
+.overviewGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 28px 20px;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 8px 0 24px;
+  list-style: none;
+}
+
+.thumb {
+  position: relative;
+  animation: overviewIn var(--duration-slow) var(--ease-out) backwards;
+}
+
+.thumbFrame {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--radius-control);
+  box-shadow: 0 0 0 1px var(--deck-rule);
+  pointer-events: none;
+  transition: box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.thumb:hover .thumbFrame {
+  box-shadow: 0 0 0 1px var(--deck-fg-2);
+}
+
+.thumb[data-current] .thumbFrame {
+  box-shadow: 0 0 0 2px var(--deck-accent);
+}
+
+.thumbLabel {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--caps-tracking);
+  text-transform: uppercase;
+  color: var(--deck-fg-2);
+}
+
+.thumbLabel span:first-child {
+  color: var(--deck-fg);
+}
+
+.thumbButton {
+  position: absolute;
+  inset: -6px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-inset);
+  background: transparent;
+  cursor: pointer;
+}
+
+/* ---------- Misc ---------- */
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- Print: one slide per 16:9 page ---------- */
+
+@page {
+  size: 13.333in 7.5in;
+  margin: 0;
+}
+
+@media print {
+  .root {
+    position: static;
+    display: block;
+    padding: 0;
+    background: none;
+  }
+
+  .root *,
+  .root *::before,
+  .root *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  /* The header isn't printed, so the slides keep their own margins. */
+  .viewport,
+  .stage {
+    position: static;
+    --slide-top: 0px;
+    --slide-edge: 0px;
+    --slide-bottom: 0px;
+  }
+
+  .slot,
+  .slot[data-state] {
+    position: relative;
+    inset: auto;
+    width: 100vw;
+    height: 100vh;
+    visibility: visible;
+    opacity: 1;
+    translate: none;
+    break-after: page;
+    break-inside: avoid;
+  }
+
+  .slot:last-child {
+    break-after: auto;
+  }
+
+  .header,
+  .grid,
+  .rotate,
+  .bar,
+  .overview,
+  .srOnly {
+    display: none !important;
+  }
+}

@@ -1,0 +1,1455 @@
+/*
+ * One slide (Slide.tsx), filling whatever holds it: the whole window on the
+ * stage, a 16:9 box in the overview and on a printed page. The slide is its
+ * own size container, and every length is in `--u`, a hundredth of the width
+ * of the largest 16:9 box that fits it, so the content reads the same at any
+ * window shape while the ground and full-bleed media run to every edge.
+ * The host can push the content in with `--slide-top`, `--slide-edge` and
+ * `--slide-bottom`, to clear the site header, line up with its wordmark and
+ * leave room for the deck's controls. Grounds re-pin the
+ * local colours: `--fg`, `--fg-2`, `--rule`, `--rule-strong`, `--card` and `--accent`.
+ */
+@property --u {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+.slide {
+  --fg: var(--color-text-primary);
+  --fg-2: var(--color-text-secondary);
+  --rule: var(--color-border);
+  --rule-strong: var(--color-border-hover);
+  --card: var(--color-white);
+  --accent: var(--color-accent-strong);
+  --bg: var(--color-white);
+
+  position: relative;
+  container-type: size;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.slide[data-ground="paper"] {
+  --bg: var(--color-paper);
+}
+
+/*
+ * Cards follow the solution slide's principle cards (Principles.module.css):
+ * square cells on the card ground, joined by hairlines so a set of cards
+ * reads as one panel. Each cell draws its own hairline, which the next
+ * cell's overlaps across the 1px gap, so the lines fade in with the cards.
+ * Their titles take the display face in Light.
+ */
+.newsGrid,
+.facts,
+.capital {
+  gap: 1px;
+  padding: 1px;
+}
+
+.newsCard,
+.fact,
+.callout,
+.example,
+.capitalLayer {
+  padding: calc(1 * var(--u)) calc(1.3 * var(--u)) calc(1.2 * var(--u));
+  background: var(--card);
+  box-shadow: 0 0 0 1px var(--rule);
+}
+
+.newsCard .h3,
+.factValue,
+.calloutValue,
+.capitalLabel {
+  font-family: var(--font-display);
+  font-weight: 300;
+}
+
+.slide[data-ground="ink"] {
+  --bg: var(--color-ink);
+  --fg: var(--color-text-inverse);
+  --fg-2: var(--color-text-inverse-secondary);
+  --rule: rgba(255, 255, 255, 0.14);
+  --rule-strong: rgba(255, 255, 255, 0.32);
+  --card: var(--color-ink);
+  --accent: var(--color-accent);
+}
+
+.frame {
+  /* Registered as a length, so it resolves here, against the slide, and inherits as pixels. */
+  --u: min(1cqw, 1cqh * 16 / 9);
+  /* The page grid, as on the site: rails down both sides, rules across between bands, a square pip where they meet. */
+  --rail: calc(1 * var(--u));
+  --inset-x: max(calc(5 * var(--u)), var(--slide-edge, 0px));
+  --pip: calc(0.36 * var(--u));
+  --pip-color: var(--rule-strong);
+
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  padding: max(calc(4 * var(--u)), var(--slide-top, 0px) + calc(1.6 * var(--u))) var(--inset-x)
+    var(--slide-bottom, 0px);
+}
+
+/*
+ * The grid is drawn here only where a slide stands alone: printed, and in
+ * the overview. On the stage the deck draws one grid over every slide and
+ * moves its rules to each slide's bands (Deck.tsx), so it doesn't redraw.
+ * The rails sit over the content, as the site's circuit rails do, so
+ * full-bleed media runs under them.
+ */
+.frame[data-grid]::before {
+  content: "";
+  position: absolute;
+  inset: 0 var(--rail);
+  z-index: 2;
+  border-inline: 1px solid var(--rule);
+  pointer-events: none;
+}
+
+.frame:not([data-foot]) {
+  padding-bottom: max(calc(2.4 * var(--u)), var(--slide-bottom, 0px));
+}
+
+.head,
+.foot {
+  position: relative;
+}
+
+/*
+ * A rule runs from rail to rail, past the bands' inset content, with a pip
+ * centred on each rail. The cover has no head, so its top rule hangs off the
+ * frame instead, where the head's would be.
+ */
+.frame[data-grid] .head::before,
+.frame[data-grid] .head::after,
+.frame[data-grid] .foot::before,
+.frame[data-grid][data-foot]:not([data-head])::after {
+  --bleed: calc(var(--rail) + 0.5px - var(--inset-x) - var(--pip) / 2);
+
+  content: "";
+  position: absolute;
+  left: var(--bleed);
+  right: var(--bleed);
+  height: var(--pip);
+  background:
+    linear-gradient(var(--pip-color), var(--pip-color)) left / var(--pip) 100% no-repeat,
+    linear-gradient(var(--pip-color), var(--pip-color)) right / var(--pip) 100% no-repeat,
+    linear-gradient(var(--rule), var(--rule)) center / 100% 1px no-repeat;
+  pointer-events: none;
+}
+
+/* The deck's own grid places its top rule this far above the head, too. */
+.frame[data-grid] .head::before {
+  top: calc(-1.4 * var(--u) - var(--pip) / 2);
+}
+
+.frame[data-grid] .head::after {
+  bottom: calc(var(--pip) / -2);
+}
+
+.frame[data-grid] .foot::before {
+  top: calc(var(--pip) / -2);
+}
+
+.frame[data-grid][data-foot]:not([data-head])::after {
+  --bleed: calc(var(--rail) + 0.5px - var(--pip) / 2);
+
+  top: calc(max(calc(4 * var(--u)), var(--slide-top, 0px) + calc(1.6 * var(--u))) - 1.4 * var(--u) - var(--pip) / 2);
+}
+
+/* Keeps the body off the foot rule. */
+.frame[data-foot] .main {
+  padding-bottom: calc(1.2 * var(--u));
+}
+
+.head {
+  padding-bottom: calc(1.4 * var(--u));
+}
+
+/*
+ * Set like a selected nav row: a tinted tab hung off the left rail with a bar
+ * on its edge, its text on the content line. On the stage the deck draws one
+ * name over every slide and resizes it between them (Deck.tsx), so this one
+ * only holds the space.
+ */
+.sectionName {
+  --bar: calc(0.2 * var(--u));
+
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: calc(2.3 * var(--u));
+  margin-left: calc(var(--rail) + 1px - var(--inset-x));
+  padding: 0 calc(1.4 * var(--u)) 0 calc(var(--inset-x) - var(--rail) - 1px - var(--bar));
+  border-left: var(--bar) solid var(--rule-strong);
+  background: var(--name-bg, var(--color-surface-hover));
+  font-family: var(--font-sans);
+  font-size: calc(1.1 * var(--u));
+  letter-spacing: normal;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--fg-2);
+}
+
+.slide[data-ground="ink"] .sectionName {
+  --name-bg: rgba(255, 255, 255, 0.08);
+}
+
+.frame:not([data-grid]) .sectionName {
+  visibility: hidden;
+}
+
+/* Placed by row, so the cover and close, which have no header, keep the body in the tall row. */
+.main {
+  grid-row: 2;
+}
+
+.foot {
+  grid-row: 3;
+}
+
+.eyebrow,
+.number,
+.footLabel,
+.label,
+.meta,
+.figLabel {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: calc(0.72 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+.eyebrow {
+  font-size: calc(0.78 * var(--u));
+}
+
+/*
+ * Headings follow the site's: the display face in Light with the H1 and H2 leading and
+ * tracking from globals.css, sized in slide units so a slide keeps its
+ * proportions. The page's one H1 is the deck's; each slide's title is an H2,
+ * set as display on the cover and close like the site's closing call to
+ * action, and the headings inside a slide are H3s. Labels that head a list
+ * are H3s set as eyebrows.
+ */
+.display,
+.title,
+.h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 300;
+  text-wrap: balance;
+}
+
+.display {
+  font-size: calc(5.2 * var(--u));
+  line-height: var(--h1-leading);
+  letter-spacing: var(--h1-tracking);
+}
+
+.title {
+  max-width: calc(64 * var(--u));
+  font-size: calc(3.5 * var(--u));
+  line-height: var(--h2-leading);
+  letter-spacing: var(--h2-tracking);
+}
+
+/* Weight 400 only where a host sets it small (the news cards), as the styleguide keeps Light for 20px and up. */
+.h3 {
+  font-size: var(--h3-size, calc(1.9 * var(--u)));
+  font-weight: var(--h3-weight, 300);
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding-top: calc(1.8 * var(--u));
+}
+
+.main > * {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Sources, then logos, in a band of the same height on every slide; the print wordmark takes the far end. */
+.foot {
+  display: flex;
+  align-items: center;
+  gap: calc(3 * var(--u));
+  min-height: calc(3.6 * var(--u));
+  padding: calc(0.8 * var(--u)) 0;
+  font-family: var(--font-mono);
+  font-size: calc(0.64 * var(--u));
+  letter-spacing: 0.04em;
+  color: var(--fg-2);
+}
+
+.footLabel {
+  flex: none;
+  font-size: calc(0.64 * var(--u));
+  color: var(--fg);
+}
+
+/* Sources, then the page number, then (printed) the wordmark, at the foot's far end. */
+.footEnd {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: calc(2 * var(--u));
+  margin-left: auto;
+}
+
+.footSources {
+  position: relative;
+}
+
+.sourcesToggle {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  text-decoration: underline dotted;
+  text-decoration-color: var(--rule-strong);
+  text-underline-offset: 0.3em;
+  color: var(--fg);
+  cursor: help;
+}
+
+.sourcesToggle:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/*
+ * Opens above the label, its right edge on the label's. The panel's own
+ * padding bridges the gap to the label, so the pointer can cross to a link.
+ */
+.sourcesPanel {
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  z-index: 3;
+  width: max-content;
+  max-width: calc(44 * var(--u));
+  padding-bottom: calc(1.9 * var(--u));
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    opacity var(--duration-fast) ease,
+    visibility 0s linear var(--duration-fast);
+}
+
+.sourcesPanel .sources {
+  padding: calc(1 * var(--u)) calc(1.3 * var(--u)) calc(1.1 * var(--u));
+  background: var(--card);
+  box-shadow: 0 0 0 1px var(--rule);
+}
+
+.footSources:is(:hover, :focus-within, [data-open]) .sourcesPanel {
+  visibility: visible;
+  opacity: 1;
+  transition-delay: 0s;
+}
+
+.footMark {
+  flex: none;
+  width: auto;
+  height: calc(1 * var(--u));
+}
+
+/* Other companies' marks, flattened to the slide's quiet text tone. */
+.logos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(0.8 * var(--u)) calc(2.4 * var(--u));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.logos img {
+  display: block;
+  width: auto;
+  height: calc(var(--h) * var(--u));
+  filter: brightness(0);
+  opacity: 0.6;
+}
+
+.slide[data-ground="ink"] .logos img {
+  filter: brightness(0) invert(1);
+}
+
+.sources {
+  max-width: calc(74 * var(--u));
+  margin: 0;
+  line-height: 1.5;
+}
+
+.sources a,
+.citations a,
+.meta a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+  text-underline-offset: 0.2em;
+}
+
+.number {
+  flex: none;
+}
+
+.body {
+  margin: 0;
+  font-size: calc(1 * var(--u));
+  line-height: 1.5;
+  color: var(--fg-2);
+}
+
+.strong {
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.fine {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: calc(0.62 * var(--u));
+  line-height: 1.55;
+  letter-spacing: 0.02em;
+  color: var(--fg-2);
+}
+
+.statement {
+  max-width: calc(60 * var(--u));
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: calc(2 * var(--u));
+  font-weight: 300;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+}
+
+/* Figures: large Inter numbers over a mono label. */
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.8 * var(--u));
+}
+
+.statValue {
+  font-size: calc(2.8 * var(--u));
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat[data-size="lg"] .statValue {
+  font-size: calc(4.4 * var(--u));
+}
+
+.stat[data-size="xl"] .statValue {
+  font-size: calc(7.6 * var(--u));
+  letter-spacing: -0.045em;
+}
+
+.statValue[data-highlight] {
+  color: var(--accent);
+}
+
+.statLabel {
+  max-width: calc(24 * var(--u));
+  font-family: var(--font-mono);
+  font-size: calc(0.7 * var(--u));
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+.statSource {
+  display: block;
+  margin-top: calc(0.5 * var(--u));
+  font-family: var(--font-mono);
+  font-size: calc(0.6 * var(--u));
+  letter-spacing: 0.04em;
+  color: var(--fg-2);
+}
+
+/* Stats, columns and steps: content up top, the statement at the foot. */
+.statsBody {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: calc(2 * var(--u));
+}
+
+.statRow,
+.columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: calc(3 * var(--u));
+}
+
+.column .h3,
+.step .h3 {
+  margin: calc(0.9 * var(--u)) 0 calc(0.8 * var(--u));
+}
+
+/* Chart slides: the figure, then a side column. */
+.chartBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) calc(21 * var(--u));
+  grid-template-rows: minmax(0, 1fr);
+  align-items: start;
+  gap: calc(4 * var(--u));
+}
+
+.chartBody[data-split="wide"] {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+}
+
+.chartBody[data-split="map"] {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+}
+
+/* A chart takes the column's width but gives up height on windows wider than 16:9. */
+.figure {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+}
+
+.figure > svg {
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
+.map {
+  max-width: calc(44 * var(--u));
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(0.6 * var(--u)) calc(2 * var(--u));
+  margin-top: calc(1 * var(--u));
+  font-family: var(--font-mono);
+  font-size: calc(0.64 * var(--u));
+  letter-spacing: 0.04em;
+  color: var(--fg-2);
+}
+
+.key {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(0.6 * var(--u));
+}
+
+.key::before {
+  content: "";
+  width: calc(1.8 * var(--u));
+}
+
+.key[data-key="line"]::before {
+  border-top: 2px solid var(--fg);
+}
+
+.key[data-key="dashed"]::before {
+  border-top: 2px dashed var(--fg-2);
+}
+
+.key[data-key="gap"]::before {
+  width: calc(0.9 * var(--u));
+  height: calc(0.9 * var(--u));
+  background: var(--color-accent-soft);
+}
+
+.caption {
+  margin-top: calc(0.8 * var(--u));
+  font-family: var(--font-mono);
+  font-size: calc(0.64 * var(--u));
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  color: var(--fg-2);
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: calc(1.6 * var(--u));
+}
+
+.side .stat {
+  gap: calc(0.6 * var(--u));
+  padding-top: calc(1 * var(--u));
+}
+
+.side .statValue {
+  font-size: calc(2.4 * var(--u));
+}
+
+/* State legend, keyed to the tile map's fills. */
+.statusList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.status {
+  display: grid;
+  grid-template-columns: calc(1.2 * var(--u)) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: calc(0.9 * var(--u));
+  padding: calc(0.55 * var(--u)) 0;
+  font-size: calc(0.92 * var(--u));
+}
+
+.swatch {
+  width: calc(1.2 * var(--u));
+  height: calc(1.2 * var(--u));
+  border: 1px solid var(--color-border-strong);
+}
+
+.status[data-status="enacted"] .swatch {
+  border-color: var(--color-accent-strong);
+  background: var(--color-accent-strong);
+}
+
+.status[data-status="executive"] .swatch {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+}
+
+.status[data-status="introduced"] .swatch {
+  border-color: var(--color-ink);
+  background: repeating-linear-gradient(45deg, var(--color-ink) 0 1px, transparent 1px 4px);
+}
+
+.status[data-status="failed"] .swatch {
+  border-style: dashed;
+  background: var(--color-surface-tint);
+}
+
+.status[data-status="county"] .swatch {
+  width: calc(0.6 * var(--u));
+  height: calc(0.6 * var(--u));
+  justify-self: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-ink);
+}
+
+.count {
+  font-family: var(--font-mono);
+  font-size: calc(0.8 * var(--u));
+  color: var(--fg-2);
+}
+
+/* News: the headline figure and takeaway, then the coverage. */
+.newsBody {
+  display: grid;
+  grid-template-columns: calc(24 * var(--u)) minmax(0, 1fr);
+  gap: calc(3.5 * var(--u));
+}
+
+.newsLead {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: calc(2 * var(--u));
+}
+
+.newsLead .stat[data-size="xl"] .statValue {
+  font-size: calc(6.4 * var(--u));
+}
+
+.takeaway {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: calc(1.45 * var(--u));
+  font-weight: 300;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.newsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  list-style: none;
+}
+
+.newsCard {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.6 * var(--u));
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  .newsCard:hover {
+    background: linear-gradient(var(--color-surface-tint), var(--color-surface-tint)), var(--card);
+  }
+}
+
+.newsCard:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: -1px;
+}
+
+.newsPlace,
+.newsMeta {
+  font-family: var(--font-mono);
+  font-size: calc(0.6 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+.newsMeta {
+  margin-top: auto;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.newsCard .h3 {
+  --h3-size: calc(1.22 * var(--u));
+
+  line-height: 1.22;
+  letter-spacing: -0.01em;
+}
+
+.newsSummary {
+  font-size: calc(0.8 * var(--u));
+  line-height: 1.45;
+  color: var(--fg-2);
+}
+
+/* Solution: the cabin drawing across the slide, the principle cards below. */
+.solution {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) calc(16 * var(--u));
+  gap: calc(1.4 * var(--u));
+}
+
+.cabinRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) calc(14 * var(--u));
+  align-items: center;
+  gap: calc(2 * var(--u));
+  min-height: 0;
+}
+
+.cabin {
+  --ink: var(--color-ink);
+  --accent: var(--color-accent-strong);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+}
+
+/* The pod's packets wait for the slide, as on the home page. */
+.cabin:not([data-shown]) {
+  --run-opacity: 0;
+  --run-state: paused;
+}
+
+.cabinArt {
+  height: calc(100% - calc(1.8 * var(--u)));
+  max-width: 100%;
+  aspect-ratio: var(--ratio);
+  pointer-events: none;
+}
+
+.cabinArt > svg {
+  width: 100%;
+  height: 100%;
+}
+
+.figLabel {
+  margin-top: calc(0.6 * var(--u));
+  font-size: calc(0.62 * var(--u));
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  list-style: none;
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.35 * var(--u));
+}
+
+.factValue {
+  font-size: calc(1.5 * var(--u));
+  letter-spacing: -0.01em;
+}
+
+.factLabel {
+  font-family: var(--font-mono);
+  font-size: calc(0.6 * var(--u));
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+/* The home page's principle cards, retuned to the slide (Principles.module.css reads these). */
+.solution .principles {
+  --ink: var(--color-ink);
+  --card-h: 100%;
+  --card-pad: calc(1 * var(--u)) calc(1.3 * var(--u)) calc(1.2 * var(--u));
+  --figure-pad: calc(0.6 * var(--u)) 0;
+  --body-gap: calc(0.5 * var(--u));
+  --h2-size: calc(1.5 * var(--u));
+  --text-base: calc(0.8 * var(--u));
+  --eyebrow-size: calc(0.64 * var(--u));
+
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr);
+  max-width: none;
+  height: 100%;
+  margin: 0;
+  border: 1px solid var(--rule);
+}
+
+/* Stack: the exploded plates with a label leading off each. */
+.stack {
+  display: grid;
+  grid-template-columns: calc(26 * var(--u)) minmax(0, 1fr);
+  gap: calc(4 * var(--u));
+}
+
+.lede {
+  margin: 0;
+  font-size: calc(1.15 * var(--u));
+  line-height: 1.55;
+  color: var(--fg-2);
+}
+
+.stackFigure {
+  --ink: var(--color-ink);
+  --art: 100%;
+
+  position: relative;
+  justify-self: start;
+  height: 100%;
+  aspect-ratio: var(--ratio);
+  margin-left: calc(6 * var(--u));
+}
+
+.stackLabels {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+
+.stackLabel {
+  position: absolute;
+  display: grid;
+  grid-template-columns: calc(5 * var(--u)) calc(1.8 * var(--u)) max-content;
+  grid-template-areas:
+    "line index title"
+    "line . body";
+  align-items: baseline;
+  column-gap: calc(0.6 * var(--u));
+  transform: translateY(-50%);
+}
+
+.stackLabel::before {
+  content: "";
+  grid-area: line;
+  align-self: center;
+  height: 1px;
+  background: var(--rule-strong);
+}
+
+.stackLabel > .label {
+  grid-area: index;
+  font-size: calc(0.62 * var(--u));
+}
+
+.stackTitle {
+  grid-area: title;
+  font-size: calc(1.05 * var(--u));
+  font-weight: 600;
+}
+
+.stackBody {
+  grid-area: body;
+  font-size: calc(0.9 * var(--u));
+  color: var(--fg-2);
+}
+
+/* Steps along a rule. */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: calc(2.4 * var(--u));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Unit: the spec sheet beside the cutaway. */
+.unit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) calc(36 * var(--u));
+  gap: calc(4 * var(--u));
+}
+
+.specGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-content: start;
+  gap: calc(2.4 * var(--u)) calc(3 * var(--u));
+}
+
+.render {
+  margin: 0;
+}
+
+.renderImage,
+.coverImage {
+  position: relative;
+  overflow: hidden;
+}
+
+.renderImage {
+  aspect-ratio: 1024 / 540;
+  border-radius: calc(0.4 * var(--u));
+}
+
+.renderImage img,
+.coverImage img {
+  object-fit: cover;
+}
+
+/* Two-column slides: the lead figure, then the detail. */
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: calc(5 * var(--u));
+}
+
+.split[data-split="table"] {
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+}
+
+/* Bodies sized to their content sit just above the middle of the room under the title. */
+.main > .split,
+.main > .unit {
+  flex: none;
+  margin-block: auto;
+  padding-bottom: calc(2.4 * var(--u));
+}
+
+.splitSide {
+  display: flex;
+  flex-direction: column;
+  gap: calc(2 * var(--u));
+}
+
+/* Traction's two headline figures: the signed total, then the LOIs joined with a plus. */
+.heroPair {
+  display: grid;
+  gap: calc(2.4 * var(--u));
+  align-content: start;
+}
+
+.heroPlus {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: calc(1.2 * var(--u));
+  align-items: start;
+}
+
+.plusSign {
+  padding-top: calc(1.2 * var(--u));
+  font-size: calc(4.4 * var(--u));
+  font-weight: 300;
+  line-height: 1;
+  color: var(--fg-2);
+}
+
+.details {
+  margin: 0;
+}
+
+.detail {
+  display: grid;
+  grid-template-columns: calc(12 * var(--u)) minmax(0, 1fr);
+  align-items: baseline;
+  padding: calc(0.9 * var(--u)) 0;
+}
+
+.detail dt {
+  font-family: var(--font-mono);
+  font-size: calc(0.7 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+.detail dd {
+  margin: 0;
+  font-size: calc(1.2 * var(--u));
+}
+
+.notes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(2 * var(--u));
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: calc(1.1 * var(--u));
+  font-variant-numeric: tabular-nums;
+}
+
+.table th,
+.table td {
+  padding: calc(1 * var(--u)) calc(1.2 * var(--u)) calc(1 * var(--u)) 0;
+  font-weight: 400;
+  text-align: left;
+}
+
+.table thead th {
+  font-family: var(--font-mono);
+  font-size: calc(0.66 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+.table tbody th {
+  font-weight: 500;
+}
+
+.table [data-num] {
+  text-align: right;
+}
+
+.table tfoot :is(th, td) {
+  font-weight: 600;
+}
+
+.compare tbody th {
+  width: calc(16 * var(--u));
+  font-family: var(--font-mono);
+  font-size: calc(0.7 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+.compare td {
+  color: var(--fg-2);
+}
+
+.compare [data-us] {
+  padding-left: calc(1.6 * var(--u));
+  font-weight: 500;
+  color: var(--fg);
+}
+
+.compare thead [data-us] {
+  color: var(--fg);
+}
+
+.compare + .fine {
+  margin-top: calc(1.2 * var(--u));
+}
+
+.callout {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.6 * var(--u));
+}
+
+.calloutValue {
+  font-size: calc(2.6 * var(--u));
+  letter-spacing: -0.02em;
+}
+
+/* Finance: the capital stack, top of the waterfall first. */
+.capital {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  list-style: none;
+}
+
+/* Shaded by seniority, over the card ground: the senior layer in ink, the residual left plain and set back. */
+.capitalLayer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(2 * var(--u));
+  padding-block: calc(1.4 * var(--u));
+}
+
+.capitalLayer[data-tier="0"] {
+  background: var(--color-ink);
+  color: var(--color-text-inverse);
+  box-shadow: 0 0 0 1px var(--color-ink);
+}
+
+.capitalLayer[data-tier="1"] {
+  background: linear-gradient(var(--color-surface-active), var(--color-surface-active)), var(--card);
+}
+
+.capitalLayer[data-tier="2"] {
+  background: linear-gradient(var(--color-surface-tint), var(--color-surface-tint)), var(--card);
+}
+
+.capitalLayer[data-tier="3"] {
+  color: var(--fg-2);
+}
+
+.capitalLabel {
+  font-size: calc(1.3 * var(--u));
+}
+
+.capitalValue {
+  font-family: var(--font-mono);
+  font-size: calc(0.72 * var(--u));
+  letter-spacing: var(--caps-tracking);
+  text-transform: uppercase;
+}
+
+.capitalLayer:not([data-tier="0"]) .capitalValue {
+  color: var(--fg-2);
+}
+
+.example {
+  display: flex;
+  flex-direction: column;
+  gap: calc(1.2 * var(--u));
+}
+
+.detail dd.exampleValue {
+  font-size: calc(1.9 * var(--u));
+  letter-spacing: -0.02em;
+  text-align: right;
+}
+
+/* Raise. */
+.raiseLead {
+  display: flex;
+  flex-direction: column;
+  gap: calc(2.4 * var(--u));
+}
+
+.terms,
+.uses,
+.credits {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.terms li,
+.uses li {
+  padding: calc(0.9 * var(--u)) 0;
+  font-size: calc(1.2 * var(--u));
+}
+
+.uses {
+  margin-top: calc(-1 * var(--u));
+}
+
+.uses .usesTotal {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+/* Team. */
+.person {
+  --h3-size: calc(4.2 * var(--u));
+
+  margin: calc(0.8 * var(--u)) 0 calc(1.4 * var(--u));
+  line-height: var(--h2-leading);
+  letter-spacing: var(--h2-tracking);
+}
+
+.credits li {
+  padding: calc(1 * var(--u)) 0;
+  font-size: calc(1.3 * var(--u));
+  line-height: 1.45;
+  color: var(--fg-2);
+}
+
+/* Cover: the title left, a render bleeding off the right. */
+.slide[data-kind="cover"] .main,
+.slide[data-kind="close"] .main {
+  padding-top: 0;
+}
+
+.cover {
+  display: flex;
+}
+
+.coverText {
+  display: flex;
+  flex-direction: column;
+  max-width: calc(50 * var(--u));
+}
+
+/* The title block centres in the room above the confidentiality line. */
+.coverText > div {
+  margin-block: auto;
+}
+
+/* The cover's wordmark, for the printed deck only: on screen the site header carries it. */
+.printMark {
+  display: none;
+}
+
+@media print {
+  .printMark {
+    display: block;
+    align-self: flex-start;
+    width: auto;
+    height: calc(1.6 * var(--u));
+  }
+
+  /* No pointer on paper: the sources set out in full across the foot, after their label. */
+  .footEnd {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .footSources {
+    display: flex;
+    flex: 1;
+    align-items: baseline;
+    gap: calc(1.6 * var(--u));
+    min-width: 0;
+  }
+
+  .sourcesToggle {
+    text-decoration: none;
+  }
+
+  .sourcesPanel {
+    position: static;
+    width: auto;
+    padding: 0;
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .sourcesPanel .sources {
+    padding: 0;
+    background: none;
+    box-shadow: none;
+  }
+}
+
+.coverTitle {
+  max-width: calc(46 * var(--u));
+  margin-top: calc(1.2 * var(--u));
+}
+
+.coverLede {
+  max-width: calc(38 * var(--u));
+  margin: calc(1.8 * var(--u)) 0 0;
+  font-size: calc(1.35 * var(--u));
+  line-height: 1.5;
+  color: var(--fg-2);
+}
+
+/*
+ * The render fills one cell of the page grid: from the top rule to the foot
+ * rule, and in to the right rail, so the cover shows the grid it opens.
+ */
+.coverImage {
+  position: absolute;
+  top: calc(max(calc(4 * var(--u)), var(--slide-top, 0px) + calc(1.6 * var(--u))) - 1.4 * var(--u));
+  right: calc(var(--rail) + 1px);
+  bottom: calc(3.6 * var(--u) + var(--slide-bottom, 0px));
+  width: calc(38 * var(--u) - var(--rail) - 1px);
+  border-left: 1px solid var(--rule-strong);
+}
+
+/* The cover's grid reads stronger: it's the first thing on the page. */
+.slide[data-kind="cover"] {
+  --rule: var(--rule-strong);
+}
+
+/* Close: the one centred view, the call to action. */
+.close {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.closeTitle {
+  max-width: calc(60 * var(--u));
+}
+
+.close .coverLede {
+  margin-inline: auto;
+}
+
+.actions {
+  display: flex;
+  gap: calc(1 * var(--u));
+  margin-top: calc(2.6 * var(--u));
+}
+
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  height: calc(3.2 * var(--u));
+  padding: 0 calc(1.8 * var(--u));
+  border: 1px solid var(--fg);
+  border-radius: calc(0.25 * var(--u));
+  font-size: calc(1 * var(--u));
+  font-weight: 500;
+  text-decoration: none;
+  transition:
+    background-color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease;
+}
+
+.primary {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.primary:hover {
+  background: var(--color-border);
+}
+
+.secondary {
+  border-color: var(--rule-strong);
+  color: var(--fg);
+}
+
+.secondary:hover {
+  border-color: var(--fg);
+}
+
+.close .meta {
+  margin-top: calc(2.6 * var(--u));
+}
+
+/* Sources appendix. */
+.sourcesBody {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: calc(3 * var(--u));
+}
+
+.citations {
+  margin: calc(0.8 * var(--u)) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.citations li {
+  padding: calc(0.55 * var(--u)) 0;
+  font-size: calc(0.8 * var(--u));
+  line-height: 1.45;
+  color: var(--fg-2);
+}
+
+.citations a {
+  color: var(--fg);
+}
+
+.citePublisher {
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.citations + .fine {
+  margin-top: calc(1.2 * var(--u));
+}
+
+/*
+ * Entrances: each `.rise` block fades in, in `--d` order, once the slide is
+ * active. Text only fades, never moves, so it reads in the place it will
+ * stay. Screen only, so print and reduced motion get the finished slide.
+ */
+@media screen and (prefers-reduced-motion: no-preference) {
+  .rise {
+    transition: opacity 600ms ease calc(120ms + var(--d, 0) * 80ms);
+  }
+
+  .slide:not([data-active]) .rise {
+    opacity: 0;
+    transition-duration: 0ms;
+    transition-delay: 0ms;
+  }
+
+  .cabinArt {
+    transition:
+      opacity 900ms ease 250ms,
+      translate 1100ms var(--ease-out) 250ms;
+  }
+
+  .cabin:not([data-shown]) .cabinArt {
+    opacity: 0;
+    translate: calc(-4 * var(--u)) 0;
+    transition-duration: 0ms;
+  }
+}

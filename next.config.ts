@@ -32,14 +32,14 @@ const contentSecurityPolicy = [
   "upgrade-insecure-requests",
 ].join("; ");
 
-// Deny every powerful browser feature; this site uses none of them.
+// Deny every powerful browser feature but fullscreen, which only the site
+// itself may use (the investor deck presents in it).
 const permissionsPolicy = [
   "accelerometer",
   "autoplay",
   "camera",
   "display-capture",
   "encrypted-media",
-  "fullscreen",
   "geolocation",
   "gyroscope",
   "magnetometer",
@@ -53,6 +53,7 @@ const permissionsPolicy = [
   "xr-spatial-tracking",
 ]
   .map((feature) => `${feature}=()`)
+  .concat("fullscreen=(self)")
   .join(", ");
 
 const nextConfig: NextConfig = {
@@ -93,7 +94,6 @@ const nextConfig: NextConfig = {
       { source: "/give-compute", destination: "/", permanent: true },
       { source: "/legacy", destination: "/", permanent: true },
       { source: "/network", destination: "/", permanent: true },
-      { source: "/deck", destination: "/", permanent: true },
       { source: "/deployments/:path*", destination: "/", permanent: true },
       // Renamed; the query string carries over, so shared cluster links still open.
       { source: "/cluster-configurator", destination: "/cluster-builder", permanent: true },

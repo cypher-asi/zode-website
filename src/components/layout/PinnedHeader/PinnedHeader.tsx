@@ -469,9 +469,13 @@ export function PinnedHeader({
     schedule();
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
+    // Surfaces can also change tone in place, e.g. the deck's ground between slides.
+    const surfaces = new MutationObserver(schedule);
+    surfaces.observe(document.body, { subtree: true, attributes: true, attributeFilter: ["data-surface"] });
     return () => {
       cancelAnimationFrame(frame);
       io.disconnect();
+      surfaces.disconnect();
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
     };
@@ -505,7 +509,8 @@ export function PinnedHeader({
           data-media={actionOverMedia || undefined}
           data-open={open || undefined}
           data-portal={inPortal || undefined}
-          data-still={!morph || undefined}
+          // Joins the wordmark's route transition, so it slides across too. Set here because CSS Modules would hash the name.
+          style={morph ? { viewTransitionName: "zode-action" } : undefined}
         >
           <div ref={anchorRef} className={styles.menuAnchor}>
             <div ref={actionRef} className={styles.split}>

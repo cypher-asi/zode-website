@@ -26,7 +26,7 @@
   display: flex;
   flex-direction: column;
   height: var(--card-h);
-  padding: 28px 32px 32px;
+  padding: var(--card-pad, 28px 32px 32px);
   background: var(--color-white);
   outline: none;
   opacity: 0;
@@ -150,6 +150,48 @@
 .card:is(:hover, :focus-visible) .art {
   scale: 0.74;
   translate: 0 -6px;
+}
+
+/*
+ * Held open where there's no hover to open it (the investor deck): the
+ * description shows, the drawing keeps its size, and the host's `--card-h`
+ * and `--card-pad` hold at every viewport size. The cards fade in where
+ * they sit rather than rising, as the deck's text does.
+ */
+.card[data-open] {
+  height: var(--card-h);
+  padding: var(--card-pad, 28px 32px 32px);
+  translate: none;
+  transition: opacity 700ms ease calc(var(--i) * 90ms);
+}
+
+.card[data-open] .figure {
+  min-height: 0;
+  padding: var(--figure-pad, 20px 0);
+}
+
+.card[data-open] .reveal {
+  grid-template-rows: 1fr;
+}
+
+.card[data-open] .body {
+  max-width: none;
+  padding-top: var(--body-gap, 14px);
+  opacity: 1;
+  translate: 0 0;
+}
+
+.card[data-open] .plus {
+  display: none;
+}
+
+/* The drawing fits the room the copy leaves, rather than the card's width. */
+.card[data-open] .art {
+  width: auto;
+  max-width: 100%;
+  height: 100%;
+  scale: none;
+  translate: none;
 }
 
 /*
