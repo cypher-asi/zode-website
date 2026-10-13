@@ -26,6 +26,7 @@ export type AppId =
   | "zrm"
   | "capacity"
   | "posts"
+  | "analytics"
   | "subscribers"
   | "users"
   | "settings";
@@ -144,6 +145,23 @@ const POSTS: PortalApp = {
   ],
 };
 
+/** The site's and portal's traffic and conversions, for the ZODE team. */
+const ANALYTICS: PortalApp = {
+  id: "analytics",
+  label: "Analytics",
+  icon: "analytics",
+  href: "/portal/analytics",
+  team: true,
+  links: [
+    { href: "/portal/analytics", label: "Overview", icon: "analytics" },
+    { href: "/portal/analytics/pages", label: "Pages", icon: "paper" },
+    { href: "/portal/analytics/sources", label: "Sources", icon: "site" },
+    { href: "/portal/analytics/audience", label: "Audience", icon: "users" },
+    { href: "/portal/analytics/events", label: "Events & goals", icon: "target" },
+    { href: "/portal/analytics/realtime", label: "Realtime", icon: "pulse" },
+  ],
+};
+
 const ROLE_ICONS: Record<UserRole, PortalIconName> = { member: "person", team: "badge", super_admin: "shield" };
 
 /** ZODE super admins only. */
@@ -178,7 +196,7 @@ const ADMIN_APPS: readonly PortalApp[] = [
 
 /**
  * The apps the viewer can open, in rail order, with Settings last for the
- * rail's foot: ZRM, Capacity, Posts, Team and everyone's contracts for the
+ * rail's foot: ZRM, Capacity, Posts, Analytics, Team and everyone's contracts for the
  * ZODE team, the admin apps for super admins.
  */
 export function portalApps({ admin, team }: NavAccess): PortalApp[] {
@@ -217,7 +235,7 @@ export function portalApps({ admin, team }: NavAccess): PortalApp[] {
     ORDERS,
     contracts,
     deployments,
-    ...(team ? [ZRM, CAPACITY, POSTS] : []),
+    ...(team ? [ZRM, CAPACITY, POSTS, ANALYTICS] : []),
     ...(admin ? ADMIN_APPS : []),
     settings,
   ];

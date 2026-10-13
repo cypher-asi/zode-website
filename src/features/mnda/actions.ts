@@ -3,6 +3,7 @@
 import { after } from "next/server";
 import { sendMndaEmails } from "@/emails/send";
 import { getAccount } from "@/features/account/session";
+import { trackServerEvent } from "@/features/analytics/server";
 import { RATE_LIMITED, clientIp, withinLimits } from "@/lib/rateLimit";
 import { createMnda, signFailure } from "./mndas";
 import { parseMnda } from "./parse";
@@ -37,5 +38,6 @@ export async function signMndaAction(_prev: MndaState, formData: FormData): Prom
   } catch (err) {
     return { status: "error", error: signFailure(err) };
   }
+  await trackServerEvent("mnda_signed");
   return signed;
 }

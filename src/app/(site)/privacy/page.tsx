@@ -39,7 +39,8 @@ const sections: LegalSection[] = [
   {
     heading: "5. Cookies and Analytics",
     body: [
-      "The Site may use cookies or similar technologies to remember preferences and to measure aggregate traffic and performance. You can control cookies through your browser settings, though disabling them may affect some functionality.",
+      "The Site uses cookies to keep you signed in, to remember preferences, and to measure how the Site is used. Our analytics are first party: we record the pages you visit, how long they are in view and how far you scroll, the site or campaign that referred you, your approximate location (country, region and city, derived from your IP address, which we do not store with this data), and your device, browser and operating system. Two cookies tie these visits together: a random visitor identifier kept for one year (zode_vid) and a session identifier that expires after 30 minutes of inactivity (zode_sid). When you are signed in, this activity is associated with your account. We do not share analytics data with third parties or use it for advertising.",
+      "If your browser sends a Global Privacy Control or Do Not Track signal, we do not record analytics for your visits. You can also control or delete cookies through your browser settings, though disabling them may affect some functionality.",
     ],
   },
   {
@@ -86,7 +87,7 @@ export default function PrivacyPage() {
     <LegalDocument
       title="Privacy Policy"
       description="How we handle your data, and the privacy-first principles behind ZODE."
-      effectiveDate="Effective date: October 11, 2026"
+      effectiveDate="Effective date: October 13, 2026"
       intro={`This Privacy Policy explains how ${COMPANY}, a Delaware corporation, collects, uses, and shares information when you use the ZODE website. We are committed to a privacy-first approach: we collect only what we need and never sell your personal information.`}
       sections={sections}
       contactBody={`If you have questions about this Privacy Policy or your personal information, contact ${COMPANY} at ${EMAIL}.`}

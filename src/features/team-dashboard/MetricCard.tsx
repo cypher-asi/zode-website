@@ -69,6 +69,7 @@ export function MetricCard({
   points,
   rangeDays,
   format,
+  change,
 }: {
   label: string;
   href?: string;
@@ -78,6 +79,8 @@ export function MetricCard({
   rangeDays: number;
   /** The metric in its unit, e.g. "3.5 MW". */
   format: (value: number) => string;
+  /** Replaces the change since the first point, for figures that aren't a running total, e.g. visitors per day. */
+  change?: { text: ReactNode; trend: "up" | "down" | "flat" };
 }): ReactElement {
   const first = points[0];
   const last = points.at(-1);
@@ -106,8 +109,10 @@ export function MetricCard({
             : `${label}: no history yet`
         }
       />
-      <p className={styles.change} data-trend={trend}>
-        {since ? (
+      <p className={styles.change} data-trend={change?.trend ?? trend}>
+        {change ? (
+          change.text
+        ) : since ? (
           <>
             <span className={styles.delta}>
               {delta === 0 ? "No change" : `${delta > 0 ? "+" : "−"}${format(Math.abs(delta))}`}

@@ -6,6 +6,7 @@ import { after } from "next/server";
 import { sendMailingListConfirmation } from "@/emails/send";
 import { getAccount } from "@/features/account/session";
 import type { Account } from "@/features/account/zos";
+import { trackServerEvent } from "@/features/analytics/server";
 import { normalizeEmail } from "@/features/data-room/rooms";
 import { HONEYPOT_FIELD } from "@/lib/leads";
 import { RATE_LIMITED, clientIp, withinLimits } from "@/lib/rateLimit";
@@ -62,6 +63,7 @@ async function signUp(
       ),
     );
   }
+  await trackServerEvent("newsletter_subscribed", { list, ...(source ? { source } : {}) });
   return null;
 }
 
@@ -89,6 +91,7 @@ export async function subscribeAction(_prev: SubscribeState, formData: FormData)
 export async function confirmSubscriptionAction(token: string): Promise<ActionResult> {
   try {
     const email = await confirmSubscription(token);
+    if (email) await trackServerEvent("newsletter_confirmed");
     return email ? { done: true } : { error: "This link has expired or was already used. Sign up again to get a new one." };
   } catch (error) {
     console.error("[mailing-list] confirm failed", error);

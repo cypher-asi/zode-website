@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { sendRegistrationEmails } from "@/emails/send";
+import { trackServerEvent } from "@/features/analytics/server";
 import { RATE_LIMITED, clientIp, withinLimits } from "@/lib/rateLimit";
 import { isEmail, singleLine } from "@/lib/validation";
 import { MIN_PASSWORD_LENGTH } from "./password";
@@ -79,6 +80,7 @@ export async function register(_prevState: RegisterState, formData: FormData): P
   }
 
   after(() => sendRegistrationEmails(account, values.inviteCode));
+  await trackServerEvent("account_registered", { invited: Boolean(values.inviteCode) }, account);
   await createAccountSession(account);
   redirect(safeNext(formData.get("next")));
 }

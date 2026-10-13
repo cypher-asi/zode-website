@@ -7,6 +7,7 @@ import { Empty, PageHeader } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
 import dash from "@/features/team-dashboard/dashboard.module.css";
 import { HomeTabs } from "@/features/team-dashboard/HomeTabs";
+import { loadVisitorSummary } from "@/features/analytics/queries";
 import { MetricCard } from "@/features/team-dashboard/MetricCard";
 import { loadTeamMetrics, type TeamMetrics } from "@/features/team-dashboard/metrics";
 import { requireTeam } from "@/features/zrm/access";
@@ -28,6 +29,17 @@ const count = (value: number) => Math.round(value).toLocaleString("en-US");
 const megawatts = (value: number) => `${value.toLocaleString("en-US", { maximumFractionDigits: 1 })} MW`;
 const dollars = (value: number) =>
   value.toLocaleString("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1 });
+
+/** Visitors against the period before, since a day's visitors aren't a running total to compare end to end. */
+function visitorChange(current: number, previous: number, days: number) {
+  const label = RANGES.find((range) => range.days === days)?.label ?? `${days}d`;
+  if (!previous) return { text: current ? `New since the previous ${label}` : "No visitors yet", trend: "flat" as const };
+  const pct = Math.round(((current - previous) / previous) * 100);
+  return {
+    text: `${pct > 0 ? "+" : pct < 0 ? "−" : ""}${Math.abs(pct)}% on the previous ${label}`,
+    trend: pct > 0 ? ("up" as const) : pct < 0 ? ("down" as const) : ("flat" as const),
+  };
+}
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
@@ -54,12 +66,16 @@ async function Dashboard({ searchParams }: { searchParams: SearchParams }): Prom
   const account = await requireTeam("/portal/team");
   const requested = Number((await searchParams).range);
   const rangeDays = RANGES.some((range) => range.days === requested) ? requested : DEFAULT_RANGE;
-  const [metrics, admin] = await Promise.all([
+  const [metrics, admin, visitors] = await Promise.all([
     loadTeamMetrics(rangeDays).catch((error: unknown): TeamMetrics | null => {
       console.error("Failed to load team metrics", error);
       return null;
     }),
     isZodeAdmin(account),
+    loadVisitorSummary(rangeDays).catch((error: unknown) => {
+      console.error("Failed to load visitors", error);
+      return null;
+    }),
   ]);
 
   return (
@@ -122,6 +138,18 @@ async function Dashboard({ searchParams }: { searchParams: SearchParams }): Prom
             points={metrics.series.subscribers_confirmed}
             rangeDays={rangeDays}
           />
+          {visitors ? (
+            <MetricCard
+              label="Visitors"
+              href={rangeDays === 30 ? "/portal/analytics" : rangeDays === 90 ? "/portal/analytics?range=90d" : "/portal/analytics?range=12mo"}
+              value={visitors.visitors}
+              format={count}
+              detail={`${count(visitors.pageviews)} pageviews on the site and portal`}
+              points={visitors.points}
+              rangeDays={rangeDays}
+              change={visitorChange(visitors.visitors, visitors.previous, rangeDays)}
+            />
+          ) : null}
         </div>
       )}
     </>

@@ -2,6 +2,7 @@
 
 import { after } from "next/server";
 import { sendEngineerRequestEmail } from "@/emails/send";
+import { trackServerEvent } from "@/features/analytics/server";
 import { createEngineerRequest, parseEngineerRequest } from "./engineerRequests";
 import { RECIPIENT_EMAIL } from "@/lib/leads";
 import { RATE_LIMITED, clientIp, withinLimits } from "@/lib/rateLimit";
@@ -39,5 +40,6 @@ export async function requestEngineer(
   }
 
   after(() => sendEngineerRequestEmail(request, reference));
+  await trackServerEvent("engineer_requested");
   return sent;
 }

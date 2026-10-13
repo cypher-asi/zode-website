@@ -9,6 +9,9 @@ export type PortalIconName =
   | "capacity"
   | "deployments"
   | "posts"
+  | "analytics"
+  | "target"
+  | "pulse"
   | "news"
   | "changelog"
   | "paper"
@@ -84,6 +87,20 @@ const GLYPHS: Record<PortalIconName, ReactElement> = {
       <path pathLength={1} d="M12.5 20.25h7" />
     </>
   ),
+  analytics: (
+    <>
+      <path pathLength={1} d="M4.75 4.75v12.5a2 2 0 0 0 2 2h12.5" />
+      <path pathLength={1} d="m8.75 14.25 3.25-3.75 2.75 2.5 4.5-5.25" />
+    </>
+  ),
+  target: (
+    <>
+      <circle pathLength={1} cx="12" cy="12" r="8.25" />
+      <circle pathLength={1} cx="12" cy="12" r="4.5" />
+      <circle pathLength={1} cx="12" cy="12" r="1" />
+    </>
+  ),
+  pulse: <path pathLength={1} d="M3 12h3.75l2.5-6.25 5.5 12.5 2.5-6.25H21" />,
   news: (
     <>
       <path pathLength={1} d="M17.25 20.25H6.25a2 2 0 0 1-2-2V5.75a1 1 0 0 1 1-1h10.5a1 1 0 0 1 1 1v12.5a2 2 0 0 0 4 0v-7.5a1 1 0 0 0-1-1h-3" />

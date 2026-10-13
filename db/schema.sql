@@ -789,3 +789,78 @@ create table if not exists deployment_phases (
 );
 
 create index if not exists deployment_phases_deployment_idx on deployment_phases (deployment_id, position);
+
+-- First-party analytics for the site and portal, reported in the portal's
+-- Analytics app (src/features/analytics). One row per pageview or event.
+-- `visitor_id` and `session_id` come from the zode_vid and zode_sid cookies;
+-- a session's source (channel, referrer, UTM) is copied from its first
+-- pageview onto every later row, so any report can filter by it. `path` never
+-- holds a query string, and secret segments (invite tokens) are replaced by
+-- their route. `engaged_ms` and `scroll_pct` grow as the page is read.
+-- `is_team` marks the ZODE team's traffic, including what they browsed
+-- before signing in, so reports can leave it out.
+create table if not exists analytics_events (
+  id bigint generated always as identity primary key,
+  created_at timestamptz not null default now(),
+  kind text not null check (kind in ('pageview', 'event')),
+  name text not null,
+  pageview_id uuid unique,
+  visitor_id uuid not null,
+  session_id uuid not null,
+  user_id bigint references users (id) on delete set null,
+  is_team boolean not null default false,
+  area text not null check (area in ('site', 'portal', 'account')),
+  path text not null,
+  route text not null,
+  title text,
+  channel text,
+  referrer_host text,
+  referrer_path text,
+  utm_source text,
+  utm_medium text,
+  utm_campaign text,
+  utm_content text,
+  utm_term text,
+  country text,
+  region text,
+  city text,
+  device text,
+  browser text,
+  os text,
+  screen_width integer,
+  language text,
+  engaged_ms integer not null default 0 check (engaged_ms >= 0),
+  scroll_pct smallint not null default 0 check (scroll_pct between 0 and 100),
+  props jsonb not null default '{}'
+);
+
+create index if not exists analytics_events_created_idx on analytics_events (created_at);
+create index if not exists analytics_events_route_idx on analytics_events (route, created_at);
+create index if not exists analytics_events_session_idx on analytics_events (session_id, created_at);
+create index if not exists analytics_events_visitor_idx on analytics_events (visitor_id, created_at);
+create index if not exists analytics_events_name_idx on analytics_events (name, created_at) where kind = 'event';
+
+-- Conversions the team tracks: an event by name, or a pageview whose path
+-- matches a pattern, `*` matching anything (e.g. /news/*).
+create table if not exists analytics_goals (
+  id bigint generated always as identity primary key,
+  label text not null,
+  match_kind text not null check (match_kind in ('event', 'path')),
+  match text not null,
+  created_by bigint references users (id) on delete set null,
+  created_at timestamptz not null default now(),
+  unique (match_kind, match)
+);
+
+-- Seeded once, with the conversions the site records itself, so a goal the
+-- team removes stays removed.
+insert into analytics_goals (label, match_kind, match)
+select g.label, 'event', g.match from (
+  values
+    ('Order placed', 'order_placed'),
+    ('MNDA signed', 'mnda_signed'),
+    ('Newsletter sign-up', 'newsletter_subscribed'),
+    ('Account registered', 'account_registered'),
+    ('Engineer requested', 'engineer_requested')
+) as g (label, match)
+where not exists (select 1 from analytics_goals);

@@ -3,6 +3,7 @@
 import { after } from "next/server";
 import { sendOrderEmails } from "@/emails/send";
 import { getAccount } from "@/features/account/session";
+import { trackServerEvent } from "@/features/analytics/server";
 import { RECIPIENT_EMAIL } from "@/lib/leads";
 import { RATE_LIMITED, clientIp, withinLimits } from "@/lib/rateLimit";
 import { createOrder, parseOrder, referenceFor } from "./orders";
@@ -45,5 +46,6 @@ export async function placeOrder(_prevState: OrderState, formData: FormData): Pr
   }
 
   after(() => sendOrderEmails(order, reference));
+  await trackServerEvent("order_placed", { mode: order.mode });
   return { status: "placed", reference };
 }
