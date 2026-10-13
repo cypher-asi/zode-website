@@ -117,10 +117,6 @@
   opacity: 0.7;
 }
 
-.range {
-  fill: var(--color-surface-active);
-}
-
 .marker {
   fill: var(--color-white);
   stroke: var(--color-ink);
@@ -209,9 +205,14 @@
   stroke: var(--color-ink);
 }
 
+/* The net gap in the macro slide's bottleneck red. */
 .barRect[data-kind="net"] {
-  fill: var(--color-accent-strong);
-  stroke: var(--color-accent-strong);
+  fill: #f04438;
+  stroke: #f04438;
+}
+
+.barValue[data-kind="net"] {
+  fill: #f04438;
 }
 
 .connector {
@@ -350,7 +351,6 @@
   .dashed,
   .gap,
   .pop,
-  .range,
   .marker,
   .note {
     transition: opacity 600ms ease;
@@ -368,7 +368,6 @@
     transition-delay: calc(700ms + var(--d, 0) * 250ms);
   }
 
-  .range,
   .marker,
   .note {
     transition-delay: 1100ms;
@@ -378,7 +377,7 @@
     stroke-dashoffset: 1;
   }
 
-  .chart:not([data-active]) :is(.dashed, .gap, .pop, .range, .marker, .note) {
+  .chart:not([data-active]) :is(.dashed, .gap, .pop, .marker, .note) {
     opacity: 0;
     transition-delay: 0ms;
     transition-duration: 0ms;

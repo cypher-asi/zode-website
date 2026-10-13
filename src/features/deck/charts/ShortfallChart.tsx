@@ -82,7 +82,14 @@ export function ShortfallChart({ active, compact = false }: { active: boolean; c
               y={y(bar.to)}
               height={y(bar.from) - y(bar.to)}
             />
-            <text className={styles.barValue} x={cx} y={y(bar.to)} dy="-0.7em" textAnchor="middle">
+            <text
+              className={styles.barValue}
+              data-kind={bar.id === "net" ? "net" : undefined}
+              x={cx}
+              y={y(bar.to)}
+              dy="-0.7em"
+              textAnchor="middle"
+            >
               {bar.kind === "step" ? `−${Math.abs(bar.value)}` : bar.value}
               <tspan className={styles.unit}> GW</tspan>
             </text>
