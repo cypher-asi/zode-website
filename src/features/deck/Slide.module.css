@@ -238,12 +238,14 @@
 }
 
 /*
- * Headings follow the site's: the display face in Light with the H1 and H2 leading and
- * tracking from globals.css, sized in slide units so a slide keeps its
- * proportions. The page's one H1 is the deck's; each slide's title is an H2,
- * set as display on the cover and close like the site's closing call to
- * action, and the headings inside a slide are H3s. Labels that head a list
- * are H3s set as eyebrows.
+ * Headings follow the site's: the display face in Light with the H1 and H2
+ * leading and tracking from globals.css. The sizes are the site's too, its
+ * vw scale read in slide units (H1 3.6vw, H2 2.55vw, subheads 1.8vw; a unit
+ * is 1vw on a 16:9 window), so a slide keeps its proportions. The page's one
+ * H1 is the deck's; each slide's title is an H2, set at H1 size on the cover
+ * and close like the site's closing call to action, and the headings inside
+ * a slide are H3s, set as the site's subheads. Labels that head a list are
+ * H3s set as eyebrows.
  */
 .display,
 .title,
@@ -255,24 +257,24 @@
 }
 
 .display {
-  font-size: calc(5.2 * var(--u));
+  font-size: calc(3.6 * var(--u));
   line-height: var(--h1-leading);
   letter-spacing: var(--h1-tracking);
 }
 
 .title {
   max-width: calc(64 * var(--u));
-  font-size: calc(3.5 * var(--u));
+  font-size: calc(2.55 * var(--u));
   line-height: var(--h2-leading);
   letter-spacing: var(--h2-tracking);
 }
 
 /* Weight 400 only where a host sets it small (the news cards), as the styleguide keeps Light for 20px and up. */
 .h3 {
-  font-size: var(--h3-size, calc(1.9 * var(--u)));
+  font-size: var(--h3-size, calc(1.8 * var(--u)));
   font-weight: var(--h3-weight, 300);
-  line-height: 1.15;
-  letter-spacing: -0.015em;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
 }
 
 .main {
@@ -1231,12 +1233,13 @@
 }
 
 /* Team. */
+/* The one name on the slide, set as an H1. */
 .person {
-  --h3-size: calc(4.2 * var(--u));
+  --h3-size: calc(3.6 * var(--u));
 
   margin: calc(0.8 * var(--u)) 0 calc(1.4 * var(--u));
-  line-height: var(--h2-leading);
-  letter-spacing: var(--h2-tracking);
+  line-height: var(--h1-leading);
+  letter-spacing: var(--h1-tracking);
 }
 
 .credits li {
@@ -1256,13 +1259,14 @@
   display: flex;
 }
 
+/* Held off the split down the middle. */
 .coverText {
   display: flex;
   flex-direction: column;
-  max-width: calc(50 * var(--u));
+  max-width: calc(50% - 4 * var(--u));
 }
 
-/* The title block centres in the room above the confidentiality line. */
+/* The title block centres in the room above the company line. */
 .coverText > div {
   margin-block: auto;
 }
@@ -1327,16 +1331,30 @@
 }
 
 /*
- * The render fills one cell of the page grid: from the top rule to the foot
- * rule, and in to the right rail, so the cover shows the grid it opens.
+ * The render fills the right half of the page grid: from the top rule to the
+ * foot rule, and from the middle out to the right rail.
  */
 .coverImage {
   position: absolute;
   top: calc(max(calc(4 * var(--u)), var(--slide-top, 0px) + calc(1.6 * var(--u))) - 1.4 * var(--u));
   right: calc(var(--rail) + 1px);
   bottom: calc(3.6 * var(--u) + var(--slide-bottom, 0px));
-  width: calc(38 * var(--u) - var(--rail) - 1px);
-  border-left: 1px solid var(--rule-strong);
+  left: calc(50% + 0.5px);
+}
+
+/* The split: a rule down the middle, from the top rule to the foot rule, with a pip at each crossing. */
+.cover::after {
+  content: "";
+  position: absolute;
+  top: calc(max(calc(4 * var(--u)), var(--slide-top, 0px) + calc(1.6 * var(--u))) - 1.4 * var(--u) - var(--pip) / 2);
+  bottom: calc(3.6 * var(--u) + var(--slide-bottom, 0px) - var(--pip) / 2);
+  left: calc(50% - var(--pip) / 2);
+  width: var(--pip);
+  background:
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 top 0 / var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 bottom 0 / var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--rule), var(--rule)) center / 1px 100% no-repeat;
+  pointer-events: none;
 }
 
 /* The cover's grid reads stronger: it's the first thing on the page. */

@@ -101,7 +101,7 @@ export const SLIDES: readonly Slide[] = [
     eyebrow: "Investor presentation · October 2026",
     title: "Sovereign AI capacity, online in 90 days.",
     lede: "ZODE builds factory-made AI data centers and sells the capacity on take-or-pay compute contracts.",
-    meta: "ZODE Inc. · Confidential",
+    meta: "ZODE Inc.",
     image: "/images/future-home/zode-hero.jpg",
     ground: "ink",
   },

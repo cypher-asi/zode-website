@@ -98,22 +98,23 @@
   pointer-events: auto;
 }
 
-/* Soft shadow keeps the dots legible over bright parts of the renders; the whites over photography stay local. */
+/* A hairline ring, not a blur, keeps the dots legible over bright parts of the renders; the whites over photography stay local. */
 .dot::before {
   content: "";
   width: 6px;
   height: 6px;
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.4);
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.35);
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18);
   transition:
-    width 300ms ease,
-    background-color 300ms ease;
+    width 300ms var(--ease-out),
+    background-color 300ms var(--ease-out),
+    box-shadow 300ms var(--ease-out);
 }
 
 @media (hover: hover) {
   .dot:hover::before {
-    background: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.85);
   }
 }
 
@@ -130,7 +131,8 @@
 
 .dot[aria-selected="true"]::before {
   width: 16px;
-  background: rgba(255, 255, 255, 0.95);
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.24);
 }
 
 .dot:focus-visible {

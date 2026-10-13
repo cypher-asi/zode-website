@@ -77,13 +77,10 @@ function Cover({ slide }: { slide: Of<"cover"> }): ReactElement {
         {/* eslint-disable-next-line @next/next/no-img-element -- the SVG wordmark scales with the slide */}
         <img className={styles.printMark} src="/brand/zode-wordmark-white.svg" alt="ZODE" />
         <div>
-          <p {...rise(1)} className={`${styles.rise} ${styles.eyebrow}`}>
-            {slide.eyebrow}
-          </p>
-          <h2 {...rise(2)} className={`${styles.rise} ${styles.display} ${styles.coverTitle}`}>
+          <h2 {...rise(1)} className={`${styles.rise} ${styles.display} ${styles.coverTitle}`}>
             {slide.title}
           </h2>
-          <p {...rise(3)} className={`${styles.rise} ${styles.coverLede}`}>
+          <p {...rise(2)} className={`${styles.rise} ${styles.coverLede}`}>
             {slide.lede}
           </p>
         </div>
@@ -812,7 +809,11 @@ export function SlideView({
                 {slide.eyebrow}
               </span>
             ) : null}
-            {slide.kind === "cover" ? <p className={styles.footLabel}>{slide.meta}</p> : null}
+            {slide.kind === "cover" ? (
+              <p className={styles.footLabel}>
+                {slide.meta} · {slide.eyebrow}
+              </p>
+            ) : null}
             {slide.logos ? (
               <ul className={styles.logos}>
                 {slide.logos.map((logo) => (
