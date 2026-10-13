@@ -231,20 +231,23 @@ create table if not exists posts (
 
 create index if not exists posts_published_idx on posts (kind, published_at desc) where status = 'published';
 
--- The mailing list: one row per email. Signing up is double opt-in, since
--- anyone can type any address: a row is 'pending' until the emailed link is
--- followed. user_id links the ZOS account that signed up while logged in with
--- this same email. ip and user_agent record where consent was given.
+-- The mailing lists, 'news' and 'changelog': one row per email per list, each
+-- joined and left on its own. Signing up is double opt-in, since anyone can
+-- type any address: a row is 'pending' until the emailed link is followed.
+-- user_id links the ZOS account that signed up while logged in with this same
+-- email. ip and user_agent record where consent was given.
 create table if not exists mailing_list_subscribers (
   id uuid primary key default gen_random_uuid(),
-  email text not null unique,
+  list text not null,
+  email text not null,
   name text,
   status text not null default 'pending' check (status in ('pending', 'subscribed', 'unsubscribed')),
-  -- Where they signed up, e.g. 'news', 'changelog', 'settings'.
+  -- Where they signed up, e.g. 'news', 'changelog', 'post', 'settings'.
   source text,
   user_id text,
-  -- sha256 of the emailed confirmation token; cleared once confirmed.
-  confirm_token_hash text unique,
+  -- sha256 of the emailed confirmation token; cleared once confirmed. Rows
+  -- split from one sign-up share it, so its link confirms them all.
+  confirm_token_hash text,
   confirm_expires_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -254,6 +257,27 @@ create table if not exists mailing_list_subscribers (
   user_agent text
 );
 
+-- Before the split there was one list for both, so every row from then goes on
+-- both lists. Only rows with no list yet are copied, which is only ever once.
+alter table mailing_list_subscribers add column if not exists list text;
+alter table mailing_list_subscribers drop constraint if exists mailing_list_subscribers_email_key;
+alter table mailing_list_subscribers drop constraint if exists mailing_list_subscribers_confirm_token_hash_key;
+
+insert into mailing_list_subscribers
+  (list, email, name, status, source, user_id, confirm_token_hash, confirm_expires_at,
+   created_at, updated_at, confirmed_at, unsubscribed_at, ip, user_agent)
+select 'changelog', email, name, status, source, user_id, confirm_token_hash, confirm_expires_at,
+  created_at, updated_at, confirmed_at, unsubscribed_at, ip, user_agent
+from mailing_list_subscribers where list is null;
+
+update mailing_list_subscribers set list = 'news' where list is null;
+
+alter table mailing_list_subscribers alter column list set not null;
+alter table mailing_list_subscribers drop constraint if exists mailing_list_subscribers_list_check;
+alter table mailing_list_subscribers add constraint mailing_list_subscribers_list_check check (list in ('news', 'changelog'));
+
+create unique index if not exists mailing_list_subscribers_list_email_idx on mailing_list_subscribers (list, email);
+create index if not exists mailing_list_subscribers_token_idx on mailing_list_subscribers (confirm_token_hash) where confirm_token_hash is not null;
 create index if not exists mailing_list_subscribers_user_idx on mailing_list_subscribers (user_id) where user_id is not null;
 create index if not exists mailing_list_subscribers_status_idx on mailing_list_subscribers (status, created_at desc);
 

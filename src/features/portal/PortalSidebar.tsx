@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PortalIcon } from "./icons";
@@ -12,6 +12,8 @@ export type SidebarRoom = { id: string; name: string; fileCount: number };
 
 /** Rooms on the Home sidebar; Data rooms lists them all. */
 const RECENT_ROOMS = 5;
+
+const PLACEHOLDER_ROWS = 6;
 
 function Count({ value }: { value: number | undefined }): ReactElement | null {
   return value === undefined ? null : <span className={styles.count}>{value.toLocaleString("en-US")}</span>;
@@ -63,6 +65,25 @@ function Rooms({ rooms, current }: { rooms: readonly SidebarRoom[] | null; curre
   );
 }
 
+/** Stands in for a room's file explorer until the room's page docks the real one. */
+function ExplorerPlaceholder(): ReactElement {
+  return (
+    <div className={styles.placeholder} role="status" aria-label="Loading files">
+      <span className={styles.placeholderSearch} />
+      {Array.from({ length: PLACEHOLDER_ROWS }, (_, index) => (
+        <span key={index} className={styles.placeholderRow} />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * How the sidebar changed last: into a room (`down`, the crumb pushing the
+ * head's border down), back out (`up`), or across apps (`swap`). None on first
+ * paint, so a fresh page load doesn't animate.
+ */
+type Motion = "down" | "up" | "swap";
+
 /**
  * The panel beside the rail, for whichever app you're in: its pages, or for
  * Data rooms the rooms themselves. Inside a room the page docks its file
@@ -87,43 +108,56 @@ export function PortalSidebar({
     app.links.map(({ href }) => href),
   );
 
+  const view = roomId ? `room:${roomId}` : app.id;
+  const [shown, setShown] = useState({ view, inRoom: roomId !== null });
+  const [motion, setMotion] = useState<Motion | null>(null);
+  if (shown.view !== view) {
+    const inRoom = roomId !== null;
+    setMotion(inRoom === shown.inRoom ? "swap" : inRoom ? "down" : "up");
+    setShown({ view, inRoom });
+  }
+
   return (
-    <aside className={styles.sidebar} aria-label={`${app.label} sidebar`}>
+    <aside className={styles.sidebar} aria-label={`${app.label} sidebar`} data-motion={motion ?? undefined}>
       <div className={styles.head}>
-        {roomId ? (
-          <div className={styles.titleGroup}>
+        <div className={styles.titleGroup}>
+          {roomId ? (
             <Link href="/portal/data-rooms" className={styles.crumb}>
               <svg viewBox="0 0 16 16" aria-hidden="true">
                 <path d="M10 3.5 5.5 8l4.5 4.5" />
               </svg>
               Data rooms
             </Link>
-            <h2 className={styles.title}>{room?.name ?? "Data room"}</h2>
-          </div>
-        ) : (
-          <h2 className={styles.title}>{app.label}</h2>
-        )}
+          ) : null}
+          <h2 key={view} className={styles.title}>
+            {roomId ? (room?.name ?? "Data room") : app.label}
+          </h2>
+        </div>
       </div>
 
-      <div ref={dockRef} className={styles.dock} />
+      <div className={styles.content}>
+        <div ref={dockRef} className={styles.dock} />
 
-      <div className={styles.body}>
-        {app.id === "home" ? (
-          <>
-            <section className={styles.section} aria-label="Recent data rooms">
-              <h3 className={styles.heading}>Recent data rooms</h3>
-              <Rooms rooms={rooms && rooms.slice(0, RECENT_ROOMS)} current={null} />
-            </section>
-            <section className={styles.section} aria-label="Tools">
-              <h3 className={styles.heading}>Tools</h3>
-              <Links links={app.links} current={current} counts={counts} />
-            </section>
-          </>
-        ) : app.id === "rooms" ? (
-          <Rooms rooms={rooms} current={roomId} />
-        ) : (
-          <Links links={app.links} current={current} counts={counts} />
-        )}
+        <div key={roomId ? "room" : app.id} className={styles.body}>
+          {roomId ? (
+            <ExplorerPlaceholder />
+          ) : app.id === "home" ? (
+            <>
+              <section className={styles.section} aria-label="Recent data rooms">
+                <h3 className={styles.heading}>Recent data rooms</h3>
+                <Rooms rooms={rooms && rooms.slice(0, RECENT_ROOMS)} current={null} />
+              </section>
+              <section className={styles.section} aria-label="Tools">
+                <h3 className={styles.heading}>Tools</h3>
+                <Links links={app.links} current={current} counts={counts} />
+              </section>
+            </>
+          ) : app.id === "rooms" ? (
+            <Rooms rooms={rooms} current={null} />
+          ) : (
+            <Links links={app.links} current={current} counts={counts} />
+          )}
+        </div>
       </div>
     </aside>
   );

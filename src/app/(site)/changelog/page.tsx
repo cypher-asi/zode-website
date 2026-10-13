@@ -27,11 +27,7 @@ export default async function ChangelogPage(): Promise<ReactElement> {
         <p className={styles.empty}>Nothing here yet. Check back soon.</p>
       )}
       <div className={styles.subscribe}>
-        <SubscribeForm
-          source="changelog"
-          title="Get changelog updates by email"
-          description="Hear about new features and fixes when they ship. Unsubscribe any time."
-        />
+        <SubscribeForm list="changelog" source="changelog" />
       </div>
     </div>
   );

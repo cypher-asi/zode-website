@@ -4,19 +4,19 @@ import type { Account } from "@/features/account/zos";
 import settings from "@/features/settings/settings.module.css";
 import { accountSubscribeAction, accountUnsubscribeAction } from "./actions";
 import { MailingListButton } from "./MailingListButton";
-import { subscriptionFor } from "./subscribers";
+import { subscriptionsFor } from "./subscribers";
+import { MAILING_LISTS, type Subscriber } from "./types";
 import styles from "./MailingList.module.css";
 
-/** Portal settings: whether the account gets ZODE news, and the button to change it. */
-export async function SettingsSubscription({ account }: { account: Account }): Promise<ReactElement> {
-  const subscription = await subscriptionFor(account).catch((error: unknown) => {
-    console.error("[mailing-list] couldn't load the account's subscription", error);
-    return undefined;
-  });
-  if (subscription === undefined) {
-    return <p className={settings.hint}>Your mailing list status couldn&apos;t be loaded right now.</p>;
-  }
-
+function ListStatus({
+  list,
+  subscription,
+  account,
+}: {
+  list: (typeof MAILING_LISTS)[number];
+  subscription: Subscriber | undefined;
+  account: Account;
+}): ReactElement {
   const status = subscription?.status ?? "unsubscribed";
   const email = subscription?.email ?? account.email;
   let text: ReactElement;
@@ -24,13 +24,13 @@ export async function SettingsSubscription({ account }: { account: Account }): P
   if (status === "subscribed") {
     text = (
       <>
-        Subscribed with {email}
-        <small>You get an email when we publish news or changelog updates.</small>
+        {list.label}: subscribed with {email}
+        <small>You get an email when {list.when}.</small>
       </>
     );
     button = (
       <MailingListButton
-        run={accountUnsubscribeAction}
+        run={accountUnsubscribeAction.bind(null, list.id)}
         label="Unsubscribe"
         pendingLabel="Unsubscribing…"
         variant="button"
@@ -39,13 +39,13 @@ export async function SettingsSubscription({ account }: { account: Account }): P
   } else if (status === "pending") {
     text = (
       <>
-        Waiting for confirmation
+        {list.label}: waiting for confirmation
         <small>We emailed a confirmation link to {email}. It works for 7 days.</small>
       </>
     );
     button = (
       <MailingListButton
-        run={accountSubscribeAction}
+        run={accountSubscribeAction.bind(null, list.id)}
         label="Resend link"
         pendingLabel="Sending…"
         variant="button"
@@ -54,17 +54,45 @@ export async function SettingsSubscription({ account }: { account: Account }): P
   } else {
     text = (
       <>
-        Not subscribed
-        <small>Get an email when we publish news or changelog updates. We&apos;ll send a link to {account.email} to confirm.</small>
+        {list.label}: not subscribed
+        <small>
+          Get an email when {list.when}. We&apos;ll send a link to {account.email} to confirm.
+        </small>
       </>
     );
-    button = <MailingListButton run={accountSubscribeAction} label="Subscribe" pendingLabel="Subscribing…" />;
+    button = (
+      <MailingListButton run={accountSubscribeAction.bind(null, list.id)} label="Subscribe" pendingLabel="Subscribing…" />
+    );
   }
 
   return (
     <div className={styles.status}>
       <p className={styles.statusText}>{text}</p>
       <div key={status}>{button}</div>
+    </div>
+  );
+}
+
+/** Portal settings: which mailing lists the account is on, and a button to change each. */
+export async function SettingsSubscription({ account }: { account: Account }): Promise<ReactElement> {
+  const subscriptions = await subscriptionsFor(account).catch((error: unknown) => {
+    console.error("[mailing-list] couldn't load the account's subscriptions", error);
+    return undefined;
+  });
+  if (subscriptions === undefined) {
+    return <p className={settings.hint}>Your mailing list status couldn&apos;t be loaded right now.</p>;
+  }
+
+  return (
+    <div className={styles.lists}>
+      {MAILING_LISTS.map((list) => (
+        <ListStatus
+          key={list.id}
+          list={list}
+          subscription={subscriptions.find((row) => row.list === list.id)}
+          account={account}
+        />
+      ))}
     </div>
   );
 }

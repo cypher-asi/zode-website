@@ -2,9 +2,20 @@ import { isZodeAdmin } from "@/features/account/admin";
 import { getAccount } from "@/features/account/session";
 import { notFoundResponse } from "@/features/data-room/http";
 import { listSubscribers } from "@/features/mailing-list/subscribers";
-import { isSubscriberStatus } from "@/features/mailing-list/types";
+import { isMailingList, isSubscriberStatus } from "@/features/mailing-list/types";
 
-const COLUMNS = ["email", "name", "status", "user_id", "account_name", "source", "signed_up_at", "confirmed_at", "unsubscribed_at"];
+const COLUMNS = [
+  "list",
+  "email",
+  "name",
+  "status",
+  "user_id",
+  "account_name",
+  "source",
+  "signed_up_at",
+  "confirmed_at",
+  "unsubscribed_at",
+];
 
 /** Quotes a CSV cell, and defuses values a spreadsheet would run as a formula. */
 function cell(value: string | Date | null): string {
@@ -14,15 +25,17 @@ function cell(value: string | Date | null): string {
   return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 
-/** The mailing list as CSV for ZODE admins, optionally one status only (`?status=subscribed`). */
+/** The mailing lists as CSV for ZODE admins, optionally one list and one status only (`?list=news&status=subscribed`). */
 export async function GET(request: Request) {
   const account = await getAccount();
   if (!account || !(await isZodeAdmin(account))) return notFoundResponse();
-  const status = new URL(request.url).searchParams.get("status");
+  const search = new URL(request.url).searchParams;
+  const list = search.get("list");
+  const status = search.get("status");
 
   let subscribers;
   try {
-    subscribers = await listSubscribers();
+    subscribers = await listSubscribers(isMailingList(list) ? list : null);
   } catch (error) {
     console.error("[mailing-list] export failed", error);
     return new Response("The mailing list couldn't be loaded. Try again shortly.", {
@@ -35,13 +48,14 @@ export async function GET(request: Request) {
   const lines = [
     COLUMNS.join(","),
     ...subscribers.map((s) =>
-      [s.email, s.name, s.status, s.userId, s.accountName, s.source, s.createdAt, s.confirmedAt, s.unsubscribedAt]
+      [s.list, s.email, s.name, s.status, s.userId, s.accountName, s.source, s.createdAt, s.confirmedAt, s.unsubscribedAt]
         .map(cell)
         .join(","),
     ),
   ];
   const day = new Date().toISOString().slice(0, 10);
-  const file = `zode-mailing-list${isSubscriberStatus(status) ? `-${status}` : ""}-${day}.csv`;
+  const parts = ["zode-mailing-list", isMailingList(list) ? list : null, isSubscriberStatus(status) ? status : null, day];
+  const file = `${parts.filter(Boolean).join("-")}.csv`;
   return new Response(`${lines.join("\r\n")}\r\n`, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",

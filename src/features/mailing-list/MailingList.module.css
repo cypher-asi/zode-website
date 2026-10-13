@@ -71,6 +71,12 @@
 }
 
 /* Portal settings */
+.lists {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .status {
   display: flex;
   flex-wrap: wrap;

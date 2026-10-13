@@ -7,11 +7,16 @@ export type PortalIconName =
   | "contracts"
   | "zrm"
   | "posts"
+  | "news"
+  | "changelog"
   | "subscribers"
   | "users"
+  | "badge"
+  | "shield"
   | "settings"
   | "person"
   | "cluster"
+  | "recurring"
   | "chart";
 
 /*
@@ -62,6 +67,19 @@ const GLYPHS: Record<PortalIconName, ReactElement> = {
       <path pathLength={1} d="M12.5 20.25h7" />
     </>
   ),
+  news: (
+    <>
+      <path pathLength={1} d="M17.25 20.25H6.25a2 2 0 0 1-2-2V5.75a1 1 0 0 1 1-1h10.5a1 1 0 0 1 1 1v12.5a2 2 0 0 0 4 0v-7.5a1 1 0 0 0-1-1h-3" />
+      <path pathLength={1} d="M8 8.75h5.5M8 12.25h5.5M8 15.75h3.25" />
+    </>
+  ),
+  changelog: (
+    <>
+      <circle pathLength={1} cx="7.5" cy="6.75" r="2.25" />
+      <circle pathLength={1} cx="7.5" cy="17.25" r="2.25" />
+      <path pathLength={1} d="M7.5 9v6M12.75 6.75h6.5M12.75 17.25h6.5" />
+    </>
+  ),
   subscribers: (
     <>
       <rect pathLength={1} x="3" y="5.5" width="18" height="13" rx="3" />
@@ -73,6 +91,19 @@ const GLYPHS: Record<PortalIconName, ReactElement> = {
       <circle pathLength={1} cx="9" cy="8.5" r="3.25" />
       <path pathLength={1} d="M3.25 19.5a5.75 5.5 0 0 1 11.5 0" />
       <path pathLength={1} d="M15.25 5.35a3.25 3.25 0 0 1 0 6.3M17.25 14.4a5.75 5.5 0 0 1 3.5 5.1" />
+    </>
+  ),
+  badge: (
+    <>
+      <rect pathLength={1} x="5" y="4.25" width="14" height="16" rx="2.5" />
+      <circle pathLength={1} cx="12" cy="11" r="2.5" />
+      <path pathLength={1} d="M8.5 17a3.5 3.25 0 0 1 7 0M10.25 4.25V2.75h3.5v1.5" />
+    </>
+  ),
+  shield: (
+    <>
+      <path pathLength={1} d="M12 3.25 18.75 5.9v5.6c0 4.15-2.75 7.6-6.75 9.25-4-1.65-6.75-5.1-6.75-9.25V5.9z" />
+      <path pathLength={1} d="m9.25 12.1 1.9 1.9 3.6-3.75" />
     </>
   ),
   settings: (
@@ -95,6 +126,12 @@ const GLYPHS: Record<PortalIconName, ReactElement> = {
       <rect pathLength={1} x="3.75" y="3.75" width="7" height="7" rx="2" />
       <rect pathLength={1} x="13.25" y="3.75" width="7" height="7" rx="2" />
       <path pathLength={1} d="M5.75 13.25h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2zm9.5 0h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2z" />
+    </>
+  ),
+  recurring: (
+    <>
+      <path pathLength={1} d="M19.25 12a7.25 7.25 0 0 1-12.6 4.9M4.75 12a7.25 7.25 0 0 1 12.6-4.9" />
+      <path pathLength={1} d="M17.5 3.5v3.75h-3.75M6.5 20.5v-3.75h3.75" />
     </>
   ),
   chart: (

@@ -14,17 +14,22 @@ import {
   confirmSubscription,
   confirmUrl,
   requestSubscription,
-  subscriptionFor,
+  subscriptionsFor,
   unsubscribe,
   verifyUnsubscribe,
   type PendingConfirmation,
 } from "./subscribers";
-import type { ActionResult, SubscribeState } from "./types";
+import { isMailingList, type ActionResult, type MailingList, type SubscribeState } from "./types";
 
 const FAILED = "We couldn't sign you up just now. Please try again shortly.";
 
 /** Stores the sign-up and emails a confirmation link; `name` is only known for signed-in accounts. */
-async function signUp(email: string, source: string | null, account: Account | null): Promise<string | null> {
+async function signUp(
+  list: MailingList,
+  email: string,
+  source: string | null,
+  account: Account | null,
+): Promise<string | null> {
   const ip = await clientIp();
   const allowed = await withinLimits([
     { key: `subscribe:ip:${ip}`, max: 10, windowSeconds: 60 * 60 },
@@ -36,6 +41,7 @@ async function signUp(email: string, source: string | null, account: Account | n
   let pending: PendingConfirmation | null;
   try {
     pending = await requestSubscription({
+      list,
       email,
       name: ownEmail ? account.displayName : null,
       source,
@@ -51,7 +57,7 @@ async function signUp(email: string, source: string | null, account: Account | n
     after(() =>
       sendMailingListConfirmation(
         pending.email,
-        { name: pending.name, confirmUrl: confirmUrl(pending.token) },
+        { name: pending.name, list, confirmUrl: confirmUrl(pending.token) },
         pending.token.slice(0, 16),
       ),
     );
@@ -72,8 +78,10 @@ export async function subscribeAction(_prev: SubscribeState, formData: FormData)
   const honey = formData.get(HONEYPOT_FIELD);
   if (typeof honey === "string" && honey.trim()) return { status: "sent", email };
 
+  const list = formData.get("list");
+  if (!isMailingList(list)) return { status: "error", error: FAILED, email: raw };
   const source = formData.get("source");
-  const error = await signUp(email, typeof source === "string" ? source : null, await getAccount());
+  const error = await signUp(list, email, typeof source === "string" ? source : null, await getAccount());
   return error ? { status: "error", error, email: raw } : { status: "sent", email };
 }
 
@@ -99,21 +107,23 @@ export async function unsubscribeAction(id: string, sig: string): Promise<Action
   }
 }
 
-/** Portal settings: sign the account's own email up, or take it off the list. */
-export async function accountSubscribeAction(): Promise<ActionResult> {
+/** Portal settings: sign the account's own email up to a list, or take it off one. */
+export async function accountSubscribeAction(list: MailingList): Promise<ActionResult> {
+  if (!isMailingList(list)) return { error: FAILED };
   const account = await getAccount();
   if (!account) return { error: "Your session has ended. Log in again to make changes." };
-  const error = await signUp(normalizeEmail(account.email), "settings", account);
+  const error = await signUp(list, normalizeEmail(account.email), "settings", account);
   if (error) return { error };
   refresh();
   return { done: true };
 }
 
-export async function accountUnsubscribeAction(): Promise<ActionResult> {
+export async function accountUnsubscribeAction(list: MailingList): Promise<ActionResult> {
+  if (!isMailingList(list)) return { error: "Couldn't unsubscribe right now. Please try again." };
   const account = await getAccount();
   if (!account) return { error: "Your session has ended. Log in again to make changes." };
   try {
-    const subscription = await subscriptionFor(account);
+    const subscription = (await subscriptionsFor(account)).find((row) => row.list === list);
     if (subscription) await unsubscribe(subscription.id);
   } catch (error) {
     console.error("[mailing-list] account unsubscribe failed", error);

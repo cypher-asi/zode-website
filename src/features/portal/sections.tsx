@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { OrderSummary } from "@/features/configurator/orders";
 import type { Contract } from "@/features/contracts/contracts";
 import { roleLabel, roomKindLabel, type RoomSummary } from "@/features/data-room/types";
-import { SUBSCRIBER_STATUSES, type Subscriber } from "@/features/mailing-list/types";
+import { SUBSCRIBER_STATUSES, mailingList, type Subscriber } from "@/features/mailing-list/types";
 import { kindLabel, type Post } from "@/features/posts/types";
 import { RoleButton } from "@/features/users/RoleButton";
 import { ROLE_LABELS, type User } from "@/features/users/types";
@@ -181,8 +181,17 @@ function subscriberDate(subscriber: Subscriber): string {
   return `Signed up ${date.format(subscriber.createdAt)}`;
 }
 
-/** The mailing list, for ZODE admins: each address, whether it's confirmed, and the account it belongs to. */
-export function SubscriberList({ subscribers }: { subscribers: Subscriber[] }): ReactElement {
+/**
+ * Mailing list rows, for ZODE admins: each address, whether it's confirmed, and
+ * the account it belongs to. `showList` adds which list, when they're mixed.
+ */
+export function SubscriberList({
+  subscribers,
+  showList = false,
+}: {
+  subscribers: Subscriber[];
+  showList?: boolean;
+}): ReactElement {
   return (
     <ul className={styles.list}>
       {subscribers.map((subscriber) => {
@@ -202,6 +211,7 @@ export function SubscriberList({ subscribers }: { subscribers: Subscriber[] }): 
                 </span>
               </span>
               <span className={styles.rowEnd}>
+                {showList ? <span className={styles.pill}>{mailingList(subscriber.list).label}</span> : null}
                 {subscriber.userId ? <span className={styles.pill}>Account</span> : null}
                 <span className={styles.pill} data-strong={subscriber.status === "subscribed" ? "" : undefined}>
                   {SUBSCRIBER_STATUSES.find((status) => status.id === subscriber.status)?.label ?? subscriber.status}

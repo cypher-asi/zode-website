@@ -48,7 +48,7 @@ export async function PublishedPostPage({ kind, slug }: { kind: PostKind; slug: 
   if (!post) notFound();
   return (
     <div className={styles.page}>
-      <PostArticle post={post} footer={<SubscribeForm source="post" />} />
+      <PostArticle post={post} footer={<SubscribeForm list={post.kind} source="post" />} />
     </div>
   );
 }

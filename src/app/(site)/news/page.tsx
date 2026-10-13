@@ -27,7 +27,7 @@ export default async function NewsPage(): Promise<ReactElement> {
         <p className={styles.empty}>Nothing here yet. Check back soon.</p>
       )}
       <div className={styles.subscribe}>
-        <SubscribeForm source="news" />
+        <SubscribeForm list="news" source="news" />
       </div>
     </div>
   );

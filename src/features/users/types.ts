@@ -11,6 +11,16 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   super_admin: "Super admin",
 };
 
+/** Each role's page in the portal's Users app, `/portal/users/<slug>`, named as the role is shown. */
+export const ROLE_SLUGS: Record<UserRole, string> = {
+  member: "regular",
+  team: "team",
+  super_admin: "super-admin",
+};
+
+export const roleForSlug = (slug: string | undefined): UserRole | null =>
+  USER_ROLES.find((role) => ROLE_SLUGS[role] === slug) ?? null;
+
 /** Super admins can do everything the Team can. */
 export const onTeam = (role: UserRole): boolean => role === "team" || role === "super_admin";
 

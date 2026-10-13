@@ -1,3 +1,24 @@
+import type { PostKind } from "@/features/posts/types";
+
+/** Each list mails one kind of post, and people join each one on its own. */
+export type MailingList = PostKind;
+
+export const MAILING_LISTS: readonly {
+  id: MailingList;
+  label: string;
+  /** What the list sends, to finish "Get …" or "stop getting …". */
+  topic: string;
+  /** To finish "You get an email when …". */
+  when: string;
+}[] = [
+  { id: "news", label: "News", topic: "ZODE news", when: "we publish news" },
+  { id: "changelog", label: "Changelog", topic: "ZODE changelog updates", when: "we ship changelog updates" },
+];
+
+export const isMailingList = (value: unknown): value is MailingList => value === "news" || value === "changelog";
+
+export const mailingList = (id: MailingList) => MAILING_LISTS.find((list) => list.id === id) ?? MAILING_LISTS[0];
+
 export type SubscriberStatus = "pending" | "subscribed" | "unsubscribed";
 
 export const SUBSCRIBER_STATUSES: readonly { id: SubscriberStatus; label: string }[] = [
@@ -13,8 +34,10 @@ export const isSubscriberStatus = (value: unknown): value is SubscriberStatus =>
 export const SOURCES = ["news", "changelog", "post", "settings"] as const;
 export type SubscribeSource = (typeof SOURCES)[number];
 
+/** One email on one list; the same email on both lists is two subscribers. */
 export interface Subscriber {
   id: string;
+  list: MailingList;
   email: string;
   name: string | null;
   status: SubscriberStatus;

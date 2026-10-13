@@ -4,17 +4,30 @@ import { useActionState, useId, type ReactElement } from "react";
 import ui from "@/features/data-room/ui.module.css";
 import { HONEYPOT_FIELD } from "@/lib/leads";
 import { subscribeAction } from "./actions";
-import type { SubscribeSource, SubscribeState } from "./types";
+import type { MailingList, SubscribeSource, SubscribeState } from "./types";
 import styles from "./MailingList.module.css";
 
 const INITIAL: SubscribeState = { status: "idle" };
 
-/** The mailing list sign-up: one email field. Confirmation happens by email, so success says to check the inbox. */
+const COPY: Record<MailingList, { title: string; description: string }> = {
+  news: {
+    title: "Get ZODE news by email",
+    description: "Announcements from the ZODE team, straight to your inbox. Unsubscribe any time.",
+  },
+  changelog: {
+    title: "Get changelog updates by email",
+    description: "Hear about new features and fixes when they ship. Unsubscribe any time.",
+  },
+};
+
+/** A mailing list sign-up: one email field. Confirmation happens by email, so success says to check the inbox. */
 export function SubscribeForm({
+  list,
   source,
-  title = "Get ZODE news by email",
-  description = "New posts and changelog entries, straight to your inbox. Unsubscribe any time.",
+  title = COPY[list].title,
+  description = COPY[list].description,
 }: {
+  list: MailingList;
   source: SubscribeSource;
   title?: string;
   description?: string;
@@ -36,6 +49,7 @@ export function SubscribeForm({
         </p>
       ) : (
         <form action={action} className={styles.form} noValidate>
+          <input type="hidden" name="list" value={list} />
           <input type="hidden" name="source" value={source} />
           <label className={styles.honeypot} aria-hidden="true">
             Website

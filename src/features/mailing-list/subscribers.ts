@@ -4,7 +4,7 @@ import type { Account } from "@/features/account/zos";
 import { isUuid, normalizeEmail } from "@/features/data-room/rooms";
 import { db } from "@/lib/db";
 import { siteOrigin } from "@/lib/site";
-import { SOURCES, type Subscriber, type SubscriberStatus } from "./types";
+import { SOURCES, type MailingList, type Subscriber, type SubscriberStatus } from "./types";
 
 const CONFIRM_TTL_DAYS = 7;
 
@@ -32,6 +32,7 @@ export function verifyUnsubscribe(id: unknown, sig: unknown): id is string {
 
 const toSubscriber = (row: Record<string, unknown>): Subscriber => ({
   id: String(row.id),
+  list: row.list as MailingList,
   email: String(row.email),
   name: row.name == null ? null : String(row.name),
   status: row.status as SubscriberStatus,
@@ -44,6 +45,7 @@ const toSubscriber = (row: Record<string, unknown>): Subscriber => ({
 });
 
 export interface SignUp {
+  list: MailingList;
   email: string;
   name: string | null;
   source: string | null;
@@ -59,9 +61,10 @@ export interface PendingConfirmation {
 }
 
 /**
- * Starts (or restarts) a sign-up with a fresh confirmation token. Returns
- * `null` when the email is already subscribed, so no email is sent. The row is
- * linked to the signed-in account only when the email is that account's own.
+ * Starts (or restarts) a sign-up to one list with a fresh confirmation token.
+ * Returns `null` when the email is already subscribed to it, so no email is
+ * sent. The row is linked to the signed-in account only when the email is
+ * that account's own.
  */
 export async function requestSubscription(signUp: SignUp): Promise<PendingConfirmation | null> {
   const email = normalizeEmail(signUp.email);
@@ -72,10 +75,10 @@ export async function requestSubscription(signUp: SignUp): Promise<PendingConfir
 
   const [row] = await db()`
     insert into mailing_list_subscribers
-      (email, name, source, user_id, confirm_token_hash, confirm_expires_at, ip, user_agent)
+      (list, email, name, source, user_id, confirm_token_hash, confirm_expires_at, ip, user_agent)
     values
-      (${email}, ${signUp.name}, ${source}, ${userId}, ${hashToken(token)}, ${expiresAt}, ${signUp.ip}, ${signUp.userAgent})
-    on conflict (email) do update set
+      (${signUp.list}, ${email}, ${signUp.name}, ${source}, ${userId}, ${hashToken(token)}, ${expiresAt}, ${signUp.ip}, ${signUp.userAgent})
+    on conflict (list, email) do update set
       name = coalesce(excluded.name, mailing_list_subscribers.name),
       user_id = coalesce(mailing_list_subscribers.user_id, excluded.user_id),
       status = case when mailing_list_subscribers.status = 'subscribed' then 'subscribed' else 'pending' end,
@@ -93,21 +96,24 @@ export async function requestSubscription(signUp: SignUp): Promise<PendingConfir
 
 export interface PendingLookup {
   email: string;
-  status: SubscriberStatus;
+  /** Usually one; a sign-up from before the lists split confirms both. */
+  lists: MailingList[];
   expired: boolean;
 }
 
 /** What a confirmation link refers to, or `null` when it isn't (or is no longer) a live token. */
 export async function findConfirmation(token: string): Promise<PendingLookup | null> {
   if (!token || token.length > 100) return null;
-  const [row] = await db()`
-    select email, status, confirm_expires_at from mailing_list_subscribers where confirm_token_hash = ${hashToken(token)}
+  const rows = await db()`
+    select email, list, confirm_expires_at from mailing_list_subscribers
+    where confirm_token_hash = ${hashToken(token)}
+    order by list desc
   `;
-  if (!row) return null;
+  if (!rows.length) return null;
   return {
-    email: String(row.email),
-    status: row.status as SubscriberStatus,
-    expired: new Date(row.confirm_expires_at as string | Date).getTime() < Date.now(),
+    email: String(rows[0].email),
+    lists: rows.map((row) => row.list as MailingList),
+    expired: new Date(rows[0].confirm_expires_at as string | Date).getTime() < Date.now(),
   };
 }
 
@@ -143,30 +149,34 @@ export async function unsubscribe(id: string): Promise<string | null> {
   return row ? String(row.email) : null;
 }
 
-export async function getEmail(id: string): Promise<{ email: string; status: SubscriberStatus } | null> {
+export async function getEmail(
+  id: string,
+): Promise<{ email: string; list: MailingList; status: SubscriberStatus } | null> {
   if (!isUuid(id)) return null;
-  const [row] = await db()`select email, status from mailing_list_subscribers where id = ${id}`;
-  return row ? { email: String(row.email), status: row.status as SubscriberStatus } : null;
+  const [row] = await db()`select email, list, status from mailing_list_subscribers where id = ${id}`;
+  return row
+    ? { email: String(row.email), list: row.list as MailingList, status: row.status as SubscriberStatus }
+    : null;
 }
 
-/** The account's own row: linked to it, or under its email. */
-export async function subscriptionFor(account: Account): Promise<Subscriber | null> {
-  const [row] = await db()`
-    select s.*, null as account_name from mailing_list_subscribers s
+/** The account's own row on each list it has one on: linked to it, or under its email. */
+export async function subscriptionsFor(account: Account): Promise<Subscriber[]> {
+  const rows = await db()`
+    select distinct on (s.list) s.*, null as account_name from mailing_list_subscribers s
     where s.user_id = ${account.userId} or s.email = ${normalizeEmail(account.email)}
-    order by (s.email = ${normalizeEmail(account.email)}) desc
-    limit 1
+    order by s.list, (s.email = ${normalizeEmail(account.email)}) desc
   `;
-  return row ? toSubscriber(row) : null;
+  return rows.map(toSubscriber);
 }
 
-/** Every row, newest first, with linked accounts' current names. For ZODE admins only. */
-export async function listSubscribers(): Promise<Subscriber[]> {
+/** Every row, or one list's, newest first, with linked accounts' current names. For ZODE admins only. */
+export async function listSubscribers(list: MailingList | null = null): Promise<Subscriber[]> {
   const rows = await db()`
     select s.*, p.display_name as account_name
     from mailing_list_subscribers s
     left join account_profiles p on p.user_id = s.user_id
-    order by s.created_at desc
+    where ${list}::text is null or s.list = ${list}
+    order by s.created_at desc, s.list desc
   `;
   return rows.map(toSubscriber);
 }

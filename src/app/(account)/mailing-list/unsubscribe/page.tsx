@@ -3,6 +3,7 @@ import type { ReactElement } from "react";
 import { unsubscribeAction } from "@/features/mailing-list/actions";
 import { MailingListButton } from "@/features/mailing-list/MailingListButton";
 import { getEmail, verifyUnsubscribe } from "@/features/mailing-list/subscribers";
+import { mailingList, type MailingList } from "@/features/mailing-list/types";
 import styles from "@/features/data-room/invite.module.css";
 
 export const metadata: Metadata = {
@@ -11,11 +12,12 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 };
 
-const Unsubscribed = ({ email }: { email: string }): ReactElement => (
+const Unsubscribed = ({ email, list }: { email: string; list: MailingList }): ReactElement => (
   <>
     <h1 className={styles.title}>You&apos;re unsubscribed</h1>
     <p className={styles.text}>
-      We won&apos;t send ZODE news to <strong>{email}</strong> anymore. Changed your mind? Sign up again on the News page.
+      We won&apos;t send {mailingList(list).topic} to <strong>{email}</strong> anymore. Changed your mind? Sign up
+      again on the {mailingList(list).label} page.
     </p>
   </>
 );
@@ -46,20 +48,22 @@ export default async function UnsubscribePage({ searchParams }: PageProps<"/mail
       </>
     );
   } else if (subscriber.status === "unsubscribed") {
-    body = <Unsubscribed email={subscriber.email} />;
+    body = <Unsubscribed email={subscriber.email} list={subscriber.list} />;
   } else {
+    const { topic } = mailingList(subscriber.list);
     body = (
       <>
         <p className={styles.eyebrow}>Mailing list</p>
-        <h1 className={styles.title}>Unsubscribe from ZODE news?</h1>
+        <h1 className={styles.title}>Unsubscribe from {topic}?</h1>
         <p className={styles.text}>
-          <strong>{subscriber.email}</strong> will stop getting news and changelog emails.
+          <strong>{subscriber.email}</strong> will stop getting {topic} by email. Other ZODE mailing lists
+          aren&apos;t affected.
         </p>
         <MailingListButton
           run={unsubscribeAction.bind(null, id as string, sig as string)}
           label="Unsubscribe"
           pendingLabel="Unsubscribing…"
-          done={<Unsubscribed email={subscriber.email} />}
+          done={<Unsubscribed email={subscriber.email} list={subscriber.list} />}
         />
       </>
     );

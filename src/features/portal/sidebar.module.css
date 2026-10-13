@@ -7,6 +7,8 @@
  * while it holds anything, the app's default list below it steps aside.
  */
 .sidebar {
+  /* The crumb's height plus its gap to the title: how far the border moves in and out of a room. */
+  --crumb-shift: 20px;
   position: fixed;
   top: var(--portal-top);
   bottom: calc(var(--portal-gap) + env(safe-area-inset-bottom, 0px));
@@ -36,7 +38,6 @@
   justify-content: space-between;
   gap: 8px;
   padding: 16px 12px 12px 18px;
-  border-bottom: 1px solid var(--glass-border);
 }
 
 .titleGroup {
@@ -62,6 +63,7 @@
   align-items: center;
   gap: 2px;
   align-self: flex-start;
+  height: calc(var(--crumb-shift) - 2px);
   margin-left: -4px;
   color: var(--color-text-tertiary);
   font-size: var(--text-xs);
@@ -77,6 +79,15 @@
   stroke-width: 1.5;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+/* Everything under the head, its top border being the line that moves when the head grows or shrinks. */
+.content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  border-top: 1px solid var(--glass-border);
 }
 
 .dock {
@@ -203,9 +214,127 @@
   }
 }
 
+/* Pulses where a room's search box and first rows will land, after a beat so quick loads skip it. */
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  animation: fade-in var(--duration-base) ease 150ms backwards;
+}
+
+.placeholderSearch,
+.placeholderRow {
+  display: block;
+  border-radius: var(--radius-inset);
+  background: var(--color-surface-tint);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.placeholderSearch {
+  height: 32px;
+  margin-bottom: 38px;
+}
+
+.placeholderRow {
+  width: 64%;
+  height: 12px;
+  margin: 10px 0 10px 10px;
+}
+
+.placeholderRow:nth-child(odd) {
+  width: 48%;
+}
+
+/*
+ * Moving between views (`data-motion`), in transforms and opacity only so it
+ * stays smooth while the next page mounts. The head takes its new height at
+ * once; the content, border and all, starts from where it was and slides
+ * into place, the title riding along, and whatever's new fades up into it.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .sidebar[data-motion="down"] .content {
+    animation: from-above var(--duration-slow) var(--ease-out);
+  }
+
+  .sidebar[data-motion="up"] .content {
+    animation: from-below var(--duration-slow) var(--ease-out);
+  }
+
+  .sidebar[data-motion="down"] .title {
+    animation:
+      from-above var(--duration-slow) var(--ease-out),
+      fade-in var(--duration-slow) ease;
+  }
+
+  .sidebar[data-motion="up"] .title {
+    animation:
+      from-below var(--duration-slow) var(--ease-out),
+      fade-in var(--duration-slow) ease;
+  }
+
+  .sidebar[data-motion="swap"] .title,
+  .sidebar[data-motion] .crumb,
+  .sidebar[data-motion] .body {
+    animation: rise var(--duration-slow) var(--ease-out);
+  }
+
+  /* A docked explorer's parts (search, path, list, footer) rise in one after another. */
+  .sidebar[data-motion] .dock > * > * {
+    animation: rise var(--duration-slow) var(--ease-out) backwards;
+  }
+
+  .sidebar[data-motion] .dock > * > :nth-child(2) {
+    animation-delay: 40ms;
+  }
+
+  .sidebar[data-motion] .dock > * > :nth-child(3) {
+    animation-delay: 80ms;
+  }
+
+  .sidebar[data-motion] .dock > * > :nth-child(n + 4) {
+    animation-delay: 120ms;
+  }
+}
+
+@keyframes from-above {
+  from {
+    translate: 0 calc(-1 * var(--crumb-shift));
+  }
+}
+
+@keyframes from-below {
+  from {
+    translate: 0 var(--crumb-shift);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .crumb,
   .link {
     transition: none;
+  }
+
+  .placeholder,
+  .placeholderSearch,
+  .placeholderRow {
+    animation: none;
   }
 }

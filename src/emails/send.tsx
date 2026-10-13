@@ -226,7 +226,7 @@ export async function sendMailingListConfirmation(
     await send({
       to,
       replyTo: teamInbox(),
-      subject: mailingListConfirmSubject(),
+      subject: mailingListConfirmSubject(props.list),
       email: <MailingListConfirm {...props} />,
       idempotencyKey: `mailing-list-confirm-${key}`,
     });

@@ -1,3 +1,5 @@
+import { MAILING_LISTS } from "@/features/mailing-list/types";
+import { ROLE_LABELS, ROLE_SLUGS, USER_ROLES, type UserRole } from "@/features/users/types";
 import type { PortalIconName } from "./icons";
 
 /** Wide enough for the rail, the sidebar and a usable panel; under it the sidebar hides. Matches shell.module.css. */
@@ -41,6 +43,12 @@ const HOME: PortalApp = {
   ],
 };
 
+/** Each order type's page in the Orders app, `/portal/orders/<id>`. */
+export const ORDER_MODES: readonly { id: "buy" | "rent"; label: string; icon: PortalIconName }[] = [
+  { id: "buy", label: "Purchases", icon: "cluster" },
+  { id: "rent", label: "Rentals", icon: "recurring" },
+];
+
 const ROOMS: PortalApp = { id: "rooms", label: "Data rooms", icon: "rooms", href: "/portal/data-rooms", links: [] };
 
 const ORDERS: PortalApp = {
@@ -49,8 +57,8 @@ const ORDERS: PortalApp = {
   icon: "orders",
   href: "/portal/orders",
   links: [
-    { href: "/portal/orders", label: "Your orders", icon: "orders", count: "orders" },
-    { href: "/buy-compute", label: "Buy compute", icon: "cluster" },
+    { href: "/portal/orders", label: "All orders", icon: "orders", count: "orders" },
+    ...ORDER_MODES.map((mode): NavLink => ({ href: `/portal/orders/${mode.id}`, label: mode.label, icon: mode.icon })),
   ],
 };
 
@@ -75,8 +83,14 @@ const POSTS: PortalApp = {
   label: "Posts",
   icon: "posts",
   href: "/portal/posts",
-  links: [{ href: "/portal/posts", label: "News and changelog", icon: "posts" }],
+  links: [
+    { href: "/portal/posts", label: "All posts", icon: "posts" },
+    { href: "/portal/posts/news", label: "News", icon: "news" },
+    { href: "/portal/posts/changelog", label: "Changelog", icon: "changelog" },
+  ],
 };
+
+const ROLE_ICONS: Record<UserRole, PortalIconName> = { member: "person", team: "badge", super_admin: "shield" };
 
 /** ZODE super admins only. */
 const ADMIN_APPS: readonly PortalApp[] = [
@@ -85,14 +99,24 @@ const ADMIN_APPS: readonly PortalApp[] = [
     label: "Subscribers",
     icon: "subscribers",
     href: "/portal/subscribers",
-    links: [{ href: "/portal/subscribers", label: "Mailing list", icon: "subscribers" }],
+    links: [
+      { href: "/portal/subscribers", label: "All lists", icon: "subscribers" },
+      ...MAILING_LISTS.map(
+        (list): NavLink => ({ href: `/portal/subscribers/${list.id}`, label: list.label, icon: list.id }),
+      ),
+    ],
   },
   {
     id: "users",
     label: "Users",
     icon: "users",
     href: "/portal/users",
-    links: [{ href: "/portal/users", label: "All users", icon: "users" }],
+    links: [
+      { href: "/portal/users", label: "All users", icon: "users" },
+      ...USER_ROLES.map(
+        (role): NavLink => ({ href: `/portal/users/${ROLE_SLUGS[role]}`, label: ROLE_LABELS[role], icon: ROLE_ICONS[role] }),
+      ),
+    ],
   },
 ];
 

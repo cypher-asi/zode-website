@@ -4,6 +4,7 @@ import Link from "next/link";
 import { confirmSubscriptionAction } from "@/features/mailing-list/actions";
 import { MailingListButton } from "@/features/mailing-list/MailingListButton";
 import { findConfirmation } from "@/features/mailing-list/subscribers";
+import { mailingList, type MailingList } from "@/features/mailing-list/types";
 import styles from "@/features/data-room/invite.module.css";
 import ui from "@/features/data-room/ui.module.css";
 
@@ -13,15 +14,20 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 };
 
-const Subscribed = ({ email }: { email: string }): ReactElement => (
+const topicOf = (lists: MailingList[]): string =>
+  lists.length > 1 ? "ZODE news and changelog updates" : mailingList(lists[0]).topic;
+
+const whenOf = (lists: MailingList[]): string =>
+  lists.length > 1 ? "we publish news or changelog updates" : mailingList(lists[0]).when;
+
+const Subscribed = ({ email, lists }: { email: string; lists: MailingList[] }): ReactElement => (
   <>
     <h1 className={styles.title}>You&apos;re subscribed</h1>
     <p className={styles.text}>
-      We&apos;ll email <strong>{email}</strong> when we publish news or changelog updates. Every email has an
-      unsubscribe link.
+      We&apos;ll email <strong>{email}</strong> when {whenOf(lists)}. Every email has an unsubscribe link.
     </p>
-    <Link className={ui.button} href="/news">
-      Read the latest news
+    <Link className={ui.button} href={`/${lists[0]}`}>
+      {lists[0] === "changelog" ? "Read the changelog" : "Read the latest news"}
     </Link>
   </>
 );
@@ -64,13 +70,13 @@ export default async function ConfirmSubscriptionPage({
         <p className={styles.eyebrow}>Mailing list</p>
         <h1 className={styles.title}>Confirm your subscription</h1>
         <p className={styles.text}>
-          Get ZODE news and changelog updates at <strong>{pending.email}</strong>.
+          Get {topicOf(pending.lists)} at <strong>{pending.email}</strong>.
         </p>
         <MailingListButton
           run={confirmSubscriptionAction.bind(null, token)}
           label="Confirm subscription"
           pendingLabel="Confirming…"
-          done={<Subscribed email={pending.email} />}
+          done={<Subscribed email={pending.email} lists={pending.lists} />}
         />
       </>
     );

@@ -1,22 +1,25 @@
 import { Button, Heading, Link, Text } from "@react-email/components";
 import type { ReactElement } from "react";
+import { mailingList, type MailingList } from "@/features/mailing-list/types";
 import { Layout, Legend, Rule, color, greetingName, text } from "./ui";
 
 export interface MailingListConfirmProps {
   name: string | null;
+  list: MailingList;
   confirmUrl: string;
 }
 
 type Props = MailingListConfirmProps & { logoSrc?: string };
 
-export const mailingListConfirmSubject = (): string => "Confirm your ZODE news subscription";
+export const mailingListConfirmSubject = (list: MailingList): string => `Confirm your ZODE ${list} subscription`;
 
-/** Sent when someone signs up for the mailing list; nothing is sent to them until they confirm. */
+/** Sent when someone signs up for a mailing list; nothing is sent to them until they confirm. */
 export default function MailingListConfirm(props: Props): ReactElement {
   const firstName = props.name ? greetingName(props.name) : "";
+  const { topic } = mailingList(props.list);
 
   return (
-    <Layout preview="One click to start getting ZODE news and changelog updates." logoSrc={props.logoSrc}>
+    <Layout preview={`One click to start getting ${topic}.`} logoSrc={props.logoSrc}>
       <Legend>Mailing list</Legend>
       <Heading
         as="h1"
@@ -25,8 +28,8 @@ export default function MailingListConfirm(props: Props): ReactElement {
         Confirm your subscription{firstName ? `, ${firstName}` : ""}.
       </Heading>
       <Text style={text.paragraph}>
-        Someone, hopefully you, asked to get ZODE news and changelog updates at this address. Confirm and we&apos;ll
-        email you when we publish. You can unsubscribe from any email.
+        Someone, hopefully you, asked to get {topic} at this address. Confirm and we&apos;ll email you when we
+        publish. You can unsubscribe from any email.
       </Text>
 
       <Button
