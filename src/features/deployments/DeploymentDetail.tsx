@@ -1,6 +1,15 @@
 import type { ReactElement, ReactNode } from "react";
 import Link from "next/link";
-import { formatCount, formatDay, formatMw, formatRate, formatTb, formatTerm, formatUsd } from "./format";
+import {
+  formatCount,
+  formatDay,
+  formatMw,
+  formatRate,
+  formatTb,
+  formatLeaseYears,
+  formatTerm,
+  formatUsd,
+} from "./format";
 import { RolloutGantt } from "./RolloutGantt";
 import {
   coolingLabel,
@@ -107,7 +116,7 @@ export function DeploymentDetail({ deployment: d, today }: { deployment: Deploym
       <Facts title="Credit">
         <Fact label="Credit">{creditLabel(d.creditRating)}</Fact>
         <Fact label="LOC required">
-          {d.locRequired ? `Yes${d.locAmountUsd !== null ? ` · ${formatUsd(d.locAmountUsd)}` : ""}` : "No"}
+          {d.locRequired ? `Yes${d.locYears !== null ? ` · ${formatLeaseYears(d.locYears)}` : ""}` : "No"}
         </Fact>
         <Fact label="Credit guarantee">{yesNo(d.creditGuarantee)}</Fact>
         <Fact label="Lease guarantee">{yesNo(d.leaseGuarantee)}</Fact>

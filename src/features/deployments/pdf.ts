@@ -16,7 +16,17 @@ import {
 } from "pdf-lib";
 import { BRAND, COLOR_GROUPS } from "@/features/styleguide/brand";
 import { SITE_URL } from "@/lib/site";
-import { formatCount, formatDay, formatMw, formatRate, formatTb, formatTerm, formatUsd, plural } from "./format";
+import {
+  formatCount,
+  formatDay,
+  formatMw,
+  formatRate,
+  formatTb,
+  formatLeaseYears,
+  formatTerm,
+  formatUsd,
+  plural,
+} from "./format";
 import { scheduleOf } from "./schedule";
 import {
   coolingLabel,
@@ -631,7 +641,7 @@ export async function renderDeploymentPdf(deployment: Deployment, today: string)
       { label: "Credit", value: orDash(creditLabel(d.creditRating)) },
       {
         label: "LOC required",
-        value: d.locRequired ? `Yes${d.locAmountUsd !== null ? ` · ${formatUsd(d.locAmountUsd)}` : ""}` : "No",
+        value: d.locRequired ? `Yes${d.locYears !== null ? ` · ${formatLeaseYears(d.locYears)}` : ""}` : "No",
       },
       { label: "Credit guarantee", value: yesNo(d.creditGuarantee) },
       { label: "Lease guarantee", value: yesNo(d.leaseGuarantee) },

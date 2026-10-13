@@ -743,8 +743,8 @@ create table if not exists deployments (
   deposit_usd numeric(16, 2) check (deposit_usd >= 0),
   credit_rating text check (credit_rating in ('ig', 'high', 'not_required')),
   loc_required boolean not null default false,
-  -- Only kept while a letter of credit is required.
-  loc_amount_usd numeric(16, 2) check (loc_amount_usd >= 0),
+  -- The letter of credit, in years of lease, only kept while one is required.
+  loc_years numeric(5, 2) check (loc_years > 0),
   credit_guarantee boolean not null default false,
   lease_guarantee boolean not null default false,
   notes text,
@@ -755,6 +755,10 @@ create table if not exists deployments (
 );
 
 create index if not exists deployments_status_idx on deployments (status);
+
+-- The LOC was first sized in dollars; it's sized in years of lease.
+alter table deployments add column if not exists loc_years numeric(5, 2) check (loc_years > 0);
+alter table deployments drop column if exists loc_amount_usd;
 
 -- A deployment's rollout: each phase comes ready for service (RFS) on its
 -- date with its nodes and MW. `start_on` is optional and only draws the

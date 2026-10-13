@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import type { ReactElement } from "react";
+import { Suspense, type ReactElement } from "react";
 import { notFound } from "next/navigation";
 import { getDeployment } from "@/features/deployments/deployments";
 import { DeploymentForm } from "@/features/deployments/DeploymentForm";
+import { PortalLoading } from "@/features/portal/PortalLoading";
 import { PageHeader } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
 import { requireTeam } from "@/features/zrm/access";
@@ -13,9 +14,17 @@ export const metadata: Metadata = {
 };
 
 /** Where the ZODE team edits or deletes a deployment. */
-export default async function EditDeploymentPage({
+export default function EditDeploymentPage({ params }: PageProps<"/portal/deployments/[id]/edit">): ReactElement {
+  return (
+    <Suspense fallback={<PortalLoading />}>
+      <EditDeployment params={params} />
+    </Suspense>
+  );
+}
+
+async function EditDeployment({
   params,
-}: PageProps<"/portal/deployments/[id]/edit">): Promise<ReactElement> {
+}: Pick<PageProps<"/portal/deployments/[id]/edit">, "params">): Promise<ReactElement> {
   const { id } = await params;
   await requireTeam(`/portal/deployments/${id}/edit`);
   const deployment = await getDeployment(id);

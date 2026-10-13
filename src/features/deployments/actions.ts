@@ -113,11 +113,15 @@ function readDeployment(formData: FormData): DeploymentInput | string {
   const priceGpuHr = figure(field("price_gpu_hr"), "Price", 1e4);
   const depositUsd = figure(field("deposit_usd"), "Deposit", 1e14);
   const locRequired = field("loc_required") === "yes";
-  const locAmountUsd = locRequired ? figure(field("loc_amount_usd"), "LOC amount", 1e14) : null;
-  for (const value of [termMonths, priceGpuHr, depositUsd, locAmountUsd]) {
+  const locYears = locRequired ? figure(field("loc_years"), "The LOC's years of lease", 100) : null;
+  for (const value of [termMonths, priceGpuHr, depositUsd, locYears]) {
     if (typeof value === "string") return value;
   }
   if (termMonths === 0) return "Term must be at least a month.";
+  if (locYears === 0) return "The LOC must cover some of the lease.";
+  if (typeof locYears === "number" && Math.abs(Math.round(locYears * 100) - locYears * 100) > 1e-6) {
+    return "Give the LOC's years of lease to at most two decimals.";
+  }
 
   const phases = readPhases(formData);
   if (typeof phases === "string") return phases;
@@ -139,7 +143,7 @@ function readDeployment(formData: FormData): DeploymentInput | string {
     depositUsd: depositUsd as number | null,
     creditRating: creditRating ? (creditRating as DeploymentInput["creditRating"]) : null,
     locRequired,
-    locAmountUsd: locAmountUsd as number | null,
+    locYears: locYears as number | null,
     creditGuarantee: field("credit_guarantee") === "yes",
     leaseGuarantee: field("lease_guarantee") === "yes",
     notes: notes || null,

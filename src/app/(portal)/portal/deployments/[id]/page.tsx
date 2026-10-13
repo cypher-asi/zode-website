@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { ReactElement } from "react";
+import { Suspense, type ReactElement } from "react";
 import Link from "next/link";
 import { io } from "next/cache";
 import { notFound } from "next/navigation";
@@ -10,6 +10,7 @@ import { todayIso } from "@/features/deployments/format";
 import { statusLabel } from "@/features/deployments/types";
 import { loadViewer } from "@/features/deployments/view";
 import { orLogIn } from "@/features/portal/mine";
+import { PortalLoading } from "@/features/portal/PortalLoading";
 import { PageHeader } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
 
@@ -19,7 +20,15 @@ export const metadata: Metadata = {
 };
 
 /** One deployment, for every signed-in account, with its PDF; the ZODE team can edit it. */
-export default async function DeploymentPage({ params }: PageProps<"/portal/deployments/[id]">): Promise<ReactElement> {
+export default function DeploymentPage({ params }: PageProps<"/portal/deployments/[id]">): ReactElement {
+  return (
+    <Suspense fallback={<PortalLoading />}>
+      <Deployment params={params} />
+    </Suspense>
+  );
+}
+
+async function Deployment({ params }: Pick<PageProps<"/portal/deployments/[id]">, "params">): Promise<ReactElement> {
   const { id } = await params;
   const viewer = orLogIn(await loadViewer(), `/portal/deployments/${id}`);
   const deployment = await getDeployment(id);

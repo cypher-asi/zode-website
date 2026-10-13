@@ -348,10 +348,10 @@ export function DeploymentForm({ deployment }: { deployment?: Deployment }): Rea
               />
             </div>
             {loc === "yes"
-              ? input("loc_amount_usd", "LOC amount (USD)", {
+              ? input("loc_years", "LOC (years of lease)", {
                   inputMode: "decimal",
-                  placeholder: "0",
-                  defaultValue: str(d?.locAmountUsd ?? null),
+                  placeholder: "1",
+                  defaultValue: str(d?.locYears ?? null),
                 })
               : null}
             {select("credit_guarantee", "Credit guarantee", YES_NO, d?.creditGuarantee ? "yes" : "no")}

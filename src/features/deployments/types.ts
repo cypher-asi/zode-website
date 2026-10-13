@@ -45,7 +45,7 @@ export interface Deployment {
   depositUsd: number | null;
   creditRating: CreditRating | null;
   locRequired: boolean;
-  locAmountUsd: number | null;
+  locYears: number | null;
   creditGuarantee: boolean;
   leaseGuarantee: boolean;
   notes: string | null;

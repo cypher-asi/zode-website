@@ -31,7 +31,7 @@ const toDeployment = (row: Record<string, unknown>): Deployment => ({
   depositUsd: row.deposit_usd == null ? null : Number(row.deposit_usd),
   creditRating: (row.credit_rating ?? null) as Deployment["creditRating"],
   locRequired: Boolean(row.loc_required),
-  locAmountUsd: row.loc_amount_usd == null ? null : Number(row.loc_amount_usd),
+  locYears: row.loc_years == null ? null : Number(row.loc_years),
   creditGuarantee: Boolean(row.credit_guarantee),
   leaseGuarantee: Boolean(row.lease_guarantee),
   notes: row.notes == null ? null : String(row.notes),
@@ -48,7 +48,7 @@ export async function listDeployments(): Promise<Deployment[]> {
     select d.id, d.name, d.status, d.nodes, d.platform, d.cooling, d.networking, d.storage_tb_per_node,
       d.address, d.facility, d.term_months, d.price_gpu_hr::float8 as price_gpu_hr,
       d.deposit_usd::float8 as deposit_usd, d.credit_rating, d.loc_required,
-      d.loc_amount_usd::float8 as loc_amount_usd, d.credit_guarantee, d.lease_guarantee, d.notes, d.updated_at,
+      d.loc_years::float8 as loc_years, d.credit_guarantee, d.lease_guarantee, d.notes, d.updated_at,
       coalesce(
         (select json_agg(
             json_build_object(
@@ -89,7 +89,7 @@ export async function saveDeployment(
           cooling = ${d.cooling}, networking = ${d.networking}, storage_tb_per_node = ${d.storageTbPerNode},
           address = ${d.address}, facility = ${d.facility}, term_months = ${d.termMonths},
           price_gpu_hr = ${d.priceGpuHr}, deposit_usd = ${d.depositUsd}, credit_rating = ${d.creditRating},
-          loc_required = ${d.locRequired}, loc_amount_usd = ${d.locAmountUsd},
+          loc_required = ${d.locRequired}, loc_years = ${d.locYears},
           credit_guarantee = ${d.creditGuarantee}, lease_guarantee = ${d.leaseGuarantee}, notes = ${d.notes},
           updated_by = ${userId}, updated_at = now()
         where id = ${deploymentId}
@@ -98,12 +98,12 @@ export async function saveDeployment(
     : sql`
         insert into deployments (
           id, name, status, nodes, platform, cooling, networking, storage_tb_per_node, address, facility,
-          term_months, price_gpu_hr, deposit_usd, credit_rating, loc_required, loc_amount_usd,
+          term_months, price_gpu_hr, deposit_usd, credit_rating, loc_required, loc_years,
           credit_guarantee, lease_guarantee, notes, created_by, updated_by
         ) values (
           ${deploymentId}, ${d.name}, ${d.status}, ${d.nodes}, ${d.platform}, ${d.cooling}, ${d.networking},
           ${d.storageTbPerNode}, ${d.address}, ${d.facility}, ${d.termMonths}, ${d.priceGpuHr}, ${d.depositUsd},
-          ${d.creditRating}, ${d.locRequired}, ${d.locAmountUsd}, ${d.creditGuarantee}, ${d.leaseGuarantee},
+          ${d.creditRating}, ${d.locRequired}, ${d.locYears}, ${d.creditGuarantee}, ${d.leaseGuarantee},
           ${d.notes}, ${userId}, ${userId}
         )
         returning id

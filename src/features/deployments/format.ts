@@ -22,6 +22,9 @@ export const formatTb = (value: number): string => `${count.format(value)} TB`;
 export const plural = (value: number, word: string): string =>
   `${count.format(value)} ${word}${value === 1 ? "" : "s"}`;
 
+export const formatLeaseYears = (years: number): string =>
+  `${decimal.format(years)} year${years === 1 ? "" : "s"} of lease`;
+
 export const formatTerm = (months: number): string =>
   months % 12 === 0 ? plural(months / 12, "year") : plural(months, "month");
 
