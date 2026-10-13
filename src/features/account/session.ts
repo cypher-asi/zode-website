@@ -1,6 +1,7 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cache } from "react";
+import { io } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { homeDb } from "@/lib/db";
@@ -123,6 +124,8 @@ export async function deleteAccountSession(): Promise<void> {
  */
 export const getAccount = cache(async (): Promise<Account | null> => {
   const cookieStore = await cookies();
+  // A prefetch can resolve cookies but not read the clock, which `decode` and the Neon driver both do.
+  await io();
   const session = decode(cookieStore.get(ACCOUNT_COOKIE)?.value);
   if (!session) return null;
   try {
