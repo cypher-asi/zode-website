@@ -99,41 +99,53 @@ function Cover({ slide }: { slide: Of<"cover"> }): ReactElement {
   );
 }
 
-/** The macro slide: a card per figure, the statement, then the chain from capital to offtake with its bottleneck in red. */
+/**
+ * The macro slide, in halves: a portrait card per figure over the statement,
+ * then the supply chain from capital to offtake as rows down the right, its
+ * bottleneck blinking red.
+ */
 function Stats({ slide, active }: { slide: Of<"stats">; active: boolean }): ReactElement {
   return (
     <div className={styles.macro}>
-      <ul className={styles.macroCards}>
-        {slide.stats.map((stat, i) => (
-          <li key={stat.label} {...rise(2 + i * 0.5)} className={`${styles.rise} ${styles.macroCard}`}>
-            <span className={styles.label}>{String(i + 1).padStart(2, "0")}</span>
-            <div className={styles.macroFigure}>
-              <MacroArt id={stat.art} playing={active} />
-            </div>
-            <span className={styles.macroValue}>{stat.value}</span>
-            <span className={styles.statLabel}>{stat.label}</span>
-          </li>
-        ))}
-      </ul>
-      <h3 {...rise(4)} className={`${styles.rise} ${styles.h3} ${styles.macroStatement}`}>
-        {slide.statement}
-      </h3>
-      <ol className={styles.chain}>
-        {slide.chain.map((step, i) => (
-          <li
-            key={step.label}
-            {...rise(5 + i * 0.4)}
-            className={`${styles.rise} ${styles.chainStep}`}
-            data-hard={step.hard || undefined}
-          >
-            <div className={styles.chainFigure}>
-              <MacroArt id={step.art} hard={step.hard} playing={active} />
-            </div>
-            <span className={styles.chainLabel}>{step.label}</span>
-            {step.hard ? <span className={styles.chainNote}>Bottleneck</span> : null}
-          </li>
-        ))}
-      </ol>
+      <div className={styles.macroLead}>
+        <ul className={styles.macroCards}>
+          {slide.stats.map((stat, i) => (
+            <li key={stat.label} {...rise(2 + i * 0.5)} className={`${styles.rise} ${styles.macroCard}`}>
+              <span className={styles.label}>{String(i + 1).padStart(2, "0")}</span>
+              <div className={styles.macroFigure}>
+                <MacroArt id={stat.art} playing={active} />
+              </div>
+              <span className={styles.macroValue}>{stat.value}</span>
+              <span className={styles.statLabel}>{stat.label}</span>
+            </li>
+          ))}
+        </ul>
+        <h3 {...rise(4)} className={`${styles.rise} ${styles.h3}`}>
+          {slide.statement}
+        </h3>
+      </div>
+      <div className={styles.macroChain}>
+        <p {...rise(3)} className={`${styles.rise} ${styles.label}`}>
+          Supply chain
+        </p>
+        <ol className={styles.chain}>
+          {slide.chain.map((step, i) => (
+            <li
+              key={step.label}
+              {...rise(3.5 + i * 0.4)}
+              className={`${styles.rise} ${styles.chainStep}`}
+              data-hard={step.hard || undefined}
+            >
+              <span className={styles.label}>{String(i + 1).padStart(2, "0")}</span>
+              <div className={styles.chainFigure}>
+                <MacroArt id={step.art} hard={step.hard} playing={active} />
+              </div>
+              <span className={styles.chainLabel}>{step.label}</span>
+              {step.hard ? <span className={styles.chainNote}>Bottleneck</span> : null}
+            </li>
+          ))}
+        </ol>
+      </div>
     </div>
   );
 }
