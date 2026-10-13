@@ -215,6 +215,58 @@
   outline-offset: 2px;
 }
 
+/*
+ * The ZODE team's apps aren't in the rail that stands in while the session
+ * loads, so when they stream in the divider grows and each icon rises in,
+ * one after another, its strokes tracing in as it lands. `trace-in` is its
+ * own name so hovering after can still restart `trace`.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .divider.arriving {
+    animation: grow-x var(--duration-slow) var(--ease-out) 60ms backwards;
+  }
+
+  .item.arriving {
+    animation: arrive var(--duration-slow) var(--ease-out) calc(var(--i) * 45ms + 100ms) backwards;
+  }
+
+  .item.arriving .icon > * {
+    animation: trace-in 450ms var(--ease-out) calc(var(--i) * 45ms + 140ms) backwards;
+  }
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+    scale: 0.9;
+  }
+}
+
+@keyframes grow-x {
+  from {
+    scale: 0 1;
+  }
+}
+
+@keyframes grow-y {
+  from {
+    scale: 1 0;
+  }
+}
+
+@keyframes trace-in {
+  from {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+  }
+}
+
 /* Each stroke has `pathLength={1}`, so a dash of 1 traces the icon in from nothing. */
 @keyframes trace {
   from {
@@ -353,6 +405,12 @@
   .panel {
     bottom: calc(var(--portal-gap) + var(--bar-height) + var(--panel-gap) + env(safe-area-inset-bottom, 0px));
     left: max(var(--edge), env(safe-area-inset-left, 0px));
+  }
+}
+
+@media (max-width: 700px) and (prefers-reduced-motion: no-preference) {
+  .divider.arriving {
+    animation-name: grow-y;
   }
 }
 

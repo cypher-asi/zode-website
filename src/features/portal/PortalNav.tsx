@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import type { CSSProperties, ReactElement } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PortalIcon } from "./icons";
@@ -8,9 +8,18 @@ import { activeApp, portalApps, type NavAccess, type PortalApp } from "./nav";
 import { usePortalTheme } from "./PortalFrame";
 import styles from "./shell.module.css";
 
-function RailItem({ app, current }: { app: PortalApp; current: boolean }): ReactElement {
+/**
+ * `arriving` is the item's place among the apps the fallback rail doesn't
+ * have, which ease in one after another once the session's access streams in.
+ */
+function RailItem({ app, current, arriving }: { app: PortalApp; current: boolean; arriving?: number }): ReactElement {
   return (
-    <Link href={app.href} className={styles.item} aria-current={current ? "page" : undefined}>
+    <Link
+      href={app.href}
+      className={arriving === undefined ? styles.item : `${styles.item} ${styles.arriving}`}
+      style={arriving === undefined ? undefined : ({ "--i": arriving } as CSSProperties)}
+      aria-current={current ? "page" : undefined}
+    >
       <PortalIcon name={app.icon} className={styles.icon} />
       <span className={styles.tooltip}>{app.label}</span>
     </Link>
@@ -51,9 +60,9 @@ export function PortalNav({ access }: { access: NavAccess }): ReactElement {
             {everyone.map((app) => (
               <RailItem key={app.id} app={app} current={app.id === current.id} />
             ))}
-            {team.length ? <hr className={styles.divider} /> : null}
-            {team.map((app) => (
-              <RailItem key={app.id} app={app} current={app.id === current.id} />
+            {team.length ? <hr className={`${styles.divider} ${styles.arriving}`} /> : null}
+            {team.map((app, index) => (
+              <RailItem key={app.id} app={app} current={app.id === current.id} arriving={index} />
             ))}
           </div>
         </div>
