@@ -40,7 +40,7 @@ export function DeploymentList({
                     `${formatCount(d.nodes)} nodes`,
                     coolingLabel(d.cooling),
                     networkingLabel(d.networking),
-                    d.address?.split("\n")[0],
+                    d.city ?? d.address?.split("\n")[0],
                   ]
                     .filter(Boolean)
                     .join(" · ")}

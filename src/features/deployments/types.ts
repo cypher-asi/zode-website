@@ -15,6 +15,7 @@ import { writeConfigParams } from "@/features/cluster/model/url";
  */
 
 export type DeploymentStatus = "planned" | "active" | "completed";
+export type Platform = PlatformId | "vera_rubin";
 export type Cooling = "liquid_dtc" | "air";
 export type Networking = FabricId;
 export type Facility = "colo" | "conversion" | "greenfield";
@@ -29,16 +30,34 @@ export interface Phase {
   mw: number | null;
 }
 
+/** A Google place suggested for the address field. */
+export interface PlaceSuggestion {
+  placeId: string;
+  main: string;
+  secondary: string | null;
+}
+
+export const isPlaceId = (value: string): boolean => /^[\w-]{1,300}$/.test(value);
+
+/** The address and city of a picked Google place. */
+export interface PlaceAddress {
+  placeId: string;
+  address: string;
+  city: string | null;
+}
+
 export interface Deployment {
   id: string;
   name: string;
   status: DeploymentStatus;
   nodes: number;
-  platform: PlatformId;
+  platform: Platform;
   cooling: Cooling;
   networking: Networking;
   storageTbPerNode: number;
   address: string | null;
+  city: string | null;
+  placeId: string | null;
   facility: Facility | null;
   termMonths: number | null;
   priceGpuHr: number | null;
@@ -66,10 +85,13 @@ export const STATUSES: readonly Option<DeploymentStatus>[] = [
   { value: "completed", label: "Completed" },
 ];
 
-export const PLATFORM_OPTIONS: readonly Option<PlatformId>[] = (Object.keys(PLATFORMS) as PlatformId[]).map((id) => ({
-  value: id,
-  label: PLATFORMS[id].short,
-}));
+/** The cluster builder's platforms, then ones it can't lay out a rack for yet. */
+export const PLATFORM_OPTIONS: readonly Option<Platform>[] = [
+  ...(Object.keys(PLATFORMS) as PlatformId[]).map((id) => ({ value: id, label: PLATFORMS[id].short })),
+  { value: "vera_rubin", label: "Vera Rubin" },
+];
+
+const inClusterBuilder = (platform: Platform): platform is PlatformId => Object.hasOwn(PLATFORMS, platform);
 
 export const COOLING: readonly Option<Cooling>[] = [
   { value: "liquid_dtc", label: "Liquid DTC" },
@@ -101,7 +123,7 @@ const labelOf = <Id extends string>(options: readonly Option<Id>[], value: Id | 
   value === null ? null : (options.find((option) => option.value === value)?.label ?? value);
 
 export const statusLabel = (value: DeploymentStatus): string => labelOf(STATUSES, value)!;
-export const platformLabel = (value: PlatformId): string => labelOf(PLATFORM_OPTIONS, value)!;
+export const platformLabel = (value: Platform): string => labelOf(PLATFORM_OPTIONS, value)!;
 export const coolingLabel = (value: Cooling): string => labelOf(COOLING, value)!;
 export const networkingLabel = (value: Networking): string => labelOf(NETWORKING, value)!;
 export const facilityLabel = (value: Facility | null): string | null => labelOf(FACILITIES, value);
@@ -150,11 +172,13 @@ export const nextPhase = (phases: readonly Phase[], today: string): Phase | null
 
 /**
  * The deployment in the cluster builder: its platform, nodes, fabric and
- * storage, with liquid DTC cabinets holding 8 nodes and air-cooled ones 4.
+ * storage, with liquid DTC cabinets holding 8 nodes and air-cooled ones 4;
+ * null for a platform it has no rack for.
  */
 export function rackDesignHref(
   d: Pick<Deployment, "platform" | "nodes" | "networking" | "cooling" | "storageTbPerNode">,
-): string {
+): string | null {
+  if (!inClusterBuilder(d.platform)) return null;
   const params = new URLSearchParams();
   writeConfigParams(
     {

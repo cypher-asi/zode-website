@@ -607,7 +607,7 @@ export async function renderDeploymentPdf(deployment: Deployment, today: string)
     { value: next ? formatDay(next.rfsOn) : "—", label: next ? "Next RFS" : "No RFS to come" },
   ]);
 
-  const rackHref = `${SITE_URL}${rackDesignHref(d)}`;
+  const rackPath = rackDesignHref(d);
   w.facts("Deployment", [
     { label: "Platform", value: platformLabel(d.platform) },
     { label: "Nodes", value: formatCount(d.nodes) },
@@ -621,7 +621,10 @@ export async function renderDeploymentPdf(deployment: Deployment, today: string)
         : "None",
     },
     { label: "Facility", value: orDash(facilityLabel(d.facility)) },
-    { label: "Rack design", value: "Open in the cluster builder", href: rackHref },
+    { label: "City", value: orDash(d.city) },
+    rackPath
+      ? { label: "Rack design", value: "Open in the cluster builder", href: `${SITE_URL}${rackPath}` }
+      : { label: "Rack design", value: "Not in the cluster builder yet" },
     { label: "Data center address", value: orDash(d.address), wide: true },
   ]);
 

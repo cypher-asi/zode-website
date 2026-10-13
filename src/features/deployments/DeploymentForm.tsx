@@ -16,6 +16,7 @@ import { Select } from "@/components/ui/Select";
 import { Dialog } from "@/features/data-room/Dialog";
 import ui from "@/features/data-room/ui.module.css";
 import { deleteDeploymentAction, saveDeploymentAction, type DeploymentFormState } from "./actions";
+import { AddressField } from "./AddressField";
 import { formatCount, formatTb, formatUsd } from "./format";
 import {
   COOLING,
@@ -194,17 +195,7 @@ export function DeploymentForm({ deployment }: { deployment?: Deployment }): Rea
               />
             </div>
             {select("facility", "Facility", [NONE, ...FACILITIES], d?.facility ?? "")}
-            <div className={ui.field} data-wide="">
-              {label("address", "Data center address")}
-              <textarea
-                id={`${id}-address`}
-                name="address"
-                className={ui.textarea}
-                rows={2}
-                maxLength={500}
-                defaultValue={d?.address ?? ""}
-              />
-            </div>
+            <AddressField address={d?.address ?? null} city={d?.city ?? null} placeId={d?.placeId ?? null} />
           </>,
           <p className={styles.summary}>
             {formatCount(totals.gpus)} GPUs ·{" "}

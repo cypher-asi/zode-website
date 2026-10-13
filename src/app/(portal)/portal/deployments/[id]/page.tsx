@@ -39,7 +39,9 @@ async function Deployment({ params }: Pick<PageProps<"/portal/deployments/[id]">
     <div className={styles.page}>
       <PageHeader
         title={deployment.name}
-        subtitle={[statusLabel(deployment.status), deployment.address?.split("\n")[0]].filter(Boolean).join(" · ")}
+        subtitle={[statusLabel(deployment.status), deployment.city ?? deployment.address?.split("\n")[0]]
+          .filter(Boolean)
+          .join(" · ")}
         actions={
           <>
             <a href={`/api/deployments/${deployment.id}/pdf`} className={ui.button} download>

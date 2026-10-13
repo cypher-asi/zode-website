@@ -732,11 +732,14 @@ create table if not exists deployments (
   name text not null,
   status text not null default 'active' check (status in ('planned', 'active', 'completed')),
   nodes integer not null check (nodes > 0),
-  platform text not null default 'b300' check (platform in ('b300', 'b200')),
+  platform text not null default 'b300' check (platform in ('b300', 'b200', 'vera_rubin')),
   cooling text not null check (cooling in ('liquid_dtc', 'air')),
   networking text not null check (networking in ('infiniband', 'roce')),
   storage_tb_per_node integer not null default 0 check (storage_tb_per_node >= 0),
   address text,
+  -- Taken from the Google place the address was picked from, with its id.
+  city text,
+  place_id text,
   facility text check (facility in ('colo', 'conversion', 'greenfield')),
   term_months integer check (term_months > 0),
   price_gpu_hr numeric(10, 4) check (price_gpu_hr >= 0),
@@ -759,6 +762,12 @@ create index if not exists deployments_status_idx on deployments (status);
 -- The LOC was first sized in dollars; it's sized in years of lease.
 alter table deployments add column if not exists loc_years numeric(5, 2) check (loc_years > 0);
 alter table deployments drop column if exists loc_amount_usd;
+
+alter table deployments add column if not exists city text;
+alter table deployments add column if not exists place_id text;
+
+alter table deployments drop constraint if exists deployments_platform_check;
+alter table deployments add constraint deployments_platform_check check (platform in ('b300', 'b200', 'vera_rubin'));
 
 -- A deployment's rollout: each phase comes ready for service (RFS) on its
 -- date with its nodes and MW. `start_on` is optional and only draws the

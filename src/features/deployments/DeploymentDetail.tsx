@@ -47,6 +47,7 @@ function Fact({ label, children, wide }: { label: string; children: ReactNode; w
 export function DeploymentDetail({ deployment: d, today }: { deployment: Deployment; today: string }): ReactElement {
   const totals = totalsOf(d);
   const next = d.phases.find((phase) => phase.rfsOn >= today);
+  const rackHref = rackDesignHref(d);
 
   return (
     <div className={styles.detail}>
@@ -85,11 +86,16 @@ export function DeploymentDetail({ deployment: d, today }: { deployment: Deploym
           )}
         </Fact>
         <Fact label="Rack design">
-          <Link className={styles.link} href={rackDesignHref(d)} prefetch={false}>
-            Open in the cluster builder
-          </Link>
+          {rackHref ? (
+            <Link className={styles.link} href={rackHref} prefetch={false}>
+              Open in the cluster builder
+            </Link>
+          ) : (
+            "Not in the cluster builder yet"
+          )}
         </Fact>
         <Fact label="Facility">{facilityLabel(d.facility)}</Fact>
+        <Fact label="City">{d.city}</Fact>
         <Fact label="Data center address" wide>
           {d.address ? <span className={styles.preline}>{d.address}</span> : null}
         </Fact>

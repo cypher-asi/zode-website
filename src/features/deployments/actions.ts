@@ -16,6 +16,7 @@ import {
   STATUSES,
   STORAGE_OPTIONS,
   isOption,
+  isPlaceId,
   type Phase,
 } from "./types";
 
@@ -104,8 +105,12 @@ function readDeployment(formData: FormData): DeploymentInput | string {
   const creditRating = field("credit_rating");
   if (creditRating && !isOption(CREDIT_RATINGS, creditRating)) return "Choose the credit requirement.";
 
-  const address = typeof formData.get("address") === "string" ? multiLine(formData.get("address") as string) : "";
+  const address = field("address");
   if (address.length > MAX_ADDRESS) return "The address is too long.";
+  const placeId = address ? field("place_id") : "";
+  if (placeId && !isPlaceId(placeId)) return "Pick the address from the list again.";
+  const city = placeId ? field("city") : "";
+  if (city.length > MAX_TEXT) return "The city is too long.";
   const notes = typeof formData.get("notes") === "string" ? multiLine(formData.get("notes") as string) : "";
   if (notes.length > MAX_NOTES) return "Notes are too long.";
 
@@ -137,6 +142,8 @@ function readDeployment(formData: FormData): DeploymentInput | string {
     networking,
     storageTbPerNode,
     address: address || null,
+    city: city || null,
+    placeId: placeId || null,
     facility: facility ? (facility as DeploymentInput["facility"]) : null,
     termMonths: termMonths as number | null,
     priceGpuHr: priceGpuHr as number | null,

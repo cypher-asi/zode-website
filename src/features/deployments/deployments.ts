@@ -25,6 +25,8 @@ const toDeployment = (row: Record<string, unknown>): Deployment => ({
   networking: row.networking as Deployment["networking"],
   storageTbPerNode: Number(row.storage_tb_per_node),
   address: row.address == null ? null : String(row.address),
+  city: row.city == null ? null : String(row.city),
+  placeId: row.place_id == null ? null : String(row.place_id),
   facility: (row.facility ?? null) as Deployment["facility"],
   termMonths: row.term_months == null ? null : Number(row.term_months),
   priceGpuHr: row.price_gpu_hr == null ? null : Number(row.price_gpu_hr),
@@ -46,7 +48,7 @@ export async function listDeployments(): Promise<Deployment[]> {
   cacheTag(DEPLOYMENTS_TAG, DB_TAG);
   const rows = await db()`
     select d.id, d.name, d.status, d.nodes, d.platform, d.cooling, d.networking, d.storage_tb_per_node,
-      d.address, d.facility, d.term_months, d.price_gpu_hr::float8 as price_gpu_hr,
+      d.address, d.city, d.place_id, d.facility, d.term_months, d.price_gpu_hr::float8 as price_gpu_hr,
       d.deposit_usd::float8 as deposit_usd, d.credit_rating, d.loc_required,
       d.loc_years::float8 as loc_years, d.credit_guarantee, d.lease_guarantee, d.notes, d.updated_at,
       coalesce(
@@ -87,9 +89,9 @@ export async function saveDeployment(
         update deployments set
           name = ${d.name}, status = ${d.status}, nodes = ${d.nodes}, platform = ${d.platform},
           cooling = ${d.cooling}, networking = ${d.networking}, storage_tb_per_node = ${d.storageTbPerNode},
-          address = ${d.address}, facility = ${d.facility}, term_months = ${d.termMonths},
-          price_gpu_hr = ${d.priceGpuHr}, deposit_usd = ${d.depositUsd}, credit_rating = ${d.creditRating},
-          loc_required = ${d.locRequired}, loc_years = ${d.locYears},
+          address = ${d.address}, city = ${d.city}, place_id = ${d.placeId}, facility = ${d.facility},
+          term_months = ${d.termMonths}, price_gpu_hr = ${d.priceGpuHr}, deposit_usd = ${d.depositUsd},
+          credit_rating = ${d.creditRating}, loc_required = ${d.locRequired}, loc_years = ${d.locYears},
           credit_guarantee = ${d.creditGuarantee}, lease_guarantee = ${d.leaseGuarantee}, notes = ${d.notes},
           updated_by = ${userId}, updated_at = now()
         where id = ${deploymentId}
@@ -97,14 +99,14 @@ export async function saveDeployment(
       `
     : sql`
         insert into deployments (
-          id, name, status, nodes, platform, cooling, networking, storage_tb_per_node, address, facility,
-          term_months, price_gpu_hr, deposit_usd, credit_rating, loc_required, loc_years,
+          id, name, status, nodes, platform, cooling, networking, storage_tb_per_node, address, city, place_id,
+          facility, term_months, price_gpu_hr, deposit_usd, credit_rating, loc_required, loc_years,
           credit_guarantee, lease_guarantee, notes, created_by, updated_by
         ) values (
           ${deploymentId}, ${d.name}, ${d.status}, ${d.nodes}, ${d.platform}, ${d.cooling}, ${d.networking},
-          ${d.storageTbPerNode}, ${d.address}, ${d.facility}, ${d.termMonths}, ${d.priceGpuHr}, ${d.depositUsd},
-          ${d.creditRating}, ${d.locRequired}, ${d.locYears}, ${d.creditGuarantee}, ${d.leaseGuarantee},
-          ${d.notes}, ${userId}, ${userId}
+          ${d.storageTbPerNode}, ${d.address}, ${d.city}, ${d.placeId}, ${d.facility}, ${d.termMonths},
+          ${d.priceGpuHr}, ${d.depositUsd}, ${d.creditRating}, ${d.locRequired}, ${d.locYears},
+          ${d.creditGuarantee}, ${d.leaseGuarantee}, ${d.notes}, ${userId}, ${userId}
         )
         returning id
       `;
