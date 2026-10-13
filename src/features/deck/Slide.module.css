@@ -76,7 +76,8 @@
   --bg: var(--color-ink);
   --fg: var(--color-text-inverse);
   --fg-2: var(--color-text-inverse-secondary);
-  --rule: rgba(255, 255, 255, 0.14);
+  /* 14% white over ink, flattened: cards overlap their hairlines, and a translucent rule would double where they meet. */
+  --rule: #2e2e2f;
   --rule-strong: rgba(255, 255, 255, 0.32);
   --card: var(--color-ink);
   --accent: var(--color-accent);
