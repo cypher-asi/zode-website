@@ -800,7 +800,7 @@
 .key[data-key="gap"]::before {
   width: calc(0.9 * var(--u));
   height: calc(0.9 * var(--u));
-  background: var(--color-accent-soft);
+  background: rgba(240, 68, 56, 0.28);
 }
 
 .caption {

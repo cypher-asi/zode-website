@@ -74,7 +74,7 @@
 .gapLabel {
   font-size: 18px;
   font-weight: 600;
-  fill: var(--color-text-primary);
+  fill: #f04438;
 }
 
 /* Demand chart (DemandChart.tsx). */
@@ -112,9 +112,10 @@
   vector-effect: non-scaling-stroke;
 }
 
+/* The gap in the shortfall's net-gap red, tinted so the lines and grid read through it. */
 .gap {
-  fill: var(--color-accent-soft);
-  opacity: 0.7;
+  fill: #f04438;
+  opacity: 0.28;
 }
 
 .marker {
