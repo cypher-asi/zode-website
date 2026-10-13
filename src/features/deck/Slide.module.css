@@ -518,8 +518,8 @@
 /*
  * Macro, two thirds and one, split by a page-grid rule. Left, a quadrant: a
  * card per figure with its drawing, and one charting token growth. Right,
- * the statement, then the supply chain from capital to offtake: rows joined
- * by arrows down, its bottleneck blinking red.
+ * the statement, then the supply chain from capital to offtake: rows split
+ * by hairlines, its bottleneck blinking red.
  */
 .macro {
   --alarm: #f04438;
@@ -575,11 +575,6 @@
     linear-gradient(var(--rule), var(--rule)) center / 100% 1px no-repeat;
 }
 
-.chainStep {
-  background: var(--card);
-  box-shadow: 0 0 0 1px var(--rule);
-}
-
 /* A feature's figure cell: the drawing centred, its caption small in the bottom-left corner. */
 .macroCard {
   position: relative;
@@ -628,8 +623,8 @@
   margin-bottom: calc(0.8 * var(--u));
 }
 
+/* Rows split by single hairlines, none above the first or below the last, as the quadrant's open edges. */
 .chain {
-  --step-gap: calc(1 * var(--u));
   --step-pad: calc(1.2 * var(--u));
   --index-w: calc(1.6 * var(--u));
   --figure-w: calc(5.6 * var(--u));
@@ -637,18 +632,20 @@
   display: grid;
   flex: 1;
   grid-template-rows: repeat(5, minmax(0, 1fr));
-  gap: var(--step-gap);
   min-height: 0;
 }
 
 .chainStep {
-  position: relative;
   display: grid;
   grid-template-columns: var(--index-w) var(--figure-w) minmax(0, 1fr);
   align-items: center;
   gap: var(--step-pad);
   min-height: 0;
-  padding: calc(0.5 * var(--u)) var(--step-pad);
+  padding: calc(0.5 * var(--u)) calc(0.8 * var(--u));
+}
+
+.chainStep + .chainStep {
+  border-top: 1px solid var(--rule);
 }
 
 /* The label, and the bottleneck's tag at the row's far end, so every label sits on the row's centre. */
@@ -658,21 +655,6 @@
   justify-content: space-between;
   gap: calc(0.8 * var(--u));
   min-width: 0;
-}
-
-/* The arrow down the gap to the next step, under the drawing's centre. */
-.chainStep:not(:last-child)::after {
-  content: "";
-  position: absolute;
-  top: calc(100% + 1px);
-  left: calc(2 * var(--step-pad) + var(--index-w) + var(--figure-w) / 2);
-  width: calc(0.7 * var(--u));
-  height: calc(var(--step-gap) - 2px);
-  translate: -50% 0;
-  background:
-    linear-gradient(var(--rule-strong), var(--rule-strong)) center top / 1px 100% no-repeat,
-    conic-gradient(from 315deg at 50% 100%, var(--rule-strong) 0 90deg, transparent 0) center bottom / 100%
-      calc(0.35 * var(--u)) no-repeat;
 }
 
 .chainFigure {
@@ -705,9 +687,14 @@
   background: currentColor;
 }
 
+/* The bottleneck in red, the hairlines either side of it too. */
 .chainStep[data-hard] {
-  box-shadow: 0 0 0 1px var(--alarm);
   color: var(--alarm);
+}
+
+.chainStep[data-hard],
+.chainStep[data-hard] + .chainStep {
+  border-top-color: var(--alarm);
 }
 
 @media screen and (prefers-reduced-motion: no-preference) {
@@ -1936,7 +1923,6 @@
 }
 
 .slide[data-compact] .chain {
-  --step-gap: 16px;
   --step-pad: 12px;
   --index-w: 20px;
   --figure-w: 56px;
@@ -1945,15 +1931,7 @@
 }
 
 .slide[data-compact] .chainStep {
-  padding: 8px var(--step-pad);
-}
-
-.slide[data-compact] .chainStep:not(:last-child)::after {
-  width: 6px;
-  background:
-    linear-gradient(var(--rule-strong), var(--rule-strong)) center top / 1px 100% no-repeat,
-    conic-gradient(from 315deg at 50% 100%, var(--rule-strong) 0 90deg, transparent 0) center bottom / 100% 3px
-      no-repeat;
+  padding: 8px;
 }
 
 .slide[data-compact] .chainFigure {
