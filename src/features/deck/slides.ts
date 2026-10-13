@@ -220,7 +220,7 @@ export const SLIDES: readonly Slide[] = [
         },
         rest: [
           { title: "Construction varies town to town", art: "localBuild" },
-          { title: "Brittle global supply chains", art: "supplyChain" },
+          { title: "Volatile global supply chains", art: "supplyChain" },
           { title: "Capital won't fund risky builds", art: "financing" },
         ],
       },
