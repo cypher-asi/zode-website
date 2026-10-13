@@ -95,6 +95,11 @@ const nextConfig: NextConfig = {
       { source: "/deployments/:path*", destination: "/", permanent: true },
       // Renamed; the query string carries over, so shared cluster links still open.
       { source: "/cluster-configurator", destination: "/cluster-builder", permanent: true },
+      // Portal apps open on their first section. Done here rather than with a
+      // page that calls redirect(): a prerendered page that throws trips React's
+      // dev performance track ("cannot have a negative time stamp").
+      { source: "/portal/zrm", destination: "/portal/zrm/people", permanent: false },
+      { source: "/portal/capacity", destination: "/portal/capacity/sites", permanent: false },
     ];
   },
   async rewrites() {
