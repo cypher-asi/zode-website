@@ -20,8 +20,12 @@ export function SiteShell({
   footer?: boolean;
   /** Set false when the content never scrolls under the header, e.g. the portal's fixed panel. */
   fade?: boolean;
-  /** "tight" tucks the header into the corners like the buy compute page; it slides there and back between pages. */
-  edge?: "wide" | "tight";
+  /**
+   * "tight" tucks the header into the corners like the buy compute page, and
+   * "flush" all but to the window's sides, for the portal's panels; it slides
+   * there and back between pages.
+   */
+  edge?: "wide" | "tight" | "flush";
   /** Pinned navigation beside the content, e.g. the portal's icon rail. */
   nav?: ReactNode;
 }): ReactElement {

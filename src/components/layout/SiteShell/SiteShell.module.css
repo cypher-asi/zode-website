@@ -9,6 +9,11 @@
   --edge: clamp(24px, 2.5vw, 40px);
 }
 
+/* The portal's insets: its panels run nearly to the window's sides, as far in as they are from each other. */
+.shell[data-edge="flush"] {
+  --edge: 12px;
+}
+
 /* Opaque over the <html> fallback colour; clears the pinned header. */
 .main {
   min-height: 100svh;

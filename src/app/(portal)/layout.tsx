@@ -35,7 +35,7 @@ export default async function PortalLayout({
       <SiteShell
         footer={false}
         fade={false}
-        edge="tight"
+        edge="flush"
         nav={
           <>
             <PortalNav access={access} />
