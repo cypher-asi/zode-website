@@ -74,6 +74,8 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/mnda": ["src/features/mnda/assets/**/*"],
     "/data-rooms/invite/*": ["src/features/mnda/assets/**/*"],
+    // Likewise the deployment PDF's fonts and wordmark.
+    "/api/deployments/**": ["src/features/deployments/assets/**/*", "public/wordmark.svg"],
   },
   // AVIF first (roughly 20% smaller than WebP at the same quality), WebP for
   // browsers without it. AVIF's first encode is slower; the result is cached.

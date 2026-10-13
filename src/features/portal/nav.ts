@@ -19,6 +19,7 @@ export type AppId =
   | "rooms"
   | "orders"
   | "contracts"
+  | "deployments"
   | "zrm"
   | "capacity"
   | "posts"
@@ -159,10 +160,21 @@ const ADMIN_APPS: readonly PortalApp[] = [
 
 /**
  * The apps the viewer can open, in rail order, with Settings last for the
- * rail's foot: ZRM, Capacity, Posts, Team and everyone's contracts for the ZODE team, the
- * admin apps for super admins.
+ * rail's foot: ZRM, Capacity, Posts, Team, everyone's contracts and adding
+ * deployments for the ZODE team, the admin apps for super admins.
  */
 export function portalApps({ admin, team }: NavAccess): PortalApp[] {
+  const deployments: PortalApp = {
+    id: "deployments",
+    label: "Deployments",
+    icon: "deployments",
+    href: "/portal/deployments",
+    links: [
+      { href: "/portal/deployments", label: "Active", icon: "deployments" },
+      { href: "/portal/deployments/all", label: "All deployments", icon: "cluster" },
+      ...(team ? [{ href: "/portal/deployments/new", label: "New deployment", icon: "posts" } as const] : []),
+    ],
+  };
   const contracts: PortalApp = {
     id: "contracts",
     label: "Contracts",
@@ -187,6 +199,7 @@ export function portalApps({ admin, team }: NavAccess): PortalApp[] {
     ROOMS,
     ORDERS,
     contracts,
+    deployments,
     ...(team ? [ZRM, CAPACITY, POSTS] : []),
     ...(admin ? ADMIN_APPS : []),
     settings,

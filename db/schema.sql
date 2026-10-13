@@ -720,3 +720,54 @@ cross join lateral (
        where o.created_at < d.day + 1 and g.position < (select max(position) from zrm_stages)))
 ) as m (metric, value)
 on conflict (day, metric) do nothing;
+
+-- GPU deployments, written by the ZODE team and shown to every signed-in
+-- account in the portal's Deployments app. Totals (GPUs, storage, revenue) are
+-- derived from the node count and rates in src/features/deployments/types.ts,
+-- never stored. Node counts and TB per node are the cluster builder's
+-- standard sizes, checked by the save action rather than here, so the
+-- builder's catalog can change without a migration.
+create table if not exists deployments (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  status text not null default 'active' check (status in ('planned', 'active', 'completed')),
+  nodes integer not null check (nodes > 0),
+  platform text not null default 'b300' check (platform in ('b300', 'b200')),
+  cooling text not null check (cooling in ('liquid_dtc', 'air')),
+  networking text not null check (networking in ('infiniband', 'roce')),
+  storage_tb_per_node integer not null default 0 check (storage_tb_per_node >= 0),
+  address text,
+  facility text check (facility in ('colo', 'conversion', 'greenfield')),
+  term_months integer check (term_months > 0),
+  price_gpu_hr numeric(10, 4) check (price_gpu_hr >= 0),
+  deposit_usd numeric(16, 2) check (deposit_usd >= 0),
+  credit_rating text check (credit_rating in ('ig', 'high', 'not_required')),
+  loc_required boolean not null default false,
+  -- Only kept while a letter of credit is required.
+  loc_amount_usd numeric(16, 2) check (loc_amount_usd >= 0),
+  credit_guarantee boolean not null default false,
+  lease_guarantee boolean not null default false,
+  notes text,
+  created_by bigint references users (id),
+  updated_by bigint references users (id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists deployments_status_idx on deployments (status);
+
+-- A deployment's rollout: each phase comes ready for service (RFS) on its
+-- date with its nodes and MW. `start_on` is optional and only draws the
+-- phase's bar on the schedule. Saving replaces every phase.
+create table if not exists deployment_phases (
+  id uuid primary key default gen_random_uuid(),
+  deployment_id uuid not null references deployments (id) on delete cascade,
+  position integer not null default 0,
+  name text,
+  start_on date,
+  rfs_on date not null,
+  nodes integer not null check (nodes >= 0),
+  mw numeric(10, 2) check (mw >= 0)
+);
+
+create index if not exists deployment_phases_deployment_idx on deployment_phases (deployment_id, position);
