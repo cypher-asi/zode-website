@@ -593,6 +593,10 @@
   min-height: 0;
 }
 
+.macroFigure[data-art] > * {
+  scale: 0.8;
+}
+
 .macroCaption {
   position: absolute;
   bottom: calc(1.1 * var(--u));

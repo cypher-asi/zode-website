@@ -116,12 +116,21 @@ function Stats({ slide, active, compact }: { slide: Of<"stats">; active: boolean
               key: stat.art,
               value: stat.value,
               label: stat.label,
+              art: true,
               figure: <MacroArt id={stat.art} playing={active} />,
             })),
-            { key: "tokens", value: "", label: slide.trend, figure: <TokenChart active={active} compact={compact} /> },
+            {
+              key: "tokens",
+              value: "",
+              label: slide.trend,
+              art: false,
+              figure: <TokenChart active={active} compact={compact} />,
+            },
           ].map((card, i) => (
             <li key={card.key} {...rise(2 + i * 0.5)} className={`${styles.rise} ${styles.macroCard}`}>
-              <div className={styles.macroFigure}>{card.figure}</div>
+              <div className={styles.macroFigure} data-art={card.art || undefined}>
+                {card.figure}
+              </div>
               <p className={styles.macroCaption}>
                 {card.value ? <span className={styles.macroValue}>{card.value}</span> : null} {card.label}
               </p>
