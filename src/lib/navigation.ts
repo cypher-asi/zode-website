@@ -14,7 +14,7 @@ export const ENGINEER_ACTION = {
   scroll: false,
 } as const satisfies TerminalMenuItem;
 
-/** The home page header's primary button; opens over the page as a modal like ENGINEER_ACTION. */
+/** The investor deck's header button; opens over the page as a modal like ENGINEER_ACTION. */
 export const INVEST_ACTION = {
   id: "invest",
   label: "Invest",

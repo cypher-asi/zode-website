@@ -14,7 +14,7 @@ import { PodTour } from "@/features/home/pod-tour/PodTour";
 import { Principles } from "@/features/home/principles/Principles";
 import { FullStack } from "@/features/home/stack/FullStack";
 import { Features } from "@/features/home/why-zode/Features";
-import { COMPUTE_ACTIONS, INVEST_ACTION } from "@/lib/navigation";
+import { COMPUTE_ACTIONS } from "@/lib/navigation";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
@@ -38,7 +38,7 @@ export default function HomePage() {
   return (
     <main className={styles.page}>
       <CircuitFrame />
-      <PinnedHeader primary={INVEST_ACTION} />
+      <PinnedHeader />
 
       <div className={styles.hero} data-circuit data-hero>
         <section className={styles.left} data-surface="light" data-circuit-seam>

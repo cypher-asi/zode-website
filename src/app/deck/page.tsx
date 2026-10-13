@@ -3,6 +3,7 @@ import { Suspense, type ReactNode } from "react";
 import { PinnedHeader } from "@/components/layout/PinnedHeader";
 import { Deck, DeckGround } from "@/features/deck/Deck";
 import { SLIDES } from "@/features/deck/slides";
+import { INVEST_ACTION } from "@/lib/navigation";
 
 const DESCRIPTION =
   "ZODE's investor presentation: factory-made AI data centers, online in 90 days and sold on take-or-pay compute contracts.";
@@ -25,7 +26,7 @@ type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
  * only known per request, so the deck's ground and header paint first.
  */
 export default function DeckPage({ searchParams }: { searchParams: SearchParams }) {
-  const header = <PinnedHeader />;
+  const header = <PinnedHeader primary={INVEST_ACTION} />;
   return (
     <Suspense fallback={<DeckGround header={header} />}>
       <DeckAtSlide searchParams={searchParams} header={header} />

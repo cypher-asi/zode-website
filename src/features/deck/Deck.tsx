@@ -62,7 +62,8 @@ const clamp = (n: number) => Math.min(Math.max(n, 0), TOTAL - 1);
 function ownedByControl(event: KeyboardEvent): boolean {
   const target = event.target as HTMLElement | null;
   if (!target) return false;
-  if (target.closest("input, textarea, select, [contenteditable=true], [role=menu]")) return true;
+  // `dialog` covers a route modal (e.g. Invest) opened over the deck.
+  if (target.closest("input, textarea, select, [contenteditable=true], [role=menu], dialog")) return true;
   return event.key === " " && target.closest("button, a") !== null;
 }
 
