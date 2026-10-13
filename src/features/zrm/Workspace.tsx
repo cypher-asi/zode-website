@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactElement, type ReactNode } from "react";
+import { Fragment, memo, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactElement, type ReactNode } from "react";
 import Link from "next/link";
 import { useSelectedLayoutSegments } from "next/navigation";
 import { Select } from "@/components/ui/Select";
@@ -8,8 +8,8 @@ import { Splitter } from "@/components/ui/Splitter";
 import { PortalLoading } from "@/features/portal/PortalLoading";
 import ui from "@/features/data-room/ui.module.css";
 import { Icon } from "./bits";
-import { NEW_LABELS, companiesConfig, opportunitiesConfig, peopleConfig, type ListConfig } from "./columns";
-import { KIND_LABELS, isKind, recordHref, type ZrmKind, type ZrmType } from "./types";
+import { NEW_LABELS, companiesConfig, opportunitiesConfig, peopleConfig, sitesConfig, type ListConfig } from "./columns";
+import { KIND_LABELS, listHref, recordHref, type RecordKind } from "./types";
 import { goOnClick, useZrm, ZrmLink } from "./ZrmProvider";
 import styles from "./zrm.module.css";
 
@@ -21,7 +21,6 @@ interface Sort {
 interface ListRow {
   id: string;
   active: boolean;
-  type_ids: string[];
 }
 
 function compare(a: string | number | null, b: string | number | null): number {
@@ -32,7 +31,7 @@ function compare(a: string | number | null, b: string | number | null): number {
 }
 
 interface RowProps<T> {
-  kind: ZrmKind;
+  kind: RecordKind;
   row: T;
   config: ListConfig<T>;
   style: CSSProperties;
@@ -69,43 +68,48 @@ const Row = memo(function Row<T extends ListRow>({ kind, row, config, style, sel
   );
 }) as <T extends ListRow>(props: RowProps<T>) => ReactElement;
 
-/** The middle pane: search, a type filter and sortable columns over the records, pinned ones first. */
+/**
+ * The middle pane: search, the config's filters and sortable columns over the
+ * records, pinned ones first, under section headings while unsorted when the
+ * config has them.
+ */
 function RecordList<T extends ListRow>({
   kind,
   rows,
   config,
-  types,
   selectedId,
 }: {
-  kind: ZrmKind;
+  kind: RecordKind;
   rows: readonly T[];
   config: ListConfig<T>;
-  types: readonly ZrmType[];
   selectedId: string | null;
 }): ReactElement {
   const { go } = useZrm();
   const [query, setQuery] = useState("");
-  const [typeId, setTypeId] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [sort, setSort] = useState<Sort | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const typeOptions = useMemo(() => {
-    const used = new Set(rows.flatMap((row) => row.type_ids));
-    return [
-      { value: "", label: "All types" },
-      ...types.filter((type) => used.has(type.id)).map((type) => ({ value: type.id, label: type.name })),
-    ];
-  }, [rows, types]);
+  const filters = useMemo(
+    () =>
+      (config.filters ?? []).map((filter) => ({ filter, options: [{ value: "", label: filter.all }, ...filter.options(rows)] })),
+    [config, rows],
+  );
+
+  const sections = sort ? undefined : config.sections;
 
   const shown = useMemo(() => {
     const needle = query.trim().toLowerCase();
     const filtered = rows.filter(
-      (row) => (!typeId || row.type_ids.includes(typeId)) && (!needle || config.searchText(row).includes(needle)),
+      (row) =>
+        (config.filters ?? []).every((filter) => !filterValues[filter.key] || filter.test(row, filterValues[filter.key]!)) &&
+        (!needle || config.searchText(row).includes(needle)),
     );
     const column = sort ? config.columns.find((c) => c.key === sort.key) : undefined;
     return filtered
-      .map((row, index) => ({ row, index }))
+      .map((row, index) => ({ row, index, section: sections?.of(row).order ?? 0 }))
       .sort((a, b) => {
+        if (a.section !== b.section) return a.section - b.section;
         if (a.row.active !== b.row.active) return a.row.active ? -1 : 1;
         if (column?.sortValue && sort) {
           const order = compare(column.sortValue(a.row), column.sortValue(b.row));
@@ -114,7 +118,20 @@ function RecordList<T extends ListRow>({
         return a.index - b.index;
       })
       .map(({ row }) => row);
-  }, [rows, query, typeId, sort, config]);
+  }, [rows, query, filterValues, sort, sections, config]);
+
+  /** The shown rows split at each change of section, or one untitled run without sections. */
+  const runs = useMemo(() => {
+    if (!sections) return [{ key: "", label: null, rows: shown }];
+    const out: { key: string; label: string | null; rows: T[] }[] = [];
+    for (const row of shown) {
+      const section = sections.of(row);
+      const last = out.at(-1);
+      if (last?.key === section.key) last.rows.push(row);
+      else out.push({ key: section.key, label: section.label, rows: [row] });
+    }
+    return out;
+  }, [shown, sections]);
 
   const columnsStyle = useMemo(
     () =>
@@ -159,18 +176,20 @@ function RecordList<T extends ListRow>({
             />
           </label>
         </div>
-        {typeOptions.length > 1 ? (
+        {filters.map(({ filter, options }) => (
           <Select
+            key={filter.key}
             size="sm"
             className={styles.filter}
-            options={typeOptions}
-            value={typeId}
-            onChange={setTypeId}
-            aria-label="Filter by type"
+            options={options}
+            value={filterValues[filter.key] ?? ""}
+            onChange={(value) => setFilterValues((current) => ({ ...current, [filter.key]: value }))}
+            disabled={options.length < 2}
+            aria-label={filter.label}
             align="end"
           />
-        ) : null}
-        <ZrmLink href={`/portal/zrm/${kind}/new`} className={ui.primary} aria-label={NEW_LABELS[kind]} title={NEW_LABELS[kind]}>
+        ))}
+        <ZrmLink href={`${listHref(kind)}/new`} className={ui.primary} aria-label={NEW_LABELS[kind]} title={NEW_LABELS[kind]}>
           <Icon name="plus" />
           New
         </ZrmLink>
@@ -203,16 +222,26 @@ function RecordList<T extends ListRow>({
             {rows.length === 0 ? `No ${plural} yet.` : `No ${plural} match.`}
           </p>
         ) : (
-          shown.map((row) => (
-            <Row
-              key={row.id}
-              kind={kind}
-              row={row}
-              config={config}
-              style={columnsStyle}
-              selected={row.id === selectedId}
-              go={go}
-            />
+          runs.map((run) => (
+            <Fragment key={run.key}>
+              {run.label !== null ? (
+                <div className={styles.sectionRow}>
+                  <span>{run.label}</span>
+                  {sections?.summary ? <span>{sections.summary(run.rows)}</span> : null}
+                </div>
+              ) : null}
+              {run.rows.map((row) => (
+                <Row
+                  key={row.id}
+                  kind={kind}
+                  row={row}
+                  config={config}
+                  style={columnsStyle}
+                  selected={row.id === selectedId}
+                  go={go}
+                />
+              ))}
+            </Fragment>
           ))
         )}
       </div>
@@ -230,27 +259,33 @@ function RecordList<T extends ListRow>({
 }
 
 /**
- * The open ZRM tab: the list of records, and once one is open (or the New
- * form), a resizable divider and the record (the route's page) on the right.
- * Lives in the ZRM layout and lists from data already loaded, so switching
- * tabs shows the new list at once, and moving between records keeps the
- * list, its search and its scroll.
+ * The open tab of ZRM or Capacity: the list of records, and once one is open
+ * (or the New form), a resizable divider and the record (the route's page) on
+ * the right. Lives in the app's layout and lists from data already loaded, so
+ * switching tabs shows the new list at once, and moving between records keeps
+ * the list, its search and its scroll.
  */
 export function Workspace({ children }: { children: ReactNode }): ReactElement {
-  const { data, segments, pending } = useZrm();
-  const [kind, child = null] = segments;
+  const { data, kinds, segments, pending } = useZrm();
+  const [segment, child = null] = segments;
   const shownChild = useSelectedLayoutSegments()[1] ?? null;
   /** On its way to another record or form: an empty pane shows a placeholder, an open record dims until it's replaced. */
   const loading = pending && child !== shownChild;
   const containerRef = useRef<HTMLDivElement>(null);
   const configs = useMemo(() => {
     const typeMap = new Map(data.types.map((type) => [type.id, type]));
-    return { people: peopleConfig(typeMap), companies: companiesConfig(typeMap), opportunities: opportunitiesConfig() };
-  }, [data.types]);
+    return {
+      people: peopleConfig(typeMap),
+      companies: companiesConfig(typeMap),
+      opportunities: opportunitiesConfig(),
+      sites: sitesConfig(data.groups, data.statuses),
+    };
+  }, [data.types, data.groups, data.statuses]);
 
-  if (!isKind(kind)) return <>{children}</>;
+  const kind = kinds.find((k) => k === segment);
+  if (!kind) return <>{children}</>;
 
-  const common = { types: data.types, selectedId: child && child !== "new" ? child : null };
+  const common = { selectedId: child && child !== "new" ? child : null };
   let list: ReactElement;
   switch (kind) {
     case "people":
@@ -261,6 +296,9 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
       break;
     case "opportunities":
       list = <RecordList key={kind} kind={kind} rows={data.opportunities} config={configs.opportunities} {...common} />;
+      break;
+    case "sites":
+      list = <RecordList key={kind} kind={kind} rows={data.sites} config={configs.sites} {...common} />;
       break;
   }
 
@@ -273,7 +311,7 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
         <>
           <Splitter
             containerRef={containerRef}
-            storageKey="zode:zrm:list-share"
+            storageKey={kind === "sites" ? "zode:capacity:list-share" : "zode:zrm:list-share"}
             label="Resize list"
             cssVar="--list-width"
             defaultFraction={0.52}

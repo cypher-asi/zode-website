@@ -9,13 +9,34 @@ export const KINDS: readonly ZrmKind[] = ["people", "companies", "opportunities"
 
 export const isKind = (value: unknown): value is ZrmKind => KINDS.includes(value as ZrmKind);
 
-export const KIND_LABELS: Record<ZrmKind, { plural: string; singular: string }> = {
+/**
+ * Every kind of record the ZRM engine lists and edits: ZRM's own, and
+ * Capacity's sites, which sit in their own portal app but link into ZRM.
+ */
+export type RecordKind = ZrmKind | "sites";
+
+export const isRecordKind = (value: unknown): value is RecordKind => isKind(value) || value === "sites";
+
+/** The portal apps built on the engine, each with its base path and the kinds it has tabs for. */
+export type RecordAppId = "zrm" | "capacity";
+
+export const RECORD_APPS: Record<RecordAppId, { base: string; kinds: readonly RecordKind[] }> = {
+  zrm: { base: "/portal/zrm", kinds: KINDS },
+  capacity: { base: "/portal/capacity", kinds: ["sites"] },
+};
+
+const appOf = (kind: RecordKind): RecordAppId => (kind === "sites" ? "capacity" : "zrm");
+
+export const KIND_LABELS: Record<RecordKind, { plural: string; singular: string }> = {
   people: { plural: "People", singular: "Person" },
   companies: { plural: "Companies", singular: "Company" },
   opportunities: { plural: "Opportunities", singular: "Opportunity" },
+  sites: { plural: "Sites", singular: "Site" },
 };
 
-export const recordHref = (kind: ZrmKind, id: string): string => `/portal/zrm/${kind}/${id}`;
+export const listHref = (kind: RecordKind): string => `${RECORD_APPS[appOf(kind)].base}/${kind}`;
+
+export const recordHref = (kind: RecordKind, id: string): string => `${listHref(kind)}/${id}`;
 
 export interface ZrmType {
   id: string;
@@ -74,12 +95,49 @@ export interface OpportunityRow {
   type_ids: string[];
 }
 
+export interface SiteGroup {
+  id: string;
+  name: string;
+  position: number;
+}
+
+export interface SiteStatus {
+  id: string;
+  name: string;
+  position: number;
+  color: string;
+}
+
+export interface SiteRow {
+  id: string;
+  name: string;
+  address: string | null;
+  group_id: string | null;
+  status_id: string;
+  provider_name: string | null;
+  customer_name: string | null;
+  deal_type: string | null;
+  initial_it_mw: number | null;
+  secondary_it_mw: number | null;
+  total_it_mw: number;
+  upfront: number | null;
+  conversion: number | null;
+  contract_value: number | null;
+  annual_revenue: number | null;
+  /** `YYYY-MM-DD`. */
+  rfs_date: string | null;
+  active: boolean;
+}
+
 export interface ZrmData {
   people: PersonRow[];
   companies: CompanyRow[];
   opportunities: OpportunityRow[];
   types: ZrmType[];
   stages: Stage[];
+  sites: SiteRow[];
+  groups: SiteGroup[];
+  statuses: SiteStatus[];
 }
 
 // Full records, for the detail pane.
@@ -171,6 +229,45 @@ export interface Opportunity {
   updated_at: Date;
 }
 
+export interface Site {
+  id: string;
+  name: string;
+  address: string | null;
+  group_id: string | null;
+  group_name: string | null;
+  status_id: string;
+  status_name: string;
+  status_color: string;
+  provider_company_id: string | null;
+  provider_name: string | null;
+  term_years: number | null;
+  deal_type: string | null;
+  initial_it_mw: number | null;
+  secondary_it_mw: number | null;
+  total_it_mw: number;
+  kw_rate: number | null;
+  power_rate: number | null;
+  upfront: number | null;
+  conversion: number | null;
+  /** `YYYY-MM-DD`. */
+  rfs_date: string | null;
+  cooling: string | null;
+  vdr_url: string | null;
+  link_url: string | null;
+  customer_company_id: string | null;
+  customer_name: string | null;
+  broker_person_id: string | null;
+  broker_name: string | null;
+  firm_company_id: string | null;
+  firm_name: string | null;
+  contract_value: number | null;
+  annual_revenue: number | null;
+  notes: string | null;
+  active: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
 export interface WorkExperience {
   id: string;
   company: string | null;
@@ -234,3 +331,11 @@ export const initials = (name: string): string =>
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 export const formatMoney = (value: number | null): string => (value == null ? "" : money.format(value));
+
+const decimal = new Intl.NumberFormat("en-US", { maximumFractionDigits: 4 });
+
+export const formatDecimal = (value: number | null): string => (value == null ? "" : decimal.format(value));
+
+const megawatts = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+export const formatMw = (value: number | null): string => (value == null ? "" : `${megawatts.format(value)} MW`);

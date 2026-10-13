@@ -6,9 +6,9 @@ import { db } from "@/lib/db";
 import { isEmail, multiLine, singleLine } from "@/lib/validation";
 import { isUuid, teamAccount } from "./access";
 import { CHILDREN, TABLES, fieldsFor, isChildKind, type ChildKind, type FieldSpec } from "./fields";
-import { isKind, recordHref, type ActionState, type ZrmKind } from "./types";
+import { RECORD_APPS, isRecordKind, listHref, recordHref, type ActionState, type RecordKind } from "./types";
 
-const NO_ACCESS: ActionState = { error: "You don't have access to ZRM. Try reloading the page." };
+const NO_ACCESS: ActionState = { error: "You don't have access to this. Try reloading the page." };
 const MISSING: ActionState = { error: "That record no longer exists. Try reloading the page." };
 
 const MAX_TEXT = 500;
@@ -48,15 +48,23 @@ function parseField(field: FieldSpec, raw: FormDataEntryValue | null): { value: 
       const number = Number(value.replace(/[,\s]/g, ""));
       return Number.isSafeInteger(number) && number >= 0 && number < 2 ** 31 ? { value: number } : fail("must be a whole number");
     }
+    case "decimal": {
+      const number = Number(value.replace(/[$,\s]/g, ""));
+      return Number.isFinite(number) && Math.abs(number) < 1e8 ? { value: number } : fail("must be a number");
+    }
     case "money": {
       const number = Number(value.replace(/[$,\s]/g, ""));
       return Number.isFinite(number) && number >= 0 && number < 1e12 ? { value: number } : fail("must be an amount");
     }
     case "date":
       return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) ? { value } : fail("must be a date");
+    case "choice":
+      return field.options?.includes(value) ? { value } : fail("isn't one of the choices");
     case "company":
     case "person":
     case "stage":
+    case "group":
+    case "status":
       return isUuid(value) ? { value } : fail("isn't one of the choices");
     default:
       return { value };
@@ -77,7 +85,10 @@ function parseFields(fields: readonly FieldSpec[], formData: FormData): Map<stri
 const isStaleReference = (error: unknown): boolean =>
   typeof error === "object" && error !== null && "code" in error && (error.code === "23503" || error.code === "23514");
 
-const revalidate = () => revalidatePath("/portal/zrm", "layout");
+/** Both apps, since each lists the other's records: Capacity's pickers and links are ZRM's people and companies. */
+const revalidate = () => {
+  for (const app of Object.values(RECORD_APPS)) revalidatePath(app.base, "layout");
+};
 
 /**
  * Saves one section of a record's fields, or creates the record from the New
@@ -85,14 +96,14 @@ const revalidate = () => revalidatePath("/portal/zrm", "layout");
  * field specs, never from the request.
  */
 export async function saveFieldsAction(
-  kind: ZrmKind,
+  kind: RecordKind,
   id: string | null,
   section: string,
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
   if (!(await teamAccount())) return NO_ACCESS;
-  const fields = isKind(kind) ? fieldsFor(kind, section) : undefined;
+  const fields = isRecordKind(kind) ? fieldsFor(kind, section) : undefined;
   if (!fields || (id !== null && !isUuid(id))) return NO_ACCESS;
 
   const values = parseFields(fields, formData);
@@ -134,18 +145,18 @@ export async function saveFieldsAction(
   return { saved: true };
 }
 
-export async function deleteRecordAction(kind: ZrmKind, id: string): Promise<ActionState> {
+export async function deleteRecordAction(kind: RecordKind, id: string): Promise<ActionState> {
   if (!(await teamAccount())) return NO_ACCESS;
-  if (!isKind(kind) || !isUuid(id)) return NO_ACCESS;
+  if (!isRecordKind(kind) || !isUuid(id)) return NO_ACCESS;
   await db().query(`delete from ${TABLES[kind]} where id = $1`, [id]);
   revalidate();
-  redirect(`/portal/zrm/${kind}`);
+  redirect(listHref(kind));
 }
 
 /** Pins a record to the top of its list, or unpins it. */
-export async function setActiveAction(kind: ZrmKind, id: string, active: boolean): Promise<ActionState> {
+export async function setActiveAction(kind: RecordKind, id: string, active: boolean): Promise<ActionState> {
   if (!(await teamAccount())) return NO_ACCESS;
-  if (!isKind(kind) || !isUuid(id)) return NO_ACCESS;
+  if (!isRecordKind(kind) || !isUuid(id)) return NO_ACCESS;
   await db().query(`update ${TABLES[kind]} set active = $1, updated_at = now() where id = $2`, [active === true, id]);
   revalidate();
   return { saved: true };
@@ -158,6 +169,19 @@ export async function setStageAction(id: string, stageId: string): Promise<Actio
     await db()`update zrm_opportunities set stage_id = ${stageId}, updated_at = now() where id = ${id}`;
   } catch (error) {
     if (isStaleReference(error)) return { error: "That stage no longer exists. Reload and try again." };
+    throw error;
+  }
+  revalidate();
+  return { saved: true };
+}
+
+export async function setSiteStatusAction(id: string, statusId: string): Promise<ActionState> {
+  if (!(await teamAccount())) return NO_ACCESS;
+  if (!isUuid(id) || !isUuid(statusId)) return NO_ACCESS;
+  try {
+    await db()`update capacity_sites set status_id = ${statusId}, updated_at = now() where id = ${id}`;
+  } catch (error) {
+    if (isStaleReference(error)) return { error: "That status no longer exists. Reload and try again." };
     throw error;
   }
   revalidate();
@@ -202,7 +226,7 @@ export async function setCompanyTypesAction(companyId: string, _prev: ActionStat
 /** Adds a work history entry, school, custom field, activity or note under a record. */
 export async function addChildAction(
   child: ChildKind,
-  kind: ZrmKind,
+  kind: RecordKind,
   parentId: string,
   _prev: ActionState,
   formData: FormData,
@@ -210,7 +234,7 @@ export async function addChildAction(
   const account = await teamAccount();
   if (!account) return NO_ACCESS;
   const spec = isChildKind(child) ? CHILDREN[child] : undefined;
-  const parent = spec && isKind(kind) ? spec.parents[kind] : undefined;
+  const parent = spec && isRecordKind(kind) ? spec.parents[kind] : undefined;
   if (!spec || !parent || !isUuid(parentId)) return NO_ACCESS;
 
   const values = parseFields(spec.fields, formData);

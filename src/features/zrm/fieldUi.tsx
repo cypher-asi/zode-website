@@ -5,7 +5,7 @@ import { Select } from "@/components/ui/Select";
 import ui from "@/features/data-room/ui.module.css";
 import { Badge } from "./bits";
 import type { FieldSpec } from "./fields";
-import { formatMoney, recordHref, type Option } from "./types";
+import { formatDecimal, formatMoney, recordHref, type Option } from "./types";
 import { useRefOptions, ZrmLink } from "./ZrmProvider";
 import styles from "./zrm.module.css";
 
@@ -55,6 +55,8 @@ export function fieldValue(field: FieldSpec, record: object): ReactNode {
       return <a href={`tel:${String(value).replace(/[^\d+]/g, "")}`}>{String(value)}</a>;
     case "money":
       return formatMoney(Number(value));
+    case "decimal":
+      return formatDecimal(Number(value));
     case "date":
       return formatDate(String(value));
     case "textarea":
@@ -69,7 +71,16 @@ export function fieldValue(field: FieldSpec, record: object): ReactNode {
       );
     }
     case "stage":
+    case "group":
       return <Badge>{String(field.display ? read(record, field.display) : value)}</Badge>;
+    case "status": {
+      const color = read(record, "status_color");
+      return (
+        <Badge color={typeof color === "string" ? color : undefined}>
+          {String(field.display ? read(record, field.display) : value)}
+        </Badge>
+      );
+    }
     default:
       return String(value);
   }
@@ -102,13 +113,24 @@ export function FieldInput({
     </label>
   );
 
-  if (field.type === "company" || field.type === "person" || field.type === "stage") {
-    const choices: Option[] =
-      field.type === "stage"
-        ? options.stages.map((stage) => ({ value: stage.id, label: stage.name }))
-        : field.type === "company"
-          ? options.companies
-          : options.people;
+  if (
+    field.type === "company" ||
+    field.type === "person" ||
+    field.type === "stage" ||
+    field.type === "group" ||
+    field.type === "status" ||
+    field.type === "choice"
+  ) {
+    const named = (items: readonly { id: string; name: string }[]): Option[] =>
+      items.map((item) => ({ value: item.id, label: item.name }));
+    const choices: Option[] = {
+      company: () => options.companies,
+      person: () => options.people,
+      stage: () => named(options.stages),
+      group: () => named(options.groups),
+      status: () => named(options.statuses),
+      choice: () => (field.options ?? []).map((value) => ({ value, label: value })),
+    }[field.type]();
     const withNone = field.required ? choices : [{ value: "", label: "None" }, ...choices];
     return (
       <div className={ui.field}>
@@ -141,6 +163,7 @@ export function FieldInput({
     url: { type: "text", inputMode: "url" as const, placeholder: "https://" },
     tel: { type: "tel" },
     int: { type: "text", inputMode: "numeric" as const },
+    decimal: { type: "text", inputMode: "decimal" as const, placeholder: "0" },
     money: { type: "text", inputMode: "decimal" as const, placeholder: "0" },
     date: { type: "date" },
     list: { type: "text", placeholder: "Separate with commas" },

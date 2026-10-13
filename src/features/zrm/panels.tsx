@@ -2,13 +2,14 @@
 
 import { useOptimistic, useTransition, type ReactElement } from "react";
 import { Select } from "@/components/ui/Select";
-import { setStageAction } from "./actions";
+import { setSiteStatusAction, setStageAction } from "./actions";
 import { DetailShell } from "./DetailShell";
 import { SECTIONS } from "./fields";
 import { formatDate, formatSpan } from "./fieldUi";
 import { ChildSection, FieldSection, RelatedSection, Section, TypeList, TypesSection } from "./sections";
 import {
   formatMoney,
+  formatMw,
   personName,
   recordHref,
   type Activity,
@@ -18,15 +19,16 @@ import {
   type Note,
   type Opportunity,
   type Person,
+  type RecordKind,
   type Related,
+  type Site,
   type WorkExperience,
-  type ZrmKind,
   type ZrmType,
 } from "./types";
 import { useZrm, ZrmLink } from "./ZrmProvider";
 import styles from "./zrm.module.css";
 
-function Fields({ kind, record }: { kind: ZrmKind; record: { id: string } }) {
+function Fields({ kind, record }: { kind: RecordKind; record: { id: string } }) {
   return SECTIONS[kind].map((section) => (
     <FieldSection key={section.id} kind={kind} id={record.id} section={section} record={record} />
   ));
@@ -64,6 +66,7 @@ export function PersonPanel({
   education,
   custom,
   opportunities,
+  sites,
   notes,
 }: {
   person: Person;
@@ -72,6 +75,7 @@ export function PersonPanel({
   education: Education[];
   custom: CustomField[];
   opportunities: Related[];
+  sites: Related[];
   notes: Note[];
 }): ReactElement {
   const name = personName(person);
@@ -138,6 +142,7 @@ export function PersonPanel({
         items={opportunities}
         addHref={newOpportunityHref({ person_id: person.id, company_id: person.company_id })}
       />
+      {sites.length > 0 ? <RelatedSection title="Sites" kind="sites" items={sites} /> : null}
     </DetailShell>
   );
 }
@@ -148,6 +153,7 @@ export function CompanyPanel({
   custom,
   people,
   opportunities,
+  sites,
   notes,
 }: {
   company: Company;
@@ -155,6 +161,7 @@ export function CompanyPanel({
   custom: CustomField[];
   people: Related[];
   opportunities: Related[];
+  sites: Related[];
   notes: Note[];
 }): ReactElement {
   const { data } = useZrm();
@@ -176,6 +183,7 @@ export function CompanyPanel({
         items={opportunities}
         addHref={newOpportunityHref({ company_id: company.id })}
       />
+      <RelatedSection title="Sites" kind="sites" items={sites} addHref={`/portal/capacity/sites/new?provider_company_id=${company.id}`} />
     </DetailShell>
   );
 }
@@ -258,6 +266,59 @@ export function OpportunityPanel({
       <Section title="Timeline">
         <p className={styles.none}>
           Opened {formatDate(o.created_at)}, updated {formatDate(o.updated_at)}.
+        </p>
+      </Section>
+    </DetailShell>
+  );
+}
+
+function StatusSelect({ id, statusId }: { id: string; statusId: string }): ReactElement {
+  const { data } = useZrm();
+  const [optimistic, setOptimistic] = useOptimistic(statusId);
+  const [, startTransition] = useTransition();
+  return (
+    <Select
+      size="sm"
+      className={styles.stage}
+      aria-label="Status"
+      align="end"
+      options={data.statuses.map((status) => ({ value: status.id, label: status.name }))}
+      value={optimistic}
+      onChange={(next) =>
+        startTransition(async () => {
+          setOptimistic(next);
+          await setSiteStatusAction(id, next);
+        })
+      }
+    />
+  );
+}
+
+export function SitePanel({ site, notes }: { site: Site; notes: Note[] }): ReactElement {
+  return (
+    <DetailShell
+      kind="sites"
+      id={site.id}
+      name={site.name}
+      active={site.active}
+      notes={notes}
+      actions={<StatusSelect id={site.id} statusId={site.status_id} />}
+      subtitle={
+        <>
+          {site.address}
+          {site.address && site.provider_company_id ? " · " : null}
+          {site.provider_company_id ? (
+            <ZrmLink href={recordHref("companies", site.provider_company_id)}>{site.provider_name}</ZrmLink>
+          ) : null}
+          {site.address || site.provider_company_id ? " · " : null}
+          {formatMw(site.total_it_mw)}
+        </>
+      }
+    >
+      <Fields kind="sites" record={site} />
+      <Section title="Timeline">
+        <p className={styles.none}>
+          Added {formatDate(site.created_at)}, updated {formatDate(site.updated_at)}.
         </p>
       </Section>
     </DetailShell>

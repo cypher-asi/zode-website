@@ -1,8 +1,9 @@
-import type { ZrmKind } from "./types";
+import type { RecordKind } from "./types";
 
 /**
- * How a field is edited and shown. References (`company`, `person`, `stage`)
- * hold an id, with its name alongside in the record under `display`.
+ * How a field is edited and shown. References (`company`, `person`, `stage`,
+ * `group`, `status`) hold an id, with its name alongside in the record under
+ * `display`. `decimal`, unlike `money`, takes fractions and negatives.
  */
 export type FieldType =
   | "text"
@@ -11,12 +12,16 @@ export type FieldType =
   | "url"
   | "tel"
   | "int"
+  | "decimal"
   | "money"
   | "date"
   | "list"
+  | "choice"
   | "company"
   | "person"
-  | "stage";
+  | "stage"
+  | "group"
+  | "status";
 
 export interface FieldSpec {
   /** The column, and the record property and form input of the same name. */
@@ -26,6 +31,10 @@ export interface FieldSpec {
   required?: boolean;
   /** For references, the record property holding the referenced name. */
   display?: string;
+  /** For `choice`, the values it can take. */
+  options?: readonly string[];
+  /** Shown but never edited, e.g. a generated column. */
+  readOnly?: boolean;
 }
 
 export interface SectionSpec {
@@ -40,15 +49,31 @@ const url = of("url");
 const email = of("email");
 const tel = of("tel");
 const list = of("list");
+const decimal = of("decimal");
+const money = of("money");
 const company: FieldSpec = { key: "company_id", label: "Company", type: "company", display: "company_name" };
 
-export const TABLES: Record<ZrmKind, string> = {
+export const DEAL_TYPES = ["Lease", "JV", "Buy"] as const;
+
+const site = {
+  name: text("name", "Site", true),
+  address: text("address", "Address"),
+  group: { key: "group_id", label: "Group", type: "group", display: "group_name" },
+  status: { key: "status_id", label: "Status", type: "status", required: true, display: "status_name" },
+  provider: { key: "provider_company_id", label: "Provider", type: "company", display: "provider_name" },
+  dealType: { key: "deal_type", label: "Type", type: "choice", options: DEAL_TYPES },
+  initial: decimal("initial_it_mw", "Initial IT (MW)"),
+  secondary: decimal("secondary_it_mw", "Secondary IT (MW)"),
+} satisfies Record<string, FieldSpec>;
+
+export const TABLES: Record<RecordKind, string> = {
   people: "zrm_people",
   companies: "zrm_companies",
   opportunities: "zrm_opportunities",
+  sites: "capacity_sites",
 };
 
-export const SECTIONS: Record<ZrmKind, readonly SectionSpec[]> = {
+export const SECTIONS: Record<RecordKind, readonly SectionSpec[]> = {
   people: [
     {
       id: "basics",
@@ -149,17 +174,69 @@ export const SECTIONS: Record<ZrmKind, readonly SectionSpec[]> = {
       ],
     },
   ],
+  sites: [
+    {
+      id: "site",
+      title: "Site",
+      fields: [
+        site.name,
+        site.address,
+        site.group,
+        site.status,
+        site.provider,
+        site.dealType,
+        { key: "term_years", label: "Term (years)", type: "int" },
+        { key: "rfs_date", label: "RFS", type: "date" },
+        text("cooling", "Cooling"),
+      ],
+    },
+    {
+      id: "capacity",
+      title: "Capacity",
+      fields: [site.initial, site.secondary, { key: "total_it_mw", label: "Total IT (MW)", type: "decimal", readOnly: true }],
+    },
+    {
+      id: "economics",
+      title: "Economics",
+      fields: [
+        money("kw_rate", "kW rate ($)"),
+        decimal("power_rate", "Power ($/kWh)"),
+        money("upfront", "Upfront ($)"),
+        money("conversion", "Conversion ($)"),
+      ],
+    },
+    {
+      id: "deal",
+      title: "Deal",
+      fields: [
+        { key: "customer_company_id", label: "Customer", type: "company", display: "customer_name" },
+        { key: "broker_person_id", label: "Broker", type: "person", display: "broker_name" },
+        { key: "firm_company_id", label: "Firm", type: "company", display: "firm_name" },
+        money("contract_value", "Contract ($)"),
+        money("annual_revenue", "Annual revenue ($)"),
+      ],
+    },
+    {
+      id: "links",
+      title: "Links and notes",
+      fields: [url("vdr_url", "VDR"), url("link_url", "Link"), { key: "notes", label: "Site notes", type: "textarea" }],
+    },
+  ],
 };
 
 /** What the New form asks for; the rest is filled in on the record. */
-export const CREATE_FIELDS: Record<ZrmKind, readonly FieldSpec[]> = {
+export const CREATE_FIELDS: Record<RecordKind, readonly FieldSpec[]> = {
   people: [text("first_name", "First name", true), text("last_name", "Last name"), text("title", "Title"), company, email("email", "Email")],
   companies: [text("name", "Name", true), text("domain", "Domain"), text("industry", "Industry"), url("website", "Website")],
   opportunities: SECTIONS.opportunities[0]!.fields.filter((field) => field.key !== "owner_notes"),
+  sites: [site.name, site.address, site.group, site.status, site.provider, site.dealType, site.initial, site.secondary],
 };
 
-export const fieldsFor = (kind: ZrmKind, section: string): readonly FieldSpec[] | undefined =>
-  section === "create" ? CREATE_FIELDS[kind] : SECTIONS[kind].find((s) => s.id === section)?.fields;
+/** The fields a section's form saves, leaving out read-only ones. */
+export const fieldsFor = (kind: RecordKind, section: string): readonly FieldSpec[] | undefined =>
+  (section === "create" ? CREATE_FIELDS[kind] : SECTIONS[kind].find((s) => s.id === section)?.fields)?.filter(
+    (field) => !field.readOnly,
+  );
 
 /** Rows listed under a record: its experience, schooling, custom fields, activities and notes. */
 export type ChildKind = "work" | "education" | "custom" | "activity" | "note";
@@ -167,7 +244,7 @@ export type ChildKind = "work" | "education" | "custom" | "activity" | "note";
 export interface ChildSpec {
   table: string;
   /** The parent column for each kind of record the child can hang off. */
-  parents: Partial<Record<ZrmKind, string>>;
+  parents: Partial<Record<RecordKind, string>>;
   fields: readonly FieldSpec[];
   /** Appended in display order rather than by time. */
   ordered: boolean;
@@ -211,7 +288,7 @@ export const CHILDREN: Record<ChildKind, ChildSpec> = {
   },
   note: {
     table: "zrm_notes",
-    parents: { people: "person_id", companies: "company_id", opportunities: "opportunity_id" },
+    parents: { people: "person_id", companies: "company_id", opportunities: "opportunity_id", sites: "site_id" },
     fields: [{ key: "body", label: "Note", type: "textarea", required: true }],
     ordered: false,
   },

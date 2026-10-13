@@ -6,7 +6,7 @@ import { saveFieldsAction } from "./actions";
 import { Icon } from "./bits";
 import { CREATE_FIELDS } from "./fields";
 import { FieldInput } from "./fieldUi";
-import { KIND_LABELS, type ActionState, type ZrmKind } from "./types";
+import { KIND_LABELS, listHref, type ActionState, type RecordKind } from "./types";
 import { ZrmLink } from "./ZrmProvider";
 import styles from "./zrm.module.css";
 
@@ -17,7 +17,7 @@ export function NewRecordForm({
   kind,
   defaults,
 }: {
-  kind: ZrmKind;
+  kind: RecordKind;
   /** Prefilled references, e.g. the company a person is added from. */
   defaults: Record<string, string>;
 }): ReactElement {
@@ -28,7 +28,7 @@ export function NewRecordForm({
   return (
     <>
       <header className={styles.detailHeader}>
-        <ZrmLink href={`/portal/zrm/${kind}`} className={`${ui.iconButton} ${styles.back}`} aria-label={`Back to ${KIND_LABELS[kind].plural}`}>
+        <ZrmLink href={listHref(kind)} className={`${ui.iconButton} ${styles.back}`} aria-label={`Back to ${KIND_LABELS[kind].plural}`}>
           <Icon name="back" />
         </ZrmLink>
         <div className={styles.detailTitle}>
@@ -47,7 +47,7 @@ export function NewRecordForm({
           </p>
         ) : null}
         <div className={styles.formActions}>
-          <ZrmLink href={`/portal/zrm/${kind}`} className={ui.button}>
+          <ZrmLink href={listHref(kind)} className={ui.button}>
             Cancel
           </ZrmLink>
           <button type="submit" className={ui.primary} disabled={pending}>

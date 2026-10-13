@@ -127,6 +127,30 @@
   background: var(--color-surface-hover);
 }
 
+/* A group's heading in a sectioned list, with its subtotal on the right. */
+.sectionRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 8px 6px;
+  color: var(--color-text-secondary);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: var(--caps-tracking);
+  text-transform: uppercase;
+}
+
+.sectionRow:first-child {
+  padding-top: 6px;
+}
+
+.sectionRow span:last-child:not(:first-child) {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
 .row:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: -2px;

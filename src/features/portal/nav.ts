@@ -15,7 +15,17 @@ export type NavLink = {
   count?: CountKey;
 };
 
-export type AppId = "home" | "rooms" | "orders" | "contracts" | "zrm" | "posts" | "subscribers" | "users" | "settings";
+export type AppId =
+  | "home"
+  | "rooms"
+  | "orders"
+  | "contracts"
+  | "zrm"
+  | "capacity"
+  | "posts"
+  | "subscribers"
+  | "users"
+  | "settings";
 
 /**
  * One of the portal's apps: an icon on the rail, and the links the sidebar
@@ -77,6 +87,15 @@ const ZRM: PortalApp = {
   ],
 };
 
+/** The ZODE team's data center sites, linked into ZRM. */
+const CAPACITY: PortalApp = {
+  id: "capacity",
+  label: "Capacity",
+  icon: "capacity",
+  href: "/portal/capacity",
+  links: [{ href: "/portal/capacity/sites", label: "Sites", icon: "capacity" }],
+};
+
 /** News and changelog for the public site, written by the ZODE team. */
 const POSTS: PortalApp = {
   id: "posts",
@@ -122,7 +141,7 @@ const ADMIN_APPS: readonly PortalApp[] = [
 
 /**
  * The apps the viewer can open, in rail order, with Settings last for the
- * rail's foot: ZRM, Posts and Team for the ZODE team, the admin apps and everyone's
+ * rail's foot: ZRM, Capacity, Posts and Team for the ZODE team, the admin apps and everyone's
  * contracts for super admins.
  */
 export function portalApps({ admin, team }: NavAccess): PortalApp[] {
@@ -150,7 +169,7 @@ export function portalApps({ admin, team }: NavAccess): PortalApp[] {
     ROOMS,
     ORDERS,
     contracts,
-    ...(team ? [ZRM, POSTS] : []),
+    ...(team ? [ZRM, CAPACITY, POSTS] : []),
     ...(admin ? ADMIN_APPS : []),
     settings,
   ];

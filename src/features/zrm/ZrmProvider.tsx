@@ -14,42 +14,58 @@ import {
 } from "react";
 import Link from "next/link";
 import { useRouter, useSelectedLayoutSegments } from "next/navigation";
-import type { Option, Stage, ZrmData } from "./types";
+import { RECORD_APPS, type Option, type RecordAppId, type RecordKind, type SiteGroup, type SiteStatus, type Stage, type ZrmData } from "./types";
 
 interface ZrmContextValue {
   data: ZrmData;
-  /** The route's segments below /portal/zrm, ahead of the router while a ZRM navigation is in flight. */
+  /** The kinds this app has lists for. */
+  kinds: readonly RecordKind[];
+  /** The route's segments below the app's base, ahead of the router while a navigation within it is in flight. */
   segments: readonly string[];
-  /** Whether a ZRM navigation is in flight, i.e. `segments` is ahead of what's rendered. */
+  /** Whether a navigation within the app is in flight, i.e. `segments` is ahead of what's rendered. */
   pending: boolean;
-  /** Navigates within ZRM, showing the destination's list and selection before the server answers. */
+  /**
+   * Navigates within the app, showing the destination's list and selection
+   * before the server answers. Links into the other app (a site's company,
+   * a company's sites) navigate as usual.
+   */
   go: (href: string) => void;
 }
 
 const ZrmContext = createContext<ZrmContextValue | null>(null);
 
-const PREFIX = "/portal/zrm/";
+const pathOf = (href: string): string => new URL(href, "http://zrm").pathname;
 
-const segmentsOf = (href: string): string[] => new URL(href, "http://zrm").pathname.slice(PREFIX.length).split("/").filter(Boolean);
-
-/** All of ZRM's lists, loaded once by its layout so tabs and records switch without refetching them. */
-export function ZrmProvider({ data, children }: { data: ZrmData; children: ReactNode }): ReactElement {
+/**
+ * All of the engine's lists, loaded once by the app's layout so tabs and
+ * records switch without refetching them. ZRM and Capacity each wrap their
+ * layout in one, with their own `app`.
+ */
+export function ZrmProvider({ app, data, children }: { app: RecordAppId; data: ZrmData; children: ReactNode }): ReactElement {
   const router = useRouter();
   const routed = useSelectedLayoutSegments();
   const [pending, setPending] = useOptimistic<string | null>(null);
+  const { base, kinds } = RECORD_APPS[app];
+  const prefix = `${base}/`;
 
   const go = useCallback(
     (href: string) =>
       startTransition(() => {
-        setPending(href);
+        if (pathOf(href).startsWith(prefix)) setPending(href);
         router.push(href, { scroll: false });
       }),
-    [router, setPending],
+    [router, setPending, prefix],
   );
 
   const value = useMemo(
-    () => ({ data, segments: pending ? segmentsOf(pending) : routed, pending: pending !== null, go }),
-    [data, pending, routed, go],
+    () => ({
+      data,
+      kinds,
+      segments: pending ? pathOf(pending).slice(prefix.length).split("/").filter(Boolean) : routed,
+      pending: pending !== null,
+      go,
+    }),
+    [data, kinds, pending, prefix, routed, go],
   );
 
   return <ZrmContext value={value}>{children}</ZrmContext>;
@@ -70,17 +86,19 @@ export const goOnClick =
     go(href);
   };
 
-/** A Link within ZRM, which switches the list and selection at once rather than when the server answers. */
+/** A Link to a record, which within the app switches the list and selection at once rather than when the server answers. */
 export function ZrmLink({ href, ...props }: Omit<ComponentProps<typeof Link>, "href" | "onClick"> & { href: string }): ReactElement {
   const { go } = useZrm();
   return <Link {...props} href={href} scroll={false} onClick={goOnClick(go, href)} />;
 }
 
-/** Choices for the company, person and stage fields. */
+/** Choices for the reference fields. */
 export interface RefOptions {
   companies: Option[];
   people: Option[];
   stages: Stage[];
+  groups: SiteGroup[];
+  statuses: SiteStatus[];
 }
 
 export function useRefOptions(): RefOptions {
@@ -93,6 +111,8 @@ export function useRefOptions(): RefOptions {
         label: [[person.first_name, person.last_name].filter(Boolean).join(" "), person.company_name].filter(Boolean).join(" · "),
       })),
       stages: data.stages,
+      groups: data.groups,
+      statuses: data.statuses,
     }),
     [data],
   );

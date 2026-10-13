@@ -7,11 +7,11 @@ import { deleteRecordAction, setActiveAction } from "./actions";
 import { Avatar, Icon } from "./bits";
 import { formatDate } from "./fieldUi";
 import { ChildSection } from "./sections";
-import { KIND_LABELS, type Note, type ZrmKind } from "./types";
+import { KIND_LABELS, listHref, type Note, type RecordKind } from "./types";
 import { ZrmLink } from "./ZrmProvider";
 import styles from "./zrm.module.css";
 
-function PinButton({ kind, id, active }: { kind: ZrmKind; id: string; active: boolean }): ReactElement {
+function PinButton({ kind, id, active }: { kind: RecordKind; id: string; active: boolean }): ReactElement {
   const [optimistic, setOptimistic] = useOptimistic(active);
   const [, startTransition] = useTransition();
   const label = optimistic ? "Unpin from the top of the list" : "Pin to the top of the list";
@@ -34,7 +34,7 @@ function PinButton({ kind, id, active }: { kind: ZrmKind; id: string; active: bo
   );
 }
 
-function DeleteButton({ kind, id, name }: { kind: ZrmKind; id: string; name: string }): ReactElement {
+function DeleteButton({ kind, id, name }: { kind: RecordKind; id: string; name: string }): ReactElement {
   const [open, setOpen] = useState(false);
   const singular = KIND_LABELS[kind].singular.toLowerCase();
   return (
@@ -54,7 +54,9 @@ function DeleteButton({ kind, id, name }: { kind: ZrmKind; id: string; name: str
           description={
             kind === "opportunities"
               ? "Its activities and notes go with it. This can't be undone."
-              : `Its notes go with it, and anything linked to it is unlinked. This can't be undone.`
+              : kind === "sites"
+                ? "Its notes go with it. This can't be undone."
+                : `Its notes go with it, and anything linked to it is unlinked. This can't be undone.`
           }
           confirmLabel="Delete"
           danger
@@ -80,7 +82,7 @@ export function DetailShell({
   notes,
   children,
 }: {
-  kind: ZrmKind;
+  kind: RecordKind;
   id: string;
   name: string;
   subtitle?: ReactNode;
@@ -95,10 +97,10 @@ export function DetailShell({
   return (
     <>
       <header className={styles.detailHeader}>
-        <ZrmLink href={`/portal/zrm/${kind}`} className={`${ui.iconButton} ${styles.back}`} aria-label={`Back to ${KIND_LABELS[kind].plural}`}>
+        <ZrmLink href={listHref(kind)} className={`${ui.iconButton} ${styles.back}`} aria-label={`Back to ${KIND_LABELS[kind].plural}`}>
           <Icon name="back" />
         </ZrmLink>
-        <Avatar name={name} shape={kind === "companies" ? "square" : "round"} size="lg" />
+        <Avatar name={name} shape={kind === "companies" || kind === "sites" ? "square" : "round"} size="lg" />
         <div className={styles.detailTitle}>
           <h2>{name}</h2>
           {subtitle ? <p>{subtitle}</p> : null}
@@ -108,7 +110,7 @@ export function DetailShell({
           <PinButton kind={kind} id={id} active={active} />
           <DeleteButton kind={kind} id={id} name={name} />
           <ZrmLink
-            href={`/portal/zrm/${kind}`}
+            href={listHref(kind)}
             className={`${ui.iconButton} ${styles.close}`}
             aria-label="Close"
             title="Close"

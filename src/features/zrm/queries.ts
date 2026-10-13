@@ -13,6 +13,10 @@ import type {
   Person,
   PersonRow,
   Related,
+  Site,
+  SiteGroup,
+  SiteRow,
+  SiteStatus,
   Stage,
   WorkExperience,
   ZrmData,
@@ -63,11 +67,41 @@ const typesQuery = (sql: Sql) => sql`select id, name, color from zrm_types order
 
 const stagesQuery = (sql: Sql) => sql`select id, name, position from zrm_stages order by position, name`;
 
-/** Everything the three tabs list, loaded once by the ZRM layout so switching tabs doesn't touch the database. */
+const sitesQuery = (sql: Sql) => sql`
+  select s.id, s.name, s.address, s.group_id, s.status_id,
+    pc.name as provider_name, cc.name as customer_name, s.deal_type,
+    s.initial_it_mw::float8 as initial_it_mw, s.secondary_it_mw::float8 as secondary_it_mw,
+    s.total_it_mw::float8 as total_it_mw, s.upfront::float8 as upfront, s.conversion::float8 as conversion,
+    s.contract_value::float8 as contract_value, s.annual_revenue::float8 as annual_revenue,
+    s.rfs_date::text as rfs_date, s.active
+  from capacity_sites s
+  left join zrm_companies pc on pc.id = s.provider_company_id
+  left join zrm_companies cc on cc.id = s.customer_company_id
+  order by s.created_at, lower(s.name)
+`;
+
+const groupsQuery = (sql: Sql) => sql`select id, name, position from capacity_groups order by position, name`;
+
+const statusesQuery = (sql: Sql) => sql`select id, name, position, color from capacity_statuses order by position, name`;
+
+/**
+ * Everything ZRM's and Capacity's tabs list, loaded once by each app's layout
+ * so switching tabs doesn't touch the database. Both load it all, since
+ * Capacity picks from ZRM's people and companies.
+ */
 export async function loadZrmData(): Promise<ZrmData> {
   const sql = db();
-  const [people, companies, opportunities, types, stages] = await sql.transaction(
-    [peopleQuery(sql), companiesQuery(sql), opportunitiesQuery(sql), typesQuery(sql), stagesQuery(sql)],
+  const [people, companies, opportunities, types, stages, sites, groups, statuses] = await sql.transaction(
+    [
+      peopleQuery(sql),
+      companiesQuery(sql),
+      opportunitiesQuery(sql),
+      typesQuery(sql),
+      stagesQuery(sql),
+      sitesQuery(sql),
+      groupsQuery(sql),
+      statusesQuery(sql),
+    ],
     { readOnly: true },
   );
   return {
@@ -76,6 +110,9 @@ export async function loadZrmData(): Promise<ZrmData> {
     opportunities: opportunities as OpportunityRow[],
     types: types as ZrmType[],
     stages: stages as Stage[],
+    sites: sites as SiteRow[],
+    groups: groups as SiteGroup[],
+    statuses: statuses as SiteStatus[],
   };
 }
 
@@ -98,7 +135,7 @@ const typesThrough = (sql: Sql, table: "zrm_people" | "zrm_opportunities", id: s
     [id],
   );
 
-const notesOf = (sql: Sql, column: "person_id" | "company_id" | "opportunity_id", id: string) =>
+const notesOf = (sql: Sql, column: "person_id" | "company_id" | "opportunity_id" | "site_id", id: string) =>
   sql.query(`select id, body, author_email, created_at from zrm_notes where ${column} = $1 order by created_at desc`, [id]);
 
 const customFieldsOf = (sql: Sql, column: "person_id" | "company_id", id: string) =>
@@ -113,6 +150,28 @@ const opportunitiesOf = (sql: Sql, column: "person_id" | "company_id", id: strin
     [id],
   );
 
+/** The sites a company is the provider, customer or broker's firm of, or a person brokers, with their role, MW and status. */
+const sitesOf = (sql: Sql, id: string, roles: readonly (readonly [column: string, label: string])[]) =>
+  sql.query(
+    `select s.id, s.name as label,
+       concat_ws(' · ',
+         nullif(concat_ws(', ', ${roles.map(([column, label]) => `case when s.${column} = $1 then '${label}' end`).join(", ")}), ''),
+         to_char(s.total_it_mw, 'FM999,990.00') || ' MW',
+         st.name) as detail
+     from capacity_sites s join capacity_statuses st on st.id = s.status_id
+     where $1 in (${roles.map(([column]) => `s.${column}`).join(", ")})
+     order by lower(s.name)`,
+    [id],
+  );
+
+const COMPANY_SITE_ROLES = [
+  ["provider_company_id", "Provider"],
+  ["customer_company_id", "Customer"],
+  ["firm_company_id", "Broker firm"],
+] as const;
+
+const PERSON_SITE_ROLES = [["broker_person_id", "Broker"]] as const;
+
 export interface PersonDetail {
   person: Person;
   types: ZrmType[];
@@ -120,13 +179,14 @@ export interface PersonDetail {
   education: Education[];
   custom: CustomField[];
   opportunities: Related[];
+  sites: Related[];
   notes: Note[];
 }
 
 export async function getPersonDetail(id: string): Promise<PersonDetail | null> {
   if (!isUuid(id)) return null;
   const sql = db();
-  const [[person], types, work, education, custom, opportunities, notes] = await sql.transaction(
+  const [[person], types, work, education, custom, opportunities, sites, notes] = await sql.transaction(
     [
       sql`
         select p.id, p.first_name, p.last_name, p.title, p.seniority, p.department, p.email, p.personal_email,
@@ -150,6 +210,7 @@ export async function getPersonDetail(id: string): Promise<PersonDetail | null> 
       `,
       customFieldsOf(sql, "person_id", id),
       opportunitiesOf(sql, "person_id", id),
+      sitesOf(sql, id, PERSON_SITE_ROLES),
       notesOf(sql, "person_id", id),
     ],
     { readOnly: true },
@@ -162,6 +223,7 @@ export async function getPersonDetail(id: string): Promise<PersonDetail | null> 
     education: education as Education[],
     custom: custom as CustomField[],
     opportunities: opportunities as Related[],
+    sites: sites as Related[],
     notes: notes as Note[],
   };
 }
@@ -172,13 +234,14 @@ export interface CompanyDetail {
   custom: CustomField[];
   people: Related[];
   opportunities: Related[];
+  sites: Related[];
   notes: Note[];
 }
 
 export async function getCompanyDetail(id: string): Promise<CompanyDetail | null> {
   if (!isUuid(id)) return null;
   const sql = db();
-  const [[company], types, custom, people, opportunities, notes] = await sql.transaction(
+  const [[company], types, custom, people, opportunities, sites, notes] = await sql.transaction(
     [
       sql`select * from zrm_companies where id = ${id}`,
       typesOfCompany(sql, id),
@@ -189,6 +252,7 @@ export async function getCompanyDetail(id: string): Promise<CompanyDetail | null
         order by lower(coalesce(first_name, '')), lower(coalesce(last_name, ''))
       `,
       opportunitiesOf(sql, "company_id", id),
+      sitesOf(sql, id, COMPANY_SITE_ROLES),
       notesOf(sql, "company_id", id),
     ],
     { readOnly: true },
@@ -200,6 +264,7 @@ export async function getCompanyDetail(id: string): Promise<CompanyDetail | null
     custom: custom as CustomField[],
     people: people as Related[],
     opportunities: opportunities as Related[],
+    sites: sites as Related[],
     notes: notes as Note[],
   };
 }
@@ -240,4 +305,44 @@ export async function getOpportunityDetail(id: string): Promise<OpportunityDetai
     activities: activities as Activity[],
     notes: notes as Note[],
   };
+}
+
+export interface SiteDetail {
+  site: Site;
+  notes: Note[];
+}
+
+export async function getSiteDetail(id: string): Promise<SiteDetail | null> {
+  if (!isUuid(id)) return null;
+  const sql = db();
+  const [[site], notes] = await sql.transaction(
+    [
+      sql`
+        select s.id, s.name, s.address, s.group_id, g.name as group_name,
+          s.status_id, st.name as status_name, st.color as status_color,
+          s.provider_company_id, pc.name as provider_name, s.term_years, s.deal_type,
+          s.initial_it_mw::float8 as initial_it_mw, s.secondary_it_mw::float8 as secondary_it_mw,
+          s.total_it_mw::float8 as total_it_mw, s.kw_rate::float8 as kw_rate, s.power_rate::float8 as power_rate,
+          s.upfront::float8 as upfront, s.conversion::float8 as conversion, s.rfs_date::text as rfs_date,
+          s.cooling, s.vdr_url, s.link_url,
+          s.customer_company_id, cc.name as customer_name,
+          s.broker_person_id, nullif(concat_ws(' ', bp.first_name, bp.last_name), '') as broker_name,
+          s.firm_company_id, fc.name as firm_name,
+          s.contract_value::float8 as contract_value, s.annual_revenue::float8 as annual_revenue,
+          s.notes, s.active, s.created_at, s.updated_at
+        from capacity_sites s
+        join capacity_statuses st on st.id = s.status_id
+        left join capacity_groups g on g.id = s.group_id
+        left join zrm_companies pc on pc.id = s.provider_company_id
+        left join zrm_companies cc on cc.id = s.customer_company_id
+        left join zrm_companies fc on fc.id = s.firm_company_id
+        left join zrm_people bp on bp.id = s.broker_person_id
+        where s.id = ${id}
+      `,
+      notesOf(sql, "site_id", id),
+    ],
+    { readOnly: true },
+  );
+  if (!site) return null;
+  return { site: site as Site, notes: notes as Note[] };
 }

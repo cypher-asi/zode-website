@@ -1,12 +1,18 @@
 import type { ReactNode } from "react";
 import { Avatar, Badge, Icon, TypeBadges } from "./bits";
+import { formatDate } from "./fieldUi";
 import {
   formatMoney,
+  formatMw,
   personName,
   type CompanyRow,
+  type Option,
   type OpportunityRow,
   type PersonRow,
-  type ZrmKind,
+  type RecordKind,
+  type SiteGroup,
+  type SiteRow,
+  type SiteStatus,
   type ZrmType,
 } from "./types";
 import styles from "./zrm.module.css";
@@ -23,12 +29,30 @@ export interface Column<T> {
   render: (row: T) => ReactNode;
 }
 
+/** A select in the toolbar narrowing the list, e.g. to one type. Lists only the options some row has. */
+export interface ListFilter<T> {
+  key: string;
+  label: string;
+  /** The first option, which shows every row. */
+  all: string;
+  options: (rows: readonly T[]) => Option[];
+  test: (row: T, value: string) => boolean;
+}
+
+/** Headed groups of rows, in `order`, shown while the list isn't sorted by a column. */
+export interface ListSections<T> {
+  of: (row: T) => { key: string; label: string; order: number };
+  summary?: (rows: readonly T[]) => string;
+}
+
 export interface ListConfig<T> {
   columns: readonly Column<T>[];
   /** Lower-cased text the search box matches against. */
   searchText: (row: T) => string;
   noun: [singular: string, plural: string];
   summary?: (rows: readonly T[]) => string;
+  filters?: readonly ListFilter<T>[];
+  sections?: ListSections<T>;
 }
 
 type Types = ReadonlyMap<string, ZrmType>;
@@ -57,12 +81,24 @@ const typeColumn = <T extends { type_ids: string[] }>(types: Types): Column<T> =
   render: (row) => <TypeBadges ids={row.type_ids} types={types} />,
 });
 
+const typeFilter = <T extends { type_ids: string[] }>(types: Types): ListFilter<T> => ({
+  key: "type",
+  label: "Filter by type",
+  all: "All types",
+  options: (rows) => {
+    const used = new Set(rows.flatMap((row) => row.type_ids));
+    return [...types.values()].filter((type) => used.has(type.id)).map((type) => ({ value: type.id, label: type.name }));
+  },
+  test: (row, value) => row.type_ids.includes(value),
+});
+
 const lower = (...parts: (string | null | undefined)[]): string => parts.filter(Boolean).join(" ").toLowerCase();
 
 export function peopleConfig(types: Types): ListConfig<PersonRow> {
   return {
     noun: ["person", "people"],
     searchText: (p) => lower(personName(p), p.title, p.email, p.company_name),
+    filters: [typeFilter(types)],
     columns: [
       {
         key: "name",
@@ -87,6 +123,7 @@ export function companiesConfig(types: Types): ListConfig<CompanyRow> {
   return {
     noun: ["company", "companies"],
     searchText: (c) => lower(c.name, c.industry, c.domain, c.country),
+    filters: [typeFilter(types)],
     columns: [
       {
         key: "name",
@@ -148,8 +185,110 @@ export function opportunitiesConfig(): ListConfig<OpportunityRow> {
   };
 }
 
-export const NEW_LABELS: Record<ZrmKind, string> = {
+const sum = (rows: readonly SiteRow[], value: (row: SiteRow) => number | null): number =>
+  rows.reduce((total, row) => total + (value(row) ?? 0), 0);
+
+/** Initial, secondary and total IT, as the sheet subtotals each group. */
+const capacitySummary = (rows: readonly SiteRow[]): string =>
+  `${formatMw(sum(rows, (s) => s.initial_it_mw))} + ${formatMw(sum(rows, (s) => s.secondary_it_mw))} = ${formatMw(sum(rows, (s) => s.total_it_mw))}`;
+
+export function sitesConfig(groups: readonly SiteGroup[], statuses: readonly SiteStatus[]): ListConfig<SiteRow> {
+  const groupOf = new Map(groups.map((group) => [group.id, group]));
+  const statusOf = new Map(statuses.map((status) => [status.id, status]));
+  return {
+    noun: ["site", "sites"],
+    searchText: (s) =>
+      lower(s.name, s.address, s.provider_name, s.customer_name, s.deal_type, groupOf.get(s.group_id ?? "")?.name, statusOf.get(s.status_id)?.name),
+    summary: (rows) => {
+      const money = [
+        ["upfront", sum(rows, (s) => s.upfront)],
+        ["contract", sum(rows, (s) => s.contract_value)],
+        ["a year", sum(rows, (s) => s.annual_revenue)],
+      ] as const;
+      return [
+        formatMw(sum(rows, (s) => s.total_it_mw)),
+        ...money.filter(([, total]) => total > 0).map(([label, total]) => `${formatMoney(total)} ${label}`),
+      ].join(" · ");
+    },
+    filters: [
+      {
+        key: "status",
+        label: "Filter by status",
+        all: "All statuses",
+        options: (rows) => {
+          const used = new Set(rows.map((s) => s.status_id));
+          return statuses.filter((status) => used.has(status.id)).map((status) => ({ value: status.id, label: status.name }));
+        },
+        test: (s, value) => s.status_id === value,
+      },
+      {
+        key: "group",
+        label: "Filter by group",
+        all: "All groups",
+        options: (rows) => {
+          const used = new Set(rows.map((s) => s.group_id));
+          return groups.filter((group) => used.has(group.id)).map((group) => ({ value: group.id, label: group.name }));
+        },
+        test: (s, value) => s.group_id === value,
+      },
+    ],
+    sections: {
+      of: (s) => {
+        const group = groupOf.get(s.group_id ?? "");
+        return group ? { key: group.id, label: group.name, order: group.position } : { key: "", label: "No group", order: Infinity };
+      },
+      summary: capacitySummary,
+    },
+    columns: [
+      {
+        key: "name",
+        header: "Site",
+        width: "minmax(0, 2fr)",
+        sortValue: (s) => s.name.toLowerCase(),
+        render: (s) => <Primary name={s.name} sub={s.address} shape="square" active={s.active} />,
+      },
+      {
+        key: "provider",
+        header: "Provider",
+        width: "minmax(0, 1.2fr)",
+        wideOnly: true,
+        sortValue: (s) => s.provider_name?.toLowerCase() ?? null,
+        render: (s) => s.provider_name,
+      },
+      {
+        key: "status",
+        header: "Status",
+        width: "minmax(0, 1fr)",
+        sortValue: (s) => statusOf.get(s.status_id)?.position ?? null,
+        render: (s) => {
+          const status = statusOf.get(s.status_id);
+          return status ? <Badge color={status.color}>{status.name}</Badge> : null;
+        },
+      },
+      {
+        key: "total",
+        header: "Total IT",
+        width: "92px",
+        align: "end",
+        sortValue: (s) => s.total_it_mw,
+        render: (s) => formatMw(s.total_it_mw),
+      },
+      {
+        key: "rfs",
+        header: "RFS",
+        width: "92px",
+        align: "end",
+        wideOnly: true,
+        sortValue: (s) => s.rfs_date,
+        render: (s) => formatDate(s.rfs_date),
+      },
+    ],
+  };
+}
+
+export const NEW_LABELS: Record<RecordKind, string> = {
   people: "New person",
   companies: "New company",
   opportunities: "New opportunity",
+  sites: "New site",
 };

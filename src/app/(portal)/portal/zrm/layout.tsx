@@ -22,7 +22,7 @@ export default async function ZrmLayout({ children }: LayoutProps<"/portal/zrm">
   const [, data] = await Promise.all([requireTeam("/portal/zrm"), loadZrmData()]);
 
   return (
-    <ZrmProvider data={data}>
+    <ZrmProvider app="zrm" data={data}>
       <div className={styles.frame}>
         <header className={styles.bar}>
           <div className={styles.titleGroup}>

@@ -564,3 +564,89 @@ create table if not exists zrm_notes (
 create index if not exists zrm_notes_person_idx on zrm_notes (person_id) where person_id is not null;
 create index if not exists zrm_notes_company_idx on zrm_notes (company_id) where company_id is not null;
 create index if not exists zrm_notes_opportunity_idx on zrm_notes (opportunity_id) where opportunity_id is not null;
+
+-- Capacity: the team's data center sites, beside ZRM in the portal and
+-- linked into it, their provider, customer and broker's firm being ZRM
+-- companies and their broker a ZRM person. A site's group is the part of the
+-- pipeline sheet it sits in (Critical Path, LOI, a portfolio like Atlas); its
+-- status is where the deal stands. `seed_key` lets `npm run capacity:import`
+-- re-run without duplicating. `active` pins a site to the top of its list.
+create table if not exists capacity_groups (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  position integer not null default 0
+);
+
+insert into capacity_groups (name, position)
+select g.name, g.position
+from (values ('Critical Path', 0), ('LOI', 1), ('Atlas', 2), ('Metroplex', 3), ('Misc', 4)) as g (name, position)
+where not exists (select 1 from capacity_groups);
+
+create table if not exists capacity_statuses (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  position integer not null default 0,
+  color text not null default '#94A3B8'
+);
+
+insert into capacity_statuses (name, position, color)
+select s.name, s.position, s.color
+from (
+  values ('Prospect', 0, '#94A3B8'), ('LOI', 1, '#60A5FA'), ('Diligence', 2, '#F59E0B'),
+    ('Contracted', 3, '#8B5CF6'), ('Live', 4, '#22C55E'), ('Passed', 5, '#EF4444')
+) as s (name, position, color)
+where not exists (select 1 from capacity_statuses);
+
+create table if not exists capacity_sites (
+  id uuid primary key default gen_random_uuid(),
+  seed_key text unique,
+  name text not null,
+  address text,
+  group_id uuid references capacity_groups (id) on delete set null,
+  status_id uuid not null references capacity_statuses (id),
+  provider_company_id uuid references zrm_companies (id) on delete set null,
+  term_years integer,
+  deal_type text check (deal_type in ('Lease', 'JV', 'Buy')),
+  -- MW. Secondary can be negative where the second phase revises the first down.
+  initial_it_mw numeric(10, 2),
+  secondary_it_mw numeric(10, 2),
+  total_it_mw numeric(10, 2) generated always as (coalesce(initial_it_mw, 0) + coalesce(secondary_it_mw, 0)) stored,
+  -- $ per kW, and $ per kWh of power.
+  kw_rate numeric(12, 2),
+  power_rate numeric(10, 4),
+  upfront numeric(14, 2),
+  conversion numeric(14, 2),
+  rfs_date date,
+  cooling text,
+  vdr_url text,
+  link_url text,
+  customer_company_id uuid references zrm_companies (id) on delete set null,
+  broker_person_id uuid references zrm_people (id) on delete set null,
+  firm_company_id uuid references zrm_companies (id) on delete set null,
+  contract_value numeric(14, 2),
+  annual_revenue numeric(14, 2),
+  notes text,
+  active boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists capacity_sites_group_idx on capacity_sites (group_id);
+create index if not exists capacity_sites_status_idx on capacity_sites (status_id);
+create index if not exists capacity_sites_provider_idx on capacity_sites (provider_company_id);
+create index if not exists capacity_sites_customer_idx on capacity_sites (customer_company_id);
+create index if not exists capacity_sites_firm_idx on capacity_sites (firm_company_id);
+create index if not exists capacity_sites_broker_idx on capacity_sites (broker_person_id);
+
+-- Sites take notes too, so a note hangs off exactly one person, company,
+-- opportunity or site. The check is dropped and re-added under one name so
+-- this re-runs, replacing the unnamed one zrm_notes was created with.
+alter table zrm_notes add column if not exists site_id uuid references capacity_sites (id) on delete cascade;
+
+alter table zrm_notes drop constraint if exists zrm_notes_check;
+
+alter table zrm_notes drop constraint if exists zrm_notes_one_parent;
+
+alter table zrm_notes add constraint zrm_notes_one_parent check (num_nonnulls(person_id, company_id, opportunity_id, site_id) = 1);
+
+create index if not exists zrm_notes_site_idx on zrm_notes (site_id) where site_id is not null;

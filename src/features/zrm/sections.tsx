@@ -6,7 +6,7 @@ import { addChildAction, deleteChildAction, saveFieldsAction, setCompanyTypesAct
 import { Badge, Icon } from "./bits";
 import { CHILDREN, type ChildKind, type SectionSpec } from "./fields";
 import { FieldInput, fieldValue } from "./fieldUi";
-import { recordHref, type ActionState, type Related, type ZrmKind, type ZrmType } from "./types";
+import { recordHref, type ActionState, type RecordKind, type Related, type ZrmType } from "./types";
 import { ZrmLink } from "./ZrmProvider";
 import styles from "./zrm.module.css";
 
@@ -60,7 +60,7 @@ export function FieldSection({
   section,
   record,
 }: {
-  kind: ZrmKind;
+  kind: RecordKind;
   id: string;
   section: SectionSpec;
   record: object;
@@ -78,9 +78,11 @@ export function FieldSection({
       <Section title={section.title}>
         <form action={action} className={styles.form}>
           <div className={styles.formGrid}>
-            {section.fields.map((field) => (
-              <FieldInput key={field.key} field={field} record={record} idPrefix={formId} />
-            ))}
+            {section.fields
+              .filter((field) => !field.readOnly)
+              .map((field) => (
+                <FieldInput key={field.key} field={field} record={record} idPrefix={formId} />
+              ))}
           </div>
           <FormError state={state} />
           <FormActions pending={pending} onCancel={() => setEditing(false)} />
@@ -145,7 +147,7 @@ export function ChildSection<T extends { id: string }>({
 }: {
   title?: string;
   child: ChildKind;
-  kind: ZrmKind;
+  kind: RecordKind;
   parentId: string;
   items: readonly T[];
   render: (item: T) => ReactNode;
@@ -297,7 +299,7 @@ export function RelatedSection({
   addHref,
 }: {
   title: string;
-  kind: ZrmKind;
+  kind: RecordKind;
   items: readonly Related[];
   addHref?: string;
 }): ReactElement {
