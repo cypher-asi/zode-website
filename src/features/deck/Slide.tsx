@@ -151,8 +151,10 @@ function Stats({ slide, active, compact }: { slide: Of<"stats">; active: boolean
               <div className={styles.chainFigure}>
                 <MacroArt id={step.art} hard={step.hard} playing={active} />
               </div>
-              <span className={styles.chainLabel}>{step.label}</span>
-              {step.hard ? <span className={styles.chainNote}>Bottleneck</span> : null}
+              <span className={styles.chainText}>
+                <span className={styles.chainLabel}>{step.label}</span>
+                {step.hard ? <span className={styles.chainNote}>Bottleneck</span> : null}
+              </span>
             </li>
           ))}
         </ol>
