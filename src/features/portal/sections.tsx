@@ -2,7 +2,7 @@ import type { ReactElement, ReactNode } from "react";
 import Link from "next/link";
 import type { OrderSummary } from "@/features/configurator/orders";
 import type { Contract } from "@/features/contracts/contracts";
-import type { RoomSummary } from "@/features/data-room/types";
+import { roleLabel, type RoomSummary } from "@/features/data-room/types";
 import { SUBSCRIBER_STATUSES, type Subscriber } from "@/features/mailing-list/types";
 import { kindLabel, type Post } from "@/features/posts/types";
 import { RoleButton } from "@/features/users/RoleButton";
@@ -69,7 +69,8 @@ const Chevron = () => (
   </svg>
 );
 
-export function RoomList({ rooms }: { rooms: RoomSummary[] }): ReactElement {
+/** `superAdmin` is whether the viewer is a ZODE super admin, which their room admin pills say instead. */
+export function RoomList({ rooms, superAdmin = false }: { rooms: RoomSummary[]; superAdmin?: boolean }): ReactElement {
   return (
     <ul className={styles.list}>
       {rooms.map((room) => (
@@ -86,7 +87,7 @@ export function RoomList({ rooms }: { rooms: RoomSummary[] }): ReactElement {
               </span>
             </span>
             <span className={styles.rowEnd}>
-              <span className={styles.pill}>{room.role === "admin" ? "Admin" : "Viewer"}</span>
+              <span className={styles.pill}>{roleLabel(room.role, superAdmin)}</span>
               <Chevron />
             </span>
           </Link>

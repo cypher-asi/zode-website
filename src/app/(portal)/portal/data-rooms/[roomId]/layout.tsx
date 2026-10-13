@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
+import { isZodeAdmin } from "@/features/account/admin";
 import { RoomTabs } from "@/features/data-room/RoomTabs";
 import { ShareButton } from "@/features/data-room/ShareDialog";
 import { listMembers, requireRoomRole } from "@/features/data-room/rooms";
+import { roleLabel } from "@/features/data-room/types";
 import styles from "@/features/data-room/room.module.css";
 
 export async function generateMetadata({ params }: LayoutProps<"/portal/data-rooms/[roomId]">): Promise<Metadata> {
@@ -23,7 +25,7 @@ export default async function DataRoomLayout({
   const { roomId } = await params;
   const { room, role, account } = await requireRoomRole(roomId);
   const isAdmin = role === "admin";
-  const members = isAdmin ? await listMembers(roomId) : [];
+  const [members, superAdmin] = await Promise.all([isAdmin ? listMembers(roomId) : [], isZodeAdmin(account)]);
 
   return (
     <div className={styles.frame}>
@@ -37,7 +39,7 @@ export default async function DataRoomLayout({
           </Link>
           <div className={styles.titleRow}>
             <h1 className={styles.title}>{room.name}</h1>
-            <span className={styles.role}>{isAdmin ? "Admin" : "Viewer"}</span>
+            <span className={styles.role}>{roleLabel(role, superAdmin)}</span>
           </div>
         </div>
         <div className={styles.headerActions}>

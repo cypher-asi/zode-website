@@ -60,6 +60,7 @@ export function MembersPanel({ roomId, roomName, members, selfEmail }: MembersPa
           <span className={styles.memberEmail}>
             {member.email}
             {self ? <span className={styles.you}>You</span> : null}
+            {member.superAdmin ? <span className={styles.you}>Super admin</span> : null}
           </span>
           <span className={styles.memberMeta}>
             <span className={styles.status} data-status={member.status}>

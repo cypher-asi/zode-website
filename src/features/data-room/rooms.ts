@@ -238,10 +238,12 @@ export async function folderSubtree(roomId: string, folderId: string): Promise<s
 
 export async function listMembers(roomId: string): Promise<RoomMember[]> {
   const rows = await db()`
-    select id, email, role, invited_by_email, invited_at, accepted_at, invite_expires_at, requires_mnda
-    from data_room_members
-    where room_id = ${roomId}
-    order by accepted_at is null, role, email
+    select m.id, m.email, m.role, m.invited_by_email, m.invited_at, m.accepted_at, m.invite_expires_at, m.requires_mnda,
+      coalesce(u.role = 'super_admin', false) as super_admin
+    from data_room_members m
+    left join users u on u.zos_user_id = m.user_id
+    where m.room_id = ${roomId}
+    order by m.accepted_at is null, m.role, m.email
   `;
   const now = Date.now();
   return rows.map((row) => ({
@@ -257,6 +259,7 @@ export async function listMembers(roomId: string): Promise<RoomMember[]> {
     invitedAt: iso(row.invited_at),
     acceptedAt: row.accepted_at == null ? null : iso(row.accepted_at),
     requiresMnda: Boolean(row.requires_mnda),
+    superAdmin: Boolean(row.super_admin),
   }));
 }
 

@@ -15,7 +15,7 @@ import Link from "next/link";
 import { isEmail } from "@/lib/validation";
 import { inviteMembersAction } from "./actions";
 import { Icon } from "./icons";
-import { ROLES, type ActionState, type PersonSuggestion, type RoomMember } from "./types";
+import { ROLES, roleLabel, type ActionState, type PersonSuggestion, type RoomMember } from "./types";
 import styles from "./share.module.css";
 import ui from "./ui.module.css";
 
@@ -29,8 +29,6 @@ const STATUS_LABELS: Record<RoomMember["status"], string> = {
   pending: "Invite sent",
   expired: "Invite expired",
 };
-
-const roleLabel = (role: RoomMember["role"]): string => ROLES.find((r) => r.id === role)?.label ?? role;
 
 const splitEmails = (text: string): string[] =>
   text
@@ -416,7 +414,7 @@ function ShareDialog({ roomId, roomName, members, selfEmail, onClose }: SharePro
                     {STATUS_LABELS[member.status]}
                   </span>
                 ) : null}
-                <span className={styles.personRole}>{roleLabel(member.role)}</span>
+                <span className={styles.personRole}>{roleLabel(member.role, member.superAdmin)}</span>
               </li>
             ))}
           </ul>

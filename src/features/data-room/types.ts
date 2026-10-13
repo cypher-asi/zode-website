@@ -5,6 +5,10 @@ export const ROLES: readonly { id: RoomRole; label: string; detail: string }[] =
   { id: "admin", label: "Admin", detail: "Can also upload, organize, invite people and see activity." },
 ];
 
+/** A room role as shown; a ZODE super admin who is a room admin reads as "Super admin". */
+export const roleLabel = (role: RoomRole, superAdmin = false): string =>
+  superAdmin && role === "admin" ? "Super admin" : (ROLES.find((r) => r.id === role)?.label ?? role);
+
 /** Whether the room is for buying a site or leasing one. */
 export type RoomKind = "purchase" | "lease";
 
@@ -61,6 +65,8 @@ export interface RoomMember {
   acceptedAt: string | null;
   /** The invite asks for a signed MNDA before joining. */
   requiresMnda: boolean;
+  /** The member's account is a ZODE super admin. */
+  superAdmin: boolean;
 }
 
 /** Someone the share dialog suggests inviting; `name` is null when only their email is known. */
