@@ -2,21 +2,19 @@
  * The portal's frame: a fixed rail of apps down the left edge (a black bar
  * of icons in a frosted tray, with Settings in a tray of its own at the
  * foot), the sidebar for the current app beside it (sidebar.module.css,
- * where `SIDEBAR_MEDIA` in nav.ts mirrors the 1100px cut), the pinned wordmark just
- * right of both, and one fixed panel that every section renders into.
- * Inherits `--edge` from SiteShell. The page itself never scrolls, so the
- * header's top fade is off here.
+ * where `SIDEBAR_MEDIA` in nav.ts mirrors the 1100px cut), and one fixed
+ * panel that every section renders into, all under the pinned header with
+ * the wordmark in its corner. Inherits `--edge` from SiteShell. The page
+ * itself never scrolls, so the header's top fade is off here.
  *
- * Spacing is even all the way down: the rail's and sidebar's tops line up
- * with the wordmark's (`--header-top`, globals.css), the panel starts
+ * Spacing is even all the way down: the rail, sidebar and panel all start
  * `--portal-gap` below the header (the Buy Compute button's bottom edge,
- * `--header-bottom`), and all three end `--portal-gap` above the bottom.
- * Side by side, every panel (the two trays, the sidebar, the panel, and the
- * phone bar) is `--panel-gap` from the next.
+ * `--header-bottom`) and end `--portal-gap` above the bottom. Side by side,
+ * every panel (the two trays, the sidebar, the panel, and the phone bar) is
+ * `--panel-gap` from the next.
  *
- * The variables live on `.frame`, around the whole shell, so `--brand-inset`
- * also reaches PinnedHeader's wordmark. `--sidebar-space` is zero wherever
- * the sidebar is hidden: collapsed, or under 1100px.
+ * `--sidebar-space` is zero wherever the sidebar is hidden: collapsed, or
+ * under 1100px.
  */
 .frame {
   --tray-pad: 6px;
@@ -29,7 +27,6 @@
   --header-bottom: calc(59px + env(safe-area-inset-top, 0px));
   --portal-top: calc(var(--header-bottom) + var(--portal-gap));
   --content-inset: calc(var(--tray-width) + var(--sidebar-space) + var(--panel-gap));
-  --brand-inset: var(--content-inset);
 
   /* The frosted surface shared by the trays and the sidebar. */
   --glass-bg: color-mix(in srgb, var(--color-paper) 82%, transparent);
@@ -48,7 +45,7 @@
 
 .rail {
   position: fixed;
-  top: calc(var(--header-top) + env(safe-area-inset-top, 0px));
+  top: var(--portal-top);
   bottom: calc(var(--portal-gap) + env(safe-area-inset-bottom, 0px));
   left: max(var(--edge), env(safe-area-inset-left, 0px));
   z-index: 10;
@@ -333,14 +330,13 @@
 
 /*
  * Phones: the rail becomes a black bar along the bottom (the trays fall away
- * and their contents join one row), the wordmark returns to the edge, and the
- * panel ends a gap above the bar. Labels pop up above the icons.
+ * and their contents join one row), and the panel ends a gap above the bar.
+ * Labels pop up above the icons.
  */
 @media (max-width: 700px) {
   .frame {
     --bar-height: 56px;
     --rail-item: 36px;
-    --brand-inset: 0px;
   }
 
   .rail {

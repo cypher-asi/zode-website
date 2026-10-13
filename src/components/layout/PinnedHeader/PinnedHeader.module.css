@@ -1,6 +1,5 @@
 /*
- * Fixed top-left wordmark, inset by `--edge` (globals.css; some pages tighten it)
- * plus `--brand-inset`, which the portal sets to clear its rail.
+ * Fixed top-left wordmark, inset by `--edge` (globals.css; some pages tighten it).
  * The source PNG is white on transparency, so it inverts to black by default
  * and drops the filter over dark surfaces.
  *
@@ -13,7 +12,7 @@
   position: fixed;
   /* The insets keep it clear of the notch when the page runs edge to edge. */
   top: calc(var(--header-top) + env(safe-area-inset-top, 0px));
-  left: calc(max(var(--edge), env(safe-area-inset-left, 0px)) + var(--brand-inset, 0px));
+  left: max(var(--edge), env(safe-area-inset-left, 0px));
   z-index: 10;
   display: inline-flex;
   isolation: isolate;
