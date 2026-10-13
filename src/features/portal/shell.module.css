@@ -13,8 +13,7 @@
  * every panel (the two trays, the sidebar, the panel, and the phone bar) is
  * `--panel-gap` from the next.
  *
- * `--sidebar-space` is zero wherever the sidebar is hidden: collapsed, or
- * under 1100px.
+ * `--sidebar-space` is zero under 1100px, where the sidebar is hidden.
  */
 .frame {
   --tray-pad: 6px;
@@ -38,7 +37,7 @@
 }
 
 @media (min-width: 1101px) {
-  .frame[data-sidebar="open"] {
+  .frame {
     --sidebar-space: calc(var(--panel-gap) + var(--sidebar-width));
   }
 }
@@ -122,18 +121,6 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-}
-
-/* Brings the sidebar back once it's collapsed; under 1100px there's no room for it. */
-.item.railToggle {
-  display: none;
-}
-
-@media (min-width: 1101px) {
-  .frame[data-sidebar="collapsed"] .item.railToggle {
-    display: grid;
-    margin-top: auto;
-  }
 }
 
 .item,

@@ -1,10 +1,5 @@
 import type { PortalIconName } from "./icons";
 
-/** Remembers whether the sidebar beside the rail is open; read by the layout, written by the toggle. */
-export const SIDEBAR_COOKIE = "zode_portal_sidebar";
-
-export type SidebarState = "open" | "collapsed";
-
 /** Wide enough for the rail, the sidebar and a usable panel; under it the sidebar hides. Matches shell.module.css. */
 export const SIDEBAR_MEDIA = "(min-width: 1101px)";
 

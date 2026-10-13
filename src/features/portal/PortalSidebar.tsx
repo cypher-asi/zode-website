@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PortalIcon } from "./icons";
 import { activeApp, activeHref, portalApps, roomIdIn, type CountKey, type NavAccess, type NavLink } from "./nav";
-import { SidebarToggle, useDockRef } from "./PortalFrame";
+import { useDockRef } from "./PortalFrame";
 import styles from "./sidebar.module.css";
 
 export type SidebarRoom = { id: string; name: string; fileCount: number };
@@ -103,7 +103,6 @@ export function PortalSidebar({
         ) : (
           <h2 className={styles.title}>{app.label}</h2>
         )}
-        <SidebarToggle placement="sidebar" className={styles.toggle} />
       </div>
 
       <div ref={dockRef} className={styles.dock} />

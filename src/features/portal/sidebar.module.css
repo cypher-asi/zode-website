@@ -1,7 +1,7 @@
 /*
  * The sidebar between the rail and the panel, on the same frosted surface as
  * the rail's trays. Its place and the `--glass-*` surface come from `.frame`
- * (shell.module.css); it's hidden when collapsed and under 1100px.
+ * (shell.module.css); it's hidden under 1100px.
  *
  * `.dock` is where a page renders its own explorer (a data room's files);
  * while it holds anything, the app's default list below it steps aside.
@@ -21,10 +21,6 @@
   background: var(--glass-bg);
   box-shadow: var(--glass-shadow);
   backdrop-filter: blur(20px) saturate(1.4);
-}
-
-[data-sidebar="collapsed"] .sidebar {
-  display: none;
 }
 
 @media (max-width: 1100px) {
@@ -81,28 +77,6 @@
   stroke-width: 1.5;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-
-.toggle {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: none;
-  border-radius: var(--radius-inset);
-  background: none;
-  color: var(--color-text-tertiary);
-  cursor: pointer;
-  transition:
-    background-color var(--duration-base) ease,
-    color var(--duration-base) ease;
-}
-
-.toggle svg {
-  width: 18px;
-  height: 18px;
 }
 
 .dock {
@@ -214,19 +188,16 @@
 }
 
 .crumb:focus-visible,
-.toggle:focus-visible,
 .link:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
 
 @media (hover: hover) {
-  .link:not([aria-current="page"]):hover,
-  .toggle:hover {
+  .link:not([aria-current="page"]):hover {
     background: var(--color-surface-hover);
   }
 
-  .toggle:hover,
   .crumb:hover {
     color: var(--color-text-primary);
   }
@@ -234,7 +205,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .crumb,
-  .toggle,
   .link {
     transition: none;
   }

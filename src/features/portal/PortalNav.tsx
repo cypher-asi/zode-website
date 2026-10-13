@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PortalIcon } from "./icons";
 import { activeApp, portalApps, type NavAccess, type PortalApp } from "./nav";
-import { SidebarToggle } from "./PortalFrame";
 import styles from "./shell.module.css";
 
 function RailItem({ app, current }: { app: PortalApp; current: boolean }): ReactElement {
@@ -37,12 +36,6 @@ export function PortalNav({ access }: { access: NavAccess }): ReactElement {
               <RailItem key={app.id} app={app} current={app.id === current.id} />
             ))}
           </div>
-          <SidebarToggle
-            placement="rail"
-            className={`${styles.item} ${styles.railToggle}`}
-            iconClassName={styles.icon}
-            labelClassName={styles.tooltip}
-          />
         </div>
         <span className={styles.rule} />
         <span className={styles.caption} aria-hidden="true">

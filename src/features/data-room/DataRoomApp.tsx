@@ -248,12 +248,7 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId, summary }: D
   const activeUploads = uploads.items.filter((item) => item.status === "uploading" || item.status === "queued").length;
 
   return (
-    <div
-      ref={containerRef}
-      className={styles.app}
-      data-view={openFile || summaryOpen ? "viewer" : "tree"}
-      data-docked={docked ? "" : undefined}
-    >
+    <div ref={containerRef} className={styles.app} data-view={openFile || summaryOpen ? "viewer" : "tree"}>
       <SidebarDock>
         <section className={styles.side} aria-label="Files" data-docked={docked ? "" : undefined}>
           <div className={styles.toolbar}>

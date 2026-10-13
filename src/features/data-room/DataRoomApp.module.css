@@ -20,26 +20,23 @@
 }
 
 /*
- * Docked in the portal's sidebar, the list takes the sidebar's glass for its
- * background and the viewer has the room to itself. The sidebar-open rules
- * cover the first paint, before the list has moved over.
+ * Wherever the portal's sidebar shows (`SIDEBAR_MEDIA` in portal/nav.ts), the
+ * list docks there on the sidebar's glass and the viewer has the room to
+ * itself. Hiding the list here also covers the first paint, before it has
+ * moved over.
  */
-.app[data-docked] {
-  grid-template-columns: minmax(0, 1fr);
-}
-
 .side[data-docked] {
   flex: 1;
   background: none;
 }
 
 @media (min-width: 1101px) {
-  [data-sidebar="open"] .app {
+  .app {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  [data-sidebar="open"] .app > .side,
-  [data-sidebar="open"] .app > [role="separator"] {
+  .app > .side,
+  .app > [role="separator"] {
     display: none;
   }
 }
