@@ -41,6 +41,13 @@
   min-width: 132px;
 }
 
+/* Where the portal sidebar shows (SIDEBAR_MEDIA in nav.ts), it lists these filters instead. */
+@media (min-width: 1101px) {
+  .toolbar .sidebarFilter {
+    display: none;
+  }
+}
+
 .head,
 .row {
   display: grid;

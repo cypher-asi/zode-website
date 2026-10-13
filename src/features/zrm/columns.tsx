@@ -37,6 +37,8 @@ export interface ListFilter<T> {
   all: string;
   options: (rows: readonly T[]) => Option[];
   test: (row: T, value: string) => boolean;
+  /** Also listed in the portal sidebar, so the toolbar drops it on windows wide enough to show that. */
+  sidebar?: boolean;
 }
 
 /** Headed groups of rows, in `order`, shown while the list isn't sorted by a column. */
@@ -90,6 +92,7 @@ const typeFilter = <T extends { type_ids: string[] }>(types: Types): ListFilter<
     return [...types.values()].filter((type) => used.has(type.id)).map((type) => ({ value: type.id, label: type.name }));
   },
   test: (row, value) => row.type_ids.includes(value),
+  sidebar: true,
 });
 
 const lower = (...parts: (string | null | undefined)[]): string => parts.filter(Boolean).join(" ").toLowerCase();
@@ -153,10 +156,11 @@ export function companiesConfig(types: Types): ListConfig<CompanyRow> {
   };
 }
 
-export function opportunitiesConfig(): ListConfig<OpportunityRow> {
+export function opportunitiesConfig(types: Types): ListConfig<OpportunityRow> {
   return {
     noun: ["opportunity", "opportunities"],
     searchText: (o) => lower(o.title, o.person_name, o.company_name, o.stage_name),
+    filters: [typeFilter(types)],
     summary: (rows) => `${formatMoney(rows.reduce((sum, o) => sum + (o.value ?? 0), 0))} total`,
     columns: [
       {

@@ -5,6 +5,7 @@
  *
  * `.dock` is where a page renders its own explorer (a data room's files);
  * while it holds anything, the app's default list below it steps aside.
+ * `.extra`, under the app's links, holds a page's own section (ZRM's types).
  */
 .sidebar {
   /* The crumb's height plus its gap to the title: how far the border moves in and out of a room. */
@@ -138,6 +139,16 @@
   list-style: none;
 }
 
+.extra {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.extra:empty {
+  display: none;
+}
+
 .link {
   display: flex;
   align-items: center;
@@ -153,6 +164,24 @@
     background-color var(--duration-base) ease,
     border-color var(--duration-base) ease,
     box-shadow var(--duration-base) ease;
+}
+
+button.link {
+  width: 100%;
+  background: none;
+  font: inherit;
+  font-size: var(--text-base);
+  text-align: left;
+  cursor: pointer;
+}
+
+/* A type's color, standing in for a link's icon. */
+.swatch {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin: 0 5px;
+  border-radius: 50%;
 }
 
 .linkIcon {
@@ -171,7 +200,8 @@
 }
 
 /* Raised out of the glass: a white pill with a soft halo. */
-.link[aria-current="page"] {
+.link[aria-current="page"],
+.link[aria-pressed="true"] {
   border-color: var(--glass-border);
   background: var(--color-white);
   box-shadow:
@@ -205,7 +235,7 @@
 }
 
 @media (hover: hover) {
-  .link:not([aria-current="page"]):hover {
+  .link:not([aria-current="page"], [aria-pressed="true"]):hover {
     background: var(--color-surface-hover);
   }
 

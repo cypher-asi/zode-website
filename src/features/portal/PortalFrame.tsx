@@ -12,9 +12,18 @@ type SidebarContextValue = {
   /** The sidebar's slot for the page's own explorer, e.g. a data room's files. */
   dock: HTMLElement | null;
   setDock: (element: HTMLElement | null) => void;
+  /** The sidebar's slot under the app's links, for a page's own section, e.g. ZRM's types. */
+  extra: HTMLElement | null;
+  setExtra: (element: HTMLElement | null) => void;
 };
 
-const SidebarContext = createContext<SidebarContextValue>({ wide: false, dock: null, setDock: () => {} });
+const SidebarContext = createContext<SidebarContextValue>({
+  wide: false,
+  dock: null,
+  setDock: () => {},
+  extra: null,
+  setExtra: () => {},
+});
 
 const ThemeContext = createContext<{ theme: PortalTheme; toggle: () => void }>({
   theme: "light",
@@ -40,6 +49,7 @@ export function PortalFrame({
   children: ReactNode;
 }): ReactElement {
   const [dock, setDock] = useState<HTMLElement | null>(null);
+  const [extra, setExtra] = useState<HTMLElement | null>(null);
   const [theme, setTheme] = useState(initialTheme);
   const wide = useSyncExternalStore(
     subscribeWide,
@@ -55,7 +65,7 @@ export function PortalFrame({
 
   return (
     <ThemeContext value={{ theme, toggle }}>
-      <SidebarContext value={{ wide, dock, setDock }}>
+      <SidebarContext value={{ wide, dock, setDock, extra, setExtra }}>
         <div className={styles.frame} data-theme={theme}>
           {children}
         </div>
@@ -88,4 +98,15 @@ export function useDocked(): boolean {
 export function SidebarDock({ children }: { children: ReactNode }): ReactNode {
   const { dock } = use(SidebarContext);
   return useDocked() && dock ? createPortal(children, dock) : children;
+}
+
+/** The ref callback for the sidebar's slot under the app's links. */
+export function useExtraRef(): (element: HTMLElement | null) => void {
+  return use(SidebarContext).setExtra;
+}
+
+/** Renders `children` in the sidebar under the app's links while it's showing, and nowhere on narrow windows. */
+export function SidebarExtra({ children }: { children: ReactNode }): ReactNode {
+  const { wide, extra } = use(SidebarContext);
+  return wide && extra ? createPortal(children, extra) : null;
 }

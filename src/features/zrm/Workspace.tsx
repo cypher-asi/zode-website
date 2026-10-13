@@ -10,6 +10,7 @@ import ui from "@/features/data-room/ui.module.css";
 import { Icon } from "./bits";
 import { NEW_LABELS, companiesConfig, opportunitiesConfig, peopleConfig, sitesConfig, type ListConfig } from "./columns";
 import { KIND_LABELS, listHref, recordHref, type RecordKind } from "./types";
+import { TypeNav } from "./TypeNav";
 import { goOnClick, useZrm, ZrmLink } from "./ZrmProvider";
 import styles from "./zrm.module.css";
 
@@ -78,15 +79,18 @@ function RecordList<T extends ListRow>({
   rows,
   config,
   selectedId,
+  filterValues,
+  onFilterChange,
 }: {
   kind: RecordKind;
   rows: readonly T[];
   config: ListConfig<T>;
   selectedId: string | null;
+  filterValues: Readonly<Record<string, string>>;
+  onFilterChange: (key: string, value: string) => void;
 }): ReactElement {
   const { go } = useZrm();
   const [query, setQuery] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [sort, setSort] = useState<Sort | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -180,10 +184,10 @@ function RecordList<T extends ListRow>({
           <Select
             key={filter.key}
             size="sm"
-            className={styles.filter}
+            className={filter.sidebar ? `${styles.filter} ${styles.sidebarFilter}` : styles.filter}
             options={options}
             value={filterValues[filter.key] ?? ""}
-            onChange={(value) => setFilterValues((current) => ({ ...current, [filter.key]: value }))}
+            onChange={(value) => onFilterChange(filter.key, value)}
             disabled={options.length < 2}
             aria-label={filter.label}
             align="end"
@@ -277,25 +281,43 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
     return {
       people: peopleConfig(typeMap),
       companies: companiesConfig(typeMap),
-      opportunities: opportunitiesConfig(),
+      opportunities: opportunitiesConfig(typeMap),
       sites: sitesConfig(data.groups, data.statuses),
     };
   }, [data.types, data.groups, data.statuses]);
 
   const kind = kinds.find((k) => k === segment);
+  /** The open list's filters, shared by its toolbar and the sidebar's types, and cleared on switching lists. */
+  const [filters, setFilters] = useState<{ kind: RecordKind | undefined; values: Record<string, string> }>({ kind, values: {} });
+  if (filters.kind !== kind) setFilters({ kind, values: {} });
+  const filterValues = filters.values;
+  const setFilter = (key: string, value: string) =>
+    setFilters((current) => ({ ...current, values: { ...current.values, [key]: value } }));
+
   if (!kind) return <>{children}</>;
 
-  const common = { selectedId: child && child !== "new" ? child : null };
+  const common = {
+    selectedId: child && child !== "new" ? child : null,
+    filterValues,
+    onFilterChange: setFilter,
+  };
+  const typeNav = (rows: readonly { type_ids: string[] }[]) => (
+    <TypeNav rows={rows} types={data.types} value={filterValues.type ?? ""} onChange={(value) => setFilter("type", value)} />
+  );
   let list: ReactElement;
+  let types: ReactElement | null = null;
   switch (kind) {
     case "people":
       list = <RecordList key={kind} kind={kind} rows={data.people} config={configs.people} {...common} />;
+      types = typeNav(data.people);
       break;
     case "companies":
       list = <RecordList key={kind} kind={kind} rows={data.companies} config={configs.companies} {...common} />;
+      types = typeNav(data.companies);
       break;
     case "opportunities":
       list = <RecordList key={kind} kind={kind} rows={data.opportunities} config={configs.opportunities} {...common} />;
+      types = typeNav(data.opportunities);
       break;
     case "sites":
       list = <RecordList key={kind} kind={kind} rows={data.sites} config={configs.sites} {...common} />;
@@ -307,6 +329,7 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
       <section className={styles.listPane} aria-label={KIND_LABELS[kind].plural}>
         {list}
       </section>
+      {types}
       {child ? (
         <>
           <Splitter

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PortalIcon } from "./icons";
 import { activeApp, activeHref, portalApps, roomIdIn, type CountKey, type NavAccess, type NavLink } from "./nav";
-import { useDockRef } from "./PortalFrame";
+import { useDockRef, useExtraRef } from "./PortalFrame";
 import styles from "./sidebar.module.css";
 
 export type SidebarRoom = { id: string; name: string; fileCount: number };
@@ -100,6 +100,7 @@ export function PortalSidebar({
 }): ReactElement {
   const pathname = usePathname() ?? "/portal";
   const dockRef = useDockRef();
+  const extraRef = useExtraRef();
   const app = activeApp(pathname, portalApps(access));
   const roomId = app.id === "rooms" ? roomIdIn(pathname) : null;
   const room = roomId ? rooms?.find(({ id }) => id === roomId) : undefined;
@@ -155,7 +156,10 @@ export function PortalSidebar({
           ) : app.id === "rooms" ? (
             <Rooms rooms={rooms} current={null} />
           ) : (
-            <Links links={app.links} current={current} counts={counts} />
+            <>
+              <Links links={app.links} current={current} counts={counts} />
+              <div ref={extraRef} className={styles.extra} />
+            </>
           )}
         </div>
       </div>
