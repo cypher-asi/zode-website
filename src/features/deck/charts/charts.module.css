@@ -138,34 +138,12 @@
   font-variant-numeric: tabular-nums;
 }
 
-.tokenLine,
-.tokenForecast {
-  fill: none;
-  stroke: var(--fg);
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-/* Scales with the chart: a non-scaling stroke measures its draw-on dash in screen pixels, which falls short of the line when the chart is drawn large. */
-.tokenLine {
-  stroke-width: 4;
-}
-
-.tokenForecast {
-  stroke-width: 3;
-  stroke-dasharray: 6 6;
-  vector-effect: non-scaling-stroke;
-}
-
-.tokenDot {
+.tokenBar[data-kind="actual"] {
   fill: var(--fg);
 }
 
-.tokenRing {
-  fill: var(--card, var(--bg));
-  stroke: var(--fg);
-  stroke-width: 2;
-  vector-effect: non-scaling-stroke;
+.tokenBar[data-kind="forecast"] {
+  fill: var(--fg-2);
 }
 
 .chart[data-compact] :is(.tokenAxis, .tokenNote) {
@@ -398,25 +376,22 @@
     transition-duration: 0ms;
   }
 
-  .tokenLine {
-    stroke-dasharray: 1;
-    transition: stroke-dashoffset 1200ms var(--ease-in-out) 300ms;
+  .tokenBar {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    transition: scale 700ms var(--ease-out) calc(300ms + var(--d, 0) * 50ms);
   }
 
-  .tokenDot {
-    transition: opacity 400ms ease 900ms;
-  }
-
-  .tokenForecast,
   .tokenLabels {
-    transition: opacity 700ms ease 1400ms;
+    transition: opacity 600ms ease 1400ms;
   }
 
-  .chart:not([data-active]) .tokenLine {
-    stroke-dashoffset: 1;
+  .chart:not([data-active]) .tokenBar {
+    scale: 1 0;
+    transition-duration: 0ms;
   }
 
-  .chart:not([data-active]) :is(.tokenDot, .tokenForecast, .tokenLabels) {
+  .chart:not([data-active]) .tokenLabels {
     opacity: 0;
     transition-delay: 0ms;
     transition-duration: 0ms;
