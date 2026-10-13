@@ -14,8 +14,7 @@ const LAYOUTS = {
   compact: { W: 520, H: 520, pad: { top: 52, right: 4, bottom: 72, left: 4 }, labelY: 34 },
 } as const;
 
-/** SVG text doesn't wrap; notes and labels break onto lines this many characters long to stay inside their slot. */
-const NOTE_CHARS = 16;
+/** SVG text doesn't wrap; a phone's labels break onto lines this many characters long to stay inside their slot. */
 const LABEL_CHARS = 6;
 
 function wrap(text: string, max: number): string[] {
@@ -104,7 +103,7 @@ export function ShortfallChart({ active, compact = false }: { active: boolean; c
             </text>
             {compact ? null : (
               <text className={styles.barNote} x={cx} y={H - PAD.bottom + 46} textAnchor="middle">
-                {wrap(bar.note, NOTE_CHARS).map((line, n) => (
+                {bar.note.map((line, n) => (
                   <tspan key={line} x={cx} dy={n ? "1.3em" : 0}>
                     {line}
                   </tspan>

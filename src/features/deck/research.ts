@@ -165,29 +165,32 @@ export const MARKET_TIGHTNESS = [
   { value: "25 GW", label: "Absorbed in H1 2026, double a year earlier", source: "JLL, midyear 2026", cite: "jll" },
 ] as const;
 
-/** Morgan Stanley's 2026–2028 US data center power bridge, in GW. `short` labels the bars at phone width. */
+/**
+ * Morgan Stanley's 2026–2028 US data center power bridge, in GW. `short`
+ * labels the bars at phone width; `note` is set under each label in two lines.
+ */
 export const SHORTFALL = {
   steps: [
-    { id: "demand", label: "Demand", short: "Demand", note: "2026–28 incremental", value: 97, kind: "total" },
+    { id: "demand", label: "Demand", short: "Demand", note: ["New load", "2026–28"], value: 97, kind: "total" },
     {
       id: "construction",
       label: "Under construction",
       short: "Building",
-      note: "Already building",
+      note: ["Already", "building"],
       value: -21,
       kind: "step",
     },
-    { id: "grid", label: "Grid capacity", short: "Grid", note: "Available or contractable", value: -19, kind: "step" },
-    { id: "gross", label: "Gross gap", short: "Gross gap", note: "Before new power", value: 57, kind: "total" },
+    { id: "grid", label: "Grid capacity", short: "Grid", note: ["Spare or", "contractable"], value: -19, kind: "step" },
+    { id: "gross", label: "Gross gap", short: "Gross gap", note: ["Before", "new power"], value: 57, kind: "total" },
     {
       id: "fixes",
       label: "Time-to-power",
       short: "Fixes",
-      note: "On-site gas, fuel cells, nuclear",
+      note: ["Gas, fuel cells,", "nuclear"],
       value: -24,
       kind: "step",
     },
-    { id: "net", label: "Net gap", short: "Net gap", note: "34% of demand", value: 33, kind: "total" },
+    { id: "net", label: "Net gap", short: "Net gap", note: ["34% of", "demand"], value: 33, kind: "total" },
   ],
   /** Cumulative midpoint net gap by year; 2029 extends the forecast. */
   byYear: [
