@@ -9,9 +9,9 @@ const YEARS = [2024, 2026, 2028, 2030];
 const Y_TICKS = [10, 100, 1_000, 10_000, 100_000];
 const [LOG0, LOG1] = [Math.log10(6), Math.log10(200_000)];
 
-const W = 340;
-const H = 250;
-const PAD = { top: 14, right: 76, bottom: 30, left: 46 };
+const W = 520;
+const H = 220;
+const PAD = { top: 14, right: 84, bottom: 30, left: 46 };
 
 const x = (year: number) => PAD.left + ((year - X0) / (X1 - X0)) * (W - PAD.left - PAD.right);
 const y = (trillions: number) =>
@@ -58,11 +58,11 @@ export function TokenChart({ active, compact = false }: { active: boolean; compa
       <path className={styles.tokenForecast} d={path(TOKENS.forecast)} />
       <path className={styles.tokenLine} d={path(TOKENS.google)} pathLength={1} />
       {TOKENS.google.map(([year, value]) => (
-        <circle key={year} className={styles.tokenDot} cx={x(year)} cy={y(value)} r={3.5} />
+        <circle key={year} className={styles.tokenDot} cx={x(year)} cy={y(value)} r={5} />
       ))}
 
       <g className={styles.tokenLabels}>
-        <circle className={styles.tokenRing} cx={x(END[0])} cy={y(END[1])} r={4.5} />
+        <circle className={styles.tokenRing} cx={x(END[0])} cy={y(END[1])} r={6} />
         <text className={styles.tokenValue} x={x(END[0]) + 12} y={y(END[1])} dy="0.35em">
           {short(END[1])}
         </text>

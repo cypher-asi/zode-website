@@ -148,11 +148,11 @@
 
 /* Scales with the chart: a non-scaling stroke measures its draw-on dash in screen pixels, which falls short of the line when the chart is drawn large. */
 .tokenLine {
-  stroke-width: 2.5;
+  stroke-width: 4;
 }
 
 .tokenForecast {
-  stroke-width: 2;
+  stroke-width: 3;
   stroke-dasharray: 6 6;
   vector-effect: non-scaling-stroke;
 }
@@ -164,7 +164,7 @@
 .tokenRing {
   fill: var(--card, var(--bg));
   stroke: var(--fg);
-  stroke-width: 1.5;
+  stroke-width: 2;
   vector-effect: non-scaling-stroke;
 }
 
