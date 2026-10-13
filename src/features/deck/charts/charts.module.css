@@ -74,6 +74,10 @@
 .gapLabel {
   font-size: 18px;
   font-weight: 600;
+  fill: var(--color-text-primary);
+}
+
+.gapValue {
   fill: #f04438;
 }
 
