@@ -18,8 +18,8 @@
   grid-template-areas:
     "t1 f2 t2"
     "f1 t3 f3"
-    "t4 f5 t5"
-    "f4 cta cta";
+    "t4 f4 t5"
+    "cta cta f5";
   gap: 1px;
   max-width: 1400px;
   margin: 0 auto;

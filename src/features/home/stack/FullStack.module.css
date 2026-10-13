@@ -352,7 +352,7 @@
   line-height: 20px;
 }
 
-/* Matches the "Fig. 0n" captions in ../why-zode/Features.module.css. */
+/* Matches the "0n" figure captions in ../why-zode/Features.module.css. */
 .labelIndex {
   font-size: var(--eyebrow-size);
   font-weight: 500;

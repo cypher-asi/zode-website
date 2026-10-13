@@ -7,7 +7,7 @@ export interface Feature {
   body: string;
 }
 
-/** In figure order: the nth feature is drawn as FIG. 0n. */
+/** In figure order: the nth feature is captioned 0n. */
 export const FEATURES: readonly Feature[] = [
   {
     id: "rapid",

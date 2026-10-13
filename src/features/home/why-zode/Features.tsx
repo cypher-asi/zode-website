@@ -9,7 +9,7 @@ import { FEATURES } from "./features";
 import styles from "./Features.module.css";
 
 /** Desktop reading order of the grid areas, used to stagger the reveal. */
-const ORDER = ["t1", "f2", "t2", "f1", "t3", "f3", "t4", "f5", "t5", "f4", "cta"];
+const ORDER = ["t1", "f2", "t2", "f1", "t3", "f3", "t4", "f4", "t5", "cta", "f5"];
 
 const ACTIONS: readonly TerminalMenuItem[] = [...COMPUTE_ACTIONS, ENGINEER_ACTION];
 
@@ -51,7 +51,7 @@ export function Features(): ReactElement {
             </article>
             <figure className={styles.figure} style={area(`f${n + 1}`)}>
               <FeatureArt id={feature.id} />
-              <figcaption className={styles.caption}>Fig. {String(n + 1).padStart(2, "0")}</figcaption>
+              <figcaption className={styles.caption}>{String(n + 1).padStart(2, "0")}</figcaption>
             </figure>
           </Fragment>
         ))}
