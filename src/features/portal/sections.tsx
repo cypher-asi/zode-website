@@ -4,6 +4,8 @@ import type { OrderSummary } from "@/features/configurator/orders";
 import type { ComputeContract, Contract } from "@/features/contracts/contracts";
 import bar from "@/features/data-room/room.module.css";
 import { roleLabel, roomKindLabel, type RoomSummary } from "@/features/data-room/types";
+import { StatusButton } from "@/features/leads/StatusButton";
+import { customerOrderStatus, leadSource, leadType, statusLabel, type Lead } from "@/features/leads/types";
 import { SUBSCRIBER_STATUSES, mailingList, type Subscriber } from "@/features/mailing-list/types";
 import { kindLabel, type Post } from "@/features/posts/types";
 import { RoleButton } from "@/features/users/RoleButton";
@@ -186,7 +188,7 @@ export function OrderList({ orders }: { orders: OrderSummary[] }): ReactElement 
             <span className={styles.pill} data-strong="">
               {order.mode === "rent" ? "Rent" : "Buy"}
             </span>
-            <span className={styles.pill}>{order.status}</span>
+            <span className={styles.pill}>{customerOrderStatus(order.status)}</span>
           </span>
         </li>
       ))}
@@ -285,6 +287,50 @@ export function SubscriberList({
           </li>
         );
       })}
+    </ul>
+  );
+}
+
+/**
+ * Buy, rent and invest leads for the ZODE team: who, what they asked for, the
+ * form it came through, and a control to set where the team stands with it.
+ */
+export function LeadList({ leads }: { leads: Lead[] }): ReactElement {
+  return (
+    <ul className={styles.list}>
+      {leads.map((lead) => (
+        <li key={`${lead.source}:${lead.id}`}>
+          <div className={styles.row} data-actions="">
+            <span className={styles.rowIcon}>
+              <PortalIcon name={leadSource(lead.source).icon} />
+            </span>
+            <span className={styles.rowMain}>
+              <span className={styles.rowTitle}>
+                {lead.source === "order" ? <span className={styles.reference}>#{lead.reference} · </span> : null}
+                {lead.name}
+                {lead.organization ? ` · ${lead.organization}` : ""}
+              </span>
+              <span className={styles.rowMeta}>
+                {[lead.title, lead.email, lead.phone, lead.summary, date.format(lead.createdAt)]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </span>
+            </span>
+            <span className={styles.rowEnd}>
+              <span className={styles.pill}>{leadSource(lead.source).label}</span>
+              {lead.types.map((type) => (
+                <span key={type} className={styles.pill}>
+                  {leadType(type).pill}
+                </span>
+              ))}
+              <span className={styles.pill} data-strong={lead.status === "new" ? "" : undefined}>
+                {statusLabel(lead.status)}
+              </span>
+              <StatusButton source={lead.source} id={lead.id} status={lead.status} label={lead.name} />
+            </span>
+          </div>
+        </li>
+      ))}
     </ul>
   );
 }

@@ -4,6 +4,8 @@ import { listOrdersByUser, type OrderSummary } from "@/features/configurator/ord
 import { listAllContracts, listContractsForUser, type Contract } from "@/features/contracts/contracts";
 import { listRoomNamesForUser, listRoomsForUser } from "@/features/data-room/rooms";
 import type { RoomSummary } from "@/features/data-room/types";
+import { listLeads } from "@/features/leads/leads";
+import type { Lead } from "@/features/leads/types";
 import { listSubscribers } from "@/features/mailing-list/subscribers";
 import type { MailingList, Subscriber } from "@/features/mailing-list/types";
 import { listAllPosts } from "@/features/posts/posts";
@@ -55,6 +57,14 @@ export function loadAllPosts(): Promise<Post[] | null> {
 export function loadAllContracts(): Promise<Contract[] | null> {
   return listAllContracts().catch((error: unknown) => {
     console.error("Failed to load all contracts", error);
+    return null;
+  });
+}
+
+/** Every buy, rent and invest lead, for the ZODE team, or `null` when they couldn't be loaded. */
+export function loadLeads(): Promise<Lead[] | null> {
+  return listLeads().catch((error: unknown) => {
+    console.error("Failed to load leads", error);
     return null;
   });
 }

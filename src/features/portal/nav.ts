@@ -1,3 +1,4 @@
+import { LEAD_TYPES } from "@/features/leads/types";
 import { MAILING_LISTS } from "@/features/mailing-list/types";
 import { ROLE_LABELS, ROLE_SLUGS, USER_ROLES, type UserRole } from "@/features/users/types";
 import { RESOURCE_LINKS as SITE_RESOURCE_LINKS } from "@/lib/navigation";
@@ -24,6 +25,7 @@ export type AppId =
   | "contracts"
   | "deployments"
   | "zrm"
+  | "leads"
   | "capacity"
   | "posts"
   | "analytics"
@@ -121,6 +123,19 @@ const ZRM: PortalApp = {
   ],
 };
 
+/** Buy compute, rent compute and invest inquiries from the site's forms, for the ZODE team. */
+const LEADS: PortalApp = {
+  id: "leads",
+  label: "Leads",
+  icon: "leads",
+  href: "/portal/leads",
+  team: true,
+  links: [
+    { href: "/portal/leads", label: "All leads", icon: "leads" },
+    ...LEAD_TYPES.map((type): NavLink => ({ href: `/portal/leads/${type.id}`, label: type.label, icon: type.icon })),
+  ],
+};
+
 /** The ZODE team's data center sites, linked into ZRM. */
 const CAPACITY: PortalApp = {
   id: "capacity",
@@ -196,7 +211,7 @@ const ADMIN_APPS: readonly PortalApp[] = [
 
 /**
  * The apps the viewer can open, in rail order, with Settings last for the
- * rail's foot: ZRM, Capacity, Posts, Analytics, Team and everyone's contracts for the
+ * rail's foot: ZRM, Leads, Capacity, Posts, Analytics, Team and everyone's contracts for the
  * ZODE team, the admin apps for super admins.
  */
 export function portalApps({ admin, team }: NavAccess): PortalApp[] {
@@ -235,7 +250,7 @@ export function portalApps({ admin, team }: NavAccess): PortalApp[] {
     ORDERS,
     contracts,
     deployments,
-    ...(team ? [ZRM, CAPACITY, POSTS, ANALYTICS] : []),
+    ...(team ? [ZRM, LEADS, CAPACITY, POSTS, ANALYTICS] : []),
     ...(admin ? ADMIN_APPS : []),
     settings,
   ];

@@ -192,7 +192,7 @@ export interface OrderSummary {
   gpus: number;
 }
 
-const choiceLabel = (choices: readonly Choice<string, unknown>[], id: unknown): string =>
+export const choiceLabel = (choices: readonly Choice<string, unknown>[], id: unknown): string =>
   choices.find((c) => c.id === id)?.label.replace(/^NVIDIA /, "") ?? String(id ?? "");
 
 /**

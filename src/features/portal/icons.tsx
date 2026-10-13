@@ -6,6 +6,8 @@ export type PortalIconName =
   | "orders"
   | "contracts"
   | "zrm"
+  | "leads"
+  | "invest"
   | "capacity"
   | "deployments"
   | "posts"
@@ -70,6 +72,13 @@ const GLYPHS: Record<PortalIconName, ReactElement> = {
       <rect pathLength={1} x="3.25" y="4.75" width="17.5" height="14.5" rx="2.5" />
       <circle pathLength={1} cx="9" cy="10.5" r="2.25" />
       <path pathLength={1} d="M5.75 16.25a3.5 3.25 0 0 1 6.5 0M14.5 9.75h3.25M14.5 13.25h3.25" />
+    </>
+  ),
+  leads: <path pathLength={1} d="M3.75 4.75h16.5a.75.75 0 0 1 .58 1.23L14 14.25v5.5l-4 1.5v-7L3.17 5.98a.75.75 0 0 1 .58-1.23z" />,
+  invest: (
+    <>
+      <path pathLength={1} d="m3.75 17.25 5.5-5.5 3.5 3.5 7.5-7.5" />
+      <path pathLength={1} d="M15.25 7.75h5v5" />
     </>
   ),
   capacity: <path pathLength={1} d="M13.25 2.75 4.75 13.5h7l-1 7.75 8.5-10.75h-7z" />,
