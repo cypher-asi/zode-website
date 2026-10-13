@@ -84,11 +84,6 @@
     0 12px 24px -16px rgba(0, 0, 0, 0.5);
 }
 
-.tray:first-child .bar {
-  flex: 1;
-  min-height: 0;
-}
-
 .group {
   display: flex;
   flex-direction: column;
