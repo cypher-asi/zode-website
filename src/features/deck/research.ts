@@ -104,6 +104,8 @@ export const SOURCES = {
 
 export type SourceId = keyof typeof SOURCES;
 
+export const sourceUrl = (id: SourceId): string | undefined => (SOURCES[id] as Source).url;
+
 /** A chart point: a year (fractional for a month within it) and its value. */
 export type Point = readonly [year: number, value: number];
 
@@ -153,9 +155,14 @@ export const DEMAND = {
 } as const;
 
 export const MARKET_TIGHTNESS = [
-  { value: "1.4%", label: "Primary-market vacancy, a record low", source: "CBRE, H1 2026" },
-  { value: "66 GW", label: "Under construction in North America, 95% pre-committed", source: "JLL, midyear 2026" },
-  { value: "25 GW", label: "Absorbed in H1 2026, double a year earlier", source: "JLL, midyear 2026" },
+  { value: "1.4%", label: "Primary-market vacancy, a record low", source: "CBRE, H1 2026", cite: "cbre" },
+  {
+    value: "66 GW",
+    label: "Under construction in North America, 95% pre-committed",
+    source: "JLL, midyear 2026",
+    cite: "jll",
+  },
+  { value: "25 GW", label: "Absorbed in H1 2026, double a year earlier", source: "JLL, midyear 2026", cite: "jll" },
 ] as const;
 
 /** Morgan Stanley's 2026–2028 US data center power bridge, in GW. `short` labels the bars at phone width. */
@@ -224,6 +231,11 @@ export const STATUS_LABELS: Readonly<Record<StateStatus, string>> = {
 };
 
 export const POLICY_STATS = [
-  { value: "16", label: "States where lawmakers considered banning new data centers", source: "NCSL" },
-  { value: "30", label: "Statehouses that acted on siting, cost-sharing, power or water in 2026", source: "Data Center Watch" },
+  { value: "16", label: "States where lawmakers considered banning new data centers", source: "NCSL", cite: "ncsl" },
+  {
+    value: "30",
+    label: "Statehouses that acted on siting, cost-sharing, power or water in 2026",
+    source: "Data Center Watch",
+    cite: "dataCenterWatch",
+  },
 ] as const;

@@ -38,6 +38,18 @@
   fill: var(--color-text-secondary);
 }
 
+/* A note linked to its source (DemandChart.tsx), underlined as the slides' inline citations are. */
+.cited text {
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+@media (hover: hover) {
+  .cited:hover text {
+    fill: var(--color-ink);
+  }
+}
+
 .series,
 .barLabel {
   font-size: 16px;

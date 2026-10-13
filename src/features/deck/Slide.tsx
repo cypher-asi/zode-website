@@ -20,6 +20,7 @@ import {
   SOURCES,
   STATE_ACTIONS,
   STATUS_LABELS,
+  sourceUrl,
   type Source,
   type SourceId,
   type StateStatus,
@@ -36,6 +37,18 @@ const rise = (d: number) => ({ className: styles.rise, style: { "--d": d } as CS
 
 function cite(source: Source): string {
   return `${source.publisher}${source.via ? ` (${source.via})` : ""}, ${source.date}`;
+}
+
+/** An inline citation, linked to its source when the source has a page. */
+function Cited({ id, children }: { id: SourceId; children: ReactNode }): ReactElement {
+  const url = sourceUrl(id);
+  return url ? (
+    <a className={styles.cited} href={url} target="_blank" rel="noreferrer noopener">
+      {children}
+    </a>
+  ) : (
+    <>{children}</>
+  );
 }
 
 function SourceLine({ ids }: { ids: readonly SourceId[] }): ReactElement {
@@ -176,7 +189,7 @@ function Demand({ active, compact }: { active: boolean; compact: boolean }): Rea
         <DemandChart active={active} compact={compact} />
         <figcaption className={styles.legend}>
           <span className={styles.key} data-key="line">
-            Forecast US data center capacity, BNEF base case
+            Forecast US data center capacity, <Cited id="bnef">BNEF base case</Cited>
           </span>
           <span className={styles.key} data-key="dashed">
             Installed base growing at the grid&rsquo;s record 10 GW a year (illustrative, ZODE)
@@ -193,7 +206,9 @@ function Demand({ active, compact }: { active: boolean; compact: boolean }): Rea
         {MARKET_TIGHTNESS.map((item, i) => (
           <div key={item.label} {...rise(4 + i)}>
             <StatBlock stat={item} />
-            <span className={styles.statSource}>{item.source}</span>
+            <span className={styles.statSource}>
+              <Cited id={item.cite}>{item.source}</Cited>
+            </span>
           </div>
         ))}
       </aside>
@@ -248,7 +263,9 @@ function States({ active, compact }: { active: boolean; compact: boolean }): Rea
         {POLICY_STATS.map((item, i) => (
           <div key={item.label} {...rise(4 + i)}>
             <StatBlock stat={item} />
-            <span className={styles.statSource}>{item.source}</span>
+            <span className={styles.statSource}>
+              <Cited id={item.cite}>{item.source}</Cited>
+            </span>
           </div>
         ))}
         <p {...rise(6)} className={`${styles.rise} ${styles.fine}`}>
@@ -266,7 +283,9 @@ function News({ slide }: { slide: Of<"news"> }): ReactElement {
       <div className={styles.newsLead}>
         <div {...rise(2)}>
           <StatBlock stat={BLOCKED} highlight size="xl" />
-          <span className={styles.statSource}>{BLOCKED.detail} · Data Center Watch</span>
+          <span className={styles.statSource}>
+            {BLOCKED.detail} · <Cited id="dataCenterWatch">Data Center Watch</Cited>
+          </span>
         </div>
         <p {...rise(3)} className={`${styles.rise} ${styles.takeaway}`}>
           {slide.takeaway}

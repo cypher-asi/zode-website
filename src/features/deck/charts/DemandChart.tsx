@@ -1,6 +1,15 @@
-import type { CSSProperties, ReactElement } from "react";
-import { DEMAND, type Point } from "../research";
+import type { CSSProperties, ReactElement, ReactNode } from "react";
+import { DEMAND, sourceUrl, type Point, type SourceId } from "../research";
 import styles from "./charts.module.css";
+
+/** A note on the plot, linked to its source. */
+function Cited({ id, children }: { id: SourceId; children: ReactNode }): ReactElement {
+  return (
+    <a className={styles.cited} href={sourceUrl(id)} target="_blank" rel="noreferrer noopener">
+      {children}
+    </a>
+  );
+}
 
 const X0 = 2024;
 const X1 = 2035;
@@ -84,26 +93,30 @@ export function DemandChart({ active, compact = false }: { active: boolean; comp
         height={y(DEMAND.epri2030.low) - y(DEMAND.epri2030.high)}
       />
       {/* The squarer plot has room under the range and left of the marker, where the lines aren't. */}
-      <text
-        className={styles.note}
-        x={compact ? x(2030) : x(2030) - 18}
-        y={y(DEMAND.epri2030.low)}
-        dy={compact ? "1.4em" : "-0.2em"}
-        textAnchor={compact ? "middle" : "end"}
-      >
-        EPRI 2030: {DEMAND.epri2030.low}–{DEMAND.epri2030.high} GW
-      </text>
+      <Cited id="epri">
+        <text
+          className={styles.note}
+          x={compact ? x(2030) : x(2030) - 18}
+          y={y(DEMAND.epri2030.low)}
+          dy={compact ? "1.4em" : "-0.2em"}
+          textAnchor={compact ? "middle" : "end"}
+        >
+          EPRI 2030: {DEMAND.epri2030.low}–{DEMAND.epri2030.high} GW
+        </text>
+      </Cited>
 
       <circle className={styles.marker} cx={x(2030)} cy={y(DEMAND.sp2030)} r={6} />
-      <text
-        className={styles.note}
-        x={compact ? x(2030) - 14 : x(2030) + 14}
-        y={y(DEMAND.sp2030)}
-        dy="0.35em"
-        textAnchor={compact ? "end" : "start"}
-      >
-        S&amp;P 2030: {DEMAND.sp2030}+ GW
-      </text>
+      <Cited id="utilityDive">
+        <text
+          className={styles.note}
+          x={compact ? x(2030) - 14 : x(2030) + 14}
+          y={y(DEMAND.sp2030)}
+          dy="0.35em"
+          textAnchor={compact ? "end" : "start"}
+        >
+          S&amp;P 2030: {DEMAND.sp2030}+ GW
+        </text>
+      </Cited>
 
       <path className={styles.dashed} d={path(GRID)} />
       <path className={styles.line} d={path(DEMAND.forecast)} pathLength={1} />
@@ -124,9 +137,11 @@ export function DemandChart({ active, compact = false }: { active: boolean; comp
           <text className={styles.series} x={W - PAD.right + 16} y={y(FORECAST_END)} dy="0.35em">
             Forecast demand
           </text>
-          <text className={styles.seriesNote} x={W - PAD.right + 16} y={y(FORECAST_END)} dy="1.9em">
-            BNEF base case
-          </text>
+          <Cited id="bnef">
+            <text className={styles.seriesNote} x={W - PAD.right + 16} y={y(FORECAST_END)} dy="1.9em">
+              BNEF base case
+            </text>
+          </Cited>
           <text className={styles.series} x={W - PAD.right + 16} y={y(GRID_END)} dy="0.35em">
             Grid at record pace
           </text>

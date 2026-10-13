@@ -411,11 +411,18 @@
 
 .sources a,
 .citations a,
-.meta a {
+.meta a,
+.cited {
   color: inherit;
   text-decoration: underline;
   text-decoration-color: var(--rule-strong);
   text-underline-offset: 0.2em;
+}
+
+@media (hover: hover) {
+  .cited:hover {
+    text-decoration-color: currentColor;
+  }
 }
 
 .number {
