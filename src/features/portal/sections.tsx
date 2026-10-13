@@ -69,8 +69,7 @@ const Chevron = () => (
   </svg>
 );
 
-/** `superAdmin` is whether the viewer is a ZODE super admin, which their room admin pills say instead. */
-export function RoomList({ rooms, superAdmin = false }: { rooms: RoomSummary[]; superAdmin?: boolean }): ReactElement {
+export function RoomList({ rooms }: { rooms: RoomSummary[] }): ReactElement {
   return (
     <ul className={styles.list}>
       {rooms.map((room) => (
@@ -87,7 +86,7 @@ export function RoomList({ rooms, superAdmin = false }: { rooms: RoomSummary[]; 
               </span>
             </span>
             <span className={styles.rowEnd}>
-              <span className={styles.pill}>{roleLabel(room.role, superAdmin)}</span>
+              <span className={styles.pill}>{roleLabel(room.role)}</span>
               <Chevron />
             </span>
           </Link>

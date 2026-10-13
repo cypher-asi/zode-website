@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
-import { isZodeAdmin } from "@/features/account/admin";
 import { requireAccount } from "@/features/account/session";
 import { NewRoomForm } from "@/features/data-room/NewRoomForm";
 import { canCreateRooms } from "@/features/data-room/rooms";
@@ -16,11 +15,7 @@ export const metadata: Metadata = {
 /** Every room you own or that's been shared with you; the ZODE team can open new ones. */
 export default async function DataRoomsPage(): Promise<ReactElement> {
   const account = await requireAccount("/portal/data-rooms");
-  const [rooms, superAdmin, canCreate] = await Promise.all([
-    loadRooms(account.userId),
-    isZodeAdmin(account),
-    canCreateRooms(account),
-  ]);
+  const [rooms, canCreate] = await Promise.all([loadRooms(account.userId), canCreateRooms(account)]);
 
   return (
     <div className={styles.page}>
@@ -30,7 +25,7 @@ export default async function DataRoomsPage(): Promise<ReactElement> {
       {rooms === null ? (
         <Empty>Your data rooms couldn&apos;t be loaded right now. Please try again shortly.</Empty>
       ) : rooms.length ? (
-        <RoomList rooms={rooms} superAdmin={superAdmin} />
+        <RoomList rooms={rooms} />
       ) : (
         <Empty>
           {canCreate

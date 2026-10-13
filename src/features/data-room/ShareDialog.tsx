@@ -414,7 +414,7 @@ function ShareDialog({ roomId, roomName, members, selfEmail, onClose }: SharePro
                     {STATUS_LABELS[member.status]}
                   </span>
                 ) : null}
-                <span className={styles.personRole}>{roleLabel(member.role, member.superAdmin)}</span>
+                <span className={styles.personRole}>{roleLabel(member.role)}</span>
               </li>
             ))}
           </ul>

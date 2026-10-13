@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
-import { isZodeAdmin } from "@/features/account/admin";
 import { RoomTabs } from "@/features/data-room/RoomTabs";
 import { ShareButton } from "@/features/data-room/ShareDialog";
 import { listMembers, requireRoomRole } from "@/features/data-room/rooms";
@@ -25,7 +24,7 @@ export default async function DataRoomLayout({
   const { roomId } = await params;
   const { room, role, account } = await requireRoomRole(roomId);
   const isAdmin = role === "admin";
-  const [members, superAdmin] = await Promise.all([isAdmin ? listMembers(roomId) : [], isZodeAdmin(account)]);
+  const members = isAdmin ? await listMembers(roomId) : [];
 
   return (
     <div className={styles.frame}>
@@ -39,7 +38,7 @@ export default async function DataRoomLayout({
           </Link>
           <div className={styles.titleRow}>
             <h1 className={styles.title}>{room.name}</h1>
-            <span className={styles.role}>{roleLabel(role, superAdmin)}</span>
+            <span className={styles.role}>{roleLabel(role)}</span>
           </div>
         </div>
         <div className={styles.headerActions}>

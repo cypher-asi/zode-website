@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
-import { isZodeAdmin } from "@/features/account/admin";
 import { LogoutButton } from "@/features/account/LogoutButton";
 import { requireAccount } from "@/features/account/session";
 import ui from "@/features/data-room/ui.module.css";
@@ -18,11 +17,10 @@ const RECENT = 3;
 /** Signed-in home: who you are, your figures at a glance, and the latest rooms and orders. */
 export default async function HomePage(): Promise<ReactElement> {
   const account = await requireAccount("/portal");
-  const [rooms, orders, contracts, superAdmin] = await Promise.all([
+  const [rooms, orders, contracts] = await Promise.all([
     loadRooms(account.userId),
     loadOrders(account.userId),
     loadContracts(account.userId),
-    isZodeAdmin(account),
   ]);
   const firstName = account.displayName.trim().split(/\s+/)[0] || account.displayName;
   const files = rooms?.reduce((sum, room) => sum + room.fileCount, 0);
@@ -65,7 +63,7 @@ export default async function HomePage(): Promise<ReactElement> {
         {rooms === null ? (
           <Empty>Your data rooms couldn&apos;t be loaded right now. Please try again shortly.</Empty>
         ) : rooms.length ? (
-          <RoomList rooms={rooms.slice(0, RECENT)} superAdmin={superAdmin} />
+          <RoomList rooms={rooms.slice(0, RECENT)} />
         ) : (
           <Empty>No data rooms yet. Rooms shared with you appear here.</Empty>
         )}
