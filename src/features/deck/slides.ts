@@ -100,6 +100,7 @@ export type Slide =
     })
   | (Base & { kind: "problems"; groups: readonly [ProblemGroup, ProblemGroup] })
   | (Base & { kind: "solution"; facts: readonly Stat[] })
+  | (Base & { kind: "principles" })
   | (Base & {
       kind: "stack";
       lede: string;
@@ -346,6 +347,14 @@ export const SLIDES: readonly Slide[] = [
       { value: "Tier III", label: "N+1 power and cooling" },
       { value: "NVIDIA", label: "Reference architecture" },
     ],
+  },
+  {
+    id: "principles",
+    kind: "principles",
+    section: "Design principles",
+    eyebrow: "Solution · Design principles",
+    title: "Sovereign, distributed, sustainable, open.",
+    ground: "white",
   },
   {
     id: "stack",

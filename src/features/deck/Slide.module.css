@@ -44,7 +44,7 @@
 }
 
 /*
- * Cards follow the solution slide's principle cards (Principles.module.css):
+ * Cards follow the design principles slide's cards (Principles.module.css):
  * square cells on the card ground, joined by hairlines so a set of cards
  * reads as one panel. Each cell draws its own hairline, which the next
  * cell's overlaps across the 1px gap, so the lines fade in with the cards.
@@ -1275,11 +1275,10 @@
   background: var(--accent);
 }
 
-/* Solution: the cabin drawing across the slide, the principle cards below. */
+/* Solution: the cabin drawing across the slide, the facts beside it. */
 .solution {
   display: grid;
-  grid-template-rows: minmax(0, 1fr) calc(16 * var(--u));
-  gap: calc(1.4 * var(--u));
+  grid-template-rows: minmax(0, 1fr);
 }
 
 .cabinRow {
@@ -1352,8 +1351,13 @@
   color: var(--fg-2);
 }
 
-/* The home page's principle cards, retuned to the slide (Principles.module.css reads these). */
-.solution .principles {
+/* Design principles: the home page's principle cards, retuned to the slide (Principles.module.css reads these). */
+.designPrinciples {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.designPrinciples .principles {
   --ink: var(--color-ink);
   --card-h: 100%;
   --card-pad: calc(1 * var(--u)) calc(1.3 * var(--u)) calc(1.2 * var(--u));
@@ -2471,7 +2475,7 @@
   font-size: 15px;
 }
 
-/* Solution: the cabin across the card, then the facts and the principle cards stacked. */
+/* Solution: the cabin across the card, the facts under it. */
 .slide[data-compact] .solution {
   grid-template-rows: none;
   gap: 24px;
@@ -2507,7 +2511,12 @@
   text-align: right;
 }
 
-.slide[data-compact] .solution .principles {
+/* Design principles: the cards stacked. */
+.slide[data-compact] .designPrinciples {
+  grid-template-rows: none;
+}
+
+.slide[data-compact] .designPrinciples .principles {
   --card-h: 300px;
   --card-pad: 18px 20px 20px;
   --figure-pad: 12px 0;

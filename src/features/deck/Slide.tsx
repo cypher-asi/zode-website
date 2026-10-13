@@ -436,6 +436,13 @@ function Solution({ slide, active }: { slide: Of<"solution">; active: boolean })
           ))}
         </ul>
       </div>
+    </div>
+  );
+}
+
+function DesignPrinciples({ active }: { active: boolean }): ReactElement {
+  return (
+    <div className={styles.designPrinciples}>
       <div className={`${PRINCIPLE_GRID_CLASS} ${styles.principles}`} data-shown={active || undefined}>
         {PRINCIPLES.map((principle, i) => (
           <PrincipleCard key={principle.id} principle={principle} index={i} open playing={active} headingLevel={3} />
@@ -825,6 +832,8 @@ function Body({ slide, active, compact }: { slide: Slide; active: boolean; compa
       return <Problems slide={slide} active={active} />;
     case "solution":
       return <Solution slide={slide} active={active} />;
+    case "principles":
+      return <DesignPrinciples active={active} />;
     case "stack":
       return <Stack slide={slide} active={active} />;
     case "steps":
