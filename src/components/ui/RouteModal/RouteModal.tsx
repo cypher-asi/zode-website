@@ -55,6 +55,7 @@ export function RouteModal({
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
+    leaving.current = false;
     if (!dialog.open) dialog.showModal();
     // Focus the panel rather than its first field, so phones don't open the keyboard straight away.
     panelRef.current?.focus({ preventScroll: true });
@@ -64,6 +65,11 @@ export function RouteModal({
     root.style.overflow = "hidden";
     return () => {
       root.style.overflow = overflow;
+      // A route navigated away from is hidden rather than unmounted, and a hidden
+      // modal dialog still makes the page inert. `leaving` keeps onClose from stepping back.
+      leaving.current = true;
+      if (dialog.open) dialog.close();
+      setClosing(false);
     };
   }, []);
 
