@@ -257,37 +257,30 @@
   stroke: transparent;
 }
 
+/* Steps of the alarm red, set with the legend's swatches (Slide.module.css): full red where a moratorium is in effect. */
 .tile[data-status="enacted"] .tileRect {
-  fill: var(--color-accent-strong);
-  stroke: var(--color-accent-strong);
+  fill: var(--alarm);
+  stroke: var(--alarm);
 }
 
 .tile[data-status="executive"] .tileRect {
-  fill: var(--color-ink);
-  stroke: var(--color-ink);
+  fill: var(--alarm-2);
+  stroke: var(--alarm-2);
 }
 
 .tile[data-status="introduced"] .tileRect {
-  stroke: var(--color-ink);
+  fill: var(--alarm-3);
+  stroke: var(--alarm-3);
 }
 
 .tile[data-status="failed"] .tileRect {
-  fill: var(--color-surface-tint);
+  fill: var(--alarm-4);
+  stroke: var(--alarm-3);
   stroke-dasharray: 3 3;
 }
 
 .tile[data-status] .tileLabel {
   fill: var(--color-text-primary);
-}
-
-.tile[data-status="executive"] .tileLabel {
-  fill: var(--color-text-inverse);
-}
-
-/* The hatching runs under the label, so it gets a halo in the slide's ground. */
-.tile[data-status="introduced"] .tileLabel {
-  stroke: var(--color-white);
-  stroke-width: 5px;
 }
 
 .tile[data-status="failed"] .tileLabel {
@@ -298,11 +291,6 @@
   fill: var(--color-ink);
   stroke: var(--color-white);
   stroke-width: 1.5;
-}
-
-.tile[data-status="executive"] .county {
-  fill: var(--color-white);
-  stroke: var(--color-ink);
 }
 
 /*

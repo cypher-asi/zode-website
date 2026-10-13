@@ -744,7 +744,13 @@
   grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
 }
 
+/* Moratorium status in steps of one red, mixed into the ground so a tile's fill and stroke match. */
 .chartBody[data-split="map"] {
+  --alarm: #f04438;
+  --alarm-2: color-mix(in srgb, var(--alarm) 60%, var(--bg));
+  --alarm-3: color-mix(in srgb, var(--alarm) 32%, var(--bg));
+  --alarm-4: color-mix(in srgb, var(--alarm) 14%, var(--bg));
+
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
 }
 
@@ -850,23 +856,24 @@
 }
 
 .status[data-status="enacted"] .swatch {
-  border-color: var(--color-accent-strong);
-  background: var(--color-accent-strong);
+  border-color: var(--alarm);
+  background: var(--alarm);
 }
 
 .status[data-status="executive"] .swatch {
-  border-color: var(--color-ink);
-  background: var(--color-ink);
+  border-color: var(--alarm-2);
+  background: var(--alarm-2);
 }
 
 .status[data-status="introduced"] .swatch {
-  border-color: var(--color-ink);
-  background: repeating-linear-gradient(45deg, var(--color-ink) 0 1px, transparent 1px 4px);
+  border-color: var(--alarm-3);
+  background: var(--alarm-3);
 }
 
 .status[data-status="failed"] .swatch {
   border-style: dashed;
-  background: var(--color-surface-tint);
+  border-color: var(--alarm-3);
+  background: var(--alarm-4);
 }
 
 .status[data-status="county"] .swatch {
