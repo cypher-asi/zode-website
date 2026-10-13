@@ -38,9 +38,11 @@ type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 export default function TeamDashboardPage({ searchParams }: { searchParams: SearchParams }): ReactElement {
   return (
     <div className={styles.page}>
-      <PageHeader title="Team dashboard" subtitle="ZODE's capacity, pipeline, contracts and audience, tracked daily.">
-        <HomeTabs current="team" />
-      </PageHeader>
+      <PageHeader
+        title="Team dashboard"
+        subtitle="ZODE's capacity, pipeline, contracts and audience, tracked daily."
+        tabs={<HomeTabs current="team" />}
+      />
       <Suspense fallback={<PortalLoading header={false} nested />}>
         <Dashboard searchParams={searchParams} />
       </Suspense>

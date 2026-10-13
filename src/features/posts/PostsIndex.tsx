@@ -9,13 +9,14 @@ import { Empty, PageHeader, PostList } from "@/features/portal/sections";
 import { requireTeam } from "@/features/zrm/access";
 import styles from "@/features/portal/portal.module.css";
 import { createPostAction } from "./actions";
-import admin from "./PostEditor.module.css";
 import { POST_KINDS, kindLabel, type PostKind } from "./types";
 
 const TABS = [
   { id: "all", label: "All", href: "/portal/posts" },
   ...POST_KINDS.map((kind) => ({ id: kind.id, label: kind.label, href: `/portal/posts/${kind.id}` })),
 ];
+
+const NEW_POST_FORM = "new-post";
 
 const SUBTITLES: Record<PostKind | "all", string> = {
   all: "News and changelog entries on the public site.",
@@ -27,28 +28,46 @@ const SUBTITLES: Record<PostKind | "all", string> = {
 export function PostsIndex({ kind }: { kind: PostKind | null }): ReactElement {
   return (
     <div className={styles.page}>
-      <PageHeader title={kind ? kindLabel(kind) : "Posts"} subtitle={SUBTITLES[kind ?? "all"]}>
-        <form action={createPostAction} className={admin.actions}>
-          <button className={kind === "changelog" ? ui.primary : ui.button} type="submit" name="kind" value="changelog">
-            New changelog entry
-          </button>
-          <button className={kind === "changelog" ? ui.button : ui.primary} type="submit" name="kind" value="news">
-            New news post
-          </button>
-        </form>
-      </PageHeader>
-      <nav className={admin.filter} aria-label="Post kinds">
-        {TABS.map((tab) => (
-          <Link
-            key={tab.id}
-            href={tab.href}
-            className={tabs.tab}
-            aria-current={(kind ?? "all") === tab.id ? "page" : undefined}
-          >
-            {tab.label}
-          </Link>
-        ))}
-      </nav>
+      <PageHeader
+        title={kind ? kindLabel(kind) : "Posts"}
+        subtitle={SUBTITLES[kind ?? "all"]}
+        tabs={
+          <nav className={tabs.tabs} aria-label="Post kinds">
+            {TABS.map((tab) => (
+              <Link
+                key={tab.id}
+                href={tab.href}
+                className={tabs.tab}
+                aria-current={(kind ?? "all") === tab.id ? "page" : undefined}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </nav>
+        }
+        actions={
+          <>
+            {/* The buttons sit beside the tabs, not inside the form, so the header sizes them like its other actions. */}
+            <form id={NEW_POST_FORM} action={createPostAction} hidden />
+            {kind !== "news" ? (
+              <button
+                className={kind ? ui.primary : ui.button}
+                form={NEW_POST_FORM}
+                type="submit"
+                name="kind"
+                value="changelog"
+              >
+                New changelog entry
+              </button>
+            ) : null}
+            {kind !== "changelog" ? (
+              <button className={ui.primary} form={NEW_POST_FORM} type="submit" name="kind" value="news">
+                New news post
+              </button>
+            ) : null}
+          </>
+        }
+      />
       <Suspense fallback={<PortalLoading header={false} nested />}>
         <Posts kind={kind} />
       </Suspense>
@@ -67,10 +86,10 @@ async function Posts({ kind }: { kind: PostKind | null }): Promise<ReactElement>
   ) : (
     <Empty>
       {kind === "news"
-        ? "No news posts yet. Start one with the button above."
+        ? "No news posts yet. Start one with New news post."
         : kind === "changelog"
-          ? "No changelog entries yet. Start one with the button above."
-          : "No posts yet. Start one with the buttons above."}
+          ? "No changelog entries yet. Start one with New changelog entry."
+          : "No posts yet. Start one with the buttons at the top."}
     </Empty>
   );
 }

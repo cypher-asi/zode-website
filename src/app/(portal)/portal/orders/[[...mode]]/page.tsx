@@ -49,8 +49,10 @@ async function Orders({ params }: { params: PageProps<"/portal/orders/[[...mode]
 
   return (
     <div className={styles.page}>
-      <PageHeader title={mode ? mode.label : "Orders"} subtitle={SUBTITLES[mode?.id ?? "all"]}>
-        <div className={tabs.headerActions}>
+      <PageHeader
+        title={mode ? mode.label : "Orders"}
+        subtitle={SUBTITLES[mode?.id ?? "all"]}
+        tabs={
           <nav className={tabs.tabs} aria-label="Order types">
             {TABS.map((tab) => (
               <Link
@@ -63,11 +65,13 @@ async function Orders({ params }: { params: PageProps<"/portal/orders/[[...mode]
               </Link>
             ))}
           </nav>
+        }
+        actions={
           <Link className={ui.primary} href="/buy-compute">
             New order
           </Link>
-        </div>
-      </PageHeader>
+        }
+      />
       {shown === null ? (
         <Empty>Your orders couldn&apos;t be loaded right now. Please try again shortly.</Empty>
       ) : shown.length ? (

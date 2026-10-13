@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Suspense, type ReactElement } from "react";
 import Link from "next/link";
 import { LogoutButton } from "@/features/account/LogoutButton";
-import tabs from "@/features/data-room/room.module.css";
 import ui from "@/features/data-room/ui.module.css";
 import { loadMyHome, orLogIn } from "@/features/portal/mine";
 import { PortalLoading } from "@/features/portal/PortalLoading";
@@ -42,16 +41,9 @@ async function Home(): Promise<ReactElement> {
             {account.primaryZid ? <> · {account.primaryZid}</> : null}
           </>
         }
-      >
-        {team ? (
-          <div className={tabs.headerActions}>
-            <HomeTabs current="mine" />
-            <LogoutButton className={ui.button} />
-          </div>
-        ) : (
-          <LogoutButton className={ui.button} />
-        )}
-      </PageHeader>
+        tabs={team ? <HomeTabs current="mine" /> : null}
+        actions={<LogoutButton className={ui.button} />}
+      />
 
       <div className={styles.stats}>
         <Link className={styles.stat} href="/portal/data-rooms">

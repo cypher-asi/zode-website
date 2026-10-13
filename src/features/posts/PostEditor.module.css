@@ -1,10 +1,4 @@
 /* The portal's post list controls and the post editor. */
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
 .filter {
   composes: tabs from "../data-room/room.module.css";
   width: fit-content;

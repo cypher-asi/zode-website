@@ -5,6 +5,7 @@ import { PortalLoading } from "@/features/portal/PortalLoading";
 import { requireTeam } from "@/features/zrm/access";
 import { loadZrmData } from "@/features/zrm/queries";
 import { Workspace } from "@/features/zrm/Workspace";
+import { ZrmNewButton } from "@/features/zrm/ZrmNewButton";
 import { ZrmProvider } from "@/features/zrm/ZrmProvider";
 
 export const metadata: Metadata = {
@@ -56,6 +57,9 @@ async function Capacity({ children }: { children: ReactNode }): Promise<ReactEle
               <h1 className={styles.title}>Capacity</h1>
               <span className={styles.role}>Team</span>
             </div>
+          </div>
+          <div className={styles.headerActions}>
+            <ZrmNewButton />
           </div>
         </header>
         <div className={styles.body}>

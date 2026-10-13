@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense, type ReactElement } from "react";
 import { LogoutButton } from "@/features/account/LogoutButton";
-import tabs from "@/features/data-room/room.module.css";
 import ui from "@/features/data-room/ui.module.css";
 import { SettingsSubscription } from "@/features/mailing-list/SettingsSubscription";
 import { DevDbSwitch } from "@/features/portal/DevDbSwitch";
@@ -23,14 +22,16 @@ export const metadata: Metadata = {
 export default function SettingsPage(): ReactElement {
   return (
     <div className={styles.page}>
-      <PageHeader title="Settings" subtitle="Your profile and account.">
-        <div className={tabs.headerActions}>
+      <PageHeader
+        title="Settings"
+        subtitle="Your profile and account."
+        tabs={
           <Suspense fallback={null}>
             <TeamTabs />
           </Suspense>
-          <LogoutButton className={ui.button} />
-        </div>
-      </PageHeader>
+        }
+        actions={<LogoutButton className={ui.button} />}
+      />
       <Suspense fallback={<PortalLoading header={false} nested />}>
         <Settings />
       </Suspense>

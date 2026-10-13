@@ -1,7 +1,6 @@
 import { Suspense, type ReactElement } from "react";
 import Link from "next/link";
 import { io } from "next/cache";
-import tabs from "@/features/data-room/room.module.css";
 import ui from "@/features/data-room/ui.module.css";
 import { orLogIn } from "@/features/portal/mine";
 import { PortalLoading } from "@/features/portal/PortalLoading";
@@ -23,14 +22,13 @@ export function DeploymentsIndex({ scope }: { scope: DeploymentScope }): ReactEl
         subtitle={
           scope === "active" ? "GPU deployments live and rolling out." : "Every GPU deployment, planned to completed."
         }
-      >
-        <div className={tabs.headerActions}>
+        tabs={<DeploymentTabs current={scope} />}
+        actions={
           <Suspense fallback={null}>
             <NewButton />
           </Suspense>
-          <DeploymentTabs current={scope} />
-        </div>
-      </PageHeader>
+        }
+      />
       <Suspense fallback={<PortalLoading header={false} nested />}>
         <Deployments scope={scope} />
       </Suspense>

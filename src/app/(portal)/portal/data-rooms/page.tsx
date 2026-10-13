@@ -15,11 +15,15 @@ export const metadata: Metadata = {
 export default function DataRoomsPage(): ReactElement {
   return (
     <div className={styles.page}>
-      <PageHeader title="Data rooms" subtitle="Private documents, with every view and download tracked.">
-        <Suspense fallback={null}>
-          <NewRoom />
-        </Suspense>
-      </PageHeader>
+      <PageHeader
+        title="Data rooms"
+        subtitle="Private documents, with every view and download tracked."
+        actions={
+          <Suspense fallback={null}>
+            <NewRoom />
+          </Suspense>
+        }
+      />
       <Suspense fallback={<PortalLoading header={false} nested />}>
         <Rooms />
       </Suspense>

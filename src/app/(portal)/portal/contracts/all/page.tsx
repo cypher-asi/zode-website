@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Suspense, type ReactElement } from "react";
 import Link from "next/link";
 import { ContractTabs } from "@/features/contracts/ContractTabs";
-import tabs from "@/features/data-room/room.module.css";
 import ui from "@/features/data-room/ui.module.css";
 import { loadAllContracts } from "@/features/portal/data";
 import { PortalLoading } from "@/features/portal/PortalLoading";
@@ -19,14 +18,16 @@ export const metadata: Metadata = {
 export default function AllContractsPage(): ReactElement {
   return (
     <div className={styles.page}>
-      <PageHeader title="Contracts" subtitle="Every agreement signed with ZODE.">
-        <div className={tabs.headerActions}>
+      <PageHeader
+        title="Contracts"
+        subtitle="Every agreement signed with ZODE."
+        tabs={<ContractTabs current="all" />}
+        actions={
           <Link href="/portal/contracts/new" className={ui.primary}>
             Record contract
           </Link>
-          <ContractTabs current="all" />
-        </div>
-      </PageHeader>
+        }
+      />
       <Suspense fallback={<PortalLoading header={false} nested />}>
         <AllContracts />
       </Suspense>

@@ -16,7 +16,7 @@ export function NewRoomForm(): ReactElement {
 
   if (!open) {
     return (
-      <button type="button" className={ui.button} onClick={() => setOpen(true)}>
+      <button type="button" className={ui.primary} onClick={() => setOpen(true)}>
         New data room
       </button>
     );

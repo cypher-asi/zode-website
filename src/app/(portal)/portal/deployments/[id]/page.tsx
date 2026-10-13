@@ -3,7 +3,6 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 import { io } from "next/cache";
 import { notFound } from "next/navigation";
-import tabs from "@/features/data-room/room.module.css";
 import ui from "@/features/data-room/ui.module.css";
 import { getDeployment } from "@/features/deployments/deployments";
 import { DeploymentDetail } from "@/features/deployments/DeploymentDetail";
@@ -32,18 +31,19 @@ export default async function DeploymentPage({ params }: PageProps<"/portal/depl
       <PageHeader
         title={deployment.name}
         subtitle={[statusLabel(deployment.status), deployment.address?.split("\n")[0]].filter(Boolean).join(" · ")}
-      >
-        <div className={tabs.headerActions}>
-          <a href={`/api/deployments/${deployment.id}/pdf`} className={ui.button} download>
-            Download PDF
-          </a>
-          {viewer.team ? (
-            <Link href={`/portal/deployments/${deployment.id}/edit`} className={ui.primary}>
-              Edit
-            </Link>
-          ) : null}
-        </div>
-      </PageHeader>
+        actions={
+          <>
+            <a href={`/api/deployments/${deployment.id}/pdf`} className={ui.button} download>
+              Download PDF
+            </a>
+            {viewer.team ? (
+              <Link href={`/portal/deployments/${deployment.id}/edit`} className={ui.primary}>
+                Edit
+              </Link>
+            ) : null}
+          </>
+        }
+      />
       <DeploymentDetail deployment={deployment} today={todayIso()} />
     </div>
   );

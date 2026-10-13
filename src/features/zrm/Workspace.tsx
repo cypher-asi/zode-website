@@ -6,13 +6,12 @@ import { useSelectedLayoutSegments } from "next/navigation";
 import { Select } from "@/components/ui/Select";
 import { Splitter } from "@/components/ui/Splitter";
 import { PortalLoading } from "@/features/portal/PortalLoading";
-import ui from "@/features/data-room/ui.module.css";
 import { Icon } from "./bits";
-import { NEW_LABELS, companiesConfig, opportunitiesConfig, peopleConfig, sitesConfig, type ListConfig } from "./columns";
-import { KIND_LABELS, listHref, recordHref, type RecordKind } from "./types";
+import { companiesConfig, opportunitiesConfig, peopleConfig, sitesConfig, type ListConfig } from "./columns";
+import { KIND_LABELS, recordHref, type RecordKind } from "./types";
 import { GroupNav } from "./GroupNav";
 import { TypeNav } from "./TypeNav";
-import { goOnClick, useZrmData, useZrmNavigate, useZrmRoute, ZrmLink } from "./ZrmProvider";
+import { goOnClick, useZrmData, useZrmNavigate, useZrmRoute } from "./ZrmProvider";
 import styles from "./zrm.module.css";
 
 interface Sort {
@@ -207,10 +206,6 @@ function RecordList<T extends ListRow>({
             align="end"
           />
         ))}
-        <ZrmLink href={`${listHref(kind)}/new`} className={ui.primary} aria-label={NEW_LABELS[kind]} title={NEW_LABELS[kind]}>
-          <Icon name="plus" />
-          New
-        </ZrmLink>
       </div>
 
       <div className={styles.head} style={columnsStyle}>

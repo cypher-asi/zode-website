@@ -648,7 +648,7 @@
     display: none;
   }
 
-  /* Search takes the first row; the filters share the next with New. */
+  /* Search takes the first row; the filters share the next. */
   .toolbar {
     flex-wrap: wrap;
   }
@@ -660,10 +660,6 @@
   .toolbar .filter {
     flex: 1 1 0;
     min-width: 0;
-  }
-
-  .toolbar > :last-child {
-    margin-left: auto;
   }
 }
 

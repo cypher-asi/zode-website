@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense, type ReactElement } from "react";
 import Link from "next/link";
 import { ContractTabs } from "@/features/contracts/ContractTabs";
+import ui from "@/features/data-room/ui.module.css";
 import { loadMyContracts, orLogIn } from "@/features/portal/mine";
 import { PortalLoading } from "@/features/portal/PortalLoading";
 import { ContractList, Empty, PageHeader } from "@/features/portal/sections";
@@ -16,11 +17,20 @@ export const metadata: Metadata = {
 export default function ContractsPage(): ReactElement {
   return (
     <div className={styles.page}>
-      <PageHeader title="Contracts" subtitle="Agreements you've signed with ZODE.">
-        <Suspense fallback={null}>
-          <TeamTabs />
-        </Suspense>
-      </PageHeader>
+      <PageHeader
+        title="Contracts"
+        subtitle="Agreements you've signed with ZODE."
+        tabs={
+          <Suspense fallback={null}>
+            <TeamTabs />
+          </Suspense>
+        }
+        actions={
+          <Suspense fallback={null}>
+            <RecordButton />
+          </Suspense>
+        }
+      />
       <Suspense fallback={<PortalLoading header={false} nested />}>
         <Contracts />
       </Suspense>
@@ -32,6 +42,16 @@ export default function ContractsPage(): ReactElement {
 async function TeamTabs(): Promise<ReactElement | null> {
   const mine = await loadMyContracts();
   return mine?.team ? <ContractTabs current="mine" /> : null;
+}
+
+/** Recording a compute contract, for the ZODE team, as on the All tab. */
+async function RecordButton(): Promise<ReactElement | null> {
+  const mine = await loadMyContracts();
+  return mine?.team ? (
+    <Link href="/portal/contracts/new" className={ui.primary}>
+      Record contract
+    </Link>
+  ) : null;
 }
 
 async function Contracts(): Promise<ReactElement> {

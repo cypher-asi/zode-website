@@ -85,8 +85,7 @@ async function Subscribers({
             ? `The ${mailingList(list).label} mailing list. Only subscribed addresses have confirmed by email.`
             : "Both mailing lists, a row per list. Only subscribed addresses have confirmed by email."
         }
-      >
-        <div className={tabs.headerActions}>
+        tabs={
           <nav className={tabs.tabs} aria-label="Mailing lists">
             {LIST_TABS.map((tab) => (
               <Link
@@ -99,11 +98,13 @@ async function Subscribers({
               </Link>
             ))}
           </nav>
+        }
+        actions={
           <a className={ui.button} href={`/api/mailing-list/export${exportQuery ? `?${exportQuery}` : ""}`} download>
             Export CSV
           </a>
-        </div>
-      </PageHeader>
+        }
+      />
       {subscribers ? (
         <div className={styles.stats}>
           {stats.map((stat) => (

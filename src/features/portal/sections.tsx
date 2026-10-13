@@ -2,6 +2,7 @@ import type { ReactElement, ReactNode } from "react";
 import Link from "next/link";
 import type { OrderSummary } from "@/features/configurator/orders";
 import type { ComputeContract, Contract } from "@/features/contracts/contracts";
+import bar from "@/features/data-room/room.module.css";
 import { roleLabel, roomKindLabel, type RoomSummary } from "@/features/data-room/types";
 import { SUBSCRIBER_STATUSES, mailingList, type Subscriber } from "@/features/mailing-list/types";
 import { kindLabel, type Post } from "@/features/posts/types";
@@ -16,15 +17,22 @@ const date = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
 
 const plural = (count: number, word: string) => `${count.toLocaleString("en-US")} ${word}${count === 1 ? "" : "s"}`;
 
+/**
+ * Every portal page's title, with its section tabs and actions on the right,
+ * always in that order so the primary action sits at the far end on every page.
+ */
 export function PageHeader({
   title,
   subtitle,
-  children,
+  tabs,
+  actions,
 }: {
   title: string;
   subtitle?: ReactNode;
-  /** Actions on the right, e.g. "New order". */
-  children?: ReactNode;
+  /** The page's sections, e.g. All, Purchases and Rentals. */
+  tabs?: ReactNode;
+  /** Secondary actions first, then the primary one, e.g. "New order". */
+  actions?: ReactNode;
 }): ReactElement {
   return (
     <header className={styles.header}>
@@ -32,7 +40,12 @@ export function PageHeader({
         <h1 className={styles.title}>{title}</h1>
         {subtitle ? <p className={styles.subtitle}>{subtitle}</p> : null}
       </div>
-      {children}
+      {tabs || actions ? (
+        <div className={bar.headerActions}>
+          {tabs}
+          {actions}
+        </div>
+      ) : null}
     </header>
   );
 }

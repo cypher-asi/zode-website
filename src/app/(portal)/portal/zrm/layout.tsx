@@ -5,6 +5,7 @@ import { PortalLoading } from "@/features/portal/PortalLoading";
 import { requireTeam } from "@/features/zrm/access";
 import { loadZrmData } from "@/features/zrm/queries";
 import { Workspace } from "@/features/zrm/Workspace";
+import { ZrmNewButton } from "@/features/zrm/ZrmNewButton";
 import { ZrmProvider } from "@/features/zrm/ZrmProvider";
 import { ZrmTabs } from "@/features/zrm/ZrmTabs";
 
@@ -59,6 +60,7 @@ async function Zrm({ children }: { children: ReactNode }): Promise<ReactElement>
           </div>
           <div className={styles.headerActions}>
             <ZrmTabs />
+            <ZrmNewButton />
           </div>
         </header>
         <div className={styles.body}>

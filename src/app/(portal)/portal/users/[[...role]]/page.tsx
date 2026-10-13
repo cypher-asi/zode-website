@@ -57,20 +57,24 @@ async function Users({ params }: { params: PageProps<"/portal/users/[[...role]]"
 
   return (
     <div className={styles.page}>
-      <PageHeader title={role ? ROLE_LABELS[role] : "Users"} subtitle={SUBTITLES[role ?? "all"]}>
-        <nav className={tabs.tabs} aria-label="User types">
-          {TABS.map((tab) => (
-            <Link
-              key={tab.id}
-              href={tab.href}
-              className={tabs.tab}
-              aria-current={(role ?? "all") === tab.id ? "page" : undefined}
-            >
-              {tab.label}
-            </Link>
-          ))}
-        </nav>
-      </PageHeader>
+      <PageHeader
+        title={role ? ROLE_LABELS[role] : "Users"}
+        subtitle={SUBTITLES[role ?? "all"]}
+        tabs={
+          <nav className={tabs.tabs} aria-label="User types">
+            {TABS.map((tab) => (
+              <Link
+                key={tab.id}
+                href={tab.href}
+                className={tabs.tab}
+                aria-current={(role ?? "all") === tab.id ? "page" : undefined}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </nav>
+        }
+      />
       {shown === null ? (
         <Empty>Users couldn&apos;t be loaded right now. Please try again shortly.</Empty>
       ) : shown.length ? (

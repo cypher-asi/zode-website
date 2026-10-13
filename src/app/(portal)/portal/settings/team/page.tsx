@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { isTeam, isZodeAdmin } from "@/features/account/admin";
 import { LogoutButton } from "@/features/account/LogoutButton";
 import { requireAccount } from "@/features/account/session";
-import tabs from "@/features/data-room/room.module.css";
 import ui from "@/features/data-room/ui.module.css";
 import { PortalLoading } from "@/features/portal/PortalLoading";
 import { Empty, PageHeader } from "@/features/portal/sections";
@@ -33,12 +32,12 @@ const orNull = <T,>(promise: Promise<T>, what: string): Promise<T | null> =>
 export default function TeamPage(): ReactElement {
   return (
     <div className={styles.page}>
-      <PageHeader title="Settings" subtitle="The ZODE team, who can open data rooms. Super admins choose who's on it.">
-        <div className={tabs.headerActions}>
-          <SettingsTabs current="team" />
-          <LogoutButton className={ui.button} />
-        </div>
-      </PageHeader>
+      <PageHeader
+        title="Settings"
+        subtitle="The ZODE team, who can open data rooms. Super admins choose who's on it."
+        tabs={<SettingsTabs current="team" />}
+        actions={<LogoutButton className={ui.button} />}
+      />
       <Suspense fallback={<PortalLoading header={false} nested />}>
         <Team />
       </Suspense>
