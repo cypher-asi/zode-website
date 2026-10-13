@@ -383,7 +383,7 @@ export function Deck({ initialSlide, header }: { initialSlide: number; header: R
             <span className={styles.rule} data-rule="bottom" />
             <span className={styles.name}>
               <span
-                key={SLIDES[NAMED[index]].eyebrow}
+                key={`${SLIDES[NAMED[index]].eyebrow}:${NAMED[index] === index ? "shown" : "borrowed"}`}
                 className={styles.nameLine}
                 style={{ "--chars": SLIDES[NAMED[index]].eyebrow.length } as CSSProperties}
               >

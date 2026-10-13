@@ -282,6 +282,11 @@
   animation: name-cursor var(--type-time) steps(var(--chars), end) var(--duration-slow) backwards;
 }
 
+/* Hidden (the cover and close borrow a neighbour's name), the name waits whole, to type in once it shows. */
+.grid:not([data-name]) :is(.nameText, .nameCursor) {
+  animation: none;
+}
+
 @keyframes name-type {
   from {
     clip-path: inset(0 100% 0 0);
