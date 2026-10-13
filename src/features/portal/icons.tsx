@@ -63,12 +63,7 @@ const GLYPHS: Record<PortalIconName, ReactElement> = {
       <path pathLength={1} d="M5.75 16.25a3.5 3.25 0 0 1 6.5 0M14.5 9.75h3.25M14.5 13.25h3.25" />
     </>
   ),
-  capacity: (
-    <>
-      <rect pathLength={1} x="4.75" y="3.25" width="14.5" height="17.5" rx="2.5" />
-      <path pathLength={1} d="M12.75 6.75 9.5 12.25h5L11.25 17.25" />
-    </>
-  ),
+  capacity: <path pathLength={1} d="M13.25 2.75 4.75 13.5h7l-1 7.75 8.5-10.75h-7z" />,
   posts: (
     <>
       <path pathLength={1} d="M15.5 4.5a2.12 2.12 0 0 1 3 3l-10 10-4 1 1-4z" />
