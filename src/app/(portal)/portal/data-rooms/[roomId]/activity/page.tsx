@@ -3,7 +3,13 @@ import Link from "next/link";
 import { Select } from "@/components/ui/Select";
 import { listActors, listEvents } from "@/features/data-room/audit";
 import { getRoomTree, isUuid, requireRoomRole } from "@/features/data-room/rooms";
-import { AUDIT_ACTION_LABELS, type AuditAction, type AuditEvent } from "@/features/data-room/types";
+import {
+  AUDIT_ACTION_LABELS,
+  isRoomKind,
+  roomKindLabel,
+  type AuditAction,
+  type AuditEvent,
+} from "@/features/data-room/types";
 import styles from "@/features/data-room/admin.module.css";
 import room from "@/features/data-room/room.module.css";
 import ui from "@/features/data-room/ui.module.css";
@@ -11,6 +17,8 @@ import ui from "@/features/data-room/ui.module.css";
 const time = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "medium" });
 
 const roleName = (value: unknown) => (value === "admin" ? "Admin" : value === "viewer" ? "Viewer" : String(value ?? ""));
+
+const kindName = (value: unknown) => (isRoomKind(value) ? roomKindLabel(value) : String(value ?? ""));
 
 /** The subject and any detail of an event, from the snapshot taken when it happened. */
 function describe(event: AuditEvent): { subject: string; detail: string } {
@@ -24,6 +32,8 @@ function describe(event: AuditEvent): { subject: string; detail: string } {
     case "rename":
     case "room_rename":
       return { subject: String(d.to ?? ""), detail: `Was “${String(d.from ?? "")}”` };
+    case "room_kind_change":
+      return { subject: kindName(d.to), detail: `Was ${kindName(d.from)}` };
     case "invite":
       return { subject: String(d.email ?? ""), detail: `As ${roleName(d.role)}${d.requiresMnda ? ", MNDA required" : ""}` };
     case "mnda_sign":

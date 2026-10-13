@@ -92,7 +92,7 @@ export interface LeaseTerms {
   sources: DiligenceSource[];
 }
 
-/** What diligence found for a site ZODE would lease; everything else comes from the compute model. */
+/** What diligence found for a site ZODE would lease or rent colo space in; everything else comes from the compute model. */
 export interface LeaseEconomics {
   rent: LeaseTerms;
   /** Paid to the landlord toward the build-out. */
@@ -109,16 +109,21 @@ interface SummaryBase {
 
 /** The room's kind decides which economics its summary holds. */
 export type DiligenceSummary = SummaryBase &
-  ({ kind: "purchase"; economics: PurchaseEconomics } | { kind: "lease"; economics: LeaseEconomics });
+  ({ kind: "purchase"; economics: PurchaseEconomics } | { kind: "lease" | "colo"; economics: LeaseEconomics });
 
 /** Every file the economics cite. */
 export function economicsSources(summary: DiligenceSummary): DiligenceSource[] {
-  if (summary.kind === "lease") {
+  if (summary.kind !== "purchase") {
     const e = summary.economics;
     return [...e.rent.sources, ...e.capitalContribution.sources, ...e.criticalItMw.sources];
   }
   const e = summary.economics;
   return [...e.purchasePrice.sources, ...e.conversionCost.sources, ...e.criticalItMw.sources];
+}
+
+export async function hasDiligenceSummary(roomId: string): Promise<boolean> {
+  const [row] = await db()`select exists (select 1 from data_room_summaries where room_id = ${roomId}) as found`;
+  return Boolean(row.found);
 }
 
 /**
@@ -172,8 +177,8 @@ export const toUsd = (money: Money, fx: Fx): number | null =>
 /**
  * Runs the standard compute model for the site: as many B300 nodes as its
  * critical IT power carries. A purchase pays its price and conversion upfront
- * with no base lease; a lease pays its rent terms and capital contribution.
- * Every other input keeps the model's default.
+ * with no base lease; a lease or colo pays its rent terms and capital
+ * contribution. Every other input keeps the model's default.
  */
 export function summaryEconomics(summary: DiligenceSummary, start = nextMonthStart()): SummaryEconomics {
   const e = summary.economics;
@@ -183,7 +188,7 @@ export function summaryEconomics(summary: DiligenceSummary, start = nextMonthSta
   const perMw = (usd: number | null) => (clusterMw > 0 ? Math.round((usd ?? 0) / clusterMw) : 0);
 
   let inputs: ModelInputs;
-  if (summary.kind === "lease") {
+  if (summary.kind !== "purchase") {
     const { rent, capitalContribution, fx } = summary.economics;
     inputs = {
       ...DEFAULT_INPUTS,

@@ -9,15 +9,21 @@ export const ROLES: readonly { id: RoomRole; label: string; detail: string }[] =
 export const roleLabel = (role: RoomRole, superAdmin = false): string =>
   superAdmin && role === "admin" ? "Super admin" : (ROLES.find((r) => r.id === role)?.label ?? role);
 
-/** Whether the room is for buying a site or leasing one. */
-export type RoomKind = "purchase" | "lease";
+/** Whether the room is for buying a site, leasing one, or renting colo space. */
+export type RoomKind = "purchase" | "lease" | "colo";
 
 export const ROOM_KINDS: readonly { id: RoomKind; label: string; detail: string }[] = [
   { id: "purchase", label: "Purchase", detail: "ZODE would buy the site." },
   { id: "lease", label: "Lease", detail: "ZODE would lease the site from a landlord." },
+  { id: "colo", label: "Colo", detail: "ZODE would rent colocation space in a provider's data center." },
 ];
 
-export const isRoomKind = (value: unknown): value is RoomKind => value === "purchase" || value === "lease";
+export const isRoomKind = (value: unknown): value is RoomKind => ROOM_KINDS.some((kind) => kind.id === value);
+
+export const roomKindLabel = (kind: RoomKind): string => ROOM_KINDS.find((k) => k.id === kind)?.label ?? kind;
+
+/** A purchase's summary holds purchase economics; a lease's and a colo's hold lease economics. */
+export const leaseEconomics = (kind: RoomKind): boolean => kind !== "purchase";
 
 export interface RoomSummary {
   id: string;
@@ -85,6 +91,7 @@ export type AuditAction =
   | "folder_create"
   | "room_create"
   | "room_rename"
+  | "room_kind_change"
   | "invite"
   | "invite_resend"
   | "invite_revoke"
@@ -103,6 +110,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   folder_create: "Created folder",
   room_create: "Created room",
   room_rename: "Renamed room",
+  room_kind_change: "Changed type",
   invite: "Invited",
   invite_resend: "Resent invite",
   invite_revoke: "Revoked invite",

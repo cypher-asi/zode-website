@@ -89,9 +89,9 @@ const moneyFigure = (label: string, money: Money, usd: number | null): Figure =>
 
 const perKwMonth = (usd: number) => `$${Number(usd.toFixed(2))} / kW-mo`;
 
-/** The figures that differ by deal: what a purchase pays for the site, or what a lease costs. */
+/** The figures that differ by deal: what a purchase pays for the site, or what a lease or colo costs. */
 function siteFigures(summary: Summary): Figure[] {
-  if (summary.kind === "lease") {
+  if (summary.kind !== "purchase") {
     const { rent, capitalContribution, fx } = summary.economics;
     return [
       {
@@ -154,8 +154,8 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
 
   const fx = e.fx.currency === "USD" ? "" : ` ${e.fx.currency} converted at ${e.fx.usdPerUnit} USD (${e.fx.asOf}).`;
   const site =
-    summary.kind === "lease"
-      ? `Site leased: base rent at $${i.baseLease} per kW-month escalating ${pct(i.leaseEscalation, 1)} a year, ` +
+    summary.kind !== "purchase"
+      ? `${summary.kind === "colo" ? "Colo space" : "Site leased"}: base rent at $${i.baseLease} per kW-month escalating ${pct(i.leaseEscalation, 1)} a year, ` +
         `NNN and operations at $${i.nnn + i.operations} per kW-month, the capital contribution funded by equity and not recovered.`
       : `Site owned: purchase and conversion funded by equity, no base lease, ` +
         `NNN and operations at $${i.nnn + i.operations} per kW-month, ${pct(i.siteResidual, 0)} of the purchase price recovered at exit.`;

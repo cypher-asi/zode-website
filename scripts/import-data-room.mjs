@@ -8,7 +8,7 @@
  *
  * Create the room in the app first (so its owner is a real ZOS account) and
  * pass its id; or, where room creation isn't allowed yet, pass
- * `--create "<room name>" --owner-user-id <ZOS user id> [--kind purchase|lease]`
+ * `--create "<room name>" --owner-user-id <ZOS user id> [--kind purchase|lease|colo]`
  * instead of `--room`. The kind defaults to purchase.
  *
  * A "00 Index/File Index.csv" in the tree, if present, supplies each file's
@@ -55,7 +55,7 @@ const concurrency = Math.max(1, Number.parseInt(args.concurrency, 10) || 4);
 if (!args.dir) fail("--dir is required.");
 if (!args.room && !args.create) fail("Pass --room <id>, or --create <name> with --owner-user-id.");
 if (args.create && !args["owner-user-id"]) fail("--create needs --owner-user-id (the owner's ZOS user id).");
-if (!["purchase", "lease"].includes(args.kind)) fail("--kind is purchase or lease.");
+if (!["purchase", "lease", "colo"].includes(args.kind)) fail("--kind is purchase, lease or colo.");
 const root = path.resolve(args.dir.replace(/^~(?=$|\/)/, process.env.HOME ?? "~"));
 
 const formatBytes = (bytes) => {

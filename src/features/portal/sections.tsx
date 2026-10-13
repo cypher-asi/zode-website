@@ -2,7 +2,7 @@ import type { ReactElement, ReactNode } from "react";
 import Link from "next/link";
 import type { OrderSummary } from "@/features/configurator/orders";
 import type { Contract } from "@/features/contracts/contracts";
-import { roleLabel, type RoomSummary } from "@/features/data-room/types";
+import { roleLabel, roomKindLabel, type RoomSummary } from "@/features/data-room/types";
 import { SUBSCRIBER_STATUSES, type Subscriber } from "@/features/mailing-list/types";
 import { kindLabel, type Post } from "@/features/posts/types";
 import { RoleButton } from "@/features/users/RoleButton";
@@ -82,7 +82,7 @@ export function RoomList({ rooms, superAdmin = false }: { rooms: RoomSummary[]; 
             <span className={styles.rowMain}>
               <span className={styles.rowTitle}>{room.name}</span>
               <span className={styles.rowMeta}>
-                {room.kind === "lease" ? "Lease" : "Purchase"} · {plural(room.fileCount, "file")} · Created{" "}
+                {roomKindLabel(room.kind)} · {plural(room.fileCount, "file")} · Created{" "}
                 {date.format(new Date(room.createdAt))}
               </span>
             </span>

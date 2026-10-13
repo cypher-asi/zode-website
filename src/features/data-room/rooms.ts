@@ -5,7 +5,16 @@ import { isTeam } from "@/features/account/admin";
 import { getAccount, requireAccount } from "@/features/account/session";
 import type { Account } from "@/features/account/zos";
 import { db } from "@/lib/db";
-import type { RoomFile, RoomFolder, RoomKind, RoomMember, RoomRole, RoomSummary, RoomTree } from "./types";
+import {
+  leaseEconomics,
+  type RoomFile,
+  type RoomFolder,
+  type RoomKind,
+  type RoomMember,
+  type RoomRole,
+  type RoomSummary,
+  type RoomTree,
+} from "./types";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -112,6 +121,15 @@ export async function createRoom(name: string, kind: RoomKind, account: Account)
 
 export async function renameRoom(roomId: string, name: string): Promise<void> {
   await db()`update data_rooms set name = ${name} where id = ${roomId}`;
+}
+
+/** A summary's economics follow the kind, so moving to or from a purchase drops the summary written for the old one. */
+export async function setRoomKind(roomId: string, from: RoomKind, to: RoomKind): Promise<void> {
+  const sql = db();
+  await sql.transaction([
+    sql`update data_rooms set kind = ${to} where id = ${roomId}`,
+    ...(leaseEconomics(from) === leaseEconomics(to) ? [] : [sql`delete from data_room_summaries where room_id = ${roomId}`]),
+  ]);
 }
 
 export async function deleteRoom(roomId: string): Promise<void> {

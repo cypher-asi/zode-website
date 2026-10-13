@@ -10,8 +10,8 @@
  * follows the room's kind:
  *
  * - purchase: purchase price, conversion cost, critical IT MW and the FX rate;
- * - lease: rent terms (USD base rent, escalation, NNN, operations fee, power
- *   rate and PUE), the capital contribution, critical IT MW and the FX rate.
+ * - lease or colo: rent terms (USD base rent, escalation, NNN, operations fee,
+ *   power rate and PUE), the capital contribution, critical IT MW and the FX rate.
  *
  * Sources are paths inside the room, such as "05 Power and Electrical/04 .../file.pdf";
  * each must name one live file, and is stored with that file's id so later
@@ -47,7 +47,7 @@ if (!databaseUrl) fail("DATABASE_URL is not set.");
 const sql = neon(databaseUrl);
 const [room] = await sql`select id, name, kind from data_rooms where id = ${args.room}`;
 if (!room) fail(`No room ${args.room}.`);
-const lease = room.kind === "lease";
+const lease = room.kind !== "purchase";
 
 const input = JSON.parse(await readFile(args.file.replace(/^~(?=$|\/)/, process.env.HOME ?? "~"), "utf8"));
 const problems = [];

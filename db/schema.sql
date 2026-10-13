@@ -85,10 +85,13 @@ create table if not exists data_rooms (
   created_by_email text not null
 );
 
--- Whether ZODE would buy the site or lease it. It picks the room's summary
--- economics and its standard folders; existing rooms were all purchases.
+-- Whether ZODE would buy the site, lease it, or rent colo space in it. It picks
+-- the room's summary economics, a colo's being a lease's; existing rooms were
+-- all purchases.
 alter table data_rooms add column if not exists kind text not null default 'purchase'
-  check (kind in ('purchase', 'lease'));
+  check (kind in ('purchase', 'lease', 'colo'));
+alter table data_rooms drop constraint if exists data_rooms_kind_check;
+alter table data_rooms add constraint data_rooms_kind_check check (kind in ('purchase', 'lease', 'colo'));
 
 -- One row per invited email. A row grants access only once its invite link has
 -- been accepted by a signed-in ZOS account with that email, which binds user_id.

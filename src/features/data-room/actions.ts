@@ -37,9 +37,10 @@ import {
   renameRoom,
   roomAccess,
   roomUsage,
+  setRoomKind,
   type RoomAccess,
 } from "./rooms";
-import { ROLES, isRoomKind, type ActionState, type RoomRole } from "./types";
+import { ROLES, isRoomKind, roomKindLabel, type ActionState, type RoomKind, type RoomRole } from "./types";
 
 const NO_ACCESS: ActionState = { error: "You don't have permission to do that. Try reloading the page." };
 
@@ -87,7 +88,7 @@ export async function createRoomAction(_prev: ActionState, formData: FormData): 
   const name = cleanName(formData.get("name"));
   if (typeof name !== "string") return name;
   const kind = formData.get("kind");
-  if (!isRoomKind(kind)) return { error: "Choose whether the room is for a purchase or a lease." };
+  if (!isRoomKind(kind)) return { error: "Choose whether the room is for a purchase, a lease or colo." };
 
   const roomId = await createRoom(name, kind, account);
   await recordEvent({ roomId, account, action: "room_create", detail: { name, kind } });
@@ -104,6 +105,18 @@ export async function renameRoomAction(roomId: string, _prev: ActionState, formD
   await recordEvent({ roomId, account: access.account, action: "room_rename", detail: { from: access.room.name, to: name } });
   refresh();
   return { ok: "Room renamed." };
+}
+
+export async function changeRoomKindAction(roomId: string, kind: RoomKind): Promise<ActionState> {
+  const access = await roomAccess(roomId, "admin");
+  if (!access) return NO_ACCESS;
+  if (!isRoomKind(kind)) return { error: "Choose a room type." };
+  if (access.room.kind === kind) return {};
+
+  await setRoomKind(roomId, access.room.kind, kind);
+  await recordEvent({ roomId, account: access.account, action: "room_kind_change", detail: { from: access.room.kind, to: kind } });
+  refresh();
+  return { ok: `Room type changed to ${roomKindLabel(kind)}.` };
 }
 
 export async function deleteRoomAction(roomId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {

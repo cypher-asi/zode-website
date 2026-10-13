@@ -9,7 +9,7 @@ import styles from "./portal.module.css";
 
 const KIND_OPTIONS = ROOM_KINDS.map(({ id, label, detail }) => ({ value: id, label, detail }));
 
-/** "New data room" in the portal; expands into name and purchase/lease fields, and the creator becomes its admin. */
+/** "New data room" in the portal; expands into name and type fields, and the creator becomes its admin. */
 export function NewRoomForm(): ReactElement {
   const [open, setOpen] = useState(false);
   const [state, create, pending] = useActionState<ActionState, FormData>(createRoomAction, {});
