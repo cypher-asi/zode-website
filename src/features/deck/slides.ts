@@ -159,7 +159,7 @@ export const SLIDES: readonly Slide[] = [
     kind: "shortfall",
     section: "Shortfall",
     eyebrow: "Macro · Shortfall",
-    title: "A 33 GW gap through 2028, after every fix.",
+    title: "A 33 GW gap through 2028.",
     ground: "white",
     sources: ["morganStanley"],
   },
