@@ -2,10 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useId, useState, type CSSProperties, type ReactElement, type ReactNode } from "react";
 import { CabinArt, VIEW as CABIN_VIEW } from "@/features/zode-drawings/CabinArt";
-import { PRINCIPLE_GRID_CLASS, PrincipleCard } from "@/features/home/principles/Principles";
-import { PRINCIPLES } from "@/features/home/principles/principles";
-import { ANCHOR_X, StackArt, VIEW as STACK_VIEW, labelY } from "@/features/home/stack/StackArt";
-import stackStyles from "@/features/home/stack/FullStack.module.css";
+import { Principles } from "@/features/home/principles/Principles";
+import { StackFigure } from "@/features/home/stack/FullStack";
 import { MacroArt } from "./art/MacroArt";
 import { DEMAND_GAP, DemandChart } from "./charts/DemandChart";
 import { ShortfallByYear, ShortfallChart } from "./charts/ShortfallChart";
@@ -203,14 +201,22 @@ function Demand({ active, compact }: { active: boolean; compact: boolean }): Rea
         <h3 {...rise(3)} className={`${styles.rise} ${styles.label}`}>
           Market tightness
         </h3>
-        {MARKET_TIGHTNESS.map((item, i) => (
-          <div key={item.label} {...rise(4 + i)}>
-            <StatBlock stat={item} />
-            <span className={styles.statSource}>
-              <Cited id={item.cite}>{item.source}</Cited>
-            </span>
-          </div>
-        ))}
+        <ul className={styles.drawnStats}>
+          {MARKET_TIGHTNESS.map((item, i) => (
+            <li key={item.label} {...rise(4 + i * 0.5)} className={`${styles.rise} ${styles.drawnStat}`}>
+              <div className={styles.drawnFigure}>
+                <MacroArt id={item.art} playing={active} />
+              </div>
+              <div className={styles.drawnText}>
+                <span className={styles.statValue}>{item.value}</span>
+                <span className={styles.statLabel}>{item.label}</span>
+                <span className={styles.statSource}>
+                  <Cited id={item.cite}>{item.source}</Cited>
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
       </aside>
     </div>
   );
@@ -309,54 +315,42 @@ function News({ slide }: { slide: Of<"news"> }): ReactElement {
   );
 }
 
-const EFFECT_LABELS = { blocks: "Blocks projects", delays: "Delays projects" } as const;
-
 /**
- * Problem and solution, side by side: what stops data centers down the left,
- * muted, and ZODE's answer to each on the same row at the right, split by a
- * page-grid rule as the macro slide. The problems that kill projects
- * outright are tagged in red; the rest delay them.
+ * Problem and solution as two columns of cards: down the left each problem
+ * as a drawing, its name and one figure; down the right ZODE's answer on the
+ * same row, an arrow in the empty column between. The problem that blocks
+ * projects outright is drawn in red.
  */
-function ProblemSolution({ slide, compact }: { slide: Of<"problemSolution">; compact: boolean }): ReactElement {
+function ProblemSolution({ slide, active }: { slide: Of<"problemSolution">; active: boolean }): ReactElement {
   return (
     <div className={styles.problemSolution}>
       <div {...rise(1.5)} className={`${styles.rise} ${styles.psHead}`}>
         <p className={styles.label}>{slide.columns[0]}</p>
+        <span />
         <p className={styles.label}>{slide.columns[1]}</p>
       </div>
-      {slide.rows.map(({ effect, problem, solution }, i) => (
+      {slide.rows.map(({ art, hard, problem, solution }, i) => (
         <div key={problem.title} className={styles.psRow}>
-          <div {...rise(2 + i)} className={`${styles.rise} ${styles.psProblem}`}>
-            <div className={styles.psText}>
-              <span className={styles.psEffect} data-effect={effect}>
-                {EFFECT_LABELS[effect]}
-              </span>
-              <h3 className={styles.h3}>{problem.title}</h3>
-              <p className={styles.body}>{problem.body}</p>
-              {problem.drivers ? (
-                <ul className={styles.psDrivers}>
-                  {problem.drivers.map((driver) => (
-                    <li key={driver}>{driver}</li>
-                  ))}
-                </ul>
-              ) : null}
+          <div {...rise(2 + i)} className={`${styles.rise} ${styles.psProblem}`} data-hard={hard || undefined}>
+            <div className={styles.psFigure}>
+              <MacroArt id={art} hard={hard} light={slide.ground !== "ink"} playing={active} />
             </div>
-            <p className={styles.psStat}>
-              <span className={styles.psStatValue}>{problem.stat.value}</span>
-              <span className={styles.statLabel}>{problem.stat.label}</span>
-              <span className={styles.statSource}>
-                <Cited id={problem.stat.cite}>{problem.stat.source}</Cited>
-              </span>
-            </p>
+            <div className={styles.psText}>
+              <h3 className={styles.h3}>{problem.title}</h3>
+              <p className={styles.psStat}>
+                <span className={styles.psStatValue}>{problem.stat.value}</span>
+                <span className={styles.statLabel}>
+                  <Cited id={problem.stat.cite}>{problem.stat.label}</Cited>
+                </span>
+              </p>
+            </div>
           </div>
+          <svg {...rise(2.25 + i)} className={`${styles.rise} ${styles.psArrow}`} viewBox="0 0 40 14" aria-hidden="true">
+            <path d="M1 7H39M32 1l7 6-7 6" />
+          </svg>
           <div {...rise(2.5 + i)} className={`${styles.rise} ${styles.psSolution}`}>
-            {compact ? <span className={styles.label}>ZODE</span> : null}
             <h3 className={styles.h3}>{solution.title}</h3>
-            <ul className={styles.psPoints}>
-              {solution.points.map((point) => (
-                <li key={point}>{point}</li>
-              ))}
-            </ul>
+            <p className={styles.body}>{solution.body}</p>
           </div>
         </div>
       ))}
@@ -443,46 +437,20 @@ function Solution({ slide, active }: { slide: Of<"solution">; active: boolean })
 function DesignPrinciples({ active }: { active: boolean }): ReactElement {
   return (
     <div className={styles.designPrinciples}>
-      <div className={`${PRINCIPLE_GRID_CLASS} ${styles.principles}`} data-shown={active || undefined}>
-        {PRINCIPLES.map((principle, i) => (
-          <PrincipleCard key={principle.id} principle={principle} index={i} open playing={active} headingLevel={3} />
-        ))}
-      </div>
+      <Principles shown={active} headingLevel={3} className={styles.principles} />
     </div>
   );
 }
 
-function Stack({ slide, active }: { slide: Of<"stack">; active: boolean }): ReactElement {
-  const anchorX = ((ANCHOR_X - STACK_VIEW.x) / STACK_VIEW.w) * 100;
+function Stack({ slide, active, compact }: { slide: Of<"stack">; active: boolean; compact: boolean }): ReactElement {
   return (
     <div className={styles.stack}>
-      <p {...rise(2)} className={`${styles.rise} ${styles.lede}`}>
-        {slide.lede}
-      </p>
-      <div className={styles.stackFigure} style={{ "--ratio": STACK_VIEW.w / STACK_VIEW.h } as CSSProperties}>
-        <div className={stackStyles.figure} data-exploded={active || undefined}>
-          <StackArt active={null} onActive={noop} />
-        </div>
-        <ol className={styles.stackLabels}>
-          {slide.layers.map((layer, i) => (
-            <li
-              key={layer.title}
-              className={`${styles.rise} ${styles.stackLabel}`}
-              style={
-                {
-                  "--d": 3 + i * 0.5,
-                  "--x": `${anchorX}%`,
-                  "--y": `${((labelY(i) - STACK_VIEW.y) / STACK_VIEW.h) * 100}%`,
-                } as CSSProperties
-              }
-            >
-              <span className={styles.label}>{layer.index}</span>
-              <span className={styles.stackTitle}>{layer.title}</span>
-              <span className={styles.stackBody}>{layer.body}</span>
-            </li>
-          ))}
-        </ol>
+      <div {...rise(2)} className={`${styles.rise} ${styles.lede}`}>
+        {slide.lede.map((paragraph) => (
+          <p key={paragraph}>{paragraph}</p>
+        ))}
       </div>
+      <StackFigure exploded={active} side={!compact} className={styles.stackFigure} />
     </div>
   );
 }
@@ -827,7 +795,7 @@ function Body({ slide, active, compact }: { slide: Slide; active: boolean; compa
     case "news":
       return <News slide={slide} />;
     case "problemSolution":
-      return <ProblemSolution slide={slide} compact={compact} />;
+      return <ProblemSolution slide={slide} active={active} />;
     case "problems":
       return <Problems slide={slide} active={active} />;
     case "solution":
@@ -835,7 +803,7 @@ function Body({ slide, active, compact }: { slide: Slide; active: boolean; compa
     case "principles":
       return <DesignPrinciples active={active} />;
     case "stack":
-      return <Stack slide={slide} active={active} />;
+      return <Stack slide={slide} active={active} compact={compact} />;
     case "steps":
       return <Steps slide={slide} />;
     case "unit":

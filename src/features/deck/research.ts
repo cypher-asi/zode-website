@@ -4,6 +4,8 @@
  * is labelled as such where it's drawn.
  */
 
+import type { MacroArtId } from "./slides";
+
 export const AS_OF = "October 13, 2026";
 
 export interface Source {
@@ -167,16 +169,30 @@ export const DEMAND = {
   sp2030: 180,
 } as const;
 
+/** `art` names each figure's drawing on the demand slide (art/MacroArt.tsx). */
 export const MARKET_TIGHTNESS = [
-  { value: "1.4%", label: "Primary-market vacancy, a record low", source: "CBRE, H1 2026", cite: "cbre" },
+  {
+    value: "1.4%",
+    label: "Primary-market vacancy, record low",
+    source: "CBRE, H1 2026",
+    cite: "cbre",
+    art: "vacancy",
+  },
   {
     value: "66 GW",
-    label: "Under construction in North America, 95% pre-committed",
+    label: "Under construction, 95% pre-leased",
     source: "JLL, midyear 2026",
     cite: "jll",
+    art: "construction",
   },
-  { value: "25 GW", label: "Absorbed in H1 2026, double a year earlier", source: "JLL, midyear 2026", cite: "jll" },
-] as const;
+  {
+    value: "25 GW",
+    label: "Absorbed in H1\u00a02026, 2× last year",
+    source: "JLL, midyear 2026",
+    cite: "jll",
+    art: "absorption",
+  },
+] as const satisfies readonly { value: string; label: string; source: string; cite: SourceId; art: MacroArtId }[];
 
 /**
  * Morgan Stanley's 2026–2028 US data center power bridge, in GW. `short`

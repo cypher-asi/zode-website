@@ -56,6 +56,9 @@
 /*
  * The SVG is the only in-flow child, so label `top` percentages track its
  * height. `--lift` is how far a hovered plate rises, in viewBox units.
+ * Another host (the investor deck) sets `--art`, `--art-max` and `--lead`
+ * itself, `--label-end` for where the labels stop, and `--px`, the length
+ * one pixel of the labels' spacing takes.
  */
 .figure {
   --gap: 30;
@@ -292,9 +295,9 @@
   position: absolute;
   top: var(--y);
   left: calc(50% + var(--art) * (0.5 - var(--anchor-in)));
-  right: calc(24px - var(--edge));
+  right: var(--label-end, calc(24px - var(--edge)));
   display: grid;
-  grid-template-columns: minmax(var(--lead), 1fr) minmax(0, 400px) minmax(
+  grid-template-columns: minmax(var(--lead), 1fr) minmax(0, calc(400 * var(--px, 1px))) minmax(
       0,
       1fr
     );
@@ -304,7 +307,7 @@
   letter-spacing: -0.005em;
   color: var(--color-text-secondary);
   opacity: 0;
-  translate: 0 8px;
+  translate: 0 calc(8 * var(--px, 1px));
   transition:
     opacity 600ms ease calc(400ms + var(--i) * 60ms),
     translate 600ms ease calc(400ms + var(--i) * 60ms),
@@ -326,7 +329,7 @@
   grid-row: 1;
   align-self: center;
   height: 1px;
-  margin-right: 12px;
+  margin-right: calc(12 * var(--px, 1px));
   background: var(--color-border-strong);
   transition:
     background-color 200ms ease,
@@ -348,8 +351,8 @@
 .labelHead {
   display: flex;
   align-items: baseline;
-  gap: 10px;
-  line-height: 20px;
+  gap: calc(10 * var(--px, 1px));
+  line-height: calc(20 * var(--px, 1px));
 }
 
 /* Matches the "0n" figure captions in ../why-zode/Features.module.css. */
@@ -368,7 +371,7 @@
 
 .labelBody {
   display: block;
-  margin-top: 4px;
+  margin-top: calc(4 * var(--px, 1px));
 }
 
 .figure[data-exploded] .label {
@@ -386,7 +389,10 @@
   color: var(--color-text-primary);
 }
 
-/* Below this the side column gets narrow enough that labels wrap into their neighbours. */
+/*
+ * Below this the side column gets narrow enough that labels wrap into their
+ * neighbours. A host that scales the whole figure (`data-side`) keeps them beside it.
+ */
 @media (max-width: 1200px) {
   .layout {
     display: block;
@@ -398,7 +404,7 @@
     margin: 0 auto;
   }
 
-  .figure {
+  .figure:not([data-side]) {
     --art: min(340px, 100%);
 
     flex-direction: column;
@@ -406,7 +412,7 @@
     margin-top: 36px;
   }
 
-  .labels {
+  .figure:not([data-side]) .labels {
     position: static;
     display: grid;
     gap: 14px;
@@ -415,19 +421,18 @@
     margin-top: 28px;
   }
 
-  .label,
-  .label[data-on] {
+  .figure:not([data-side]) :is(.label, .label[data-on]) {
     position: static;
     display: block;
     transform: none;
   }
 
-  .label::before {
+  .figure:not([data-side]) .label::before {
     content: none;
   }
 
   /* Stacked labels leave gaps if hidden outright, so they only dim. */
-  .figure[data-active] .label:not([data-on]) .labelText {
+  .figure[data-active]:not([data-side]) .label:not([data-on]) .labelText {
     opacity: 0.3;
   }
 }

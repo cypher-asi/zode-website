@@ -93,7 +93,7 @@
 
 /* These scale with the chart: a non-scaling stroke measures its draw-on dash in screen pixels, which falls short of the line when the chart is drawn large. */
 .line {
-  stroke: var(--fg);
+  stroke: #f04438;
   stroke-width: 2.5;
 }
 

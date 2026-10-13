@@ -6,38 +6,24 @@ import { PrincipleArt } from "./PrincipleArt";
 import { PRINCIPLES, type Principle } from "./principles";
 import styles from "./Principles.module.css";
 
-/** The grid's class, for hosts that lay the cards out themselves (the investor deck); `data-shown` fades them in. */
-export const PRINCIPLE_GRID_CLASS = styles.grid;
-
 /**
  * One numbered principle card: a line drawing over its title. Hovering or
  * focusing it plays the drawing and slides the description up under the
- * title; `open` keeps the description out and `playing` keeps the drawing
- * looping, for places with no hover (a slide). `headingLevel` drops the
- * title to an H3 where the card sits under a section's own H2.
+ * title. `headingLevel` drops the title to an H3 where the card sits under
+ * a section's own H2.
  */
-export function PrincipleCard({
+function PrincipleCard({
   principle,
   index,
-  open = false,
-  playing = false,
-  headingLevel = 2,
+  headingLevel,
 }: {
   principle: Principle;
   index: number;
-  open?: boolean;
-  playing?: boolean;
-  headingLevel?: 2 | 3;
+  headingLevel: 2 | 3;
 }): ReactElement {
   const Heading = headingLevel === 3 ? "h3" : "h2";
   return (
-    <article
-      className={styles.card}
-      tabIndex={open ? undefined : 0}
-      data-open={open || undefined}
-      data-playing={playing || undefined}
-      style={{ "--i": index } as CSSProperties}
-    >
+    <article className={styles.card} tabIndex={0} style={{ "--i": index } as CSSProperties}>
       <div className={styles.head}>
         <span className={styles.index}>{String(index + 1).padStart(2, "0")}</span>
         <span className={styles.plus} aria-hidden="true" />
@@ -58,11 +44,22 @@ export function PrincipleCard({
 /**
  * Four numbered principle cards in a row. Touch screens show every
  * description, and play a drawing while its card sits in the middle of the
- * viewport.
+ * viewport. The cards rise in once scrolled into view, or with `shown` where
+ * the host decides (a deck slide becoming active); `className` lets a host
+ * retune the custom properties the stylesheet reads.
  */
-export function Principles(): ReactElement {
+export function Principles({
+  shown,
+  headingLevel = 2,
+  className,
+}: {
+  shown?: boolean;
+  headingLevel?: 2 | 3;
+  className?: string;
+}): ReactElement {
   const ref = useRef<HTMLDivElement>(null);
-  const shown = useInView(ref, "0px 0px -20% 0px");
+  const inView = useInView(ref, "0px 0px -20% 0px");
+  const rise = shown ?? inView;
 
   useEffect(() => {
     const grid = ref.current;
@@ -78,10 +75,10 @@ export function Principles(): ReactElement {
   }, []);
 
   return (
-    <div className={styles.root}>
-      <div ref={ref} className={styles.grid} data-shown={shown || undefined} data-top-fade>
+    <div className={className ? `${styles.root} ${className}` : styles.root}>
+      <div ref={ref} className={styles.grid} data-shown={rise || undefined} data-top-fade>
         {PRINCIPLES.map((principle, i) => (
-          <PrincipleCard key={principle.id} principle={principle} index={i} />
+          <PrincipleCard key={principle.id} principle={principle} index={i} headingLevel={headingLevel} />
         ))}
       </div>
     </div>

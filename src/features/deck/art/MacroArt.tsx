@@ -63,59 +63,63 @@ function capital(s: Sketch): void {
     .forEach(([x, y, n], k) => s.group(anim(styles.shade, k), () => coins(s, x, y, 20, n, 6)));
 }
 
-/** A lattice pylon: the lines arrive solid on the left and leave dashed on the right, short of supply. */
-function power(s: Sketch): void {
-  const [BASE, TOP, BW, TW] = [64, -92, 36, 9];
-  const leg = (y: number) => BW + ((TW - BW) * (BASE - y)) / (BASE - TOP);
-  const levels = [64, 30, 0, -26, -50, -72, -92];
-
-  seg(s, -70, BASE, 70, BASE, styles.fine);
-  seg(s, -leg(BASE), BASE, -TW, TOP, styles.edge);
-  seg(s, leg(BASE), BASE, TW, TOP, styles.edge);
-  for (let k = 0; k < levels.length - 1; k++) {
-    const [y0, y1] = [levels[k], levels[k + 1]];
-    seg(s, -leg(y0), y0, leg(y1), y1, styles.fine);
-    seg(s, leg(y0), y0, -leg(y1), y1, styles.fine);
-    seg(s, -leg(y1), y1, leg(y1), y1, styles.fine);
-  }
-  poly(
-    s,
-    [
-      [-TW, TOP],
-      [0, TOP - 16],
-      [TW, TOP],
-    ],
-    styles.top,
-  );
-
-  const arms = [
-    [-72, 64],
-    [-50, 52],
-  ] as const;
-  arms.forEach(([y, reach], k) => {
-    poly(
-      s,
-      [
-        [-reach, y],
-        [reach, y],
-        [leg(y), y + 6],
-        [-leg(y), y + 6],
-      ],
-      styles.top,
-    );
-    for (const side of [-1, 1]) {
-      const x = side * (reach - 4);
-      const drop = y + 12;
-      seg(s, x, y, x, drop, styles.edge);
-      circle(s, x, drop, 2.2, styles.ring);
-      const end = side * 160;
-      const d = `M ${round(x)} ${round(drop)} Q ${round((x + end) / 2)} ${round(drop + 24)} ${end} ${round(drop + 6)}`;
-      s.extend(end, drop + 6);
-      s.extend((x + end) / 2, drop + 14);
-      if (side < 0) s.group(anim(styles.flow, k), () => s.path(d, styles.edge));
-      else s.path(d, styles.dash);
-    }
+/** A conductor from `a` to `b`, sagging `dip` at its middle. */
+function span(a: P3, b: P3, dip: number): P3[] {
+  const [ax, ay, az = 0] = a;
+  const [bx, by, bz = 0] = b;
+  return Array.from({ length: 13 }, (_, k) => {
+    const t = k / 12;
+    return [ax + (bx - ax) * t, ay + (by - ay) * t, az + (bz - az) * t - dip * 4 * t * (1 - t)] as const;
   });
+}
+
+/** An insulator: a stem from `z0` to `z1` ringed with sheds. */
+function insulator(s: Sketch, x: number, y: number, z0: number, z1: number, r: number): void {
+  s.line([[x, y, z0], [x, y, z1]], styles.edge);
+  const sheds = Math.max(2, Math.round((z1 - z0) / 4));
+  for (let k = 0; k < sheds; k++) s.disc([x, y, z0 + ((z1 - z0) * (k + 0.5)) / sheds], r, styles.ring);
+}
+
+/** An H-frame gantry at `x`: two steel posts and a beam carrying the three phases. */
+function gantry(s: Sketch, x: number, half: number, h: number): void {
+  s.box(x - 2, -half - 2, 4, 4, 4, h);
+  s.box(x - 2, -half - 2, 4, 2 * half + 4, h - 4, 4);
+  s.box(x - 2, half - 2, 4, 4, 4, h - 4);
+}
+
+/**
+ * A substation on its pad: the grid arrives solid at the gantry on the left,
+ * steps down through the transformer and leaves dashed on the right, short of supply.
+ */
+function power(s: Sketch): void {
+  const PHASES = [-18, 0, 18];
+  const [IN, OUT] = [-66, 62];
+  const [IN_H, OUT_H] = [86, 62];
+  const [HV, LV, TOP] = [-12, 12, 42];
+
+  s.box(-80, -46, 160, 92, 0, 4);
+  for (let x = -72; x <= 72; x += 16) s.line([[x, -46, 4], [x, 46, 4]], styles.trace);
+
+  PHASES.forEach((y, k) =>
+    s.group(anim(styles.flow, k), () => s.line(span([-116, y, IN_H + 2], [IN, y, IN_H - 16], 6), styles.edge)),
+  );
+  gantry(s, IN, 34, IN_H);
+  for (const y of PHASES) insulator(s, IN, y, IN_H - 16, IN_H - 4, 2.2);
+
+  s.group(anim(styles.shade), () => s.box(-30, -28, 60, 56, 4, TOP - 4));
+  for (const y of PHASES) {
+    insulator(s, HV, y, TOP, TOP + 20, 3);
+    insulator(s, LV, y, TOP, TOP + 12, 2.6);
+  }
+  for (let x = -24; x <= 24; x += 6) s.box(x - 1, 28, 2, 8, 10, 24);
+
+  for (const y of PHASES) s.line(span([IN, y, IN_H - 16], [HV, y, TOP + 20], 4), styles.edge);
+  gantry(s, OUT, 30, OUT_H);
+  for (const y of PHASES) {
+    insulator(s, OUT, y, OUT_H - 14, OUT_H - 4, 2);
+    s.line(span([LV, y, TOP + 12], [OUT, y, OUT_H - 14], 3), styles.edge);
+    s.line(span([OUT, y, OUT_H - 14], [112, y, OUT_H - 10], 6), styles.dash);
+  }
 }
 
 /** A GPU node: a chassis with eight finned heat sinks. */
@@ -209,6 +213,87 @@ function offtake(s: Sketch): void {
   s.extend(L + 16, T + 112);
   s.group(anim(styles.flash), () => circle(s, L + W - 24, T + H - 26, 14, styles.ring));
   circle(s, L + W - 24, T + H - 26, 9, styles.fine);
+}
+
+/** A rack cabinet at (x, y), its front (+y) ruled into servers. */
+function rack(s: Sketch, x: number, y: number, w: number, d: number, h: number): void {
+  s.box(x, y, w, d, 0, h);
+  for (let z = 8; z < h - 4; z += 6) s.line([[x + 3, y + d, z], [x + w - 3, y + d, z]]);
+}
+
+/** A leased-out hall: two rows of racks, one slot in the front row still open. */
+function vacancy(s: Sketch): void {
+  const [W, D, H, STEP] = [16, 22, 44, 18];
+  const OPEN = 3;
+  s.box(-64, -46, 128, 92, -4, 4);
+  for (const [y, row] of [
+    [-34, 0],
+    [12, 1],
+  ] as const) {
+    for (let i = 0; i < 6; i++) {
+      const x = -54 + i * STEP;
+      if (row === 1 && i === OPEN) {
+        s.group(anim(styles.flow), () =>
+          s.line(
+            [
+              [x, y],
+              [x + W, y],
+              [x + W, y + D],
+              [x, y + D],
+              [x, y],
+            ],
+            styles.dash,
+          ),
+        );
+      } else {
+        s.group(anim(styles.shade, i + row * 2), () => rack(s, x, y, W, D, H));
+      }
+    }
+  }
+}
+
+/** A hall going up: the first bay clad, the rest a steel frame, under a tower crane. */
+function construction(s: Sketch): void {
+  const [Y, H] = [30, 48];
+  const BAYS = [-60, -24, 12, 48];
+  const [MX, MY, MH] = [-40, -58, 112];
+
+  s.box(MX - 4, MY - 4, 8, 8, 0, MH);
+  for (let z = 10; z < MH; z += 10) s.line([[MX + 4, MY - 4, z - 10], [MX + 4, MY + 4, z]]);
+  s.line([[MX - 36, MY, MH + 4], [MX + 112, MY, MH + 4]], styles.edge);
+  s.line([[MX, MY, MH + 22], [MX + 112, MY, MH + 4]]);
+  s.line([[MX, MY, MH + 22], [MX - 36, MY, MH + 4]]);
+  s.box(MX - 36, MY - 5, 12, 10, MH - 8, 12);
+  s.group(anim(styles.flow), () => s.line([[MX + 84, MY, MH + 4], [MX + 84, MY, H + 30]], styles.dash));
+  s.box(MX + 76, MY - 6, 16, 12, H + 18, 12);
+
+  s.box(-68, -Y - 8, 136, 2 * Y + 16, -4, 4);
+  s.group(anim(styles.shade), () => s.box(BAYS[0], -Y, BAYS[1] - BAYS[0], 2 * Y, 0, H));
+  for (const x of BAYS.slice(1)) {
+    for (const y of [-Y, Y]) s.line([[x, y, 0], [x, y, H]], styles.edge);
+    s.line([[x, -Y, H], [x, Y, H]], styles.edge);
+  }
+  for (const y of [-Y, Y]) s.line([[BAYS[1], y, H], [BAYS[3], y, H]], styles.edge);
+  for (let k = 1; k < BAYS.length - 1; k++) {
+    const [x0, x1] = [BAYS[k], BAYS[k + 1]];
+    s.line([[x0, Y, 0], [x1, Y, H]]);
+    s.line([[x0, Y, H / 2], [x1, Y, H / 2]]);
+  }
+}
+
+/** Modules absorbed: last year's stack, then this year's, twice as tall, its new half pulsing. */
+function absorption(s: Sketch): void {
+  const [W, H, GAP] = [34, 18, 3];
+  const stack = (x: number, n: number, fresh: number) => {
+    for (let k = 0; k < n; k++) {
+      const draw = () => s.box(x, -W / 2, W, W, k * (H + GAP), H);
+      if (k < n - fresh) draw();
+      else s.group(anim(styles.shade, k), draw);
+    }
+  };
+  s.box(-56, -32, 112, 64, -4, 4);
+  stack(-44, 2, 0);
+  stack(10, 4, 2);
 }
 
 /** A gabled box at (x, y), its ridge along x, `roof` above the eaves. */
@@ -520,6 +605,9 @@ const DRAW: Record<MacroArtId, (s: Sketch) => void> = {
   land,
   datacenter,
   offtake,
+  vacancy,
+  construction,
+  absorption,
   regulation,
   localBuild,
   supplyChain,
@@ -540,16 +628,19 @@ const ART = Object.fromEntries(
 ) as Record<MacroArtId, { items: ReactElement[]; view: Bounds }>;
 
 /**
- * A line drawing for the macro slide, drawn for the ink ground. `hard` sets
- * it in red, for the bottleneck; `playing` loops its animation.
+ * A line drawing for the macro slides, drawn for the ink ground unless
+ * `light`. `hard` sets it in red, for the bottleneck; `playing` loops its
+ * animation.
  */
 export function MacroArt({
   id,
   hard = false,
+  light = false,
   playing = false,
 }: {
   id: MacroArtId;
   hard?: boolean;
+  light?: boolean;
   playing?: boolean;
 }): ReactElement {
   const { items, view } = ART[id];
@@ -558,6 +649,7 @@ export function MacroArt({
       className={styles.art}
       viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
       data-hard={hard || undefined}
+      data-light={light || undefined}
       data-playing={playing || undefined}
       aria-hidden="true"
     >

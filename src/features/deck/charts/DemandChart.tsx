@@ -85,36 +85,16 @@ export function DemandChart({ active, compact = false }: { active: boolean; comp
 
       <path className={styles.gap} d={gapArea} />
 
-      <rect
-        className={styles.range}
-        x={x(2030) - 9}
-        width={18}
-        y={y(DEMAND.epri2030.high)}
-        height={y(DEMAND.epri2030.low) - y(DEMAND.epri2030.high)}
-      />
-      {/* The squarer plot has room under the range and left of the marker, where the lines aren't. */}
-      <Cited id="epri">
-        <text
-          className={styles.note}
-          x={compact ? x(2030) : x(2030) - 18}
-          y={y(DEMAND.epri2030.low)}
-          dy={compact ? "1.4em" : "-0.2em"}
-          textAnchor={compact ? "middle" : "end"}
-        >
-          EPRI 2030: {DEMAND.epri2030.low}–{DEMAND.epri2030.high} GW
-        </text>
-      </Cited>
-
+      {/* The other 2030 estimates, stacked left of the marker, where the lines aren't. */}
       <circle className={styles.marker} cx={x(2030)} cy={y(DEMAND.sp2030)} r={6} />
       <Cited id="utilityDive">
-        <text
-          className={styles.note}
-          x={compact ? x(2030) - 14 : x(2030) + 14}
-          y={y(DEMAND.sp2030)}
-          dy="0.35em"
-          textAnchor={compact ? "end" : "start"}
-        >
+        <text className={styles.note} x={x(2030) - 14} y={y(DEMAND.sp2030)} dy="0.35em" textAnchor="end">
           S&amp;P 2030: {DEMAND.sp2030}+ GW
+        </text>
+      </Cited>
+      <Cited id="epri">
+        <text className={styles.note} x={x(2030) - 14} y={y(DEMAND.sp2030)} dy="2em" textAnchor="end">
+          EPRI 2030: {DEMAND.epri2030.low}–{DEMAND.epri2030.high} GW
         </text>
       </Cited>
 

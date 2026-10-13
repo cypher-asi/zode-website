@@ -2,21 +2,26 @@
  * White principles row, inside `.principles` in app/(home)/page.module.css.
  * Hairlines are the grid background showing through 1px gaps, as in
  * ../why-zode/Features.module.css. `--ink` is the host colour the drawings
- * read.
+ * read. Another host (the investor deck) retunes the custom properties
+ * through the root's `className`: `--cols`, `--grid-max` and `--grid-h` lay
+ * out the grid, `--card-h` and `--card-pad` size the cards, and `--px` is
+ * the length one pixel of the drawings' size takes.
  */
 .root {
   --ink: var(--color-ink);
   --scale: 0.82;
   --card-h: clamp(380px, 30vw, 440px);
+  --cols: 4;
 
   padding: 96px var(--edge);
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
   gap: 1px;
-  max-width: 1400px;
+  max-width: var(--grid-max, 1400px);
+  height: var(--grid-h, auto);
   margin: 0 auto;
   background: var(--color-border);
 }
@@ -153,55 +158,13 @@
 }
 
 /*
- * Held open where there's no hover to open it (the investor deck): the
- * description shows, the drawing keeps its size, and the host's `--card-h`
- * and `--card-pad` hold at every viewport size. The cards fade in where
- * they sit rather than rising, as the deck's text does.
- */
-.card[data-open] {
-  height: var(--card-h);
-  padding: var(--card-pad, 28px 32px 32px);
-  translate: none;
-  transition: opacity 700ms ease calc(var(--i) * 90ms);
-}
-
-.card[data-open] .figure {
-  min-height: 0;
-  padding: var(--figure-pad, 20px 0);
-}
-
-.card[data-open] .reveal {
-  grid-template-rows: 1fr;
-}
-
-.card[data-open] .body {
-  max-width: none;
-  padding-top: var(--body-gap, 14px);
-  opacity: 1;
-  translate: 0 0;
-}
-
-.card[data-open] .plus {
-  display: none;
-}
-
-/* The drawing fits the room the copy leaves, rather than the card's width. */
-.card[data-open] .art {
-  width: auto;
-  max-width: 100%;
-  height: 100%;
-  scale: none;
-  translate: none;
-}
-
-/*
  * Drawings (see PrincipleArt.tsx). `--w` is the shared frame's viewBox width.
  * The face shades and hairline greys are artwork, matched to the shared line
  * art rather than to the UI tokens.
  */
 .art {
   display: block;
-  width: min(100%, calc(var(--w) * var(--scale) * 1px));
+  width: min(100%, calc(var(--w) * var(--scale) * var(--px, 1px)));
   height: auto;
   max-height: 100%;
   overflow: visible;
@@ -364,22 +327,20 @@
 }
 
 @media (max-width: 1200px) {
-  .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .root {
+    --cols: 2;
   }
 }
 
 @media (max-width: 700px) {
   .root {
+    --cols: 1;
+
     padding: 72px var(--edge);
   }
 
-  .grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .card {
-    padding: 24px;
+    padding: var(--card-pad, 24px);
   }
 }
 

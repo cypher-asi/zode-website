@@ -8,7 +8,7 @@ export interface Stat {
   readonly label: string;
 }
 
-/** Line drawings for the macro slide's cards (art/MacroArt.tsx). */
+/** Line drawings for the macro slides' cards (art/MacroArt.tsx). */
 export type MacroArtId =
   | "capital"
   | "power"
@@ -16,6 +16,9 @@ export type MacroArtId =
   | "land"
   | "datacenter"
   | "offtake"
+  | "vacancy"
+  | "construction"
+  | "absorption"
   | "regulation"
   | "localBuild"
   | "supplyChain"
@@ -86,26 +89,18 @@ export type Slide =
   | (Base & {
       kind: "problemSolution";
       columns: readonly [string, string];
-      /** One problem per row, ZODE's answer beside it; `blocks` marks the ones that kill projects outright. */
+      /** One problem per row, drawn, ZODE's answer beside it; `hard` sets the one that blocks projects outright in red. */
       rows: readonly {
-        effect: "blocks" | "delays";
-        problem: {
-          title: string;
-          body: string;
-          drivers?: readonly string[];
-          stat: Stat & { source: string; cite: SourceId };
-        };
-        solution: { title: string; points: readonly string[] };
+        art: MacroArtId;
+        hard?: boolean;
+        problem: { title: string; stat: Stat & { cite: SourceId } };
+        solution: { title: string; body: string };
       }[];
     })
   | (Base & { kind: "problems"; groups: readonly [ProblemGroup, ProblemGroup] })
   | (Base & { kind: "solution"; facts: readonly Stat[] })
   | (Base & { kind: "principles" })
-  | (Base & {
-      kind: "stack";
-      lede: string;
-      layers: readonly { index: string; title: string; body: string }[];
-    })
+  | (Base & { kind: "stack"; lede: readonly string[] })
   | (Base & { kind: "steps"; steps: readonly { title: string; body: string }[]; statement: string })
   | (Base & { kind: "unit"; specs: readonly Stat[]; highlight: number; image: string })
   | (Base & {
@@ -175,7 +170,7 @@ export const SLIDES: readonly Slide[] = [
       { value: "$3.75–5", label: "per GPU-hour", art: "compute" },
     ],
     trend: "AI tokens per month",
-    statement: "Capital, GPUs and powered land are available. Converting energy to tokens is the main bottleneck.",
+    statement: "Capital, GPUs and powered land are available. Converting energy to tokens is the hard part.",
     chain: [
       { label: "Capital", art: "capital" },
       { label: "Land", art: "land" },
@@ -261,81 +256,6 @@ export const SLIDES: readonly Slide[] = [
     sources: ["dataCenterWatch"],
   },
   {
-    id: "problem-solution",
-    kind: "problemSolution",
-    section: "Problem / Solution",
-    eyebrow: "Problem · Solution",
-    title: "Why data centers stall, and why ZODEs don't.",
-    ground: "ink",
-    columns: ["What stops data centers", "How ZODE solves it"],
-    rows: [
-      {
-        effect: "blocks",
-        problem: {
-          title: "Community opposition",
-          body: "The main reason projects are denied or withdrawn.",
-          drivers: ["Power bills", "Water", "Noise and emissions", "Farmland", "Secrecy", "Few local jobs"],
-          stat: {
-            value: "71%",
-            label: "Of Americans oppose a data center near their home",
-            source: "Heatmap, May 2026",
-            cite: "heatmap",
-          },
-        },
-        solution: {
-          title: "Small, quiet and locally owned.",
-          points: [
-            "4 MW clusters inside existing powered buildings. No new campus, no farmland.",
-            "Closed-loop liquid cooling with no evaporative water, and no on-site gas plant.",
-            "Designed to be beautiful, and owned by the communities that host them.",
-          ],
-        },
-      },
-      {
-        effect: "delays",
-        problem: {
-          title: "Power and grid interconnection",
-          body: "Large loads wait years for a connection, and for the equipment to make it.",
-          stat: {
-            value: "160+",
-            label: "Weeks to get a substation transformer in 2026",
-            source: "Wood Mackenzie, May 2026",
-            cite: "transformers",
-          },
-        },
-        solution: {
-          title: "Already-energized sites.",
-          points: [
-            "Converts powered buildings and colocation space that are already connected.",
-            "A 4 MW load fits in spare capacity a utility can serve now.",
-            "928 MW of power partner sites under LOI.",
-          ],
-        },
-      },
-      {
-        effect: "delays",
-        problem: {
-          title: "Permitting and zoning",
-          body: "Codes weren't written for 100 MW campuses, and moratoriums fill the gap.",
-          stat: {
-            value: "16",
-            label: "States where lawmakers considered banning new data centers",
-            source: "NCSL",
-            cite: "ncsl",
-          },
-        },
-        solution: {
-          title: "Under every threshold.",
-          points: [
-            "Moratoriums target 20, 50 and 100 MW. A ZODE cluster is 4 MW.",
-            "Factory-built pods arrive complete: 90 days from order to production.",
-          ],
-        },
-      },
-    ],
-    sources: ["heatmap", "transformers", "ncsl"],
-  },
-  {
     id: "solution",
     kind: "solution",
     section: "Solution",
@@ -357,20 +277,61 @@ export const SLIDES: readonly Slide[] = [
     ground: "white",
   },
   {
+    id: "problem-solution",
+    kind: "problemSolution",
+    section: "Differentiation",
+    eyebrow: "Differentiation",
+    title: "Why data centers stall and ZODEs fly.",
+    ground: "white",
+    columns: ["What stops data centers", "How ZODE solves it"],
+    rows: [
+      {
+        art: "datacenter",
+        hard: true,
+        problem: {
+          title: "Community opposition",
+          stat: { value: "71%", label: "Oppose a data center near them", cite: "heatmap" },
+        },
+        solution: {
+          title: "Small, quiet and beautiful.",
+          body: "4 MW in existing buildings, owned by the communities that host them. No evaporative water, no gas plant.",
+        },
+      },
+      {
+        art: "power",
+        problem: {
+          title: "Grid connection",
+          stat: { value: "160+", label: "Weeks for a substation transformer", cite: "transformers" },
+        },
+        solution: {
+          title: "Already energized.",
+          body: "Powered buildings and colocation, connected today. 928 MW of power partner sites under LOI.",
+        },
+      },
+      {
+        art: "offtake",
+        problem: {
+          title: "Permitting and zoning",
+          stat: { value: "16", label: "States weighing data center bans", cite: "ncsl" },
+        },
+        solution: {
+          title: "Under every threshold.",
+          body: "Moratoriums start at 20 MW. A ZODE cluster is 4 MW, in production 90 days from order.",
+        },
+      },
+    ],
+    sources: ["heatmap", "transformers", "ncsl"],
+  },
+  {
     id: "stack",
     kind: "stack",
     section: "The stack",
     eyebrow: "Solution · Stack",
     title: "Vertically integrated, from dirt to tokens.",
     ground: "paper",
-    lede: "ZODE builds every layer itself, from the land and power to the network that delivers tokens. ZODEs are factory-made in North America and ship complete, weather-rated from -40°F to 115°F.",
-    layers: [
-      { index: "06", title: "Network", body: "Fiber and satellite uplinks" },
-      { index: "05", title: "Edge routing", body: "Software that places workloads" },
-      { index: "04", title: "Compute", body: "Dense, liquid-cooled GPU clusters" },
-      { index: "03", title: "ZODE Pods", body: "Compute, Electrical and Cooling Pods" },
-      { index: "02", title: "Power", body: "On-site generation and storage" },
-      { index: "01", title: "Land", body: "Powered sites, owned or leased" },
+    lede: [
+      "ZODE builds every layer itself, from the land and power to the network that delivers tokens.",
+      "ZODEs are factory-made in North America and ship complete, weather-rated from -40°F to 115°F.",
     ],
   },
   {

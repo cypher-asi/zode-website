@@ -19,6 +19,21 @@
   overflow: visible;
 }
 
+/*
+ * On a light ground, the home page drawings' faces (lineArt.module.css),
+ * pulsing a step darker in grey, as on ink. Plain colours: a fill animated
+ * from a color-mix() interpolates out of gamut.
+ */
+.art[data-light] {
+  --art-ink: var(--fg);
+  --art-fine: var(--fg-2);
+  --art-faint: var(--rule-strong);
+  --art-top: #ffffff;
+  --art-side-l: #f1f1ed;
+  --art-side-r: #e5e5e0;
+  --art-pulse: #d6d6d1;
+}
+
 .art[data-hard] {
   --art-ink: #f04438;
   --art-fine: #a3392f;
@@ -26,6 +41,14 @@
   --art-side-l: #22100e;
   --art-side-r: #331512;
   --art-pulse: #5c1d18;
+}
+
+.art[data-light][data-hard] {
+  --art-fine: #d0625a;
+  --art-faint: #f3c1bb;
+  --art-side-l: #fdecea;
+  --art-side-r: #fad7d3;
+  --art-pulse: #f5b8b1;
 }
 
 .art :is(polygon, polyline, path, ellipse, rect, circle, line) {

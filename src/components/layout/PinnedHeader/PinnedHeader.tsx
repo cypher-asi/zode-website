@@ -132,13 +132,17 @@ function topFadeMask(
 /**
  * What sits under the center of `el`: the surface tone (`data-surface`) and
  * whether it's photography (`data-media`), whose tone varies shot to shot.
+ * `null` while a view transition runs (React reveals streamed Suspense
+ * content in one): it hit-tests as the bare root until it ends.
  */
-function sampleUnder(el: HTMLElement, rect: DOMRect): { tone: Tone | null; media: boolean } {
+function sampleUnder(el: HTMLElement, rect: DOMRect): { tone: Tone | null; media: boolean } | null {
   const x = rect.left + rect.width / 2;
   const y = rect.top + rect.height / 2;
+  const nodes = document.elementsFromPoint(x, y);
+  if (nodes.every((node) => node === document.documentElement)) return null;
   let tone: Tone | null = null;
   let media = false;
-  for (const node of document.elementsFromPoint(x, y)) {
+  for (const node of nodes) {
     if (el.contains(node)) continue;
     if (!media && node.closest("[data-media]")) media = true;
     if (!tone) {
@@ -198,7 +202,7 @@ export function PinnedHeader({
   const [mountPath, setMountPath] = useState<string | null>(pathname);
   if (mountPath !== null && mountPath !== pathname) setMountPath(null);
   /**
-   * Whether the wordmark and button carry their shared transition names. The
+   * Whether the wordmark and button join the shared route transition. The
    * portal's header stays put across its routes, so there they only join the
    * navigation that mounts it; past that each route change would sit through
    * the whole morph for nothing.
@@ -446,7 +450,7 @@ export function PinnedHeader({
         (node) => [node, node.getBoundingClientRect()] as const,
       );
       const brandUnder = sampleUnder(brand, brandRect);
-      const actionUnder = action && actionRect ? sampleUnder(action, actionRect) : null;
+      const actionUnder = action && actionRect ? sampleUnder(action, actionRect) : undefined;
 
       const clear = Math.max(brandRect.bottom, actionRect?.bottom ?? 0) + FADE_GAP;
       const band: FadeBand = {
@@ -462,7 +466,9 @@ export function PinnedHeader({
         setMask(node, topFadeMask(rect, undefined, true, band) ?? COVER_HIDDEN);
       }
 
-      if (brandUnder.tone) setBrandTone(brandUnder.tone);
+      // Nothing else re-samples once a view transition ends (the deck doesn't scroll), so keep looking until it has.
+      if (brandUnder === null || actionUnder === null) schedule();
+      if (brandUnder?.tone) setBrandTone(brandUnder.tone);
       if (actionUnder) {
         if (actionUnder.tone) setActionTone(actionUnder.tone);
         setActionOverMedia(actionUnder.media);
@@ -491,8 +497,10 @@ export function PinnedHeader({
   return (
     <>
       {/* Pages set their own `--edge`, so the wordmark sits at a different spot on
-          each; the shared name slides it across instead of jumping. */}
-      <ViewTransition name={morph ? "zode-wordmark" : undefined} share="auto" default="none">
+          each; the shared name slides it across instead of jumping. `share` switches
+          off rather than the name: React only forgets a name it still carries when
+          it unmounts, so dropping it reads as a duplicate on the next page. */}
+      <ViewTransition name="zode-wordmark" share={morph ? "auto" : "none"} default="none">
         <Link
           ref={brandRef}
           className={styles.brand}
