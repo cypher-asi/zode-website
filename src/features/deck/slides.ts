@@ -56,6 +56,21 @@ export type Slide =
   | (Base & { kind: "states" })
   | (Base & { kind: "news"; takeaway: string })
   | (Base & {
+      kind: "problemSolution";
+      columns: readonly [string, string];
+      /** One problem per row, ZODE's answer beside it; `blocks` marks the ones that kill projects outright. */
+      rows: readonly {
+        effect: "blocks" | "delays";
+        problem: {
+          title: string;
+          body: string;
+          drivers?: readonly string[];
+          stat: Stat & { source: string; cite: SourceId };
+        };
+        solution: { title: string; points: readonly string[] };
+      }[];
+    })
+  | (Base & {
       kind: "columns";
       columns: readonly { label: string; title: string; body: string }[];
       statement: string;
@@ -208,6 +223,81 @@ export const SLIDES: readonly Slide[] = [
     takeaway:
       "The bans target scale: 50 MW in New York, 100 MW in Delaware's bill, 20 MW in Maine's. A standard ZODE cluster is 4 MW, in an existing powered building.",
     sources: ["dataCenterWatch"],
+  },
+  {
+    id: "problem-solution",
+    kind: "problemSolution",
+    section: "Problem / Solution",
+    eyebrow: "Problem · Solution",
+    title: "Why data centers stall, and why ZODEs don't.",
+    ground: "ink",
+    columns: ["What stops data centers", "How ZODE solves it"],
+    rows: [
+      {
+        effect: "blocks",
+        problem: {
+          title: "Community opposition",
+          body: "The main reason projects are denied or withdrawn.",
+          drivers: ["Power bills", "Water", "Noise and emissions", "Farmland", "Secrecy", "Few local jobs"],
+          stat: {
+            value: "71%",
+            label: "Of Americans oppose a data center near their home",
+            source: "Heatmap, May 2026",
+            cite: "heatmap",
+          },
+        },
+        solution: {
+          title: "Small, quiet and locally owned.",
+          points: [
+            "4 MW clusters inside existing powered buildings. No new campus, no farmland.",
+            "Closed-loop liquid cooling with no evaporative water, and no on-site gas plant.",
+            "Designed to be beautiful, and owned by the communities that host them.",
+          ],
+        },
+      },
+      {
+        effect: "delays",
+        problem: {
+          title: "Power and grid interconnection",
+          body: "Large loads wait years for a connection, and for the equipment to make it.",
+          stat: {
+            value: "160+",
+            label: "Weeks to get a substation transformer in 2026",
+            source: "Wood Mackenzie, May 2026",
+            cite: "transformers",
+          },
+        },
+        solution: {
+          title: "Already-energized sites.",
+          points: [
+            "Converts powered buildings and colocation space that are already connected.",
+            "A 4 MW load fits in spare capacity a utility can serve now.",
+            "928 MW of power partner sites under LOI.",
+          ],
+        },
+      },
+      {
+        effect: "delays",
+        problem: {
+          title: "Permitting and zoning",
+          body: "Codes weren't written for 100 MW campuses, and moratoriums fill the gap.",
+          stat: {
+            value: "16",
+            label: "States where lawmakers considered banning new data centers",
+            source: "NCSL",
+            cite: "ncsl",
+          },
+        },
+        solution: {
+          title: "Under every threshold.",
+          points: [
+            "Moratoriums target 20, 50 and 100 MW. A ZODE cluster is 4 MW.",
+            "Factory-built pods arrive complete: 90 days from order to production.",
+          ],
+        },
+      },
+    ],
+    sources: ["heatmap", "transformers", "ncsl"],
   },
   {
     id: "solution",

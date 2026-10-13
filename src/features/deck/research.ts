@@ -78,6 +78,19 @@ export const SOURCES = {
     url: "https://www.bisnow.com/news/national/data-center-community-relations/community-backlash-upends-billions-of-dollars-in-new-data-center-projects",
     via: "via Bisnow",
   },
+  heatmap: {
+    publisher: "Heatmap Pro / Embold Research",
+    title: "Americans now overwhelmingly oppose new data centers near them",
+    date: "June 2026",
+    url: "https://heatmap.news/politics/americans-oppose-data-centers-poll",
+  },
+  transformers: {
+    publisher: "Wood Mackenzie",
+    title: "Why AI data center projects face years of delays after approval",
+    date: "May 12, 2026",
+    url: "https://www.datacenterknowledge.com/energy-power-supply/why-ai-data-center-projects-face-years-of-delays-after-approval",
+    via: "via Data Center Knowledge",
+  },
   capex: {
     publisher: "Amazon, Microsoft, Alphabet and Meta",
     title: "2026 capital expenditure guidance",

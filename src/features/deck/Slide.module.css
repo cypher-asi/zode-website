@@ -969,6 +969,178 @@
   color: var(--fg-2);
 }
 
+/*
+ * Problem and solution: two halves split by a page-grid rule, as the macro
+ * slide's, and a row per problem ruled across both, so each answer sits
+ * level with what it answers. Rows share the height the head leaves.
+ */
+.problemSolution {
+  --alarm: #f04438;
+  --split-gap: calc(5 * var(--u));
+
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: auto repeat(3, minmax(0, 1fr));
+  column-gap: var(--split-gap);
+}
+
+.problemSolution::after {
+  content: "";
+  position: absolute;
+  top: calc(-1.8 * var(--u) - var(--pip) / 2);
+  bottom: calc(-1.2 * var(--u) - var(--pip) / 2);
+  left: calc(50% - var(--pip) / 2);
+  width: var(--pip);
+  background:
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 top 0 / var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 bottom 0 / var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--rule), var(--rule)) center / 1px 100% no-repeat;
+  pointer-events: none;
+}
+
+.psHead,
+.psRow {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+.psHead {
+  padding-bottom: calc(1 * var(--u));
+}
+
+.psHead .label:last-child {
+  color: var(--fg);
+}
+
+.psRow {
+  min-height: 0;
+  border-top: 1px solid var(--rule);
+}
+
+/* The problem's text, its figure at the far end. */
+.psProblem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) calc(11 * var(--u));
+  align-items: center;
+  gap: calc(2 * var(--u));
+  min-height: 0;
+  padding: calc(1.2 * var(--u)) 0;
+}
+
+.psText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(0.7 * var(--u));
+  min-width: 0;
+}
+
+.psProblem .h3,
+.psSolution .h3 {
+  --h3-size: calc(1.5 * var(--u));
+}
+
+.psSolution {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: calc(0.9 * var(--u));
+  min-height: 0;
+  padding: calc(1.2 * var(--u)) 0;
+}
+
+/* As the macro chain's bottleneck tag: a square light, red where the problem kills projects. */
+.psEffect {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(0.6 * var(--u));
+  font-family: var(--font-mono);
+  font-size: calc(0.64 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+.psEffect::before {
+  content: "";
+  width: calc(0.6 * var(--u));
+  height: calc(0.6 * var(--u));
+  background: currentColor;
+}
+
+.psEffect[data-effect="blocks"] {
+  color: var(--alarm);
+}
+
+.psDrivers,
+.psPoints {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.psDrivers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(0.4 * var(--u));
+  margin-top: calc(0.2 * var(--u));
+}
+
+.psDrivers li {
+  padding: calc(0.25 * var(--u)) calc(0.6 * var(--u));
+  box-shadow: inset 0 0 0 1px var(--rule-strong);
+  font-family: var(--font-mono);
+  font-size: calc(0.58 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+.psStat {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.5 * var(--u));
+  margin: 0;
+}
+
+.psStatValue {
+  font-size: calc(2.8 * var(--u));
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.psStat .statSource {
+  margin-top: 0;
+}
+
+/* ZODE's answers, each after a short accent rule. */
+.psPoints {
+  display: grid;
+  gap: calc(0.5 * var(--u));
+}
+
+.psPoints li {
+  display: grid;
+  grid-template-columns: calc(1.2 * var(--u)) minmax(0, 1fr);
+  gap: calc(0.6 * var(--u));
+  font-size: calc(1 * var(--u));
+  line-height: 1.45;
+}
+
+.psPoints li::before {
+  content: "";
+  height: 1px;
+  margin-top: 0.72em;
+  background: var(--accent);
+}
+
 /* Solution: the cabin drawing across the slide, the principle cards below. */
 .solution {
   display: grid;
@@ -2050,6 +2222,61 @@
 
 .slide[data-compact] .newsSummary {
   font-size: 14px;
+}
+
+/* Problem and solution: one column, each problem then ZODE's answer under it. */
+.slide[data-compact] .problemSolution {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: none;
+}
+
+.slide[data-compact] .problemSolution::after,
+.slide[data-compact] .psHead {
+  display: none;
+}
+
+.slide[data-compact] .psRow {
+  gap: 16px;
+  padding: 20px 0 24px;
+}
+
+.slide[data-compact] .psProblem {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  padding: 0;
+}
+
+.slide[data-compact] .psText {
+  gap: 8px;
+}
+
+.slide[data-compact] .psStatValue {
+  font-size: 32px;
+}
+
+.slide[data-compact] :is(.psProblem, .psSolution) .h3 {
+  --h3-size: 21px;
+}
+
+.slide[data-compact] .psSolution {
+  gap: 10px;
+  padding: 2px 0 2px 16px;
+  border-left: 1px solid var(--accent);
+}
+
+.slide[data-compact] :is(.psEffect, .psDrivers li) {
+  font-size: var(--text-2xs);
+}
+
+.slide[data-compact] .psEffect::before {
+  width: 7px;
+  height: 7px;
+}
+
+.slide[data-compact] .psPoints li {
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 8px;
+  font-size: 15px;
 }
 
 /* Solution: the cabin across the card, then the facts and the principle cards stacked. */

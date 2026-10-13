@@ -309,6 +309,61 @@ function News({ slide }: { slide: Of<"news"> }): ReactElement {
   );
 }
 
+const EFFECT_LABELS = { blocks: "Blocks projects", delays: "Delays projects" } as const;
+
+/**
+ * Problem and solution, side by side: what stops data centers down the left,
+ * muted, and ZODE's answer to each on the same row at the right, split by a
+ * page-grid rule as the macro slide. The problems that kill projects
+ * outright are tagged in red; the rest delay them.
+ */
+function ProblemSolution({ slide, compact }: { slide: Of<"problemSolution">; compact: boolean }): ReactElement {
+  return (
+    <div className={styles.problemSolution}>
+      <div {...rise(1.5)} className={`${styles.rise} ${styles.psHead}`}>
+        <p className={styles.label}>{slide.columns[0]}</p>
+        <p className={styles.label}>{slide.columns[1]}</p>
+      </div>
+      {slide.rows.map(({ effect, problem, solution }, i) => (
+        <div key={problem.title} className={styles.psRow}>
+          <div {...rise(2 + i)} className={`${styles.rise} ${styles.psProblem}`}>
+            <div className={styles.psText}>
+              <span className={styles.psEffect} data-effect={effect}>
+                {EFFECT_LABELS[effect]}
+              </span>
+              <h3 className={styles.h3}>{problem.title}</h3>
+              <p className={styles.body}>{problem.body}</p>
+              {problem.drivers ? (
+                <ul className={styles.psDrivers}>
+                  {problem.drivers.map((driver) => (
+                    <li key={driver}>{driver}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+            <p className={styles.psStat}>
+              <span className={styles.psStatValue}>{problem.stat.value}</span>
+              <span className={styles.statLabel}>{problem.stat.label}</span>
+              <span className={styles.statSource}>
+                <Cited id={problem.stat.cite}>{problem.stat.source}</Cited>
+              </span>
+            </p>
+          </div>
+          <div {...rise(2.5 + i)} className={`${styles.rise} ${styles.psSolution}`}>
+            {compact ? <span className={styles.label}>ZODE</span> : null}
+            <h3 className={styles.h3}>{solution.title}</h3>
+            <ul className={styles.psPoints}>
+              {solution.points.map((point) => (
+                <li key={point}>{point}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Columns({ slide }: { slide: Of<"columns"> }): ReactElement {
   return (
     <div className={styles.statsBody}>
@@ -668,7 +723,7 @@ function Close({ slide }: { slide: Of<"close"> }): ReactElement {
 
 const SOURCE_GROUPS: readonly { title: string; ids: readonly SourceId[] }[] = [
   { title: "Demand and supply", ids: ["bnef", "utilityDive", "epri", "morganStanley", "cbre", "jll", "capex", "zodePricing", "googleTokens", "goldmanTokens"] },
-  { title: "Policy", ids: ["ncsl", "newYork", "oregon", "dataCenterWatch"] },
+  { title: "Policy", ids: ["ncsl", "newYork", "oregon", "dataCenterWatch", "heatmap", "transformers"] },
 ];
 
 function Sources(): ReactElement {
@@ -734,6 +789,8 @@ function Body({ slide, active, compact }: { slide: Slide; active: boolean; compa
       return <States active={active} compact={compact} />;
     case "news":
       return <News slide={slide} />;
+    case "problemSolution":
+      return <ProblemSolution slide={slide} compact={compact} />;
     case "columns":
       return <Columns slide={slide} />;
     case "solution":
