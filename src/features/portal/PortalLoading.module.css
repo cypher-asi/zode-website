@@ -5,7 +5,11 @@
   overflow: hidden;
   padding: 32px 36px 40px;
   /* Held back briefly so quick navigations swap straight to the content without a flash. */
-  animation: appear var(--duration-base) ease 150ms both;
+  animation: appear var(--duration-fast) ease 150ms both;
+}
+
+.page.nested {
+  padding: 0;
 }
 
 .header {

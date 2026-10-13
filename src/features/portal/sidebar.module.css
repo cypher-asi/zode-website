@@ -267,47 +267,52 @@ button.link {
  * into place, the title riding along, and whatever's new fades up into it.
  */
 @media (prefers-reduced-motion: no-preference) {
+  /* Only the flat page colour sits behind the sidebar, so the blur can go without a visible change. */
+  .sidebar[data-motion] {
+    backdrop-filter: none;
+  }
+
   .sidebar[data-motion="down"] .content {
-    animation: from-above var(--duration-slow) var(--ease-out);
+    animation: from-above var(--duration-fast) var(--ease-out);
   }
 
   .sidebar[data-motion="up"] .content {
-    animation: from-below var(--duration-slow) var(--ease-out);
+    animation: from-below var(--duration-fast) var(--ease-out);
   }
 
   .sidebar[data-motion="down"] .title {
     animation:
-      from-above var(--duration-slow) var(--ease-out),
-      fade-in var(--duration-slow) ease;
+      from-above var(--duration-fast) var(--ease-out),
+      fade-in var(--duration-fast) ease;
   }
 
   .sidebar[data-motion="up"] .title {
     animation:
-      from-below var(--duration-slow) var(--ease-out),
-      fade-in var(--duration-slow) ease;
+      from-below var(--duration-fast) var(--ease-out),
+      fade-in var(--duration-fast) ease;
   }
 
   .sidebar[data-motion="swap"] .title,
   .sidebar[data-motion] .crumb,
   .sidebar[data-motion] .body {
-    animation: rise var(--duration-slow) var(--ease-out);
+    animation: rise var(--duration-fast) var(--ease-out);
   }
 
   /* A docked explorer's parts (search, path, list, footer) rise in one after another. */
   .sidebar[data-motion] .dock > * > * {
-    animation: rise var(--duration-slow) var(--ease-out) backwards;
+    animation: rise var(--duration-fast) var(--ease-out) backwards;
   }
 
   .sidebar[data-motion] .dock > * > :nth-child(2) {
-    animation-delay: 40ms;
+    animation-delay: 20ms;
   }
 
   .sidebar[data-motion] .dock > * > :nth-child(3) {
-    animation-delay: 80ms;
+    animation-delay: 40ms;
   }
 
   .sidebar[data-motion] .dock > * > :nth-child(n + 4) {
-    animation-delay: 120ms;
+    animation-delay: 60ms;
   }
 }
 

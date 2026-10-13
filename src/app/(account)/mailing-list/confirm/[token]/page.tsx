@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { ReactElement } from "react";
+import { Suspense, type ReactElement } from "react";
 import Link from "next/link";
 import { confirmSubscriptionAction } from "@/features/mailing-list/actions";
 import { MailingListButton } from "@/features/mailing-list/MailingListButton";
@@ -33,9 +33,21 @@ const Subscribed = ({ email, lists }: { email: string; lists: MailingList[] }): 
 );
 
 /** Where confirmation emails land. Confirming takes a button press, so mail scanners opening the link don't subscribe anyone. */
-export default async function ConfirmSubscriptionPage({
+export default function ConfirmSubscriptionPage({ params }: PageProps<"/mailing-list/confirm/[token]">): ReactElement {
+  return (
+    <div className={styles.page}>
+      <div className={styles.card}>
+        <Suspense fallback={<p className={styles.text}>Checking your link…</p>}>
+          <Confirmation params={params} />
+        </Suspense>
+      </div>
+    </div>
+  );
+}
+
+async function Confirmation({
   params,
-}: PageProps<"/mailing-list/confirm/[token]">): Promise<ReactElement> {
+}: Pick<PageProps<"/mailing-list/confirm/[token]">, "params">): Promise<ReactElement> {
   const { token } = await params;
   const pending = await findConfirmation(token).catch((error: unknown) => {
     console.error("[mailing-list] confirmation lookup failed", error);
@@ -82,9 +94,5 @@ export default async function ConfirmSubscriptionPage({
     );
   }
 
-  return (
-    <div className={styles.page}>
-      <div className={styles.card}>{body}</div>
-    </div>
-  );
+  return body;
 }

@@ -58,6 +58,10 @@ const permissionsPolicy = [
 const nextConfig: NextConfig = {
   // Don't advertise the framework in every response.
   poweredByHeader: false,
+  // Pages prerender a static shell around their request-time parts, and links
+  // prefetch it, so navigations paint at once while the rest streams in.
+  cacheComponents: true,
+  partialPrefetching: true,
   // Hide the on-screen Next.js dev indicator (bottom-left).
   devIndicators: false,
   // Pin the workspace root so Turbopack ignores the stray lockfile in the home

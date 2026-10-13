@@ -1,7 +1,8 @@
 import "server-only";
+import { cache } from "react";
 import { listOrdersByUser, type OrderSummary } from "@/features/configurator/orders";
 import { listAllContracts, listContractsForUser, type Contract } from "@/features/contracts/contracts";
-import { listRoomsForUser } from "@/features/data-room/rooms";
+import { listRoomNamesForUser, listRoomsForUser } from "@/features/data-room/rooms";
 import type { RoomSummary } from "@/features/data-room/types";
 import { listSubscribers } from "@/features/mailing-list/subscribers";
 import type { MailingList, Subscriber } from "@/features/mailing-list/types";
@@ -10,10 +11,18 @@ import type { Post } from "@/features/posts/types";
 import type { User } from "@/features/users/types";
 import { listUsers } from "@/features/users/users";
 
-/** The account's data rooms, or `null` when they couldn't be loaded. */
-export function loadRooms(userId: string): Promise<RoomSummary[] | null> {
-  return listRoomsForUser(userId).catch((error: unknown) => {
+/** The account's data rooms, or `null` when they couldn't be loaded. Cached per request. */
+export const loadRooms = cache((userId: string): Promise<RoomSummary[] | null> =>
+  listRoomsForUser(userId).catch((error: unknown) => {
     console.error("Failed to load data rooms", error);
+    return null;
+  }),
+);
+
+/** The account's data rooms by name, for the sidebar, or `null` when they couldn't be loaded. */
+export function loadRoomNames(userId: string): Promise<{ id: string; name: string }[] | null> {
+  return listRoomNamesForUser(userId).catch((error: unknown) => {
+    console.error("Failed to load data room names", error);
     return null;
   });
 }

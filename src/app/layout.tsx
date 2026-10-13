@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono } from "next/font/google";
+import { Suspense } from "react";
 import { RememberAccount } from "@/features/account/RememberAccount";
 import { MARK_SIGNED_IN_SCRIPT } from "@/features/account/signedInCookie";
 import { display, text } from "@/lib/fonts";
@@ -47,7 +48,9 @@ export default function RootLayout({
       <body>
         {children}
         {modal}
-        <RememberAccount />
+        <Suspense>
+          <RememberAccount />
+        </Suspense>
       </body>
     </html>
   );

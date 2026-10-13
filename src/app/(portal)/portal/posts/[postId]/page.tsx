@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import { notFound } from "next/navigation";
-import { PostEditor } from "@/features/posts/PostEditor";
+import { LazyPostEditor } from "@/features/posts/LazyPostEditor";
 import { getPost } from "@/features/posts/posts";
 import { requireTeam } from "@/features/zrm/access";
 import styles from "@/features/portal/portal.module.css";
@@ -19,7 +19,7 @@ export default async function EditPostPage({ params }: PageProps<"/portal/posts/
 
   return (
     <div className={styles.page}>
-      <PostEditor key={post.id} post={post} />
+      <LazyPostEditor key={post.id} post={post} />
     </div>
   );
 }

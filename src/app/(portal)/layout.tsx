@@ -1,40 +1,42 @@
-import type { ReactNode } from "react";
-import { cookies } from "next/headers";
+import { Suspense, type ReactNode } from "react";
 import { SiteShell } from "@/components/layout/SiteShell";
-import { isTeam, isZodeAdmin } from "@/features/account/admin";
-import { getAccount } from "@/features/account/session";
-import { loadRooms } from "@/features/portal/data";
+import { PortalChrome } from "@/features/portal/PortalChrome";
 import { PortalFrame } from "@/features/portal/PortalFrame";
 import { PortalNav } from "@/features/portal/PortalNav";
 import { PortalSidebar } from "@/features/portal/PortalSidebar";
 import styles from "@/features/portal/shell.module.css";
-import { PORTAL_THEME_COOKIE, parsePortalTheme } from "@/features/portal/theme";
+
+const NO_ACCESS = { admin: false, team: false };
 
 /**
  * The signed-in portal: a black rail of apps down the left, the sidebar for
  * the current app beside it, and the panel, all under the site's pinned header.
+ * Nothing here waits on the session; the rail and sidebar stream in with the
+ * account's apps and rooms, everyone's apps standing in until then.
  */
-export default async function PortalLayout({
+export default function PortalLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
-  const account = await getAccount();
-  const [admin, team, rooms] = account
-    ? await Promise.all([isZodeAdmin(account), isTeam(account), loadRooms(account.userId)])
-    : [false, false, null];
-  const access = { admin, team };
-  const theme = parsePortalTheme((await cookies()).get(PORTAL_THEME_COOKIE)?.value);
-
   return (
-    <PortalFrame initialTheme={theme}>
+    <PortalFrame>
       <SiteShell
         footer={false}
         fade={false}
         edge="flush"
         nav={
-          <>
-            <PortalNav access={access} />
-            <PortalSidebar access={access} rooms={rooms && rooms.map(({ id, name }) => ({ id, name }))} />
-          </>
+          // The fallback reads the pathname too, which a page with dynamic params only knows per request.
+          <Suspense>
+            <Suspense
+              fallback={
+                <>
+                  <PortalNav access={NO_ACCESS} />
+                  <PortalSidebar access={NO_ACCESS} rooms={undefined} />
+                </>
+              }
+            >
+              <PortalChrome />
+            </Suspense>
+          </Suspense>
         }
       >
         <div className={styles.panel}>{children}</div>

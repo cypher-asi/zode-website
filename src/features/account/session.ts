@@ -2,12 +2,12 @@ import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cache } from "react";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { homeDb } from "@/lib/db";
 import { SITE_URL } from "@/lib/site";
 import { recordAccount } from "./directory";
 import { initials } from "./initials";
-import { applyProfile, loadProfile } from "./profile";
+import { applyProfile, loadProfile, loadRequestProfile } from "./profile";
 import { REMEMBER_COOKIE } from "./rememberedAccounts";
 import { SIGNED_IN_COOKIE } from "./signedInCookie";
 import type { Account } from "./zos";
@@ -132,10 +132,11 @@ export const getAccount = cache(async (): Promise<Account | null> => {
         where id = ${session.sid} and user_id = ${session.account.userId}
           and revoked_at is null and expires_at > now()
       `,
-      loadProfile(session.account.userId),
+      loadRequestProfile(session.account.userId),
     ]);
     return row ? applyProfile(session.account, profile) : null;
   } catch (error) {
+    unstable_rethrow(error);
     console.error("[session] lookup failed; treating as signed out", error);
     return null;
   }

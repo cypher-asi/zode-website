@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import type { ReactElement } from "react";
+import { Suspense, type ReactElement } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireAccount } from "@/features/account/session";
 import tabs from "@/features/data-room/room.module.css";
 import ui from "@/features/data-room/ui.module.css";
-import { loadOrders } from "@/features/portal/data";
+import { loadMyOrders, orLogIn } from "@/features/portal/mine";
 import { ORDER_MODES } from "@/features/portal/nav";
+import { PortalLoading } from "@/features/portal/PortalLoading";
 import { Empty, OrderList, PageHeader } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
 
@@ -27,13 +27,24 @@ const SUBTITLES = {
 } as const;
 
 /** Compute bought or rented while signed in, or one of the two, newest first. */
-export default async function OrdersPage({ params }: PageProps<"/portal/orders/[[...mode]]">): Promise<ReactElement> {
-  const { mode: segments } = await params;
+export default function OrdersPage({ params }: PageProps<"/portal/orders/[[...mode]]">): ReactElement {
+  return (
+    <Suspense fallback={<PortalLoading />}>
+      <Orders params={params} />
+    </Suspense>
+  );
+}
+
+/**
+ * The whole page, header included, since its title and tabs follow the URL.
+ * The orders are loaded for both kinds and filtered here, so every tab shares them.
+ */
+async function Orders({ params }: { params: PageProps<"/portal/orders/[[...mode]]">["params"] }): Promise<ReactElement> {
+  const [{ mode: segments }, mine] = await Promise.all([params, loadMyOrders()]);
   const mode = segments ? ORDER_MODES.find(({ id }) => id === segments[0]) : undefined;
   if (segments && (segments.length > 1 || !mode)) notFound();
 
-  const account = await requireAccount(mode ? `/portal/orders/${mode.id}` : "/portal/orders");
-  const orders = await loadOrders(account.userId);
+  const { orders } = orLogIn(mine, mode ? `/portal/orders/${mode.id}` : "/portal/orders");
   const shown = orders && mode ? orders.filter((order) => order.mode === mode.id) : orders;
 
   return (

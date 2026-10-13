@@ -7,6 +7,7 @@ import {
   useCallback,
   useMemo,
   useOptimistic,
+  useState,
   type ComponentProps,
   type MouseEvent,
   type ReactElement,
@@ -16,25 +17,41 @@ import Link from "next/link";
 import { useRouter, useSelectedLayoutSegments } from "next/navigation";
 import { RECORD_APPS, type Option, type RecordAppId, type RecordKind, type SiteGroup, type SiteStatus, type Stage, type ZrmData } from "./types";
 
-interface ZrmContextValue {
+interface ZrmDataValue {
   data: ZrmData;
   /** The kinds this app has lists for. */
   kinds: readonly RecordKind[];
+}
+
+interface ZrmRouteValue {
   /** The route's segments below the app's base, ahead of the router while a navigation within it is in flight. */
   segments: readonly string[];
   /** Whether a navigation within the app is in flight, i.e. `segments` is ahead of what's rendered. */
   pending: boolean;
+}
+
+interface ZrmNavigateValue {
   /**
    * Navigates within the app, showing the destination's list and selection
    * before the server answers. Links into the other app (a site's company,
    * a company's sites) navigate as usual.
    */
   go: (href: string) => void;
+  /** Prefetches a route once, again only after its prefetched data goes stale. */
+  prefetch: (href: string) => void;
 }
 
-const ZrmContext = createContext<ZrmContextValue | null>(null);
+type ZrmContextValue = ZrmDataValue & ZrmRouteValue & ZrmNavigateValue;
+
+/** Split so that what only reads the lists, or only navigates, doesn't re-render as each navigation starts and lands. */
+const ZrmDataContext = createContext<ZrmDataValue | null>(null);
+const ZrmRouteContext = createContext<ZrmRouteValue | null>(null);
+const ZrmNavigateContext = createContext<ZrmNavigateValue | null>(null);
 
 const pathOf = (href: string): string => new URL(href, "http://zrm").pathname;
+
+/** Its type requires Next's internal `kind`, which defaults to auto when omitted. */
+type PrefetchOptions = Parameters<ReturnType<typeof useRouter>["prefetch"]>[1];
 
 /**
  * All of the engine's lists, loaded once by the app's layout so tabs and
@@ -57,24 +74,61 @@ export function ZrmProvider({ app, data, children }: { app: RecordAppId; data: Z
     [router, setPending, prefix],
   );
 
-  const value = useMemo(
-    () => ({
-      data,
-      kinds,
-      segments: pending ? pathOf(pending).slice(prefix.length).split("/").filter(Boolean) : routed,
-      pending: pending !== null,
-      go,
-    }),
-    [data, kinds, pending, prefix, routed, go],
+  const [prefetched] = useState(() => new Set<string>());
+  const prefetch = useCallback(
+    (href: string) => {
+      if (prefetched.has(href)) return;
+      prefetched.add(href);
+      router.prefetch(href, {
+        onInvalidate: () => {
+          prefetched.delete(href);
+        },
+      } as PrefetchOptions);
+    },
+    [router, prefetched],
   );
 
-  return <ZrmContext value={value}>{children}</ZrmContext>;
+  const dataValue = useMemo(() => ({ data, kinds }), [data, kinds]);
+  const routeValue = useMemo(
+    () => ({
+      segments: pending ? pathOf(pending).slice(prefix.length).split("/").filter(Boolean) : routed,
+      pending: pending !== null,
+    }),
+    [pending, prefix, routed],
+  );
+  const navigateValue = useMemo(() => ({ go, prefetch }), [go, prefetch]);
+
+  return (
+    <ZrmDataContext value={dataValue}>
+      <ZrmNavigateContext value={navigateValue}>
+        <ZrmRouteContext value={routeValue}>{children}</ZrmRouteContext>
+      </ZrmNavigateContext>
+    </ZrmDataContext>
+  );
+}
+
+function required<T>(value: T | null, hook: string): T {
+  if (!value) throw new Error(`${hook} must be used inside ZrmProvider`);
+  return value;
+}
+
+/** The app's lists and kinds, which change only when the server sends new data. */
+export function useZrmData(): ZrmDataValue {
+  return required(use(ZrmDataContext), "useZrmData");
+}
+
+/** The route as the app shows it, which changes as each navigation starts and lands. */
+export function useZrmRoute(): ZrmRouteValue {
+  return required(use(ZrmRouteContext), "useZrmRoute");
+}
+
+/** `go` and `prefetch`, which never change. */
+export function useZrmNavigate(): ZrmNavigateValue {
+  return required(use(ZrmNavigateContext), "useZrmNavigate");
 }
 
 export function useZrm(): ZrmContextValue {
-  const value = use(ZrmContext);
-  if (!value) throw new Error("useZrm must be used inside ZrmProvider");
-  return value;
+  return { ...useZrmData(), ...useZrmRoute(), ...useZrmNavigate() };
 }
 
 /** A Link's onClick that hands plain clicks to `go`, leaving new-tab and new-window clicks to the browser. */
@@ -88,7 +142,7 @@ export const goOnClick =
 
 /** A Link to a record, which within the app switches the list and selection at once rather than when the server answers. */
 export function ZrmLink({ href, ...props }: Omit<ComponentProps<typeof Link>, "href" | "onClick"> & { href: string }): ReactElement {
-  const { go } = useZrm();
+  const { go } = useZrmNavigate();
   return <Link {...props} href={href} scroll={false} onClick={goOnClick(go, href)} />;
 }
 
@@ -102,7 +156,7 @@ export interface RefOptions {
 }
 
 export function useRefOptions(): RefOptions {
-  const { data } = useZrm();
+  const { data } = useZrmData();
   return useMemo(
     () => ({
       companies: data.companies.map((company) => ({ value: company.id, label: company.name })),

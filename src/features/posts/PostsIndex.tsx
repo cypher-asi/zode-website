@@ -1,9 +1,10 @@
 import "server-only";
-import type { ReactElement } from "react";
+import { Suspense, type ReactElement } from "react";
 import Link from "next/link";
 import tabs from "@/features/data-room/room.module.css";
 import ui from "@/features/data-room/ui.module.css";
 import { loadAllPosts } from "@/features/portal/data";
+import { PortalLoading } from "@/features/portal/PortalLoading";
 import { Empty, PageHeader, PostList } from "@/features/portal/sections";
 import { requireTeam } from "@/features/zrm/access";
 import styles from "@/features/portal/portal.module.css";
@@ -23,11 +24,7 @@ const SUBTITLES: Record<PostKind | "all", string> = {
 };
 
 /** News and changelog posts, drafts included, or one kind of them. ZODE team only. */
-export async function PostsIndex({ kind }: { kind: PostKind | null }): Promise<ReactElement> {
-  await requireTeam(kind ? `/portal/posts/${kind}` : "/portal/posts");
-  const posts = await loadAllPosts();
-  const shown = posts && kind ? posts.filter((post) => post.kind === kind) : posts;
-
+export function PostsIndex({ kind }: { kind: PostKind | null }): ReactElement {
   return (
     <div className={styles.page}>
       <PageHeader title={kind ? kindLabel(kind) : "Posts"} subtitle={SUBTITLES[kind ?? "all"]}>
@@ -52,19 +49,28 @@ export async function PostsIndex({ kind }: { kind: PostKind | null }): Promise<R
           </Link>
         ))}
       </nav>
-      {shown === null ? (
-        <Empty>Posts couldn&apos;t be loaded right now. Please try again shortly.</Empty>
-      ) : shown.length ? (
-        <PostList posts={shown} />
-      ) : (
-        <Empty>
-          {kind === "news"
-            ? "No news posts yet. Start one with the button above."
-            : kind === "changelog"
-              ? "No changelog entries yet. Start one with the button above."
-              : "No posts yet. Start one with the buttons above."}
-        </Empty>
-      )}
+      <Suspense fallback={<PortalLoading header={false} nested />}>
+        <Posts kind={kind} />
+      </Suspense>
     </div>
+  );
+}
+
+async function Posts({ kind }: { kind: PostKind | null }): Promise<ReactElement> {
+  await requireTeam(kind ? `/portal/posts/${kind}` : "/portal/posts");
+  const posts = await loadAllPosts();
+  const shown = posts && kind ? posts.filter((post) => post.kind === kind) : posts;
+  return shown === null ? (
+    <Empty>Posts couldn&apos;t be loaded right now. Please try again shortly.</Empty>
+  ) : shown.length ? (
+    <PostList posts={shown} />
+  ) : (
+    <Empty>
+      {kind === "news"
+        ? "No news posts yet. Start one with the button above."
+        : kind === "changelog"
+          ? "No changelog entries yet. Start one with the button above."
+          : "No posts yet. Start one with the buttons above."}
+    </Empty>
   );
 }

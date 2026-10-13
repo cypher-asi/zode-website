@@ -1,7 +1,9 @@
 import "server-only";
-import { db } from "@/lib/db";
+import { cacheLife, cacheTag } from "next/cache";
+import { DB_TAG, db } from "@/lib/db";
 import { isUuid } from "./access";
 import type {
+  RecordAppId,
   Activity,
   Company,
   CompanyRow,
@@ -34,32 +36,52 @@ import type {
 
 type Sql = ReturnType<typeof db>;
 
+/**
+ * Cache tags: one per list, one for the pickers' lookups, and one for every
+ * record's detail, since a detail shows its relatives' names. Mutations update
+ * the ones they touch (see `actions.ts`).
+ */
+export const ZRM_TAGS = {
+  people: "zrm:people",
+  companies: "zrm:companies",
+  opportunities: "zrm:opportunities",
+  sites: "zrm:sites",
+  lookups: "zrm:lookups",
+  detail: "zrm:detail",
+} as const;
+
 const peopleQuery = (sql: Sql) => sql`
+  with company_types as (select company_id, array_agg(type_id)::text[] as type_ids from zrm_company_types group by company_id)
   select p.id, p.first_name, p.last_name, p.title, p.email, p.company_id, c.name as company_name, p.active,
-    coalesce((select array_agg(ct.type_id)::text[] from zrm_company_types ct where ct.company_id = p.company_id), '{}') as type_ids
+    coalesce(ct.type_ids, '{}') as type_ids
   from zrm_people p
   left join zrm_companies c on c.id = p.company_id
+  left join company_types ct on ct.company_id = p.company_id
   order by lower(coalesce(p.first_name, '')), lower(coalesce(p.last_name, ''))
 `;
 
 const companiesQuery = (sql: Sql) => sql`
+  with company_types as (select company_id, array_agg(type_id)::text[] as type_ids from zrm_company_types group by company_id)
   select c.id, c.name, c.industry, c.domain, c.employee_count, c.country, c.active,
-    coalesce((select array_agg(ct.type_id)::text[] from zrm_company_types ct where ct.company_id = c.id), '{}') as type_ids
+    coalesce(ct.type_ids, '{}') as type_ids
   from zrm_companies c
+  left join company_types ct on ct.company_id = c.id
   order by lower(c.name)
 `;
 
 const opportunitiesQuery = (sql: Sql) => sql`
+  with company_types as (select company_id, array_agg(type_id)::text[] as type_ids from zrm_company_types group by company_id)
   select o.id, o.title, o.person_id,
     nullif(concat_ws(' ', p.first_name, p.last_name), '') as person_name,
     o.company_id, c.name as company_name,
     o.stage_id, s.name as stage_name, s.position as stage_position,
     o.value::float8 as value, o.active,
-    coalesce((select array_agg(ct.type_id)::text[] from zrm_company_types ct where ct.company_id = o.company_id), '{}') as type_ids
+    coalesce(ct.type_ids, '{}') as type_ids
   from zrm_opportunities o
   join zrm_stages s on s.id = o.stage_id
   left join zrm_people p on p.id = o.person_id
   left join zrm_companies c on c.id = o.company_id
+  left join company_types ct on ct.company_id = o.company_id
   order by o.updated_at desc
 `;
 
@@ -84,36 +106,72 @@ const groupsQuery = (sql: Sql) => sql`select id, name, position from capacity_gr
 
 const statusesQuery = (sql: Sql) => sql`select id, name, position, color from capacity_statuses order by position, name`;
 
-/**
- * Everything ZRM's and Capacity's tabs list, loaded once by each app's layout
- * so switching tabs doesn't touch the database. Both load it all, since
- * Capacity picks from ZRM's people and companies.
+/*
+ * The lists are shared by the whole team, so each is cached on the server
+ * under its tag; `minutes` revalidates in the background after a minute,
+ * which picks up the import scripts' writes.
  */
-export async function loadZrmData(): Promise<ZrmData> {
+
+async function listPeople(): Promise<PersonRow[]> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(ZRM_TAGS.people, DB_TAG);
+  return (await peopleQuery(db())) as PersonRow[];
+}
+
+async function listCompanies(): Promise<CompanyRow[]> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(ZRM_TAGS.companies, DB_TAG);
+  return (await companiesQuery(db())) as CompanyRow[];
+}
+
+async function listOpportunities(): Promise<OpportunityRow[]> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(ZRM_TAGS.opportunities, DB_TAG);
+  return (await opportunitiesQuery(db())) as OpportunityRow[];
+}
+
+async function listSites(): Promise<SiteRow[]> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(ZRM_TAGS.sites, DB_TAG);
+  return (await sitesQuery(db())) as SiteRow[];
+}
+
+async function listLookups(): Promise<Pick<ZrmData, "types" | "stages" | "groups" | "statuses">> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(ZRM_TAGS.lookups, DB_TAG);
   const sql = db();
-  const [people, companies, opportunities, types, stages, sites, groups, statuses] = await sql.transaction(
-    [
-      peopleQuery(sql),
-      companiesQuery(sql),
-      opportunitiesQuery(sql),
-      typesQuery(sql),
-      stagesQuery(sql),
-      sitesQuery(sql),
-      groupsQuery(sql),
-      statusesQuery(sql),
-    ],
+  const [types, stages, groups, statuses] = await sql.transaction(
+    [typesQuery(sql), stagesQuery(sql), groupsQuery(sql), statusesQuery(sql)],
     { readOnly: true },
   );
   return {
-    people: people as PersonRow[],
-    companies: companies as CompanyRow[],
-    opportunities: opportunities as OpportunityRow[],
     types: types as ZrmType[],
     stages: stages as Stage[],
-    sites: sites as SiteRow[],
     groups: groups as SiteGroup[],
     statuses: statuses as SiteStatus[],
   };
+}
+
+/**
+ * Everything an app's tabs list, loaded once by its layout so switching tabs
+ * doesn't touch the database. Capacity also gets ZRM's people and companies
+ * for its pickers and links; neither app gets the other's own list.
+ */
+export async function loadZrmData(app: RecordAppId): Promise<ZrmData> {
+  const capacity = app === "capacity";
+  const [people, companies, opportunities, sites, lookups] = await Promise.all([
+    listPeople(),
+    listCompanies(),
+    capacity ? [] : listOpportunities(),
+    capacity ? listSites() : [],
+    listLookups(),
+  ]);
+  return { people, companies, opportunities, sites, ...lookups };
 }
 
 const typesOfCompany = (sql: Sql, companyId: string) => sql`
@@ -184,6 +242,9 @@ export interface PersonDetail {
 }
 
 export async function getPersonDetail(id: string): Promise<PersonDetail | null> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(ZRM_TAGS.detail, DB_TAG);
   if (!isUuid(id)) return null;
   const sql = db();
   const [[person], types, work, education, custom, opportunities, sites, notes] = await sql.transaction(
@@ -239,6 +300,9 @@ export interface CompanyDetail {
 }
 
 export async function getCompanyDetail(id: string): Promise<CompanyDetail | null> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(ZRM_TAGS.detail, DB_TAG);
   if (!isUuid(id)) return null;
   const sql = db();
   const [[company], types, custom, people, opportunities, sites, notes] = await sql.transaction(
@@ -277,6 +341,9 @@ export interface OpportunityDetail {
 }
 
 export async function getOpportunityDetail(id: string): Promise<OpportunityDetail | null> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(ZRM_TAGS.detail, DB_TAG);
   if (!isUuid(id)) return null;
   const sql = db();
   const [[opportunity], types, activities, notes] = await sql.transaction(
@@ -313,6 +380,9 @@ export interface SiteDetail {
 }
 
 export async function getSiteDetail(id: string): Promise<SiteDetail | null> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(ZRM_TAGS.detail, DB_TAG);
   if (!isUuid(id)) return null;
   const sql = db();
   const [[site], notes] = await sql.transaction(

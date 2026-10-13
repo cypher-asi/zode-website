@@ -1,13 +1,14 @@
 "use client";
 
-import { Fragment, useActionState, useId, useState, useTransition, type ReactElement, type ReactNode } from "react";
+import { Fragment, useActionState, useId, useOptimistic, useState, useTransition, type ReactElement, type ReactNode } from "react";
 import ui from "@/features/data-room/ui.module.css";
+import { multiLine, singleLine } from "@/lib/validation";
 import { addChildAction, deleteChildAction, saveFieldsAction, setCompanyTypesAction } from "./actions";
 import { Badge, Icon } from "./bits";
-import { CHILDREN, type ChildKind, type SectionSpec } from "./fields";
+import { CHILDREN, type ChildKind, type FieldSpec, type SectionSpec } from "./fields";
 import { FieldInput, fieldValue } from "./fieldUi";
-import { recordHref, type ActionState, type RecordKind, type Related, type ZrmType } from "./types";
-import { ZrmLink } from "./ZrmProvider";
+import { personName, recordHref, type ActionState, type RecordKind, type Related, type ZrmData, type ZrmType } from "./types";
+import { useZrmData, ZrmLink } from "./ZrmProvider";
 import styles from "./zrm.module.css";
 
 const INITIAL: ActionState = {};
@@ -53,6 +54,65 @@ function FormActions({ pending, onCancel, label = "Save" }: { pending: boolean; 
   );
 }
 
+const numberFrom = (value: string): number => Number(value.replace(/[$,\s]/g, ""));
+
+/** The record with a section's submitted values, cleaned as `saveFieldsAction` cleans them, and its linked records' names. */
+function savedRecord(record: object, fields: readonly FieldSpec[], formData: FormData, data: ZrmData): object {
+  const next: Record<string, unknown> = { ...record };
+  const named = (items: readonly { id: string; name: string }[], value: string) => items.find((item) => item.id === value)?.name ?? null;
+  for (const field of fields) {
+    if (field.readOnly) continue;
+    const raw = formData.get(field.key);
+    const input = typeof raw === "string" ? raw : "";
+    if (field.type === "list") {
+      next[field.key] = [...new Set(input.split(/[,\n]/).map(singleLine).filter(Boolean))];
+      continue;
+    }
+    const value = field.type === "textarea" ? multiLine(input) : singleLine(input);
+    if (!value) {
+      next[field.key] = null;
+      if (field.display) next[field.display] = null;
+      continue;
+    }
+    switch (field.type) {
+      case "url":
+        next[field.key] = /^https?:\/\//i.test(value) ? value : `https://${value}`;
+        break;
+      case "int":
+      case "decimal":
+      case "money":
+        next[field.key] = numberFrom(value);
+        break;
+      default:
+        next[field.key] = value;
+    }
+    if (!field.display) continue;
+    switch (field.type) {
+      case "company":
+        next[field.display] = named(data.companies, value);
+        break;
+      case "person": {
+        const person = data.people.find((p) => p.id === value);
+        next[field.display] = person ? personName(person) : null;
+        break;
+      }
+      case "stage":
+        next[field.display] = named(data.stages, value);
+        break;
+      case "group":
+        next[field.display] = named(data.groups, value);
+        break;
+      case "status": {
+        const status = data.statuses.find((s) => s.id === value);
+        next[field.display] = status?.name ?? null;
+        if (status) next.status_color = status.color;
+        break;
+      }
+    }
+  }
+  return next;
+}
+
 /** A group of a record's fields, read as a list and edited in place. */
 export function FieldSection({
   kind,
@@ -66,14 +126,18 @@ export function FieldSection({
   record: object;
 }): ReactElement {
   const formId = useId();
+  const { data } = useZrmData();
   const [editing, setEditing] = useState(false);
+  /** The record as the form saves it, shown until the server's re-render lands, or dropped for the form and its error. */
+  const [saving, setSaving] = useOptimistic<object | null>(null);
   const [state, action, pending] = useActionState(async (prev: ActionState, formData: FormData) => {
+    setSaving(savedRecord(record, section.fields, formData, data));
     const result = await saveFieldsAction(kind, id, section.id, prev, formData);
     if (result.saved) setEditing(false);
     return result;
   }, INITIAL);
 
-  if (editing) {
+  if (editing && !saving) {
     return (
       <Section title={section.title}>
         <form action={action} className={styles.form}>
@@ -92,11 +156,14 @@ export function FieldSection({
   }
 
   const filled = section.fields
-    .map((field) => ({ field, value: fieldValue(field, record) }))
+    .map((field) => ({ field, value: fieldValue(field, saving ?? record) }))
     .filter((entry) => entry.value !== null);
 
   return (
-    <Section title={section.title} action={<EditButton label={`Edit ${section.title.toLowerCase()}`} onClick={() => setEditing(true)} />}>
+    <Section
+      title={section.title}
+      action={saving ? null : <EditButton label={`Edit ${section.title.toLowerCase()}`} onClick={() => setEditing(true)} />}
+    >
       {filled.length > 0 ? (
         <dl className={styles.fields}>
           {filled.map(({ field, value }) => (

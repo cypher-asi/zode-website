@@ -15,12 +15,20 @@ const RECENT_ROOMS = 5;
 
 const PLACEHOLDER_ROWS = 6;
 
+const ROOM_PLACEHOLDER_ROWS = 3;
+
 function Links({ links, current }: { links: readonly NavLink[]; current: string | null }): ReactElement {
   return (
     <ul className={styles.links}>
       {links.map((link) => (
         <li key={link.href}>
-          <Link href={link.href} className={styles.link} aria-current={link.href === current ? "page" : undefined}>
+          {/* The site's tools, e.g. the cluster builder's 3D bundle, aren't worth warming up from the portal. */}
+          <Link
+            href={link.href}
+            prefetch={link.href.startsWith("/portal") ? undefined : false}
+            className={styles.link}
+            aria-current={link.href === current ? "page" : undefined}
+          >
             <PortalIcon name={link.icon} className={styles.linkIcon} />
             <span className={styles.linkLabel}>{link.label}</span>
           </Link>
@@ -30,7 +38,23 @@ function Links({ links, current }: { links: readonly NavLink[]; current: string 
   );
 }
 
-function Rooms({ rooms, current }: { rooms: readonly SidebarRoom[] | null; current: string | null }): ReactElement {
+/** `rooms` is `undefined` while they load, `null` when they couldn't be. */
+function Rooms({
+  rooms,
+  current,
+}: {
+  rooms: readonly SidebarRoom[] | null | undefined;
+  current: string | null;
+}): ReactElement {
+  if (rooms === undefined) {
+    return (
+      <div className={styles.placeholder} role="status" aria-label="Loading data rooms">
+        {Array.from({ length: ROOM_PLACEHOLDER_ROWS }, (_, index) => (
+          <span key={index} className={styles.placeholderRow} />
+        ))}
+      </div>
+    );
+  }
   if (rooms === null) return <p className={styles.empty}>Your data rooms couldn&apos;t be loaded.</p>;
   if (!rooms.length) return <p className={styles.empty}>Data rooms shared with you appear here.</p>;
   return (
@@ -73,14 +97,15 @@ type Motion = "down" | "up" | "swap";
 /**
  * The panel beside the rail, for whichever app you're in: its pages, or for
  * Data rooms the rooms themselves. Inside a room the page docks its file
- * explorer here, in place of the room list.
+ * explorer here, in place of the room list. `rooms` is `undefined` while
+ * the session's rooms load.
  */
 export function PortalSidebar({
   access,
   rooms,
 }: {
   access: NavAccess;
-  rooms: readonly SidebarRoom[] | null;
+  rooms: readonly SidebarRoom[] | null | undefined;
 }): ReactElement {
   const pathname = usePathname() ?? "/portal";
   const dockRef = useDockRef();

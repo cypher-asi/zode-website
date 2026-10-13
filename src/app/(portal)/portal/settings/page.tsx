@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
-import type { ReactElement } from "react";
-import { isTeam, isZodeAdmin } from "@/features/account/admin";
+import { Suspense, type ReactElement } from "react";
 import { LogoutButton } from "@/features/account/LogoutButton";
-import { avatarUrl, loadProfile } from "@/features/account/profile";
-import { requireAccount } from "@/features/account/session";
 import tabs from "@/features/data-room/room.module.css";
 import ui from "@/features/data-room/ui.module.css";
 import { SettingsSubscription } from "@/features/mailing-list/SettingsSubscription";
 import { DevDbSwitch } from "@/features/portal/DevDbSwitch";
+import { loadMySettings, orLogIn } from "@/features/portal/mine";
+import { PortalLoading } from "@/features/portal/PortalLoading";
 import { PageHeader } from "@/features/portal/sections";
 import { devDbSwitchAvailable, devDbTarget } from "@/lib/db";
 import styles from "@/features/portal/portal.module.css";
@@ -15,35 +14,42 @@ import { AvatarField } from "@/features/settings/AvatarField";
 import { NameForm } from "@/features/settings/NameForm";
 import { SettingsTabs } from "@/features/settings/SettingsTabs";
 import settings from "@/features/settings/settings.module.css";
-import { userIdFor } from "@/features/users/users";
 
 export const metadata: Metadata = {
   title: "Settings | ZODE",
 };
 
 /** Your profile as the portal shows it, and the ZOS account behind it. */
-export default async function SettingsPage(): Promise<ReactElement> {
-  const account = await requireAccount("/portal/settings");
-  const [profile, zodeUserId] = await Promise.all([
-    loadProfile(account.userId),
-    userIdFor(account.userId).catch((error: unknown) => {
-      console.error("[settings] couldn't load the ZODE user id", error);
-      return null;
-    }),
-  ]);
-  const photo = profile?.avatarPathname ? avatarUrl(account.userId, profile.avatarPathname) : null;
-  const [superAdmin, team] = await Promise.all([isZodeAdmin(account), isTeam(account)]);
-  const showDbSwitch = devDbSwitchAvailable() && superAdmin;
-
+export default function SettingsPage(): ReactElement {
   return (
     <div className={styles.page}>
       <PageHeader title="Settings" subtitle="Your profile and account.">
         <div className={tabs.headerActions}>
-          {team ? <SettingsTabs current="account" /> : null}
+          <Suspense fallback={null}>
+            <TeamTabs />
+          </Suspense>
           <LogoutButton className={ui.button} />
         </div>
       </PageHeader>
+      <Suspense fallback={<PortalLoading header={false} nested />}>
+        <Settings />
+      </Suspense>
+    </div>
+  );
+}
 
+/** The tabs over to the team, for the ZODE team. */
+async function TeamTabs(): Promise<ReactElement | null> {
+  const mine = await loadMySettings();
+  return mine?.team ? <SettingsTabs current="account" /> : null;
+}
+
+async function Settings(): Promise<ReactElement> {
+  const { account, photo, zodeUserId, superAdmin } = orLogIn(await loadMySettings(), "/portal/settings");
+  const showDbSwitch = devDbSwitchAvailable() && superAdmin;
+
+  return (
+    <>
       <section className={styles.section} aria-labelledby="settings-profile">
         <div className={styles.sectionHead}>
           <h2 id="settings-profile" className={styles.sectionTitle}>
@@ -82,7 +88,10 @@ export default async function SettingsPage(): Promise<ReactElement> {
           </h2>
         </div>
         <div className={settings.card}>
-          <SettingsSubscription account={account} />
+          {/* Uncached, so it streams in on its own and the rest stays in the prefetched shell. */}
+          <Suspense fallback={null}>
+            <SettingsSubscription account={account} />
+          </Suspense>
         </div>
       </section>
 
@@ -102,6 +111,6 @@ export default async function SettingsPage(): Promise<ReactElement> {
           </div>
         </section>
       ) : null}
-    </div>
+    </>
   );
 }

@@ -10,9 +10,6 @@ export const metadata: Metadata = {
   description: "Announcements and updates from the ZODE team.",
 };
 
-/** Publishing refreshes this page straight away; the hour is a backstop. */
-export const revalidate = 3600;
-
 export default async function NewsPage(): Promise<ReactElement> {
   const posts = await loadPublished("news");
 

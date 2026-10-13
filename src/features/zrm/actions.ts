@@ -1,12 +1,13 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { isEmail, multiLine, singleLine } from "@/lib/validation";
 import { isUuid, teamAccount } from "./access";
 import { CHILDREN, TABLES, fieldsFor, isChildKind, type ChildKind, type FieldSpec } from "./fields";
-import { RECORD_APPS, isRecordKind, listHref, recordHref, type ActionState, type RecordKind } from "./types";
+import { ZRM_TAGS } from "./queries";
+import { isRecordKind, listHref, recordHref, type ActionState, type RecordKind } from "./types";
 
 const NO_ACCESS: ActionState = { error: "You don't have access to this. Try reloading the page." };
 const MISSING: ActionState = { error: "That record no longer exists. Try reloading the page." };
@@ -85,9 +86,23 @@ function parseFields(fields: readonly FieldSpec[], formData: FormData): Map<stri
 const isStaleReference = (error: unknown): boolean =>
   typeof error === "object" && error !== null && "code" in error && (error.code === "23503" || error.code === "23514");
 
-/** Both apps, since each lists the other's records: Capacity's pickers and links are ZRM's people and companies. */
-const revalidate = () => {
-  for (const app of Object.values(RECORD_APPS)) revalidatePath(app.base, "layout");
+/** The lists that show a kind's columns: people and opportunities show their company's name and types, and so on. */
+const LISTS_SHOWING: Record<RecordKind | "types" | "stages", readonly string[]> = {
+  people: [ZRM_TAGS.people, ZRM_TAGS.opportunities],
+  companies: [ZRM_TAGS.companies, ZRM_TAGS.people, ZRM_TAGS.opportunities, ZRM_TAGS.sites],
+  opportunities: [ZRM_TAGS.opportunities],
+  sites: [ZRM_TAGS.sites],
+  types: [ZRM_TAGS.lookups, ZRM_TAGS.companies, ZRM_TAGS.people, ZRM_TAGS.opportunities],
+  stages: [ZRM_TAGS.lookups, ZRM_TAGS.opportunities],
+};
+
+/**
+ * Refreshes every record's detail, which shows its relatives' names, and the
+ * lists `changed` appears in; a child (note, school, ...) only changes details.
+ */
+const revalidate = (changed?: keyof typeof LISTS_SHOWING) => {
+  updateTag(ZRM_TAGS.detail);
+  for (const tag of changed ? LISTS_SHOWING[changed] : []) updateTag(tag);
 };
 
 /**
@@ -126,7 +141,7 @@ export async function saveFieldsAction(
       if (isStaleReference(error)) return { error: "A linked record no longer exists. Reload and try again." };
       throw error;
     }
-    revalidate();
+    revalidate(kind);
     redirect(recordHref(kind, createdId));
   }
 
@@ -141,7 +156,7 @@ export async function saveFieldsAction(
     if (isStaleReference(error)) return { error: "A linked record no longer exists. Reload and try again." };
     throw error;
   }
-  revalidate();
+  revalidate(kind);
   return { saved: true };
 }
 
@@ -149,7 +164,7 @@ export async function deleteRecordAction(kind: RecordKind, id: string): Promise<
   if (!(await teamAccount())) return NO_ACCESS;
   if (!isRecordKind(kind) || !isUuid(id)) return NO_ACCESS;
   await db().query(`delete from ${TABLES[kind]} where id = $1`, [id]);
-  revalidate();
+  revalidate(kind);
   redirect(listHref(kind));
 }
 
@@ -158,7 +173,7 @@ export async function setActiveAction(kind: RecordKind, id: string, active: bool
   if (!(await teamAccount())) return NO_ACCESS;
   if (!isRecordKind(kind) || !isUuid(id)) return NO_ACCESS;
   await db().query(`update ${TABLES[kind]} set active = $1, updated_at = now() where id = $2`, [active === true, id]);
-  revalidate();
+  revalidate(kind);
   return { saved: true };
 }
 
@@ -171,7 +186,7 @@ export async function setStageAction(id: string, stageId: string): Promise<Actio
     if (isStaleReference(error)) return { error: "That stage no longer exists. Reload and try again." };
     throw error;
   }
-  revalidate();
+  revalidate("opportunities");
   return { saved: true };
 }
 
@@ -184,7 +199,7 @@ export async function setSiteStatusAction(id: string, statusId: string): Promise
     if (isStaleReference(error)) return { error: "That status no longer exists. Reload and try again." };
     throw error;
   }
-  revalidate();
+  revalidate("sites");
   return { saved: true };
 }
 
@@ -219,7 +234,7 @@ export async function setCompanyTypesAction(companyId: string, _prev: ActionStat
     if (isStaleReference(error)) return MISSING;
     throw error;
   }
-  revalidate();
+  revalidate("types");
   return { saved: true };
 }
 

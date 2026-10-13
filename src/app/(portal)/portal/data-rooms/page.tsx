@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import type { ReactElement } from "react";
-import { requireAccount } from "@/features/account/session";
+import { Suspense, type ReactElement } from "react";
 import { NewRoomForm } from "@/features/data-room/NewRoomForm";
-import { canCreateRooms } from "@/features/data-room/rooms";
-import { loadRooms } from "@/features/portal/data";
+import { loadMyRooms, orLogIn } from "@/features/portal/mine";
+import { PortalLoading } from "@/features/portal/PortalLoading";
 import { Empty, PageHeader, RoomList } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
 
@@ -13,26 +12,38 @@ export const metadata: Metadata = {
 };
 
 /** Every room you own or that's been shared with you; the ZODE team can open new ones. */
-export default async function DataRoomsPage(): Promise<ReactElement> {
-  const account = await requireAccount("/portal/data-rooms");
-  const [rooms, canCreate] = await Promise.all([loadRooms(account.userId), canCreateRooms(account)]);
-
+export default function DataRoomsPage(): ReactElement {
   return (
     <div className={styles.page}>
       <PageHeader title="Data rooms" subtitle="Private documents, with every view and download tracked.">
-        {canCreate ? <NewRoomForm /> : null}
+        <Suspense fallback={null}>
+          <NewRoom />
+        </Suspense>
       </PageHeader>
-      {rooms === null ? (
-        <Empty>Your data rooms couldn&apos;t be loaded right now. Please try again shortly.</Empty>
-      ) : rooms.length ? (
-        <RoomList rooms={rooms} />
-      ) : (
-        <Empty>
-          {canCreate
-            ? "Create a room to share documents privately. Rooms shared with you appear here too."
-            : "Data rooms shared with you appear here."}
-        </Empty>
-      )}
+      <Suspense fallback={<PortalLoading header={false} nested />}>
+        <Rooms />
+      </Suspense>
     </div>
+  );
+}
+
+/** The new room button, for those who can open one. */
+async function NewRoom(): Promise<ReactElement | null> {
+  const mine = await loadMyRooms();
+  return mine?.canCreate ? <NewRoomForm /> : null;
+}
+
+async function Rooms(): Promise<ReactElement> {
+  const { rooms, canCreate } = orLogIn(await loadMyRooms(), "/portal/data-rooms");
+  return rooms === null ? (
+    <Empty>Your data rooms couldn&apos;t be loaded right now. Please try again shortly.</Empty>
+  ) : rooms.length ? (
+    <RoomList rooms={rooms} />
+  ) : (
+    <Empty>
+      {canCreate
+        ? "Create a room to share documents privately. Rooms shared with you appear here too."
+        : "Data rooms shared with you appear here."}
+    </Empty>
   );
 }

@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { cacheLife } from "next/cache";
 import { loadPublished } from "@/features/posts/pages";
 import { postHref } from "@/features/posts/types";
 import { SITE_URL } from "@/lib/site";
@@ -18,10 +19,10 @@ const PUBLIC_ROUTES = [
   "/terms",
 ] as const;
 
-/** Publishing revalidates this; the hour is a backstop. */
-export const revalidate = 3600;
-
+/** Publishing expires this through the posts' tag; the hour is a backstop. */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  "use cache";
+  cacheLife("hours");
   const pages: MetadataRoute.Sitemap = PUBLIC_ROUTES.map((route) => ({
     url: `${SITE_URL}${route}`,
     lastModified: new Date(),

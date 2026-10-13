@@ -202,24 +202,21 @@ const choiceLabel = (choices: readonly Choice<string, unknown>[], id: unknown): 
  */
 export async function listOrdersByUser(userId: string): Promise<OrderSummary[]> {
   const rows = await db()`
-    select id, created_at, mode, status, monthly_usd, total_usd, config, quote
+    select id, created_at, mode, status, monthly_usd, total_usd,
+      config->>'platform' as platform, config->>'location' as location, quote->>'gpus' as gpus
     from compute_orders
     where user_id = ${userId}
     order by created_at desc
   `;
-  return rows.map((row) => {
-    const config = row.config as Record<string, unknown>;
-    const priced = row.quote as { gpus?: number };
-    return {
-      reference: referenceFor(String(row.id)),
-      createdAt: new Date(row.created_at as string | Date),
-      mode: row.mode === "rent" ? "rent" : "buy",
-      status: String(row.status),
-      monthlyUsd: Number(row.monthly_usd),
-      totalUsd: row.total_usd == null ? null : Number(row.total_usd),
-      platform: choiceLabel(PLATFORMS, config.platform),
-      location: choiceLabel(LOCATIONS, config.location),
-      gpus: Number(priced.gpus ?? 0),
-    };
-  });
+  return rows.map((row) => ({
+    reference: referenceFor(String(row.id)),
+    createdAt: new Date(row.created_at as string | Date),
+    mode: row.mode === "rent" ? "rent" : "buy",
+    status: String(row.status),
+    monthlyUsd: Number(row.monthly_usd),
+    totalUsd: row.total_usd == null ? null : Number(row.total_usd),
+    platform: choiceLabel(PLATFORMS, row.platform),
+    location: choiceLabel(LOCATIONS, row.location),
+    gpus: Number(row.gpus ?? 0),
+  }));
 }

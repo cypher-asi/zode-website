@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   title: "Register | ZODE",
 };
 
+export const instant = false;
+
 /** Direct visits and refreshes; links on the site open the same panel as a modal (see app/@modal). */
 export default async function RegisterPage({
   searchParams,

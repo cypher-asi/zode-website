@@ -15,6 +15,8 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 };
 
+export const instant = false;
+
 /**
  * Where team invite emails land. Signed-out invitees log in or register and
  * come back here; the invite is accepted only by the account with the invited email.

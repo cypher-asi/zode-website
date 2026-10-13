@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import type { ReactElement } from "react";
+import { Suspense, type ReactElement } from "react";
 import Link from "next/link";
-import { isTeam } from "@/features/account/admin";
 import { LogoutButton } from "@/features/account/LogoutButton";
-import { requireAccount } from "@/features/account/session";
 import ui from "@/features/data-room/ui.module.css";
-import { loadContracts, loadOrders, loadRooms } from "@/features/portal/data";
+import { loadMyHome, orLogIn } from "@/features/portal/mine";
+import { PortalLoading } from "@/features/portal/PortalLoading";
 import { Empty, OrderList, PageHeader, RoomList, Section } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
 import dash from "@/features/team-dashboard/dashboard.module.css";
@@ -18,14 +17,17 @@ export const metadata: Metadata = {
 const RECENT = 3;
 
 /** Signed-in home: who you are, your figures at a glance, and the latest rooms and orders. */
-export default async function HomePage(): Promise<ReactElement> {
-  const account = await requireAccount("/portal");
-  const [rooms, orders, contracts, team] = await Promise.all([
-    loadRooms(account.userId),
-    loadOrders(account.userId),
-    loadContracts(account.userId),
-    isTeam(account),
-  ]);
+export default function HomePage(): ReactElement {
+  return (
+    <Suspense fallback={<PortalLoading />}>
+      <Home />
+    </Suspense>
+  );
+}
+
+/** The whole page, header included, since it greets the account by name. */
+async function Home(): Promise<ReactElement> {
+  const { account, team, rooms, orders, contracts } = orLogIn(await loadMyHome(), "/portal");
   const firstName = account.displayName.trim().split(/\s+/)[0] || account.displayName;
   const files = rooms?.reduce((sum, room) => sum + room.fileCount, 0);
   const figure = (value: number | undefined) => (value === undefined ? "—" : value.toLocaleString("en-US"));

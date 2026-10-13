@@ -9,6 +9,8 @@ export const metadata: Metadata = {
     "Configure your own ZODE, or rent a cluster: compute, networking, storage and CPUs, with live pricing.",
 };
 
+export const instant = false;
+
 /**
  * Build-your-own ZODE configurator, laid out like a car maker's build page:
  * the ZODE drawing on the left, configuration steps on the right and a

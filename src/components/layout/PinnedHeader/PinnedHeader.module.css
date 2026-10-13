@@ -115,6 +115,10 @@
   view-transition-name: zode-action;
 }
 
+.action[data-still] {
+  view-transition-name: none;
+}
+
 .action[data-tone="dark"],
 .action[data-media] {
   --ink: var(--color-white);

@@ -172,7 +172,8 @@ export async function subscriptionsFor(account: Account): Promise<Subscriber[]> 
 /** Every row, or one list's, newest first, with linked accounts' current names. For ZODE admins only. */
 export async function listSubscribers(list: MailingList | null = null): Promise<Subscriber[]> {
   const rows = await db()`
-    select s.*, p.display_name as account_name
+    select s.id, s.list, s.email, s.name, s.status, s.source, s.user_id, s.created_at, s.confirmed_at,
+      s.unsubscribed_at, p.display_name as account_name
     from mailing_list_subscribers s
     left join account_profiles p on p.user_id = s.user_id
     where ${list}::text is null or s.list = ${list}

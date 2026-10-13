@@ -3,6 +3,9 @@ import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
 
 export type DbTarget = "dev" | "prod";
 
+/** Tagged on every cached read of `db()`, so flipping the dev switch drops results from the other database. */
+export const DB_TAG = "db";
+
 const clients = new Map<string, NeonQueryFunction<false, false>>();
 
 /** Shared across the server's module instances (actions, rendering) and survives HMR; resets on restart. */

@@ -10,6 +10,8 @@ export const metadata: Metadata = {
     "Design a GPU cluster rack by rack: GPU platform, rack density, InfiniBand or RoCE fabric and storage, in live 3D.",
 };
 
+export const instant = false;
+
 /**
  * The cluster builder, a resource linked from the footer menu. Lives
  * outside the `(site)` group, like /buy-compute, so the 3D viewport can fill

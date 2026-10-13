@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import type { ReactElement } from "react";
+import { Suspense, type ReactElement, type ReactNode } from "react";
 import styles from "@/features/data-room/room.module.css";
+import { PortalLoading } from "@/features/portal/PortalLoading";
 import { requireTeam } from "@/features/zrm/access";
 import { loadZrmData } from "@/features/zrm/queries";
 import { Workspace } from "@/features/zrm/Workspace";
@@ -13,12 +14,38 @@ export const metadata: Metadata = {
 
 /**
  * Capacity, the team's data center sites: ZRM's list and record panes over
- * sites, whose providers, customers, brokers and firms link into ZRM. Loads
- * ZRM's lists too, for those pickers and links. The data is only rendered
- * once `requireTeam` passes.
+ * sites, whose providers, customers, brokers and firms link into ZRM. Every
+ * list loads here, once, from the server's cache, ZRM's people and companies
+ * too for those pickers and links; mutations update the tags of the lists
+ * they touch. The data is only rendered once `requireTeam` passes; until then
+ * the bar shows Capacity's name.
  */
-export default async function CapacityLayout({ children }: LayoutProps<"/portal/capacity">): Promise<ReactElement> {
-  const [, data] = await Promise.all([requireTeam("/portal/capacity"), loadZrmData()]);
+export default function CapacityLayout({ children }: LayoutProps<"/portal/capacity">): ReactElement {
+  return (
+    <Suspense
+      fallback={
+        <div className={styles.frame}>
+          <header className={styles.bar}>
+            <div className={styles.titleGroup}>
+              <div className={styles.titleRow}>
+                <h1 className={styles.title}>Capacity</h1>
+                <span className={styles.role}>Team</span>
+              </div>
+            </div>
+          </header>
+          <div className={styles.body}>
+            <PortalLoading header={false} />
+          </div>
+        </div>
+      }
+    >
+      <Capacity>{children}</Capacity>
+    </Suspense>
+  );
+}
+
+async function Capacity({ children }: { children: ReactNode }): Promise<ReactElement> {
+  const [, data] = await Promise.all([requireTeam("/portal/capacity"), loadZrmData("capacity")]);
 
   return (
     <ZrmProvider app="capacity" data={data}>

@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 };
 
+export const instant = false;
+
 const Unsubscribed = ({ email, list }: { email: string; list: MailingList }): ReactElement => (
   <>
     <h1 className={styles.title}>You&apos;re unsubscribed</h1>

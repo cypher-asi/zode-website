@@ -1,17 +1,20 @@
 import type { Metadata } from "next";
+import { Suspense, type ReactElement } from "react";
 import { PublishedPostPage, postMetadata } from "@/features/posts/pages";
-
-export const revalidate = 3600;
-
-/** None at build; each post renders on its first visit and is then cached until it's edited. */
-export function generateStaticParams(): { slug: string }[] {
-  return [];
-}
 
 export async function generateMetadata({ params }: PageProps<"/news/[slug]">): Promise<Metadata> {
   return postMetadata("news", (await params).slug);
 }
 
-export default async function NewsPostPage({ params }: PageProps<"/news/[slug]">) {
+/** Renders per request around the post, which is cached until it's edited. */
+export default function NewsPostPage({ params }: PageProps<"/news/[slug]">): ReactElement {
+  return (
+    <Suspense>
+      <Post params={params} />
+    </Suspense>
+  );
+}
+
+async function Post({ params }: Pick<PageProps<"/news/[slug]">, "params">): Promise<ReactElement> {
   return <PublishedPostPage kind="news" slug={(await params).slug} />;
 }

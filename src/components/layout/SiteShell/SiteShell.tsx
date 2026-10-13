@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from "react";
+import { Suspense, type ReactElement, type ReactNode } from "react";
 import { PinnedHeader } from "@/components/layout/PinnedHeader";
 import { FooterReveal, FooterScene } from "@/components/layout/SiteFooter";
 import styles from "./SiteShell.module.css";
@@ -31,7 +31,10 @@ export function SiteShell({
 }): ReactElement {
   return (
     <div className={styles.shell} data-edge={edge}>
-      <PinnedHeader />
+      {/* The header reads the pathname, which a page with dynamic params only knows per request. */}
+      <Suspense>
+        <PinnedHeader />
+      </Suspense>
       {nav}
       <main className={styles.main} data-surface="light">
         {fade ? (

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import type { ReactElement } from "react";
+import { Suspense, type ReactElement } from "react";
 import { notFound } from "next/navigation";
 import { isTeam, isZodeAdmin } from "@/features/account/admin";
 import { LogoutButton } from "@/features/account/LogoutButton";
 import { requireAccount } from "@/features/account/session";
 import tabs from "@/features/data-room/room.module.css";
 import ui from "@/features/data-room/ui.module.css";
+import { PortalLoading } from "@/features/portal/PortalLoading";
 import { Empty, PageHeader } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
 import { SettingsTabs } from "@/features/settings/SettingsTabs";
@@ -29,7 +30,23 @@ const orNull = <T,>(promise: Promise<T>, what: string): Promise<T | null> =>
   });
 
 /** The ZODE team. Everyone on it sees who else is; super admins invite, add and remove people. */
-export default async function TeamPage(): Promise<ReactElement> {
+export default function TeamPage(): ReactElement {
+  return (
+    <div className={styles.page}>
+      <PageHeader title="Settings" subtitle="The ZODE team, who can open data rooms. Super admins choose who's on it.">
+        <div className={tabs.headerActions}>
+          <SettingsTabs current="team" />
+          <LogoutButton className={ui.button} />
+        </div>
+      </PageHeader>
+      <Suspense fallback={<PortalLoading header={false} nested />}>
+        <Team />
+      </Suspense>
+    </div>
+  );
+}
+
+async function Team(): Promise<ReactElement> {
   const account = await requireAccount("/portal/settings/team");
   const [team, superAdmin] = await Promise.all([isTeam(account), isZodeAdmin(account)]);
   if (!team) notFound();
@@ -48,14 +65,7 @@ export default async function TeamPage(): Promise<ReactElement> {
     }));
 
   return (
-    <div className={styles.page}>
-      <PageHeader title="Settings" subtitle="The ZODE team, who can open data rooms. Super admins choose who's on it.">
-        <div className={tabs.headerActions}>
-          <SettingsTabs current="team" />
-          <LogoutButton className={ui.button} />
-        </div>
-      </PageHeader>
-
+    <>
       {superAdmin ? (
         <section className={styles.section} aria-labelledby="team-add">
           <div className={styles.sectionHead}>
@@ -96,6 +106,6 @@ export default async function TeamPage(): Promise<ReactElement> {
           <PendingTeamInvites invites={invites} />
         </section>
       ) : null}
-    </div>
+    </>
   );
 }

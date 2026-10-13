@@ -103,6 +103,18 @@ export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
   }));
 }
 
+/** The account's rooms by name alone, newest first, for the sidebar. */
+export async function listRoomNamesForUser(userId: string): Promise<{ id: string; name: string }[]> {
+  const rows = await db()`
+    select r.id, r.name
+    from data_room_members m
+    join data_rooms r on r.id = m.room_id
+    where m.user_id = ${userId} and m.accepted_at is not null
+    order by r.created_at desc
+  `;
+  return rows.map((row) => ({ id: String(row.id), name: String(row.name) }));
+}
+
 /** Creates a room with its creator as the first, already-active admin. */
 export async function createRoom(name: string, kind: RoomKind, account: Account): Promise<string> {
   const email = normalizeEmail(account.email);
@@ -145,6 +157,12 @@ const toFile = (row: Record<string, unknown>): RoomFile => ({
   uploadedBy: String(row.uploaded_by_email),
   createdAt: iso(row.created_at),
 });
+
+/** A room's live files by name alone. */
+export async function listFileNames(roomId: string): Promise<{ id: string; name: string }[]> {
+  const rows = await db()`select id, name from data_room_files where room_id = ${roomId} and deleted_at is null`;
+  return rows.map((row) => ({ id: String(row.id), name: String(row.name) }));
+}
 
 export async function getRoomTree(roomId: string): Promise<RoomTree> {
   const sql = db();
@@ -246,7 +264,8 @@ export async function folderSubtree(roomId: string, folderId: string): Promise<s
   return rows.map((row) => String(row.id));
 }
 
-export async function listMembers(roomId: string): Promise<RoomMember[]> {
+/** Cached per request, since a room's layout and its Members tab both list them. */
+export const listMembers = cache(async (roomId: string): Promise<RoomMember[]> => {
   const rows = await db()`
     select id, email, role, invited_by_email, invited_at, accepted_at, invite_expires_at, requires_mnda
     from data_room_members
@@ -268,7 +287,7 @@ export async function listMembers(roomId: string): Promise<RoomMember[]> {
     acceptedAt: row.accepted_at == null ? null : iso(row.accepted_at),
     requiresMnda: Boolean(row.requires_mnda),
   }));
-}
+});
 
 export async function getMember(
   roomId: string,

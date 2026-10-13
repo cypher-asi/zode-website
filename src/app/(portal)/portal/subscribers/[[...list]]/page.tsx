@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { ReactElement } from "react";
+import { Suspense, type ReactElement } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { isZodeAdmin } from "@/features/account/admin";
@@ -13,6 +13,7 @@ import {
   type MailingList,
 } from "@/features/mailing-list/types";
 import { loadSubscribers } from "@/features/portal/data";
+import { PortalLoading } from "@/features/portal/PortalLoading";
 import { Empty, PageHeader, SubscriberList } from "@/features/portal/sections";
 import tabs from "@/features/data-room/room.module.css";
 import ui from "@/features/data-room/ui.module.css";
@@ -33,10 +34,19 @@ const LIST_TABS: readonly { id: MailingList | "all"; label: string; href: string
  * Everyone on the mailing lists, or one list, and which of them have ZODE
  * accounts. Someone on both lists is a row on each. ZODE admins only.
  */
-export default async function SubscribersPage({
+export default function SubscribersPage({ params, searchParams }: PageProps<"/portal/subscribers/[[...list]]">): ReactElement {
+  return (
+    <Suspense fallback={<PortalLoading />}>
+      <Subscribers params={params} searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+/** The whole page, header included, since its title, tabs and export follow the URL. */
+async function Subscribers({
   params,
   searchParams,
-}: PageProps<"/portal/subscribers/[[...list]]">): Promise<ReactElement> {
+}: Pick<PageProps<"/portal/subscribers/[[...list]]">, "params" | "searchParams">): Promise<ReactElement> {
   const { list: segments } = await params;
   const list = segments && isMailingList(segments[0]) ? segments[0] : null;
   if (segments && (segments.length > 1 || !list)) notFound();

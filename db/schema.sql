@@ -230,6 +230,7 @@ create table if not exists posts (
 );
 
 create index if not exists posts_published_idx on posts (kind, published_at desc) where status = 'published';
+create index if not exists posts_updated_at_idx on posts (updated_at desc);
 
 -- The mailing lists, 'news' and 'changelog': one row per email per list, each
 -- joined and left on its own. Signing up is double opt-in, since anyone can

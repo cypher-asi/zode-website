@@ -1,11 +1,11 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { teamAccount } from "@/features/zrm/access";
 import { deletePostBlobs, postBlobPrefix } from "./blob";
-import { createDraft, deletePost, getPost, setStatus, slugTaken, updatePost } from "./posts";
+import { POSTS_TAG, createDraft, deletePost, getPost, setStatus, slugTaken, updatePost } from "./posts";
 import {
   MAX_BODY_LENGTH,
   MAX_SLUG_LENGTH,
@@ -56,6 +56,7 @@ function cleanDraft(postId: string, raw: PostDraft, publishing: boolean): PostDr
 
 /** Refreshes the public pages a post appears on, before and after an edit that may move it. */
 function revalidatePublic(...posts: (Post | null | undefined)[]): void {
+  revalidateTag(POSTS_TAG, { expire: 0 });
   const seen = new Set<string>();
   for (const post of posts) {
     if (!post) continue;

@@ -1,4 +1,6 @@
 import "server-only";
+import { cache } from "react";
+import { unstable_rethrow } from "next/navigation";
 import { db } from "@/lib/db";
 import type { Account } from "./zos";
 
@@ -33,10 +35,17 @@ export async function loadProfile(userId: string): Promise<Profile | null> {
       avatarPathname: row.avatar_pathname == null ? null : String(row.avatar_pathname),
     };
   } catch (error) {
+    unstable_rethrow(error);
     console.error("[profile] lookup failed; using the ZOS profile", error);
     return null;
   }
 }
+
+/**
+ * `loadProfile` once per request, shared by the session lookup and pages that
+ * show the profile. Not for actions, which read it back after saving.
+ */
+export const loadRequestProfile = cache(loadProfile);
 
 /** The account as the site shows it: ZOS's values, with the user's own edits on top. */
 export function applyProfile(account: Account, profile: Profile | null): Account {

@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 import { Select } from "@/components/ui/Select";
 import { listActors, listEvents } from "@/features/data-room/audit";
-import { getRoomTree, isUuid, requireRoomRole } from "@/features/data-room/rooms";
+import { isUuid, listFileNames, requireRoomRole } from "@/features/data-room/rooms";
 import {
   AUDIT_ACTION_LABELS,
   isRoomKind,
@@ -70,13 +70,13 @@ export default async function DataRoomActivityPage({
   const page = Math.max(0, Math.floor(Number(one("page")) || 0));
 
   const filters = { action: action || undefined, actor: actor || undefined, fileId: fileId || undefined };
-  const [{ events, hasMore }, actors, tree] = await Promise.all([
+  const [{ events, hasMore }, actors, files] = await Promise.all([
     listEvents(roomId, filters, page),
     listActors(roomId),
-    getRoomTree(roomId),
+    listFileNames(roomId),
   ]);
-  const liveFiles = new Set(tree.files.map((file) => file.id));
-  const fileName = fileId ? (tree.files.find((file) => file.id === fileId)?.name ?? "a deleted file") : "";
+  const liveFiles = new Set(files.map((file) => file.id));
+  const fileName = fileId ? (files.find((file) => file.id === fileId)?.name ?? "a deleted file") : "";
 
   const query = (changes: Record<string, string | number | undefined>) => {
     const next = new URLSearchParams();

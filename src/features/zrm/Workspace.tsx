@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, memo, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactElement, type ReactNode } from "react";
+import { Fragment, memo, useDeferredValue, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactElement, type ReactNode } from "react";
 import Link from "next/link";
 import { useSelectedLayoutSegments } from "next/navigation";
 import { Select } from "@/components/ui/Select";
@@ -12,7 +12,7 @@ import { NEW_LABELS, companiesConfig, opportunitiesConfig, peopleConfig, sitesCo
 import { KIND_LABELS, listHref, recordHref, type RecordKind } from "./types";
 import { GroupNav } from "./GroupNav";
 import { TypeNav } from "./TypeNav";
-import { goOnClick, useZrm, ZrmLink } from "./ZrmProvider";
+import { goOnClick, useZrmData, useZrmNavigate, useZrmRoute, ZrmLink } from "./ZrmProvider";
 import styles from "./zrm.module.css";
 
 interface Sort {
@@ -39,10 +39,15 @@ interface RowProps<T> {
   style: CSSProperties;
   selected: boolean;
   go: (href: string) => void;
+  prefetch: (href: string) => void;
 }
 
-/** One record in the list, memoized so moving the selection re-renders only the rows it leaves and lands on. */
-const Row = memo(function Row<T extends ListRow>({ kind, row, config, style, selected, go }: RowProps<T>): ReactElement {
+/**
+ * One record in the list, memoized so moving the selection re-renders only the
+ * rows it leaves and lands on. Prefetched on hover or focus rather than as it
+ * scrolls into view, as a list can hold thousands.
+ */
+const Row = memo(function Row<T extends ListRow>({ kind, row, config, style, selected, go, prefetch }: RowProps<T>): ReactElement {
   const href = recordHref(kind, row.id);
   return (
     <Link
@@ -50,6 +55,8 @@ const Row = memo(function Row<T extends ListRow>({ kind, row, config, style, sel
       href={href}
       scroll={false}
       prefetch={false}
+      onMouseEnter={() => prefetch(href)}
+      onFocus={() => prefetch(href)}
       onClick={goOnClick(go, href)}
       className={styles.row}
       style={style}
@@ -90,10 +97,14 @@ function RecordList<T extends ListRow>({
   filterValues: Readonly<Record<string, string>>;
   onFilterChange: (key: string, value: string) => void;
 }): ReactElement {
-  const { go } = useZrm();
+  const { go, prefetch } = useZrmNavigate();
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
+  const deferredFilterValues = useDeferredValue(filterValues);
   const [sort, setSort] = useState<Sort | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+
+  const searchTexts = useMemo(() => rows.map((row) => config.searchText(row)), [rows, config]);
 
   const filters = useMemo(
     () =>
@@ -104,11 +115,13 @@ function RecordList<T extends ListRow>({
   const sections = sort ? undefined : config.sections;
 
   const shown = useMemo(() => {
-    const needle = query.trim().toLowerCase();
+    const needle = deferredQuery.trim().toLowerCase();
     const filtered = rows.filter(
-      (row) =>
-        (config.filters ?? []).every((filter) => !filterValues[filter.key] || filter.test(row, filterValues[filter.key]!)) &&
-        (!needle || config.searchText(row).includes(needle)),
+      (row, at) =>
+        (config.filters ?? []).every(
+          (filter) => !deferredFilterValues[filter.key] || filter.test(row, deferredFilterValues[filter.key]!),
+        ) &&
+        (!needle || searchTexts[at]!.includes(needle)),
     );
     const column = sort ? config.columns.find((c) => c.key === sort.key) : undefined;
     return filtered
@@ -123,7 +136,7 @@ function RecordList<T extends ListRow>({
         return a.index - b.index;
       })
       .map(({ row }) => row);
-  }, [rows, query, filterValues, sort, sections, config]);
+  }, [rows, searchTexts, deferredQuery, deferredFilterValues, sort, sections, config]);
 
   /** The shown rows split at each change of section, or one untitled run without sections. */
   const runs = useMemo(() => {
@@ -244,6 +257,7 @@ function RecordList<T extends ListRow>({
                   style={columnsStyle}
                   selected={row.id === selectedId}
                   go={go}
+                  prefetch={prefetch}
                 />
               ))}
             </Fragment>
@@ -271,7 +285,8 @@ function RecordList<T extends ListRow>({
  * the list, its search and its scroll.
  */
 export function Workspace({ children }: { children: ReactNode }): ReactElement {
-  const { data, kinds, segments, pending } = useZrm();
+  const { data, kinds } = useZrmData();
+  const { segments, pending } = useZrmRoute();
   const [segment, child = null] = segments;
   const shownChild = useSelectedLayoutSegments()[1] ?? null;
   /** On its way to another record or form: an empty pane shows a placeholder, an open record dims until it's replaced. */

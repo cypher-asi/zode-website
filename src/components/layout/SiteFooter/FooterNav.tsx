@@ -2,7 +2,6 @@
 
 import type { CSSProperties, KeyboardEvent, ReactElement } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { RESOURCE_LINKS, TOOL_LINKS, type NavLink } from "@/lib/navigation";
 import styles from "./FooterNav.module.css";
 
@@ -73,8 +72,6 @@ export interface FooterNavProps {
  * hovered or focused link gets a caret and a blinking cursor.
  */
 export function FooterNav({ open }: FooterNavProps): ReactElement {
-  const pathname = usePathname() ?? "/";
-
   return (
     <nav
       className={styles.columns}
@@ -118,7 +115,7 @@ export function FooterNav({ open }: FooterNavProps): ReactElement {
                       href={link.href}
                       // Same-page links don't navigate, so scroll back up instead.
                       onClick={() => {
-                        if (link.href === pathname) window.scrollTo({ top: 0, behavior: "smooth" });
+                        if (link.href === window.location.pathname) window.scrollTo({ top: 0, behavior: "smooth" });
                       }}
                     >
                       {content}

@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import type { ReactElement } from "react";
+import { Suspense, type ReactElement } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { isZodeAdmin } from "@/features/account/admin";
 import { requireAccount } from "@/features/account/session";
 import { loadUsers } from "@/features/portal/data";
+import { PortalLoading } from "@/features/portal/PortalLoading";
 import { Empty, PageHeader, UserList } from "@/features/portal/sections";
 import { ROLE_LABELS, ROLE_SLUGS, USER_ROLES, roleForSlug, type UserRole } from "@/features/users/types";
 import tabs from "@/features/data-room/room.module.css";
@@ -35,7 +36,16 @@ const EMPTY: Record<UserRole | "all", string> = {
 };
 
 /** Every account that has signed in, or those with one role, by ZODE user id. Super admins only. */
-export default async function UsersPage({ params }: PageProps<"/portal/users/[[...role]]">): Promise<ReactElement> {
+export default function UsersPage({ params }: PageProps<"/portal/users/[[...role]]">): ReactElement {
+  return (
+    <Suspense fallback={<PortalLoading />}>
+      <Users params={params} />
+    </Suspense>
+  );
+}
+
+/** The whole page, header included, since its title and tabs follow the URL. */
+async function Users({ params }: { params: PageProps<"/portal/users/[[...role]]">["params"] }): Promise<ReactElement> {
   const { role: segments } = await params;
   const role = segments ? roleForSlug(segments[0]) : null;
   if (segments && (segments.length > 1 || !role)) notFound();

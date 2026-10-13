@@ -5,6 +5,9 @@ import type { Account } from "@/features/account/zos";
 import { db } from "@/lib/db";
 import type { Post, PostDraft, PostKind, PostStatus } from "./types";
 
+/** Cache tag of every cached read of published posts: the public pages and the sitemap. */
+export const POSTS_TAG = "posts";
+
 const toPost = (row: Record<string, unknown>): Post => ({
   id: String(row.id),
   kind: row.kind as PostKind,

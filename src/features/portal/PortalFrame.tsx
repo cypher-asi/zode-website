@@ -1,10 +1,10 @@
 "use client";
 
-import { createContext, use, useState, useSyncExternalStore, type ReactElement, type ReactNode } from "react";
+import { createContext, use, useMemo, useState, useSyncExternalStore, type ReactElement, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { SIDEBAR_MEDIA } from "./nav";
 import styles from "./shell.module.css";
-import { PORTAL_THEME_COOKIE, type PortalTheme } from "./theme";
+import { PORTAL_THEME_COOKIE, PORTAL_THEME_SCRIPT, readPortalTheme, type PortalTheme } from "./theme";
 
 type SidebarContextValue = {
   /** Whether the window is wide enough to show the sidebar at all. */
@@ -36,37 +36,64 @@ const subscribeWide = (onChange: () => void) => {
   return () => query.removeEventListener("change", onChange);
 };
 
+/** The theme cookie as a store; the cookie has no change event, so `toggleTheme` notifies. */
+const themeListeners = new Set<() => void>();
+
+const subscribeTheme = (onChange: () => void) => {
+  themeListeners.add(onChange);
+  return () => {
+    themeListeners.delete(onChange);
+  };
+};
+
+const toggleTheme = () => {
+  const next = readPortalTheme(document.cookie) === "dark" ? "light" : "dark";
+  document.cookie = `${PORTAL_THEME_COOKIE}=${next}; Max-Age=31536000; Path=/; SameSite=Lax`;
+  themeListeners.forEach((listener) => listener());
+};
+
+/**
+ * An inline script that runs as a hard load's HTML is parsed. Rendered in the
+ * browser, which wouldn't run it, it's `text/plain` so React doesn't warn.
+ */
+function InlineScript({ html }: { html: string }): ReactElement {
+  return (
+    <script
+      type={typeof window === "undefined" ? "text/javascript" : "text/plain"}
+      suppressHydrationWarning
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+
 /**
  * Wraps the portal shell, tracks where pages can dock their explorer in the
  * sidebar, and carries the light or dark theme (globals.css) for everything
- * inside, the pinned header included.
+ * inside, the pinned header included. The server renders light; an inline
+ * script switches a hard load to dark before it paints.
  */
-export function PortalFrame({
-  initialTheme,
-  children,
-}: {
-  initialTheme: PortalTheme;
-  children: ReactNode;
-}): ReactElement {
+export function PortalFrame({ children }: { children: ReactNode }): ReactElement {
   const [dock, setDock] = useState<HTMLElement | null>(null);
   const [extra, setExtra] = useState<HTMLElement | null>(null);
-  const [theme, setTheme] = useState(initialTheme);
+  const theme = useSyncExternalStore(
+    subscribeTheme,
+    () => readPortalTheme(document.cookie),
+    (): PortalTheme => "light",
+  );
   const wide = useSyncExternalStore(
     subscribeWide,
     () => window.matchMedia(SIDEBAR_MEDIA).matches,
     () => false,
   );
 
-  const toggle = () => {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    document.cookie = `${PORTAL_THEME_COOKIE}=${next}; Max-Age=31536000; Path=/; SameSite=Lax`;
-  };
+  const themeValue = useMemo(() => ({ theme, toggle: toggleTheme }), [theme]);
+  const sidebarValue = useMemo(() => ({ wide, dock, setDock, extra, setExtra }), [wide, dock, extra]);
 
   return (
-    <ThemeContext value={{ theme, toggle }}>
-      <SidebarContext value={{ wide, dock, setDock, extra, setExtra }}>
-        <div className={styles.frame} data-theme={theme}>
+    <ThemeContext value={themeValue}>
+      <SidebarContext value={sidebarValue}>
+        <div className={styles.frame} data-theme={theme} suppressHydrationWarning>
+          <InlineScript html={PORTAL_THEME_SCRIPT} />
           {children}
         </div>
       </SidebarContext>

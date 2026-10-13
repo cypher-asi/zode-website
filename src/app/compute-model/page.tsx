@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { PinnedHeader } from "@/components/layout/PinnedHeader";
 import { ComputeModel } from "@/features/compute-model/ComputeModel";
 import { nextMonthStart } from "@/features/compute-model/model/engine";
@@ -9,6 +10,8 @@ export const metadata: Metadata = {
   description:
     "Model a GPU cluster SPV: contract and merchant revenue, facility costs, DSCR-sized debt and the preferred equity waterfall, with live IRR and equity required.",
 };
+
+export const instant = false;
 
 /**
  * The GPU SPV financial model, a resource linked from the footer and header
@@ -27,6 +30,8 @@ export default async function ComputeModelPage({
   for (const [key, value] of Object.entries(raw)) {
     if (typeof value === "string") params[key] = value;
   }
+  // Today's date is only known per request.
+  await connection();
 
   return (
     <main className={styles.page}>

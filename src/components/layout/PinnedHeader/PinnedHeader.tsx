@@ -187,6 +187,16 @@ export function PinnedHeader({
   const signedIn = accountInitials !== null;
   const inPortal = isPortalPath(pathname ?? "/");
   const menu = inPortal ? PORTAL_ACTION_MENU : ACTION_MENU;
+  /** The route this header mounted on, cleared by the first route change after. */
+  const [mountPath, setMountPath] = useState<string | null>(pathname);
+  if (mountPath !== null && mountPath !== pathname) setMountPath(null);
+  /**
+   * Whether the wordmark and button carry their shared transition names. The
+   * portal's header stays put across its routes, so there they only join the
+   * navigation that mounts it; past that each route change would sit through
+   * the whole morph for nothing.
+   */
+  const morph = !inPortal || mountPath !== null;
   const { logOut, pending: loggingOut } = useLogout();
   const menuId = useId();
   const flyoutIdPrefix = useId();
@@ -371,6 +381,8 @@ export function PinnedHeader({
   };
 
   useEffect(() => {
+    // The portal's panel is fixed and light under both, with nothing to fade, so the default tones hold.
+    if (inPortal) return;
     let frame = 0;
     // Faded nodes near the top of the viewport. Only these are measured each
     // frame; the margins are generous so a node is tracked well before it
@@ -463,13 +475,13 @@ export function PinnedHeader({
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
     };
-  }, [showAction]);
+  }, [showAction, inPortal]);
 
   return (
     <>
       {/* Pages set their own `--edge`, so the wordmark sits at a different spot on
           each; the shared name slides it across instead of jumping. */}
-      <ViewTransition name="zode-wordmark" share="auto" default="none">
+      <ViewTransition name={morph ? "zode-wordmark" : undefined} share="auto" default="none">
         <Link
           ref={brandRef}
           className={styles.brand}
@@ -493,6 +505,7 @@ export function PinnedHeader({
           data-media={actionOverMedia || undefined}
           data-open={open || undefined}
           data-portal={inPortal || undefined}
+          data-still={!morph || undefined}
         >
           <div ref={anchorRef} className={styles.menuAnchor}>
             <div ref={actionRef} className={styles.split}>
