@@ -516,8 +516,8 @@
 /*
  * Macro, two thirds and one, split by a page-grid rule. Left, a quadrant: a
  * card per figure with its drawing, and one charting token growth. Right,
- * the supply chain from capital to offtake: rows joined by arrows down, its
- * bottleneck blinking red, then the statement.
+ * the statement, then the supply chain from capital to offtake: rows joined
+ * by arrows down, its bottleneck blinking red.
  */
 .macro {
   --alarm: #f04438;
@@ -623,7 +623,7 @@
 }
 
 .macroStatement {
-  margin-top: calc(0.8 * var(--u));
+  margin-bottom: calc(0.8 * var(--u));
 }
 
 .chain {
@@ -649,10 +649,12 @@
   padding: calc(0.5 * var(--u)) var(--step-pad);
 }
 
+/* The label, and the bottleneck's tag at the row's far end, so every label sits on the row's centre. */
 .chainText {
   display: flex;
-  flex-direction: column;
-  gap: calc(0.35 * var(--u));
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(0.8 * var(--u));
   min-width: 0;
 }
 
@@ -1894,7 +1896,7 @@
   gap: 28px;
 }
 
-/* Macro: the cards stacked full width, then the supply chain's rows and the statement. */
+/* Macro: the cards stacked full width, then the statement and the supply chain's rows. */
 .slide[data-compact] .macro {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: none;

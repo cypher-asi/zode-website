@@ -103,8 +103,8 @@ function Cover({ slide }: { slide: Of<"cover"> }): ReactElement {
 /**
  * The macro slide, two thirds and one: on the left a quadrant of figure
  * cards, as the home page's features, a drawing (or the token chart) each,
- * captioned in the fewest words; on the right the supply chain from capital
- * to offtake as rows, its bottleneck blinking red, then the statement.
+ * captioned in the fewest words; on the right the statement, then the supply
+ * chain from capital to offtake as rows, its bottleneck blinking red.
  */
 function Stats({ slide, active, compact }: { slide: Of<"stats">; active: boolean; compact: boolean }): ReactElement {
   return (
@@ -139,6 +139,9 @@ function Stats({ slide, active, compact }: { slide: Of<"stats">; active: boolean
         </ul>
       </div>
       <div className={styles.macroChain}>
+        <h3 {...rise(2.5)} className={`${styles.rise} ${styles.h3} ${styles.macroStatement}`}>
+          {slide.statement}
+        </h3>
         <p {...rise(3)} className={`${styles.rise} ${styles.label}`}>
           Supply chain
         </p>
@@ -161,9 +164,6 @@ function Stats({ slide, active, compact }: { slide: Of<"stats">; active: boolean
             </li>
           ))}
         </ol>
-        <h3 {...rise(6)} className={`${styles.rise} ${styles.h3} ${styles.macroStatement}`}>
-          {slide.statement}
-        </h3>
       </div>
     </div>
   );
