@@ -7,7 +7,8 @@
  * The host can push the content in with `--slide-top`, `--slide-edge` and
  * `--slide-bottom`, to clear the site header, line up with its wordmark and
  * leave room for the deck's controls. Grounds re-pin the
- * local colours: `--fg`, `--fg-2`, `--rule`, `--rule-strong`, `--card` and `--accent`.
+ * local colours: `--fg`, `--fg-2`, `--fg-3`, `--rule`, `--rule-strong`,
+ * `--tint`, `--card` and `--accent`.
  */
 @property --u {
   syntax: "<length>";
@@ -18,8 +19,10 @@
 .slide {
   --fg: var(--color-text-primary);
   --fg-2: var(--color-text-secondary);
+  --fg-3: var(--color-text-faint);
   --rule: var(--color-border);
   --rule-strong: var(--color-border-hover);
+  --tint: var(--color-surface-tint);
   --card: var(--color-white);
   --accent: var(--color-accent-strong);
   --bg: var(--color-white);
@@ -76,6 +79,8 @@
   --bg: var(--color-ink);
   --fg: var(--color-text-inverse);
   --fg-2: var(--color-text-inverse-secondary);
+  --fg-3: #55555b;
+  --tint: rgba(255, 255, 255, 0.06);
   /* 14% white over ink, flattened: cards overlap their hairlines, and a translucent rule would double where they meet. */
   --rule: #2e2e2f;
   --rule-strong: rgba(255, 255, 255, 0.32);
@@ -852,7 +857,7 @@
 .swatch {
   width: calc(1.2 * var(--u));
   height: calc(1.2 * var(--u));
-  border: 1px solid var(--color-border-strong);
+  border: 1px solid var(--rule-strong);
 }
 
 .status[data-status="enacted"] .swatch {
@@ -882,7 +887,7 @@
   justify-self: center;
   border: 0;
   border-radius: 50%;
-  background: var(--color-ink);
+  background: var(--fg);
 }
 
 .count {
@@ -937,7 +942,7 @@
 
 @media (hover: hover) {
   .newsCard:hover {
-    background: linear-gradient(var(--color-surface-tint), var(--color-surface-tint)), var(--card);
+    background: linear-gradient(var(--tint), var(--tint)), var(--card);
   }
 }
 

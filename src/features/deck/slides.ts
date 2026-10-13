@@ -166,7 +166,7 @@ export const SLIDES: readonly Slide[] = [
     section: "Demand",
     eyebrow: "Macro · Demand",
     title: "Demand is outrunning what the grid can connect.",
-    ground: "paper",
+    ground: "ink",
     sources: ["bnef", "epri", "utilityDive", "cbre", "jll"],
   },
   {
@@ -175,7 +175,7 @@ export const SLIDES: readonly Slide[] = [
     section: "Shortfall",
     eyebrow: "Macro · Shortfall",
     title: "A 33 GW gap through 2028.",
-    ground: "white",
+    ground: "ink",
     sources: ["morganStanley"],
   },
   {
@@ -184,7 +184,7 @@ export const SLIDES: readonly Slide[] = [
     section: "Problem",
     eyebrow: "Problem",
     title: "The constraint is power and time. Not capital.",
-    ground: "paper",
+    ground: "ink",
     columns: [
       {
         label: "Power",
@@ -210,7 +210,7 @@ export const SLIDES: readonly Slide[] = [
     section: "State moratoriums",
     eyebrow: "Policy",
     title: "States are starting to say no.",
-    ground: "white",
+    ground: "ink",
     sources: ["ncsl", "newYork", "oregon", "dataCenterWatch"],
   },
   {
@@ -219,7 +219,7 @@ export const SLIDES: readonly Slide[] = [
     section: "Local pauses",
     eyebrow: "Policy · Local",
     title: "Local pauses are spreading.",
-    ground: "paper",
+    ground: "ink",
     takeaway:
       "The bans target scale: 50 MW in New York, 100 MW in Delaware's bill, 20 MW in Maine's. A standard ZODE cluster is 4 MW, in an existing powered building.",
     sources: ["dataCenterWatch"],

@@ -1,7 +1,8 @@
 /*
- * The deck's charts, drawn on white or paper slides. Sizes are viewBox units,
- * so type scales with the slide. Ink carries the data, hairlines the axes,
- * and one element per chart takes the accent.
+ * The deck's charts, in the slide's tones (Slide.module.css), so they read
+ * on any ground. Sizes are viewBox units, so type scales with the slide. The
+ * foreground carries the data, hairlines the axes, and one element per chart
+ * takes the accent.
  */
 .chart {
   display: block;
@@ -13,20 +14,20 @@
 
 .grid,
 .baseline {
-  stroke: var(--color-border);
+  stroke: var(--rule);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
 
 .baseline {
-  stroke: var(--color-border-hover);
+  stroke: var(--rule-strong);
 }
 
 .axis {
   font-family: var(--font-mono);
   font-size: 13px;
   letter-spacing: 0.04em;
-  fill: var(--color-text-secondary);
+  fill: var(--fg-2);
 }
 
 .note,
@@ -35,7 +36,7 @@
   font-family: var(--font-mono);
   font-size: 13px;
   letter-spacing: 0.04em;
-  fill: var(--color-text-secondary);
+  fill: var(--fg-2);
 }
 
 /* A note linked to its source (DemandChart.tsx), underlined as the slides' inline citations are. */
@@ -46,7 +47,7 @@
 
 @media (hover: hover) {
   .cited:hover text {
-    fill: var(--color-ink);
+    fill: var(--fg);
   }
 }
 
@@ -54,7 +55,7 @@
 .barLabel {
   font-size: 16px;
   font-weight: 500;
-  fill: var(--color-text-primary);
+  fill: var(--fg);
 }
 
 .value,
@@ -62,19 +63,19 @@
   font-size: 22px;
   font-weight: 500;
   letter-spacing: -0.01em;
-  fill: var(--color-text-primary);
+  fill: var(--fg);
   font-variant-numeric: tabular-nums;
 }
 
 .unit {
   font-size: 14px;
-  fill: var(--color-text-secondary);
+  fill: var(--fg-2);
 }
 
 .gapLabel {
   font-size: 18px;
   font-weight: 600;
-  fill: var(--color-text-primary);
+  fill: var(--fg);
 }
 
 .gapValue {
@@ -92,12 +93,12 @@
 
 /* These scale with the chart: a non-scaling stroke measures its draw-on dash in screen pixels, which falls short of the line when the chart is drawn large. */
 .line {
-  stroke: var(--color-ink);
+  stroke: var(--fg);
   stroke-width: 2.5;
 }
 
 .installed {
-  stroke: var(--color-ink);
+  stroke: var(--fg);
   stroke-width: 4;
 }
 
@@ -110,7 +111,7 @@
 }
 
 .dashed {
-  stroke: var(--color-text-secondary);
+  stroke: var(--fg-2);
   stroke-width: 2;
   stroke-dasharray: 6 6;
   vector-effect: non-scaling-stroke;
@@ -123,14 +124,14 @@
 }
 
 .marker {
-  fill: var(--color-white);
-  stroke: var(--color-ink);
+  fill: var(--bg);
+  stroke: var(--fg);
   stroke-width: 1.5;
   vector-effect: non-scaling-stroke;
 }
 
 .dot {
-  fill: var(--color-ink);
+  fill: var(--fg);
 }
 
 /* Token growth (TokenChart.tsx), in the slide's tones (Slide.module.css), filling the card it sits in. */
@@ -201,13 +202,13 @@
 }
 
 .barRect[data-kind="total"] {
-  fill: var(--color-ink);
-  stroke: var(--color-ink);
+  fill: var(--fg);
+  stroke: var(--fg);
 }
 
 .barRect[data-kind="step"] {
-  fill: var(--color-white);
-  stroke: var(--color-ink);
+  fill: var(--bg);
+  stroke: var(--fg);
 }
 
 /* The net gap in the macro slide's bottleneck red. */
@@ -221,28 +222,28 @@
 }
 
 .connector {
-  stroke: var(--color-border-hover);
+  stroke: var(--rule-strong);
   stroke-width: 1;
   stroke-dasharray: 3 3;
   vector-effect: non-scaling-stroke;
 }
 
 .yearRect {
-  fill: var(--color-ink);
-  stroke: var(--color-ink);
+  fill: var(--fg);
+  stroke: var(--fg);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
 
 .hatchLine {
-  stroke: var(--color-ink);
+  stroke: var(--fg);
   stroke-width: 1.4;
 }
 
 /* State tiles (StateTileMap.tsx). */
 .tileRect {
   fill: transparent;
-  stroke: var(--color-border-strong);
+  stroke: var(--rule-strong);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
@@ -252,7 +253,7 @@
   font-size: 15px;
   font-weight: 500;
   letter-spacing: 0.04em;
-  fill: var(--color-text-faint);
+  fill: var(--fg-3);
   paint-order: stroke;
   stroke: transparent;
 }
@@ -280,16 +281,16 @@
 }
 
 .tile[data-status] .tileLabel {
-  fill: var(--color-text-primary);
+  fill: var(--fg);
 }
 
 .tile[data-status="failed"] .tileLabel {
-  fill: var(--color-text-secondary);
+  fill: var(--fg-2);
 }
 
 .county {
-  fill: var(--color-ink);
-  stroke: var(--color-white);
+  fill: var(--fg);
+  stroke: var(--bg);
   stroke-width: 1.5;
 }
 
