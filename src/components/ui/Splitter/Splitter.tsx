@@ -1,31 +1,35 @@
 "use client";
 
 import { useCallback, useEffect, useRef, type ReactElement, type RefObject } from "react";
-import styles from "./DataRoomApp.module.css";
+import styles from "./Splitter.module.css";
 
 const MIN_WIDTH = 220;
-/** Room left for the viewer beside the tree. */
+/** Room left for the pane on the right. */
 const MIN_REMAINDER = 320;
-/** Share of the panel the tree takes until it's resized; matches `--tree-width` in the CSS. */
-const DEFAULT_FRACTION = 0.33;
 const STEP = 24;
 
-/**
- * The draggable divider between the file tree and the viewer. It writes
- * `--tree-width` on the container directly, so dragging doesn't re-render, and
- * remembers the width per browser as a share of the panel, so it holds its
- * proportion as the window resizes.
- */
-export function Splitter({
-  containerRef,
-  storageKey,
-}: {
+export interface SplitterProps {
   containerRef: RefObject<HTMLElement | null>;
+  /** localStorage key the width is remembered under. */
   storageKey: string;
-}): ReactElement {
+  /** Accessible name, e.g. "Resize file list". */
+  label: string;
+  /** The custom property on the container that sizes the left pane. */
+  cssVar: string;
+  /** Share of the container the left pane takes until it's resized; match the CSS default. */
+  defaultFraction: number;
+}
+
+/**
+ * A draggable divider between two panes in a grid. It writes `cssVar` on the
+ * container directly, so dragging doesn't re-render, and remembers the width
+ * per browser as a share of the container, so it holds its proportion as the
+ * window resizes. Hidden on phones, where the panes stack.
+ */
+export function Splitter({ containerRef, storageKey, label, cssVar, defaultFraction }: SplitterProps): ReactElement {
   const ref = useRef<HTMLDivElement>(null);
   const width = useRef(0);
-  const fraction = useRef(DEFAULT_FRACTION);
+  const fraction = useRef(defaultFraction);
 
   const apply = useCallback(
     (next: number) => {
@@ -33,15 +37,15 @@ export function Splitter({
       if (!container) return;
       const max = Math.max(MIN_WIDTH, container.clientWidth - MIN_REMAINDER);
       width.current = Math.round(Math.min(max, Math.max(MIN_WIDTH, next)));
-      fraction.current = container.clientWidth ? width.current / container.clientWidth : DEFAULT_FRACTION;
-      container.style.setProperty("--tree-width", `${width.current}px`);
+      fraction.current = container.clientWidth ? width.current / container.clientWidth : defaultFraction;
+      container.style.setProperty(cssVar, `${width.current}px`);
       ref.current?.setAttribute("aria-valuenow", String(width.current));
       ref.current?.setAttribute("aria-valuemax", String(max));
     },
-    [containerRef],
+    [containerRef, cssVar, defaultFraction],
   );
 
-  /** Width for a share of the panel, e.g. the default or a saved one. */
+  /** Width for a share of the container, e.g. the default or a saved one. */
   const applyFraction = useCallback(
     (share: number) => apply(share * (containerRef.current?.clientWidth ?? 0)),
     [apply, containerRef],
@@ -62,11 +66,11 @@ export function Splitter({
     } catch {
       saved = 0;
     }
-    applyFraction(saved > 0 && saved < 1 ? saved : DEFAULT_FRACTION);
+    applyFraction(saved > 0 && saved < 1 ? saved : defaultFraction);
     const onResize = () => applyFraction(fraction.current);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [applyFraction, storageKey]);
+  }, [applyFraction, defaultFraction, storageKey]);
 
   return (
     <div
@@ -74,7 +78,7 @@ export function Splitter({
       className={styles.splitter}
       role="separator"
       aria-orientation="vertical"
-      aria-label="Resize file list"
+      aria-label={label}
       aria-valuemin={MIN_WIDTH}
       tabIndex={0}
       onPointerDown={(event) => {
@@ -103,7 +107,7 @@ export function Splitter({
         target.addEventListener("pointercancel", end);
       }}
       onDoubleClick={() => {
-        applyFraction(DEFAULT_FRACTION);
+        applyFraction(defaultFraction);
         save();
       }}
       onKeyDown={(event) => {

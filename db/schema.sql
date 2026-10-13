@@ -336,3 +336,204 @@ create table if not exists team_invites (
 );
 
 create unique index if not exists team_invites_pending_email_idx on team_invites (email) where accepted_at is null;
+
+-- ZRM: the team's CRM in the portal, People, Companies and Opportunities,
+-- with the data model of OD3N (github.com/cypher-asi/oden). `legacy_id` holds
+-- a record's OD3N id so `npm run zrm:import` can re-run without duplicating.
+-- `active` pins a record to the top of its list.
+
+-- Company categories, e.g. Neocloud or Hyperscaler. People and opportunities
+-- show their company's types rather than having their own.
+create table if not exists zrm_types (
+  id uuid primary key default gen_random_uuid(),
+  legacy_id text unique,
+  name text not null unique,
+  color text not null default '#94A3B8',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists zrm_companies (
+  id uuid primary key default gen_random_uuid(),
+  legacy_id text unique,
+  name text not null,
+  legal_name text,
+  domain text,
+  website text,
+  industry text,
+  employee_count integer,
+  revenue text,
+  founded_year integer,
+  company_type text,
+  description text,
+  logo_url text,
+  email text,
+  phone text,
+  linkedin_url text,
+  twitter_url text,
+  crunchbase_url text,
+  location text,
+  city text,
+  state text,
+  country text,
+  funding_stage text,
+  total_funding text,
+  latest_round text,
+  latest_valuation text,
+  ticker text,
+  market_cap text,
+  technologies text[] not null default '{}',
+  specialties text[] not null default '{}',
+  tags text[] not null default '{}',
+  active boolean not null default false,
+  source text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists zrm_companies_name_idx on zrm_companies (lower(name));
+
+create table if not exists zrm_company_types (
+  company_id uuid not null references zrm_companies (id) on delete cascade,
+  type_id uuid not null references zrm_types (id) on delete cascade,
+  primary key (company_id, type_id)
+);
+
+create index if not exists zrm_company_types_type_idx on zrm_company_types (type_id);
+
+create table if not exists zrm_people (
+  id uuid primary key default gen_random_uuid(),
+  legacy_id text unique,
+  first_name text,
+  last_name text,
+  title text,
+  seniority text,
+  department text,
+  email text,
+  personal_email text,
+  email_status text,
+  phone text,
+  mobile_phone text,
+  linkedin_url text,
+  twitter_url text,
+  github_url text,
+  company_id uuid references zrm_companies (id) on delete set null,
+  location text,
+  city text,
+  state text,
+  country text,
+  headline text,
+  bio text,
+  photo_url text,
+  job_started_at date,
+  skills text[] not null default '{}',
+  tags text[] not null default '{}',
+  active boolean not null default false,
+  source text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists zrm_people_company_idx on zrm_people (company_id);
+
+-- A person's past roles and schooling, in display order.
+create table if not exists zrm_work_history (
+  id uuid primary key default gen_random_uuid(),
+  person_id uuid not null references zrm_people (id) on delete cascade,
+  position integer not null default 0,
+  company text,
+  title text,
+  start_date date,
+  end_date date
+);
+
+create index if not exists zrm_work_history_person_idx on zrm_work_history (person_id, position);
+
+create table if not exists zrm_education (
+  id uuid primary key default gen_random_uuid(),
+  person_id uuid not null references zrm_people (id) on delete cascade,
+  position integer not null default 0,
+  school text,
+  degree text,
+  field text,
+  start_date date,
+  end_date date
+);
+
+create index if not exists zrm_education_person_idx on zrm_education (person_id, position);
+
+-- The opportunity pipeline, left to right.
+create table if not exists zrm_stages (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  position integer not null default 0
+);
+
+insert into zrm_stages (name, position)
+select s.name, s.position
+from (values ('Contacted', 0), ('Meeting Scheduled', 1), ('Proposal Sent', 2), ('Negotiating', 3), ('Signed Contract', 4))
+  as s (name, position)
+where not exists (select 1 from zrm_stages);
+
+create table if not exists zrm_opportunities (
+  id uuid primary key default gen_random_uuid(),
+  legacy_id text unique,
+  title text not null,
+  person_id uuid references zrm_people (id) on delete set null,
+  company_id uuid references zrm_companies (id) on delete set null,
+  stage_id uuid not null references zrm_stages (id),
+  value numeric(14, 2),
+  owner_notes text,
+  active boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists zrm_opportunities_person_idx on zrm_opportunities (person_id);
+create index if not exists zrm_opportunities_company_idx on zrm_opportunities (company_id);
+create index if not exists zrm_opportunities_stage_idx on zrm_opportunities (stage_id);
+
+-- A log of touches on an opportunity: calls, emails, meetings.
+create table if not exists zrm_activities (
+  id uuid primary key default gen_random_uuid(),
+  legacy_id text unique,
+  opportunity_id uuid not null references zrm_opportunities (id) on delete cascade,
+  kind text not null,
+  note text not null default '',
+  at timestamptz not null default now()
+);
+
+create index if not exists zrm_activities_opportunity_idx on zrm_activities (opportunity_id, at);
+
+-- Free-form key/value pairs on a person or company, in display order.
+create table if not exists zrm_custom_fields (
+  id uuid primary key default gen_random_uuid(),
+  person_id uuid references zrm_people (id) on delete cascade,
+  company_id uuid references zrm_companies (id) on delete cascade,
+  position integer not null default 0,
+  key text not null,
+  value text not null default '',
+  check (num_nonnulls(person_id, company_id) = 1)
+);
+
+create index if not exists zrm_custom_fields_person_idx on zrm_custom_fields (person_id) where person_id is not null;
+create index if not exists zrm_custom_fields_company_idx on zrm_custom_fields (company_id) where company_id is not null;
+
+-- Notes on exactly one person, company or opportunity.
+create table if not exists zrm_notes (
+  id uuid primary key default gen_random_uuid(),
+  legacy_id text unique,
+  person_id uuid references zrm_people (id) on delete cascade,
+  company_id uuid references zrm_companies (id) on delete cascade,
+  opportunity_id uuid references zrm_opportunities (id) on delete cascade,
+  body text not null,
+  author_user_id text,
+  author_email text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (num_nonnulls(person_id, company_id, opportunity_id) = 1)
+);
+
+create index if not exists zrm_notes_person_idx on zrm_notes (person_id) where person_id is not null;
+create index if not exists zrm_notes_company_idx on zrm_notes (company_id) where company_id is not null;
+create index if not exists zrm_notes_opportunity_idx on zrm_notes (opportunity_id) where opportunity_id is not null;

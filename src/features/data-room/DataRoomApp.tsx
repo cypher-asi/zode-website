@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useMemo, useRef, useState, type ReactElement } from "react";
+import { Splitter } from "@/components/ui/Splitter";
 import { SidebarDock, useDocked } from "@/features/portal/PortalFrame";
 import {
   createFolderAction,
@@ -13,7 +14,6 @@ import { Dialog, type DialogProps } from "./Dialog";
 import { formatBytes } from "./fileKinds";
 import { FileTree, ancestorsOf, folderPath, indexTree, type TreeAction } from "./FileTree";
 import { Icon } from "./icons";
-import { Splitter } from "./Splitter";
 import { MAX_ARCHIVE_BYTES, type RoomFile, type RoomTree } from "./types";
 import { useUploads } from "./useUploads";
 import { SummaryPanel, Viewer, type RoomSummary } from "./Viewer";
@@ -407,7 +407,13 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId, summary }: D
       </SidebarDock>
 
       {docked ? null : (
-        <Splitter containerRef={containerRef} storageKey="zode:data-room:tree-share" />
+        <Splitter
+          containerRef={containerRef}
+          storageKey="zode:data-room:tree-share"
+          label="Resize file list"
+          cssVar="--tree-width"
+          defaultFraction={0.33}
+        />
       )}
 
       <section className={styles.main} aria-label="Viewer">

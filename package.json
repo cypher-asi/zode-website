@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate.mjs",
+    "zrm:import": "node --env-file-if-exists=.env.local scripts/import-oden.mjs",
     "prebuild": "npm run db:migrate",
     "build": "next build",
     "start": "next start",

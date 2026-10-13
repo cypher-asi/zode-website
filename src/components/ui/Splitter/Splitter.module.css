@@ -1,0 +1,51 @@
+/* A 9px grid track: a hairline that widens and turns blue under the pointer, with a grip in the middle. */
+.splitter {
+  position: relative;
+  z-index: 1;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.splitter::before {
+  position: absolute;
+  inset: 0 4px;
+  background: var(--color-border);
+  content: "";
+  transition: background-color var(--duration-fast) ease;
+}
+
+.splitter::after {
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  width: 5px;
+  height: 36px;
+  border-radius: var(--radius-control);
+  background: var(--color-border-strong);
+  content: "";
+  translate: 0 -50%;
+  transition: background-color var(--duration-fast) ease;
+}
+
+.splitter:hover::before,
+.splitter:focus-visible::before,
+:global(html[data-resizing]) .splitter::before {
+  inset: 0 3px;
+  background: var(--color-focus-ring);
+}
+
+.splitter:hover::after,
+.splitter:focus-visible::after,
+:global(html[data-resizing]) .splitter::after {
+  background: var(--color-focus-ring);
+}
+
+.splitter:focus-visible {
+  outline: 0;
+}
+
+@media (max-width: 700px) {
+  .splitter {
+    display: none;
+  }
+}
