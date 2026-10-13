@@ -11,6 +11,8 @@
  * with the wordmark's (`--header-top`, globals.css), the panel starts
  * `--portal-gap` below the header (the Buy Compute button's bottom edge,
  * `--header-bottom`), and all three end `--portal-gap` above the bottom.
+ * Side by side, every panel (the two trays, the sidebar, the panel, and the
+ * phone bar) is `--panel-gap` from the next.
  *
  * The variables live on `.frame`, around the whole shell, so `--brand-inset`
  * also reaches PinnedHeader's wordmark. `--sidebar-space` is zero wherever
@@ -21,12 +23,12 @@
   --tray-width: 64px;
   --rail-item: 40px;
   --sidebar-width: 288px;
-  --sidebar-gap: 12px;
+  --panel-gap: 12px;
   --sidebar-space: 0px;
   --portal-gap: 32px;
   --header-bottom: calc(59px + env(safe-area-inset-top, 0px));
   --portal-top: calc(var(--header-bottom) + var(--portal-gap));
-  --content-inset: calc(var(--tray-width) + var(--sidebar-space) + var(--portal-gap));
+  --content-inset: calc(var(--tray-width) + var(--sidebar-space) + var(--panel-gap));
   --brand-inset: var(--content-inset);
 
   /* The frosted surface shared by the trays and the sidebar. */
@@ -40,7 +42,7 @@
 
 @media (min-width: 1101px) {
   .frame[data-sidebar="open"] {
-    --sidebar-space: calc(var(--sidebar-gap) + var(--sidebar-width));
+    --sidebar-space: calc(var(--panel-gap) + var(--sidebar-width));
   }
 }
 
@@ -52,7 +54,7 @@
   z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--panel-gap);
   width: var(--tray-width);
 }
 
@@ -290,7 +292,7 @@
 
 /*
  * The panel keeps the same size and place as you move between sections;
- * sections scroll inside it. It runs from `--portal-gap` past the rail (and
+ * sections scroll inside it. It runs from `--panel-gap` past the rail (and
  * the sidebar, when it's open) to the header's right edge, under the Buy
  * Compute button.
  */
@@ -389,7 +391,7 @@
   }
 
   .panel {
-    bottom: calc(2 * var(--portal-gap) + var(--bar-height) + env(safe-area-inset-bottom, 0px));
+    bottom: calc(var(--portal-gap) + var(--bar-height) + var(--panel-gap) + env(safe-area-inset-bottom, 0px));
     left: max(var(--edge), env(safe-area-inset-left, 0px));
   }
 }
