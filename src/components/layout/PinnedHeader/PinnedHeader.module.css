@@ -16,12 +16,19 @@
   z-index: 10;
   display: inline-flex;
   isolation: isolate;
+  /* How far the hover box reaches past the wordmark on either side. */
+  --brand-box-x: 14px;
+}
+
+/* On the flush edge (the portal) the hover box, not the wordmark, lines up with the panels below. */
+[data-edge="flush"] .brand {
+  left: calc(max(var(--edge), env(safe-area-inset-left, 0px)) + var(--brand-box-x));
 }
 
 .brand::before {
   content: "";
   position: absolute;
-  inset: -10px -14px;
+  inset: -10px calc(-1 * var(--brand-box-x));
   z-index: -1;
   border-radius: var(--radius-inset);
   background: var(--color-black);
@@ -635,8 +642,12 @@ button.menuItem:disabled {
 }
 
 @media (max-width: 900px) {
+  .brand {
+    --brand-box-x: 11px;
+  }
+
   .brand::before {
-    inset: -8px -11px;
+    inset: -8px calc(-1 * var(--brand-box-x));
   }
 
   .wordmark {
