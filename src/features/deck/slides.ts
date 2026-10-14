@@ -369,8 +369,8 @@ export const SLIDES: readonly Slide[] = [
   {
     id: "unit",
     kind: "unit",
-    section: "The unit",
-    eyebrow: "The unit",
+    section: "Unit economics",
+    eyebrow: "Unit economics",
     title: "One standard cluster: 2,048 GPUs in 4 MW.",
     ground: "paper",
     specs: [
