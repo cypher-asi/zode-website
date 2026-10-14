@@ -8,8 +8,11 @@ type Pt = readonly [number, number];
 
 const pts = (ps: readonly Pt[]) => ps.map(([x, y]) => `${round(x)},${round(y)}`).join(" ");
 
-/** Props for a group animated while the icon plays; `k` staggers its start. */
-const anim = (className: string, k = 0) => ({ className, style: { "--k": k } as CSSProperties });
+/** Props for a group animated while the icon plays; `k` staggers its start, `step` apart. */
+const anim = (className: string, k = 0, step?: string) => ({
+  className,
+  style: { "--k": k, ...(step ? { "--step": step } : null) } as CSSProperties,
+});
 
 /** Points along the lower half of a flat circle's ellipse, from angle `from` to `to`. */
 function arc(cx: number, cy: number, rx: number, from: number, to: number): Pt[] {
@@ -31,10 +34,10 @@ function cylinder(s: Sketch, x: number, y: number, r: number, z0: number, h: num
 }
 
 /** A status light at `p`, blinking while the icon plays. */
-function lamp(s: Sketch, p: P3, k: number, r = 1.3): void {
+function lamp(s: Sketch, p: P3, k: number, r = 1.3, step?: string): void {
   const [x, y] = project(p);
   s.extend(x, y, r);
-  s.group(anim(styles.flash, k), () => s.el("circle", { cx: x, cy: y, r, className: styles.ring }));
+  s.group(anim(styles.flash, k, step), () => s.el("circle", { cx: x, cy: y, r, className: styles.ring }));
 }
 
 /**
@@ -88,23 +91,25 @@ function node(s: Sketch): void {
     .forEach(({ x, y }, k) => s.group(anim(styles.shade, k), () => s.box(x, y, 11, 14, H, 5)));
 }
 
-/** A GPU package: the substrate, its pins, and the lidded die with its light. */
+/** A GPU package: the substrate, its pins, and the lidded die, current running round it. */
 function gpu(s: Sketch): void {
   s.box(-24, -24, 48, 48, 0, 4);
   for (let t = -18; t <= 18; t += 6) {
     s.line([[24, t, 1.5], [29, t, 1.5]], styles.edge);
     s.line([[t, 24, 1.5], [t, 29, 1.5]], styles.edge);
   }
-  s.box(-15, -15, 30, 30, 4, 6);
-  s.line(
-    [
-      [-9, -9, 10],
-      [9, -9, 10],
-      [9, 9, 10],
-      [-9, 9, 10],
-      [-9, -9, 10],
-    ],
-    styles.fine,
+  s.group(anim(styles.shade), () => s.box(-15, -15, 30, 30, 4, 6));
+  s.group(anim(styles.flow), () =>
+    s.line(
+      [
+        [-9, -9, 10],
+        [9, -9, 10],
+        [9, 9, 10],
+        [-9, 9, 10],
+        [-9, -9, 10],
+      ],
+      styles.edge,
+    ),
   );
   lamp(s, [0, 0, 10], 0, 2);
 }
@@ -120,7 +125,11 @@ function power(s: Sketch): void {
     [12.25, 10.5],
   ];
   s.box(-18, -18, 36, 36, -3, 3);
-  s.disc([0, 0, 0], 9, styles.fine);
+  const ring: P3[] = Array.from({ length: 33 }, (_, k) => {
+    const t = (k / 32) * Math.PI * 2;
+    return [9 * Math.cos(t), 9 * Math.sin(t), 0];
+  });
+  s.group(anim(styles.flow), () => s.line(ring, styles.edge));
   s.group(anim(styles.shade), () =>
     extrude(
       s,
@@ -157,17 +166,20 @@ function fabric(s: Sketch): void {
   ports(-20, 40, 10, 26, 5, 2);
 }
 
-/** Three storage drums stacked, a light on each. */
+/** Three storage drums stacked, pulsing up the stack, a light on each. */
 function storage(s: Sketch): void {
   const [R, H, GAP] = [20, 9, 3.5];
   for (let k = 0; k < 3; k++) {
     const z = k * (H + GAP);
-    cylinder(s, 0, 0, R, z, H);
+    s.group(anim(styles.shade, k * 2), () => cylinder(s, 0, 0, R, z, H));
     lamp(s, [R * 0.72, R * 0.72, z + H / 2], k);
   }
 }
 
-/** A stopwatch, standing face on: its case behind, the dial, the hands, the crown. */
+/**
+ * A stopwatch, standing face on: its case behind, the dial, the hands, the
+ * crown, a light sweeping the dial clockwise once a cycle.
+ */
 function rate(s: Sketch): void {
   const [R, Y0, Y1] = [24, -3, 3];
   s.box(-3, Y0 + 1, 6, 4, R + 1, 4);
@@ -176,15 +188,16 @@ function rate(s: Sketch): void {
   s.wheel([0, Y1, 0], R, "xz", styles.top);
   s.wheel([0, Y1, 0], R - 4, "xz", styles.fine);
   for (let k = 0; k < 12; k++) {
-    const t = (k / 12) * Math.PI * 2;
+    const t = Math.PI / 2 - (k / 12) * Math.PI * 2;
     const [c, n] = [Math.cos(t), Math.sin(t)];
     s.line([[c * (R - 4), Y1, n * (R - 4)], [c * (R - (k % 3 ? 6 : 8)), Y1, n * (R - (k % 3 ? 6 : 8))]], styles.edge);
+    lamp(s, [c * (R - 11), Y1, n * (R - 11)], k, 1.1, "150ms");
   }
   s.line([[0, Y1, 13], [0, Y1, 0], [9, Y1, -5]], styles.edge);
-  lamp(s, [0, Y1, 0], 0, 1.6);
+  s.disc([0, Y1, 0], 1.2, styles.ink);
 }
 
-/** Profit kept: two stacks of coins, a third coin settling on the taller. */
+/** Profit kept: two stacks of coins pulsing up from the base, a coin settling on the taller. */
 function profit(s: Sketch): void {
   const [R, T] = [13, 3.5];
   const STACKS = [
@@ -192,10 +205,10 @@ function profit(s: Sketch): void {
     [10, -6, 7],
   ] as const;
   for (const [x, y, n] of STACKS) {
-    for (let k = 0; k < n; k++) cylinder(s, x, y, R, k * T, T);
+    for (let k = 0; k < n; k++) s.group(anim(styles.shade, k), () => cylinder(s, x, y, R, k * T, T));
     s.disc([x, y, n * T], R * 0.62, styles.fine);
   }
-  s.group(anim(styles.shade), () => cylinder(s, 10, -6, R, 7 * T + 9, T));
+  s.group(anim(styles.shade, 8), () => cylinder(s, 10, -6, R, 7 * T + 9, T));
 }
 
 /** Rising bars on a plinth, a trend line climbing over them. */
