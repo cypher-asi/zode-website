@@ -548,7 +548,7 @@ export const SLIDES: readonly Slide[] = [
           years: "2004–2011",
           role: "Founder and CEO",
           description: "The #1 cloud-based dental EMR system.",
-          outcome: "Sold to private equity at a $1 billion+ valuation",
+          outcome: "Valuation over $1 billion",
         },
       ],
     },
