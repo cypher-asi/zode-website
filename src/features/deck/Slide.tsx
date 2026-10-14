@@ -873,19 +873,29 @@ function Comparison({ slide }: { slide: Of<"comparison"> }): ReactElement {
 }
 
 /**
- * The deals as one panel of cards across the top, each shaded as its layers
- * are in the example under them: one stacked bar, each layer as wide as its
- * share of the total, tagged with the deal it comes from.
+ * The deals as one panel of cards across the top, each headed by its icon in
+ * a square cell ruled off from its title, as the unit slide's mini-cards, then
+ * what it funds and its terms; each shaded as its layers are in the example
+ * under them: one stacked bar, each layer as wide as its share of the total,
+ * tagged with the deal it comes from.
  */
-function Finance({ slide }: { slide: Of<"finance"> }): ReactElement {
+function Finance({ slide, active }: { slide: Of<"finance">; active: boolean }): ReactElement {
   const { example } = slide;
   return (
     <div className={styles.finance}>
       <ul className={styles.deals}>
         {slide.deals.map((deal, i) => (
           <li key={deal.id} {...rise(2 + i * 0.4)} className={`${styles.rise} ${styles.deal}`} data-deal={deal.id}>
-            <h3 className={styles.dealTitle}>{deal.title}</h3>
-            <span className={styles.statLabel}>{deal.purpose}</span>
+            <div className={styles.dealHead}>
+              <div className={styles.dealFigure}>
+                <UnitIcon id={deal.icon} light={deal.id !== "compute"} playing={active} />
+              </div>
+              <div className={styles.dealHeading}>
+                <h3 className={styles.dealTitle}>{deal.title}</h3>
+                <span className={styles.statLabel}>{deal.purpose}</span>
+              </div>
+            </div>
+            <p className={`${styles.body} ${styles.dealBody}`}>{deal.body}</p>
             <dl className={styles.dealLayers}>
               {deal.layers.map((layer) => (
                 <div key={layer.label}>
@@ -1110,7 +1120,7 @@ function Body({
     case "comparison":
       return <Comparison slide={slide} />;
     case "finance":
-      return <Finance slide={slide} />;
+      return <Finance slide={slide} active={active} />;
     case "raise":
       return <Raise slide={slide} />;
     case "team":

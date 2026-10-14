@@ -1,8 +1,18 @@
 import type { CSSProperties, ReactElement } from "react";
 import { Sketch, backToFront, project, round, type Bounds, type P3 } from "@/features/zode-drawings/lineArt";
 import styles from "./MacroArt.module.css";
-
-export type UnitIconId = "node" | "gpu" | "power" | "fabric" | "storage" | "rate" | "profit" | "revenue";
+export type UnitIconId =
+  | "node"
+  | "gpu"
+  | "power"
+  | "fabric"
+  | "storage"
+  | "rate"
+  | "profit"
+  | "revenue"
+  | "prepay"
+  | "building"
+  | "gpuDebt";
 
 type Pt = readonly [number, number];
 
@@ -233,7 +243,120 @@ function revenue(s: Sketch): void {
   );
 }
 
-const DRAW: Record<UnitIconId, (s: Sketch) => void> = { node, gpu, power, fabric, storage, rate, profit, revenue };
+/** A take-or-pay contract lying signed, coins prepaid on its corner pulsing up the stack, its seal blinking. */
+function prepay(s: Sketch): void {
+  const [X, Y, T] = [22, 28, 1.5];
+  s.box(-X, -Y, 2 * X, 2 * Y, 0, T);
+  s.line([[-X + 6, -Y + 8, T], [-X + 13, -Y + 8, T]], styles.edge);
+  [0, 5, 10].forEach((y, k) => s.line([[-X + 6, y, T], [X - 6 - (k % 2) * 8, y, T]]));
+  s.group(anim(styles.flow), () =>
+    s.line(
+      Array.from({ length: 17 }, (_, k): P3 => [-X + 6 + k, 19 + 1.6 * Math.sin(k * 0.9), T]),
+      styles.edge,
+    ),
+  );
+  s.disc([X - 8, Y - 8, T], 4.5, styles.fine);
+  lamp(s, [X - 8, Y - 8, T], 3, 1.8);
+  for (let k = 0; k < 3; k++) s.group(anim(styles.shade, k), () => cylinder(s, 11, -15, 9, T + k * 3.5, 3.5));
+}
+
+/** A powered hall on its surveyed lot: the lot's boundary running, a transformer at its side, a light by its loading door. */
+function building(s: Sketch): void {
+  const [X, Y] = [31, 19];
+  const [BX, BY, W, D, H, ROOF] = [-26, -13, 42, 22, 15, 4];
+  const [X1, Y1, YM] = [BX + W, BY + D, BY + D / 2];
+  s.box(-X, -Y, 2 * X, 2 * Y, -3, 3);
+  s.group(anim(styles.flow), () =>
+    s.line(
+      [
+        [-X + 4, -Y + 4, 0],
+        [X - 4, -Y + 4, 0],
+        [X - 4, Y - 4, 0],
+        [-X + 4, Y - 4, 0],
+        [-X + 4, -Y + 4, 0],
+      ],
+      styles.dash,
+    ),
+  );
+  s.box(BX, BY, W, D, 0, H);
+  s.face(
+    [
+      [BX, BY, H],
+      [X1, BY, H],
+      [X1, YM, H + ROOF],
+      [BX, YM, H + ROOF],
+    ],
+    styles.top,
+  );
+  s.face(
+    [
+      [X1, BY, H],
+      [X1, Y1, H],
+      [X1, YM, H + ROOF],
+    ],
+    styles.sideR,
+  );
+  s.face(
+    [
+      [BX, YM, H + ROOF],
+      [X1, YM, H + ROOF],
+      [X1, Y1, H],
+      [BX, Y1, H],
+    ],
+    styles.top,
+  );
+  for (let x = BX + 4; x <= BX + W - 4; x += 4) s.line([[x, Y1, 11], [x, Y1, H - 1]]);
+  s.face(
+    [
+      [BX + 8, Y1, 0],
+      [BX + 20, Y1, 0],
+      [BX + 20, Y1, 9],
+      [BX + 8, Y1, 9],
+    ],
+    styles.top,
+  );
+  for (let z = 3; z < 9; z += 3) s.line([[BX + 8, Y1, z], [BX + 20, Y1, z]]);
+  lamp(s, [BX + 23, Y1, 7], 0);
+  s.line([[X1, 0, 12], [X1 + 6, 0, 12], [X1 + 6, 0, 9]], styles.edge);
+  s.group(anim(styles.shade, 2), () => s.box(X1 + 3, -5, 7, 10, 0, 9));
+  lamp(s, [X1 + 10, 2, 6], 1);
+}
+
+/** Senior debt on the GPUs: the package resting on a stack of coins pulsing up under it, current running round the die. */
+function gpuDebt(s: Sketch): void {
+  const [R, T, N] = [15, 4, 4];
+  for (let k = 0; k < N; k++) s.group(anim(styles.shade, k), () => cylinder(s, 0, 0, R, k * T, T));
+  const Z = N * T;
+  s.box(-19, -19, 38, 38, Z, 3);
+  s.box(-11, -11, 22, 22, Z + 3, 5);
+  s.group(anim(styles.flow), () =>
+    s.line(
+      [
+        [-6, -6, Z + 8],
+        [6, -6, Z + 8],
+        [6, 6, Z + 8],
+        [-6, 6, Z + 8],
+        [-6, -6, Z + 8],
+      ],
+      styles.edge,
+    ),
+  );
+  lamp(s, [0, 0, Z + 8], 3, 1.6);
+}
+
+const DRAW: Record<UnitIconId, (s: Sketch) => void> = {
+  node,
+  gpu,
+  power,
+  fabric,
+  storage,
+  rate,
+  profit,
+  revenue,
+  prepay,
+  building,
+  gpuDebt,
+};
 
 const ART = Object.fromEntries(
   Object.entries(DRAW).map(([id, draw]) => {
@@ -244,9 +367,9 @@ const ART = Object.fromEntries(
 ) as Record<UnitIconId, { items: ReactElement[]; view: Bounds }>;
 
 /**
- * A small isometric line drawing for the unit slide's mini-cards, in the macro
- * drawings' style: drawn for the ink ground unless `light`, its lights and
- * lines running while `playing`.
+ * A small isometric line drawing for the unit and finance slides' cards, in
+ * the macro drawings' style: drawn for the ink ground unless `light`, its
+ * lights and lines running while `playing`.
  */
 export function UnitIcon({
   id,

@@ -2094,8 +2094,45 @@
 .deal {
   display: flex;
   flex-direction: column;
-  gap: calc(0.6 * var(--u));
+  gap: calc(1.2 * var(--u));
   padding-block: calc(1.4 * var(--u));
+}
+
+/* A square cell for the icon, a hairline, then the title, as the unit slide's mini-cards. */
+.dealHead {
+  --fig: calc(5.2 * var(--u));
+
+  display: grid;
+  grid-template-columns: var(--fig) minmax(0, 1fr);
+  align-items: stretch;
+  min-height: var(--fig);
+}
+
+.dealFigure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.dealFigure > svg {
+  width: calc(4.4 * var(--u));
+  height: calc(4.4 * var(--u));
+}
+
+.dealHeading {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: calc(0.6 * var(--u));
+  min-width: 0;
+  padding-left: calc(1.2 * var(--u));
+  border-left: 1px solid var(--rule);
+}
+
+.dealBody {
+  max-width: calc(28 * var(--u));
+  text-wrap: pretty;
 }
 
 .dealTitle {
@@ -3578,7 +3615,21 @@
 }
 
 .slide[data-compact] .deal {
+  gap: 14px;
+}
+
+.slide[data-compact] .dealHead {
+  --fig: 72px;
+}
+
+.slide[data-compact] .dealFigure > svg {
+  width: 56px;
+  height: 56px;
+}
+
+.slide[data-compact] .dealHeading {
   gap: 6px;
+  padding-left: 16px;
 }
 
 .slide[data-compact] .dealTitle,

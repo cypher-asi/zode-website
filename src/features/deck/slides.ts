@@ -171,7 +171,15 @@ export type Slide =
   | (Base & {
       kind: "finance";
       /** One card per deal, in the row across the top. */
-      deals: readonly { id: DealId; title: string; purpose: string; layers: readonly { label: string; value: string }[] }[];
+      deals: readonly {
+        id: DealId;
+        icon: UnitIconId;
+        title: string;
+        purpose: string;
+        /** What the deal funds and what backs it, in a sentence. */
+        body: string;
+        layers: readonly { label: string; value: string }[];
+      }[];
       /** Drawn as one stacked bar, each layer as wide as its share of `usd` and shaded by its deal. */
       example: {
         title: string;
@@ -535,8 +543,10 @@ export const SLIDES: readonly Slide[] = [
     deals: [
       {
         id: "compute",
+        icon: "prepay",
         title: "Compute deal",
         purpose: "Equity and debt for compute delivery",
+        body: "The customer's take-or-pay contract funds delivery, part prepaid, with preferred equity behind it.",
         layers: [
           { label: "Customer prepayment", value: "25–30% of contract value" },
           { label: "Preferred equity", value: "18% pref · 1.5x minimum" },
@@ -544,14 +554,18 @@ export const SLIDES: readonly Slide[] = [
       },
       {
         id: "realEstate",
+        icon: "building",
         title: "Real estate deal",
         purpose: "Equity for real estate purchase",
+        body: "Buys the powered building the cluster runs in, and pays for its conversion.",
         layers: [{ label: "Real estate equity", value: "Purchase and conversion · ~$5M per MW" }],
       },
       {
         id: "gpu",
+        icon: "gpuDebt",
         title: "GPU deal",
         purpose: "Debt for GPUs",
+        body: "Senior debt secured on the GPUs, repaid from the contracted compute revenue.",
         layers: [{ label: "Senior GPU debt", value: "Sized to 1.15x DSCR" }],
       },
     ],
