@@ -561,8 +561,9 @@ export const SLIDES: readonly Slide[] = [
         purpose: "Equity and debt for real estate purchase",
         body: "Buys the powered building the cluster runs in, and pays for its conversion.",
         layers: [
-          { label: "Real estate equity", kind: "equity", value: "Purchase and conversion · ~$5M per MW" },
-          { label: "Conversion debt", kind: "debt" },
+          { label: "Real estate equity", kind: "equity", value: "Purchase · $1M per MW" },
+          { label: "Conversion debt", kind: "debt", value: "$5M per MW" },
+          { label: "Mortgage debt", kind: "debt", value: "20-year amortizing" },
         ],
       },
       {
