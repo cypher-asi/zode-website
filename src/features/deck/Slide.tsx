@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useId, useState, type CSSProperties, type ReactElement, type ReactNode } from "react";
+import { NorthAmericaFlags } from "@/components/ui/NorthAmericaFlags";
 import { CabinArt, VIEW as CABIN_VIEW } from "@/features/zode-drawings/CabinArt";
 import { Principles } from "@/features/home/principles/Principles";
 import { StackFigure } from "@/features/home/stack/FullStack";
@@ -456,6 +457,7 @@ function Solution({ slide, active }: { slide: Of<"solution">; active: boolean })
           ))}
         </ul>
       </div>
+      <NorthAmericaFlags className={styles.solutionFlags} />
     </div>
   );
 }

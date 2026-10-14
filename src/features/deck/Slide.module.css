@@ -1285,8 +1285,18 @@
 
 /* Solution: the cabin drawing across the slide, the facts beside it. */
 .solution {
+  position: relative;
   display: grid;
   grid-template-rows: minmax(0, 1fr);
+}
+
+.solutionFlags {
+  --flag-h: calc(0.9 * var(--u));
+
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  color: var(--fg);
 }
 
 /* An empty column matching the facts' on the left, so the cabin sits on the slide's center. */
@@ -2534,6 +2544,12 @@
 
 .slide[data-compact] .facts {
   grid-column: auto;
+}
+
+.slide[data-compact] .solutionFlags {
+  --flag-h: 16px;
+
+  position: static;
 }
 
 .slide[data-compact] .cabinArt {

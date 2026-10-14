@@ -77,25 +77,8 @@
 }
 
 .flags {
-  display: flex;
-  gap: 12px;
   margin-top: 20px;
-}
-
-.flag {
-  height: 19.2px;
-  width: auto;
-  overflow: visible;
-  fill: none;
-  stroke: var(--color-paper);
-  stroke-width: 1;
-  opacity: 0.8;
-}
-
-.flag :is(rect, line, path) {
-  vector-effect: non-scaling-stroke;
-  stroke-linejoin: round;
-  stroke-linecap: round;
+  color: var(--color-paper);
 }
 
 /* Bottom-right callout, after the "PLAY 1 / LEVELS" product-diagram labels. */
