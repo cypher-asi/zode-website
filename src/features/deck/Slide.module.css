@@ -2536,29 +2536,6 @@
   gap: calc(2 * var(--u));
 }
 
-.founderHead {
-  display: flex;
-  align-items: flex-end;
-  gap: calc(1.8 * var(--u));
-}
-
-/* An empty frame until there's a portrait. */
-.founderPhoto {
-  position: relative;
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: calc(9 * var(--u));
-  aspect-ratio: 4 / 5;
-  overflow: hidden;
-  border: 1px solid var(--rule-strong);
-  background: var(--tint);
-}
-
-.founderPhoto img {
-  object-fit: cover;
-}
-
 /* The one name on the slide, set as an H1. */
 .person {
   --h3-size: calc(3.6 * var(--u));
@@ -4172,14 +4149,6 @@
 
 .slide[data-compact] .founder {
   gap: 20px;
-}
-
-.slide[data-compact] .founderHead {
-  gap: 16px;
-}
-
-.slide[data-compact] .founderPhoto {
-  width: 96px;
 }
 
 .slide[data-compact] .linkedin svg {

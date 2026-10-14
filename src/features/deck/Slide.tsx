@@ -1138,8 +1138,8 @@ function LinkedInMark(): ReactElement {
 }
 
 /**
- * The founder on the left, a photo beside the name and the ventures ruled
- * under them, each company's years tagged on the right; on the right the
+ * The founder on the left, the ventures ruled under the name, each
+ * company's years tagged on the right; on the right the
  * team, alliances and advisors as rows of logos by area.
  */
 function Team({ slide }: { slide: Of<"team"> }): ReactElement {
@@ -1147,27 +1147,18 @@ function Team({ slide }: { slide: Of<"team"> }): ReactElement {
   return (
     <div className={styles.split}>
       <div className={styles.founder}>
-        <div {...rise(2)} className={`${styles.rise} ${styles.founderHead}`}>
-          <div className={styles.founderPhoto}>
-            {founder.photo ? (
-              <Image src={founder.photo} alt={founder.name} fill sizes="(max-width: 700px) 120px, 12vw" />
-            ) : (
-              <span className={styles.figLabel}>Photo</span>
-            )}
-          </div>
-          <div>
-            <p className={styles.label}>{founder.role}</p>
-            <h3 className={`${styles.h3} ${styles.person}`}>{founder.name}</h3>
-            <a
-              className={styles.linkedin}
-              href={founder.linkedin}
-              target="_blank"
-              rel="noreferrer noopener"
-              aria-label={`${founder.name} on LinkedIn`}
-            >
-              <LinkedInMark />
-            </a>
-          </div>
+        <div {...rise(2)} className={styles.rise}>
+          <p className={styles.label}>{founder.role}</p>
+          <h3 className={`${styles.h3} ${styles.person}`}>{founder.name}</h3>
+          <a
+            className={styles.linkedin}
+            href={founder.linkedin}
+            target="_blank"
+            rel="noreferrer noopener"
+            aria-label={`${founder.name} on LinkedIn`}
+          >
+            <LinkedInMark />
+          </a>
         </div>
         <ul className={styles.ventures}>
           {founder.ventures.map((venture, i) => (

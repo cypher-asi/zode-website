@@ -214,8 +214,6 @@ export type Slide =
       founder: {
         role: string;
         name: string;
-        /** Drawn as an empty frame until it's set. */
-        photo?: string;
         linkedin: string;
         /** Each company's name links to its site, its years tagged beside it. */
         ventures: readonly { company: string; href: string; years: string; title: string; outcome: string }[];
