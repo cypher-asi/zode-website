@@ -215,14 +215,15 @@ export type Slide =
         role: string;
         name: string;
         linkedin: string;
-        /** Each company's name links to its site, its years tagged beside it. */
+        /** Each company's years tagged beside its name; the name and the outcome each link out where they have a site. */
         ventures: readonly {
           company: string;
-          href: string;
+          href?: string;
           years: string;
           role: string;
           description: string;
           outcome: string;
+          outcomeHref?: string;
         }[];
       };
       /** The team, alliances and advisors, by area. */
@@ -536,11 +537,11 @@ export const SLIDES: readonly Slide[] = [
         },
         {
           company: "Factory ZERO",
-          href: "https://www.hf0.com",
           years: "2011–2020",
           role: "Co-founder and CEO",
           description: "Venture studio for Apple, Nike, GE, Google and the Fortune 100.",
           outcome: "Became HF0",
+          outcomeHref: "https://www.hf0.com",
         },
         {
           company: "Curve Dental",

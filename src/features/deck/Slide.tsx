@@ -1137,6 +1137,16 @@ function LinkedInMark(): ReactElement {
   );
 }
 
+/** Text that opens its site in a new tab, or plain text without one. */
+function OutLink({ href, children }: { href?: string; children: ReactNode }): ReactNode {
+  if (!href) return children;
+  return (
+    <a className={styles.ventureLink} href={href} target="_blank" rel="noreferrer noopener">
+      {children}
+    </a>
+  );
+}
+
 /**
  * The founder on the left, the ventures ruled under the name, each
  * company's years tagged on the right; on the right the
@@ -1164,14 +1174,16 @@ function Team({ slide }: { slide: Of<"team"> }): ReactElement {
           {founder.ventures.map((venture, i) => (
             <li key={venture.company} {...rise(3 + i * 0.4)} className={`${styles.rise} ${styles.venture}`}>
               <div className={styles.ventureHead}>
-                <a className={styles.ventureName} href={venture.href} target="_blank" rel="noreferrer noopener">
-                  {venture.company}
-                </a>
+                <span className={styles.ventureName}>
+                  <OutLink href={venture.href}>{venture.company}</OutLink>
+                </span>
                 <span className={styles.years}>{venture.years}</span>
               </div>
               <p className={styles.ventureRole}>{venture.role}</p>
               <p className={styles.ventureText}>{venture.description}</p>
-              <p className={`${styles.ventureText} ${styles.ventureOutcome}`}>{venture.outcome}</p>
+              <p className={`${styles.ventureText} ${styles.ventureOutcome}`}>
+                <OutLink href={venture.outcomeHref}>{venture.outcome}</OutLink>
+              </p>
             </li>
           ))}
         </ul>
