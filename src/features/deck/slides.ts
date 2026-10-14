@@ -551,7 +551,7 @@ export const SLIDES: readonly Slide[] = [
         layers: [
           { label: "Preferred equity", kind: "equity", terms: ["18% pref · 1.5x minimum"] },
           { label: "Customer prepayment", kind: "debt", terms: ["25–30% of contract value"] },
-          { label: "Debt", kind: "debt" },
+          { label: "Project debt", kind: "debt", terms: ["8–15% interest"] },
         ],
       },
       {
