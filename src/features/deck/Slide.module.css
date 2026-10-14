@@ -2119,13 +2119,13 @@
 .finance {
   display: flex;
   flex-direction: column;
-  gap: calc(2.4 * var(--u));
+  gap: calc(1.8 * var(--u));
 }
 
 .main > .finance {
   flex: none;
   margin-block: auto;
-  padding-bottom: calc(2.4 * var(--u));
+  padding-bottom: calc(0.8 * var(--u));
 }
 
 .deals {
@@ -2262,7 +2262,7 @@
 .stackExample {
   display: flex;
   flex-direction: column;
-  gap: calc(1.2 * var(--u));
+  gap: calc(0.9 * var(--u));
 }
 
 .stackRow {
@@ -2278,12 +2278,14 @@
   list-style: none;
 }
 
+/* As wide as its share of the total, but never too narrow to read. */
 .stackSegment {
   display: flex;
   flex: var(--usd) 1 0;
   flex-direction: column;
   gap: calc(0.3 * var(--u));
-  min-width: 0;
+  min-width: calc(9.5 * var(--u));
+  padding-block: calc(0.8 * var(--u)) calc(1 * var(--u));
 }
 
 .stackTag {

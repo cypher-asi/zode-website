@@ -582,15 +582,16 @@ export const SLIDES: readonly Slide[] = [
       },
     ],
     example: {
-      title: "Example · Chicago, with a purchased building",
+      title: "Example · Alberta, 22 MW, with a purchased building",
       layers: [
-        { label: "Customer prepayment", deal: "compute", tag: "Compute · Debt", value: "$103.6M", usd: 103.6e6 },
-        { label: "Senior GPU debt", deal: "gpu", tag: "GPU · Debt", value: "~$52.5M", usd: 52.5e6 },
-        { label: "Preferred equity", deal: "compute", tag: "Compute · Equity", value: "~$28M", usd: 28e6 },
-        { label: "Real estate equity", deal: "realEstate", tag: "Real estate · Equity", value: "~$30M", usd: 30e6 },
+        { label: "Customer prepayment", deal: "compute", tag: "Compute · Debt", value: "~$570M", usd: 569.8e6 },
+        { label: "Senior GPU debt", deal: "gpu", tag: "GPU · Debt", value: "~$289M", usd: 288.75e6 },
+        { label: "Conversion debt", deal: "realEstate", tag: "Real estate · Debt", value: "$110M", usd: 110e6 },
+        { label: "Preferred equity", deal: "compute", tag: "Compute · Equity", value: "~$154M", usd: 154e6 },
+        { label: "Real estate equity", deal: "realEstate", tag: "Real estate · Equity", value: "$22M", usd: 22e6 },
       ],
-      total: "~$214M",
-      note: "Preliminary, per current project model. Chicago is leased; real estate equity is illustrative, for a purchased 4 MW building at $10M plus $5M per MW of conversion.",
+      total: "~$1.14B",
+      note: "Preliminary. Compute layers scaled to 22 MW from the current 4 MW cluster model; the building at $1M per MW to purchase and $5M per MW to convert. Project and mortgage debt not shown.",
     },
   },
   {
