@@ -223,6 +223,35 @@
 }
 
 /*
+ * Entering the portal, the rail's icons fade in with the header's OS badge
+ * (PinnedHeader.module.css), on the same timing. The rail remounts when the
+ * session's access streams in, so the fade runs on the frame, which doesn't,
+ * and the icons follow it through `--rail-in`.
+ */
+@property --rail-in {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+.rail .icon {
+  opacity: var(--rail-in);
+  scale: calc(0.85 + 0.15 * var(--rail-in));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .frame {
+    animation: rail-in 360ms var(--ease-out) 400ms both;
+  }
+}
+
+@keyframes rail-in {
+  from {
+    --rail-in: 0;
+  }
+}
+
+/*
  * The ZODE team's apps aren't in the rail that stands in while the session
  * loads, so when they stream in the divider grows and each icon rises in,
  * one after another, its strokes tracing in as it lands. `trace-in` is its
