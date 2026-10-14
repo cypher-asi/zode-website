@@ -498,7 +498,11 @@ function Steps({ slide, active }: { slide: Of<"steps">; active: boolean }): Reac
         ))}
       </ol>
       <p {...rise(6)} className={`${styles.rise} ${styles.statement}`}>
-        {slide.statement}
+        {slide.statement.map((line) => (
+          <span key={line} className={styles.statementLine}>
+            {line}
+          </span>
+        ))}
       </p>
     </div>
   );

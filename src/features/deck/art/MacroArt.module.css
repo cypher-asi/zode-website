@@ -111,6 +111,14 @@
   fill: var(--art-ink);
 }
 
+/* Drawn on with a dash a path length long: a scaling stroke, so its dashes count in path units. */
+.art .sign {
+  fill: none;
+  stroke: var(--art-ink);
+  stroke-width: 1.1;
+  vector-effect: none;
+}
+
 /* Loops while the slide is open (`data-playing`); each group starts `--k` x `--step` late. */
 .flash {
   --step: 200ms;
@@ -139,6 +147,22 @@
   .art[data-playing] .flow :is(line, polyline, path, circle) {
     stroke-dasharray: 3 3;
     animation: dash-flow 600ms linear infinite;
+  }
+
+  .art[data-playing] .sign {
+    stroke-dasharray: 1;
+    animation: sign-draw 3200ms ease-in-out infinite;
+  }
+}
+
+@keyframes sign-draw {
+  0% {
+    stroke-dashoffset: 1;
+  }
+
+  55%,
+  100% {
+    stroke-dashoffset: 0;
   }
 }
 

@@ -26,7 +26,11 @@ export type MacroArtId =
   | "monolith"
   | "water"
   | "powerBill"
-  | "economics";
+  | "economics"
+  | "signature"
+  | "interconnect"
+  | "capitalStack"
+  | "tokenMaze";
 
 /** One link in the chain from capital to offtake; `hard` marks the bottleneck. */
 export interface ChainStep {
@@ -104,7 +108,8 @@ export type Slide =
   | (Base & {
       kind: "steps";
       steps: readonly { title: string; body: string; art: MacroArtId }[];
-      statement: string;
+      /** Each entry starts its own line. */
+      statement: readonly string[];
     })
   | (Base & { kind: "unit"; specs: readonly Stat[]; highlight: number; image: string })
   | (Base & {
@@ -349,17 +354,17 @@ export const SLIDES: readonly Slide[] = [
       {
         title: "Sign offtake",
         body: "Take-or-pay GPU-hour contracts, 3–5 years, with 25–30% prepaid.",
-        art: "offtake",
+        art: "signature",
       },
-      { title: "Secure power", body: "Lease colocation or convert existing powered buildings.", art: "power" },
+      { title: "Secure power", body: "Lease colocation or convert existing powered buildings.", art: "interconnect" },
       {
         title: "Finance the project",
         body: "One SPV per cluster: prepayment, GPU debt and preferred equity.",
-        art: "capital",
+        art: "capitalStack",
       },
-      { title: "Deliver tokens", body: "Deploy, accept and operate the cluster for the term.", art: "compute" },
+      { title: "Produce tokens", body: "Deploy, accept and operate the cluster for the term.", art: "tokenMaze" },
     ],
-    statement: "No megawatt is built without a buyer. Every dollar of capex sits behind a signed contract.",
+    statement: ["No megawatt is built without a buyer.", "Every dollar of capex sits behind a signed contract."],
   },
   {
     id: "unit",

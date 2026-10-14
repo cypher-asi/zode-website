@@ -463,6 +463,11 @@
   font-weight: 300;
   line-height: 1.25;
   letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+.statementLine {
+  display: block;
 }
 
 /* Figures: large Inter numbers over a mono label. */

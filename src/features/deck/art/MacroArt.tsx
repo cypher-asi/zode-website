@@ -598,6 +598,268 @@ function economics(s: Sketch): void {
     gabled(s, x, y, 22, 18, 14, 9);
 }
 
+/** A lightning bolt standing in the plane facing +y at (x, y), `h` tall from `z`. */
+function bolt(s: Sketch, x: number, y: number, z: number, h: number): void {
+  const k = h / 28;
+  const shape: Pt[] = [
+    [2, 28],
+    [-4, 14],
+    [1, 14],
+    [-3, 0],
+    [7, 17],
+    [2, 17],
+    [6, 28],
+  ];
+  s.face(
+    shape.map(([u, v]) => [x + u * k, y, z + v * k] as const),
+    styles.ring,
+  );
+}
+
+/** A contract signed on a tablet: the signature writes itself, then the seal's ring turns. */
+function signature(s: Sketch): void {
+  const Z = 7;
+  s.box(-72, -52, 144, 104, 0, Z);
+  s.face(
+    [
+      [-64, -44, Z],
+      [64, -44, Z],
+      [64, 44, Z],
+      [-64, 44, Z],
+    ],
+    styles.fine,
+  );
+  s.line([[-54, -34, Z], [-12, -34, Z]], styles.edge);
+  [-24, -16, -8, 0].forEach((y, k) => s.line([[-54, y, Z], [[50, 36, 44, 22][k], y, Z]], styles.fine));
+  s.line([[-54, 27, Z], [24, 27, Z]], styles.fine);
+  s.line([[-60, 19, Z], [-56, 23, Z]], styles.fine);
+  s.line([[-60, 23, Z], [-56, 19, Z]], styles.fine);
+
+  const N = 90;
+  const ink: P3[] = Array.from({ length: N + 1 }, (_, i) => {
+    const t = (i / N) * 7 * Math.PI;
+    const x = -50 + t * (62 / (7 * Math.PI)) - 4.2 * Math.sin(t);
+    const y = 25 - 6 * (1 - Math.cos(t)) * (0.7 + 0.3 * Math.sin(t * 0.45));
+    return [x, y, Z];
+  });
+  const [ex, ey] = ink[N];
+  ink.push([ex + 6, ey - 3, Z], [ex + 12, ey - 7, Z], [ex + 16, ey - 11, Z]);
+  const screen = ink.map((p) => project(p));
+  for (const [x, y] of screen) s.extend(x, y);
+  s.el("polyline", { points: pts(screen), pathLength: 1, className: styles.sign });
+
+  const [SX, SY] = [46, 28];
+  s.disc([SX, SY, Z], 10, styles.top);
+  s.line(
+    [
+      [SX - 5, SY, Z],
+      [SX - 1, SY + 4, Z],
+      [SX + 6, SY - 6, Z],
+    ],
+    styles.edge,
+  );
+  s.group(anim(styles.flow), () =>
+    s.line(
+      Array.from({ length: 33 }, (_, k) => {
+        const t = (k / 32) * Math.PI * 2;
+        return [SX + 14 * Math.cos(t), SY + 14 * Math.sin(t), Z] as const;
+      }),
+      styles.edge,
+    ),
+  );
+
+  const [tx, ty] = project([ex + 16, ey - 11, Z]);
+  const [ux, uy] = project([ex + 46, ey - 17, Z + 64]);
+  const [dx, dy] = [ux - tx, uy - ty];
+  const len = Math.hypot(dx, dy);
+  const [nx, ny] = [(-dy / len) * 3.6, (dx / len) * 3.6];
+  const [ax, ay] = [tx + dx * 0.16, ty + dy * 0.16];
+  poly(
+    s,
+    [
+      [ax + nx, ay + ny],
+      [ux + nx, uy + ny],
+      [ux - nx, uy - ny],
+      [ax - nx, ay - ny],
+    ],
+    styles.sideL,
+  );
+  seg(s, ax + nx * 0.3, ay + ny * 0.3, ux + nx * 0.3, uy + ny * 0.3, styles.fine);
+  poly(
+    s,
+    [
+      [tx, ty],
+      [ax + nx, ay + ny],
+      [ax - nx, ay - ny],
+    ],
+    styles.sideR,
+  );
+  circle(s, ux, uy, 3.6, styles.top);
+}
+
+/** Grid power secured: a lattice tower feeds a transformer beside an existing building, which lights up. */
+function interconnect(s: Sketch): void {
+  const [TX, TOP, ARM] = [-96, 100, 86];
+  const half = (z: number) => 11 - (8 * z) / TOP;
+  const LEVELS = [0, 18, 36, 54, 72, ARM];
+  for (const [sx, sy] of [
+    [-1, -1],
+    [1, -1],
+    [-1, 1],
+    [1, 1],
+  ] as const) {
+    const front = sx > 0 || sy > 0;
+    s.line(
+      [
+        [TX + sx * half(0), sy * half(0), 0],
+        [TX + sx * half(TOP), sy * half(TOP), TOP],
+      ],
+      front ? styles.edge : styles.fine,
+    );
+  }
+  for (let k = 0; k < LEVELS.length - 1; k++) {
+    const [z0, z1] = [LEVELS[k], LEVELS[k + 1]];
+    const [w0, w1] = [half(z0), half(z1)];
+    s.line([[TX + w0, -w0, z0], [TX + w1, w1, z1]]);
+    s.line([[TX + w0, w0, z0], [TX + w1, -w1, z1]]);
+    s.line([[TX - w0, w0, z0], [TX + w1, w1, z1]]);
+    s.line([[TX + w0, w0, z0], [TX - w1, w1, z1]]);
+    s.line([[TX + w1, -w1, z1], [TX + w1, w1, z1], [TX - w1, w1, z1]]);
+  }
+  s.box(TX - 1.5, -36, 3, 72, ARM, 3);
+  const PHASES = [-30, 0, 30];
+  for (const y of PHASES) insulator(s, TX, y, ARM - 12, ARM, 2);
+
+  const [BX, BY, BW, BD, BH] = [10, -36, 80, 66, 46];
+  s.box(BX, BY, BW, BD, 0, BH);
+  for (let x = BX + 8; x < BX + BW; x += 8) if (x < 58 || x > 82) s.line([[x, BY + BD, 4], [x, BY + BD, BH - 4]]);
+  s.face(
+    [
+      [60, BY + BD, 0],
+      [80, BY + BD, 0],
+      [80, BY + BD, 26],
+      [60, BY + BD, 26],
+    ],
+    styles.fine,
+  );
+  for (let z = 5; z < 26; z += 5) s.line([[60, BY + BD, z], [80, BY + BD, z]]);
+  s.box(24, -26, 22, 22, BH, 8);
+  s.disc([35, -15, BH + 8], 8, styles.ring);
+  s.group(anim(styles.flash, 2), () => bolt(s, 30, BY + BD, 12, 26));
+
+  const [RX, RY, RW] = [-30, 32, 22];
+  s.box(RX, RY, RW, RW, 0, 26);
+  for (let x = RX + 4; x < RX + RW; x += 4) s.line([[x, RY + RW, 4], [x, RY + RW, 22]]);
+  const BUSHINGS = [37, 43, 49];
+  for (const y of BUSHINGS) insulator(s, RX + 11, y, 26, 36, 2);
+
+  PHASES.forEach((y, k) =>
+    s.group(anim(styles.flow, k), () =>
+      s.line(span([TX, y, ARM - 12], [RX + 11, BUSHINGS[k], 36], 10), styles.edge),
+    ),
+  );
+  s.group(anim(styles.flow), () =>
+    s.line(
+      [
+        [RX + RW, 43, 1],
+        [70, 43, 1],
+        [70, BY + BD, 1],
+      ],
+      styles.edge,
+    ),
+  );
+}
+
+/** One SPV per cluster: prepayment, GPU debt and preferred equity stack up inside its boundary and fund the rack. */
+function capitalStack(s: Sketch): void {
+  s.box(-84, -60, 168, 120, -4, 4);
+  s.group(anim(styles.flow), () =>
+    s.line(
+      [
+        [-74, -50],
+        [74, -50],
+        [74, 50],
+        [-74, 50],
+        [-74, -50],
+      ],
+      styles.dash,
+    ),
+  );
+
+  const [CX, CY] = [-30, -6];
+  const TRANCHES = [
+    [30, 0, 16],
+    [24, 16, 24],
+    [15, 40, 12],
+  ] as const;
+  TRANCHES.forEach(([r, z, h], k) =>
+    s.group(anim(styles.flow, k), () => s.line([[CX, -84, z + h / 2], [CX, CY - r, z + h / 2]], styles.edge)),
+  );
+  s.group(anim(styles.flow, 3), () => s.line([[CX + 30, 12, 1], [24, 12, 1]], styles.edge));
+
+  TRANCHES.forEach(([r, z, h], k) =>
+    s.group(anim(styles.shade, k * 2), () => {
+      s.box(CX - r, CY - r, 2 * r, 2 * r, z, h);
+      s.line(
+        [
+          [CX - r + 4, CY + r, z + h / 2],
+          [CX + r, CY + r, z + h / 2],
+          [CX + r, CY - r + 4, z + h / 2],
+        ],
+        styles.fine,
+      );
+    }),
+  );
+
+  rack(s, 24, -2, 24, 28, 58);
+}
+
+/** Energy in on the left, worked through a maze of GPU nodes, tokens out on the right. */
+function tokenMaze(s: Sketch): void {
+  s.box(-76, -60, 140, 118, -4, 4);
+
+  s.group(anim(styles.flash), () => bolt(s, -114, 50, 14, 32));
+  s.line(
+    [
+      [-96, 50, 50],
+      [-96, 50, 0.5],
+    ],
+    styles.edge,
+  );
+  s.group(anim(styles.flow), () =>
+    s.line(
+      [
+        [-96, 50, 0.5],
+        [-29, 50, 0.5],
+        [-29, 16, 0.5],
+        [11, 16, 0.5],
+        [11, -18, 0.5],
+        [51, -18, 0.5],
+        [51, -52, 0.5],
+        [80, -52, 0.5],
+      ],
+      styles.edge,
+    ),
+  );
+
+  const [W, D, H] = [22, 18, 8];
+  const nodes: { x: number; y: number; k: number }[] = [];
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) nodes.push({ x: -60 + i * 40, y: -44 + j * 34, k: i + 2 - j });
+  nodes
+    .sort((a, b) => a.x + a.y - (b.x + b.y))
+    .forEach(({ x, y, k }) => {
+      s.group(anim(styles.shade, k), () => s.box(x, y, W, D, 0, H));
+      for (let fx = x + 4; fx < x + W; fx += 4) s.line([[fx, y + 2, H], [fx, y + D - 2, H]]);
+    });
+
+  [
+    [84, -56, 0],
+    [94, -62, 16],
+    [102, -68, 34],
+    [108, -74, 54],
+  ].forEach(([x, y, z], i) => s.group(anim(styles.shade, 5 + i), () => s.box(x, y, 9, 9, z, 9)));
+}
+
 const DRAW: Record<MacroArtId, (s: Sketch) => void> = {
   capital,
   power,
@@ -616,6 +878,10 @@ const DRAW: Record<MacroArtId, (s: Sketch) => void> = {
   water,
   powerBill,
   economics,
+  signature,
+  interconnect,
+  capitalStack,
+  tokenMaze,
 };
 
 /** Each drawing fits its own frame: the cards are small, so legibility wins over a shared scale. */
