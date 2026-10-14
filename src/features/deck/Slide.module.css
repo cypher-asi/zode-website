@@ -2135,9 +2135,11 @@
   list-style: none;
 }
 
+/* Head, body and stack on rows shared across the cards, so the stacks start level and match in height. */
 .deal {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
   gap: calc(1.2 * var(--u));
   padding-top: 0;
   padding-bottom: calc(1.4 * var(--u));
@@ -2200,7 +2202,7 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
-  margin: auto 0 0;
+  margin: 0;
   padding: 1px;
   list-style: none;
 }
@@ -2208,6 +2210,7 @@
 /* The label level with the first of its terms, so a block with several reads from the top. */
 .dealLayer {
   display: flex;
+  flex: 1;
   align-items: baseline;
   justify-content: space-between;
   gap: calc(1.2 * var(--u));
