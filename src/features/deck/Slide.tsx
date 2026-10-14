@@ -1169,8 +1169,9 @@ function Team({ slide }: { slide: Of<"team"> }): ReactElement {
                 </a>
                 <span className={styles.years}>{venture.years}</span>
               </div>
-              <p className={styles.ventureTitle}>{venture.title}</p>
-              <p className={styles.ventureOutcome}>{venture.outcome}</p>
+              <p className={styles.ventureRole}>{venture.role}</p>
+              <p className={styles.ventureText}>{venture.description}</p>
+              <p className={`${styles.ventureText} ${styles.ventureOutcome}`}>{venture.outcome}</p>
             </li>
           ))}
         </ul>

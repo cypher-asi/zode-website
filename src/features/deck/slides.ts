@@ -216,7 +216,14 @@ export type Slide =
         name: string;
         linkedin: string;
         /** Each company's name links to its site, its years tagged beside it. */
-        ventures: readonly { company: string; href: string; years: string; title: string; outcome: string }[];
+        ventures: readonly {
+          company: string;
+          href: string;
+          years: string;
+          role: string;
+          description: string;
+          outcome: string;
+        }[];
       };
       /** The team, alliances and advisors, by area. */
       network: { title: string; areas: readonly { label: string; logos: readonly Logo[] }[] };
@@ -523,22 +530,25 @@ export const SLIDES: readonly Slide[] = [
           company: "Wilder World",
           href: "https://wilderworld.com",
           years: "2020–Present",
-          title: "Persistent simulation",
+          role: "Co-founder, CEO and Executive Chairman",
+          description: "Persistent simulation with Samsung, NVIDIA, Epic Games and Lamborghini.",
           outcome: "Peak valuation of $2 billion",
         },
         {
           company: "Factory ZERO",
           href: "https://www.hf0.com",
-          years: "2011–2018",
-          title: "Venture studio",
+          years: "2011–2020",
+          role: "Co-founder and CEO",
+          description: "Venture studio for Apple, Nike, GE, Google and the Fortune 100.",
           outcome: "Became HF0",
         },
         {
           company: "Curve Dental",
           href: "https://www.curvedental.com",
           years: "2004–2011",
-          title: "Sold to private equity",
-          outcome: "$1 billion+ valuation",
+          role: "Founder and CEO",
+          description: "The #1 cloud-based dental EMR system.",
+          outcome: "Sold to private equity at a $1 billion+ valuation",
         },
       ],
     },

@@ -2533,14 +2533,14 @@
 .founder {
   display: flex;
   flex-direction: column;
-  gap: calc(2 * var(--u));
+  gap: calc(1.2 * var(--u));
 }
 
-/* The one name on the slide, set as an H1. */
+/* The one name on the slide, set as an H2. */
 .person {
-  --h3-size: calc(3.6 * var(--u));
+  --h3-size: calc(2.55 * var(--u));
 
-  margin: calc(0.6 * var(--u)) 0 calc(0.8 * var(--u));
+  margin: calc(0.4 * var(--u)) 0 calc(0.5 * var(--u));
   line-height: var(--h1-leading);
   letter-spacing: var(--h1-tracking);
 }
@@ -2552,8 +2552,8 @@
 }
 
 .linkedin svg {
-  width: calc(1.4 * var(--u));
-  height: calc(1.4 * var(--u));
+  width: calc(1.2 * var(--u));
+  height: calc(1.2 * var(--u));
   fill: currentColor;
 }
 
@@ -2576,7 +2576,7 @@
 }
 
 .venture {
-  padding: calc(1 * var(--u)) 0;
+  padding: calc(0.8 * var(--u)) 0;
   border-top: 1px solid var(--rule);
 }
 
@@ -2585,12 +2585,12 @@
   align-items: center;
   justify-content: space-between;
   gap: calc(1 * var(--u));
-  margin-bottom: calc(0.3 * var(--u));
+  margin-bottom: calc(0.25 * var(--u));
 }
 
 .ventureName {
   font-family: var(--font-display);
-  font-size: calc(1.5 * var(--u));
+  font-size: calc(1.3 * var(--u));
   font-weight: 300;
   line-height: 1.15;
   letter-spacing: -0.02em;
@@ -2627,15 +2627,26 @@
   font-variant-numeric: tabular-nums;
 }
 
-.ventureTitle,
-.ventureOutcome {
-  margin: 0;
-  font-size: calc(1 * var(--u));
-  line-height: 1.45;
+/* Set as `.label`, in the foreground. */
+.ventureRole {
+  margin: 0 0 calc(0.35 * var(--u));
+  font-family: var(--font-mono);
+  font-size: calc(0.62 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  line-height: 1.4;
+  text-transform: uppercase;
 }
 
-.ventureTitle {
+.ventureText {
+  margin: 0;
+  font-size: calc(0.9 * var(--u));
+  line-height: 1.4;
   color: var(--fg-2);
+}
+
+.ventureOutcome {
+  color: var(--fg);
 }
 
 /* As tall as the founder's column, the areas sharing its height between the same top and bottom rules. */
@@ -2651,8 +2662,8 @@
   flex: 1;
   flex-direction: column;
   justify-content: center;
-  gap: calc(1.4 * var(--u));
-  padding: calc(1.2 * var(--u)) 0;
+  gap: calc(1 * var(--u));
+  padding: calc(0.9 * var(--u)) 0;
   border-top: 1px solid var(--rule);
 }
 
@@ -4142,13 +4153,13 @@
 
 /* Team. */
 .slide[data-compact] .person {
-  --h3-size: 34px;
+  --h3-size: 30px;
 
-  margin: 8px 0 0;
+  margin: 6px 0 8px;
 }
 
 .slide[data-compact] .founder {
-  gap: 20px;
+  gap: 16px;
 }
 
 .slide[data-compact] .linkedin svg {
@@ -4157,7 +4168,7 @@
 }
 
 .slide[data-compact] .venture {
-  padding: 12px 0;
+  padding: 10px 0;
 }
 
 .slide[data-compact] .ventureHead {
@@ -4173,8 +4184,13 @@
   font-size: 10px;
 }
 
-.slide[data-compact] :is(.ventureTitle, .ventureOutcome) {
-  font-size: 15px;
+.slide[data-compact] .ventureRole {
+  margin-bottom: 4px;
+  font-size: 10px;
+}
+
+.slide[data-compact] .ventureText {
+  font-size: 14px;
 }
 
 .slide[data-compact] :is(.network, .networkArea) {
