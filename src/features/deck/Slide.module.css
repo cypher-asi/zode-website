@@ -59,7 +59,6 @@
 
 .newsCard,
 .fact,
-.callout,
 .example,
 .capitalLayer {
   padding: calc(1 * var(--u)) calc(1.3 * var(--u)) calc(1.2 * var(--u));
@@ -69,7 +68,6 @@
 
 .newsCard .h3,
 .factValue,
-.calloutValue,
 .capitalLabel {
   font-family: var(--font-display);
   font-weight: 300;
@@ -1717,6 +1715,21 @@
   text-align: right;
 }
 
+.planTable {
+  display: flex;
+  flex-direction: column;
+}
+
+/* The table's last row, on the hairline under the final year. */
+.planNote {
+  margin: 0 1px 1px;
+  padding: calc(1 * var(--u)) calc(1.2 * var(--u));
+  font-size: calc(1.05 * var(--u));
+  line-height: 1.35;
+  text-wrap: balance;
+  box-shadow: 0 0 0 1px var(--rule);
+}
+
 .render {
   margin: 0;
 }
@@ -2044,17 +2057,6 @@
 
 .compare + .fine {
   margin-top: calc(1.2 * var(--u));
-}
-
-.callout {
-  display: flex;
-  flex-direction: column;
-  gap: calc(0.6 * var(--u));
-}
-
-.calloutValue {
-  font-size: calc(2.6 * var(--u));
-  letter-spacing: -0.02em;
 }
 
 /* Finance: the capital stack, top of the waterfall first. */
@@ -2656,7 +2658,7 @@
   max-width: none;
 }
 
-.slide[data-compact] :is(.newsCard, .fact, .callout, .example, .capitalLayer) {
+.slide[data-compact] :is(.newsCard, .fact, .example, .capitalLayer) {
   padding: 14px 16px 16px;
 }
 
@@ -3324,6 +3326,11 @@
   font-size: 15px;
 }
 
+.slide[data-compact] .planNote {
+  padding: 12px 14px;
+  font-size: 15px;
+}
+
 .slide[data-compact] .traction {
   gap: 32px;
 }
@@ -3448,10 +3455,6 @@
 .slide[data-compact] .compare [data-us] {
   padding-left: 12px;
   border-left: 1px solid var(--rule);
-}
-
-.slide[data-compact] .calloutValue {
-  font-size: 30px;
 }
 
 /* Finance. */

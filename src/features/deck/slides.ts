@@ -154,8 +154,9 @@ export type Slide =
       capacity: readonly Stat[];
       /** Capacity online by year; each step is ten times the last, so it's drawn on a log scale. */
       plan: readonly { year: string; value: string }[];
+      /** Under the plan, closing the table. */
+      planNote: string;
     })
-  | (Base & { kind: "market"; hero: Stat; stats: readonly Stat[]; callout: Stat })
   | (Base & {
       kind: "comparison";
       columns: readonly [string, string];
@@ -490,23 +491,7 @@ export const SLIDES: readonly Slide[] = [
       { year: "2029", value: "100 GW" },
       { year: "2030", value: "Singularity" },
     ],
-  },
-  {
-    id: "market",
-    kind: "market",
-    section: "Market",
-    eyebrow: "Market",
-    title: "Every megawatt is worth $18.8M a year.",
-    ground: "paper",
-    hero: { value: "$18.8M", label: "Annual revenue per IT MW at $4.20/GPU-hr" },
-    stats: [
-      { value: "20–30%", label: "Customer prepayment on 24–60 month terms" },
-      { value: "~$10B", label: "Volta / Bitdeer contract value on 133 MW, 6 years" },
-    ],
-    callout: {
-      value: "~$1.26B",
-      label: "Implied annual revenue capacity of ZODE's 66.8 MW critical path at contracted pricing.",
-    },
+    planNote: "Every MW is worth $18.8M in annual revenue and $100–200M in enterprise value.",
   },
   {
     id: "advantage",

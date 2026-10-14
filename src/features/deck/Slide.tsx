@@ -809,42 +809,26 @@ function Pipeline({ slide }: { slide: Of<"pipeline"> }): ReactElement {
           <h3 {...rise(4)} className={`${styles.rise} ${styles.label}`}>
             Plan
           </h3>
-          <ol className={styles.plan}>
-            {slide.plan.map((row, i) => (
-              <li
-                key={row.year}
-                {...rise(4.5 + i * 0.4)}
-                className={`${styles.rise} ${styles.planRow}`}
-                data-ink={i === steps - 1 || undefined}
-              >
-                <span className={styles.planYear}>{row.year}</span>
-                <span className={styles.planBar} style={{ "--share": (i + 1) / steps } as CSSProperties} />
-                <span className={styles.planValue}>{row.value}</span>
-              </li>
-            ))}
-          </ol>
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function Market({ slide }: { slide: Of<"market"> }): ReactElement {
-  return (
-    <div className={styles.split}>
-      <div {...rise(2)}>
-        <StatBlock stat={slide.hero} highlight size="xl" />
-      </div>
-      <div className={styles.splitSide}>
-        {slide.stats.map((stat, i) => (
-          <div key={stat.label} {...rise(3 + i)}>
-            <StatBlock stat={stat} size="lg" />
+          <div className={styles.planTable}>
+            <ol className={styles.plan}>
+              {slide.plan.map((row, i) => (
+                <li
+                  key={row.year}
+                  {...rise(4.5 + i * 0.4)}
+                  className={`${styles.rise} ${styles.planRow}`}
+                  data-ink={i === steps - 1 || undefined}
+                >
+                  <span className={styles.planYear}>{row.year}</span>
+                  <span className={styles.planBar} style={{ "--share": (i + 1) / steps } as CSSProperties} />
+                  <span className={styles.planValue}>{row.value}</span>
+                </li>
+              ))}
+            </ol>
+            <p {...rise(4.5 + steps * 0.4)} className={`${styles.rise} ${styles.planNote}`}>
+              {slide.planNote}
+            </p>
           </div>
-        ))}
-        <div {...rise(5)} className={`${styles.rise} ${styles.callout}`}>
-          <span className={styles.calloutValue}>{slide.callout.value}</span>
-          <span className={styles.body}>{slide.callout.label}</span>
-        </div>
+        </section>
       </div>
     </div>
   );
@@ -1078,8 +1062,6 @@ function Body({
       return <Traction slide={slide} />;
     case "pipeline":
       return <Pipeline slide={slide} />;
-    case "market":
-      return <Market slide={slide} />;
     case "comparison":
       return <Comparison slide={slide} />;
     case "finance":
