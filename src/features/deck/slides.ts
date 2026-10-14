@@ -221,17 +221,23 @@ export type Slide =
         role: string;
         name: string;
         linkedin: string;
-        /** Each company's years tagged beside its name; the name and the outcome each link out where they have a site. */
-        ventures: readonly {
-          company: string;
-          href?: string;
-          years: string;
-          role: string;
-          description: string;
-          outcome: string;
-          outcomeHref?: string;
-        }[];
-        /** Drawn under the ventures. */
+        /** The ventures, under a label of their own. */
+        main: {
+          title: string;
+          /** Each company's years tagged beside its name; the name and the outcome each link out where they have a site. */
+          ventures: readonly {
+            company: string;
+            href?: string;
+            years: string;
+            role: string;
+            description: string;
+            outcome: string;
+            outcomeHref?: string;
+          }[];
+        };
+        /** Set much smaller under the ventures, as one line of links. */
+        side: { title: string; links: readonly { label: string; href: string }[] };
+        /** Drawn under the side projects. */
         contributions: Contributions;
       };
       /** The team, alliances and advisors, by area. */
@@ -534,32 +540,44 @@ export const SLIDES: readonly Slide[] = [
       role: "Founder and CEO",
       name: "Matthew J. Dorey",
       linkedin: "https://www.linkedin.com/in/frank-wilder/",
-      ventures: [
-        {
-          company: "Wilder World",
-          href: "https://wilderworld.com",
-          years: "2020–Present",
-          role: "Co-founder, CEO and Executive Chairman",
-          description: "Persistent simulation with Samsung, NVIDIA, Epic Games and Lamborghini.",
-          outcome: "$2 billion+ valuation",
-        },
-        {
-          company: "Factory ZERO",
-          years: "2011–2020",
-          role: "Co-founder and CEO",
-          description: "Venture studio for Apple, Nike, GE, Google and the Fortune 100.",
-          outcome: "Became HF0",
-          outcomeHref: "https://www.hf0.com",
-        },
-        {
-          company: "Curve Dental",
-          href: "https://www.curvedental.com",
-          years: "2004–2011",
-          role: "Founder and CEO",
-          description: "The #1 cloud-based dental EMR system.",
-          outcome: "$1 billion+ valuation",
-        },
-      ],
+      main: {
+        title: "Main quests",
+        ventures: [
+          {
+            company: "Wilder World",
+            href: "https://wilderworld.com",
+            years: "2020–Present",
+            role: "Co-founder, CEO and Executive Chairman",
+            description: "Persistent simulation with Samsung, NVIDIA, Epic Games and Lamborghini.",
+            outcome: "$2 billion+ valuation",
+          },
+          {
+            company: "Factory ZERO",
+            years: "2011–2020",
+            role: "Co-founder and CEO",
+            description: "Venture studio for Apple, Nike, GE, Google and the Fortune 100.",
+            outcome: "Became HF0",
+            outcomeHref: "https://www.hf0.com",
+          },
+          {
+            company: "Curve Dental",
+            href: "https://www.curvedental.com",
+            years: "2004–2011",
+            role: "Founder and CEO",
+            description: "The #1 cloud-based dental EMR system.",
+            outcome: "$1 billion+ valuation",
+          },
+        ],
+      },
+      side: {
+        title: "Side quests",
+        links: [
+          { label: "cypher.net", href: "https://cypher.net" },
+          { label: "zode.tech", href: "https://zode.tech" },
+          { label: "zchain.org", href: "https://zchain.org" },
+          { label: "aura.ai", href: "https://aura.ai" },
+        ],
+      },
       contributions: FOUNDER_CONTRIBUTIONS,
     },
     network: {

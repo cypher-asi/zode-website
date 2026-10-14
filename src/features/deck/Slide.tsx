@@ -1311,8 +1311,9 @@ function ContributionGraph({ data }: { data: Contributions }): ReactElement {
 }
 
 /**
- * The founder on the left, the ventures ruled under the name, each
- * company's years tagged on the right, and a year of commits under them;
+ * The founder on the left, the ventures ruled under the name as main
+ * quests, each company's years tagged on the right, the side quests as one
+ * small line of links, and a year of commits under them;
  * on the right the team and advisors as rows of logos by area.
  */
 function Team({ slide }: { slide: Of<"team"> }): ReactElement {
@@ -1335,24 +1336,39 @@ function Team({ slide }: { slide: Of<"team"> }): ReactElement {
           </div>
           <h3 className={`${styles.h3} ${styles.person}`}>{founder.name}</h3>
         </div>
-        <ul className={styles.ventures}>
-          {founder.ventures.map((venture, i) => (
-            <li key={venture.company} {...rise(3 + i * 0.4)} className={`${styles.rise} ${styles.venture}`}>
-              <div className={styles.ventureHead}>
-                <span className={styles.ventureName}>
-                  <OutLink href={venture.href}>{venture.company}</OutLink>
-                </span>
-                <span className={styles.years}>{venture.years}</span>
-              </div>
-              <p className={styles.ventureRole}>{venture.role}</p>
-              <p className={styles.ventureText}>{venture.description}</p>
-              <p className={`${styles.ventureText} ${styles.ventureOutcome}`}>
-                <OutLink href={venture.outcomeHref}>{venture.outcome}</OutLink>
-              </p>
-            </li>
-          ))}
-        </ul>
-        <div {...rise(4.2)} className={styles.rise}>
+        <section className={styles.quests}>
+          <h4 {...rise(2.6)} className={`${styles.rise} ${styles.figLabel}`}>
+            {founder.main.title}
+          </h4>
+          <ul className={styles.ventures}>
+            {founder.main.ventures.map((venture, i) => (
+              <li key={venture.company} {...rise(3 + i * 0.4)} className={`${styles.rise} ${styles.venture}`}>
+                <div className={styles.ventureHead}>
+                  <span className={styles.ventureName}>
+                    <OutLink href={venture.href}>{venture.company}</OutLink>
+                  </span>
+                  <span className={styles.years}>{venture.years}</span>
+                </div>
+                <p className={styles.ventureRole}>{venture.role}</p>
+                <p className={styles.ventureText}>{venture.description}</p>
+                <p className={`${styles.ventureText} ${styles.ventureOutcome}`}>
+                  <OutLink href={venture.outcomeHref}>{venture.outcome}</OutLink>
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+        <section {...rise(4.2)} className={`${styles.rise} ${styles.sideQuests}`}>
+          <h4 className={styles.figLabel}>{founder.side.title}</h4>
+          <ul>
+            {founder.side.links.map((link) => (
+              <li key={link.href}>
+                <OutLink href={link.href}>{link.label}</OutLink>
+              </li>
+            ))}
+          </ul>
+        </section>
+        <div {...rise(4.6)} className={styles.rise}>
           <ContributionGraph data={founder.contributions} />
         </div>
       </div>
