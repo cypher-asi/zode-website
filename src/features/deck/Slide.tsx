@@ -945,9 +945,8 @@ function Comparison({ slide }: { slide: Of<"comparison"> }): ReactElement {
 /**
  * The deals as one panel of cards across the top, each headed by its icon in
  * a square cell ruled off from its title, as the unit slide's mini-cards, then
- * what it funds and its terms; each shaded as its layers are in the example
- * under them: one stacked bar, each layer as wide as its share of the total,
- * tagged with the deal it comes from.
+ * what it funds and its terms. Under them the example: one stacked bar, each
+ * layer as wide as its share of the total, shaded and tagged by its deal.
  */
 function Finance({ slide, active }: { slide: Of<"finance">; active: boolean }): ReactElement {
   const { example } = slide;
@@ -955,10 +954,10 @@ function Finance({ slide, active }: { slide: Of<"finance">; active: boolean }): 
     <div className={styles.finance}>
       <ul className={styles.deals}>
         {slide.deals.map((deal, i) => (
-          <li key={deal.id} {...rise(2 + i * 0.4)} className={`${styles.rise} ${styles.deal}`} data-deal={deal.id}>
+          <li key={deal.id} {...rise(2 + i * 0.4)} className={`${styles.rise} ${styles.deal}`}>
             <div className={styles.dealHead}>
               <div className={styles.dealFigure}>
-                <UnitIcon id={deal.icon} light={deal.id !== "compute"} playing={active} />
+                <UnitIcon id={deal.icon} light playing={active} />
               </div>
               <div className={styles.dealHeading}>
                 <h3 className={styles.dealTitle}>{deal.title}</h3>
