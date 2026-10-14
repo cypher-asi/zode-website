@@ -434,8 +434,8 @@ export const SLIDES: readonly Slide[] = [
     highlight: 7,
     image: "/images/deck/cluster-2048.png",
     links: [
-      { label: "Open in the cluster builder", href: "/cluster-builder?nodes=256&tb=8" },
-      { label: "Open the compute model", href: "/compute-model" },
+      { label: "Cluster builder", href: "/cluster-builder?nodes=256&tb=8" },
+      { label: "Compute model", href: "/compute-model" },
     ],
   },
   {

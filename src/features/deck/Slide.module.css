@@ -1758,10 +1758,10 @@
   box-shadow: 0 0 0 1px var(--rule);
 }
 
+/* The label on the left, the links stacked on the right. */
 .renderCaption {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: calc(0.4 * var(--u)) calc(1.6 * var(--u));
   margin-top: calc(0.8 * var(--u));
@@ -1778,7 +1778,8 @@
  */
 .renderLinks {
   display: flex;
-  flex-wrap: wrap;
+  flex: none;
+  flex-direction: column;
   gap: calc(0.6 * var(--u));
   font-size: calc(0.62 * var(--u));
   font-weight: 500;
@@ -1790,6 +1791,7 @@
 .renderLink {
   display: inline-flex;
   align-items: center;
+  justify-content: space-between;
   gap: calc(0.5 * var(--u));
   height: calc(2 * var(--u));
   padding: 0 calc(0.9 * var(--u));
