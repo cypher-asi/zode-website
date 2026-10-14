@@ -384,7 +384,7 @@ export const SLIDES: readonly Slide[] = [
     ground: "paper",
     specs: [
       { value: "256", label: "Nodes · 8× NVIDIA B300 each", icon: "gpu" },
-      { value: "~4 MW", label: "Critical IT load, direct liquid cooling", icon: "power" },
+      { value: "4 MW", label: "Critical IT load, direct liquid cooling", icon: "power" },
       { value: "800G", label: "Quantum-X800 InfiniBand fabric", icon: "fabric" },
       { value: "2 PB", label: "High-performance storage", icon: "storage" },
       { value: "$4.20", label: "Contracted price per GPU-hour, 5-year term", icon: "rate" },
