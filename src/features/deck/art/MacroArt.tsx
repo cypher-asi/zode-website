@@ -864,50 +864,116 @@ function capitalStack(s: Sketch): void {
   rack(s, 24, -2, 24, 28, 58);
 }
 
-/** Energy in on the left, worked through a maze of GPU nodes, tokens out on the right. */
-function tokenMaze(s: Sketch): void {
-  s.box(-76, -60, 140, 118, -4, 4);
+/** An SVG motion path through model points, in screen space. */
+const motion = (ps: readonly P3[]) =>
+  `M ${ps
+    .map((p) => project(p))
+    .map(([x, y]) => `${x} ${y}`)
+    .join(" L ")}`;
 
-  s.group(anim(styles.flash), () => bolt(s, -114, 50, 14, 32));
+/**
+ * `n` riders spaced evenly along `path`, each drawn by `draw` at the origin;
+ * every other one is `extra`, shown only while the card is hovered.
+ */
+function riders(s: Sketch, path: string, dur: number, n: number, draw: () => void): void {
+  for (let k = 0; k < n; k++) {
+    s.group({ className: `${styles.rider}${k % 2 ? ` ${styles.extra}` : ""}` }, () => {
+      s.el("animateMotion", {
+        path,
+        dur: `${dur}s`,
+        begin: `${round((-k * dur) / n)}s`,
+        repeatCount: "indefinite",
+        calcMode: "paced",
+      });
+      draw();
+    });
+  }
+}
+
+/**
+ * Tokens made like an advanced chip on a line: energy rides the feed rail in
+ * on the left, winds through the channels between the die's cores, and leaves
+ * on the right as tokens down the output conveyor.
+ */
+function tokenMaze(s: Sketch): void {
+  const TOP = 10;
+
+  s.box(-96, -66, 192, 132, 0, 4);
+  for (let x = -90; x <= 86; x += 8) s.box(x, 66, 4, 2, 1, 2);
+  for (let y = -60; y <= 58; y += 8) if (y < -46 || y > -28) s.box(96, y, 2, 4, 1, 2);
+  s.box(-74, -50, 148, 100, 4, 3);
+  for (let k = 0; k < 4; k++) {
+    const x = -58 + k * 30;
+    s.group(anim(styles.shade, k), () => s.box(x, 41, 20, 7, 7, 8));
+    for (const z of [9, 11, 13]) s.line([[x + 1, 48, z], [x + 19, 48, z]]);
+  }
+  s.box(-62, -40, 124, 80, 7, TOP - 7);
   s.line(
     [
-      [-96, 50, 50],
-      [-96, 50, 0.5],
+      [-59, -37, TOP],
+      [59, -37, TOP],
+      [59, 37, TOP],
+      [-59, 37, TOP],
+      [-59, -37, TOP],
     ],
-    styles.edge,
+    styles.fine,
   );
-  s.group(anim(styles.flow), () =>
-    s.line(
-      [
-        [-96, 50, 0.5],
-        [-29, 50, 0.5],
-        [-29, 16, 0.5],
-        [11, 16, 0.5],
-        [11, -18, 0.5],
-        [51, -18, 0.5],
-        [51, -52, 0.5],
-        [80, -52, 0.5],
-      ],
-      styles.edge,
-    ),
-  );
+  for (const gy of [-16, 8]) for (const dy of [-3, 3]) s.line([[-60, gy + dy, TOP], [60, gy + dy, TOP]], styles.trace);
+  for (const gx of [-37, -15, 7, 29]) for (const dx of [-3, 3]) s.line([[gx + dx, -38, TOP], [gx + dx, 38, TOP]], styles.trace);
 
-  const [W, D, H] = [22, 18, 8];
-  const nodes: { x: number; y: number; k: number }[] = [];
-  for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) nodes.push({ x: -60 + i * 40, y: -44 + j * 34, k: i + 2 - j });
-  nodes
+  const FEED: P3[] = [
+    [-124, 33, TOP],
+    [-62, 33, TOP],
+  ];
+  const MAZE: P3[] = [
+    [-62, 33, TOP],
+    [-37, 33, TOP],
+    [-37, 8, TOP],
+    [-15, 8, TOP],
+    [-15, -16, TOP],
+    [7, -16, TOP],
+    [7, 8, TOP],
+    [29, 8, TOP],
+    [29, -37, TOP],
+    [62, -37, TOP],
+  ];
+  const OUT: P3[] = [
+    [62, -37, TOP],
+    [134, -37, TOP],
+  ];
+  s.group(anim(styles.flow), () => s.line(MAZE, styles.fine));
+
+  const [CW, CH] = [12, 3];
+  const cores: { x: number; y: number; k: number }[] = [];
+  for (let i = 0; i < 5; i++) for (let j = 0; j < 3; j++) cores.push({ x: -54 + i * 22, y: -34 + j * 24, k: i });
+  cores
     .sort((a, b) => a.x + a.y - (b.x + b.y))
     .forEach(({ x, y, k }) => {
-      s.group(anim(styles.shade, k), () => s.box(x, y, W, D, 0, H));
-      for (let fx = x + 4; fx < x + W; fx += 4) s.line([[fx, y + 2, H], [fx, y + D - 2, H]]);
+      s.group(anim(styles.shade, k), () => s.box(x, y, CW, CW, TOP, CH));
+      s.line(
+        [
+          [x + 3, y + 3, TOP + CH],
+          [x + CW - 3, y + 3, TOP + CH],
+          [x + CW - 3, y + CW - 3, TOP + CH],
+          [x + 3, y + CW - 3, TOP + CH],
+          [x + 3, y + 3, TOP + CH],
+        ],
+        styles.fine,
+      );
     });
 
-  [
-    [84, -56, 0],
-    [94, -62, 16],
-    [102, -68, 34],
-    [108, -74, 54],
-  ].forEach(([x, y, z], i) => s.group(anim(styles.shade, 5 + i), () => s.box(x, y, 9, 9, z, 9)));
+  s.box(-124, 28, 62, 10, 0, TOP);
+  for (let x = -120; x < -62; x += 6) s.line([[x, 28, TOP], [x, 38, TOP]]);
+  s.group(anim(styles.flash), () => bolt(s, -134, 33, TOP, 26));
+
+  s.box(62, -42, 72, 10, 0, TOP);
+  for (let x = 66; x < 134; x += 6) s.line([[x, -42, TOP], [x, -32, TOP]]);
+  for (let x = 70; x < 134; x += 24) s.line([[x, -32, 2], [x, -32, TOP - 2]], styles.edge);
+
+  riders(s, motion([...FEED, ...MAZE.slice(1)]), 7, 16, () => {
+    s.disc([0, 0, 0], 2.2, styles.ink);
+  });
+  riders(s, motion(OUT), 3.5, 8, () => s.box(-3, -3, 6, 6, 0, 6));
 }
 
 const DRAW: Record<MacroArtId, (s: Sketch) => void> = {
