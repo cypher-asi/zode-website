@@ -617,8 +617,9 @@ function bolt(s: Sketch, x: number, y: number, z: number, h: number): void {
 }
 
 /**
- * An e-signature on a tablet: a "sign here" tab pulses beside the field, the
- * signature writes itself, then the floating certificate shield turns solid.
+ * A digital signature on a tablet: a "sign here" tab pulses beside the field,
+ * the signature types itself in byte by byte, `0x` then two rows of hex pairs,
+ * and the certificate shield floating at the end of the dashed link turns solid.
  */
 function signature(s: Sketch): void {
   const Z = 6;
@@ -646,7 +647,7 @@ function signature(s: Sketch): void {
   );
   for (const x of [-59, -55, -51]) s.disc([x, -40.5, Z], 1, styles.ring);
   s.line([[-54, -30, Z], [-14, -30, Z]], styles.edge);
-  [-22, -15, -8].forEach((y, k) => s.line([[-54, y, Z], [[50, 38, 44][k], y, Z]], styles.fine));
+  [-22, -15, -8].forEach((y, k) => s.line([[-54, y, Z], [[34, 22, 28][k], y, Z]], styles.fine));
 
   const [FL, FT, FR, FB] = [-40, 4, 42, 30];
   s.line(
@@ -673,50 +674,58 @@ function signature(s: Sketch): void {
     ),
   );
 
-  const N = 90;
-  const ink: P3[] = Array.from({ length: N + 1 }, (_, i) => {
-    const t = (i / N) * 7 * Math.PI;
-    const x = -34 + t * (52 / (7 * Math.PI)) - 4.2 * Math.sin(t);
-    const y = FB - 6 - 5 * (1 - Math.cos(t)) * (0.7 + 0.3 * Math.sin(t * 0.45));
-    return [x, y, Z];
+  const [X0, CW, CH, CG, BG] = [-35, 2.6, 4.4, 0.8, 2.4];
+  const cell = (x: number, y: number) =>
+    s.face(
+      flat([
+        [x, y - CH / 2],
+        [x + CW, y - CH / 2],
+        [x + CW, y + CH / 2],
+        [x, y + CH / 2],
+      ]),
+      styles.ink,
+    );
+  const ROWS = [
+    { x: X0 + 2 * CW + CG + BG, y: 11.5, n: 7 },
+    { x: X0, y: 20.5, n: 8 },
+  ];
+  const total = ROWS.reduce((sum, { n }) => sum + n, 0) + 1;
+  const byte = (k: number, draw: () => void) =>
+    s.group({ style: { "--t": round(k / total) } as CSSProperties }, draw);
+  s.group({ className: styles.bytes }, () => {
+    byte(0, () => {
+      const [ox, oy] = [X0 + CW / 2, ROWS[0].y];
+      s.face(
+        Array.from({ length: 16 }, (_, i) => {
+          const t = (i / 16) * 2 * Math.PI;
+          return [ox + (CW / 2) * Math.cos(t), oy + (CH / 2) * Math.sin(t), Z] as const;
+        }),
+        styles.edge,
+      );
+      const xx = X0 + CW + CG;
+      s.line([[xx, oy - CH / 2 + 1, Z], [xx + CW, oy + CH / 2, Z]], styles.edge);
+      s.line([[xx + CW, oy - CH / 2 + 1, Z], [xx, oy + CH / 2, Z]], styles.edge);
+    });
+    let k = 1;
+    for (const { x, y, n } of ROWS) {
+      for (let b = 0; b < n; b++, k++) {
+        const bx = x + b * (2 * CW + CG + BG);
+        byte(k, () => {
+          cell(bx, y);
+          cell(bx + CW + CG, y);
+        });
+      }
+    }
   });
-  const [ex, ey] = ink[N];
-  ink.push([ex + 6, ey - 3, Z], [ex + 12, ey - 7, Z], [ex + 16, ey - 10, Z]);
-  const screen = ink.map((p) => project(p));
-  for (const [x, y] of screen) s.extend(x, y);
-  s.el("polyline", { points: pts(screen), pathLength: 1, className: styles.sign });
 
   const [SX, SY, SZ] = [50, -30, Z + 18];
+  const rim = 6 / Math.hypot(FR - SX, FT - SY);
   s.disc([SX, SY, Z], 6, styles.fine);
-  s.group(anim(styles.flow), () => s.line([[SX, SY, Z], [SX, SY, SZ]], styles.edge));
-
-  const [tx, ty] = project([ex + 16, ey - 10, Z]);
-  const [ux, uy] = project([ex + 46, ey - 16, Z + 64]);
-  const [dx, dy] = [ux - tx, uy - ty];
-  const len = Math.hypot(dx, dy);
-  const [nx, ny] = [(-dy / len) * 3.6, (dx / len) * 3.6];
-  const [ax, ay] = [tx + dx * 0.16, ty + dy * 0.16];
-  poly(
-    s,
-    [
-      [ax + nx, ay + ny],
-      [ux + nx, uy + ny],
-      [ux - nx, uy - ny],
-      [ax - nx, ay - ny],
-    ],
-    styles.sideL,
-  );
-  seg(s, ax + nx * 0.3, ay + ny * 0.3, ux + nx * 0.3, uy + ny * 0.3, styles.fine);
-  poly(
-    s,
-    [
-      [tx, ty],
-      [ax + nx, ay + ny],
-      [ax - nx, ay - ny],
-    ],
-    styles.sideR,
-  );
-  circle(s, ux, uy, 3.6, styles.top);
+  s.group(anim(styles.flow), () => {
+    s.line([[FR, FT, Z], [SX + (FR - SX) * rim, SY + (FT - SY) * rim, Z]], styles.dash);
+    s.line([[SX, SY, Z], [SX, SY, SZ]], styles.edge);
+  });
+  s.disc([FR, FT, Z], 1.4, styles.ink);
 
   const SHIELD: Pt[] = [
     [-13, 32],

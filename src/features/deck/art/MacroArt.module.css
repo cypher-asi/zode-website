@@ -111,12 +111,11 @@
   fill: var(--art-ink);
 }
 
-/* Drawn on with a dash a path length long: a scaling stroke, so its dashes count in path units. */
-.art .sign {
-  fill: none;
-  stroke: var(--art-ink);
-  stroke-width: 1.1;
-  vector-effect: none;
+/* Registered so it animates: each byte under `.bytes` shows once it passes the byte's `--t`. */
+@property --art-signed {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
 }
 
 /* Moved by SMIL along their paths: hidden unless playing, as SMIL ignores `prefers-reduced-motion`. */
@@ -168,9 +167,12 @@
     opacity: 1;
   }
 
-  .art[data-playing] .sign {
-    stroke-dasharray: 1;
-    animation: sign-draw 3200ms ease-in-out infinite;
+  .art[data-playing] .bytes {
+    animation: bytes-sign 3200ms linear infinite;
+  }
+
+  .art[data-playing] .bytes > g {
+    opacity: clamp(0, (var(--art-signed) - var(--t)) * 1000, 1);
   }
 
   /* On the signature's clock: solid with the check knocked out once it's signed. */
@@ -209,14 +211,15 @@
   }
 }
 
-@keyframes sign-draw {
-  0% {
-    stroke-dashoffset: 1;
+@keyframes bytes-sign {
+  0%,
+  6% {
+    --art-signed: 0;
   }
 
   55%,
   100% {
-    stroke-dashoffset: 0;
+    --art-signed: 1;
   }
 }
 
