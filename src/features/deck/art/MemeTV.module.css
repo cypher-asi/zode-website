@@ -117,6 +117,43 @@
   letter-spacing: -0.01em;
 }
 
+.photo {
+  filter: contrast(1.08);
+}
+
+.key {
+  cursor: pointer;
+  outline: none;
+}
+
+.hit {
+  fill: transparent;
+}
+
+.keyCap {
+  fill: var(--tv-top);
+  stroke: var(--tv-fine);
+  stroke-width: 0.8;
+  transition:
+    fill var(--duration-fast) var(--ease-out),
+    stroke var(--duration-fast) var(--ease-out);
+}
+
+.key:is(:hover, :focus-visible) .keyCap {
+  fill: var(--tv-glow);
+  stroke: var(--tv-ink);
+}
+
+.key:active .keyCap {
+  fill: var(--tv-body);
+}
+
+.static {
+  fill: var(--tv-ink);
+  opacity: 0;
+  pointer-events: none;
+}
+
 .fist {
   transform-box: view-box;
   transform-origin: 62px 124px;
@@ -137,6 +174,20 @@
 
   .tv[data-playing] .led {
     animation: blink 1600ms ease-in-out infinite;
+  }
+
+  .static {
+    animation: zap 180ms ease-out;
+  }
+}
+
+@keyframes zap {
+  0% {
+    opacity: 0.55;
+  }
+
+  100% {
+    opacity: 0;
   }
 }
 

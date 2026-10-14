@@ -1,4 +1,4 @@
-import { useId, type ReactElement } from "react";
+import { useId, useState, type KeyboardEvent, type ReactElement } from "react";
 import styles from "./MemeTV.module.css";
 
 /** The TikTok note (Simple Icons, CC0), drawn on a 24-unit square. */
@@ -6,6 +6,11 @@ const NOTE =
   "M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z";
 
 const SCREEN = { x: 12, y: 12, w: 216, h: 112 };
+
+/** The real frame, a 4:3 still pillarboxed on the wide screen. */
+const PHOTO = "/images/deck/old-man-yells-at-cloud.jpg";
+
+const CHANNELS = ["the Old Man Yells at Cloud meme, drawn", "the Old Man Yells at Cloud frame, in black and white"];
 
 /** HUD brackets in the screen's corners, `l` long, inset `i`. */
 function brackets(l: number, i: number): string {
@@ -85,22 +90,49 @@ function Meme(): ReactElement {
   );
 }
 
+/** A channel key on the chin, centred on `x`, with a hit area a few units wider than the key. */
+function ChannelKey({ x, dir, onPress }: { x: number; dir: -1 | 1; onPress: () => void }): ReactElement {
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    onPress();
+  };
+  return (
+    <g
+      className={styles.key}
+      role="button"
+      tabIndex={0}
+      aria-label={dir < 0 ? "Previous channel" : "Next channel"}
+      onClick={onPress}
+      onKeyDown={onKeyDown}
+    >
+      <rect className={styles.hit} x={x - 9} y="128" width="18" height="21" />
+      <rect className={styles.keyCap} x={x - 7} y="132" width="14" height="13" rx="2" />
+      <path className={styles.edge} d={`M${x - dir * 1.5} 135.5L${x + dir * 1.5} 138.5L${x - dir * 1.5} 141.5`} />
+    </g>
+  );
+}
+
 /**
  * A clean sci-fi TV, branded TikTok, showing Old Man Yells at Cloud: a
  * chamfered panel on a slim stand, the brand and channel controls on its
- * chin. `playing` shakes the fist and flickers the screen.
+ * chin. The keys flip between the drawing and the real frame. `playing`
+ * shakes the fist and flickers the screen.
  */
 export function MemeTV({ playing = false }: { playing?: boolean }): ReactElement {
   const id = useId();
   const [glow, clip] = [`${id}glow`, `${id}clip`];
+  const [flips, setFlips] = useState(0);
+  const channel = flips % CHANNELS.length;
+  const flip = () => setFlips((n) => n + 1);
   return (
     <svg
       className={styles.tv}
       viewBox="0 0 240 180"
       preserveAspectRatio="xMinYMax meet"
       data-playing={playing || undefined}
-      role="img"
-      aria-label="A TV branded TikTok showing the Old Man Yells at Cloud meme"
+      role="group"
+      aria-label="A TV branded TikTok"
     >
       <defs>
         <radialGradient id={glow} cx="50%" cy="45%" r="70%">
@@ -120,27 +152,53 @@ export function MemeTV({ playing = false }: { playing?: boolean }): ReactElement
       <path className={styles.fine} d="M11 7H229L233 11V145L229 149H11L7 145V11Z" />
       <circle className={styles.fine} cx="120" cy="8.5" r="0.9" />
 
-      <rect
-        x={SCREEN.x}
-        y={SCREEN.y}
-        width={SCREEN.w}
-        height={SCREEN.h}
-        rx="2"
-        fill={`url(#${glow})`}
-        className={styles.screen}
-      />
-      <g clipPath={`url(#${clip})`} className={styles.picture}>
-        <Meme />
-        <rect className={styles.chyron} x="18" y="111" width="124" height="9" />
-        <rect className={styles.live} x="18" y="111" width="18" height="9" />
-        <text className={styles.liveText} x="27" y="117.6">
-          LIVE
-        </text>
-        <text className={styles.caption} x="40" y="117.6">
-          OLD MAN YELLS AT CLOUD
-        </text>
+      <g role="img" aria-label={`The screen shows ${CHANNELS[channel]}`}>
+        <rect
+          x={SCREEN.x}
+          y={SCREEN.y}
+          width={SCREEN.w}
+          height={SCREEN.h}
+          rx="2"
+          fill={`url(#${glow})`}
+          className={styles.screen}
+        />
+        <g clipPath={`url(#${clip})`} className={styles.picture}>
+          {channel === 0 ? (
+            <>
+              <Meme />
+              <rect className={styles.chyron} x="18" y="111" width="124" height="9" />
+              <rect className={styles.live} x="18" y="111" width="18" height="9" />
+              <text className={styles.liveText} x="27" y="117.6">
+                LIVE
+              </text>
+              <text className={styles.caption} x="40" y="117.6">
+                OLD MAN YELLS AT CLOUD
+              </text>
+            </>
+          ) : (
+            <image
+              className={styles.photo}
+              href={PHOTO}
+              x={SCREEN.x}
+              y={SCREEN.y}
+              width={SCREEN.w}
+              height={SCREEN.h}
+              preserveAspectRatio="xMidYMid meet"
+            />
+          )}
+          {flips > 0 ? (
+            <rect
+              key={flips}
+              className={styles.static}
+              x={SCREEN.x}
+              y={SCREEN.y}
+              width={SCREEN.w}
+              height={SCREEN.h}
+            />
+          ) : null}
+        </g>
+        <path className={styles.fine} d={brackets(6, 3)} />
       </g>
-      <path className={styles.fine} d={brackets(6, 3)} />
 
       <circle className={styles.led} cx="20" cy="138" r="1.4" />
 
@@ -153,13 +211,14 @@ export function MemeTV({ playing = false }: { playing?: boolean }): ReactElement
         TikTok
       </text>
 
-      <text className={styles.label} x="188" y="140">
+      <text className={styles.label} x="164" y="140.5">
         CH
       </text>
-      <path className={styles.edge} d="M199 137.5L202 134.5L205 137.5M199 140.5L202 143.5L205 140.5" />
-      <circle className={styles.ink} cx="212" cy="139" r="1.2" />
-      <circle className={styles.fine} cx="217" cy="139" r="1.2" />
-      <circle className={styles.fine} cx="222" cy="139" r="1.2" />
+      {CHANNELS.map((_, i) => (
+        <circle key={i} className={i === channel ? styles.ink : styles.fine} cx={176 + i * 5} cy="138.5" r="1.2" />
+      ))}
+      <ChannelKey x={197} dir={-1} onPress={flip} />
+      <ChannelKey x={215} dir={1} onPress={flip} />
     </svg>
   );
 }
