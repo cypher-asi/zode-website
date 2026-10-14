@@ -383,14 +383,16 @@ export const SLIDES: readonly Slide[] = [
     title: "One standard cluster: 2,048 GPUs in 4 MW.",
     ground: "paper",
     specs: [
-      { value: "256", label: "Nodes · 8× NVIDIA B300 each", icon: "gpu" },
+      { value: "256", label: "Nodes · 8× NVIDIA B300 each", icon: "node" },
+      { value: "2,048", label: "NVIDIA B300 GPUs, Blackwell Ultra", icon: "gpu" },
       { value: "4 MW", label: "Critical IT load, direct liquid cooling", icon: "power" },
       { value: "800G", label: "Quantum-X800 InfiniBand fabric", icon: "fabric" },
       { value: "2 PB", label: "High-performance storage", icon: "storage" },
       { value: "$4.20", label: "Contracted price per GPU-hour, 5-year term", icon: "rate" },
+      { value: "$12.5M", label: "Year 1 net profit, after depreciation and interest", icon: "profit" },
       { value: "$75M", label: "Annual contracted revenue at $4.20/GPU-hr", icon: "revenue" },
     ],
-    highlight: 5,
+    highlight: 7,
     image: "/images/deck/cluster-2048.png",
     links: [
       { label: "Open in the cluster builder", href: "/cluster-builder?nodes=256&tb=8" },

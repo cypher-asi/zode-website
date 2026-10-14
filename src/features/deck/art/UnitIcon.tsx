@@ -1,8 +1,8 @@
 import type { CSSProperties, ReactElement } from "react";
-import { Sketch, project, round, type Bounds, type P3 } from "@/features/zode-drawings/lineArt";
+import { Sketch, backToFront, project, round, type Bounds, type P3 } from "@/features/zode-drawings/lineArt";
 import styles from "./MacroArt.module.css";
 
-export type UnitIconId = "gpu" | "power" | "fabric" | "storage" | "rate" | "revenue";
+export type UnitIconId = "node" | "gpu" | "power" | "fabric" | "storage" | "rate" | "profit" | "revenue";
 
 type Pt = readonly [number, number];
 
@@ -72,6 +72,20 @@ function extrude(s: Sketch, outline: readonly Pt[], y0: number, y1: number): voi
     outline.map(([x, z]): P3 => [x, y1, z]),
     styles.sideL,
   );
+}
+
+/** A GPU node: a server tray, its front vented, eight GPU modules on its board. */
+function node(s: Sketch): void {
+  const [X, Y, W, D, H] = [-32, -22, 64, 44, 8];
+  s.box(X, Y, W, D, 0, H);
+  for (let x = X + 6; x < X + W - 14; x += 4) s.line([[x, Y + D, 2], [x, Y + D, H - 2]]);
+  lamp(s, [X + W - 8, Y + D, H / 2], 0);
+  lamp(s, [X + W - 4, Y + D, H / 2], 1);
+  const modules: { x: number; y: number }[] = [];
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) modules.push({ x: X + 5 + i * 15, y: Y + 5 + j * 18 });
+  modules
+    .sort(backToFront)
+    .forEach(({ x, y }, k) => s.group(anim(styles.shade, k), () => s.box(x, y, 11, 14, H, 5)));
 }
 
 /** A GPU package: the substrate, its pins, and the lidded die with its light. */
@@ -170,6 +184,20 @@ function rate(s: Sketch): void {
   lamp(s, [0, Y1, 0], 0, 1.6);
 }
 
+/** Profit kept: two stacks of coins, a third coin settling on the taller. */
+function profit(s: Sketch): void {
+  const [R, T] = [13, 3.5];
+  const STACKS = [
+    [-14, 6, 4],
+    [10, -6, 7],
+  ] as const;
+  for (const [x, y, n] of STACKS) {
+    for (let k = 0; k < n; k++) cylinder(s, x, y, R, k * T, T);
+    s.disc([x, y, n * T], R * 0.62, styles.fine);
+  }
+  s.group(anim(styles.shade), () => cylinder(s, 10, -6, R, 7 * T + 9, T));
+}
+
 /** Rising bars on a plinth, a trend line climbing over them. */
 function revenue(s: Sketch): void {
   const BARS = [
@@ -191,7 +219,7 @@ function revenue(s: Sketch): void {
   );
 }
 
-const DRAW: Record<UnitIconId, (s: Sketch) => void> = { gpu, power, fabric, storage, rate, revenue };
+const DRAW: Record<UnitIconId, (s: Sketch) => void> = { node, gpu, power, fabric, storage, rate, profit, revenue };
 
 const ART = Object.fromEntries(
   Object.entries(DRAW).map(([id, draw]) => {
