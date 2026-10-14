@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { RememberAccount } from "@/features/account/RememberAccount";
 import { MARK_SIGNED_IN_SCRIPT } from "@/features/account/signedInCookie";
 import { Tracker } from "@/features/analytics/Tracker";
+import { BackOrigin } from "@/features/navigation/BackOrigin";
 import { display, text } from "@/lib/fonts";
 import { SITE_URL } from "@/lib/site";
 import "./globals.css";
@@ -57,6 +58,7 @@ export default function RootLayout({
         <Suspense>
           <RememberAccount />
           <Tracker />
+          <BackOrigin />
         </Suspense>
       </body>
     </html>

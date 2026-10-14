@@ -8,3 +8,10 @@
   -webkit-tap-highlight-color: transparent;
   color: var(--color-ink);
 }
+
+/* The header's Back pill sits left of the settings panel (ClusterConfigurator's right column) rather than over its close button. */
+@media (min-width: 901px) {
+  .page {
+    --action-clear: 440px;
+  }
+}

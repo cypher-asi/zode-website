@@ -76,6 +76,12 @@
   z-index: 3;
 }
 
+/* The header's Back pill takes the viewport's top-right corner when it shows, so the toolbar and its dropdown sit beside it. */
+:global(body:has([data-header-back])) .tools,
+:global(body:has([data-header-back])) .layers {
+  right: calc(var(--edge) + var(--header-action-width, 0px) + 8px);
+}
+
 .inspector {
   position: absolute;
   top: var(--head-top);

@@ -102,7 +102,8 @@
 
   position: fixed;
   top: calc(27px + env(safe-area-inset-top, 0px));
-  right: max(var(--edge), env(safe-area-inset-right, 0px));
+  /* Pages with a full-height panel in the top-right corner set `--action-clear` to its width, so the Back pill sits beside it. */
+  right: calc(max(var(--edge), env(safe-area-inset-right, 0px)) + var(--action-clear, 0px));
   z-index: 10;
   display: inline-flex;
   gap: 8px;
@@ -117,6 +118,59 @@
 .action[data-media] {
   --ink: var(--color-white);
   --paper: var(--color-black);
+}
+
+/*
+ * Back to the page a detour was entered from, left of the split button. Same
+ * outline, height and wipe-up hover as the button's segments.
+ */
+.back {
+  display: inline-flex;
+  flex: none;
+  gap: 8px;
+  align-items: center;
+  height: 32px;
+  padding: 0 14px 0 12px;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-control);
+  background: linear-gradient(var(--ink), var(--ink)) no-repeat bottom / 100% 0%;
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    border-color 200ms ease,
+    background-size var(--duration-slow) var(--ease-in-out),
+    background-color 200ms ease,
+    box-shadow 200ms ease,
+    color 200ms ease 80ms;
+}
+
+.action[data-media] .back {
+  background-color: var(--paper);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.backChevron {
+  width: 6px;
+  height: 10px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.back:focus-visible {
+  background-size: 100% 100%;
+  color: var(--paper);
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .back:hover {
+    background-size: 100% 100%;
+    color: var(--paper);
+  }
 }
 
 /* Positions the menu under the split button alone, not the avatar beside it. */
@@ -666,6 +720,12 @@ button.menuItem:disabled {
     height: 28px;
   }
 
+  .back {
+    gap: 6px;
+    height: 28px;
+    padding: 0 11px 0 9px;
+  }
+
   .avatar {
     width: 28px;
     height: 28px;
@@ -744,6 +804,7 @@ button.menuItem:disabled {
   .brand::before,
   .wordmark,
   .avatar,
+  .back,
   .split,
   .action[data-open] .split,
   .primary,

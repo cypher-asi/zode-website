@@ -6,8 +6,10 @@ import {
   useEffect,
   useId,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   ViewTransition,
   type CSSProperties,
   type KeyboardEvent,
@@ -17,6 +19,13 @@ import {
 } from "react";
 import { markSignedIn, readSignedInCookie } from "@/features/account/signedInCookie";
 import { isPortalPath, useAccountInitials, useLogout, useLogoutToast } from "@/features/account/useAccount";
+import {
+  isDetourPath,
+  parseBackOrigin,
+  readBackOriginRaw,
+  requestBackRestore,
+  subscribeBackOrigin,
+} from "@/lib/backOrigin";
 import { COMPUTE_ACTIONS, ENGINEER_ACTION, RESOURCE_LINKS, TOOL_LINKS } from "@/lib/navigation";
 import styles from "./PinnedHeader.module.css";
 
@@ -157,7 +166,9 @@ function sampleUnder(el: HTMLElement, rect: DOMRect): { tone: Tone | null; media
 /**
  * Top-left wordmark and top-right split button ("Buy Compute" unless the page
  * passes `primary`) that stay fixed while the page scrolls. The button's
- * chevron opens a menu of other actions. Each is black over light surfaces and white over dark ones:
+ * chevron opens a menu of other actions. On a detour (the deck, buy compute,
+ * the portal and the like) a Back pill to its left returns to the page you
+ * left, even where the button itself is left out. Each is black over light surfaces and white over dark ones:
  * it reads the nearest `data-surface` ancestor of whatever sits under its
  * center point. Content marked with `data-top-fade` is masked out as it scrolls
  * up into the top corners, while the top middle stays solid. `data-top-fade`
@@ -181,6 +192,7 @@ export function PinnedHeader({
 }): ReactElement {
   const pathname = usePathname();
   const brandRef = useRef<HTMLAnchorElement>(null);
+  const groupRef = useRef<HTMLDivElement>(null);
   const anchorRef = useRef<HTMLDivElement>(null);
   const actionRef = useRef<HTMLDivElement>(null);
   const growRef = useRef<HTMLSpanElement>(null);
@@ -198,6 +210,11 @@ export function PinnedHeader({
   const signedIn = accountInitials !== null;
   const inPortal = isPortalPath(pathname ?? "/");
   const menu = inPortal ? PORTAL_ACTION_MENU : ACTION_MENU;
+  const backRaw = useSyncExternalStore(subscribeBackOrigin, readBackOriginRaw, () => null);
+  const backOrigin = useMemo(() => parseBackOrigin(backRaw), [backRaw]);
+  /** The page this detour was entered from, shown as the Back pill; unset when you landed here directly. */
+  const back = backOrigin && isDetourPath(pathname ?? "/") ? backOrigin : null;
+  const showBack = back !== null;
   /** The route this header mounted on, cleared by the first route change after. */
   const [mountPath, setMountPath] = useState<string | null>(pathname);
   if (mountPath !== null && mountPath !== pathname) setMountPath(null);
@@ -286,6 +303,24 @@ export function PinnedHeader({
     observer.observe(list);
     return () => observer.disconnect();
   }, [showAction]);
+
+  /**
+   * The right-hand group's width as `--header-action-width` on `<html>`, for
+   * pages whose own top-right controls move aside for the Back pill.
+   */
+  useEffect(() => {
+    const group = groupRef.current;
+    if (!group) return;
+    const root = document.documentElement;
+    const observer = new ResizeObserver(() => {
+      root.style.setProperty("--header-action-width", `${group.getBoundingClientRect().width}px`);
+    });
+    observer.observe(group);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--header-action-width");
+    };
+  }, [showAction, showBack]);
 
   /** Moves focus between the menu's own items (not the flyout's) with the arrow keys, wrapping at the ends. */
   const onMenuKey = (event: KeyboardEvent<HTMLUListElement>) => {
@@ -423,7 +458,7 @@ export function PinnedHeader({
     const sample = () => {
       frame = 0;
       const brand = brandRef.current;
-      const action = actionRef.current;
+      const action = groupRef.current;
       if (!brand) return;
 
       // Reads first: interleaving them with the mask writes below would force a style recalc per node.
@@ -492,7 +527,7 @@ export function PinnedHeader({
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
     };
-  }, [showAction, inPortal]);
+  }, [showAction, showBack, inPortal]);
 
   return (
     <>
@@ -517,165 +552,188 @@ export function PinnedHeader({
           <img className={styles.wordmark} src="/wordmark.png" alt="" aria-hidden="true" />
         </Link>
       </ViewTransition>
-      {showAction ? (
+      {showAction || back ? (
         <div
+          ref={groupRef}
           className={styles.action}
           data-tone={actionTone}
           data-media={actionOverMedia || undefined}
           data-open={open || undefined}
           data-portal={inPortal || undefined}
+          data-header-back={showBack || undefined}
           // Joins the wordmark's route transition, so it slides across too. Set here because CSS Modules would hash the name.
           style={morph ? { viewTransitionName: "zode-action" } : undefined}
         >
-          <div ref={anchorRef} className={styles.menuAnchor}>
-            <div ref={actionRef} className={styles.split}>
-              <Link className={styles.primary} href={primary.href} scroll={primary.scroll}>
-                {primary.label}
-                <span ref={growRef} className={styles.grow} aria-hidden="true" />
-              </Link>
-              <button
-                ref={toggleRef}
-                type="button"
-                className={styles.toggle}
-                aria-label="More options"
-                aria-haspopup="menu"
-                aria-expanded={open}
-                aria-controls={menuId}
-                onClick={() => (open ? closeMenu() : setOpen(true))}
-                onKeyDown={onToggleKey}
-              >
-                <svg className={styles.chevron} viewBox="0 0 10 6" aria-hidden="true">
-                  <path d="M1 1l4 4 4-4" />
-                </svg>
-              </button>
-            </div>
-            <ul
-              ref={menuRef}
-              id={menuId}
-              role="menu"
-              aria-label="Get started"
-              className={styles.menu}
-              onKeyDown={onMenuKey}
+          {back ? (
+            <Link
+              className={styles.back}
+              href={back.href}
+              scroll={false}
+              title="Back to previous page"
+              onClick={(event) => {
+                if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                requestBackRestore(back);
+              }}
             >
-              {menu.map((item, i) => (
-                <li key={item.id} role="none">
-                  <Link
-                    role="menuitem"
-                    className={styles.menuItem}
-                    href={item.href}
-                    scroll={"scroll" in item ? item.scroll : undefined}
-                    onClick={closeMenu}
-                  >
-                    <TypedLabel text={item.label} index={i} />
+              <svg className={styles.backChevron} viewBox="0 0 6 10" aria-hidden="true">
+                <path d="M5 1L1 5l4 4" />
+              </svg>
+              Back
+            </Link>
+          ) : null}
+          {showAction ? (
+            <>
+              <div ref={anchorRef} className={styles.menuAnchor}>
+                <div ref={actionRef} className={styles.split}>
+                  <Link className={styles.primary} href={primary.href} scroll={primary.scroll}>
+                    {primary.label}
+                    <span ref={growRef} className={styles.grow} aria-hidden="true" />
                   </Link>
-                </li>
-              ))}
-              <li role="separator" className={styles.separator} />
-              {SUBMENUS.map((sub, s) => {
-                const index = menu.length + s;
-                const flyoutId = `${flyoutIdPrefix}-${sub.id}`;
-                const expanded = submenu === sub.id;
-                return (
-                  <li
-                    key={sub.id}
-                    role="none"
-                    className={styles.submenuRow}
-                    onPointerEnter={(event) => onSubmenuEnter(sub.id, event)}
-                    onPointerLeave={(event) => onSubmenuLeave(sub.id, event)}
-                  >
-                    <button
-                      ref={(node) => {
-                        submenuRowRefs.current[sub.id] = node;
-                      }}
-                      type="button"
-                      role="menuitem"
-                      className={styles.menuItem}
-                      aria-haspopup="menu"
-                      aria-expanded={expanded}
-                      aria-controls={flyoutId}
-                      style={{ "--i": index } as CSSProperties}
-                      onClick={(event) => onSubmenuClick(sub.id, event)}
-                      onKeyDown={(event) => onSubmenuRowKey(sub.id, event)}
-                    >
-                      <svg className={styles.submenuIcon} viewBox="0 0 6 10" aria-hidden="true">
-                        <path d="M5 1L1 5l4 4" />
-                      </svg>
-                      <TypedLabel text={sub.label} index={index} />
-                    </button>
-                    <ul
-                      ref={(node) => {
-                        flyoutRefs.current[sub.id] = node;
-                      }}
-                      id={flyoutId}
-                      role="menu"
-                      aria-label={sub.label}
-                      className={styles.submenu}
-                      data-open={expanded || undefined}
-                      onKeyDown={(event) => onFlyoutKey(sub.id, event)}
-                    >
-                      {sub.links.map((link, i) => (
-                        <li key={link.label} role="none">
-                          {link.external ? (
-                            <a
-                              role="menuitem"
-                              className={styles.menuItem}
-                              href={link.href}
-                              target="_blank"
-                              rel="noreferrer noopener"
-                              onClick={closeMenu}
-                            >
-                              <TypedLabel text={link.label} index={i} />
-                            </a>
-                          ) : (
-                            <Link role="menuitem" className={styles.menuItem} href={link.href} onClick={closeMenu}>
-                              <TypedLabel text={link.label} index={i} />
-                            </Link>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </li>
-                );
-              })}
-              <li role="separator" className={styles.separator} />
-              {signedIn ? (
-                <li role="none">
                   <button
+                    ref={toggleRef}
                     type="button"
-                    role="menuitem"
-                    className={styles.menuItem}
-                    disabled={loggingOut}
-                    onClick={() => logOut(closeMenu)}
+                    className={styles.toggle}
+                    aria-label="More options"
+                    aria-haspopup="menu"
+                    aria-expanded={open}
+                    aria-controls={menuId}
+                    onClick={() => (open ? closeMenu() : setOpen(true))}
+                    onKeyDown={onToggleKey}
                   >
-                    <TypedLabel
-                      text={loggingOut ? "Logging out…" : "Logout"}
-                      index={menu.length + SUBMENUS.length}
-                    />
+                    <svg className={styles.chevron} viewBox="0 0 10 6" aria-hidden="true">
+                      <path d="M1 1l4 4 4-4" />
+                    </svg>
                   </button>
-                </li>
-              ) : (
-                SIGNED_OUT_MENU.map((item, i) => (
-                  <li key={item.id} role="none">
-                    <Link
-                      role="menuitem"
-                      className={styles.menuItem}
-                      href={item.href}
-                      onClick={closeMenu}
-                    >
-                      <TypedLabel text={item.label} index={menu.length + SUBMENUS.length + i} />
-                    </Link>
-                  </li>
-                ))
-              )}
-            </ul>
-          </div>
-          {/* Always rendered; CSS shows it and supplies the initials from the `<html>` flags. */}
-          <Link className={styles.avatar} href="/portal" aria-label="Your portal">
-            <svg className={styles.avatarGlyph} viewBox="0 0 16 16" aria-hidden="true">
-              <circle cx="8" cy="5.5" r="2.75" />
-              <path d="M2.75 14c.6-2.9 2.7-4.5 5.25-4.5s4.65 1.6 5.25 4.5" />
-            </svg>
-          </Link>
+                </div>
+                <ul
+                  ref={menuRef}
+                  id={menuId}
+                  role="menu"
+                  aria-label="Get started"
+                  className={styles.menu}
+                  onKeyDown={onMenuKey}
+                >
+                  {menu.map((item, i) => (
+                    <li key={item.id} role="none">
+                      <Link
+                        role="menuitem"
+                        className={styles.menuItem}
+                        href={item.href}
+                        scroll={"scroll" in item ? item.scroll : undefined}
+                        onClick={closeMenu}
+                      >
+                        <TypedLabel text={item.label} index={i} />
+                      </Link>
+                    </li>
+                  ))}
+                  <li role="separator" className={styles.separator} />
+                  {SUBMENUS.map((sub, s) => {
+                    const index = menu.length + s;
+                    const flyoutId = `${flyoutIdPrefix}-${sub.id}`;
+                    const expanded = submenu === sub.id;
+                    return (
+                      <li
+                        key={sub.id}
+                        role="none"
+                        className={styles.submenuRow}
+                        onPointerEnter={(event) => onSubmenuEnter(sub.id, event)}
+                        onPointerLeave={(event) => onSubmenuLeave(sub.id, event)}
+                      >
+                        <button
+                          ref={(node) => {
+                            submenuRowRefs.current[sub.id] = node;
+                          }}
+                          type="button"
+                          role="menuitem"
+                          className={styles.menuItem}
+                          aria-haspopup="menu"
+                          aria-expanded={expanded}
+                          aria-controls={flyoutId}
+                          style={{ "--i": index } as CSSProperties}
+                          onClick={(event) => onSubmenuClick(sub.id, event)}
+                          onKeyDown={(event) => onSubmenuRowKey(sub.id, event)}
+                        >
+                          <svg className={styles.submenuIcon} viewBox="0 0 6 10" aria-hidden="true">
+                            <path d="M5 1L1 5l4 4" />
+                          </svg>
+                          <TypedLabel text={sub.label} index={index} />
+                        </button>
+                        <ul
+                          ref={(node) => {
+                            flyoutRefs.current[sub.id] = node;
+                          }}
+                          id={flyoutId}
+                          role="menu"
+                          aria-label={sub.label}
+                          className={styles.submenu}
+                          data-open={expanded || undefined}
+                          onKeyDown={(event) => onFlyoutKey(sub.id, event)}
+                        >
+                          {sub.links.map((link, i) => (
+                            <li key={link.label} role="none">
+                              {link.external ? (
+                                <a
+                                  role="menuitem"
+                                  className={styles.menuItem}
+                                  href={link.href}
+                                  target="_blank"
+                                  rel="noreferrer noopener"
+                                  onClick={closeMenu}
+                                >
+                                  <TypedLabel text={link.label} index={i} />
+                                </a>
+                              ) : (
+                                <Link role="menuitem" className={styles.menuItem} href={link.href} onClick={closeMenu}>
+                                  <TypedLabel text={link.label} index={i} />
+                                </Link>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </li>
+                    );
+                  })}
+                  <li role="separator" className={styles.separator} />
+                  {signedIn ? (
+                    <li role="none">
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className={styles.menuItem}
+                        disabled={loggingOut}
+                        onClick={() => logOut(closeMenu)}
+                      >
+                        <TypedLabel
+                          text={loggingOut ? "Logging out…" : "Logout"}
+                          index={menu.length + SUBMENUS.length}
+                        />
+                      </button>
+                    </li>
+                  ) : (
+                    SIGNED_OUT_MENU.map((item, i) => (
+                      <li key={item.id} role="none">
+                        <Link
+                          role="menuitem"
+                          className={styles.menuItem}
+                          href={item.href}
+                          onClick={closeMenu}
+                        >
+                          <TypedLabel text={item.label} index={menu.length + SUBMENUS.length + i} />
+                        </Link>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              </div>
+              {/* Always rendered; CSS shows it and supplies the initials from the `<html>` flags. */}
+              <Link className={styles.avatar} href="/portal" aria-label="Your portal">
+                <svg className={styles.avatarGlyph} viewBox="0 0 16 16" aria-hidden="true">
+                  <circle cx="8" cy="5.5" r="2.75" />
+                  <path d="M2.75 14c.6-2.9 2.7-4.5 5.25-4.5s4.65 1.6 5.25 4.5" />
+                </svg>
+              </Link>
+            </>
+          ) : null}
         </div>
       ) : null}
       <LogoutNotice />
