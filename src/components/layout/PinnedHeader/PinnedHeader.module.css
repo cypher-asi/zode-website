@@ -17,8 +17,7 @@
   z-index: 10;
   display: flex;
   align-items: center;
-  /* Clears the hover box, which reaches past the wordmark. */
-  gap: calc(var(--brand-box-x) + 8px);
+  gap: 10px;
   /* How far the hover box reaches past the wordmark on either side. */
   --brand-box-x: 14px;
 }
@@ -97,19 +96,20 @@
   outline-offset: 14px;
 }
 
-/* "OS" after the wordmark in the portal, in the portal theme's ink, fading in once the wordmark's morph settles. */
+/* "OS" after the wordmark in the portal, outlined like the header's buttons, fading in once the wordmark's morph settles. */
 .os {
   display: inline-flex;
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--color-ink);
-  color: var(--color-paper);
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--color-black);
+  border-radius: var(--radius-inset);
+  color: var(--color-black);
+  font-family: var(--font-display);
   font-size: var(--caps-size);
-  font-weight: 600;
+  font-weight: 300;
   letter-spacing: var(--caps-tracking);
   line-height: 1;
   /* Tracking trails the last letter; this pulls the pair back to centre. */
@@ -737,12 +737,14 @@ button.menuItem:disabled {
 
 @media (max-width: 900px) {
   .brandRow {
+    gap: 8px;
     --brand-box-x: 11px;
   }
 
   .os {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
     font-size: var(--text-2xs);
   }
 
