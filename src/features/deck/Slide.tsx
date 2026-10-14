@@ -970,7 +970,13 @@ function Finance({ slide, active }: { slide: Of<"finance">; active: boolean }): 
               {deal.layers.map((layer) => (
                 <li key={layer.label} className={styles.dealLayer} data-kind={layer.kind}>
                   <span className={styles.dealLayerLabel}>{layer.label}</span>
-                  {layer.value ? <span className={styles.dealLayerValue}>{layer.value}</span> : null}
+                  {layer.terms ? (
+                    <span className={styles.dealLayerTerms}>
+                      {layer.terms.map((term) => (
+                        <span key={term}>{term}</span>
+                      ))}
+                    </span>
+                  ) : null}
                 </li>
               ))}
             </ol>

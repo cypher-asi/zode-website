@@ -179,7 +179,7 @@ export type Slide =
         /** What the deal funds and what backs it, in a sentence. */
         body: string;
         /** Its capital stack, top to bottom: equity over debt, the most senior last. */
-        layers: readonly { label: string; kind: "equity" | "debt"; value?: string }[];
+        layers: readonly { label: string; kind: "equity" | "debt"; terms?: readonly string[] }[];
       }[];
       /** Drawn as one stacked bar, each layer as wide as its share of `usd` and shaded by its deal. */
       example: {
@@ -549,8 +549,8 @@ export const SLIDES: readonly Slide[] = [
         purpose: "Equity and debt for compute delivery",
         body: "The customer's take-or-pay contract funds delivery: part prepaid, the rest preferred equity and debt.",
         layers: [
-          { label: "Preferred equity", kind: "equity", value: "18% pref · 1.5x minimum" },
-          { label: "Customer prepayment", kind: "debt", value: "25–30% of contract value" },
+          { label: "Preferred equity", kind: "equity", terms: ["18% pref · 1.5x minimum"] },
+          { label: "Customer prepayment", kind: "debt", terms: ["25–30% of contract value"] },
           { label: "Debt", kind: "debt" },
         ],
       },
@@ -561,9 +561,9 @@ export const SLIDES: readonly Slide[] = [
         purpose: "Equity and debt for real estate purchase",
         body: "Buys the powered building the cluster runs in, and pays for its conversion.",
         layers: [
-          { label: "Real estate equity", kind: "equity", value: "Purchase · $1M per MW" },
-          { label: "Conversion debt", kind: "debt", value: "$5M per MW" },
-          { label: "Mortgage debt", kind: "debt", value: "20-year amortizing" },
+          { label: "Real estate equity", kind: "equity", terms: ["Purchase · $1M per MW"] },
+          { label: "Conversion debt", kind: "debt", terms: ["$5M per MW"] },
+          { label: "Mortgage debt", kind: "debt", terms: ["20-year amortizing"] },
         ],
       },
       {
@@ -572,7 +572,13 @@ export const SLIDES: readonly Slide[] = [
         title: "GPU deal",
         purpose: "Debt for GPUs",
         body: "Senior debt secured on the GPUs, repaid from the contracted compute revenue.",
-        layers: [{ label: "Senior GPU debt", kind: "debt", value: "Sized to 1.15x DSCR" }],
+        layers: [
+          {
+            label: "Senior GPU debt",
+            kind: "debt",
+            terms: ["Sized to 1.15x DSCR", "8–15% interest", "80% LTV", "3-year term"],
+          },
+        ],
       },
     ],
     example: {

@@ -2225,7 +2225,11 @@
   white-space: nowrap;
 }
 
-.dealLayerValue {
+/* One term to a line, right-aligned. */
+.dealLayerTerms {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.2 * var(--u));
   font-family: var(--font-mono);
   font-size: calc(0.62 * var(--u));
   line-height: 1.4;
@@ -3722,7 +3726,7 @@
   font-size: 15px;
 }
 
-.slide[data-compact] :is(.dealLayerValue, .stackTag) {
+.slide[data-compact] :is(.dealLayerTerms, .stackTag) {
   font-size: var(--text-2xs);
 }
 
