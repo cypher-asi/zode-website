@@ -1557,8 +1557,8 @@
 }
 
 .unitFigure > svg {
-  width: calc(2.6 * var(--u));
-  height: calc(2.6 * var(--u));
+  width: calc(4.4 * var(--u));
+  height: calc(4.4 * var(--u));
 }
 
 .unitText {
@@ -2761,8 +2761,8 @@
 }
 
 .slide[data-compact] .unitFigure > svg {
-  width: 32px;
-  height: 32px;
+  width: 56px;
+  height: 56px;
 }
 
 .slide[data-compact] .unitText {
