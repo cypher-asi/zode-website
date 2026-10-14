@@ -2192,35 +2192,47 @@
   letter-spacing: -0.015em;
 }
 
-/* Pushed to the card's foot, so the layers line up across the row. */
-.dealLayers {
+/*
+ * The capital stack as blocks joined by hairlines, as the cards are, pushed to
+ * the card's foot so the stacks stand on one line across the row; debt tinted.
+ */
+.dealStack {
   display: flex;
   flex-direction: column;
-  gap: calc(0.8 * var(--u));
+  gap: 1px;
   margin: auto 0 0;
-  padding-top: calc(1.6 * var(--u));
+  padding: 1px;
+  list-style: none;
 }
 
-.dealLayers > div {
+.dealLayer {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: calc(1.2 * var(--u));
-  padding-top: calc(0.8 * var(--u));
-  border-top: 1px solid var(--rule);
+  min-height: calc(2.2 * var(--u));
+  padding: calc(0.4 * var(--u)) calc(1 * var(--u));
+  background: var(--card);
+  box-shadow: 0 0 0 1px var(--rule);
 }
 
-.dealLayers dt {
-  font-size: calc(1.1 * var(--u));
+.dealLayer[data-kind="debt"] {
+  background: linear-gradient(var(--color-surface-tint), var(--color-surface-tint)), var(--card);
 }
 
-.dealLayers dd {
-  margin: 0;
+.dealLayerLabel {
+  font-size: calc(1 * var(--u));
+  white-space: nowrap;
+}
+
+.dealLayerValue {
   font-family: var(--font-mono);
   font-size: calc(0.62 * var(--u));
+  line-height: 1.4;
   letter-spacing: var(--caps-tracking);
   text-align: right;
   text-transform: uppercase;
+  text-wrap: balance;
   color: var(--fg-2);
 }
 
@@ -3701,20 +3713,16 @@
   font-size: 22px;
 }
 
-.slide[data-compact] .dealLayers {
-  gap: 8px;
-  padding-top: 12px;
+.slide[data-compact] .dealLayer {
+  min-height: 44px;
+  padding: 8px 12px;
 }
 
-.slide[data-compact] .dealLayers > div {
-  padding-top: 8px;
-}
-
-.slide[data-compact] .dealLayers dt {
+.slide[data-compact] .dealLayerLabel {
   font-size: 15px;
 }
 
-.slide[data-compact] :is(.dealLayers dd, .stackTag) {
+.slide[data-compact] :is(.dealLayerValue, .stackTag) {
   font-size: var(--text-2xs);
 }
 

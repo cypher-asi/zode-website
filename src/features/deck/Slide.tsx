@@ -945,7 +945,8 @@ function Comparison({ slide }: { slide: Of<"comparison"> }): ReactElement {
 /**
  * The deals as one panel of cards across the top, each headed by its icon in
  * a square cell ruled off from its title, as the unit slide's mini-cards, then
- * what it funds and its terms. Under them the example: one stacked bar, each
+ * what it funds and its capital stack, equity over debt, as blocks at its foot
+ * so the stacks stand on one line. Under them the example: one stacked bar, each
  * layer as wide as its share of the total, shaded and tagged by its deal.
  */
 function Finance({ slide, active }: { slide: Of<"finance">; active: boolean }): ReactElement {
@@ -965,14 +966,14 @@ function Finance({ slide, active }: { slide: Of<"finance">; active: boolean }): 
               </div>
             </div>
             <p className={`${styles.body} ${styles.dealBody}`}>{deal.body}</p>
-            <dl className={styles.dealLayers}>
+            <ol className={styles.dealStack} aria-label={`${deal.title} capital stack`}>
               {deal.layers.map((layer) => (
-                <div key={layer.label}>
-                  <dt>{layer.label}</dt>
-                  <dd>{layer.value}</dd>
-                </div>
+                <li key={layer.label} className={styles.dealLayer} data-kind={layer.kind}>
+                  <span className={styles.dealLayerLabel}>{layer.label}</span>
+                  {layer.value ? <span className={styles.dealLayerValue}>{layer.value}</span> : null}
+                </li>
               ))}
-            </dl>
+            </ol>
           </li>
         ))}
       </ul>
