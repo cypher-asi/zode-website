@@ -2205,12 +2205,12 @@
   list-style: none;
 }
 
+/* The label level with the first of its terms, so a block with several reads from the top. */
 .dealLayer {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: calc(1.2 * var(--u));
-  min-height: calc(2.2 * var(--u));
   padding: calc(0.4 * var(--u)) calc(1 * var(--u));
   background: var(--card);
   box-shadow: 0 0 0 1px var(--rule);
@@ -2222,6 +2222,7 @@
 
 .dealLayerLabel {
   font-size: calc(1 * var(--u));
+  line-height: 1.4;
   white-space: nowrap;
 }
 
@@ -3718,8 +3719,7 @@
 }
 
 .slide[data-compact] .dealLayer {
-  min-height: 44px;
-  padding: 8px 12px;
+  padding: 11px 12px;
 }
 
 .slide[data-compact] .dealLayerLabel {
