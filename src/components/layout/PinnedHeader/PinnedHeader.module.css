@@ -17,9 +17,11 @@
   z-index: 10;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--os-gap);
   /* How far the hover box reaches past the wordmark on either side. */
   --brand-box-x: 14px;
+  --os-gap: 10px;
+  --os-size: 26px;
 }
 
 /* On the flush edge (the portal) the hover box, not the wordmark, lines up with the panels below. */
@@ -46,6 +48,11 @@
 
 .brand[data-tone="dark"]::before {
   background: var(--color-white);
+}
+
+/* With the OS badge, the box reaches on past it, so ZODE OS hovers as one; the badge lets the pointer through to it. */
+.brand[data-os]::before {
+  right: calc(-1 * (var(--os-gap) + var(--os-size) + var(--brand-box-x)));
 }
 
 .wordmark {
@@ -102,8 +109,8 @@
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: var(--os-size);
+  height: var(--os-size);
   border: 1px solid var(--color-black);
   border-radius: var(--radius-inset);
   color: var(--color-black);
@@ -115,6 +122,10 @@
   /* Tracking trails the last letter; this pulls the pair back to centre. */
   text-indent: var(--caps-tracking);
   user-select: none;
+  pointer-events: none;
+  transition:
+    border-color 200ms ease,
+    color 200ms ease;
   animation: os-in 360ms var(--ease-out) 400ms both;
 }
 
@@ -122,6 +133,21 @@
   from {
     opacity: 0;
     scale: 0.85;
+  }
+}
+
+/* Flips with the wordmark as the hover box fills in behind it. */
+.brandRow:has(.brand:focus-visible) .os {
+  border-color: var(--color-white);
+  color: var(--color-white);
+  transition-delay: 120ms;
+}
+
+@media (hover: hover) {
+  .brandRow:has(.brand:hover) .os {
+    border-color: var(--color-white);
+    color: var(--color-white);
+    transition-delay: 120ms;
   }
 }
 
@@ -737,13 +763,12 @@ button.menuItem:disabled {
 
 @media (max-width: 900px) {
   .brandRow {
-    gap: 8px;
     --brand-box-x: 11px;
+    --os-gap: 8px;
+    --os-size: 22px;
   }
 
   .os {
-    width: 22px;
-    height: 22px;
     border-radius: 5px;
     font-size: var(--caps-size);
   }
@@ -848,6 +873,7 @@ button.menuItem:disabled {
 @media (prefers-reduced-motion: reduce) {
   .brand::before,
   .wordmark,
+  .os,
   .avatar,
   .back,
   .split,

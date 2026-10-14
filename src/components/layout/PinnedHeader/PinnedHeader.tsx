@@ -543,6 +543,7 @@ export function PinnedHeader({
             href="/"
             aria-label="ZODE — home"
             data-tone={brandTone}
+            data-os={inPortal || undefined}
             onClick={(event) => {
               if (pathname !== "/" || event.metaKey || event.ctrlKey || event.shiftKey) return;
               event.preventDefault();
@@ -553,7 +554,8 @@ export function PinnedHeader({
             <img className={styles.wordmark} src="/wordmark.png" alt="" aria-hidden="true" />
           </Link>
         </ViewTransition>
-        {/* Outside the wordmark's snapshot, so it fades in on its own while the wordmark slides into place. */}
+        {/* Outside the wordmark's snapshot, so it fades in on its own while the wordmark slides into place.
+            The link's hover box stretches under it (`data-os`), so it hovers and clicks as part of the logo. */}
         {inPortal ? (
           <span className={styles.os} aria-hidden="true">
             OS
