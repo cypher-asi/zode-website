@@ -553,7 +553,7 @@ export const SLIDES: readonly Slide[] = [
       ],
     },
     network: {
-      title: "Team, alliances and advisors",
+      title: "Team and advisors",
       areas: [
         {
           label: "Capital markets",
