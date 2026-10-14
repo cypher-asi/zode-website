@@ -778,7 +778,63 @@ function Traction({ slide }: { slide: Of<"traction"> }): ReactElement {
 /** A dollar figure or range, e.g. "$18.8M" or "$50–75M"; split out with its capture so it alternates with the text. */
 const FIGURE = /(\$[\d.]+(?:–[\d.]+)?[MB])/;
 
-function Pipeline({ slide }: { slide: Of<"pipeline"> }): ReactElement {
+/** The cell in user units; the ripple is a single windowed sine cycle `RIPPLE` wide, parked just left of it. */
+const WAVE_SPAN = 300;
+const WAVE_HEIGHT = 12;
+const RIPPLE = 40;
+const RIPPLE_AMPLITUDE = 1.5;
+/** A flat line well past both ends, with the ripple in [-RIPPLE, 0], so sliding it `WAVE_SPAN + RIPPLE` right carries it across and off. */
+const WAVE_PATH = [
+  `M${-RIPPLE - 20} ${WAVE_HEIGHT / 2}`,
+  ...Array.from({ length: RIPPLE * 2 + 1 }, (_, k) => {
+    const t = k / (RIPPLE * 2);
+    const window = 0.5 - 0.5 * Math.cos(2 * Math.PI * t);
+    const y = WAVE_HEIGHT / 2 + RIPPLE_AMPLITUDE * window * Math.sin(2 * Math.PI * t);
+    return `L${(-RIPPLE + t * RIPPLE).toFixed(1)} ${y.toFixed(2)}`;
+  }),
+  `L${WAVE_SPAN + RIPPLE + 20} ${WAVE_HEIGHT / 2}`,
+].join(" ");
+
+/** How long a ripple takes to cross, and the bounds of the random rest before the next. */
+const RIPPLE_MS = 1600;
+const REST_MS = [1800, 6500] as const;
+
+/**
+ * The last year's bar: flat as the others, with a ripple that runs along it
+ * at random intervals while the slide is open. Lengths on an SVG element
+ * resolve in user units, so the slide is the cell's width plus the ripple's.
+ */
+function PlanWave({ active }: { active: boolean }): ReactElement {
+  const ref = useRef<SVGPathElement>(null);
+  useEffect(() => {
+    const path = ref.current;
+    if (!active || !path || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let timer = 0;
+    let animation: Animation | undefined;
+    const rest = () => REST_MS[0] + Math.random() * (REST_MS[1] - REST_MS[0]);
+    const ripple = () => {
+      animation = path.animate(
+        [{ transform: "translateX(0)" }, { transform: `translateX(${WAVE_SPAN + RIPPLE}px)` }],
+        { duration: RIPPLE_MS, easing: "linear" },
+      );
+      animation.onfinish = () => {
+        timer = window.setTimeout(ripple, rest());
+      };
+    };
+    timer = window.setTimeout(ripple, 800 + Math.random() * 1200);
+    return () => {
+      window.clearTimeout(timer);
+      animation?.cancel();
+    };
+  }, [active]);
+  return (
+    <svg className={styles.planWave} viewBox={`0 0 ${WAVE_SPAN} ${WAVE_HEIGHT}`} preserveAspectRatio="none" aria-hidden="true">
+      <path ref={ref} className={styles.planWaveLine} d={WAVE_PATH} />
+    </svg>
+  );
+}
+
+function Pipeline({ slide, active }: { slide: Of<"pipeline">; active: boolean }): ReactElement {
   const steps = slide.plan.length;
   return (
     <div className={styles.split} data-split="sites">
@@ -831,7 +887,11 @@ function Pipeline({ slide }: { slide: Of<"pipeline"> }): ReactElement {
                 data-ink={i === steps - 1 || undefined}
               >
                 <span className={styles.planYear}>{row.year}</span>
-                <span className={styles.planBar} style={{ "--share": (i + 1) / steps } as CSSProperties} />
+                {i === steps - 1 ? (
+                  <PlanWave active={active} />
+                ) : (
+                  <span className={styles.planBar} style={{ "--share": (i + 1) / steps } as CSSProperties} />
+                )}
                 <span className={styles.planValue}>{row.value}</span>
               </li>
             ))}
@@ -1126,7 +1186,7 @@ function Body({
     case "traction":
       return <Traction slide={slide} />;
     case "pipeline":
-      return <Pipeline slide={slide} />;
+      return <Pipeline slide={slide} active={active} />;
     case "comparison":
       return <Comparison slide={slide} />;
     case "finance":

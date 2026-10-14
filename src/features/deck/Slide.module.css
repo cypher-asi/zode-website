@@ -1709,6 +1709,21 @@
     var(--rule);
 }
 
+/* The last year's bar: a flat stroke at the bars' weight, cut square by the cell, with a ripple parked off its left end that the slide runs across at random (see PlanWave). */
+.planWave {
+  display: block;
+  width: 100%;
+  height: calc(1.6 * var(--u));
+  overflow: hidden;
+}
+
+.planWaveLine {
+  fill: none;
+  stroke: var(--fg);
+  stroke-width: calc(0.5 * var(--u));
+  vector-effect: non-scaling-stroke;
+}
+
 .planValue {
   font-size: calc(1.2 * var(--u));
   line-height: 1;
@@ -3487,6 +3502,14 @@
 
 .slide[data-compact] .planBar {
   height: 4px;
+}
+
+.slide[data-compact] .planWave {
+  height: 14px;
+}
+
+.slide[data-compact] .planWaveLine {
+  stroke-width: 4px;
 }
 
 .slide[data-compact] .planValue {
