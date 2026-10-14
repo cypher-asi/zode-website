@@ -1761,7 +1761,7 @@
 .renderCaption {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: calc(0.4 * var(--u)) calc(1.6 * var(--u));
   margin-top: calc(0.8 * var(--u));
@@ -1771,35 +1771,62 @@
   margin: 0;
 }
 
+/*
+ * The builder and compute model links as the header's Buy Compute button:
+ * uppercase caps in a 1px outline, a fill in the slide's ink wiping up from
+ * the bottom edge on hover, and an arrow up and out for the new tab.
+ */
 .renderLinks {
   display: flex;
-  gap: calc(0.8 * var(--u));
-  font-family: var(--font-mono);
+  flex-wrap: wrap;
+  gap: calc(0.6 * var(--u));
   font-size: calc(0.62 * var(--u));
   font-weight: 500;
-  letter-spacing: var(--eyebrow-tracking);
-  line-height: 1.4;
+  letter-spacing: var(--caps-tracking);
+  line-height: 1;
   text-transform: uppercase;
 }
 
-.renderLinks a {
+.renderLink {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(0.5 * var(--u));
+  height: calc(2 * var(--u));
+  padding: 0 calc(0.9 * var(--u));
+  border: 1px solid var(--fg);
+  border-radius: var(--radius-control);
+  background: linear-gradient(var(--fg), var(--fg)) no-repeat bottom / 100% 0%;
   color: var(--fg);
-  text-decoration: underline;
-  text-decoration-color: var(--rule-strong);
-  text-underline-offset: 0.25em;
-  transition: text-decoration-color var(--duration-base) ease;
-}
-
-.renderLinks a:hover {
-  text-decoration-color: currentColor;
-}
-
-.renderLinks a + a::before {
-  content: "·";
-  display: inline-block;
-  margin-right: calc(0.8 * var(--u));
-  color: var(--fg-2);
   text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-size var(--duration-slow) var(--ease-in-out),
+    color 200ms ease 80ms;
+}
+
+.renderLink:focus-visible {
+  background-size: 100% 100%;
+  color: var(--bg);
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .renderLink:hover {
+    background-size: 100% 100%;
+    color: var(--bg);
+  }
+}
+
+.renderArrow {
+  flex: none;
+  width: calc(0.55 * var(--u));
+  height: calc(0.55 * var(--u));
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .renderImage img,
@@ -3377,6 +3404,7 @@
 
 .slide[data-compact] .unitText .statLabel,
 .slide[data-compact] .renderLinks {
+  gap: 8px;
   font-size: var(--text-2xs);
 }
 
@@ -3384,13 +3412,15 @@
   margin-top: 10px;
 }
 
-.slide[data-compact] .renderLinks {
-  flex-direction: column;
-  gap: 8px;
+.slide[data-compact] .renderLink {
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
 }
 
-.slide[data-compact] .renderLinks a + a::before {
-  content: none;
+.slide[data-compact] .renderArrow {
+  width: 9px;
+  height: 9px;
 }
 
 /* Two-column slides stack, the lead first. */

@@ -652,8 +652,9 @@ function Unit({ slide, active }: { slide: Of<"unit">; active: boolean }): ReactE
           <span className={styles.figLabel}>FIG. 02 — Cluster builder, 256 nodes · 2,048 B300</span>
           <span className={styles.renderLinks}>
             {slide.links.map((link) => (
-              <a key={link.href} href={link.href} target="_blank" rel="noopener">
-                {link.label} <span aria-hidden="true">↗</span>
+              <a key={link.href} className={styles.renderLink} href={link.href} target="_blank" rel="noopener">
+                {link.label}
+                <ArrowOut />
               </a>
             ))}
           </span>
@@ -671,6 +672,15 @@ function LogoMark({ logo }: { logo: Logo }): ReactElement {
   return (
     // eslint-disable-next-line @next/next/no-img-element -- the SVG logos scale with the slide
     <img src={logo.src} alt={logo.name} style={{ "--h": height } as CSSProperties} />
+  );
+}
+
+/** An arrow up and out of its box, marking a link that opens in a new tab. */
+function ArrowOut(): ReactElement {
+  return (
+    <svg className={styles.renderArrow} viewBox="0 0 10 10" aria-hidden="true">
+      <path d="M1.5 8.5 8.5 1.5M3 1.5h5.5V7" />
+    </svg>
   );
 }
 
