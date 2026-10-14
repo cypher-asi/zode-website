@@ -470,7 +470,7 @@ export const SLIDES: readonly Slide[] = [
     kind: "pipeline",
     section: "Pipeline",
     eyebrow: "Pipeline",
-    title: "66.8 MW on the critical path.",
+    title: "66.8 MW ready to close.",
     ground: "white",
     sites: [
       { site: "Chicago, IL", map: "chicago", path: "Lease", mw: "24.0", status: "Contracted" },
