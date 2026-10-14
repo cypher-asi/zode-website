@@ -1129,18 +1129,78 @@ function Raise({ slide, playing }: { slide: Of<"raise">; playing: boolean }): Re
   );
 }
 
-function Team({ slide }: { slide: Of<"team"> }): ReactElement {
+function LinkedInMark(): ReactElement {
   return (
-    <div className={styles.split} data-split="even">
-      <div {...rise(2)} className={styles.rise}>
-        <p className={styles.label}>{slide.founder.role}</p>
-        <h3 className={`${styles.h3} ${styles.person}`}>{slide.founder.name}</h3>
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 4.89v6.25ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13Zm1.78 13.02H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z" />
+    </svg>
+  );
+}
+
+/**
+ * The founder on the left, a photo beside the name and the ventures ruled
+ * under them, each company's years tagged on the right; on the right the
+ * team, alliances and advisors as rows of logos by area.
+ */
+function Team({ slide }: { slide: Of<"team"> }): ReactElement {
+  const { founder, network } = slide;
+  return (
+    <div className={styles.split}>
+      <div className={styles.founder}>
+        <div {...rise(2)} className={`${styles.rise} ${styles.founderHead}`}>
+          <div className={styles.founderPhoto}>
+            {founder.photo ? (
+              <Image src={founder.photo} alt={founder.name} fill sizes="(max-width: 700px) 120px, 12vw" />
+            ) : (
+              <span className={styles.figLabel}>Photo</span>
+            )}
+          </div>
+          <div>
+            <p className={styles.label}>{founder.role}</p>
+            <h3 className={`${styles.h3} ${styles.person}`}>{founder.name}</h3>
+            <a
+              className={styles.linkedin}
+              href={founder.linkedin}
+              target="_blank"
+              rel="noreferrer noopener"
+              aria-label={`${founder.name} on LinkedIn`}
+            >
+              <LinkedInMark />
+            </a>
+          </div>
+        </div>
+        <ul className={styles.ventures}>
+          {founder.ventures.map((venture, i) => (
+            <li key={venture.company} {...rise(3 + i * 0.4)} className={`${styles.rise} ${styles.venture}`}>
+              <div className={styles.ventureHead}>
+                <a className={styles.ventureName} href={venture.href} target="_blank" rel="noreferrer noopener">
+                  {venture.company}
+                </a>
+                <span className={styles.years}>{venture.years}</span>
+              </div>
+              <p className={styles.ventureTitle}>{venture.title}</p>
+              <p className={styles.ventureOutcome}>{venture.outcome}</p>
+            </li>
+          ))}
+        </ul>
       </div>
-      <ul {...rise(3)} className={`${styles.rise} ${styles.credits}`}>
-        {slide.founder.credits.map((credit) => (
-          <li key={credit}>{credit}</li>
+      <section className={styles.network}>
+        <h3 {...rise(4)} className={`${styles.rise} ${styles.figLabel}`}>
+          {network.title}
+        </h3>
+        {network.areas.map((area, i) => (
+          <div key={area.label} {...rise(4.5 + i * 0.5)} className={`${styles.rise} ${styles.networkArea}`}>
+            <span className={styles.label}>{area.label}</span>
+            <ul className={styles.logos}>
+              {area.logos.map((logo) => (
+                <li key={logo.name}>
+                  <LogoMark logo={logo} />
+                </li>
+              ))}
+            </ul>
+          </div>
         ))}
-      </ul>
+      </section>
     </div>
   );
 }

@@ -211,7 +211,17 @@ export type Slide =
     })
   | (Base & {
       kind: "team";
-      founder: { role: string; name: string; credits: readonly string[] };
+      founder: {
+        role: string;
+        name: string;
+        /** Drawn as an empty frame until it's set. */
+        photo?: string;
+        linkedin: string;
+        /** Each company's name links to its site, its years tagged beside it. */
+        ventures: readonly { company: string; href: string; years: string; title: string; outcome: string }[];
+      };
+      /** The team, alliances and advisors, by area. */
+      network: { title: string; areas: readonly { label: string; logos: readonly Logo[] }[] };
     })
   | (Base & { kind: "close"; lede: string; contact: string })
   | (Base & { kind: "sources" });
@@ -500,6 +510,71 @@ export const SLIDES: readonly Slide[] = [
     ],
   },
   {
+    id: "team",
+    kind: "team",
+    section: "Leadership",
+    eyebrow: "Leadership",
+    title: "Led by a four-time founder.",
+    ground: "paper",
+    founder: {
+      role: "Founder and CEO",
+      name: "Matthew J. Dorey",
+      linkedin: "https://www.linkedin.com/in/frank-wilder/",
+      ventures: [
+        {
+          company: "Wilder World",
+          href: "https://wilderworld.com",
+          years: "2020–Present",
+          title: "Persistent simulation",
+          outcome: "Peak valuation of $2 billion",
+        },
+        {
+          company: "Factory ZERO",
+          href: "https://www.hf0.com",
+          years: "2011–2018",
+          title: "Venture studio",
+          outcome: "Became HF0",
+        },
+        {
+          company: "Curve Health",
+          href: "https://www.curvedental.com",
+          years: "2004–2011",
+          title: "Sold to private equity",
+          outcome: "$1 billion+ valuation",
+        },
+      ],
+    },
+    network: {
+      title: "Team, alliances and advisors",
+      areas: [
+        {
+          label: "Capital markets",
+          logos: [
+            { name: "Goldman Sachs", src: `${LOGO_DIR}/goldman-sachs.svg`, aspect: 192.76 / 85.04 },
+            { name: "Brookfield", src: `${LOGO_DIR}/brookfield.svg`, aspect: 240 / 35.933, scale: 0.9 },
+            { name: "Merrill", src: `${LOGO_DIR}/merrill.svg`, aspect: 150 / 43, scale: 1.2 },
+          ],
+        },
+        {
+          label: "Data centers",
+          logos: [
+            { name: "AWS", src: `${LOGO_DIR}/aws.svg`, aspect: 188.726 / 125.89 },
+            { name: "Meta", src: `${LOGO_DIR}/meta.svg`, aspect: 948 / 191 },
+            { name: "Google Cloud", src: `${LOGO_DIR}/google-cloud.svg`, aspect: 181 / 28 },
+          ],
+        },
+        {
+          label: "Manufacturing",
+          logos: [
+            { name: "SpaceX", src: `${LOGO_DIR}/spacex.svg`, aspect: 400 / 50 },
+            { name: "Tesla", src: `${LOGO_DIR}/tesla.svg`, aspect: 993.047 / 100 },
+            { name: "Raytheon", src: `${LOGO_DIR}/raytheon.svg`, aspect: 239.7 / 71.8, scale: 1.2 },
+          ],
+        },
+      ],
+    },
+  },
+  {
     id: "pipeline",
     kind: "pipeline",
     section: "Pipeline",
@@ -642,24 +717,6 @@ export const SLIDES: readonly Slide[] = [
       ],
     },
     note: "Preliminary, per the project model: 51,200 GPUs at $4.20 per GPU-hour over 5 years, 30% prepaid ($2.83B, alongside); half the sites leased at $170/kW-mo, half bought at $1M per MW and converted at $5M. Project debt fills the GPU debt's DSCR gap at 12% interest-only, with $180M of site loans. NOI is after depreciation, interest and tax. Annual is the contract's yearly average.",
-  },
-  {
-    id: "team",
-    kind: "team",
-    section: "Leadership",
-    eyebrow: "Leadership",
-    title: "Led by a four-time founder.",
-    ground: "white",
-    founder: {
-      role: "Founder and CEO",
-      name: "Matthew J. Dorey",
-      credits: [
-        "Co-founder and Executive Chairman, Wilder World",
-        "Founder and CTO, ZERO encrypted communications protocol",
-        "Founder, Factory Zero venture studio",
-        "Founder and CEO, Curve Dental; sold to private equity",
-      ],
-    },
   },
   {
     id: "close",

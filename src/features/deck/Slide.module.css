@@ -2529,27 +2529,166 @@
   gap: calc(0.5 * var(--u));
 }
 
-.credits {
-  margin: 0;
-  padding: 0;
-  list-style: none;
+/* Team: the founder and his ventures, then the network's logos by area. */
+.founder {
+  display: flex;
+  flex-direction: column;
+  gap: calc(2 * var(--u));
 }
 
-/* Team. */
+.founderHead {
+  display: flex;
+  align-items: flex-end;
+  gap: calc(1.8 * var(--u));
+}
+
+/* An empty frame until there's a portrait. */
+.founderPhoto {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: calc(9 * var(--u));
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border: 1px solid var(--rule-strong);
+  background: var(--tint);
+}
+
+.founderPhoto img {
+  object-fit: cover;
+}
+
 /* The one name on the slide, set as an H1. */
 .person {
   --h3-size: calc(3.6 * var(--u));
 
-  margin: calc(0.8 * var(--u)) 0 calc(1.4 * var(--u));
+  margin: calc(0.6 * var(--u)) 0 calc(0.8 * var(--u));
   line-height: var(--h1-leading);
   letter-spacing: var(--h1-tracking);
 }
 
-.credits li {
-  padding: calc(1 * var(--u)) 0;
-  font-size: calc(1.3 * var(--u));
-  line-height: 1.45;
+.linkedin {
+  display: inline-flex;
   color: var(--fg-2);
+  transition: color 200ms ease;
+}
+
+.linkedin svg {
+  width: calc(1.4 * var(--u));
+  height: calc(1.4 * var(--u));
+  fill: currentColor;
+}
+
+.linkedin:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .linkedin:hover {
+    color: var(--fg);
+  }
+}
+
+.ventures {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-bottom: 1px solid var(--rule);
+}
+
+.venture {
+  padding: calc(1 * var(--u)) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.ventureHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(1 * var(--u));
+  margin-bottom: calc(0.3 * var(--u));
+}
+
+.ventureName {
+  font-family: var(--font-display);
+  font-size: calc(1.5 * var(--u));
+  font-weight: 300;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.ventureName:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .ventureName:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+  }
+}
+
+/* Set as `.label`, in a ruled pill. */
+.years {
+  flex: none;
+  padding: calc(0.2 * var(--u)) calc(0.6 * var(--u));
+  border: 1px solid var(--rule-strong);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: calc(0.62 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--fg-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.ventureTitle,
+.ventureOutcome {
+  margin: 0;
+  font-size: calc(1 * var(--u));
+  line-height: 1.45;
+}
+
+.ventureTitle {
+  color: var(--fg-2);
+}
+
+/* As tall as the founder's column, the areas sharing its height between the same top and bottom rules. */
+.network {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  gap: calc(1.2 * var(--u));
+}
+
+.networkArea {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: calc(1.4 * var(--u));
+  padding: calc(1.2 * var(--u)) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.networkArea:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+
+.networkArea .logos {
+  gap: calc(1 * var(--u)) calc(3.2 * var(--u));
+}
+
+.networkArea .logos img {
+  height: calc(1.4 * var(--h) * var(--u));
 }
 
 /* Cover: the title left, a render bleeding off the right. */
@@ -4031,9 +4170,50 @@
   margin: 8px 0 0;
 }
 
-.slide[data-compact] .credits li {
-  padding: 10px 0;
-  font-size: 16px;
+.slide[data-compact] .founder {
+  gap: 20px;
+}
+
+.slide[data-compact] .founderHead {
+  gap: 16px;
+}
+
+.slide[data-compact] .founderPhoto {
+  width: 96px;
+}
+
+.slide[data-compact] .linkedin svg {
+  width: 20px;
+  height: 20px;
+}
+
+.slide[data-compact] .venture {
+  padding: 12px 0;
+}
+
+.slide[data-compact] .ventureHead {
+  margin-bottom: 4px;
+}
+
+.slide[data-compact] .ventureName {
+  font-size: 20px;
+}
+
+.slide[data-compact] .years {
+  padding: 2px 8px;
+  font-size: 10px;
+}
+
+.slide[data-compact] :is(.ventureTitle, .ventureOutcome) {
+  font-size: 15px;
+}
+
+.slide[data-compact] :is(.network, .networkArea) {
+  gap: 12px;
+}
+
+.slide[data-compact] .networkArea {
+  padding: 12px 0;
 }
 
 /* Close: the calls to action full width, at a thumb's height. */
