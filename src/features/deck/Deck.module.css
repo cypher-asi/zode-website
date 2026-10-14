@@ -381,27 +381,13 @@
   white-space: nowrap;
 }
 
-.section,
-.hint {
+.section {
   overflow: hidden;
   margin-left: 8px;
   padding-left: 16px;
   border-left: 1px solid var(--deck-rule);
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.hint {
-  flex: none;
-  overflow: visible;
-  color: var(--deck-fg);
-  animation: overviewIn var(--duration-slow) var(--ease-out);
-}
-
-.hint .icon {
-  display: inline-block;
-  margin-left: 4px;
-  vertical-align: -1px;
 }
 
 .iconButton,
@@ -455,6 +441,7 @@
 .textButton:focus-visible,
 .tick:focus-visible,
 .thumbButton:focus-visible,
+.tocRow:focus-visible,
 .menuItem:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
@@ -609,58 +596,61 @@
 }
 
 /*
- * Story cards, on a portrait phone (`data-compact`, Deck.tsx). Each slide
- * reflows and scrolls inside itself (Slide.module.css) and draws its own
- * grid, so the shared one goes. The controls stay up, with thumb-sized
- * targets under the segmented progress, and a slide slides in from the side
- * it was swiped from.
+ * Scroll mode, on a portrait screen or a landscape phone (`data-scroll`,
+ * Deck.tsx): the slides stand one after another down the page, each reflowed
+ * to one column (Slide.module.css) and drawing its own grid, so the shared
+ * one goes and the page scrolls. The controls are pinned to the window's
+ * foot, with thumb-sized targets under the segmented progress, and slip away
+ * while you read down (`data-controls` drops), back as you scroll up.
  */
-.root[data-compact] {
+.root[data-scroll] {
   --bar-h: 60px;
+
+  position: relative;
+  min-height: 100svh;
+  padding-bottom: calc(var(--bar-h) + env(safe-area-inset-bottom, 0px));
 }
 
-.root[data-compact] .grid {
-  display: none;
+.root[data-scroll] :is(.viewport, .stage) {
+  position: static;
 }
 
-.root[data-compact] .slot {
-  transition:
-    opacity var(--duration-slow) var(--ease-out),
-    translate var(--duration-slow) var(--ease-out),
-    visibility 0s linear var(--duration-slow);
+/*
+ * Off-screen slides skip layout and paint, each keeping its size once drawn.
+ * A jump lands the title just below the header's corner fade, the slide's
+ * top under the header (Slide.module.css pads the title 48px down).
+ */
+.root[data-scroll] .slot {
+  position: relative;
+  inset: auto;
+  overflow: visible;
+  visibility: visible;
+  opacity: 1;
+  transition: none;
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 900px;
+  scroll-margin-top: calc(var(--header-band) + 8px);
 }
 
-.root[data-compact] .slot[data-state="before"] {
-  translate: -8% 0;
-}
-
-.root[data-compact] .slot[data-state="after"] {
-  translate: 8% 0;
-}
-
-.root[data-compact] .slot[data-state="current"] {
-  transition-delay: 0s;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .root[data-compact] .slot[data-state] {
-    translate: none;
+/* Before the deck reads the screen, the server's render is the stage; on a screen that scrolls it would flash 16:9 slides. */
+@media screen and (orientation: portrait), screen and (max-height: 500px) {
+  .root:not([data-scroll]) :is(.viewport, .bar) {
+    visibility: hidden;
   }
 }
 
-.root[data-compact] .bar {
+.root[data-scroll] .bar {
+  position: fixed;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
-  transition:
-    background-color var(--duration-slow) var(--ease-in-out),
-    border-color var(--duration-slow) var(--ease-in-out);
 }
 
-.root[data-compact] .barStart,
-.root[data-compact] .barEnd {
+.root[data-scroll] .barStart,
+.root[data-scroll] .barEnd {
   gap: 4px;
 }
 
-.root[data-compact] :is(.iconButton, .textButton) {
+.root[data-scroll] :is(.iconButton, .textButton) {
   width: 44px;
   height: 44px;
   padding: 0;
@@ -668,54 +658,107 @@
   font-size: 0;
 }
 
-.root[data-compact] .icon {
+.root[data-scroll] .icon {
   width: 14px;
   height: 14px;
 }
 
-.root[data-compact] .counter {
+.root[data-scroll] .counter {
   margin-left: 6px;
 }
 
-.root[data-compact] :is(.section, .hint) {
+.root[data-scroll] .section {
   display: block;
   min-width: 0;
   margin-left: 4px;
   padding-left: 12px;
 }
 
-.root[data-compact] .progress {
+.root[data-scroll] .progress {
+  position: absolute;
+  top: 0;
   right: max(var(--content-edge), env(safe-area-inset-right, 0px));
   left: max(var(--content-edge), env(safe-area-inset-left, 0px));
   gap: 3px;
+  height: 8px;
 }
 
-.root[data-compact] .tick::after {
+.root[data-scroll] .tick {
+  height: 12px;
+  margin-top: -2px;
+}
+
+.root[data-scroll] .tick::after {
   display: none;
 }
 
-.root[data-compact] .overview {
-  padding-inline: var(--content-edge);
+/* The slides as a list, between the header band and the bar, each row jumping to its slide. */
+.root[data-scroll] .overview {
+  position: fixed;
+  padding-inline: max(var(--content-edge), env(safe-area-inset-left, 0px));
 }
 
-.root[data-compact] .overviewGrid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px 12px;
+.toc {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
 }
 
-.root[data-compact] .thumbLabel {
-  gap: 8px;
-  margin-top: 8px;
+.overview[data-open] .tocItem {
+  animation: overviewIn var(--duration-slow) var(--ease-out) backwards;
 }
 
-.root[data-compact] .thumbLabel span:last-child {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.tocRow {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+  width: 100%;
+  padding: 14px 0;
+  border: 0;
+  border-bottom: 1px solid var(--deck-rule);
+  background: transparent;
+  color: var(--deck-fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out);
 }
 
-.root[data-compact] .thumbButton {
-  inset: -4px;
+.tocRow:active {
+  background: var(--deck-hover);
+}
+
+.tocNumber,
+.tocSection {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--caps-tracking);
+  text-transform: uppercase;
+  color: var(--deck-fg-2);
+}
+
+.tocNumber {
+  font-variant-numeric: tabular-nums;
+}
+
+.tocText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tocTitle {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 300;
+  line-height: 1.25;
+}
+
+.tocRow[aria-current="true"] :is(.tocNumber, .tocSection) {
+  color: var(--deck-accent);
 }
 
 /* ---------- Share menu ---------- */

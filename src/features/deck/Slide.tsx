@@ -95,7 +95,7 @@ function StatBlock({ stat, highlight = false, size = "md" }: { stat: Stat; highl
  * The cover's securities legend in fine print, and the full disclaimer
  * behind it: a button opens it in a panel over the cover's image, which its
  * close, Escape, the button again or turning the slide shuts, back on the
- * button. On a story card (`compact`) it sets out in full under the legend,
+ * button. In the deck's scroll mode (`compact`) it sets out in full under the legend,
  * and printed it takes the image's place, so the PDF's first page carries it
  * whole. Nothing around the panel may take a transform (`.rise`), or it would
  * position against that instead of the frame.
@@ -185,7 +185,7 @@ function CoverDisclaimer({ active, compact }: { active: boolean; compact: boolea
 function Cover({ slide, active, compact }: { slide: Of<"cover">; active: boolean; compact: boolean }): ReactElement {
   return (
     <div className={styles.cover}>
-      <div className={styles.coverText}>
+      <div className={styles.coverText} data-top-fade={compact ? "" : undefined}>
         {/* eslint-disable-next-line @next/next/no-img-element -- the SVG wordmark scales with the slide */}
         <img className={styles.printMark} src="/brand/zode-wordmark-white.svg" alt="ZODE" />
         <div className={styles.coverTitleBlock}>
@@ -1239,10 +1239,20 @@ function Raise({ slide, playing }: { slide: Of<"raise">; playing: boolean }): Re
 const SOCIAL_MARKS: Record<Of<"team">["founder"]["social"][number]["network"], string> = {
   linkedin:
     "M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 4.89v6.25ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13Zm1.78 13.02H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z",
-  github:
-    "M12 .3a12 12 0 0 0-3.8 23.38c.6.11.82-.26.82-.58v-2.04c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5 1 .1-.78.42-1.3.76-1.6-2.67-.31-5.47-1.34-5.47-5.94 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22v3.29c0 .32.21.7.82.58A12 12 0 0 0 12 .3",
-  x: "M18.9 1.15h3.68l-8.04 9.19L24 22.85h-7.4l-5.8-7.59-6.64 7.59H.47l8.6-9.83L0 1.15h7.59l5.25 6.93Zm-1.29 19.5h2.04L6.49 3.24H4.3Z",
 };
+
+/** A unicorn's head facing left, eye closed and mane curled, stroked for the billion-dollar outcomes. */
+function UnicornMark(): ReactElement {
+  return (
+    <svg className={styles.unicorn} viewBox="88 52 392 400" aria-hidden="true">
+      <path d="M150 168L110 100L185 143C192 115 212 88 243 70L245 122C300 160 350 230 362 310C368 360 362 400 356 435" />
+      <path d="M150 168C128 180 114 196 116 214C118 238 136 252 160 256C172 262 188 268 205 266C214 265 220 270 214 280C185 305 140 330 125 365C117 385 115 410 115 435" />
+      <path d="M245 96C262 82 290 84 305 100C320 92 345 92 362 104C392 108 412 140 404 178C414 196 418 230 410 262C452 280 476 330 460 380C448 418 410 440 356 435" />
+      <path d="M200 194C204 180 220 180 226 194" />
+      <circle cx="152" cy="234" r="10" />
+    </svg>
+  );
+}
 
 /** Text that opens its site in a new tab, or plain text without one. */
 function OutLink({ href, children }: { href?: string; children: ReactNode }): ReactNode {
@@ -1342,9 +1352,7 @@ function Team({ slide }: { slide: Of<"team"> }): ReactElement {
               ))}
             </ul>
           </div>
-          <h3 className={`${styles.h3} ${styles.person}`}>
-            {founder.name} <span className={styles.alias}>(aka {founder.alias})</span>
-          </h3>
+          <h3 className={`${styles.h3} ${styles.person}`}>{founder.name}</h3>
         </div>
         <section className={styles.quests}>
           <h4 {...rise(2.6)} className={`${styles.rise} ${styles.figLabel}`}>
@@ -1358,10 +1366,13 @@ function Team({ slide }: { slide: Of<"team"> }): ReactElement {
                 </span>
                 <span className={styles.years}>{venture.years}</span>
                 <p className={styles.ventureRole}>{venture.role}</p>
-                <p className={`${styles.ventureText} ${styles.ventureOutcome}`}>
-                  <OutLink href={venture.outcomeHref}>{venture.outcome}</OutLink>
-                </p>
                 <p className={styles.ventureText}>{venture.description}</p>
+                {venture.outcome && (
+                  <p className={`${styles.ventureText} ${styles.ventureOutcome}`}>
+                    {venture.outcome}
+                    <UnicornMark />
+                  </p>
+                )}
               </li>
             ))}
           </ul>
@@ -1592,7 +1603,7 @@ export const hasHead = (slide: Slide): boolean => !NO_HEAD.has(slide.kind);
 /**
  * A slide's sources, folded behind a label at the foot: hovering or focusing
  * it opens them above, and a click pins them open where there's no hover.
- * Printed, and on a story card (`inline`), they set out in the foot in full.
+ * Printed, and in the deck's scroll mode (`inline`), they set out in the foot in full.
  */
 function FootSources({ ids, inline }: { ids: readonly SourceId[]; inline: boolean }): ReactElement {
   const id = useId();
@@ -1634,11 +1645,13 @@ const pad = (n: number) => String(n).padStart(2, "0");
  * off and draws one shared grid over every slide instead, finding the bands
  * by `data-band`. `active` plays its entrance; with `still` too it shows
  * settled instead, its entrances at their end and nothing looping, as a
- * thumbnail. `near` loads its images ahead, for the open slide and its
- * neighbours. `branded` adds the wordmark to its foot for print, where the
- * site header isn't on the page. `compact` reflows it as a phone's story
- * card: one column at the site's mobile type sizes, scrolling where it runs
- * long. `policy` is the policy tracker's map for the states slide.
+ * thumbnail. `playing` runs its looping drawings, by default while it's
+ * active and not still. `near` loads its images ahead, for the open slide
+ * and its neighbours. `branded` adds the wordmark to its foot for print,
+ * where the site header isn't on the page. `compact` reflows it for the
+ * deck's scroll mode: one column at the site's mobile type sizes, as tall as
+ * its content, fading out under the pinned header's corners as it scrolls up
+ * into them. `policy` is the policy tracker's map for the states slide.
  * Memoized, so turning a slide redraws only the slides whose state changed.
  */
 export const SlideView = memo(function SlideView({
@@ -1647,6 +1660,7 @@ export const SlideView = memo(function SlideView({
   total,
   active,
   still = false,
+  playing = active && !still,
   near = false,
   branded = false,
   grid = true,
@@ -1658,13 +1672,13 @@ export const SlideView = memo(function SlideView({
   total: number;
   active: boolean;
   still?: boolean;
+  playing?: boolean;
   near?: boolean;
   branded?: boolean;
   grid?: boolean;
   compact?: boolean;
   policy: PolicyMap | null;
 }): ReactElement {
-  const playing = active && !still;
   const head = hasHead(slide);
   const foot = !NO_FOOT.has(slide.kind);
   const dark = slide.ground === "ink";
@@ -1688,6 +1702,8 @@ export const SlideView = memo(function SlideView({
       <div
         className={styles.frame}
         data-frame=""
+        // The cover's render opens the page under the header, so only its text fades (Cover).
+        data-top-fade={compact && slide.kind !== "cover" ? "" : undefined}
         data-grid={grid || undefined}
         data-head={head || undefined}
         data-foot={foot || undefined}

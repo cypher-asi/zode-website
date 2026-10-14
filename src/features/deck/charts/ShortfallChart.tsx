@@ -5,7 +5,7 @@ import styles from "./charts.module.css";
 const Y_MAX = 100;
 
 /**
- * The slide's wide bridge, and a taller one for a phone's story card, where
+ * The slide's wide bridge, and a taller one for the deck's scroll mode, where
  * the type is set larger against the viewBox and the notes under each bar
  * give way to the caption.
  */
@@ -118,7 +118,7 @@ export function ShortfallChart({ active, compact = false }: { active: boolean; c
 }
 
 const YMAX = 80;
-/** A narrow column beside the bridge on the slide; full width and shorter on a story card. */
+/** A narrow column beside the bridge on the slide; full width and shorter in the deck's scroll mode. */
 const YEAR_LAYOUTS = {
   wide: { W: 300, H: 480, pad: { top: 44, right: 8, bottom: 72, left: 8 } },
   compact: { W: 520, H: 340, pad: { top: 52, right: 4, bottom: 52, left: 4 } },

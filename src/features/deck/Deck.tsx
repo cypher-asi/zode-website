@@ -42,25 +42,48 @@ const SWIPE_MIN = 48;
 const REVEAL_PX = 120;
 /** And stay this long after a touch, where there's no pointer to follow. */
 const TOUCH_SHOW_MS = 3000;
-/** On a phone, a touch that barely moves and lifts quickly on a card's outer edge turns the slide, as a story does. */
-const TAP_SLOP = 10;
-const TAP_MS = 400;
-const TAP_EDGE = 0.28;
-/** Portrait phones get story cards: each slide reflowed to the screen, scrolling where it runs long. */
-const COMPACT_MEDIA = "(max-width: 700px) and (orientation: portrait)";
+/**
+ * Portrait screens and landscape phones read the deck as one page, the slides
+ * scrolling one after another; a 16:9 slide there would shrink its type out
+ * of reach. Deck.module.css hides the stage under the same query until this
+ * takes over from the server's render.
+ */
+const SCROLL_MEDIA = "(orientation: portrait), (max-height: 500px)";
+/** In scroll mode, scrolling down this far past the last turn hides the controls, and back up as far brings them back. */
+const BAR_SLOP = 8;
+/** They stay up within this much of the top. */
+const BAR_TOP = 80;
+/** The slide crossing this line down the window is the current one. */
+const CURRENT_LINE = "-40% 0px -59% 0px";
+/** A slide's entrance plays once this far into the window... */
+const SEEN_MARGIN = "0px 0px -15% 0px";
+/** ...and its images load within a window's height of it. */
+const NEAR_MARGIN = "100% 0px";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 /** Browser capabilities don't change while the page is open, so there is nothing to subscribe to. */
 const noSubscribe = () => () => {};
-const subscribeCompact = (onChange: () => void) => {
-  const query = window.matchMedia(COMPACT_MEDIA);
+const subscribeScroll = (onChange: () => void) => {
+  const query = window.matchMedia(SCROLL_MEDIA);
   query.addEventListener("change", onChange);
   return () => query.removeEventListener("change", onChange);
 };
 const clamp = (n: number) => Math.min(Math.max(n, 0), TOTAL - 1);
 const EVERY_SLOT: ReadonlySet<number> = new Set(SLIDES.keys());
+const NO_SLOTS: ReadonlySet<number> = new Set();
 /** A slide and its neighbours, kept drawn so the usual step to either one starts without laying it out first. */
 const around = (i: number): ReadonlySet<number> => new Set([clamp(i - 1), i, clamp(i + 1)]);
+
+/** `slots` with the observed slides added as they come into range and, unless `latch`, dropped as they leave it. */
+function follow(slots: ReadonlySet<number>, entries: IntersectionObserverEntry[], latch: boolean): ReadonlySet<number> {
+  const next = new Set(slots);
+  for (const entry of entries) {
+    const slot = Number((entry.target as HTMLElement).dataset.slot);
+    if (entry.isIntersecting) next.add(slot);
+    else if (!latch) next.delete(slot);
+  }
+  return next.size === slots.size && [...next].every((slot) => slots.has(slot)) ? slots : next;
+}
 
 /** Whether a key press belongs to a control rather than the deck: text fields, menus, and Space on buttons. */
 function ownedByControl(event: KeyboardEvent): boolean {
@@ -86,9 +109,10 @@ function ArrowIcon({ flip = false }: { flip?: boolean }): ReactElement {
  * no visible edge and the header reads its tone from `data-surface`. Every
  * slide stays mounted, inactive ones hidden and parked unrendered, so
  * printing (the PDF export) lays them all out one per page. On a portrait
- * phone (`compact`) each slide is a story card instead: reflowed to the
- * screen, scrolling inside itself, drawing its own grid, turned by a swipe or
- * a tap on its edge, with the controls always up.
+ * screen or a landscape phone (`scroll`) the slides instead stand one after
+ * another down the page, each reflowed to one column and carrying its own
+ * tone for the header. Each plays its entrance as it scrolls in, and the
+ * controls slip away while you read down. The overview is a list there.
  */
 /** The cover's ground, standing in while the page reads which slide to open. */
 export function DeckGround(): ReactElement {
@@ -108,7 +132,8 @@ export function Deck({
   const stageRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const overviewRef = useRef<HTMLDivElement>(null);
-  const swipe = useRef<{ x: number; y: number; t: number } | null>(null);
+  const slotRefs = useRef<(HTMLElement | null)[]>([]);
+  const swipe = useRef<{ x: number; y: number } | null>(null);
   const wheel = useRef({ travel: 0, lockedUntil: 0 });
   const [index, setIndex] = useState(() => clamp(initialSlide));
   const [leaving, setLeaving] = useState<number | null>(null);
@@ -126,22 +151,40 @@ export function Deck({
     () => document.fullscreenEnabled,
     () => false,
   );
-  const phone = useSyncExternalStore(
-    subscribeCompact,
-    () => window.matchMedia(COMPACT_MEDIA).matches,
+  const scrollScreen = useSyncExternalStore(
+    subscribeScroll,
+    () => window.matchMedia(SCROLL_MEDIA).matches,
     () => false,
   );
   // A printed deck is 16:9 pages wherever it's printed from.
-  const compact = phone && !printing;
+  const scroll = scrollScreen && !printing;
+  // In scroll mode, the slides that have come into the window (latched), are in it, and are near it.
+  const [seen, setSeen] = useState<ReadonlySet<number>>(NO_SLOTS);
+  const [inView, setInView] = useState<ReadonlySet<number>>(NO_SLOTS);
+  const [near, setNear] = useState<ReadonlySet<number>>(NO_SLOTS);
+  const [barHidden, setBarHidden] = useState(false);
   const [nearBottom, setNearBottom] = useState(false);
   const [touched, setTouched] = useState(false);
-  const [moved, setMoved] = useState(false);
   const slide = SLIDES[index];
-  const controls = compact || nearBottom || touched || overview || shareOpen;
+  const controls = scroll ? !barHidden || overview || shareOpen : nearBottom || touched || overview || shareOpen;
+
+  // Back on the stage, its slide and neighbours open again, wherever the page was scrolled to; while printing they all stay open.
+  const [layout, setLayout] = useState(scroll);
+  if (layout !== scroll) {
+    setLayout(scroll);
+    setBarHidden(false);
+    if (!scroll && !printing) setOpen(around(index));
+  }
 
   const go = useCallback(
     (target: number) => {
       const next = clamp(target);
+      if (scroll) {
+        // Smooth only to a neighbour: past slides not yet laid out, the target would move mid-flight.
+        const smooth = Math.abs(next - index) <= 1 && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        slotRefs.current[next]?.scrollIntoView({ block: "start", behavior: smooth ? "smooth" : "instant" });
+        return;
+      }
       if (next === index) return;
       if (!open.has(next)) {
         flushSync(() => setOpen((slots) => new Set(slots).add(next)));
@@ -149,10 +192,17 @@ export function Deck({
       }
       setLeaving(index);
       setIndex(next);
-      setMoved(true);
     },
-    [index, open],
+    [index, open, scroll],
   );
+
+  // In scroll mode, Previous first goes back to the top of a slide read partway down.
+  const back = () => {
+    const slot = slotRefs.current[index];
+    if (!scroll || !slot) return go(index - 1);
+    const offset = slot.getBoundingClientRect().top - parseFloat(getComputedStyle(slot).scrollMarginTop);
+    go(offset < -BAR_SLOP ? index : index - 1);
+  };
 
   const toggleFullscreen = useCallback(() => {
     if (document.fullscreenElement) void document.exitFullscreen();
@@ -171,12 +221,12 @@ export function Deck({
   }, [leaving, index]);
 
   // One page grid for the whole deck: its rules follow the open slide's bands, so they glide from slide to slide.
-  // Story cards scroll, so there each slide draws its own.
+  // Scrolling slides each draw their own.
   useEffect(() => {
     const grid = gridRef.current;
     const slots = stageRef.current?.children;
     const frame = slots?.[index]?.querySelector<HTMLElement>("[data-frame]");
-    if (!grid || !frame || compact) return;
+    if (!grid || !frame || scroll) return;
     const head = frame.querySelector<HTMLElement>("[data-band=head]");
     const foot = frame.querySelector<HTMLElement>("[data-band=foot]");
     const name = slots?.[NAMED[index]]?.querySelector<HTMLElement>("[data-band=name]");
@@ -206,14 +256,67 @@ export function Deck({
       cancelAnimationFrame(ready);
       observer.disconnect();
     };
-  }, [index, compact]);
+  }, [index, scroll]);
 
-  // A story card opens at its top, before it paints, wherever it was left. Only cards scroll, and the write forces a layout.
+  // Entering scroll mode, the page opens at the current slide, before it paints.
+  const scrolledTo = useRef(false);
   useLayoutEffect(() => {
-    if (!compact) return;
-    const frame = stageRef.current?.children[index]?.querySelector<HTMLElement>("[data-frame]");
-    if (frame) frame.scrollTop = 0;
-  }, [index, compact]);
+    if (!scroll) {
+      scrolledTo.current = false;
+      return;
+    }
+    if (scrolledTo.current) return;
+    scrolledTo.current = true;
+    if (index > 0) slotRefs.current[index]?.scrollIntoView({ block: "start", behavior: "instant" });
+  }, [scroll, index]);
+
+  // In scroll mode the slides report themselves: the one across the line is current, and each plays, runs and loads by its distance.
+  useEffect(() => {
+    if (!scroll) return;
+    const slots = slotRefs.current.filter((slot): slot is HTMLElement => slot !== null);
+    const track = (update: (entries: IntersectionObserverEntry[]) => void, rootMargin: string) => {
+      const observer = new IntersectionObserver(update, { rootMargin });
+      for (const slot of slots) observer.observe(slot);
+      return observer;
+    };
+    const observers = [
+      track((entries) => {
+        const crossing = entries.findLast((entry) => entry.isIntersecting);
+        if (crossing) setIndex(Number((crossing.target as HTMLElement).dataset.slot));
+      }, CURRENT_LINE),
+      track((entries) => setSeen((slots) => follow(slots, entries, true)), SEEN_MARGIN),
+      track((entries) => setInView((slots) => follow(slots, entries, false)), "0px"),
+      track((entries) => setNear((slots) => follow(slots, entries, false)), NEAR_MARGIN),
+    ];
+    return () => {
+      for (const observer of observers) observer.disconnect();
+    };
+  }, [scroll]);
+
+  // In scroll mode the controls slip away while you read down and come back as you scroll up, near the top, or at the end.
+  useEffect(() => {
+    if (!scroll) return;
+    let last = window.scrollY;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const y = window.scrollY;
+      const atEnd = y + window.innerHeight >= document.documentElement.scrollHeight - 2;
+      if (y < BAR_TOP || atEnd) setBarHidden(false);
+      else if (y > last + BAR_SLOP) setBarHidden(true);
+      else if (y < last - BAR_SLOP) setBarHidden(false);
+      else return;
+      last = y;
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [scroll]);
 
   // The address bar holds the open slide, so reloading or copying it lands here.
   useEffect(() => {
@@ -238,11 +341,12 @@ export function Deck({
         setShareOpen(false);
         return;
       }
-      if (key === "f" && canFullscreen) {
+      if (key === "f" && canFullscreen && !scroll) {
         toggleFullscreen();
         return;
       }
-      if (overview) return;
+      // A scrolling deck leaves the arrows, Space and paging keys to the page.
+      if (overview || scroll) return;
       let step = 0;
       if (["ArrowRight", "ArrowDown", "PageDown"].includes(event.key) || (event.key === " " && !event.shiftKey)) step = 1;
       else if (["ArrowLeft", "ArrowUp", "PageUp"].includes(event.key) || (event.key === " " && event.shiftKey)) step = -1;
@@ -259,12 +363,12 @@ export function Deck({
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [index, overview, shareOpen, canFullscreen, go, toggleFullscreen]);
+  }, [index, overview, shareOpen, canFullscreen, scroll, go, toggleFullscreen]);
 
-  // A trackpad or wheel turns slides one at a time; the overview scrolls instead.
+  // A trackpad or wheel turns slides one at a time; the overview, and a scrolling deck, scroll instead.
   useEffect(() => {
     const root = rootRef.current;
-    if (!root || overview) return;
+    if (!root || overview || scroll) return;
     const onWheel = (event: WheelEvent) => {
       // A list in a slide that scrolls itself (the states slide's) keeps the wheel.
       if (event.ctrlKey || (event.target as Element).closest("dialog, [data-deck-scroll]")) return;
@@ -280,7 +384,7 @@ export function Deck({
     };
     root.addEventListener("wheel", onWheel, { passive: true });
     return () => root.removeEventListener("wheel", onWheel);
-  }, [index, overview, go]);
+  }, [index, overview, scroll, go]);
 
   useEffect(() => {
     const onChange = () => setFullscreen(document.fullscreenElement === document.documentElement);
@@ -339,7 +443,7 @@ export function Deck({
   const overviewWarm = useRef(false);
   useEffect(() => {
     const overview = overviewRef.current;
-    if (!overviewDrawn || !controls || !overview || overviewWarm.current) return;
+    if (scroll || !overviewDrawn || !controls || !overview || overviewWarm.current) return;
     overview.setAttribute("data-warming", "");
     let raf = requestAnimationFrame(() => {
       raf = requestAnimationFrame(() => {
@@ -351,9 +455,11 @@ export function Deck({
       cancelAnimationFrame(raf);
       overview.removeAttribute("data-warming");
     };
-  }, [overviewDrawn, controls]);
+  }, [scroll, overviewDrawn, controls]);
 
+  // A scrolling deck lists the slides instead, so the thumbnails wait for the stage.
   useEffect(() => {
+    if (scroll || overviewDrawn) return;
     const draw = () => startTransition(() => setOverviewDrawn(true));
     if (typeof requestIdleCallback === "function") {
       const idle = requestIdleCallback(draw, { timeout: 4000 });
@@ -361,9 +467,9 @@ export function Deck({
     }
     const timer = window.setTimeout(draw, 1500);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [scroll, overviewDrawn]);
 
-  // Opening the overview focuses the current slide's thumbnail.
+  // Opening the overview focuses the current slide's entry.
   useEffect(() => {
     if (!overview) return;
     const current = overviewRef.current?.querySelector<HTMLElement>("[aria-current=true]");
@@ -375,31 +481,21 @@ export function Deck({
     swipe.current =
       event.pointerType === "mouse" || (event.target as Element).closest("dialog, [data-deck-scroll]")
         ? null
-        : { x: event.clientX, y: event.clientY, t: event.timeStamp };
+        : { x: event.clientX, y: event.clientY };
   };
 
-  // A vertical drag scrolls the card, and the browser cancels the pointer, so only horizontal swipes and taps get here.
   const onPointerUp = (event: ReactPointerEvent<HTMLElement>) => {
     const start = swipe.current;
     swipe.current = null;
     if (!start) return;
     const dx = event.clientX - start.x;
     const dy = event.clientY - start.y;
-    if (Math.abs(dx) > SWIPE_MIN && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      go(index + (dx < 0 ? 1 : -1));
-      return;
-    }
-    if (!compact || Math.hypot(dx, dy) > TAP_SLOP || event.timeStamp - start.t > TAP_MS) return;
-    if ((event.target as Element).closest("a, button, [role=button], input, select, textarea, label")) return;
-    const { left, width } = event.currentTarget.getBoundingClientRect();
-    const at = (event.clientX - left) / width;
-    if (at < TAP_EDGE) go(index - 1);
-    else if (at > 1 - TAP_EDGE) go(index + 1);
+    if (Math.abs(dx) > SWIPE_MIN && Math.abs(dx) > Math.abs(dy) * 1.5) go(index + (dx < 0 ? 1 : -1));
   };
 
   const choose = (target: number) => {
-    go(target);
     setOverview(false);
+    go(target);
   };
 
   return (
@@ -409,7 +505,7 @@ export function Deck({
       data-ground={slide.ground}
       data-surface={slide.ground === "ink" ? "dark" : "light"}
       data-controls={controls || undefined}
-      data-compact={compact || undefined}
+      data-scroll={scroll || undefined}
       aria-roledescription="presentation"
       aria-label="ZODE investor deck"
     >
@@ -421,67 +517,70 @@ export function Deck({
           ref={stageRef}
           className={styles.stage}
           inert={overview}
-          onPointerDown={onPointerDown}
-          onPointerUp={onPointerUp}
-          onPointerCancel={() => (swipe.current = null)}
+          onPointerDown={scroll ? undefined : onPointerDown}
+          onPointerUp={scroll ? undefined : onPointerUp}
+          onPointerCancel={scroll ? undefined : () => (swipe.current = null)}
         >
           {SLIDES.map((entry, i) => {
             const current = i === index;
+            const shown = scroll || current || printing;
             return (
               <section
                 key={entry.id}
+                ref={(slot) => {
+                  slotRefs.current[i] = slot;
+                }}
                 className={styles.slot}
-                data-state={current ? "current" : i < index ? "before" : "after"}
-                data-parked={!open.has(i) || undefined}
+                data-slot={i}
+                data-state={scroll ? undefined : current ? "current" : i < index ? "before" : "after"}
+                data-parked={(!scroll && !open.has(i)) || undefined}
+                data-surface={scroll ? (entry.ground === "ink" ? "dark" : "light") : undefined}
                 aria-roledescription="slide"
                 aria-label={`${i + 1} of ${TOTAL}: ${entry.title}`}
-                aria-hidden={!current && !printing}
-                inert={!current && !printing}
+                aria-hidden={!shown}
+                inert={!shown}
               >
                 <SlideView
                   slide={entry}
                   index={i}
                   total={TOTAL}
-                  active={current || i === leaving || printing}
-                  near={printing || Math.abs(i - index) <= 1}
+                  active={scroll ? seen.has(i) : current || i === leaving || printing}
+                  playing={scroll ? seen.has(i) && inView.has(i) : undefined}
+                  near={scroll ? near.has(i) : printing || Math.abs(i - index) <= 1}
                   branded={printing}
-                  grid={printing || compact}
-                  compact={compact}
+                  grid={printing || scroll}
+                  compact={scroll}
                   policy={policy}
                 />
               </section>
             );
           })}
         </div>
-        <div ref={gridRef} className={styles.grid} data-strong={index === 0 || undefined} aria-hidden="true">
-          <div className={styles.gridLines}>
-            <span className={styles.rule} data-rule="top" />
-            <span className={styles.rule} data-rule="head" />
-            <span className={styles.rule} data-rule="foot" />
-            <span className={styles.rule} data-rule="bottom" />
-            <span className={styles.name}>
-              <span
-                key={`${SLIDES[NAMED[index]].eyebrow}:${NAMED[index] === index ? "shown" : "borrowed"}`}
-                className={styles.nameLine}
-                style={{ "--chars": SLIDES[NAMED[index]].eyebrow.length } as CSSProperties}
-              >
-                <span className={styles.nameText}>{SLIDES[NAMED[index]].eyebrow}</span>
-                <span className={styles.nameCursor} />
+        {scroll ? null : (
+          <div ref={gridRef} className={styles.grid} data-strong={index === 0 || undefined} aria-hidden="true">
+            <div className={styles.gridLines}>
+              <span className={styles.rule} data-rule="top" />
+              <span className={styles.rule} data-rule="head" />
+              <span className={styles.rule} data-rule="foot" />
+              <span className={styles.rule} data-rule="bottom" />
+              <span className={styles.name}>
+                <span
+                  key={`${SLIDES[NAMED[index]].eyebrow}:${NAMED[index] === index ? "shown" : "borrowed"}`}
+                  className={styles.nameLine}
+                  style={{ "--chars": SLIDES[NAMED[index]].eyebrow.length } as CSSProperties}
+                >
+                  <span className={styles.nameText}>{SLIDES[NAMED[index]].eyebrow}</span>
+                  <span className={styles.nameCursor} />
+                </span>
               </span>
-            </span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <nav className={styles.bar} aria-label="Deck controls">
         <div className={styles.barStart}>
-          <button
-            type="button"
-            className={styles.iconButton}
-            aria-label="Previous slide"
-            disabled={index === 0}
-            onClick={() => go(index - 1)}
-          >
+          <button type="button" className={styles.iconButton} aria-label="Previous slide" disabled={index === 0} onClick={back}>
             <ArrowIcon flip />
           </button>
           <button
@@ -496,13 +595,7 @@ export function Deck({
           <span className={styles.counter}>
             {pad(index + 1)} / {pad(TOTAL)}
           </span>
-          {compact && !moved ? (
-            <span className={styles.hint}>
-              Swipe <ArrowIcon />
-            </span>
-          ) : (
-            <span className={styles.section}>{slide.section}</span>
-          )}
+          <span className={styles.section}>{slide.section}</span>
         </div>
 
         <ol className={styles.progress}>
@@ -547,7 +640,7 @@ export function Deck({
             buttonClassName={styles.textButton}
             iconClassName={styles.icon}
           />
-          {canFullscreen && !compact ? (
+          {canFullscreen && !scroll ? (
             <button
               type="button"
               className={styles.textButton}
@@ -567,7 +660,37 @@ export function Deck({
         </div>
       </nav>
 
-      {overview || overviewDrawn ? (
+      {scroll ? (
+        overview ? (
+          <div
+            ref={overviewRef}
+            className={styles.overview}
+            data-open=""
+            role="dialog"
+            aria-modal="true"
+            aria-label="All slides"
+          >
+            <ol className={styles.toc}>
+              {SLIDES.map((entry, i) => (
+                <li key={entry.id} className={styles.tocItem}>
+                  <button
+                    type="button"
+                    className={styles.tocRow}
+                    aria-current={i === index}
+                    onClick={() => choose(i)}
+                  >
+                    <span className={styles.tocNumber}>{pad(i + 1)}</span>
+                    <span className={styles.tocText}>
+                      <span className={styles.tocSection}>{entry.section}</span>
+                      <span className={styles.tocTitle}>{entry.title}</span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </div>
+        ) : null
+      ) : overview || overviewDrawn ? (
         <div
           ref={overviewRef}
           className={styles.overview}
@@ -600,9 +723,11 @@ export function Deck({
         </div>
       ) : null}
 
-      <p className={styles.srOnly} aria-live="polite">
-        Slide {index + 1} of {TOTAL}: {slide.title}
-      </p>
+      {scroll ? null : (
+        <p className={styles.srOnly} aria-live="polite">
+          Slide {index + 1} of {TOTAL}: {slide.title}
+        </p>
+      )}
     </main>
   );
 }

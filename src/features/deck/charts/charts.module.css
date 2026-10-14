@@ -340,7 +340,7 @@
 }
 
 /*
- * A phone's story card (`data-compact`) draws each chart about half size, so
+ * The deck's scroll mode (`data-compact`) draws each chart about half size, so
  * its type is set larger against the viewBox to read at 11px and up.
  */
 .chart[data-compact] :is(.axis, .note) {

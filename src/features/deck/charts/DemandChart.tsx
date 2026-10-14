@@ -18,7 +18,7 @@ const Y_TICKS = [0, 50, 100, 150, 200];
 
 /**
  * The slide's wide plot, with the series and the gap named at its right
- * end, and a squarer one for a phone's story card, where the legend names
+ * end, and a squarer one for the deck's scroll mode, where the legend names
  * them and every other year is marked.
  */
 const LAYOUTS = {

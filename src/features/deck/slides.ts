@@ -220,22 +220,19 @@ export type Slide =
       founder: {
         role: string;
         name: string;
-        /** Set smaller after the name. */
-        alias: string;
         /** Drawn as marks beside the role, in this order. */
-        social: readonly { network: "linkedin" | "github" | "x"; label: string; href: string }[];
+        social: readonly { network: "linkedin"; label: string; href: string }[];
         /** The ventures, under a label of their own. */
         main: {
           title: string;
-          /** Each company's years tagged beside its name; the name and the outcome each link out where they have a site. */
+          /** Each company's years tagged beside its name, which links out where it has a site; any outcome beside the description. */
           ventures: readonly {
             company: string;
             href?: string;
             years: string;
             role: string;
             description: string;
-            outcome: string;
-            outcomeHref?: string;
+            outcome?: string;
           }[];
         };
         /** Set much smaller under the ventures, as one line of links. */
@@ -540,14 +537,9 @@ export const SLIDES: readonly Slide[] = [
     title: "Led by a three-time founder.",
     ground: "paper",
     founder: {
-      role: "Founder and CEO",
+      role: "Founder & CEO",
       name: "Matthew J. Dorey",
-      alias: "n3o",
-      social: [
-        { network: "linkedin", label: "LinkedIn", href: "https://www.linkedin.com/in/frank-wilder/" },
-        { network: "github", label: "GitHub", href: "https://github.com/real-n3o" },
-        { network: "x", label: "X", href: "https://x.com/real_n3o" },
-      ],
+      social: [{ network: "linkedin", label: "LinkedIn", href: "https://www.linkedin.com/in/frank-wilder/" }],
       main: {
         title: "Main quests",
         ventures: [
@@ -555,25 +547,23 @@ export const SLIDES: readonly Slide[] = [
             company: "Wilder World",
             href: "https://wilderworld.com",
             years: "2020–Present",
-            role: "Co-founder, CEO and Executive Chairman",
-            description: "Persistent simulation with Samsung, NVIDIA, Epic Games and Lamborghini.",
-            outcome: "$2 billion+ valuation",
+            role: "Co-founder, CEO & Executive Chairman",
+            description: "Persistent simulation with Samsung, NVIDIA and Epic Games.",
+            outcome: "$2 billion+ EV",
           },
           {
             company: "Factory ZERO",
             years: "2011–2020",
-            role: "Co-founder and CEO",
-            description: "Venture studio for Apple, Nike, GE, Google and the Fortune 100.",
-            outcome: "Became HF0",
-            outcomeHref: "https://www.hf0.com",
+            role: "Co-founder & CEO",
+            description: "Venture studio for Apple, Nike, Google and the Fortune 100.",
           },
           {
             company: "Curve Dental",
             href: "https://www.curvedental.com",
             years: "2004–2011",
-            role: "Founder and CEO",
+            role: "Founder & CEO",
             description: "The #1 cloud-based dental EMR system.",
-            outcome: "$1 billion+ valuation",
+            outcome: "$1 billion+ EV",
           },
         ],
       },

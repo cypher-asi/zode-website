@@ -55,7 +55,7 @@ function describe(policy: PolicyMap | null): string {
  * statewide action, its local pauses in effect counted under its code, and a
  * corner mark for its grid gate (solid where hookups are paused or capped, a
  * ring where large loads need the state's sign-off). Each tile's title
- * carries the detail. `compact` sets the type larger, for a phone's story card.
+ * carries the detail. `compact` sets the type larger, for the deck's scroll mode on a phone.
  * With `onChoose`, each tracked state is a toggle button for the panel
  * `controls` names: `chosen` is pressed and outlined, and with `lit` set the
  * states outside it fade.

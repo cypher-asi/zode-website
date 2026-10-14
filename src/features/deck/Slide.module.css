@@ -3019,12 +3019,6 @@ a.measureTitle:focus-visible {
   letter-spacing: var(--h1-tracking);
 }
 
-.alias {
-  font-size: 0.55em;
-  letter-spacing: -0.01em;
-  color: var(--fg-2);
-}
-
 .social {
   display: flex;
   align-items: center;
@@ -3064,13 +3058,13 @@ a.measureTitle:focus-visible {
   border-bottom: 1px solid var(--rule);
 }
 
-/* A résumé's line: what and as whom on the left, when and to what end on the right, then what it was across both. */
+/* A résumé's line: what and as whom on the left, when on the right, then what it was with to what end beside it. */
 .venture {
   display: grid;
   grid-template-areas:
     "name years"
-    "role outcome"
-    "text text";
+    "role role"
+    "text outcome";
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: baseline;
   column-gap: calc(1 * var(--u));
@@ -3146,9 +3140,26 @@ a.measureTitle:focus-visible {
 
 .ventureOutcome {
   grid-area: outcome;
-  margin-bottom: calc(0.35 * var(--u));
   text-align: right;
   color: var(--fg);
+}
+
+.unicorn {
+  display: inline-block;
+  width: 1.3em;
+  height: 1.33em;
+  margin-left: 0.35em;
+  vertical-align: -0.3em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 20;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.unicorn circle {
+  fill: currentColor;
+  stroke: none;
 }
 
 .quests {
@@ -3701,27 +3712,48 @@ a.measureTitle:focus-visible {
   margin-top: calc(1.6 * var(--u));
 }
 
-/* ---------- Story cards ---------- */
+/* ---------- Scrolling slides ---------- */
 
 /*
- * A portrait phone's story card (`data-compact`, set by Deck.tsx): the slide
- * keeps the screen's size and its frame scrolls between the site header and
- * the deck's controls. Everything stacks into one column. `--u` becomes a
- * fixed spacing step and type takes the site's mobile sizes, since a
- * hundredth of a phone's width is too small to read. The rails run down the
- * slide itself, so they hold still as the content scrolls past.
+ * A slide in the deck's scroll mode (`data-compact`, set by Deck.tsx on
+ * portrait screens and landscape phones): the slides stand one after another
+ * down the page, each as tall as its content, and everything stacks into one
+ * column. `--u` becomes a fixed spacing step and type takes the site's mobile
+ * sizes, since a hundredth of a phone's width is too small to read. The rails
+ * run down each slide, so they read as one pair down the page. Clipped rather
+ * than hidden, so nothing in a slide becomes a scroller and its sticky heads
+ * hold against the page.
  */
+.slide[data-compact] {
+  /* Where a slide's title lands when the deck jumps to it, and where its sticky heads hold: clear of the pinned header's corner fade. */
+  --anchor-top: calc(var(--slide-top, 0px) + 56px);
+
+  height: auto;
+  overflow: clip;
+  container-type: inline-size;
+}
+
+/* On wider screens the column keeps a reading width, centred, while the ground and rails run to the edges. */
 .slide[data-compact] .frame {
   --u: 8px;
   --rail: var(--frame-inset);
-  --inset-x: var(--slide-edge, 24px);
+  --inset-x: max(var(--slide-edge, 24px), (100cqw - 720px) / 2);
 
-  inset: var(--slide-top, 0px) 0 var(--slide-bottom, 0px);
+  position: relative;
+  inset: auto;
   grid-template-rows: auto 1fr auto;
-  padding: calc(2.4 * var(--u)) var(--inset-x) 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  padding: 48px var(--inset-x) 0;
+  overflow-x: clip;
+}
+
+/* The first slide opens the page, under the header. */
+.slide[data-compact][data-kind="cover"] .frame {
+  padding-top: calc(var(--slide-top, 0px) + 2.4 * var(--u));
+}
+
+/* The close holds a screen of its own, its call to action centred in it. */
+.slide[data-compact][data-kind="close"] .frame {
+  min-height: 80svh;
 }
 
 .slide[data-compact] .frame:not([data-foot]) {
@@ -3742,7 +3774,7 @@ a.measureTitle:focus-visible {
 }
 
 .slide[data-compact] .frame[data-grid][data-foot]:not([data-head])::after {
-  top: calc(1 * var(--u) - var(--pip) / 2);
+  top: calc(var(--slide-top, 0px) + 1 * var(--u) - var(--pip) / 2);
 }
 
 .slide[data-compact] .main {
@@ -3818,7 +3850,7 @@ a.measureTitle:focus-visible {
   padding: 14px 16px 16px;
 }
 
-/* The foot closes the card: section name, then the sources in full; the bar carries the page number. */
+/* The foot closes the slide: section name, then the sources in full; the bar carries the page number. */
 .slide[data-compact] .foot {
   flex-wrap: wrap;
   gap: 12px 20px;
@@ -3863,7 +3895,7 @@ a.measureTitle:focus-visible {
   max-width: none;
 }
 
-/* Cover: the render under the top rule, rail to rail and taking the height the title leaves, then the title. */
+/* Cover: the render under the top rule, rail to rail and about half the screen tall, then the title. */
 .slide[data-compact] .cover {
   flex-direction: column;
   gap: 28px;
@@ -3884,10 +3916,10 @@ a.measureTitle:focus-visible {
 .slide[data-compact] .coverImage {
   position: relative;
   inset: auto;
-  flex: 1 1 auto;
+  flex: none;
   order: -1;
   width: auto;
-  min-height: 160px;
+  height: clamp(200px, 48svh, 480px);
   margin: calc(-1.4 * var(--u)) calc(var(--rail) + 1px - var(--inset-x)) 0;
   border-bottom: 1px solid var(--rule-strong);
   border-left: 0;
@@ -3906,7 +3938,7 @@ a.measureTitle:focus-visible {
   font-size: 17px;
 }
 
-/* The legend under the title, then the full disclaimer on down the card. */
+/* The legend under the title, then the full disclaimer on down the slide. */
 .slide[data-compact] .disclaimer {
   gap: 0;
   margin-top: 28px;
@@ -4129,12 +4161,12 @@ a.measureTitle:focus-visible {
   font-size: var(--text-xs);
 }
 
-/* The list runs on down the card, which scrolls, in place of the figures; its head is held at the card's top so the close stays in reach. */
+/* The list runs on down the page in place of the figures; its head holds under the pinned header so the close stays in reach. */
 .slide[data-compact] .policyPanel {
   position: static;
   display: block;
   animation: none;
-  scroll-margin-top: calc(2.4 * var(--u));
+  scroll-margin-top: var(--anchor-top);
 }
 
 .slide[data-compact] .panelList {
@@ -4150,7 +4182,7 @@ a.measureTitle:focus-visible {
 
 .slide[data-compact] .panelHead {
   position: sticky;
-  top: 0;
+  top: var(--anchor-top);
   z-index: 1;
   gap: 16px;
   padding: 18px 0 10px;

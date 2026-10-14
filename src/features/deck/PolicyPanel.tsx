@@ -108,8 +108,8 @@ function dates({ adopted, ends }: PolicyMeasure): string | null {
  * its bar drawn over it while hovered or scrolling (OverlayScrollbar), and the
  * deck leaves its wheel and swipes alone (`data-deck-scroll`, Deck.tsx), but
  * the deck's keys still turn the slide. It takes focus when it opens or changes,
- * and on a story card (`compact`), where it runs on down the card, scrolls
- * into view.
+ * and in the deck's scroll mode (`compact`), where it runs on down the page,
+ * scrolls into view.
  */
 export function PolicyPanel({
   id,
