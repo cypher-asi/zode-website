@@ -154,8 +154,10 @@ export type Slide =
       capacity: readonly Stat[];
       /** Capacity online by year; each step is ten times the last, so it's drawn on a log scale. */
       plan: readonly { year: string; value: string }[];
-      /** Under the plan, closing the table. */
-      planNote: string;
+      /** A statement under the plan, each entry on its own line; its dollar figures are set in the foreground. */
+      planNote: readonly string[];
+      /** Where the statement's figures come from, in small type under it. */
+      planBasis: string;
     })
   | (Base & {
       kind: "comparison";
@@ -491,8 +493,8 @@ export const SLIDES: readonly Slide[] = [
       { year: "2029", value: "100 GW" },
       { year: "2030", value: "Singularity" },
     ],
-    // A word joiner after the dash keeps the range on one line.
-    planNote: "Every MW is worth $18.8M in annual revenue and $50–\u206075M in enterprise value, as AI clouds trade today.",
+    planNote: ["Every MW is worth $18.8M in annual revenue", "and $50–75M in enterprise value."],
+    planBasis: "Enterprise value per MW as CoreWeave, Nebius and IREN trade today.",
     sources: ["evPerMw"],
   },
   {

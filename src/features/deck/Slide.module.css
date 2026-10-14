@@ -1675,7 +1675,7 @@
   grid-template-columns: calc(3.6 * var(--u)) minmax(0, 1fr) calc(7.4 * var(--u));
   align-items: center;
   gap: calc(1.2 * var(--u));
-  height: calc(3.4 * var(--u));
+  height: calc(3.1 * var(--u));
   padding: 0 calc(1.2 * var(--u));
   color: var(--fg);
   box-shadow: 0 0 0 1px var(--rule);
@@ -1715,19 +1715,29 @@
   text-align: right;
 }
 
-.planTable {
+/* What a MW is worth, set under the plan as a statement, its figures in the foreground. */
+.planNote {
   display: flex;
   flex-direction: column;
+  gap: calc(0.6 * var(--u));
+  margin-top: calc(-1 * var(--u));
 }
 
-/* The table's last row, on the hairline under the final year. */
-.planNote {
-  margin: 0 1px 1px;
-  padding: calc(1 * var(--u)) calc(1.2 * var(--u));
-  font-size: calc(1.05 * var(--u));
-  line-height: 1.35;
+.planStatement {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: calc(1.4 * var(--u));
+  font-weight: 300;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
   text-wrap: balance;
-  box-shadow: 0 0 0 1px var(--rule);
+  color: var(--fg-2);
+}
+
+.planStatement strong {
+  font-weight: 400;
+  color: var(--fg);
+  white-space: nowrap;
 }
 
 .render {
@@ -3332,8 +3342,16 @@
 }
 
 .slide[data-compact] .planNote {
-  padding: 12px 14px;
-  font-size: 15px;
+  gap: 8px;
+  margin-top: -8px;
+}
+
+.slide[data-compact] .planStatement {
+  font-size: 20px;
+}
+
+.slide[data-compact] .planNote .fine {
+  font-size: var(--text-2xs);
 }
 
 .slide[data-compact] .traction {

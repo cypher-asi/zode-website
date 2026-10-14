@@ -765,6 +765,9 @@ function Traction({ slide }: { slide: Of<"traction"> }): ReactElement {
  * them, then the plan by year, its bars on a log scale so each tenfold year
  * adds one step; the last year is set on ink.
  */
+/** A dollar figure or range, e.g. "$18.8M" or "$50–75M"; split out with its capture so it alternates with the text. */
+const FIGURE = /(\$[\d.]+(?:–[\d.]+)?[MB])/;
+
 function Pipeline({ slide }: { slide: Of<"pipeline"> }): ReactElement {
   const steps = slide.plan.length;
   return (
@@ -809,26 +812,31 @@ function Pipeline({ slide }: { slide: Of<"pipeline"> }): ReactElement {
           <h3 {...rise(4)} className={`${styles.rise} ${styles.label}`}>
             Plan
           </h3>
-          <div className={styles.planTable}>
-            <ol className={styles.plan}>
-              {slide.plan.map((row, i) => (
-                <li
-                  key={row.year}
-                  {...rise(4.5 + i * 0.4)}
-                  className={`${styles.rise} ${styles.planRow}`}
-                  data-ink={i === steps - 1 || undefined}
-                >
-                  <span className={styles.planYear}>{row.year}</span>
-                  <span className={styles.planBar} style={{ "--share": (i + 1) / steps } as CSSProperties} />
-                  <span className={styles.planValue}>{row.value}</span>
-                </li>
-              ))}
-            </ol>
-            <p {...rise(4.5 + steps * 0.4)} className={`${styles.rise} ${styles.planNote}`}>
-              {slide.planNote}
-            </p>
-          </div>
+          <ol className={styles.plan}>
+            {slide.plan.map((row, i) => (
+              <li
+                key={row.year}
+                {...rise(4.5 + i * 0.4)}
+                className={`${styles.rise} ${styles.planRow}`}
+                data-ink={i === steps - 1 || undefined}
+              >
+                <span className={styles.planYear}>{row.year}</span>
+                <span className={styles.planBar} style={{ "--share": (i + 1) / steps } as CSSProperties} />
+                <span className={styles.planValue}>{row.value}</span>
+              </li>
+            ))}
+          </ol>
         </section>
+        <div {...rise(4.5 + steps * 0.4)} className={`${styles.rise} ${styles.planNote}`}>
+          <p className={styles.planStatement}>
+            {slide.planNote.map((line) => (
+              <span key={line} className={styles.statementLine}>
+                {line.split(FIGURE).map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : part))}
+              </span>
+            ))}
+          </p>
+          <p className={styles.fine}>{slide.planBasis}</p>
+        </div>
       </div>
     </div>
   );
