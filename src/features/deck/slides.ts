@@ -493,7 +493,7 @@ export const SLIDES: readonly Slide[] = [
       { year: "2029", value: "100 GW" },
       { year: "2030", value: "Singularity" },
     ],
-    planNote: ["Every MW is worth $18.8M in annual revenue", "and $50–75M in enterprise value."],
+    planNote: ["Every MW is worth $18.8M in annual revenue", "and $50–75M in enterprise value (2.7–4.0× revenue)."],
     planBasis: "Enterprise value per MW as CoreWeave, Nebius and IREN traded on October 13, 2026.",
     sources: ["evPerMw"],
   },
