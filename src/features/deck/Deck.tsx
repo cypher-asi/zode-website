@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Fragment,
   startTransition,
   useCallback,
   useEffect,
@@ -72,17 +73,24 @@ const clamp = (n: number) => Math.min(Math.max(n, 0), TOTAL - 1);
 const EVERY_SLOT: ReadonlySet<number> = new Set(SLIDES.keys());
 const NO_SLOTS: ReadonlySet<number> = new Set();
 /** A slide and its neighbours, kept drawn so the usual step to either one starts without laying it out first. */
-const around = (i: number): ReadonlySet<number> => new Set([clamp(i - 1), i, clamp(i + 1)]);
+const around = (i: number): ReadonlySet<number> =>
+  new Set([clamp(i - 1), i, clamp(i + 1)]);
 
 /** `slots` with the observed slides added as they come into range and, unless `latch`, dropped as they leave it. */
-function follow(slots: ReadonlySet<number>, entries: IntersectionObserverEntry[], latch: boolean): ReadonlySet<number> {
+function follow(
+  slots: ReadonlySet<number>,
+  entries: IntersectionObserverEntry[],
+  latch: boolean,
+): ReadonlySet<number> {
   const next = new Set(slots);
   for (const entry of entries) {
     const slot = Number((entry.target as HTMLElement).dataset.slot);
     if (entry.isIntersecting) next.add(slot);
     else if (!latch) next.delete(slot);
   }
-  return next.size === slots.size && [...next].every((slot) => slots.has(slot)) ? slots : next;
+  return next.size === slots.size && [...next].every((slot) => slots.has(slot))
+    ? slots
+    : next;
 }
 
 /** Whether a key press belongs to a control rather than the deck: text fields, menus, and Space on buttons. */
@@ -90,13 +98,25 @@ function ownedByControl(event: KeyboardEvent): boolean {
   const target = event.target as HTMLElement | null;
   if (!target) return false;
   // `dialog` covers a route modal (e.g. Invest) opened over the deck.
-  if (target.closest("input, textarea, select, [contenteditable=true], [role=menu], dialog")) return true;
-  return event.key === " " && target.closest("button, a, [role=button]") !== null;
+  if (
+    target.closest(
+      "input, textarea, select, [contenteditable=true], [role=menu], dialog",
+    )
+  )
+    return true;
+  return (
+    event.key === " " && target.closest("button, a, [role=button]") !== null
+  );
 }
 
 function ArrowIcon({ flip = false }: { flip?: boolean }): ReactElement {
   return (
-    <svg className={styles.icon} viewBox="0 0 12 12" aria-hidden="true" data-flip={flip || undefined}>
+    <svg
+      className={styles.icon}
+      viewBox="0 0 12 12"
+      aria-hidden="true"
+      data-flip={flip || undefined}
+    >
       <path d="M2 6h8M6.5 2.5L10 6l-3.5 3.5" />
     </svg>
   );
@@ -117,7 +137,13 @@ function ArrowIcon({ flip = false }: { flip?: boolean }): ReactElement {
 /** The cover's ground, standing in while the page reads which slide to open. */
 export function DeckGround(): ReactElement {
   const { ground } = SLIDES[0];
-  return <main className={styles.root} data-ground={ground} data-surface={ground === "ink" ? "dark" : "light"} />;
+  return (
+    <main
+      className={styles.root}
+      data-ground={ground}
+      data-surface={ground === "ink" ? "dark" : "light"}
+    />
+  );
 }
 
 export function Deck({
@@ -139,7 +165,9 @@ export function Deck({
   const [leaving, setLeaving] = useState<number | null>(null);
   // The slots drawn; every other one is parked. A transition needs a style to start from, and a parked slot's content
   // keeps the last one it had, so a slot opens and is styled at rest before it plays, and is put at rest before it parks.
-  const [open, setOpen] = useState<ReadonlySet<number>>(() => around(clamp(initialSlide)));
+  const [open, setOpen] = useState<ReadonlySet<number>>(() =>
+    around(clamp(initialSlide)),
+  );
   const [overview, setOverview] = useState(false);
   // Its 21 thumbnails are whole slides, so they're drawn while the page is idle and kept, rather than on opening.
   const [overviewDrawn, setOverviewDrawn] = useState(false);
@@ -166,7 +194,9 @@ export function Deck({
   const [nearBottom, setNearBottom] = useState(false);
   const [touched, setTouched] = useState(false);
   const slide = SLIDES[index];
-  const controls = scroll ? !barHidden || overview || shareOpen : nearBottom || touched || overview || shareOpen;
+  const controls = scroll
+    ? !barHidden || overview || shareOpen
+    : nearBottom || touched || overview || shareOpen;
 
   // Back on the stage, its slide and neighbours open again, wherever the page was scrolled to; while printing they all stay open.
   const [layout, setLayout] = useState(scroll);
@@ -181,8 +211,13 @@ export function Deck({
       const next = clamp(target);
       if (scroll) {
         // Smooth only to a neighbour: past slides not yet laid out, the target would move mid-flight.
-        const smooth = Math.abs(next - index) <= 1 && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        slotRefs.current[next]?.scrollIntoView({ block: "start", behavior: smooth ? "smooth" : "instant" });
+        const smooth =
+          Math.abs(next - index) <= 1 &&
+          !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        slotRefs.current[next]?.scrollIntoView({
+          block: "start",
+          behavior: smooth ? "smooth" : "instant",
+        });
         return;
       }
       if (next === index) return;
@@ -200,7 +235,9 @@ export function Deck({
   const back = () => {
     const slot = slotRefs.current[index];
     if (!scroll || !slot) return go(index - 1);
-    const offset = slot.getBoundingClientRect().top - parseFloat(getComputedStyle(slot).scrollMarginTop);
+    const offset =
+      slot.getBoundingClientRect().top -
+      parseFloat(getComputedStyle(slot).scrollMarginTop);
     go(offset < -BAR_SLOP ? index : index - 1);
   };
 
@@ -229,29 +266,50 @@ export function Deck({
     if (!grid || !frame || scroll) return;
     const head = frame.querySelector<HTMLElement>("[data-band=head]");
     const foot = frame.querySelector<HTMLElement>("[data-band=foot]");
-    const name = slots?.[NAMED[index]]?.querySelector<HTMLElement>("[data-band=name]");
+    const name =
+      slots?.[NAMED[index]]?.querySelector<HTMLElement>("[data-band=name]");
     const nameFoot = name?.closest<HTMLElement>("[data-band=foot]");
     // A slide without a head (the cover) folds the head rule into the top one; without a foot (the close) the foot rules go.
     grid.toggleAttribute("data-head", head !== null);
     grid.toggleAttribute("data-foot", foot !== null);
-    grid.toggleAttribute("data-name", frame.querySelector("[data-band=name]") !== null);
+    grid.toggleAttribute(
+      "data-name",
+      frame.querySelector("[data-band=name]") !== null,
+    );
     const place = () => {
-      const top = head ? head.offsetTop : parseFloat(getComputedStyle(frame).paddingTop);
+      const top = head
+        ? head.offsetTop
+        : parseFloat(getComputedStyle(frame).paddingTop);
       grid.style.setProperty("--head-top", `${top}px`);
-      grid.style.setProperty("--head-bottom", `${head ? head.offsetTop + head.offsetHeight : top}px`);
-      grid.style.setProperty("--foot-top", `${foot ? foot.offsetTop : frame.offsetHeight}px`);
-      grid.style.setProperty("--foot-bottom", `${foot ? foot.offsetTop + foot.offsetHeight : frame.offsetHeight}px`);
+      grid.style.setProperty(
+        "--head-bottom",
+        `${head ? head.offsetTop + head.offsetHeight : top}px`,
+      );
+      grid.style.setProperty(
+        "--foot-top",
+        `${foot ? foot.offsetTop : frame.offsetHeight}px`,
+      );
+      grid.style.setProperty(
+        "--foot-bottom",
+        `${foot ? foot.offsetTop + foot.offsetHeight : frame.offsetHeight}px`,
+      );
       if (nameFoot && name) {
-        grid.style.setProperty("--name-top", `${nameFoot.offsetTop + name.offsetTop}px`);
+        grid.style.setProperty(
+          "--name-top",
+          `${nameFoot.offsetTop + name.offsetTop}px`,
+        );
         grid.style.setProperty("--name-width", `${name.offsetWidth}px`);
         grid.style.setProperty("--name-height", `${name.offsetHeight}px`);
       }
     };
     place();
     // Placed still the first time; after that every move animates.
-    const ready = requestAnimationFrame(() => grid.setAttribute("data-ready", ""));
+    const ready = requestAnimationFrame(() =>
+      grid.setAttribute("data-ready", ""),
+    );
     const observer = new ResizeObserver(place);
-    for (const band of [frame, head, foot, name]) if (band) observer.observe(band);
+    for (const band of [frame, head, foot, name])
+      if (band) observer.observe(band);
     return () => {
       cancelAnimationFrame(ready);
       observer.disconnect();
@@ -267,14 +325,23 @@ export function Deck({
     }
     if (scrolledTo.current) return;
     scrolledTo.current = true;
-    if (index > 0) slotRefs.current[index]?.scrollIntoView({ block: "start", behavior: "instant" });
+    if (index > 0)
+      slotRefs.current[index]?.scrollIntoView({
+        block: "start",
+        behavior: "instant",
+      });
   }, [scroll, index]);
 
   // In scroll mode the slides report themselves: the one across the line is current, and each plays, runs and loads by its distance.
   useEffect(() => {
     if (!scroll) return;
-    const slots = slotRefs.current.filter((slot): slot is HTMLElement => slot !== null);
-    const track = (update: (entries: IntersectionObserverEntry[]) => void, rootMargin: string) => {
+    const slots = slotRefs.current.filter(
+      (slot): slot is HTMLElement => slot !== null,
+    );
+    const track = (
+      update: (entries: IntersectionObserverEntry[]) => void,
+      rootMargin: string,
+    ) => {
       const observer = new IntersectionObserver(update, { rootMargin });
       for (const slot of slots) observer.observe(slot);
       return observer;
@@ -282,11 +349,21 @@ export function Deck({
     const observers = [
       track((entries) => {
         const crossing = entries.findLast((entry) => entry.isIntersecting);
-        if (crossing) setIndex(Number((crossing.target as HTMLElement).dataset.slot));
+        if (crossing)
+          setIndex(Number((crossing.target as HTMLElement).dataset.slot));
       }, CURRENT_LINE),
-      track((entries) => setSeen((slots) => follow(slots, entries, true)), SEEN_MARGIN),
-      track((entries) => setInView((slots) => follow(slots, entries, false)), "0px"),
-      track((entries) => setNear((slots) => follow(slots, entries, false)), NEAR_MARGIN),
+      track(
+        (entries) => setSeen((slots) => follow(slots, entries, true)),
+        SEEN_MARGIN,
+      ),
+      track(
+        (entries) => setInView((slots) => follow(slots, entries, false)),
+        "0px",
+      ),
+      track(
+        (entries) => setNear((slots) => follow(slots, entries, false)),
+        NEAR_MARGIN,
+      ),
     ];
     return () => {
       for (const observer of observers) observer.disconnect();
@@ -301,7 +378,8 @@ export function Deck({
     const update = () => {
       frame = 0;
       const y = window.scrollY;
-      const atEnd = y + window.innerHeight >= document.documentElement.scrollHeight - 2;
+      const atEnd =
+        y + window.innerHeight >= document.documentElement.scrollHeight - 2;
       if (y < BAR_TOP || atEnd) setBarHidden(false);
       else if (y > last + BAR_SLOP) setBarHidden(true);
       else if (y < last - BAR_SLOP) setBarHidden(false);
@@ -323,12 +401,19 @@ export function Deck({
     const url = new URL(window.location.href);
     if (index === 0) url.searchParams.delete("slide");
     else url.searchParams.set("slide", String(index + 1));
-    if (url.href !== window.location.href) window.history.replaceState(null, "", url);
+    if (url.href !== window.location.href)
+      window.history.replaceState(null, "", url);
   }, [index]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (
+        event.defaultPrevented ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey
+      )
+        return;
       if (event.key === "Escape") {
         if (shareOpen) setShareOpen(false);
         else if (overview) setOverview(false);
@@ -348,8 +433,16 @@ export function Deck({
       // A scrolling deck leaves the arrows, Space and paging keys to the page.
       if (overview || scroll) return;
       let step = 0;
-      if (["ArrowRight", "ArrowDown", "PageDown"].includes(event.key) || (event.key === " " && !event.shiftKey)) step = 1;
-      else if (["ArrowLeft", "ArrowUp", "PageUp"].includes(event.key) || (event.key === " " && event.shiftKey)) step = -1;
+      if (
+        ["ArrowRight", "ArrowDown", "PageDown"].includes(event.key) ||
+        (event.key === " " && !event.shiftKey)
+      )
+        step = 1;
+      else if (
+        ["ArrowLeft", "ArrowUp", "PageUp"].includes(event.key) ||
+        (event.key === " " && event.shiftKey)
+      )
+        step = -1;
       if (event.key === "Home") {
         event.preventDefault();
         go(0);
@@ -371,12 +464,22 @@ export function Deck({
     if (!root || overview || scroll) return;
     const onWheel = (event: WheelEvent) => {
       // A list in a slide that scrolls itself (the states slide's) keeps the wheel.
-      if (event.ctrlKey || (event.target as Element).closest("dialog, [data-deck-scroll]")) return;
+      if (
+        event.ctrlKey ||
+        (event.target as Element).closest("dialog, [data-deck-scroll]")
+      )
+        return;
       const state = wheel.current;
       const now = performance.now();
       if (now < state.lockedUntil) return;
-      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
-      state.travel = Math.sign(delta) === Math.sign(state.travel) ? state.travel + delta : delta;
+      const delta =
+        Math.abs(event.deltaX) > Math.abs(event.deltaY)
+          ? event.deltaX
+          : event.deltaY;
+      state.travel =
+        Math.sign(delta) === Math.sign(state.travel)
+          ? state.travel + delta
+          : delta;
       if (Math.abs(state.travel) < WHEEL_STEP) return;
       go(index + Math.sign(state.travel));
       state.travel = 0;
@@ -387,7 +490,8 @@ export function Deck({
   }, [index, overview, scroll, go]);
 
   useEffect(() => {
-    const onChange = () => setFullscreen(document.fullscreenElement === document.documentElement);
+    const onChange = () =>
+      setFullscreen(document.fullscreenElement === document.documentElement);
     // Printing lays out every slide as shown, so their entrances must be settled before the browser paginates.
     // They stay open after, until the next slide's turn parks them at rest.
     const onBeforePrint = () =>
@@ -443,7 +547,14 @@ export function Deck({
   const overviewWarm = useRef(false);
   useEffect(() => {
     const overview = overviewRef.current;
-    if (scroll || !overviewDrawn || !controls || !overview || overviewWarm.current) return;
+    if (
+      scroll ||
+      !overviewDrawn ||
+      !controls ||
+      !overview ||
+      overviewWarm.current
+    )
+      return;
     overview.setAttribute("data-warming", "");
     let raf = requestAnimationFrame(() => {
       raf = requestAnimationFrame(() => {
@@ -472,14 +583,17 @@ export function Deck({
   // Opening the overview focuses the current slide's entry.
   useEffect(() => {
     if (!overview) return;
-    const current = overviewRef.current?.querySelector<HTMLElement>("[aria-current=true]");
+    const current = overviewRef.current?.querySelector<HTMLElement>(
+      "[aria-current=true]",
+    );
     current?.focus({ preventScroll: true });
     current?.scrollIntoView({ block: "nearest" });
   }, [overview]);
 
   const onPointerDown = (event: ReactPointerEvent) => {
     swipe.current =
-      event.pointerType === "mouse" || (event.target as Element).closest("dialog, [data-deck-scroll]")
+      event.pointerType === "mouse" ||
+      (event.target as Element).closest("dialog, [data-deck-scroll]")
         ? null
         : { x: event.clientX, y: event.clientY };
   };
@@ -490,7 +604,8 @@ export function Deck({
     if (!start) return;
     const dx = event.clientX - start.x;
     const dy = event.clientY - start.y;
-    if (Math.abs(dx) > SWIPE_MIN && Math.abs(dx) > Math.abs(dy) * 1.5) go(index + (dx < 0 ? 1 : -1));
+    if (Math.abs(dx) > SWIPE_MIN && Math.abs(dx) > Math.abs(dy) * 1.5)
+      go(index + (dx < 0 ? 1 : -1));
   };
 
   const choose = (target: number) => {
@@ -525,39 +640,81 @@ export function Deck({
             const current = i === index;
             const shown = scroll || current || printing;
             return (
-              <section
-                key={entry.id}
-                ref={(slot) => {
-                  slotRefs.current[i] = slot;
-                }}
-                className={styles.slot}
-                data-slot={i}
-                data-state={scroll ? undefined : current ? "current" : i < index ? "before" : "after"}
-                data-parked={(!scroll && !open.has(i)) || undefined}
-                data-surface={scroll ? (entry.ground === "ink" ? "dark" : "light") : undefined}
-                aria-roledescription="slide"
-                aria-label={`${i + 1} of ${TOTAL}: ${entry.title}`}
-                aria-hidden={!shown}
-                inert={!shown}
-              >
-                <SlideView
-                  slide={entry}
-                  index={i}
-                  total={TOTAL}
-                  active={scroll ? seen.has(i) : current || i === leaving || printing}
-                  playing={scroll ? seen.has(i) && inView.has(i) : undefined}
-                  near={scroll ? near.has(i) : printing || Math.abs(i - index) <= 1}
-                  branded={printing}
-                  grid={printing || scroll}
-                  compact={scroll}
-                  policy={policy}
-                />
-              </section>
+              <Fragment key={entry.id}>
+                {/* Beside the slot, not in it, so jumps and the current-slide line still find the slide itself. */}
+                {scroll && i > 0 ? (
+                  <div
+                    className={styles.divider}
+                    data-ground={entry.ground}
+                    data-surface={entry.ground === "ink" ? "dark" : "light"}
+                    aria-hidden="true"
+                  >
+                    <span className={styles.dividerNumber}>
+                      {pad(i + 1)} / {pad(TOTAL)}
+                    </span>
+                    <span className={styles.dividerName}>{entry.section}</span>
+                  </div>
+                ) : null}
+                <section
+                  ref={(slot) => {
+                    slotRefs.current[i] = slot;
+                  }}
+                  className={styles.slot}
+                  data-slot={i}
+                  data-state={
+                    scroll
+                      ? undefined
+                      : current
+                        ? "current"
+                        : i < index
+                          ? "before"
+                          : "after"
+                  }
+                  data-parked={(!scroll && !open.has(i)) || undefined}
+                  data-surface={
+                    scroll
+                      ? entry.ground === "ink"
+                        ? "dark"
+                        : "light"
+                      : undefined
+                  }
+                  aria-roledescription="slide"
+                  aria-label={`${i + 1} of ${TOTAL}: ${entry.title}`}
+                  aria-hidden={!shown}
+                  inert={!shown}
+                >
+                  <SlideView
+                    slide={entry}
+                    index={i}
+                    total={TOTAL}
+                    active={
+                      scroll
+                        ? seen.has(i)
+                        : current || i === leaving || printing
+                    }
+                    playing={scroll ? seen.has(i) && inView.has(i) : undefined}
+                    near={
+                      scroll
+                        ? near.has(i)
+                        : printing || Math.abs(i - index) <= 1
+                    }
+                    branded={printing}
+                    grid={printing || scroll}
+                    compact={scroll}
+                    policy={policy}
+                  />
+                </section>
+              </Fragment>
             );
           })}
         </div>
         {scroll ? null : (
-          <div ref={gridRef} className={styles.grid} data-strong={index === 0 || undefined} aria-hidden="true">
+          <div
+            ref={gridRef}
+            className={styles.grid}
+            data-strong={index === 0 || undefined}
+            aria-hidden="true"
+          >
             <div className={styles.gridLines}>
               <span className={styles.rule} data-rule="top" />
               <span className={styles.rule} data-rule="head" />
@@ -567,9 +724,15 @@ export function Deck({
                 <span
                   key={`${SLIDES[NAMED[index]].eyebrow}:${NAMED[index] === index ? "shown" : "borrowed"}`}
                   className={styles.nameLine}
-                  style={{ "--chars": SLIDES[NAMED[index]].eyebrow.length } as CSSProperties}
+                  style={
+                    {
+                      "--chars": SLIDES[NAMED[index]].eyebrow.length,
+                    } as CSSProperties
+                  }
                 >
-                  <span className={styles.nameText}>{SLIDES[NAMED[index]].eyebrow}</span>
+                  <span className={styles.nameText}>
+                    {SLIDES[NAMED[index]].eyebrow}
+                  </span>
                   <span className={styles.nameCursor} />
                 </span>
               </span>
@@ -580,7 +743,13 @@ export function Deck({
 
       <nav className={styles.bar} aria-label="Deck controls">
         <div className={styles.barStart}>
-          <button type="button" className={styles.iconButton} aria-label="Previous slide" disabled={index === 0} onClick={back}>
+          <button
+            type="button"
+            className={styles.iconButton}
+            aria-label="Previous slide"
+            disabled={index === 0}
+            onClick={back}
+          >
             <ArrowIcon flip />
           </button>
           <button
@@ -604,7 +773,9 @@ export function Deck({
               <button
                 type="button"
                 className={styles.tick}
-                data-state={i === index ? "current" : i < index ? "past" : "future"}
+                data-state={
+                  i === index ? "current" : i < index ? "past" : "future"
+                }
                 data-title={`${pad(i + 1)} ${entry.section}`}
                 aria-label={`Slide ${i + 1}: ${entry.section}`}
                 aria-current={i === index ? "step" : undefined}
@@ -647,7 +818,11 @@ export function Deck({
               aria-pressed={fullscreen}
               onClick={toggleFullscreen}
             >
-              <svg className={styles.icon} viewBox="0 0 12 12" aria-hidden="true">
+              <svg
+                className={styles.icon}
+                viewBox="0 0 12 12"
+                aria-hidden="true"
+              >
                 {fullscreen ? (
                   <path d="M4.5 1.5v3h-3M7.5 1.5v3h3M4.5 10.5v-3h-3M7.5 10.5v-3h3" />
                 ) : (
@@ -702,9 +877,20 @@ export function Deck({
         >
           <ol className={styles.overviewGrid}>
             {SLIDES.map((entry, i) => (
-              <li key={entry.id} className={styles.thumb} data-current={i === index || undefined}>
+              <li
+                key={entry.id}
+                className={styles.thumb}
+                data-current={i === index || undefined}
+              >
                 <div className={styles.thumbFrame} inert aria-hidden="true">
-                  <SlideView slide={entry} index={i} total={TOTAL} active still policy={policy} />
+                  <SlideView
+                    slide={entry}
+                    index={i}
+                    total={TOTAL}
+                    active
+                    still
+                    policy={policy}
+                  />
                 </div>
                 <p className={styles.thumbLabel}>
                   <span>{pad(i + 1)}</span>
