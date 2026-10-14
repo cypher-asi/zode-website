@@ -491,7 +491,9 @@ export const SLIDES: readonly Slide[] = [
       { year: "2029", value: "100 GW" },
       { year: "2030", value: "Singularity" },
     ],
-    planNote: "Every MW is worth $18.8M in annual revenue and $100–200M in enterprise value.",
+    // A word joiner after the dash keeps the range on one line.
+    planNote: "Every MW is worth $18.8M in annual revenue and $50–\u206075M in enterprise value, as AI clouds trade today.",
+    sources: ["evPerMw"],
   },
   {
     id: "advantage",

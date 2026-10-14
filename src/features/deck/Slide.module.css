@@ -2545,6 +2545,11 @@
   margin-top: calc(1.2 * var(--u));
 }
 
+/* A second group in the same column. */
+.citationsNext {
+  margin-top: calc(1.6 * var(--u));
+}
+
 /* ---------- Story cards ---------- */
 
 /*

@@ -971,31 +971,40 @@ const SOURCE_GROUPS: readonly { title: string; ids: readonly SourceId[] }[] = [
   },
 ];
 
+/** Set under the news, where the third column has room. */
+const VALUATION_SOURCES: readonly SourceId[] = ["evPerMw"];
+
+function Citations({ ids }: { ids: readonly SourceId[] }): ReactElement {
+  return (
+    <ol className={styles.citations}>
+      {ids.map((id) => {
+        const source: Source = SOURCES[id];
+        return (
+          <li key={id}>
+            <span className={styles.citePublisher}>{source.publisher}</span>{" "}
+            {source.url ? (
+              <a href={source.url} target="_blank" rel="noreferrer noopener">
+                {source.title}
+              </a>
+            ) : (
+              source.title
+            )}
+            , {source.date}
+            {source.via ? ` (${source.via})` : null}.
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 function Sources(): ReactElement {
   return (
     <div className={styles.sourcesBody}>
       {SOURCE_GROUPS.map((group, g) => (
         <div key={group.title} {...rise(2 + g)} className={styles.rise}>
           <h3 className={styles.label}>{group.title}</h3>
-          <ol className={styles.citations}>
-            {group.ids.map((id) => {
-              const source: Source = SOURCES[id];
-              return (
-                <li key={id}>
-                  <span className={styles.citePublisher}>{source.publisher}</span>{" "}
-                  {source.url ? (
-                    <a href={source.url} target="_blank" rel="noreferrer noopener">
-                      {source.title}
-                    </a>
-                  ) : (
-                    source.title
-                  )}
-                  , {source.date}
-                  {source.via ? ` (${source.via})` : null}.
-                </li>
-              );
-            })}
-          </ol>
+          <Citations ids={group.ids} />
         </div>
       ))}
       <div {...rise(4)} className={styles.rise}>
@@ -1011,6 +1020,8 @@ function Sources(): ReactElement {
             </li>
           ))}
         </ol>
+        <h3 className={`${styles.label} ${styles.citationsNext}`}>Valuation</h3>
+        <Citations ids={VALUATION_SOURCES} />
         <p className={styles.fine}>
           As of {AS_OF}. The dashed grid line on the demand chart is ZODE&rsquo;s illustration, not a third-party forecast.
           Pipeline, contract and financing figures are ZODE&rsquo;s own and preliminary where noted.

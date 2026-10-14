@@ -139,6 +139,18 @@ export const SOURCES = {
     date: "May 2026",
     url: "https://www.goldmansachs.com/insights/articles/ai-agents-forecast-to-boost-tech-cash-flow-as-usage-soars",
   },
+  /**
+   * Enterprise value over active or year-end MW: CoreWeave $88.9B on 1.5 GW
+   * active, 1.85 GW+ by year end; Nebius $58.9B on 0.8–1 GW connected by year
+   * end; IREN $15.8B on ~0.3 GW of IT delivered in 2026. Power from each
+   * company's Q2 2026 or FY26 report.
+   */
+  evPerMw: {
+    publisher: "ZODE, from NeoCloud Stocks and company reports",
+    title: "AI cloud enterprise value per MW: CoreWeave, Nebius and IREN",
+    date: "October 13, 2026",
+    url: "https://www.neocloudstocks.com/",
+  },
 } as const satisfies Record<string, Source>;
 
 export type SourceId = keyof typeof SOURCES;
