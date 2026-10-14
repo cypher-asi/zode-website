@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactElement } from "react";
-import { Sketch, project, round, type Bounds, type P3 } from "@/features/zode-drawings/lineArt";
+import { Sketch, project, rng, round, type Bounds, type P3 } from "@/features/zode-drawings/lineArt";
 import type { MacroArtId } from "../slides";
 import styles from "./MacroArt.module.css";
 
@@ -991,32 +991,42 @@ const motion = (ps: readonly P3[]) =>
     .map(([x, y]) => `${x} ${y}`)
     .join(" L ")}`;
 
-/**
- * `n` riders spaced evenly along `path`, each drawn by `draw` at the origin;
- * every other one is `extra`, shown only while the card is hovered.
- */
-function riders(s: Sketch, path: string, dur: number, n: number, draw: () => void): void {
-  for (let k = 0; k < n; k++) {
-    s.group({ className: `${styles.rider}${k % 2 ? ` ${styles.extra}` : ""}` }, () => {
-      s.el("animateMotion", {
-        path,
-        dur: `${dur}s`,
-        begin: `${round((-k * dur) / n)}s`,
-        repeatCount: "indefinite",
-        calcMode: "paced",
-      });
-      draw();
+/** One rider looping along `path`, drawn by `draw` at the origin; an `extra` one shows only while the card is hovered. */
+function rider(s: Sketch, path: string, dur: number, begin: number, extra: boolean, draw: () => void): void {
+  s.group({ className: extra ? `${styles.rider} ${styles.extra}` : styles.rider }, () => {
+    s.el("animateMotion", {
+      path,
+      dur: `${round(dur)}s`,
+      begin: `${round(begin)}s`,
+      repeatCount: "indefinite",
+      calcMode: "paced",
     });
-  }
+    draw();
+  });
 }
+
+/** `n` riders spaced evenly along `path`, every other one extra. */
+function riders(s: Sketch, path: string, dur: number, n: number, draw: () => void): void {
+  for (let k = 0; k < n; k++) rider(s, path, dur, (-k * dur) / n, k % 2 === 1, draw);
+}
+
+/** Neurons per layer of the die's net, input to output. */
+const NET = [3, 5, 6, 5, 2];
+const NET_X = [-46, -23, 0, 23, 46];
+const netY = (n: number, j: number) => {
+  const span = Math.min(64, (n - 1) * 14);
+  return n > 1 ? -span / 2 + (j * span) / (n - 1) : 0;
+};
 
 /**
  * Tokens made like an advanced chip on a line: energy rides the feed rail in
- * on the left, winds through the channels between the die's cores, and leaves
- * on the right as tokens down the output conveyor.
+ * on the left onto the die's power bus, fires through a layered net of
+ * neurons over every connection at once, and leaves on the right as coins
+ * down the output conveyor.
  */
 function tokenMaze(s: Sketch): void {
   const TOP = 10;
+  const random = rng(7);
 
   s.box(-96, -66, 192, 132, 0, 4);
   for (let x = -90; x <= 86; x += 8) s.box(x, 66, 4, 2, 1, 2);
@@ -1038,48 +1048,41 @@ function tokenMaze(s: Sketch): void {
     ],
     styles.fine,
   );
-  for (const gy of [-16, 8]) for (const dy of [-3, 3]) s.line([[-60, gy + dy, TOP], [60, gy + dy, TOP]], styles.trace);
-  for (const gx of [-37, -15, 7, 29]) for (const dx of [-3, 3]) s.line([[gx + dx, -38, TOP], [gx + dx, 38, TOP]], styles.trace);
 
+  const neurons = NET.map((n, i) => Array.from({ length: n }, (_, j): P3 => [NET_X[i], netY(n, j), TOP]));
+  const links: [P3, P3][] = [];
+  for (let i = 0; i < neurons.length - 1; i++) for (const a of neurons[i]) for (const b of neurons[i + 1]) links.push([a, b]);
+  for (const [a, b] of links) s.line([a, b]);
+
+  const BUS_X = -56;
   const FEED: P3[] = [
     [-124, 33, TOP],
     [-62, 33, TOP],
+    [BUS_X, 33, TOP],
+    [BUS_X, neurons[0][0][1], TOP],
   ];
-  const MAZE: P3[] = [
-    [-62, 33, TOP],
-    [-37, 33, TOP],
-    [-37, 8, TOP],
-    [-15, 8, TOP],
-    [-15, -16, TOP],
-    [7, -16, TOP],
-    [7, 8, TOP],
-    [29, 8, TOP],
-    [29, -37, TOP],
+  s.line(FEED.slice(1), styles.edge);
+  for (const [x, y] of neurons[0]) s.line([[BUS_X, y, TOP], [x, y, TOP]], styles.edge);
+
+  const OUT_X = 54;
+  const exits = neurons[neurons.length - 1].map(([x, y]): P3[] => [
+    [x, y, TOP],
+    [OUT_X, y, TOP],
+    [OUT_X, -37, TOP],
     [62, -37, TOP],
-  ];
+  ]);
+  for (const route of exits) s.line(route, styles.edge);
   const OUT: P3[] = [
     [62, -37, TOP],
     [134, -37, TOP],
   ];
-  s.group(anim(styles.flow), () => s.line(MAZE, styles.fine));
 
-  const [CW, CH] = [12, 3];
-  const cores: { x: number; y: number; k: number }[] = [];
-  for (let i = 0; i < 5; i++) for (let j = 0; j < 3; j++) cores.push({ x: -54 + i * 22, y: -34 + j * 24, k: i });
-  cores
-    .sort((a, b) => a.x + a.y - (b.x + b.y))
-    .forEach(({ x, y, k }) => {
-      s.group(anim(styles.shade, k), () => s.box(x, y, CW, CW, TOP, CH));
-      s.line(
-        [
-          [x + 3, y + 3, TOP + CH],
-          [x + CW - 3, y + 3, TOP + CH],
-          [x + CW - 3, y + CW - 3, TOP + CH],
-          [x + 3, y + CW - 3, TOP + CH],
-          [x + 3, y + 3, TOP + CH],
-        ],
-        styles.fine,
-      );
+  neurons
+    .flat()
+    .sort((a, b) => a[0] + a[1] - (b[0] + b[1]))
+    .forEach(([x, y]) => {
+      s.box(x - 3, y - 3, 6, 6, TOP, 2.5);
+      s.group(anim(styles.flash, Math.floor(random() * 9)), () => s.disc([x, y, TOP + 2.5], 2.2, styles.ring));
     });
 
   s.box(-124, 28, 62, 10, 0, TOP);
@@ -1090,10 +1093,14 @@ function tokenMaze(s: Sketch): void {
   for (let x = 66; x < 134; x += 6) s.line([[x, -42, TOP], [x, -32, TOP]]);
   for (let x = 70; x < 134; x += 24) s.line([[x, -32, 2], [x, -32, TOP - 2]], styles.edge);
 
-  riders(s, motion([...FEED, ...MAZE.slice(1)]), 7, 16, () => {
-    s.disc([0, 0, 0], 2.2, styles.ink);
+  const spark = () => s.disc([0, 0, 0], 1.5, styles.ink);
+  riders(s, motion(FEED), 3, 8, spark);
+  links.forEach(([a, b], k) => {
+    const dur = 0.8 + random();
+    rider(s, motion([a, b]), dur, -random() * dur, k % 2 === 1, spark);
   });
-  riders(s, motion(OUT), 3.5, 8, () => s.box(-3, -3, 6, 6, 0, 6));
+  for (const route of exits) riders(s, motion(route), 1.6, 4, spark);
+  riders(s, motion(OUT), 3.5, 8, () => coins(s, 0, 0, 3.8, 1, 2.2));
 }
 
 const DRAW: Record<MacroArtId, (s: Sketch) => void> = {
