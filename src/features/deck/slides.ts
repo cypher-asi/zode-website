@@ -1,3 +1,4 @@
+import type { UnitIconId } from "./art/UnitIcon";
 import type { SourceId } from "./research";
 
 /** A slide's background; ink is the one dark ground. */
@@ -30,8 +31,7 @@ export type MacroArtId =
   | "signature"
   | "interconnect"
   | "capitalStack"
-  | "tokenMaze"
-  | "storage";
+  | "tokenMaze";
 
 /** One link in the chain from capital to offtake; `hard` marks the bottleneck. */
 export interface ChainStep {
@@ -115,7 +115,7 @@ export type Slide =
   | (Base & {
       kind: "unit";
       /** The `highlight` card is set on ink, to stand out. */
-      specs: readonly (Stat & { art: MacroArtId })[];
+      specs: readonly (Stat & { icon: UnitIconId })[];
       highlight: number;
       image: string;
       /** Open in a new tab, under the image. */
@@ -383,12 +383,12 @@ export const SLIDES: readonly Slide[] = [
     title: "One standard cluster: 2,048 GPUs in 4 MW.",
     ground: "paper",
     specs: [
-      { value: "256", label: "Nodes · 8× NVIDIA B300 each", art: "compute" },
-      { value: "~4 MW", label: "Critical IT load, direct liquid cooling", art: "power" },
-      { value: "800G", label: "Quantum-X800 InfiniBand fabric", art: "interconnect" },
-      { value: "2 PB", label: "High-performance storage", art: "storage" },
-      { value: "$4.20", label: "Contracted price per GPU-hour, 5-year term", art: "signature" },
-      { value: "$75M", label: "Annual contracted revenue at $4.20/GPU-hr", art: "capital" },
+      { value: "256", label: "Nodes · 8× NVIDIA B300 each", icon: "gpu" },
+      { value: "~4 MW", label: "Critical IT load, direct liquid cooling", icon: "power" },
+      { value: "800G", label: "Quantum-X800 InfiniBand fabric", icon: "fabric" },
+      { value: "2 PB", label: "High-performance storage", icon: "storage" },
+      { value: "$4.20", label: "Contracted price per GPU-hour, 5-year term", icon: "rate" },
+      { value: "$75M", label: "Annual contracted revenue at $4.20/GPU-hr", icon: "revenue" },
     ],
     highlight: 5,
     image: "/images/deck/cluster-2048.png",

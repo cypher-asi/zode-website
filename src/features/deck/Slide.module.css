@@ -1525,12 +1525,14 @@
   list-style: none;
 }
 
-/* A drawing, a hairline, then the figure. */
+/* A square cell for the icon, as tall as the card, a hairline, then the figure. */
 .unitCard {
+  --card-h: calc(7.6 * var(--u));
+
   display: grid;
-  grid-template-columns: calc(5.4 * var(--u)) minmax(0, 1fr);
+  grid-template-columns: var(--card-h) minmax(0, 1fr);
   align-items: stretch;
-  min-height: calc(8.4 * var(--u));
+  height: var(--card-h);
   background: var(--card);
   color: var(--fg);
   box-shadow: 0 0 0 1px var(--rule);
@@ -1552,12 +1554,11 @@
   align-items: center;
   justify-content: center;
   min-width: 0;
-  padding: calc(1 * var(--u)) calc(0.8 * var(--u));
 }
 
 .unitFigure > svg {
-  height: auto;
-  max-height: calc(4.4 * var(--u));
+  width: calc(2.6 * var(--u));
+  height: calc(2.6 * var(--u));
 }
 
 .unitText {
@@ -2756,16 +2757,12 @@
 }
 
 .slide[data-compact] .unitCard {
-  grid-template-columns: 72px minmax(0, 1fr);
-  min-height: 0;
-}
-
-.slide[data-compact] .unitFigure {
-  padding: 14px 10px;
+  --card-h: 92px;
 }
 
 .slide[data-compact] .unitFigure > svg {
-  max-height: 44px;
+  width: 32px;
+  height: 32px;
 }
 
 .slide[data-compact] .unitText {

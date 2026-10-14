@@ -6,6 +6,7 @@ import { CabinArt, VIEW as CABIN_VIEW } from "@/features/zode-drawings/CabinArt"
 import { Principles } from "@/features/home/principles/Principles";
 import { StackFigure } from "@/features/home/stack/FullStack";
 import { MacroArt } from "./art/MacroArt";
+import { UnitIcon } from "./art/UnitIcon";
 import { DEMAND_GAP, DemandChart } from "./charts/DemandChart";
 import { ShortfallByYear, ShortfallChart } from "./charts/ShortfallChart";
 import { StateTileMap } from "./charts/StateTileMap";
@@ -512,12 +513,12 @@ function Steps({ slide, active }: { slide: Of<"steps">; active: boolean }): Reac
 
 /**
  * The cluster, two halves split by a page-grid rule as the problems slide:
- * its figures as mini-cards on the left, each a drawing ruled off from its
- * value and label, the contract's revenue set on ink; on the right the
- * cluster builder's render of it, with the builder and the compute model a
- * new tab away.
+ * its figures as mini-cards on the left, each a line icon in a square cell
+ * ruled off from its value and label, the contract's revenue set on ink; on
+ * the right the cluster builder's render of it, with the builder and the
+ * compute model a new tab away.
  */
-function Unit({ slide, active }: { slide: Of<"unit">; active: boolean }): ReactElement {
+function Unit({ slide }: { slide: Of<"unit"> }): ReactElement {
   return (
     <div className={styles.unit}>
       <ul className={styles.unitCards}>
@@ -531,7 +532,7 @@ function Unit({ slide, active }: { slide: Of<"unit">; active: boolean }): ReactE
               data-ink={ink || undefined}
             >
               <div className={styles.unitFigure}>
-                <MacroArt id={spec.art} light={!ink} playing={active} />
+                <UnitIcon id={spec.icon} />
               </div>
               <div className={styles.unitText}>
                 <span className={styles.unitValue}>{spec.value}</span>
@@ -886,7 +887,7 @@ function Body({
     case "steps":
       return <Steps slide={slide} active={active} />;
     case "unit":
-      return <Unit slide={slide} active={active} />;
+      return <Unit slide={slide} />;
     case "traction":
       return <Traction slide={slide} />;
     case "pipeline":

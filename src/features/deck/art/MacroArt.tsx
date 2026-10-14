@@ -1021,18 +1021,6 @@ function capitalStack(s: Sketch): void {
   s.box(MX, RACKS[0] + 2, 3, RACKS[2] - RACKS[0] + RD - 4, RH + 5, 3);
 }
 
-/** A storage array: four drive shelves stacked, their fronts (+y) ruled into bays, each with an activity light. */
-function storage(s: Sketch): void {
-  const [X, Y, W, D, H, GAP] = [-84, -36, 168, 72, 14, 3];
-  const F = Y + D;
-  for (let k = 0; k < 4; k++) {
-    const z = k * (H + GAP);
-    s.group(anim(styles.shade, k), () => s.box(X, Y, W, D, z, H));
-    for (let x = X + 16; x < X + W - 4; x += 12) s.line([[x, F, z + 2], [x, F, z + H - 2]]);
-    s.group(anim(styles.flash, k), () => circle(s, ...project([X + 8, F, z + H / 2]), 1.4, styles.ring));
-  }
-}
-
 /** An SVG motion path through model points, in screen space. */
 const motion = (ps: readonly P3[]) =>
   `M ${ps
@@ -1191,7 +1179,6 @@ const DRAW: Record<MacroArtId, (s: Sketch) => void> = {
   interconnect,
   capitalStack,
   tokenMaze,
-  storage,
 };
 
 /** Each drawing fits its own frame: the cards are small, so legibility wins over a shared scale. */
