@@ -872,29 +872,55 @@ function Comparison({ slide }: { slide: Of<"comparison"> }): ReactElement {
   );
 }
 
+/**
+ * The deals as one panel of cards across the top, each shaded as its layers
+ * are in the example under them: one stacked bar, each layer as wide as its
+ * share of the total, tagged with the deal it comes from.
+ */
 function Finance({ slide }: { slide: Of<"finance"> }): ReactElement {
+  const { example } = slide;
   return (
-    <div className={styles.split} data-split="even">
-      <ol className={styles.capital}>
-        {slide.stack.map((layer, i) => (
-          <li key={layer.label} {...rise(2 + i * 0.5)} className={`${styles.rise} ${styles.capitalLayer}`} data-tier={i}>
-            <span className={styles.capitalLabel}>{layer.label}</span>
-            <span className={styles.capitalValue}>{layer.value}</span>
+    <div className={styles.finance}>
+      <ul className={styles.deals}>
+        {slide.deals.map((deal, i) => (
+          <li key={deal.id} {...rise(2 + i * 0.4)} className={`${styles.rise} ${styles.deal}`} data-deal={deal.id}>
+            <h3 className={styles.dealTitle}>{deal.title}</h3>
+            <span className={styles.statLabel}>{deal.purpose}</span>
+            <dl className={styles.dealLayers}>
+              {deal.layers.map((layer) => (
+                <div key={layer.label}>
+                  <dt>{layer.label}</dt>
+                  <dd>{layer.value}</dd>
+                </div>
+              ))}
+            </dl>
           </li>
         ))}
-      </ol>
-      <div {...rise(4)} className={`${styles.rise} ${styles.example}`}>
-        <h3 className={styles.label}>{slide.example.title}</h3>
-        <dl className={styles.details}>
-          {slide.example.rows.map((row) => (
-            <div key={row.label} className={styles.detail}>
-              <dt>{row.label}</dt>
-              <dd className={styles.exampleValue}>{row.value}</dd>
-            </div>
-          ))}
-        </dl>
-        <p className={styles.fine}>{slide.example.note}</p>
-      </div>
+      </ul>
+      <section {...rise(3.5)} className={`${styles.rise} ${styles.stackExample}`}>
+        <h3 className={styles.label}>{example.title}</h3>
+        <div className={styles.stackRow}>
+          <ol className={styles.stackBar}>
+            {example.layers.map((layer) => (
+              <li
+                key={layer.label}
+                className={styles.stackSegment}
+                data-deal={layer.deal}
+                style={{ "--usd": layer.usd } as CSSProperties}
+              >
+                <span className={styles.stackTag}>{layer.tag}</span>
+                <span className={styles.stackValue}>{layer.value}</span>
+                <span className={styles.stackLabel}>{layer.label}</span>
+              </li>
+            ))}
+          </ol>
+          <p className={styles.stackTotal}>
+            <span className={styles.label}>Total</span>
+            <span className={styles.stackValue}>{example.total}</span>
+          </p>
+        </div>
+        <p className={styles.fine}>{example.note}</p>
+      </section>
     </div>
   );
 }

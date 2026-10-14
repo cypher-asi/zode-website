@@ -75,6 +75,9 @@ export interface ContractSide {
   readonly rows: readonly { label: string; value: string }[];
 }
 
+/** A project's capital comes in up to three deals, each its own financing. */
+export type DealId = "compute" | "realEstate" | "gpu";
+
 interface Base {
   readonly id: string;
   /** Short name for the control bar, overview and progress tooltips. */
@@ -167,8 +170,15 @@ export type Slide =
     })
   | (Base & {
       kind: "finance";
-      stack: readonly { label: string; value: string }[];
-      example: { title: string; rows: readonly { label: string; value: string }[]; note: string };
+      /** One card per deal, in the row across the top. */
+      deals: readonly { id: DealId; title: string; purpose: string; layers: readonly { label: string; value: string }[] }[];
+      /** Drawn as one stacked bar, each layer as wide as its share of `usd` and shaded by its deal. */
+      example: {
+        title: string;
+        layers: readonly { label: string; deal: DealId; tag: string; value: string; usd: number }[];
+        total: string;
+        note: string;
+      };
     })
   | (Base & {
       kind: "raise";
@@ -522,20 +532,39 @@ export const SLIDES: readonly Slide[] = [
     eyebrow: "Project finance",
     title: "Every cluster is its own financeable project.",
     ground: "paper",
-    stack: [
-      { label: "Customer prepayment", value: "25–30% of contract value" },
-      { label: "Senior GPU debt", value: "Sized to 1.15x DSCR" },
-      { label: "Preferred equity", value: "18% pref · 1.5x minimum" },
-      { label: "ZODE residual", value: "After debt and pref" },
+    deals: [
+      {
+        id: "compute",
+        title: "Compute deal",
+        purpose: "Equity and debt for compute delivery",
+        layers: [
+          { label: "Customer prepayment", value: "25–30% of contract value" },
+          { label: "Preferred equity", value: "18% pref · 1.5x minimum" },
+        ],
+      },
+      {
+        id: "realEstate",
+        title: "Real estate deal",
+        purpose: "Equity for real estate purchase",
+        layers: [{ label: "Real estate equity", value: "Purchase and conversion · ~$5M per MW" }],
+      },
+      {
+        id: "gpu",
+        title: "GPU deal",
+        purpose: "Debt for GPUs",
+        layers: [{ label: "Senior GPU debt", value: "Sized to 1.15x DSCR" }],
+      },
     ],
     example: {
-      title: "Example · Chicago",
-      rows: [
-        { label: "Prepayment", value: "$103.6M" },
-        { label: "GPU debt", value: "~$52.5M" },
-        { label: "Preferred equity", value: "~$28M" },
+      title: "Example · Chicago, with a purchased building",
+      layers: [
+        { label: "Customer prepayment", deal: "compute", tag: "Compute · Debt", value: "$103.6M", usd: 103.6e6 },
+        { label: "Senior GPU debt", deal: "gpu", tag: "GPU · Debt", value: "~$52.5M", usd: 52.5e6 },
+        { label: "Preferred equity", deal: "compute", tag: "Compute · Equity", value: "~$28M", usd: 28e6 },
+        { label: "Real estate equity", deal: "realEstate", tag: "Real estate · Equity", value: "~$30M", usd: 30e6 },
       ],
-      note: "Preliminary, per current project model.",
+      total: "~$214M",
+      note: "Preliminary, per current project model. Chicago is leased; real estate equity is illustrative, for a purchased 4 MW building at $10M plus $5M per MW of conversion.",
     },
   },
   {
