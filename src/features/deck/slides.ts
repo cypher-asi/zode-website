@@ -576,7 +576,6 @@ export const SLIDES: readonly Slide[] = [
           logos: [
             { name: "SpaceX", src: `${LOGO_DIR}/spacex.svg`, aspect: 400 / 50, scale: 0.95 },
             { name: "Tesla", src: `${LOGO_DIR}/tesla.svg`, aspect: 993.047 / 100, scale: 0.85 },
-            { name: "Raytheon", src: `${LOGO_DIR}/raytheon.svg`, aspect: 239.7 / 71.8, scale: 1.1 },
           ],
         },
       ],
