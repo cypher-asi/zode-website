@@ -577,7 +577,7 @@ export const SLIDES: readonly Slide[] = [
           {
             label: "Senior GPU debt",
             kind: "debt",
-            terms: ["Sized to 1.15x DSCR", "8–15% interest", "80% LTV", "3-year term", "10% capital reserve · USD.AI"],
+            terms: ["Sized to 1.15x DSCR", "8–15% interest", "80% LTV", "3-year term", "10% capital reserve"],
           },
         ],
       },
