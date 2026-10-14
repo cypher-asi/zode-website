@@ -2148,12 +2148,12 @@
  * mini-cards: out to the card's edges, ruled off from the rest across its width.
  */
 .dealHead {
-  --fig: calc(5.2 * var(--u));
+  --fig: calc(6.4 * var(--u));
 
   display: grid;
   grid-template-columns: var(--fig) minmax(0, 1fr);
   align-items: stretch;
-  min-height: var(--fig);
+  height: var(--fig);
   margin-inline: calc(-1.3 * var(--u));
   border-bottom: 1px solid var(--rule);
 }
@@ -2166,8 +2166,8 @@
 }
 
 .dealFigure > svg {
-  width: calc(4.4 * var(--u));
-  height: calc(4.4 * var(--u));
+  width: calc(4.8 * var(--u));
+  height: calc(4.8 * var(--u));
 }
 
 .dealHeading {
@@ -2176,7 +2176,7 @@
   justify-content: center;
   gap: calc(0.6 * var(--u));
   min-width: 0;
-  padding: calc(1.2 * var(--u)) calc(1.3 * var(--u));
+  padding-inline: calc(1.3 * var(--u));
   border-left: 1px solid var(--rule);
 }
 
@@ -3681,19 +3681,19 @@
 }
 
 .slide[data-compact] .dealHead {
-  --fig: 72px;
+  --fig: 96px;
 
   margin-inline: -16px;
 }
 
 .slide[data-compact] .dealFigure > svg {
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
 }
 
 .slide[data-compact] .dealHeading {
   gap: 6px;
-  padding: 14px 16px;
+  padding-inline: 16px;
 }
 
 .slide[data-compact] .dealTitle,
