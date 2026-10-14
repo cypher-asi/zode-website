@@ -558,25 +558,25 @@ export const SLIDES: readonly Slide[] = [
         {
           label: "Capital markets",
           logos: [
-            { name: "Goldman Sachs", src: `${LOGO_DIR}/goldman-sachs.svg`, aspect: 192.76 / 85.04 },
-            { name: "Brookfield", src: `${LOGO_DIR}/brookfield.svg`, aspect: 240 / 35.933, scale: 0.9 },
-            { name: "Merrill", src: `${LOGO_DIR}/merrill.svg`, aspect: 150 / 43, scale: 1.2 },
+            { name: "Goldman Sachs", src: `${LOGO_DIR}/goldman-sachs.svg`, aspect: 192.76 / 85.04, scale: 0.9 },
+            { name: "Brookfield", src: `${LOGO_DIR}/brookfield.svg`, aspect: 240 / 35.933, scale: 0.8 },
+            { name: "Merrill", src: `${LOGO_DIR}/merrill.svg`, aspect: 150 / 43, scale: 1.15 },
           ],
         },
         {
           label: "Data centers",
           logos: [
-            { name: "AWS", src: `${LOGO_DIR}/aws.svg`, aspect: 188.726 / 125.89 },
-            { name: "Meta", src: `${LOGO_DIR}/meta.svg`, aspect: 948 / 191 },
-            { name: "Google Cloud", src: `${LOGO_DIR}/google-cloud.svg`, aspect: 181 / 28 },
+            { name: "AWS", src: `${LOGO_DIR}/aws.svg`, aspect: 188.726 / 125.89, scale: 0.8 },
+            { name: "Meta", src: `${LOGO_DIR}/meta.svg`, aspect: 948 / 191, scale: 0.9 },
+            { name: "Google Cloud", src: `${LOGO_DIR}/google-cloud.svg`, aspect: 181 / 28, scale: 1.05 },
           ],
         },
         {
           label: "Manufacturing",
           logos: [
-            { name: "SpaceX", src: `${LOGO_DIR}/spacex.svg`, aspect: 400 / 50 },
-            { name: "Tesla", src: `${LOGO_DIR}/tesla.svg`, aspect: 993.047 / 100 },
-            { name: "Raytheon", src: `${LOGO_DIR}/raytheon.svg`, aspect: 239.7 / 71.8, scale: 1.2 },
+            { name: "SpaceX", src: `${LOGO_DIR}/spacex.svg`, aspect: 400 / 50, scale: 0.95 },
+            { name: "Tesla", src: `${LOGO_DIR}/tesla.svg`, aspect: 993.047 / 100, scale: 0.85 },
+            { name: "Raytheon", src: `${LOGO_DIR}/raytheon.svg`, aspect: 239.7 / 71.8, scale: 1.1 },
           ],
         },
       ],

@@ -2671,12 +2671,18 @@
   border-bottom: 1px solid var(--rule);
 }
 
+/* One column per company, so the marks line up from area to area. */
 .networkArea .logos {
-  gap: calc(1 * var(--u)) calc(3.2 * var(--u));
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: calc(2 * var(--u));
 }
 
 .networkArea .logos img {
-  height: calc(1.4 * var(--h) * var(--u));
+  max-width: 100%;
+  height: calc(1.15 * var(--h) * var(--u));
+  object-fit: contain;
+  object-position: left center;
 }
 
 /* Cover: the title left, a render bleeding off the right. */
