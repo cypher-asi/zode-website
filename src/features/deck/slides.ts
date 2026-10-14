@@ -558,7 +558,7 @@ export const SLIDES: readonly Slide[] = [
         id: "realEstate",
         icon: "building",
         title: "Real estate deal",
-        purpose: "Equity and debt for real estate purchase",
+        purpose: "Equity and debt for site acquisition",
         body: "Buys the powered building the cluster runs in, and pays for its conversion.",
         layers: [
           { label: "Real estate equity", kind: "equity", terms: ["Purchase · $1M per MW"] },
