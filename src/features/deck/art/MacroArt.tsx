@@ -841,7 +841,6 @@ function cabin(s: Sketch): void {
 
   side(0, 3, Y0, Y1, styles.ink);
   side(3, GLASS, Y0, Y1, styles.top);
-  for (let y = Y0 + 8; y < 6; y += 6) if (Math.abs(y + 22) > 3) side(3, 16, y, y + 4, styles.sideL);
   for (const [y, w] of [
     [Y0, 4],
     [-24, 2.5],
