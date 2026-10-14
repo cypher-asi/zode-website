@@ -535,23 +535,31 @@ export function PinnedHeader({
           each; the shared name slides it across instead of jumping. `share` switches
           off rather than the name: React only forgets a name it still carries when
           it unmounts, so dropping it reads as a duplicate on the next page. */}
-      <ViewTransition name="zode-wordmark" share={morph ? "auto" : "none"} default="none">
-        <Link
-          ref={brandRef}
-          className={styles.brand}
-          href="/"
-          aria-label="ZODE — home"
-          data-tone={brandTone}
-          onClick={(event) => {
-            if (pathname !== "/" || event.metaKey || event.ctrlKey || event.shiftKey) return;
-            event.preventDefault();
-            window.scrollTo({ top: 0 });
-          }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className={styles.wordmark} src="/wordmark.png" alt="" aria-hidden="true" />
-        </Link>
-      </ViewTransition>
+      <div className={styles.brandRow}>
+        <ViewTransition name="zode-wordmark" share={morph ? "auto" : "none"} default="none">
+          <Link
+            ref={brandRef}
+            className={styles.brand}
+            href="/"
+            aria-label="ZODE — home"
+            data-tone={brandTone}
+            onClick={(event) => {
+              if (pathname !== "/" || event.metaKey || event.ctrlKey || event.shiftKey) return;
+              event.preventDefault();
+              window.scrollTo({ top: 0 });
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className={styles.wordmark} src="/wordmark.png" alt="" aria-hidden="true" />
+          </Link>
+        </ViewTransition>
+        {/* Outside the wordmark's snapshot, so it fades in on its own while the wordmark slides into place. */}
+        {inPortal ? (
+          <span className={styles.os} aria-hidden="true">
+            OS
+          </span>
+        ) : null}
+      </div>
       {showAction || back ? (
         <div
           ref={groupRef}

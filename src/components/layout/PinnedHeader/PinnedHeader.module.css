@@ -6,23 +6,32 @@
  * On hover a rounded box in the logo's current color fades in around it, then
  * the logo flips to the opposite color. The box is a pseudo-element outset from
  * the link so the link's bounding rect (used for tone sampling and the scroll
- * fade) stays the size of the wordmark.
+ * fade) stays the size of the wordmark. In the portal the row adds the OS
+ * badge beside it.
  */
-.brand {
+.brandRow {
   position: fixed;
   /* The insets keep it clear of the notch when the page runs edge to edge. */
   top: calc(var(--header-top) + env(safe-area-inset-top, 0px));
   left: max(var(--edge), env(safe-area-inset-left, 0px));
   z-index: 10;
-  display: inline-flex;
-  isolation: isolate;
+  display: flex;
+  align-items: center;
+  /* Clears the hover box, which reaches past the wordmark. */
+  gap: calc(var(--brand-box-x) + 8px);
   /* How far the hover box reaches past the wordmark on either side. */
   --brand-box-x: 14px;
 }
 
 /* On the flush edge (the portal) the hover box, not the wordmark, lines up with the panels below. */
-[data-edge="flush"] .brand {
+[data-edge="flush"] .brandRow {
   left: calc(max(var(--edge), env(safe-area-inset-left, 0px)) + var(--brand-box-x));
+}
+
+.brand {
+  position: relative;
+  display: inline-flex;
+  isolation: isolate;
 }
 
 .brand::before {
@@ -86,6 +95,34 @@
 .brand:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 14px;
+}
+
+/* "OS" after the wordmark in the portal, in the portal theme's ink, fading in once the wordmark's morph settles. */
+.os {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-size: var(--caps-size);
+  font-weight: 600;
+  letter-spacing: var(--caps-tracking);
+  line-height: 1;
+  /* Tracking trails the last letter; this pulls the pair back to centre. */
+  text-indent: var(--caps-tracking);
+  user-select: none;
+  animation: os-in 360ms var(--ease-out) 400ms both;
+}
+
+@keyframes os-in {
+  from {
+    opacity: 0;
+    scale: 0.85;
+  }
 }
 
 /*
@@ -699,8 +736,14 @@ button.menuItem:disabled {
 }
 
 @media (max-width: 900px) {
-  .brand {
+  .brandRow {
     --brand-box-x: 11px;
+  }
+
+  .os {
+    width: 22px;
+    height: 22px;
+    font-size: var(--text-2xs);
   }
 
   .brand::before {
@@ -788,7 +831,7 @@ button.menuItem:disabled {
 
 /* Phones get the portal's own title bar (PortalTopBar) in place of the header; More in its tab bar holds the menu's links. */
 @media (max-width: 700px) {
-  [data-edge="flush"] .brand,
+  [data-edge="flush"] .brandRow,
   .action[data-portal] {
     display: none;
   }
@@ -829,6 +872,7 @@ button.menuItem:disabled {
   }
 
   .split::after,
+  .os,
   .menu,
   .action[data-open] .menu,
   .action[data-open] .cursor,
@@ -840,7 +884,7 @@ button.menuItem:disabled {
 
 /* Printed pages carry their own branding (the deck's slides); a fixed header would repeat on every sheet. */
 @media print {
-  .brand,
+  .brandRow,
   .action,
   .notice {
     display: none;
