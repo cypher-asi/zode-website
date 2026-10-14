@@ -576,6 +576,7 @@ export const SLIDES: readonly Slide[] = [
           { label: "zode.tech", href: "https://zode.tech" },
           { label: "zchain.org", href: "https://zchain.org" },
           { label: "aura.ai", href: "https://aura.ai" },
+          { label: "zine.live", href: "https://zine.live" },
         ],
       },
       contributions: FOUNDER_CONTRIBUTIONS,
