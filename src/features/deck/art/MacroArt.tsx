@@ -747,7 +747,103 @@ function signature(s: Sketch): void {
   });
 }
 
-/** Grid power secured: a lattice tower feeds a transformer beside an existing building, which lights up. */
+/** A small ZODE cabin: centred on x, from y0 to y1 along its length, the glazed gable at y1 and +x the long glazed side. */
+const CABIN = { x: 36, hw: 24, y0: -52, y1: 44, glass: 25, deck: 14 };
+
+/** The gable's charcoal ring outline and its glass opening, as (across, up) from the centreline. */
+const GABLE_OUT: Pt[] = [
+  [24, 0],
+  [24, 29],
+  [23.3, 31.6],
+  [21.3, 33.4],
+  [3.8, 49.4],
+  [2.2, 50],
+  [-2.2, 50],
+  [-3.8, 49.4],
+  [-21.3, 33.4],
+  [-23.3, 31.6],
+  [-24, 29],
+  [-24, 0],
+];
+const GABLE_IN: Pt[] = [
+  [20.2, 3.8],
+  [20.2, 27.6],
+  [19.6, 29.6],
+  [18.7, 30.6],
+  [1.6, 46.2],
+  [-1.6, 46.2],
+  [-18.7, 30.6],
+  [-19.6, 29.6],
+  [-20.2, 27.6],
+  [-20.2, 3.8],
+];
+
+/**
+ * A ZODE cabin as the home page draws it, at icon scale: a glass box in a
+ * charcoal ring frame with a flat crown and rounded eaves, posts and a dark
+ * fascia along the glazed side, a deck off the glazed gable, its bolt flashing.
+ */
+function cabin(s: Sketch): void {
+  const { x: CX, hw: HW, y0: Y0, y1: Y1, glass: GLASS, deck: DECK } = CABIN;
+  const X1 = CX + HW;
+  const INK = { top: styles.ink, sideL: styles.ink, sideR: styles.ink };
+  const at =
+    (y: number) =>
+    ([u, z]: Pt): P3 => [CX + u, y, z];
+  const side = (z0: number, z1: number, y0: number, y1: number, cls: string) =>
+    s.face(
+      [
+        [X1, y0, z0],
+        [X1, y1, z0],
+        [X1, y1, z1],
+        [X1, y0, z1],
+      ],
+      cls,
+    );
+
+  side(0, 3, Y0, Y1, styles.ink);
+  side(3, GLASS, Y0, Y1, styles.top);
+  for (let y = Y0 + 8; y < 6; y += 6) if (Math.abs(y + 22) > 3) side(3, 16, y, y + 4, styles.sideL);
+  for (const [y, w] of [
+    [Y0, 4],
+    [-24, 2.5],
+    [4, 2.5],
+    [Y1 - 4, 4],
+  ] as const)
+    side(3, GLASS, y, y + w, styles.ink);
+  side(GLASS, 29, Y0, Y1, styles.ink);
+
+  const ROOF = GABLE_OUT.slice(1, -1);
+  const BULLNOSE = 2;
+  for (let i = ROOF.length - 2; i >= 0; i--) {
+    const [a, b] = [ROOF[i], ROOF[i + 1]];
+    s.face([at(Y0)(a), at(Y0)(b), at(Y1)(b), at(Y1)(a)], i < BULLNOSE ? styles.sideR : styles.top);
+  }
+  for (const y of [-20, 12]) s.line(ROOF.slice(BULLNOSE).map(at(y)));
+
+  s.face(GABLE_OUT.map(at(Y1)), styles.ink);
+  s.face(GABLE_IN.map(at(Y1)), styles.top);
+  const slope = (u: number) => 46.2 - (Math.abs(u) - 1.6) * (15.6 / 17.1);
+  for (const u of [-8, 8]) s.line([at(Y1)([u, 3.8]), at(Y1)([u, slope(u)])], styles.edge);
+  s.line([at(Y1)([-20.2, 20]), at(Y1)([20.2, 20])], styles.edge);
+  s.line([at(Y1)([0, 3.8]), at(Y1)([0, 20])], styles.edge);
+  s.group(anim(styles.flash, 2), () => bolt(s, CX - 2, Y1, 23, 15));
+
+  s.box(CX - HW, Y1, 2 * HW, DECK, 0, 1.5);
+  s.box(CX - HW, Y1, 2, DECK, 0, 9, INK);
+  s.face(
+    [
+      [CX - HW + 2, Y1 + DECK, 1.5],
+      [X1 - 2, Y1 + DECK, 1.5],
+      [X1 - 2, Y1 + DECK, 9],
+      [CX - HW + 2, Y1 + DECK, 9],
+    ],
+    styles.fine,
+  );
+  s.box(X1 - 2, Y1, 2, DECK, 0, 9, INK);
+}
+
+/** Grid power secured: a lattice tower feeds a transformer beside a ZODE cabin, which lights up. */
 function interconnect(s: Sketch): void {
   const [TX, TOP, ARM] = [-96, 100, 86];
   const half = (z: number) => 11 - (8 * z) / TOP;
@@ -780,22 +876,7 @@ function interconnect(s: Sketch): void {
   const PHASES = [-30, 0, 30];
   for (const y of PHASES) insulator(s, TX, y, ARM - 12, ARM, 2);
 
-  const [BX, BY, BW, BD, BH] = [10, -36, 80, 66, 46];
-  s.box(BX, BY, BW, BD, 0, BH);
-  for (let x = BX + 8; x < BX + BW; x += 8) if (x < 58 || x > 82) s.line([[x, BY + BD, 4], [x, BY + BD, BH - 4]]);
-  s.face(
-    [
-      [60, BY + BD, 0],
-      [80, BY + BD, 0],
-      [80, BY + BD, 26],
-      [60, BY + BD, 26],
-    ],
-    styles.fine,
-  );
-  for (let z = 5; z < 26; z += 5) s.line([[60, BY + BD, z], [80, BY + BD, z]]);
-  s.box(24, -26, 22, 22, BH, 8);
-  s.disc([35, -15, BH + 8], 8, styles.ring);
-  s.group(anim(styles.flash, 2), () => bolt(s, 30, BY + BD, 12, 26));
+  cabin(s);
 
   const [RX, RY, RW] = [-30, 32, 22];
   s.box(RX, RY, RW, RW, 0, 26);
@@ -811,9 +892,8 @@ function interconnect(s: Sketch): void {
   s.group(anim(styles.flow), () =>
     s.line(
       [
-        [RX + RW, 43, 1],
-        [70, 43, 1],
-        [70, BY + BD, 1],
+        [RX + RW, 36, 1],
+        [CABIN.x - CABIN.hw, 36, 1],
       ],
       styles.edge,
     ),
