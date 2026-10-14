@@ -27,6 +27,7 @@ export type AppId =
   | "zrm"
   | "leads"
   | "capacity"
+  | "factory"
   | "posts"
   | "analytics"
   | "subscribers"
@@ -146,6 +147,16 @@ const CAPACITY: PortalApp = {
   links: [{ href: "/portal/capacity/sites", label: "Sites", icon: "capacity" }],
 };
 
+/** The compute pod production line, simulated on its factory floor, for the ZODE team. */
+const FACTORY: PortalApp = {
+  id: "factory",
+  label: "Factory",
+  icon: "factory",
+  href: "/portal/factory",
+  team: true,
+  links: [{ href: "/portal/factory", label: "Floor", icon: "factory" }],
+};
+
 /** News and changelog for the public site, written by the ZODE team. */
 const POSTS: PortalApp = {
   id: "posts",
@@ -211,7 +222,7 @@ const ADMIN_APPS: readonly PortalApp[] = [
 
 /**
  * The apps the viewer can open, in rail order, with Settings last for the
- * rail's foot: ZRM, Leads, Capacity, Posts, Analytics, Team and everyone's contracts for the
+ * rail's foot: ZRM, Leads, Capacity, Factory, Posts, Analytics, Team and everyone's contracts for the
  * ZODE team, the admin apps for super admins.
  */
 export function portalApps({ admin, team }: NavAccess): PortalApp[] {
@@ -250,7 +261,7 @@ export function portalApps({ admin, team }: NavAccess): PortalApp[] {
     ORDERS,
     contracts,
     deployments,
-    ...(team ? [ZRM, LEADS, CAPACITY, POSTS, ANALYTICS] : []),
+    ...(team ? [ZRM, LEADS, CAPACITY, FACTORY, POSTS, ANALYTICS] : []),
     ...(admin ? ADMIN_APPS : []),
     settings,
   ];
