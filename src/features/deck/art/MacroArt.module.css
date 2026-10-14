@@ -153,6 +153,41 @@
     stroke-dasharray: 1;
     animation: sign-draw 3200ms ease-in-out infinite;
   }
+
+  /* On the signature's clock: solid with the check knocked out once it's signed. */
+  .art[data-playing] .verify .top {
+    animation: verify-fill 3200ms ease-in-out infinite;
+  }
+
+  .art[data-playing] .verify .edge {
+    animation: verify-mark 3200ms ease-in-out infinite;
+  }
+}
+
+@keyframes verify-fill {
+  0%,
+  55%,
+  100% {
+    fill: var(--art-top);
+  }
+
+  62%,
+  92% {
+    fill: var(--art-ink);
+  }
+}
+
+@keyframes verify-mark {
+  0%,
+  55%,
+  100% {
+    stroke: var(--art-ink);
+  }
+
+  62%,
+  92% {
+    stroke: var(--art-top);
+  }
 }
 
 @keyframes sign-draw {

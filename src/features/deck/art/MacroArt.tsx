@@ -616,60 +616,82 @@ function bolt(s: Sketch, x: number, y: number, z: number, h: number): void {
   );
 }
 
-/** A contract signed on a tablet: the signature writes itself, then the seal's ring turns. */
+/**
+ * An e-signature on a tablet: a "sign here" tab pulses beside the field, the
+ * signature writes itself, then the floating certificate shield turns solid.
+ */
 function signature(s: Sketch): void {
-  const Z = 7;
-  s.box(-72, -52, 144, 104, 0, Z);
+  const Z = 6;
+  const flat = (ps: readonly Pt[]): P3[] => ps.map(([x, y]) => [x, y, Z]);
+  s.box(-72, -52, 144, 104, 0, Z, { top: styles.sideL, sideL: styles.sideL, sideR: styles.sideR });
+  s.disc([-68, 0, Z], 1.2, styles.ink);
   s.face(
-    [
-      [-64, -44, Z],
-      [64, -44, Z],
-      [64, 44, Z],
-      [-64, 44, Z],
-    ],
-    styles.fine,
+    flat([
+      [-64, -44],
+      [64, -44],
+      [64, 44],
+      [-64, 44],
+    ]),
+    styles.top,
   );
-  s.line([[-54, -34, Z], [-12, -34, Z]], styles.edge);
-  [-24, -16, -8, 0].forEach((y, k) => s.line([[-54, y, Z], [[50, 36, 44, 22][k], y, Z]], styles.fine));
-  s.line([[-54, 27, Z], [24, 27, Z]], styles.fine);
-  s.line([[-60, 19, Z], [-56, 23, Z]], styles.fine);
-  s.line([[-60, 23, Z], [-56, 19, Z]], styles.fine);
+
+  s.face(
+    flat([
+      [-64, -44],
+      [64, -44],
+      [64, -37],
+      [-64, -37],
+    ]),
+    styles.sideL,
+  );
+  for (const x of [-59, -55, -51]) s.disc([x, -40.5, Z], 1, styles.ring);
+  s.line([[-54, -30, Z], [-14, -30, Z]], styles.edge);
+  [-22, -15, -8].forEach((y, k) => s.line([[-54, y, Z], [[50, 38, 44][k], y, Z]], styles.fine));
+
+  const [FL, FT, FR, FB] = [-40, 4, 42, 30];
+  s.line(
+    flat([
+      [FL, FT],
+      [FR, FT],
+      [FR, FB],
+      [FL, FB],
+      [FL, FT],
+    ]),
+    styles.dash,
+  );
+  s.line([[FL + 4, FB - 4, Z], [FR - 4, FB - 4, Z]], styles.fine);
+  s.group(anim(styles.flash), () =>
+    s.face(
+      flat([
+        [-62, FT + 7],
+        [-49, FT + 7],
+        [-44, FT + 13],
+        [-49, FT + 19],
+        [-62, FT + 19],
+      ]),
+      styles.ring,
+    ),
+  );
 
   const N = 90;
   const ink: P3[] = Array.from({ length: N + 1 }, (_, i) => {
     const t = (i / N) * 7 * Math.PI;
-    const x = -50 + t * (62 / (7 * Math.PI)) - 4.2 * Math.sin(t);
-    const y = 25 - 6 * (1 - Math.cos(t)) * (0.7 + 0.3 * Math.sin(t * 0.45));
+    const x = -34 + t * (52 / (7 * Math.PI)) - 4.2 * Math.sin(t);
+    const y = FB - 6 - 5 * (1 - Math.cos(t)) * (0.7 + 0.3 * Math.sin(t * 0.45));
     return [x, y, Z];
   });
   const [ex, ey] = ink[N];
-  ink.push([ex + 6, ey - 3, Z], [ex + 12, ey - 7, Z], [ex + 16, ey - 11, Z]);
+  ink.push([ex + 6, ey - 3, Z], [ex + 12, ey - 7, Z], [ex + 16, ey - 10, Z]);
   const screen = ink.map((p) => project(p));
   for (const [x, y] of screen) s.extend(x, y);
   s.el("polyline", { points: pts(screen), pathLength: 1, className: styles.sign });
 
-  const [SX, SY] = [46, 28];
-  s.disc([SX, SY, Z], 10, styles.top);
-  s.line(
-    [
-      [SX - 5, SY, Z],
-      [SX - 1, SY + 4, Z],
-      [SX + 6, SY - 6, Z],
-    ],
-    styles.edge,
-  );
-  s.group(anim(styles.flow), () =>
-    s.line(
-      Array.from({ length: 33 }, (_, k) => {
-        const t = (k / 32) * Math.PI * 2;
-        return [SX + 14 * Math.cos(t), SY + 14 * Math.sin(t), Z] as const;
-      }),
-      styles.edge,
-    ),
-  );
+  const [SX, SY, SZ] = [50, -30, Z + 18];
+  s.disc([SX, SY, Z], 6, styles.fine);
+  s.group(anim(styles.flow), () => s.line([[SX, SY, Z], [SX, SY, SZ]], styles.edge));
 
-  const [tx, ty] = project([ex + 16, ey - 11, Z]);
-  const [ux, uy] = project([ex + 46, ey - 17, Z + 64]);
+  const [tx, ty] = project([ex + 16, ey - 10, Z]);
+  const [ux, uy] = project([ex + 46, ey - 16, Z + 64]);
   const [dx, dy] = [ux - tx, uy - ty];
   const len = Math.hypot(dx, dy);
   const [nx, ny] = [(-dy / len) * 3.6, (dx / len) * 3.6];
@@ -695,6 +717,34 @@ function signature(s: Sketch): void {
     styles.sideR,
   );
   circle(s, ux, uy, 3.6, styles.top);
+
+  const SHIELD: Pt[] = [
+    [-13, 32],
+    [0, 37],
+    [13, 32],
+    [13, 17],
+    [8, 7],
+    [0, 0],
+    [-8, 7],
+    [-13, 17],
+  ];
+  const shield = (y: number): P3[] => SHIELD.map(([u, v]) => [SX + u, y, SZ + v]);
+  const [front, back] = [shield(SY), shield(SY - 4)];
+  front.forEach((p, i) => {
+    const j = (i + 1) % front.length;
+    s.face([p, front[j], back[j], back[i]], styles.sideR);
+  });
+  s.group({ className: styles.verify }, () => {
+    s.face(front, styles.top);
+    s.line(
+      [
+        [SX - 6, SY, SZ + 19],
+        [SX - 1, SY, SZ + 13],
+        [SX + 7, SY, SZ + 25],
+      ],
+      styles.edge,
+    );
+  });
 }
 
 /** Grid power secured: a lattice tower feeds a transformer beside an existing building, which lights up. */
