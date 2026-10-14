@@ -9,6 +9,7 @@
     "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate.mjs",
     "zrm:import": "node --env-file-if-exists=.env.local scripts/import-oden.mjs",
     "capacity:import": "node --env-file-if-exists=.env.local scripts/import-capacity.mjs",
+    "policy:import": "node --env-file-if-exists=.env.local scripts/import-policy.mjs",
     "prebuild": "npm run fonts && npm run db:migrate",
     "build": "next build",
     "start": "next start",

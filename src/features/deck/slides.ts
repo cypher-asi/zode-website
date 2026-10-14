@@ -246,7 +246,7 @@ export const SLIDES: readonly Slide[] = [
     eyebrow: "Policy",
     title: "States are starting to say no.",
     ground: "ink",
-    sources: ["ncsl", "newYork", "oregon", "dataCenterWatch"],
+    sources: ["ncsl", "newYork", "texas", "oregon", "ercot", "moratoriumNation"],
   },
   {
     id: "local",
@@ -256,7 +256,7 @@ export const SLIDES: readonly Slide[] = [
     title: "Local pauses are spreading.",
     ground: "ink",
     takeaway:
-      "The bans target scale: 50 MW in New York, 100 MW in Delaware's bill, 20 MW in Maine's. A standard ZODE cluster is 4 MW, in an existing powered building.",
+      "Statewide pauses target scale: 50 MW in New York's order, 75 MW for Texas grid hookups, 20 MW in Pennsylvania's bill. A standard ZODE cluster is 4 MW, in an existing powered building.",
     sources: ["dataCenterWatch"],
   },
   {
@@ -316,11 +316,11 @@ export const SLIDES: readonly Slide[] = [
         art: "offtake",
         problem: {
           title: "Permitting and zoning",
-          stat: { value: "16", label: "States weighing data center bans", cite: "ncsl" },
+          stat: { value: "18", label: "States where lawmakers moved to ban data centers", cite: "ncsl" },
         },
         solution: {
-          title: "Under every threshold.",
-          body: "Moratoriums start at 20 MW. A ZODE cluster is 4 MW, in production 90 days from order.",
+          title: "Under the statewide thresholds.",
+          body: "New York's pause starts at 50 MW, Texas's at 75 MW. A ZODE cluster is 4 MW, in an existing powered building.",
         },
       },
     ],

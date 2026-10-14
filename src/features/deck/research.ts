@@ -67,6 +67,30 @@ export const SOURCES = {
     date: "July 14, 2026",
     url: "https://www.governor.ny.gov/executive-order/no-62-establishing-temporary-moratorium-data-centers-new-york-while-state-develops",
   },
+  texas: {
+    publisher: "Texas Governor's Office",
+    title: "Directives pausing new data center grid hookups and state permits",
+    date: "August 3 and September 21, 2026",
+    url: "https://gov.texas.gov/news/post/governor-abbott-directs-tceq-to-halt-data-center-permits",
+  },
+  ercot: {
+    publisher: "ERCOT",
+    title: "Batch Zero update",
+    date: "September 11, 2026",
+    url: "https://www.ercot.com/files/docs/2026/09/11/14-Batch-Zero-Update.pdf",
+  },
+  eei: {
+    publisher: "Edison Electric Institute",
+    title: "List of large customer projects and tariffs",
+    date: "September 2026",
+    url: "https://www.eei.org/-/media/Project/EEI/Documents/Issues%20and%20Policy/List%20of%20Large%20Customer%20Projects%20and%20Tariffs",
+  },
+  moratoriumNation: {
+    publisher: "Moratorium Nation",
+    title: "Local pauses and state data center restrictions, open dataset",
+    date: "September 23, 2026",
+    url: "https://mjbommar.github.io/moratorium-data-2026/",
+  },
   oregon: {
     publisher: "Oregon Governor's Office",
     title: "Governor Kotek pauses work on requests for state land to support new data centers",
@@ -229,45 +253,3 @@ export const SHORTFALL = {
     { year: 2029, gw: 72, extended: true },
   ],
 } as const;
-
-export type StateStatus = "enacted" | "executive" | "introduced" | "failed";
-
-/** Statewide moratorium actions, from NCSL's tracker and the governors' orders. */
-export const STATE_ACTIONS: Readonly<Record<string, { status: StateStatus; note: string }>> = {
-  NY: { status: "enacted", note: "Executive Order 62: state permits paused for data centers of 50 MW or more, up to a year" },
-  OR: { status: "executive", note: "State-land requests for data centers paused through July 1, 2027" },
-  DE: { status: "introduced", note: "SB 353: permits over 100 MW paused until January 2027" },
-  GA: { status: "introduced", note: "HB 1059: no local permits until December 2028" },
-  MI: { status: "introduced", note: "HB 5594 / 5595: no new approvals until April 2027" },
-  NJ: { status: "introduced", note: "AB 5482: six-month moratorium" },
-  PA: { status: "introduced", note: "SB 1359 / HB 2533: three-year moratorium" },
-  SC: { status: "introduced", note: "H 5526: no local approvals until state oversight" },
-  VT: { status: "introduced", note: "S 205: moratorium until 2030" },
-  VA: { status: "introduced", note: "HB 1515: approvals held until interconnection catches up; continued" },
-  ME: { status: "failed", note: "LD 307: over 20 MW until November 2027; vetoed" },
-  MN: { status: "failed", note: "HB 4888 / SB 4298; failed" },
-  NH: { status: "failed", note: "HB 1265: one-year moratorium; failed" },
-  OK: { status: "failed", note: "SB 1488: until November 2029; failed" },
-  SD: { status: "failed", note: "SB 232: one-year moratorium; failed" },
-  WI: { status: "failed", note: "SB 1061 / AB 1099; failed" },
-};
-
-/** States where a county has paused data center approvals this fall (see news.ts). */
-export const COUNTY_PAUSES: readonly string[] = ["VA", "AZ", "NC", "ID"];
-
-export const STATUS_LABELS: Readonly<Record<StateStatus, string>> = {
-  enacted: "Moratorium in effect",
-  executive: "Executive pause",
-  introduced: "Bill introduced",
-  failed: "Failed or vetoed",
-};
-
-export const POLICY_STATS = [
-  { value: "16", label: "States where lawmakers considered banning new data centers", source: "NCSL", cite: "ncsl" },
-  {
-    value: "30",
-    label: "Statehouses that acted on siting, cost-sharing, power or water in 2026",
-    source: "Data Center Watch",
-    cite: "dataCenterWatch",
-  },
-] as const;

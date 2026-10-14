@@ -10,19 +10,8 @@ import { ShortfallByYear, ShortfallChart } from "./charts/ShortfallChart";
 import { StateTileMap } from "./charts/StateTileMap";
 import { TokenChart } from "./charts/TokenChart";
 import { BLOCKED, NEWS } from "./news";
-import {
-  AS_OF,
-  COUNTY_PAUSES,
-  MARKET_TIGHTNESS,
-  POLICY_STATS,
-  SOURCES,
-  STATE_ACTIONS,
-  STATUS_LABELS,
-  sourceUrl,
-  type Source,
-  type SourceId,
-  type StateStatus,
-} from "./research";
+import { GRID_LABELS, STATUS_LABELS, STATUS_ORDER, type GridGate, type PolicyMap, type PolicyState } from "./policyTypes";
+import { AS_OF, MARKET_TIGHTNESS, SOURCES, sourceUrl, type Source, type SourceId } from "./research";
 import type { Slide, Stat } from "./slides";
 import styles from "./Slide.module.css";
 
@@ -239,45 +228,82 @@ function Shortfall({ active, compact }: { active: boolean; compact: boolean }): 
   );
 }
 
-const STATUS_ORDER: readonly StateStatus[] = ["enacted", "executive", "introduced", "failed"];
+const GATES: readonly GridGate[] = ["paused", "signoff"];
 
-function States({ active, compact }: { active: boolean; compact: boolean }): ReactElement {
-  const counts = Object.values(STATE_ACTIONS).reduce<Partial<Record<StateStatus, number>>>((acc, { status }) => {
-    acc[status] = (acc[status] ?? 0) + 1;
-    return acc;
-  }, {});
+type CitedStat = Stat & { source: string; cite: SourceId };
+
+function policyStats(policy: PolicyMap): CitedStat[] {
+  const stats: CitedStat[] = [
+    {
+      value: String(policy.lawmakerStates),
+      label: "States where lawmakers moved to pause new data centers",
+      source: "ZODE, from NCSL and state legislatures",
+      cite: "ncsl",
+    },
+  ];
+  const { ercotQueueGw: queue, ercotPeakGw: peak } = policy;
+  if (queue != null) {
+    stats.push({
+      value: `${queue} GW`,
+      label: peak
+        ? `Of large loads waiting on ERCOT, ${(queue / peak).toFixed(1)}× Texas\u2019s record peak`
+        : "Of large loads waiting on ERCOT",
+      source: "ERCOT",
+      cite: "ercot",
+    });
+  }
+  return stats;
+}
+
+function States({ active, compact, policy }: { active: boolean; compact: boolean; policy: PolicyMap | null }): ReactElement {
+  const states: PolicyState[] = policy ? Object.values(policy.states) : [];
+  const count = (test: (state: PolicyState) => boolean) => states.filter(test).length;
+  const rows = [
+    ...STATUS_ORDER.map((status) => ({
+      key: status,
+      label: STATUS_LABELS[status],
+      n: count((state) => state.status === status),
+    })),
+    { key: "local", label: "Local pauses in effect", n: states.reduce((sum, state) => sum + state.local, 0) },
+    ...GATES.map((gate) => ({ key: gate, label: GRID_LABELS[gate], n: count((state) => state.grid?.gate === gate) })),
+  ];
   return (
     <div className={styles.chartBody} data-split="map">
       <figure {...rise(2)} className={`${styles.rise} ${styles.figure} ${styles.map}`}>
-        <StateTileMap active={active} compact={compact} />
+        <StateTileMap active={active} compact={compact} policy={policy} />
       </figure>
       <aside className={styles.side}>
-        <ul {...rise(3)} className={`${styles.rise} ${styles.statusList}`}>
-          {STATUS_ORDER.map((status) => (
-            <li key={status} className={styles.status} data-status={status}>
-              <span className={styles.swatch} aria-hidden="true" />
-              <span>{STATUS_LABELS[status]}</span>
-              <span className={styles.count}>{counts[status] ?? 0}</span>
-            </li>
-          ))}
-          <li className={styles.status} data-status="county">
-            <span className={styles.swatch} aria-hidden="true" />
-            <span>County pause this fall</span>
-            <span className={styles.count}>{COUNTY_PAUSES.length}</span>
-          </li>
-        </ul>
-        {POLICY_STATS.map((item, i) => (
-          <div key={item.label} {...rise(4 + i)}>
-            <StatBlock stat={item} />
-            <span className={styles.statSource}>
-              <Cited id={item.cite}>{item.source}</Cited>
-            </span>
-          </div>
-        ))}
-        <p {...rise(6)} className={`${styles.rise} ${styles.fine}`}>
-          New York&rsquo;s order covers data centers of 50 MW or more.{compact ? null : " Hover a state for its bill."}{" "}
-          As of {AS_OF}.
-        </p>
+        {policy ? (
+          <>
+            <ul {...rise(3)} className={`${styles.rise} ${styles.statusList}`}>
+              {rows.map((row) => (
+                <li key={row.key} className={styles.status} data-status={row.key}>
+                  <span className={styles.swatch} aria-hidden="true">
+                    {row.key === "local" ? "12" : null}
+                  </span>
+                  <span>{row.label}</span>
+                  <span className={styles.count}>{row.n}</span>
+                </li>
+              ))}
+            </ul>
+            {policyStats(policy).map((item, i) => (
+              <div key={item.label} {...rise(4 + i)}>
+                <StatBlock stat={item} />
+                <span className={styles.statSource}>
+                  <Cited id={item.cite}>{item.source}</Cited>
+                </span>
+              </div>
+            ))}
+            <p {...rise(6)} className={`${styles.rise} ${styles.fine}`}>
+              Both statewide pauses are executive: New York&rsquo;s at 50 MW, Texas&rsquo;s at 75 MW for grid hookups.
+              {compact ? null : " Hover a state for its actions."} As of {policy.asOf}.
+            </p>
+          </>
+        ) : (
+          <p {...rise(3)} className={`${styles.rise} ${styles.fine}`}>
+            The policy tracker can&rsquo;t be read right now, so the map shows the states alone.
+          </p>
+        )}
       </aside>
     </div>
   );
@@ -732,7 +758,10 @@ function Close({ slide }: { slide: Of<"close"> }): ReactElement {
 
 const SOURCE_GROUPS: readonly { title: string; ids: readonly SourceId[] }[] = [
   { title: "Demand and supply", ids: ["bnef", "utilityDive", "epri", "morganStanley", "cbre", "jll", "capex", "zodePricing", "googleTokens", "goldmanTokens"] },
-  { title: "Policy", ids: ["ncsl", "newYork", "oregon", "dataCenterWatch", "heatmap", "transformers"] },
+  {
+    title: "Policy",
+    ids: ["ncsl", "newYork", "texas", "oregon", "ercot", "eei", "moratoriumNation", "dataCenterWatch", "heatmap", "transformers"],
+  },
 ];
 
 function Sources(): ReactElement {
@@ -784,7 +813,17 @@ function Sources(): ReactElement {
   );
 }
 
-function Body({ slide, active, compact }: { slide: Slide; active: boolean; compact: boolean }): ReactNode {
+function Body({
+  slide,
+  active,
+  compact,
+  policy,
+}: {
+  slide: Slide;
+  active: boolean;
+  compact: boolean;
+  policy: PolicyMap | null;
+}): ReactNode {
   switch (slide.kind) {
     case "cover":
       return <Cover slide={slide} />;
@@ -795,7 +834,7 @@ function Body({ slide, active, compact }: { slide: Slide; active: boolean; compa
     case "shortfall":
       return <Shortfall active={active} compact={compact} />;
     case "states":
-      return <States active={active} compact={compact} />;
+      return <States active={active} compact={compact} policy={policy} />;
     case "news":
       return <News slide={slide} />;
     case "problemSolution":
@@ -886,7 +925,8 @@ const pad = (n: number) => String(n).padStart(2, "0");
  * by `data-band`. `active` plays its entrance; `branded` adds the wordmark to
  * its foot for print, where the site header isn't on the page. `compact`
  * reflows it as a phone's story card: one column at the site's mobile type
- * sizes, scrolling where it runs long.
+ * sizes, scrolling where it runs long. `policy` is the policy tracker's map
+ * for the states slide.
  */
 export function SlideView({
   slide,
@@ -896,6 +936,7 @@ export function SlideView({
   branded = false,
   grid = true,
   compact = false,
+  policy,
 }: {
   slide: Slide;
   index: number;
@@ -904,6 +945,7 @@ export function SlideView({
   branded?: boolean;
   grid?: boolean;
   compact?: boolean;
+  policy: PolicyMap | null;
 }): ReactElement {
   const head = hasHead(slide);
   const foot = !NO_FOOT.has(slide.kind);
@@ -939,7 +981,7 @@ export function SlideView({
           </header>
         ) : null}
         <div className={styles.main}>
-          <Body slide={slide} active={active} compact={compact} />
+          <Body slide={slide} active={active} compact={compact} policy={policy} />
         </div>
         {!foot ? (
           mark && <footer className={styles.foot}>{mark}</footer>

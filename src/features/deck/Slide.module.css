@@ -888,17 +888,17 @@
   border: 1px solid var(--rule-strong);
 }
 
-.status[data-status="enacted"] .swatch {
+.status[data-status="statewide"] .swatch {
   border-color: var(--alarm);
   background: var(--alarm);
 }
 
-.status[data-status="executive"] .swatch {
+.status[data-status="partial"] .swatch {
   border-color: var(--alarm-2);
   background: var(--alarm-2);
 }
 
-.status[data-status="introduced"] .swatch {
+.status[data-status="pending"] .swatch {
   border-color: var(--alarm-3);
   background: var(--alarm-3);
 }
@@ -909,12 +909,25 @@
   background: var(--alarm-4);
 }
 
-.status[data-status="county"] .swatch {
-  width: calc(0.6 * var(--u));
-  height: calc(0.6 * var(--u));
+/* The tiles' count of local pauses, then their grid marks (charts.module.css). */
+.status[data-status="local"] .swatch {
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: calc(0.56 * var(--u));
+  line-height: 1;
+  color: var(--fg-2);
+}
+
+.status:is([data-status="paused"], [data-status="signoff"]) .swatch {
+  width: calc(0.7 * var(--u));
+  height: calc(0.7 * var(--u));
   justify-self: center;
-  border: 0;
+  border: 1.5px solid var(--fg);
   border-radius: 50%;
+}
+
+.status[data-status="paused"] .swatch {
   background: var(--fg);
 }
 
@@ -2335,9 +2348,13 @@
   height: 12px;
 }
 
-.slide[data-compact] .status[data-status="county"] .swatch {
-  width: 7px;
-  height: 7px;
+.slide[data-compact] .status[data-status="local"] .swatch {
+  font-size: 9px;
+}
+
+.slide[data-compact] .status:is([data-status="paused"], [data-status="signoff"]) .swatch {
+  width: 9px;
+  height: 9px;
 }
 
 .slide[data-compact] .count {

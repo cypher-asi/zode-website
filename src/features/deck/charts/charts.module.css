@@ -258,18 +258,18 @@
   stroke: transparent;
 }
 
-/* Steps of the alarm red, set with the legend's swatches (Slide.module.css): full red where a moratorium is in effect. */
-.tile[data-status="enacted"] .tileRect {
+/* Steps of the alarm red, set with the legend's swatches (Slide.module.css): full red where a statewide pause is in effect. */
+.tile[data-status="statewide"] .tileRect {
   fill: var(--alarm);
   stroke: var(--alarm);
 }
 
-.tile[data-status="executive"] .tileRect {
+.tile[data-status="partial"] .tileRect {
   fill: var(--alarm-2);
   stroke: var(--alarm-2);
 }
 
-.tile[data-status="introduced"] .tileRect {
+.tile[data-status="pending"] .tileRect {
   fill: var(--alarm-3);
   stroke: var(--alarm-3);
 }
@@ -288,10 +288,27 @@
   fill: var(--fg-2);
 }
 
-.county {
+/* Local pauses in effect, under the state's code. */
+.tileCount {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  fill: var(--fg-2);
+}
+
+.tile[data-status]:not([data-status="failed"]) .tileCount {
   fill: var(--fg);
-  stroke: var(--bg);
+}
+
+/* The grid gate: solid where hookups are paused or capped, a ring where large loads need sign-off. */
+.gridMark {
+  fill: var(--fg);
+  stroke: var(--fg);
   stroke-width: 1.5;
+}
+
+.gridMark[data-gate="signoff"] {
+  fill: none;
 }
 
 /*
@@ -324,6 +341,14 @@
 
 .chart[data-compact] .tileLabel {
   font-size: 21px;
+}
+
+.chart[data-compact] .tileCount {
+  font-size: 16px;
+}
+
+.chart[data-compact] .gridMark {
+  stroke-width: 2;
 }
 
 /*

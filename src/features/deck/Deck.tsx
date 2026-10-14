@@ -13,6 +13,7 @@ import {
   type ReactNode,
 } from "react";
 import { flushSync } from "react-dom";
+import type { PolicyMap } from "./policyTypes";
 import { ShareMenu } from "./ShareMenu";
 import { SlideView, hasHead } from "./Slide";
 import { SLIDES } from "./slides";
@@ -96,7 +97,16 @@ export function DeckGround({ header }: { header: ReactNode }): ReactElement {
   );
 }
 
-export function Deck({ initialSlide, header }: { initialSlide: number; header: ReactNode }): ReactElement {
+export function Deck({
+  initialSlide,
+  header,
+  policy,
+}: {
+  initialSlide: number;
+  header: ReactNode;
+  /** The policy slide's map, or null when the tracker couldn't be read. */
+  policy: PolicyMap | null;
+}): ReactElement {
   const rootRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -381,6 +391,7 @@ export function Deck({ initialSlide, header }: { initialSlide: number; header: R
                   branded={printing}
                   grid={printing || compact}
                   compact={compact}
+                  policy={policy}
                 />
               </section>
             );
@@ -506,7 +517,7 @@ export function Deck({ initialSlide, header }: { initialSlide: number; header: R
             {SLIDES.map((entry, i) => (
               <li key={entry.id} className={styles.thumb} data-current={i === index || undefined}>
                 <div className={styles.thumbFrame} inert aria-hidden="true">
-                  <SlideView slide={entry} index={i} total={TOTAL} active />
+                  <SlideView slide={entry} index={i} total={TOTAL} active policy={policy} />
                 </div>
                 <p className={styles.thumbLabel}>
                   <span>{pad(i + 1)}</span>

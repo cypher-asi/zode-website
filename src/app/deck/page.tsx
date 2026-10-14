@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense, type ReactNode } from "react";
 import { PinnedHeader } from "@/components/layout/PinnedHeader";
 import { Deck, DeckGround } from "@/features/deck/Deck";
+import { getPolicyMap } from "@/features/deck/policy";
 import { SLIDES } from "@/features/deck/slides";
 import { INVEST_ACTION } from "@/lib/navigation";
 
@@ -34,10 +35,17 @@ export default function DeckPage({ searchParams }: { searchParams: SearchParams 
   );
 }
 
+/** The policy slide's map comes from the tracker tables; without them the slide says so and the rest of the deck stands. */
 async function DeckAtSlide({ searchParams, header }: { searchParams: SearchParams; header: ReactNode }) {
-  const { slide } = await searchParams;
+  const [{ slide }, policy] = await Promise.all([
+    searchParams,
+    getPolicyMap().catch((error: unknown) => {
+      console.error("[deck] policy tracker unavailable", error);
+      return null;
+    }),
+  ]);
   const requested = typeof slide === "string" ? Number.parseInt(slide, 10) : 1;
   const initial = Number.isFinite(requested) ? Math.min(Math.max(requested, 1), SLIDES.length) - 1 : 0;
 
-  return <Deck initialSlide={initial} header={header} />;
+  return <Deck initialSlide={initial} header={header} policy={policy} />;
 }

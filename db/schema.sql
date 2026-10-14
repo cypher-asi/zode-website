@@ -885,3 +885,74 @@ select g.label, 'event', g.match from (
     ('Engineer requested', 'engineer_requested')
 ) as g (label, match)
 where not exists (select 1 from analytics_goals);
+
+-- Data center policy tracker, behind the deck's states slide: every statewide
+-- bill or order, local pause and state grid approval gate the team follows.
+-- Loaded from the dated snapshots in db/policy/ by `npm run policy:import`,
+-- which matches rows on `key` (e.g. local:OH:brimfield-township), so a re-run
+-- updates rather than duplicates. `status` is the latest observation; the
+-- history below keeps every one. `gate` grades a grid gate: 'paused' where
+-- hookups are halted or capped, 'signoff' where a state commission must
+-- approve large-load terms first.
+create table if not exists policy_measures (
+  id uuid primary key default gen_random_uuid(),
+  key text not null unique,
+  level text not null check (level in ('state', 'local')),
+  kind text not null check (kind in ('moratorium', 'incentive_pause', 'land_pause', 'grid_gate')),
+  state char(2) not null,
+  jurisdiction text not null,
+  jurisdiction_type text check (
+    jurisdiction_type in (
+      'state', 'county', 'city', 'town', 'township', 'village', 'parish', 'borough', 'city_county', 'municipality'
+    )
+  ),
+  body text,
+  instrument text,
+  threshold_mw numeric(10, 2),
+  status text not null check (
+    status in (
+      'in_effect', 'pending', 'proposed', 'failed', 'vetoed', 'expired', 'replaced', 'rescinded', 'rejected', 'enjoined'
+    )
+  ),
+  gate text check (gate in ('paused', 'signoff')),
+  adopted_on date,
+  ends_on date,
+  note text,
+  source_url text,
+  confidence text check (confidence in ('high', 'medium', 'low')),
+  first_seen_on date not null,
+  last_seen_on date not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check ((kind = 'grid_gate') = (gate is not null))
+);
+
+create index if not exists policy_measures_level_kind_idx on policy_measures (level, kind, state);
+create index if not exists policy_measures_state_idx on policy_measures (state);
+
+-- Each measure's status over time: a row when the import first sees it and
+-- whenever its status or end date changes. Re-importing a snapshot corrects
+-- that date's row rather than adding one.
+create table if not exists policy_measure_history (
+  id bigint generated always as identity primary key,
+  measure_id uuid not null references policy_measures (id) on delete cascade,
+  observed_on date not null,
+  status text not null,
+  ends_on date,
+  note text,
+  source_url text,
+  recorded_at timestamptz not null default now(),
+  unique (measure_id, observed_on)
+);
+
+-- Headline figures over time, one row per metric per date the publisher
+-- reported it (e.g. ercot_large_load_queue_gw), from the same snapshots.
+create table if not exists policy_metrics (
+  observed_on date not null,
+  metric text not null,
+  value numeric not null,
+  unit text,
+  source_url text,
+  recorded_at timestamptz not null default now(),
+  primary key (observed_on, metric)
+);

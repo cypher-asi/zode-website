@@ -1,0 +1,17 @@
+[
+  { "metric": "ercot_large_load_queue_gw", "on": "2026-03-26", "value": 410, "unit": "GW", "url": "https://www.ercot.com/files/docs/2026/09/11/14-Batch-Zero-Update.pdf" },
+  { "metric": "ercot_large_load_queue_gw", "on": "2026-05-01", "value": 438, "unit": "GW", "url": "https://www.ercot.com/files/docs/2026/09/11/14-Batch-Zero-Update.pdf" },
+  { "metric": "ercot_large_load_queue_gw", "on": "2026-06-01", "value": 474, "unit": "GW", "url": "https://www.ercot.com/files/docs/2026/09/11/14-Batch-Zero-Update.pdf" },
+  { "metric": "ercot_record_peak_gw", "on": "2026-09-11", "value": 85.5, "unit": "GW", "url": "https://www.ercot.com/files/docs/2026/09/11/14-Batch-Zero-Update.pdf" },
+  { "metric": "ercot_batch_zero_gw", "on": "2026-09-11", "value": 194.3, "unit": "GW", "url": "https://www.ercot.com/files/docs/2026/09/11/14-Batch-Zero-Update.pdf" },
+  { "metric": "ercot_stranded_loads_gw", "on": "2026-09-11", "value": 6.6, "unit": "GW", "url": "https://www.ercot.com/files/docs/2026/09/11/14-Batch-Zero-Update.pdf" },
+  { "metric": "dominion_large_load_queue_gw", "on": "2026-09-22", "value": 70, "unit": "GW", "url": "https://www.princewilliamtimes.com/localnews/the-big-bottleneck-power-crunch-keeps-data-centers-in-the-dark/article_3b45f243-defa-573c-8ed1-c8709f73ce94.html" },
+  { "metric": "dominion_scheduled_through_2031_gw", "on": "2026-09-22", "value": 25, "unit": "GW", "url": "https://www.princewilliamtimes.com/localnews/the-big-bottleneck-power-crunch-keeps-data-centers-in-the-dark/article_3b45f243-defa-573c-8ed1-c8709f73ce94.html" },
+  { "metric": "georgia_power_large_load_pipeline_gw", "on": "2026-03-31", "value": 73.1, "unit": "GW", "url": "https://services.psc.ga.gov/api/v1/External/Public/Get/Document/DownloadFile/226607/107887" },
+  { "metric": "georgia_power_committed_gw", "on": "2026-03-31", "value": 12.4, "unit": "GW", "url": "https://services.psc.ga.gov/api/v1/External/Public/Get/Document/DownloadFile/226607/107887" },
+  { "metric": "aep_ohio_signed_gw", "on": "2026-02-12", "value": 5.642, "unit": "GW", "url": "https://www.aepohio.com/company/news/view?releaseID=10753" },
+  { "metric": "nyiso_large_load_queue_gw", "on": "2026-09-17", "value": 11.9, "unit": "GW", "url": "https://documents.dps.ny.gov/public/Common/ViewDoc.aspx?DocRefId=%7B707FB5A0-0000-CB52-8D3E-944DE3CDC351%7D" },
+  { "metric": "nv_energy_data_center_inquiries_gw", "on": "2026-10-13", "value": 22, "unit": "GW", "url": "https://www.nvenergy.com/publish/content/dam/nvenergy/brochures_arch/about-nvenergy/rates-regulatory/recent-regulatory-filings/2026-irp/NPC-SPPC-Volume-2.pdf" },
+  { "metric": "eei_states_large_load_tariff_approved", "on": "2026-09-01", "value": 25, "unit": "states", "url": "https://www.eei.org/-/media/Project/EEI/Documents/Issues%20and%20Policy/List%20of%20Large%20Customer%20Projects%20and%20Tariffs" },
+  { "metric": "eei_states_large_load_tariff_pending", "on": "2026-09-01", "value": 7, "unit": "states", "url": "https://www.eei.org/-/media/Project/EEI/Documents/Issues%20and%20Policy/List%20of%20Large%20Customer%20Projects%20and%20Tariffs" }
+]
