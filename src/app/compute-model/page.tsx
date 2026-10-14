@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import { PinnedHeader } from "@/components/layout/PinnedHeader";
 import { ComputeModel } from "@/features/compute-model/ComputeModel";
 import { nextMonthStart } from "@/features/compute-model/model/engine";
 import styles from "./page.module.css";
@@ -35,7 +34,6 @@ export default async function ComputeModelPage({
 
   return (
     <main className={styles.page}>
-      <PinnedHeader showAction={false} />
       <ComputeModel initialParams={params} start={nextMonthStart()} />
     </main>
   );

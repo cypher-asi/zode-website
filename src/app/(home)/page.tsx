@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { PinnedHeader } from "@/components/layout/PinnedHeader";
 import { FooterReveal, FooterScene } from "@/components/layout/SiteFooter";
 import { TerminalMenu, type TerminalMenuItem } from "@/components/ui/TerminalMenu";
 import { AssemblyLine } from "@/features/home/assembly/AssemblyLine";
@@ -38,7 +37,6 @@ export default function HomePage() {
   return (
     <main className={styles.page}>
       <CircuitFrame />
-      <PinnedHeader />
 
       <div className={styles.hero} data-circuit data-hero>
         <section className={styles.left} data-surface="light" data-circuit-seam>

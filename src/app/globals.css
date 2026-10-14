@@ -125,9 +125,15 @@
    * line, so content padded by it clears the header with the header centred
    * in the band; `--frame-inset` is how far the circuit rails sit in.
    * `--header-top` is the wordmark's distance from the top of the window,
-   * which the portal's rail shares.
+   * which the portal's rail shares. The `--edge-*` variants are the insets of
+   * routes that sit tighter (the full-window tools, the portal) or follow the
+   * deck's 16:9 stage; each route's content and the pinned header, which sits
+   * above every route, read the same one.
    */
   --edge: clamp(32px, 6vw, 96px);
+  --edge-tight: clamp(24px, 2.5vw, 40px);
+  --edge-flush: 12px;
+  --edge-deck: max(calc(5 * min(1vw, 1vh * 16 / 9)), var(--edge));
   --frame-inset: clamp(8px, 1vw, 16px);
   --header-band: 86px;
   --header-top: 32px;
@@ -288,32 +294,8 @@ body {
   outline-offset: 2px;
 }
 
-/*
- * View transitions: the page itself swaps instantly as before; only named
- * elements (the pinned wordmark and Buy Compute group, see PinnedHeader)
- * animate between routes.
- */
-::view-transition-group(root),
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-}
-
-::view-transition-group(zode-wordmark),
-::view-transition-group(zode-action) {
-  z-index: 100;
-  animation-duration: 550ms;
-  animation-timing-function: var(--ease-in-out);
-}
-
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
-  }
-
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
-    animation: none !important;
   }
 }

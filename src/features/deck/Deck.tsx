@@ -10,7 +10,6 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
   type ReactElement,
-  type ReactNode,
 } from "react";
 import { flushSync } from "react-dom";
 import type { PolicyMap } from "./policyTypes";
@@ -87,23 +86,17 @@ function ArrowIcon({ flip = false }: { flip?: boolean }): ReactElement {
  * drawing its own grid, turned by a swipe or a tap on its edge, with the
  * controls always up.
  */
-/** The cover's ground and the header, standing in while the page reads which slide to open. */
-export function DeckGround({ header }: { header: ReactNode }): ReactElement {
+/** The cover's ground, standing in while the page reads which slide to open. */
+export function DeckGround(): ReactElement {
   const { ground } = SLIDES[0];
-  return (
-    <main className={styles.root} data-ground={ground} data-surface={ground === "ink" ? "dark" : "light"}>
-      <div className={styles.header}>{header}</div>
-    </main>
-  );
+  return <main className={styles.root} data-ground={ground} data-surface={ground === "ink" ? "dark" : "light"} />;
 }
 
 export function Deck({
   initialSlide,
-  header,
   policy,
 }: {
   initialSlide: number;
-  header: ReactNode;
   /** The policy slide's map, or null when the tracker couldn't be read. */
   policy: PolicyMap | null;
 }): ReactElement {
@@ -150,7 +143,8 @@ export function Deck({
 
   const toggleFullscreen = useCallback(() => {
     if (document.fullscreenElement) void document.exitFullscreen();
-    else void rootRef.current?.requestFullscreen();
+    // The whole page, so the pinned header (mounted above the deck) stays up while presenting.
+    else void document.documentElement.requestFullscreen();
   }, []);
 
   useEffect(() => {
@@ -270,7 +264,7 @@ export function Deck({
   }, [index, overview, go]);
 
   useEffect(() => {
-    const onChange = () => setFullscreen(document.fullscreenElement === rootRef.current);
+    const onChange = () => setFullscreen(document.fullscreenElement === document.documentElement);
     // Printing lays out every slide as shown, so their entrances must be settled before the browser paginates.
     const onBeforePrint = () => flushSync(() => setPrinting(true));
     const onAfterPrint = () => setPrinting(false);
@@ -356,9 +350,6 @@ export function Deck({
       aria-roledescription="presentation"
       aria-label="ZODE investor deck"
     >
-      <div className={styles.header}>
-        {header}
-      </div>
       {/* The page's one H1; each slide's title is an H2 under it. */}
       <h1 className={styles.srOnly}>ZODE investor presentation</h1>
 

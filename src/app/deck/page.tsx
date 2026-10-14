@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
-import { Suspense, type ReactNode } from "react";
-import { PinnedHeader } from "@/components/layout/PinnedHeader";
+import { Suspense } from "react";
 import { Deck, DeckGround } from "@/features/deck/Deck";
 import { getPolicyMap } from "@/features/deck/policy";
 import { SLIDES } from "@/features/deck/slides";
-import { INVEST_ACTION } from "@/lib/navigation";
 
 const DESCRIPTION =
   "ZODE's investor presentation: factory-made AI data centers, online in 90 days and sold on take-or-pay compute contracts.";
@@ -24,19 +22,18 @@ type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
  * Lives outside the `(site)` group, like /compute-model, so the slides fill
  * the viewport without the landscape footer. `?slide=N` (1-based) opens it on
  * a given slide, so shared links land where they were copied. The query is
- * only known per request, so the deck's ground and header paint first.
+ * only known per request, so the deck's ground paints first.
  */
 export default function DeckPage({ searchParams }: { searchParams: SearchParams }) {
-  const header = <PinnedHeader primary={INVEST_ACTION} />;
   return (
-    <Suspense fallback={<DeckGround header={header} />}>
-      <DeckAtSlide searchParams={searchParams} header={header} />
+    <Suspense fallback={<DeckGround />}>
+      <DeckAtSlide searchParams={searchParams} />
     </Suspense>
   );
 }
 
 /** The policy slide's map comes from the tracker tables; without them the slide says so and the rest of the deck stands. */
-async function DeckAtSlide({ searchParams, header }: { searchParams: SearchParams; header: ReactNode }) {
+async function DeckAtSlide({ searchParams }: { searchParams: SearchParams }) {
   const [{ slide }, policy] = await Promise.all([
     searchParams,
     getPolicyMap().catch((error: unknown) => {
@@ -47,5 +44,5 @@ async function DeckAtSlide({ searchParams, header }: { searchParams: SearchParam
   const requested = typeof slide === "string" ? Number.parseInt(slide, 10) : 1;
   const initial = Number.isFinite(requested) ? Math.min(Math.max(requested, 1), SLIDES.length) - 1 : 0;
 
-  return <Deck initialSlide={initial} header={header} policy={policy} />;
+  return <Deck initialSlide={initial} policy={policy} />;
 }

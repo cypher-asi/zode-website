@@ -1,32 +1,108 @@
 /*
- * Fixed top-left wordmark, inset by `--edge` (globals.css; some pages tighten it).
- * The source PNG is white on transparency, so it inverts to black by default
- * and drops the filter over dark surfaces.
+ * The header's placement on the current route (headerRoutes.ts), as
+ * `--header-edge`: the same `--edge-*` token (globals.css) the route's own
+ * content is inset by. `--header-clear` is the width of a full-height panel
+ * in the top-right corner, which the right-hand group sits beside above 900px.
+ *
+ * Both sides are anchored to the window's corners and placed with
+ * `translate`, so sliding between placements runs on the compositor. The
+ * slide only runs while `data-moving` is set (for one route change), so
+ * resizing the window, which changes the viewport-relative edges, doesn't lag.
+ */
+.root {
+  --header-edge: var(--edge);
+  --action-clear: 0px;
+  --move: 0ms;
+
+  display: contents;
+}
+
+.root[data-placement="tight"] {
+  --header-edge: var(--edge-tight);
+}
+
+.root[data-placement="flush"] {
+  --header-edge: var(--edge-flush);
+}
+
+.root[data-placement="deck"] {
+  --header-edge: var(--edge-deck);
+}
+
+.root[data-moving] {
+  --move: 550ms;
+}
+
+@media (min-width: 901px) {
+  .root {
+    --action-clear: var(--header-clear, 0px);
+  }
+}
+
+.brandRow,
+.action {
+  transition:
+    translate var(--move) var(--ease-in-out),
+    opacity 220ms ease,
+    visibility 0s;
+}
+
+/*
+ * Routes with branding of their own (the standalone log in) fade the header
+ * out, as does the portal on phones, where its title bar (PortalTopBar)
+ * stands in and More in its tab bar holds the menu's links.
+ */
+.root[data-hidden] :is(.brandRow, .action) {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    translate var(--move) var(--ease-in-out),
+    opacity 220ms ease,
+    visibility 0s linear 220ms;
+}
+
+@media (max-width: 700px) {
+  .root[data-portal] :is(.brandRow, .action) {
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      translate var(--move) var(--ease-in-out),
+      opacity 220ms ease,
+      visibility 0s linear 220ms;
+  }
+}
+
+/*
+ * Fixed top-left wordmark. The source PNG is white on transparency, so it
+ * inverts to black by default and drops the filter over dark surfaces.
  *
  * On hover a rounded box in the logo's current color fades in around it, then
  * the logo flips to the opposite color. The box is a pseudo-element outset from
  * the link so the link's bounding rect (used for tone sampling and the scroll
- * fade) stays the size of the wordmark. In the portal the row adds the OS
- * badge beside it.
+ * fade) stays the size of the wordmark. In the portal the OS badge fades in
+ * beside it.
  */
 .brandRow {
+  /* How far the hover box reaches past the wordmark on either side. */
+  --brand-box-x: 14px;
+  --brand-indent: 0px;
+  --os-gap: 10px;
+  --os-size: 26px;
+
   position: fixed;
   /* The insets keep it clear of the notch when the page runs edge to edge. */
   top: calc(var(--header-top) + env(safe-area-inset-top, 0px));
-  left: max(var(--edge), env(safe-area-inset-left, 0px));
+  left: 0;
   z-index: 10;
   display: flex;
   align-items: center;
   gap: var(--os-gap);
-  /* How far the hover box reaches past the wordmark on either side. */
-  --brand-box-x: 14px;
-  --os-gap: 10px;
-  --os-size: 26px;
+  translate: calc(max(var(--header-edge), env(safe-area-inset-left, 0px)) + var(--brand-indent)) 0;
 }
 
 /* On the flush edge (the portal) the hover box, not the wordmark, lines up with the panels below. */
-[data-edge="flush"] .brandRow {
-  left: calc(max(var(--edge), env(safe-area-inset-left, 0px)) + var(--brand-box-x));
+.root[data-placement="flush"] .brandRow {
+  --brand-indent: var(--brand-box-x);
 }
 
 .brand {
@@ -51,7 +127,7 @@
 }
 
 /* With the OS badge, the box reaches on past it, so ZODE OS hovers as one; the badge lets the pointer through to it. */
-.brand[data-os]::before {
+.root[data-portal] .brand::before {
   right: calc(-1 * (var(--os-gap) + var(--os-size) + var(--brand-box-x)));
 }
 
@@ -103,7 +179,11 @@
   outline-offset: 14px;
 }
 
-/* "OS" after the wordmark in the portal, outlined like the header's buttons, fading in once the wordmark's morph settles. */
+/*
+ * "OS" after the wordmark, outlined like the header's buttons. Shown only in
+ * the portal, fading in once the wordmark has slid into place (the rail's
+ * icons follow on the same timing, see shell.module.css) and out at once.
+ */
 .os {
   display: inline-flex;
   flex: none;
@@ -123,17 +203,23 @@
   text-indent: var(--caps-tracking);
   user-select: none;
   pointer-events: none;
+  opacity: 0;
+  scale: 0.85;
   transition:
     border-color 200ms ease,
-    color 200ms ease;
-  animation: os-in 360ms var(--ease-out) 400ms both;
+    color 200ms ease,
+    opacity 160ms ease,
+    scale 160ms ease;
 }
 
-@keyframes os-in {
-  from {
-    opacity: 0;
-    scale: 0.85;
-  }
+.root[data-portal] .os {
+  opacity: 1;
+  scale: 1;
+  transition:
+    border-color 200ms ease,
+    color 200ms ease,
+    opacity 360ms var(--ease-out) 400ms,
+    scale 360ms var(--ease-out) 400ms;
 }
 
 /* Flips with the wordmark as the hover box fills in behind it. */
@@ -165,11 +251,10 @@
 
   position: fixed;
   top: calc(27px + env(safe-area-inset-top, 0px));
-  /* Pages with a full-height panel in the top-right corner set `--action-clear` to its width, so the Back pill sits beside it. */
-  right: calc(max(var(--edge), env(safe-area-inset-right, 0px)) + var(--action-clear, 0px));
+  right: 0;
   z-index: 10;
   display: inline-flex;
-  gap: 8px;
+  translate: calc(-1 * (max(var(--header-edge), env(safe-area-inset-right, 0px)) + var(--action-clear))) 0;
   font-size: var(--caps-size);
   font-weight: 500;
   letter-spacing: var(--caps-tracking);
@@ -184,9 +269,45 @@
 }
 
 /*
- * Back to the page a detour was entered from, left of the split button. Same
- * outline, height and wipe-up hover as the button's segments.
+ * Back to the previous page, left of the split button. Its slot opens from
+ * nothing, pushing out leftward from the button, and closes back up; the
+ * clip keeps the pill from spilling over the button meanwhile, padded out
+ * so it doesn't cut the focus ring. Same outline, height and wipe-up hover
+ * as the button's segments.
  */
+.backSlot {
+  display: grid;
+  grid-template-columns: 0fr;
+  margin-right: 0;
+  opacity: 0;
+  transition:
+    grid-template-columns 360ms var(--ease-in-out),
+    margin-right 360ms var(--ease-in-out),
+    opacity 160ms ease;
+}
+
+.backSlot[data-shown] {
+  grid-template-columns: 1fr;
+  margin-right: 8px;
+  opacity: 1;
+  transition:
+    grid-template-columns 360ms var(--ease-in-out),
+    margin-right 360ms var(--ease-in-out),
+    opacity 220ms ease 140ms;
+}
+
+.backClip {
+  min-width: 0;
+  margin: -4px;
+  padding: 4px;
+  overflow: hidden;
+}
+
+/* A drop shadow on the slot, outside the clip, so it isn't cut off at the clip's edge. */
+.action[data-media] .backSlot {
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25));
+}
+
 .back {
   display: inline-flex;
   flex: none;
@@ -209,7 +330,6 @@
 
 .action[data-media] .back {
   background-color: var(--paper);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
 .backChevron {
@@ -234,6 +354,12 @@
     background-size: 100% 100%;
     color: var(--paper);
   }
+}
+
+/* The split button and avatar, which hold their place while the Back pill comes and goes beside them. */
+.controls {
+  display: inline-flex;
+  gap: 8px;
 }
 
 /* Positions the menu under the split button alone, not the avatar beside it. */
@@ -277,11 +403,6 @@
 
 :root[data-signed-in] .avatar {
   display: inline-flex;
-}
-
-/* The portal's rail carries the avatar instead. */
-:root[data-signed-in] .action[data-portal] .avatar {
-  display: none;
 }
 
 .avatar::before {
@@ -344,7 +465,7 @@
  * to the menu's width, its bottom corners square off and its bottom edge
  * fades to a divider as the menu drops out of it.
  */
-.action[data-open] .split {
+.controls[data-open] .split {
   border-bottom-color: color-mix(in srgb, var(--ink) 20%, transparent);
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
@@ -404,10 +525,44 @@
     color 200ms ease 80ms;
 }
 
+/*
+ * Holds the button's link at its measured width (`--primary-w`, set from JS),
+ * so a route that swaps the label eases the button to the new width while the
+ * label crossfades, and one that leaves the link out closes it to nothing.
+ * Before the first measurement it's `auto`, which doesn't animate.
+ */
+.primarySlot {
+  display: flex;
+  width: var(--primary-w, auto);
+  overflow: hidden;
+  transition:
+    width 360ms var(--ease-in-out),
+    opacity 220ms ease 140ms;
+}
+
+.primarySlot:not([data-shown]) {
+  width: 0;
+  opacity: 0;
+  transition:
+    width 360ms var(--ease-in-out),
+    opacity 160ms ease;
+}
+
 .primary {
+  flex: none;
   padding: 0 14px;
   font: inherit;
   text-decoration: none;
+}
+
+.primaryLabel[data-swap] {
+  animation: label-in 260ms var(--ease-out) 100ms both;
+}
+
+@keyframes label-in {
+  from {
+    opacity: 0;
+  }
 }
 
 /* Widens the label segment to the menu's width (`--grow`, set from JS) before the menu opens, and narrows it after it closes. */
@@ -417,7 +572,7 @@
   transition: width 220ms var(--ease-in-out) 180ms;
 }
 
-.action[data-open] .grow {
+.controls[data-open] .grow {
   width: var(--grow, 0px);
   transition-delay: 0ms;
 }
@@ -430,6 +585,15 @@
   border: 0;
   border-left: 1px solid var(--ink);
   cursor: pointer;
+  transition:
+    background-size var(--duration-slow) var(--ease-in-out),
+    border-color 200ms ease,
+    color 200ms ease 80ms;
+}
+
+/* Without the link there's nothing to divide it from. */
+.split[data-bare] .toggle {
+  border-left-color: transparent;
 }
 
 .chevron {
@@ -500,7 +664,7 @@
   animation: menu-roll-up 180ms var(--ease-in-out);
 }
 
-.action[data-open] .menu {
+.controls[data-open] .menu {
   clip-path: none;
   visibility: visible;
   transition:
@@ -560,7 +724,7 @@
   transition: clip-path 0s linear 180ms;
 }
 
-.action[data-open] .text {
+.controls[data-open] .text {
   clip-path: inset(0);
   transition: clip-path calc(var(--chars) * var(--type-char)) steps(var(--chars), end)
     calc(var(--type-start) + var(--i) * var(--type-stagger));
@@ -579,7 +743,7 @@
   transition: left 0s linear 180ms;
 }
 
-.action[data-open] .cursor {
+.controls[data-open] .cursor {
   left: 100%;
   transition: left calc(var(--chars) * var(--type-char)) steps(var(--chars), end)
     calc(var(--type-start) + var(--i) * var(--type-stagger));
@@ -701,7 +865,7 @@ button.menuItem:disabled {
   transition: opacity 0s linear 180ms;
 }
 
-.action[data-open] .submenuIcon {
+.controls[data-open] .submenuIcon {
   opacity: 1;
   transition: opacity 0s calc(var(--type-start) + var(--i) * var(--type-stagger));
 }
@@ -750,12 +914,12 @@ button.menuItem:disabled {
     background-color 200ms ease;
 }
 
-.action[data-open] .submenu:not([data-open]) .text {
+.controls[data-open] .submenu:not([data-open]) .text {
   clip-path: inset(0 100% 0 0);
   transition: clip-path 0s linear 140ms;
 }
 
-.action[data-open] .submenu:not([data-open]) .cursor {
+.controls[data-open] .submenu:not([data-open]) .cursor {
   left: 0;
   transition: left 0s linear 140ms;
   animation: none;
@@ -821,6 +985,26 @@ button.menuItem:disabled {
  * already wide enough and doesn't jump when it opens. PinnedHeader checks for
  * the static position to stop hover opening it here.
  */
+/* Phones fit the wordmark, Back, the button and the avatar on one row by dropping Back to its chevron. */
+@media (max-width: 480px) {
+  .back {
+    justify-content: center;
+    width: 28px;
+    padding: 0;
+  }
+
+  .backLabel {
+    display: none;
+  }
+}
+
+/* The smallest phones have no room for it beside the wordmark and the button. */
+@media (max-width: 359px) {
+  .backSlot {
+    display: none;
+  }
+}
+
 @media (max-width: 600px) {
   .submenu {
     position: static;
@@ -856,14 +1040,6 @@ button.menuItem:disabled {
   }
 }
 
-/* Phones get the portal's own title bar (PortalTopBar) in place of the header; More in its tab bar holds the menu's links. */
-@media (max-width: 700px) {
-  [data-edge="flush"] .brandRow,
-  .action[data-portal] {
-    display: none;
-  }
-}
-
 @media (pointer: coarse) {
   .menuItem {
     height: 40px;
@@ -871,39 +1047,48 @@ button.menuItem:disabled {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .root[data-moving] {
+    --move: 0ms;
+  }
+
   .brand::before,
   .wordmark,
   .os,
+  .root[data-portal] .os,
   .avatar,
+  .backSlot,
+  .backSlot[data-shown],
   .back,
+  .primarySlot,
+  .primarySlot:not([data-shown]),
   .split,
-  .action[data-open] .split,
+  .controls[data-open] .split,
   .primary,
   .grow,
-  .action[data-open] .grow,
+  .controls[data-open] .grow,
   .toggle,
   .chevron,
   .menu,
-  .action[data-open] .menu,
+  .controls[data-open] .menu,
   .menuItem,
   .text,
-  .action[data-open] .text,
+  .controls[data-open] .text,
   .cursor,
-  .action[data-open] .cursor,
+  .controls[data-open] .cursor,
   .submenuIcon,
-  .action[data-open] .submenuIcon,
+  .controls[data-open] .submenuIcon,
   .submenu,
   .submenu[data-open],
-  .action[data-open] .submenu:not([data-open]) .text,
-  .action[data-open] .submenu:not([data-open]) .cursor {
+  .controls[data-open] .submenu:not([data-open]) .text,
+  .controls[data-open] .submenu:not([data-open]) .cursor {
     transition: none;
   }
 
   .split::after,
-  .os,
+  .primaryLabel[data-swap],
   .menu,
-  .action[data-open] .menu,
-  .action[data-open] .cursor,
+  .controls[data-open] .menu,
+  .controls[data-open] .cursor,
   .notice,
   .notice[data-leaving] {
     animation: none;

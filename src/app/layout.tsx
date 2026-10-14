@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
+import { PinnedHeader } from "@/components/layout/PinnedHeader";
 import { RememberAccount } from "@/features/account/RememberAccount";
 import { MARK_SIGNED_IN_SCRIPT } from "@/features/account/signedInCookie";
 import { Tracker } from "@/features/analytics/Tracker";
-import { BackOrigin } from "@/features/navigation/BackOrigin";
 import { display, text } from "@/lib/fonts";
 import { SITE_URL } from "@/lib/site";
 import "./globals.css";
@@ -53,12 +53,13 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: MARK_SIGNED_IN_SCRIPT }} />
       </head>
       <body>
+        {/* One header for every route, so it slides between their placements rather than remounting. */}
+        <PinnedHeader />
         {children}
         {modal}
         <Suspense>
           <RememberAccount />
           <Tracker />
-          <BackOrigin />
         </Suspense>
       </body>
     </html>

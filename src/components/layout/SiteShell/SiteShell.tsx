@@ -1,11 +1,10 @@
-import { Suspense, type ReactElement, type ReactNode } from "react";
-import { PinnedHeader } from "@/components/layout/PinnedHeader";
+import type { ReactElement, ReactNode } from "react";
 import { FooterReveal, FooterScene } from "@/components/layout/SiteFooter";
 import styles from "./SiteShell.module.css";
 
 /**
- * Shell for the secondary pages, matching the home page: the pinned wordmark
- * and Buy Compute menu over a light content area that scrolls with the
+ * Shell for the secondary pages, matching the home page: a light content area
+ * under the pinned header (mounted in the root layout) that scrolls with the
  * window, optionally closing with the home page's landscape footer.
  */
 export function SiteShell({
@@ -21,9 +20,9 @@ export function SiteShell({
   /** Set false when the content never scrolls under the header, e.g. the portal's fixed panel. */
   fade?: boolean;
   /**
-   * "tight" tucks the header into the corners like the buy compute page, and
-   * "flush" all but to the window's sides, for the portal's panels; it slides
-   * there and back between pages.
+   * "tight" tucks the content into the corners like the buy compute page, and
+   * "flush" all but to the window's sides, for the portal's panels; the
+   * header's placement for the route (headerRoutes.ts) matches it.
    */
   edge?: "wide" | "tight" | "flush";
   /** Pinned navigation beside the content, e.g. the portal's icon rail. */
@@ -31,10 +30,6 @@ export function SiteShell({
 }): ReactElement {
   return (
     <div className={styles.shell} data-edge={edge}>
-      {/* The header reads the pathname, which a page with dynamic params only knows per request. */}
-      <Suspense>
-        <PinnedHeader />
-      </Suspense>
       {nav}
       <main className={styles.main} data-surface="light">
         {fade ? (

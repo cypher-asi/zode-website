@@ -14,9 +14,11 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
+import { InlineScript } from "./InlineScript";
 import { SIDEBAR_MEDIA } from "./nav";
 import styles from "./shell.module.css";
-import { PORTAL_THEME_COOKIE, PORTAL_THEME_SCRIPT, readPortalTheme, type PortalTheme } from "./theme";
+import { PORTAL_THEME_SCRIPT, type PortalTheme } from "./theme";
+import { togglePortalTheme, usePortalThemeCookie } from "./themeStore";
 
 type SidebarContextValue = {
   /** Whether the window is wide enough to show the sidebar at all. */
@@ -71,53 +73,20 @@ const subscribeWide = (onChange: () => void) => {
   return () => query.removeEventListener("change", onChange);
 };
 
-/** The theme cookie as a store; the cookie has no change event, so `toggleTheme` notifies. */
-const themeListeners = new Set<() => void>();
-
-const subscribeTheme = (onChange: () => void) => {
-  themeListeners.add(onChange);
-  return () => {
-    themeListeners.delete(onChange);
-  };
-};
-
-const toggleTheme = () => {
-  const next = readPortalTheme(document.cookie) === "dark" ? "light" : "dark";
-  document.cookie = `${PORTAL_THEME_COOKIE}=${next}; Max-Age=31536000; Path=/; SameSite=Lax`;
-  themeListeners.forEach((listener) => listener());
-};
-
-/**
- * An inline script that runs as a hard load's HTML is parsed. Rendered in the
- * browser, which wouldn't run it, it's `text/plain` so React doesn't warn.
- */
-function InlineScript({ html }: { html: string }): ReactElement {
-  return (
-    <script
-      type={typeof window === "undefined" ? "text/javascript" : "text/plain"}
-      suppressHydrationWarning
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
-  );
-}
-
 /**
  * Wraps the portal shell, tracks where pages can dock their explorer in the
  * sidebar, and carries the light or dark theme (globals.css) for everything
- * inside, the pinned header included. The server renders light; an inline
- * script switches a hard load to dark before it paints. The browser's theme
- * colour (the status bar, in the installed app) follows along.
+ * inside; the pinned header, mounted above it, follows the same cookie. The
+ * server renders light; an inline script switches a hard load to dark before
+ * it paints. The browser's theme colour (the status bar, in the installed
+ * app) follows along.
  */
 export function PortalFrame({ children }: { children: ReactNode }): ReactElement {
   const [dock, setDock] = useState<HTMLElement | null>(null);
   const [extra, setExtra] = useState<HTMLElement | null>(null);
   const [dockFilled, claimDock] = useClaims();
   const [extraFilled, claimExtra] = useClaims();
-  const theme = useSyncExternalStore(
-    subscribeTheme,
-    () => readPortalTheme(document.cookie),
-    (): PortalTheme => "light",
-  );
+  const theme = usePortalThemeCookie();
   const wide = useSyncExternalStore(
     subscribeWide,
     () => window.matchMedia(SIDEBAR_MEDIA).matches,
@@ -136,7 +105,7 @@ export function PortalFrame({ children }: { children: ReactNode }): ReactElement
     };
   }, [theme]);
 
-  const themeValue = useMemo(() => ({ theme, toggle: toggleTheme }), [theme]);
+  const themeValue = useMemo(() => ({ theme, toggle: togglePortalTheme }), [theme]);
   const sidebarValue = useMemo(
     () => ({
       wide,

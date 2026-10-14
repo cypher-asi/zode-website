@@ -15,8 +15,8 @@
   --deck-tick: var(--color-border-strong);
   --deck-accent: var(--color-accent-strong);
   --deck-hover: var(--color-surface-hover);
-  /* The slides' content inset (`--inset-x` in Slide.module.css), so the header and controls share its edges. */
-  --content-edge: max(calc(5 * min(1vw, 1vh * 16 / 9)), var(--edge));
+  /* The slides' content inset (`--inset-x` in Slide.module.css), so the pinned header (on `--edge-deck` here) and controls share its edges. */
+  --content-edge: var(--edge-deck);
 
   position: fixed;
   inset: 0;
@@ -46,19 +46,6 @@
   --deck-tick: rgba(255, 255, 255, 0.2);
   --deck-accent: var(--color-accent);
   --deck-hover: rgba(255, 255, 255, 0.08);
-}
-
-/*
- * Above the slides; the header inside is fixed, so this only orders it. The
- * wordmark and button sit on the slide content's edges, the wordmark over
- * the title, and the header's shared view transition slides them there from
- * the page before.
- */
-.header {
-  --edge: var(--content-edge);
-
-  position: relative;
-  z-index: 4;
 }
 
 /* ---------- Stage ---------- */

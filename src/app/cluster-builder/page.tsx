@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { PinnedHeader } from "@/components/layout/PinnedHeader";
 import { ClusterConfigurator } from "@/features/cluster/ClusterConfigurator";
 import { configFromParams } from "@/features/cluster/model/url";
 import styles from "./page.module.css";
@@ -31,7 +30,6 @@ export default async function ClusterConfiguratorPage({
 
   return (
     <main className={styles.page}>
-      <PinnedHeader showAction={false} />
       <ClusterConfigurator initialConfig={configFromParams(params)} />
     </main>
   );

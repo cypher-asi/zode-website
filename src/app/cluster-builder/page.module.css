@@ -1,17 +1,10 @@
-/* Fixed light palette; PinnedHeader and the configurator inherit the tight `--edge`. */
+/* Fixed light palette; the configurator inherits the tight `--edge`, as does the pinned header on this route. */
 .page {
-  --edge: clamp(24px, 2.5vw, 40px);
+  --edge: var(--edge-tight);
 
   position: relative;
   min-height: 100svh;
   background: var(--color-white);
   -webkit-tap-highlight-color: transparent;
   color: var(--color-ink);
-}
-
-/* The header's Back pill sits left of the settings panel (ClusterConfigurator's right column) rather than over its close button. */
-@media (min-width: 901px) {
-  .page {
-    --action-clear: 440px;
-  }
 }

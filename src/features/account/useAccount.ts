@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useSyncExternalStore, useTransition } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { logout } from "./actions";
 import { readSignedInCookie } from "./signedInCookie";
 
@@ -84,7 +84,6 @@ export function useLogoutToast(): LogoutToast {
  */
 export function useLogout(): { logOut: (onDone?: () => void) => void; pending: boolean } {
   const router = useRouter();
-  const pathname = usePathname() ?? "/";
   const [pending, startTransition] = useTransition();
 
   const logOut = useCallback(
@@ -93,12 +92,13 @@ export function useLogout(): { logOut: (onDone?: () => void) => void; pending: b
         await logout();
         onDone?.();
         showLogoutToast();
-        if (isPortalPath(pathname)) {
+        // Read at call time: `usePathname()` would hold the root layout's header out of routes' static shells.
+        if (isPortalPath(window.location.pathname)) {
           router.replace("/");
         }
       });
     },
-    [pathname, router],
+    [router],
   );
 
   return { logOut, pending };

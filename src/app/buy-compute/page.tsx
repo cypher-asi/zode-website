@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { PinnedHeader } from "@/components/layout/PinnedHeader";
 import { Configurator } from "@/features/configurator/Configurator";
 import styles from "./page.module.css";
 
@@ -27,7 +26,6 @@ export default async function BuyComputePage({
 
   return (
     <main className={styles.page}>
-      <PinnedHeader showAction={false} />
       <Configurator initialMode={mode === "rent" ? "rent" : "buy"} />
     </main>
   );

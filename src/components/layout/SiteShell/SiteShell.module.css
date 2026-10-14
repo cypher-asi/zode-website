@@ -1,4 +1,4 @@
-/* PinnedHeader and the footer inherit `--edge`, `--frame-inset` and `--header-band` from globals.css. */
+/* The content and the footer inherit `--edge`, `--frame-inset` and `--header-band` from globals.css. */
 .shell {
   position: relative;
   -webkit-tap-highlight-color: transparent;
@@ -6,12 +6,12 @@
 
 /* The buy compute page's insets: the wordmark and button tuck into the corners to free up room. */
 .shell[data-edge="tight"] {
-  --edge: clamp(24px, 2.5vw, 40px);
+  --edge: var(--edge-tight);
 }
 
 /* The portal's insets: its panels run nearly to the window's sides, as far in as they are from each other. */
 .shell[data-edge="flush"] {
-  --edge: 12px;
+  --edge: var(--edge-flush);
 }
 
 /* Opaque over the <html> fallback colour; clears the pinned header. */
