@@ -100,8 +100,8 @@
   inset: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  padding: max(calc(4 * var(--u)), var(--slide-top, 0px) + calc(1.6 * var(--u))) var(--inset-x)
-    var(--slide-bottom, 0px);
+  padding: max(calc(4 * var(--u)), var(--slide-top, 0px) + calc(1.6 * var(--u)))
+    var(--inset-x) var(--slide-bottom, 0px);
 }
 
 /*
@@ -146,8 +146,10 @@
   right: var(--bleed);
   height: var(--pip);
   background:
-    linear-gradient(var(--pip-color), var(--pip-color)) left / var(--pip) 100% no-repeat,
-    linear-gradient(var(--pip-color), var(--pip-color)) right / var(--pip) 100% no-repeat,
+    linear-gradient(var(--pip-color), var(--pip-color)) left / var(--pip) 100%
+      no-repeat,
+    linear-gradient(var(--pip-color), var(--pip-color)) right / var(--pip) 100%
+      no-repeat,
     linear-gradient(var(--rule), var(--rule)) center / 100% 1px no-repeat;
   pointer-events: none;
 }
@@ -168,7 +170,10 @@
 .frame[data-grid][data-foot]:not([data-head])::after {
   --bleed: calc(var(--rail) + 0.5px - var(--pip) / 2);
 
-  top: calc(max(calc(4 * var(--u)), var(--slide-top, 0px) + calc(1.6 * var(--u))) - 1.4 * var(--u) - var(--pip) / 2);
+  top: calc(
+    max(calc(4 * var(--u)), var(--slide-top, 0px) + calc(1.6 * var(--u))) -
+      1.4 * var(--u) - var(--pip) / 2
+  );
 }
 
 /* Keeps the body off the foot rule. */
@@ -525,11 +530,15 @@
   position: absolute;
   top: calc(-1.8 * var(--u) - var(--pip) / 2);
   bottom: calc(-1.2 * var(--u) - var(--pip) / 2);
-  left: calc((100% - var(--split-gap)) * 2 / 3 + var(--split-gap) / 2 - var(--pip) / 2);
+  left: calc(
+    (100% - var(--split-gap)) * 2 / 3 + var(--split-gap) / 2 - var(--pip) / 2
+  );
   width: var(--pip);
   background:
-    linear-gradient(var(--pip-color), var(--pip-color)) left 0 top 0 / var(--pip) var(--pip) no-repeat,
-    linear-gradient(var(--pip-color), var(--pip-color)) left 0 bottom 0 / var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 top 0 /
+      var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 bottom 0 /
+      var(--pip) var(--pip) no-repeat,
     linear-gradient(var(--rule), var(--rule)) center / 1px 100% no-repeat;
   pointer-events: none;
 }
@@ -756,8 +765,10 @@
   left: calc(50% - var(--pip) / 2);
   width: var(--pip);
   background:
-    linear-gradient(var(--pip-color), var(--pip-color)) left 0 top 0 / var(--pip) var(--pip) no-repeat,
-    linear-gradient(var(--pip-color), var(--pip-color)) left 0 bottom 0 / var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 top 0 /
+      var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 bottom 0 /
+      var(--pip) var(--pip) no-repeat,
     linear-gradient(var(--rule), var(--rule)) center / 1px 100% no-repeat;
   pointer-events: none;
 }
@@ -997,7 +1008,8 @@
   color: var(--fg-2);
 }
 
-:is(.status, .measure):is([data-status="paused"], [data-status="signoff"]) .swatch {
+:is(.status, .measure):is([data-status="paused"], [data-status="signoff"])
+  .swatch {
   width: calc(0.7 * var(--u));
   height: calc(0.7 * var(--u));
   justify-self: center;
@@ -1285,8 +1297,10 @@ a.measureTitle:focus-visible {
   padding: 0;
   list-style: none;
   background:
-    linear-gradient(var(--rule), var(--rule)) left 33.333% top 0 / 1px 100% no-repeat,
-    linear-gradient(var(--rule), var(--rule)) left 66.667% top 0 / 1px 100% no-repeat,
+    linear-gradient(var(--rule), var(--rule)) left 33.333% top 0 / 1px 100%
+      no-repeat,
+    linear-gradient(var(--rule), var(--rule)) left 66.667% top 0 / 1px 100%
+      no-repeat,
     linear-gradient(var(--rule), var(--rule)) center / 100% 1px no-repeat;
 }
 
@@ -1366,8 +1380,10 @@ a.measureTitle:focus-visible {
   left: calc(50% - var(--pip) / 2);
   width: var(--pip);
   background:
-    linear-gradient(var(--pip-color), var(--pip-color)) left 0 top 0 / var(--pip) var(--pip) no-repeat,
-    linear-gradient(var(--pip-color), var(--pip-color)) left 0 bottom 0 / var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 top 0 /
+      var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 bottom 0 /
+      var(--pip) var(--pip) no-repeat,
     linear-gradient(var(--rule), var(--rule)) center / 1px 100% no-repeat;
   pointer-events: none;
 }
@@ -1400,9 +1416,12 @@ a.measureTitle:focus-visible {
   padding: 0;
   list-style: none;
   background:
-    linear-gradient(var(--rule), var(--rule)) left 0 bottom var(--small-h) / 100% 1px no-repeat,
-    linear-gradient(var(--rule), var(--rule)) left 33.333% bottom 0 / 1px var(--small-h) no-repeat,
-    linear-gradient(var(--rule), var(--rule)) left 66.667% bottom 0 / 1px var(--small-h) no-repeat;
+    linear-gradient(var(--rule), var(--rule)) left 0 bottom var(--small-h) /
+      100% 1px no-repeat,
+    linear-gradient(var(--rule), var(--rule)) left 33.333% bottom 0 / 1px
+      var(--small-h) no-repeat,
+    linear-gradient(var(--rule), var(--rule)) left 66.667% bottom 0 / 1px
+      var(--small-h) no-repeat;
 }
 
 /* A small card: the drawing centred, its caption under it in the bottom-left corner. */
@@ -1843,8 +1862,10 @@ a.measureTitle:focus-visible {
   left: calc(50% - var(--pip) / 2);
   width: var(--pip);
   background:
-    linear-gradient(var(--pip-color), var(--pip-color)) left 0 top 0 / var(--pip) var(--pip) no-repeat,
-    linear-gradient(var(--pip-color), var(--pip-color)) left 0 bottom 0 / var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 top 0 /
+      var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 bottom 0 /
+      var(--pip) var(--pip) no-repeat,
     linear-gradient(var(--rule), var(--rule)) center / 1px 100% no-repeat;
   pointer-events: none;
 }
@@ -2034,7 +2055,9 @@ a.measureTitle:focus-visible {
 
 .planRow {
   display: grid;
-  grid-template-columns: calc(3.6 * var(--u)) minmax(0, 1fr) calc(7.4 * var(--u));
+  grid-template-columns: calc(3.6 * var(--u)) minmax(0, 1fr) calc(
+      7.4 * var(--u)
+    );
   align-items: center;
   gap: calc(1.2 * var(--u));
   height: calc(3.1 * var(--u));
@@ -2065,7 +2088,8 @@ a.measureTitle:focus-visible {
 .planBar {
   height: calc(0.5 * var(--u));
   background:
-    linear-gradient(var(--fg), var(--fg)) left / calc(var(--share) * 100%) 100% no-repeat,
+    linear-gradient(var(--fg), var(--fg)) left / calc(var(--share) * 100%) 100%
+      no-repeat,
     var(--rule);
 }
 
@@ -2657,7 +2681,9 @@ a.measureTitle:focus-visible {
 }
 
 .dealLayer[data-kind="debt"] {
-  background: linear-gradient(var(--color-surface-tint), var(--color-surface-tint)), var(--card);
+  background:
+    linear-gradient(var(--color-surface-tint), var(--color-surface-tint)),
+    var(--card);
 }
 
 .dealLayerLabel {
@@ -2697,11 +2723,15 @@ a.measureTitle:focus-visible {
 }
 
 .stackSegment[data-deal="gpu"] {
-  background: linear-gradient(var(--color-surface-active), var(--color-surface-active)), var(--card);
+  background:
+    linear-gradient(var(--color-surface-active), var(--color-surface-active)),
+    var(--card);
 }
 
 .stackSegment[data-deal="realEstate"] {
-  background: linear-gradient(var(--color-surface-tint), var(--color-surface-tint)), var(--card);
+  background:
+    linear-gradient(var(--color-surface-tint), var(--color-surface-tint)),
+    var(--card);
 }
 
 /* `--brace` and `--brace-gap`: the deals' names and brackets under the bar, which the total clears to stand level with its blocks. */
@@ -2804,7 +2834,8 @@ a.measureTitle:focus-visible {
   justify-content: flex-end;
   gap: calc(0.3 * var(--u));
   margin: 0;
-  padding: calc(1 * var(--u)) 0 calc(1.2 * var(--u) + var(--brace) + var(--brace-gap)) calc(1.6 * var(--u));
+  padding: calc(1 * var(--u)) 0
+    calc(1.2 * var(--u) + var(--brace) + var(--brace-gap)) calc(1.6 * var(--u));
   text-align: right;
 }
 
@@ -2991,8 +3022,10 @@ a.measureTitle:focus-visible {
   left: calc(50% - var(--pip) / 2);
   width: var(--pip);
   background:
-    linear-gradient(var(--pip-color), var(--pip-color)) left 0 top 0 / var(--pip) var(--pip) no-repeat,
-    linear-gradient(var(--pip-color), var(--pip-color)) left 0 bottom 0 / var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 top 0 /
+      var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 bottom 0 /
+      var(--pip) var(--pip) no-repeat,
     linear-gradient(var(--rule), var(--rule)) center / 1px 100% no-repeat;
   pointer-events: none;
 }
@@ -3142,24 +3175,6 @@ a.measureTitle:focus-visible {
   grid-area: outcome;
   text-align: right;
   color: var(--fg);
-}
-
-.unicorn {
-  display: inline-block;
-  width: 1.3em;
-  height: 1.33em;
-  margin-left: 0.35em;
-  vertical-align: -0.3em;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 20;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.unicorn circle {
-  fill: currentColor;
-  stroke: none;
 }
 
 .quests {
@@ -3420,7 +3435,10 @@ a.measureTitle:focus-visible {
 .coverImage,
 .disclaimerPanel {
   position: absolute;
-  top: calc(max(calc(4 * var(--u)), var(--slide-top, 0px) + calc(1.6 * var(--u))) - 1.4 * var(--u));
+  top: calc(
+    max(calc(4 * var(--u)), var(--slide-top, 0px) + calc(1.6 * var(--u))) -
+      1.4 * var(--u)
+  );
   right: calc(var(--rail) + 1px);
   bottom: calc(3.6 * var(--u) + var(--slide-bottom, 0px));
   left: calc(50% + 0.5px);
@@ -3597,13 +3615,18 @@ a.measureTitle:focus-visible {
 .cover::after {
   content: "";
   position: absolute;
-  top: calc(max(calc(4 * var(--u)), var(--slide-top, 0px) + calc(1.6 * var(--u))) - 1.4 * var(--u) - var(--pip) / 2);
+  top: calc(
+    max(calc(4 * var(--u)), var(--slide-top, 0px) + calc(1.6 * var(--u))) -
+      1.4 * var(--u) - var(--pip) / 2
+  );
   bottom: calc(3.6 * var(--u) + var(--slide-bottom, 0px) - var(--pip) / 2);
   left: calc(50% - var(--pip) / 2);
   width: var(--pip);
   background:
-    linear-gradient(var(--pip-color), var(--pip-color)) left 0 top 0 / var(--pip) var(--pip) no-repeat,
-    linear-gradient(var(--pip-color), var(--pip-color)) left 0 bottom 0 / var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 top 0 /
+      var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 bottom 0 /
+      var(--pip) var(--pip) no-repeat,
     linear-gradient(var(--rule), var(--rule)) center / 1px 100% no-repeat;
   pointer-events: none;
 }
@@ -3800,7 +3823,18 @@ a.measureTitle:focus-visible {
 }
 
 /* Type, at the site's mobile sizes. */
-.slide[data-compact] :is(.eyebrow, .number, .footLabel, .label, .meta, .figLabel, .fine, .statLabel, .statSource) {
+.slide[data-compact]
+  :is(
+    .eyebrow,
+    .number,
+    .footLabel,
+    .label,
+    .meta,
+    .figLabel,
+    .fine,
+    .statLabel,
+    .statSource
+  ) {
   font-size: var(--text-2xs);
 }
 
@@ -4152,7 +4186,9 @@ a.measureTitle:focus-visible {
   font-size: 9px;
 }
 
-.slide[data-compact] :is(.status, .measure):is([data-status="paused"], [data-status="signoff"]) .swatch {
+.slide[data-compact]
+  :is(.status, .measure):is([data-status="paused"], [data-status="signoff"])
+  .swatch {
   width: 9px;
   height: 9px;
 }
@@ -4842,7 +4878,9 @@ a.measureTitle:focus-visible {
   flex-direction: column;
 }
 
-.slide[data-compact] .stackSegment[data-deal="compute"] + .stackSegment[data-deal="compute"] {
+.slide[data-compact]
+  .stackSegment[data-deal="compute"]
+  + .stackSegment[data-deal="compute"] {
   border-top: 1px solid var(--rule);
   border-left: 0;
 }
