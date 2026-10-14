@@ -3002,11 +3002,18 @@ a.measureTitle:focus-visible {
   gap: calc(1.2 * var(--u));
 }
 
+/* The role, the LinkedIn mark beside it. */
+.founderRole {
+  display: flex;
+  align-items: center;
+  gap: calc(0.6 * var(--u));
+}
+
 /* The one name on the slide, set as an H2. */
 .person {
   --h3-size: calc(2.55 * var(--u));
 
-  margin: calc(0.4 * var(--u)) 0 calc(0.5 * var(--u));
+  margin: calc(0.4 * var(--u)) 0 0;
   line-height: var(--h1-leading);
   letter-spacing: var(--h1-tracking);
 }
@@ -3018,8 +3025,8 @@ a.measureTitle:focus-visible {
 }
 
 .linkedin svg {
-  width: calc(1.2 * var(--u));
-  height: calc(1.2 * var(--u));
+  width: calc(0.9 * var(--u));
+  height: calc(0.9 * var(--u));
   fill: currentColor;
 }
 
@@ -3117,6 +3124,110 @@ a.measureTitle:focus-visible {
 
 .ventureOutcome {
   color: var(--fg);
+}
+
+/* GitHub's contribution graph in the slide's ink: five steps from a tint of the ground to the foreground. */
+.contrib {
+  --level-0: color-mix(in srgb, var(--fg) 7%, var(--bg));
+  --level-1: color-mix(in srgb, var(--fg) 24%, var(--bg));
+  --level-2: color-mix(in srgb, var(--fg) 46%, var(--bg));
+  --level-3: color-mix(in srgb, var(--fg) 70%, var(--bg));
+  --level-4: var(--fg);
+
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.4 * var(--u));
+  margin: 0;
+}
+
+.contribHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(1 * var(--u));
+  margin-bottom: calc(0.2 * var(--u));
+}
+
+.contribKey {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(0.2 * var(--u));
+  font-family: var(--font-mono);
+  font-size: calc(0.56 * var(--u));
+  letter-spacing: 0.02em;
+  color: var(--fg-2);
+}
+
+.contribKey i {
+  width: calc(0.56 * var(--u));
+  height: calc(0.56 * var(--u));
+  background: var(--level-0);
+}
+
+.contribKey i:first-of-type {
+  margin-left: calc(0.2 * var(--u));
+}
+
+.contribKey i:last-of-type {
+  margin-right: calc(0.2 * var(--u));
+}
+
+.contribKey i[data-level="1"] {
+  background: var(--level-1);
+}
+
+.contribKey i[data-level="2"] {
+  background: var(--level-2);
+}
+
+.contribKey i[data-level="3"] {
+  background: var(--level-3);
+}
+
+.contribKey i[data-level="4"] {
+  background: var(--level-4);
+}
+
+/* A column per week, as the graph's, each month named over its first week. */
+.contribMonths {
+  display: grid;
+  grid-template-columns: repeat(var(--weeks), minmax(0, 1fr));
+  font-family: var(--font-mono);
+  font-size: calc(0.56 * var(--u));
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--fg-2);
+  white-space: nowrap;
+}
+
+.contribMonths span {
+  grid-row: 1;
+}
+
+.contribDays {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.contribDays rect {
+  fill: var(--level-0);
+}
+
+.contribDays rect[data-level="1"] {
+  fill: var(--level-1);
+}
+
+.contribDays rect[data-level="2"] {
+  fill: var(--level-2);
+}
+
+.contribDays rect[data-level="3"] {
+  fill: var(--level-3);
+}
+
+.contribDays rect[data-level="4"] {
+  fill: var(--level-4);
 }
 
 /* As tall as the founder's column, the areas sharing its height between the same top and bottom rules. */
@@ -4730,7 +4841,7 @@ a.measureTitle:focus-visible {
 .slide[data-compact] .person {
   --h3-size: 30px;
 
-  margin: 6px 0 8px;
+  margin: 6px 0 0;
 }
 
 .slide[data-compact] .split[data-split="team"]::after {
@@ -4741,9 +4852,44 @@ a.measureTitle:focus-visible {
   gap: 16px;
 }
 
+.slide[data-compact] .founderRole {
+  gap: 8px;
+}
+
 .slide[data-compact] .linkedin svg {
-  width: 20px;
-  height: 20px;
+  width: 14px;
+  height: 14px;
+}
+
+.slide[data-compact] .contrib {
+  gap: 6px;
+}
+
+.slide[data-compact] .contribHead {
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-bottom: 2px;
+}
+
+.slide[data-compact] :is(.contribKey, .contribMonths) {
+  font-size: 9px;
+}
+
+.slide[data-compact] .contribKey {
+  gap: 3px;
+}
+
+.slide[data-compact] .contribKey i {
+  width: 9px;
+  height: 9px;
+}
+
+.slide[data-compact] .contribKey i:first-of-type {
+  margin-left: 3px;
+}
+
+.slide[data-compact] .contribKey i:last-of-type {
+  margin-right: 3px;
 }
 
 .slide[data-compact] .venture {

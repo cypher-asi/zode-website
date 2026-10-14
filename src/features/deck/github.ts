@@ -1,0 +1,18 @@
+/** A year of GitHub contributions, as GitHub draws them: a level of 0–4 per day, Sunday-first weeks. */
+export interface Contributions {
+  readonly total: number;
+  /** The first day, a Sunday, as YYYY-MM-DD. */
+  readonly from: string;
+  /** One digit per day from `from`, read off GitHub's graph. */
+  readonly levels: string;
+}
+
+export const FOUNDER_CONTRIBUTIONS: Contributions = {
+  total: 11427,
+  from: "2025-10-12",
+  levels:
+    "1111101111010000000111000000000000000000000000000000000011010000000000000000000000001111110100001111111111110111" +
+    "1110000000001000000110111111212221111111443434444432111112223322211111112112211112121111111111111111111110111122" +
+    "1121202123122113212111110000011111111212210011011011000111111000001000000000000000000000000000000000000000000000" +
+    "00000011000111000000000000111120",
+};

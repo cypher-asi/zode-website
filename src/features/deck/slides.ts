@@ -1,5 +1,6 @@
 import type { SiteMapId } from "./art/siteMaps";
 import type { UnitIconId } from "./art/UnitIcon";
+import { FOUNDER_CONTRIBUTIONS, type Contributions } from "./github";
 import type { SourceId } from "./research";
 
 /** A slide's background; ink is the one dark ground. */
@@ -230,6 +231,8 @@ export type Slide =
           outcome: string;
           outcomeHref?: string;
         }[];
+        /** Drawn under the ventures. */
+        contributions: Contributions;
       };
       /** The team, alliances and advisors, by area. */
       network: { title: string; areas: readonly { label: string; logos: readonly Logo[] }[] };
@@ -557,6 +560,7 @@ export const SLIDES: readonly Slide[] = [
           outcome: "$1 billion+ valuation",
         },
       ],
+      contributions: FOUNDER_CONTRIBUTIONS,
     },
     network: {
       title: "Team members and strategic advisors from",

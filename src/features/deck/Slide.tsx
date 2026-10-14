@@ -25,6 +25,7 @@ import { ShortfallByYear, ShortfallChart } from "./charts/ShortfallChart";
 import { StateTileMap } from "./charts/StateTileMap";
 import { TokenChart } from "./charts/TokenChart";
 import { DISCLAIMER, LEGAL_LEGEND, RAISE_NOTE } from "./disclaimer";
+import type { Contributions } from "./github";
 import { useLocalPauses } from "./localPauses";
 import { BLOCKED, NEWS } from "./news";
 import { PolicyPanel, type PolicyChoice } from "./PolicyPanel";
@@ -1252,10 +1253,67 @@ function OutLink({ href, children }: { href?: string; children: ReactNode }): Re
   );
 }
 
+const DAY_MS = 86_400_000;
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
+/** A day's square and the gap after it, in the graph's own units. */
+const CELL = 8;
+const PITCH = 10;
+
+/**
+ * A year of GitHub contributions as GitHub lays them out, a column per week
+ * and a row per weekday, shaded in the slide's ink instead of green; each
+ * month named over the week it starts in.
+ */
+function ContributionGraph({ data }: { data: Contributions }): ReactElement {
+  const from = Date.parse(`${data.from}T00:00:00Z`);
+  const weeks = Math.ceil(data.levels.length / 7);
+  const monthOf = (week: number) => new Date(from + week * 7 * DAY_MS).getUTCMonth();
+  const months = Array.from({ length: weeks }, (_, w) => w).filter((w) => w === 0 || monthOf(w) !== monthOf(w - 1));
+  const total = data.total.toLocaleString("en-US");
+  return (
+    <figure className={styles.contrib}>
+      <figcaption className={styles.contribHead}>
+        <span className={styles.label}>{total} GitHub contributions in the last year</span>
+        <span className={styles.contribKey} aria-hidden="true">
+          Less
+          {[0, 1, 2, 3, 4].map((level) => (
+            <i key={level} data-level={level} />
+          ))}
+          More
+        </span>
+      </figcaption>
+      <div className={styles.contribMonths} style={{ "--weeks": weeks } as CSSProperties} aria-hidden="true">
+        {months.map((w) => (
+          <span key={w} style={{ gridColumnStart: w + 1 }}>
+            {MONTHS[monthOf(w)]}
+          </span>
+        ))}
+      </div>
+      <svg
+        className={styles.contribDays}
+        viewBox={`0 0 ${weeks * PITCH - (PITCH - CELL)} ${7 * PITCH - (PITCH - CELL)}`}
+        role="img"
+        aria-label={`${total} GitHub contributions in the last year`}
+      >
+        {Array.from(data.levels, (level, day) => (
+          <rect
+            key={day}
+            x={Math.floor(day / 7) * PITCH}
+            y={(day % 7) * PITCH}
+            width={CELL}
+            height={CELL}
+            data-level={level}
+          />
+        ))}
+      </svg>
+    </figure>
+  );
+}
+
 /**
  * The founder on the left, the ventures ruled under the name, each
- * company's years tagged on the right; on the right the
- * team, alliances and advisors as rows of logos by area.
+ * company's years tagged on the right, and a year of commits under them;
+ * on the right the team and advisors as rows of logos by area.
  */
 function Team({ slide }: { slide: Of<"team"> }): ReactElement {
   const { founder, network } = slide;
@@ -1263,17 +1321,19 @@ function Team({ slide }: { slide: Of<"team"> }): ReactElement {
     <div className={styles.split} data-split="team">
       <div className={styles.founder}>
         <div {...rise(2)} className={styles.rise}>
-          <p className={styles.label}>{founder.role}</p>
+          <div className={styles.founderRole}>
+            <p className={styles.label}>{founder.role}</p>
+            <a
+              className={styles.linkedin}
+              href={founder.linkedin}
+              target="_blank"
+              rel="noreferrer noopener"
+              aria-label={`${founder.name} on LinkedIn`}
+            >
+              <LinkedInMark />
+            </a>
+          </div>
           <h3 className={`${styles.h3} ${styles.person}`}>{founder.name}</h3>
-          <a
-            className={styles.linkedin}
-            href={founder.linkedin}
-            target="_blank"
-            rel="noreferrer noopener"
-            aria-label={`${founder.name} on LinkedIn`}
-          >
-            <LinkedInMark />
-          </a>
         </div>
         <ul className={styles.ventures}>
           {founder.ventures.map((venture, i) => (
@@ -1292,6 +1352,9 @@ function Team({ slide }: { slide: Of<"team"> }): ReactElement {
             </li>
           ))}
         </ul>
+        <div {...rise(4.2)} className={styles.rise}>
+          <ContributionGraph data={founder.contributions} />
+        </div>
       </div>
       <section className={styles.network}>
         <h3 {...rise(4)} className={`${styles.rise} ${styles.figLabel}`}>
