@@ -1,3 +1,4 @@
+import type { SiteMapId } from "./art/siteMaps";
 import type { UnitIconId } from "./art/UnitIcon";
 import type { SourceId } from "./research";
 
@@ -147,9 +148,12 @@ export type Slide =
     })
   | (Base & {
       kind: "pipeline";
-      rows: readonly { site: string; path: string; mw: string; status: string }[];
+      /** One mini-card per site, led by a line map of its city (art/SiteMap.tsx). */
+      sites: readonly { site: string; map: SiteMapId; path: string; mw: string; status: string }[];
       total: string;
-      stats: readonly Stat[];
+      capacity: readonly Stat[];
+      /** Capacity online by year; each step is ten times the last, so it's drawn on a log scale. */
+      plan: readonly { year: string; value: string }[];
     })
   | (Base & { kind: "market"; hero: Stat; stats: readonly Stat[]; callout: Stat })
   | (Base & {
@@ -467,17 +471,24 @@ export const SLIDES: readonly Slide[] = [
     eyebrow: "Pipeline",
     title: "66.8 MW on the critical path.",
     ground: "white",
-    rows: [
-      { site: "Chicago, IL", path: "Lease", mw: "24.0", status: "Contracted" },
-      { site: "Olds, AB", path: "Purchase", mw: "22.0", status: "LOI, lead position" },
-      { site: "Calgary, AB", path: "Purchase", mw: "13.0", status: "In diligence" },
-      { site: "Milton, ON", path: "Joint venture", mw: "6.6", status: "In diligence" },
-      { site: "Mississauga, ON", path: "Colocation", mw: "1.2", status: "Awaiting signature" },
+    sites: [
+      { site: "Chicago, IL", map: "chicago", path: "Lease", mw: "24.0", status: "Contracted" },
+      { site: "Olds, AB", map: "olds", path: "Purchase", mw: "22.0", status: "LOI, lead position" },
+      { site: "Calgary, AB", map: "calgary", path: "Purchase", mw: "13.0", status: "In diligence" },
+      { site: "Milton, ON", map: "milton", path: "Joint venture", mw: "6.6", status: "In diligence" },
+      { site: "Mississauga, ON", map: "mississauga", path: "Colocation", mw: "1.2", status: "Awaiting signature" },
     ],
     total: "66.8",
-    stats: [
-      { value: "~925 MW", label: "LOI-stage sites in TX, PA, AL, MO and AK" },
-      { value: "928 MW", label: "Power partner sites under LOI" },
+    capacity: [
+      { value: "~925 MW", label: "Under LOI" },
+      { value: "1 GW+", label: "In active negotiations" },
+    ],
+    plan: [
+      { year: "2026", value: "100 MW" },
+      { year: "2027", value: "1 GW" },
+      { year: "2028", value: "10 GW" },
+      { year: "2029", value: "100 GW" },
+      { year: "2030", value: "Singularity" },
     ],
   },
   {

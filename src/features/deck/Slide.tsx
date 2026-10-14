@@ -8,6 +8,7 @@ import { Principles } from "@/features/home/principles/Principles";
 import { StackFigure } from "@/features/home/stack/FullStack";
 import { MacroArt } from "./art/MacroArt";
 import { MemeTV } from "./art/MemeTV";
+import { SiteMap } from "./art/SiteMap";
 import { UnitIcon } from "./art/UnitIcon";
 import { DEMAND_GAP, DemandChart } from "./charts/DemandChart";
 import { ShortfallByYear, ShortfallChart } from "./charts/ShortfallChart";
@@ -757,45 +758,72 @@ function Traction({ slide }: { slide: Of<"traction"> }): ReactElement {
   );
 }
 
+/**
+ * The sites as mini-cards down the left, as the unit slide's: a line map of
+ * each city filling a square cell, ruled off from its name, path, status and
+ * IT MW, the total under them. On the right the capacity contracted beyond
+ * them, then the plan by year, its bars on a log scale so each tenfold year
+ * adds one step; the last year is set on ink.
+ */
 function Pipeline({ slide }: { slide: Of<"pipeline"> }): ReactElement {
+  const steps = slide.plan.length;
   return (
-    <div className={styles.split} data-split="table">
-      <table {...rise(2)} className={`${styles.rise} ${styles.table}`}>
-        <thead>
-          <tr>
-            <th scope="col">Site</th>
-            <th scope="col">Path</th>
-            <th scope="col" data-num>
-              IT MW
-            </th>
-            <th scope="col">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {slide.rows.map((row) => (
-            <tr key={row.site}>
-              <th scope="row">{row.site}</th>
-              <td>{row.path}</td>
-              <td data-num>{row.mw}</td>
-              <td>{row.status}</td>
-            </tr>
+    <div className={styles.split} data-split="sites">
+      <div className={styles.sites}>
+        <ul className={styles.siteCards}>
+          {slide.sites.map((site, i) => (
+            <li key={site.site} {...rise(2 + i * 0.4)} className={`${styles.rise} ${styles.siteCard}`}>
+              <div className={styles.siteMap}>
+                <SiteMap id={site.map} />
+              </div>
+              <div className={styles.siteText}>
+                <span className={styles.siteName}>{site.site}</span>
+                <span className={styles.statLabel}>
+                  {site.path} · {site.status}
+                </span>
+              </div>
+              <span className={styles.siteMw}>
+                {site.mw}
+                <span className={styles.siteUnit}> MW</span>
+              </span>
+            </li>
           ))}
-        </tbody>
-        <tfoot>
-          <tr>
-            <th scope="row">Total</th>
-            <td />
-            <td data-num>{slide.total}</td>
-            <td />
-          </tr>
-        </tfoot>
-      </table>
-      <div className={styles.splitSide}>
-        {slide.stats.map((stat, i) => (
-          <div key={stat.label} {...rise(3 + i)}>
-            <StatBlock stat={stat} size="lg" />
+        </ul>
+        <p {...rise(4.5)} className={`${styles.rise} ${styles.siteFoot}`}>
+          <span className={styles.siteTotal}>
+            Total <span>{slide.total} IT MW</span>
+          </span>
+          <span className={styles.fine}>Maps © OpenStreetMap contributors</span>
+        </p>
+      </div>
+      <div className={styles.pipelineSide}>
+        <section {...rise(3)} className={styles.rise}>
+          <h3 className={styles.label}>Contracted capacity</h3>
+          <div className={styles.capacity}>
+            {slide.capacity.map((stat) => (
+              <StatBlock key={stat.label} stat={stat} />
+            ))}
           </div>
-        ))}
+        </section>
+        <section className={styles.planSection}>
+          <h3 {...rise(4)} className={`${styles.rise} ${styles.label}`}>
+            Plan
+          </h3>
+          <ol className={styles.plan}>
+            {slide.plan.map((row, i) => (
+              <li
+                key={row.year}
+                {...rise(4.5 + i * 0.4)}
+                className={`${styles.rise} ${styles.planRow}`}
+                data-ink={i === steps - 1 || undefined}
+              >
+                <span className={styles.planYear}>{row.year}</span>
+                <span className={styles.planBar} style={{ "--share": (i + 1) / steps } as CSSProperties} />
+                <span className={styles.planValue}>{row.value}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
       </div>
     </div>
   );

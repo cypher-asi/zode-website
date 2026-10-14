@@ -1557,6 +1557,166 @@
   text-wrap: balance;
 }
 
+/* The pipeline's sites, joined by hairlines as the unit cards, one to a row. */
+.siteCards {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 1px;
+  list-style: none;
+}
+
+/* The city's map filling a square cell to its edges, a hairline, the site, then its megawatts. */
+.siteCard {
+  --card-h: calc(6.4 * var(--u));
+
+  display: grid;
+  grid-template-columns: var(--card-h) minmax(0, 1fr) auto;
+  align-items: center;
+  height: var(--card-h);
+  color: var(--fg);
+  box-shadow: 0 0 0 1px var(--rule);
+}
+
+.siteMap {
+  align-self: stretch;
+  overflow: hidden;
+}
+
+.siteText {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-self: stretch;
+  gap: calc(0.45 * var(--u));
+  min-width: 0;
+  padding: 0 calc(1.2 * var(--u));
+  border-left: 1px solid var(--rule);
+}
+
+.siteName {
+  font-size: calc(1.2 * var(--u));
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.siteText .statLabel {
+  max-width: none;
+  font-size: calc(0.6 * var(--u));
+}
+
+.siteMw {
+  padding-right: calc(1.2 * var(--u));
+  font-size: calc(2 * var(--u));
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.siteUnit {
+  font-size: 0.5em;
+  letter-spacing: 0;
+  color: var(--fg-2);
+}
+
+.siteFoot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: calc(1.6 * var(--u));
+  margin: calc(0.9 * var(--u)) 0 0;
+}
+
+.siteTotal {
+  font-family: var(--font-mono);
+  font-size: calc(0.7 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+.siteTotal span {
+  margin-left: calc(0.6 * var(--u));
+  color: var(--fg);
+}
+
+/* The capacity beyond the sites at the top, the plan under it. */
+.pipelineSide {
+  display: flex;
+  flex-direction: column;
+  gap: calc(2.6 * var(--u));
+}
+
+.pipelineSide section {
+  display: flex;
+  flex-direction: column;
+  gap: calc(1 * var(--u));
+}
+
+.capacity {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(1.6 * var(--u));
+}
+
+/* A year to a row, joined by hairlines as the site cards. */
+.plan {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 1px;
+  list-style: none;
+}
+
+.planRow {
+  display: grid;
+  grid-template-columns: calc(3.6 * var(--u)) minmax(0, 1fr) calc(7.4 * var(--u));
+  align-items: center;
+  gap: calc(1.2 * var(--u));
+  height: calc(3.4 * var(--u));
+  padding: 0 calc(1.2 * var(--u));
+  color: var(--fg);
+  box-shadow: 0 0 0 1px var(--rule);
+}
+
+/* The last year on ink, as the unit slide's highlighted card. */
+.planRow[data-ink] {
+  --fg: var(--color-text-inverse);
+  --fg-2: var(--color-text-inverse-secondary);
+  --rule: color-mix(in srgb, var(--color-text-inverse) 16%, var(--color-ink));
+
+  background: var(--color-ink);
+  box-shadow: 0 0 0 1px var(--color-ink);
+}
+
+.planYear {
+  font-family: var(--font-mono);
+  font-size: calc(0.7 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  color: var(--fg-2);
+}
+
+/* A track in the rule's tone, filled to the year's step. */
+.planBar {
+  height: calc(0.5 * var(--u));
+  background:
+    linear-gradient(var(--fg), var(--fg)) left / calc(var(--share) * 100%) 100% no-repeat,
+    var(--rule);
+}
+
+.planValue {
+  font-size: calc(1.2 * var(--u));
+  line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
 .render {
   margin: 0;
 }
@@ -1630,8 +1790,8 @@
   gap: calc(5 * var(--u));
 }
 
-.split[data-split="table"] {
-  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+.split[data-split="sites"] {
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
 }
 
 /* Bodies sized to their content sit just above the middle of the room under the title. */
@@ -1856,14 +2016,6 @@
 
 .table tbody th {
   font-weight: 500;
-}
-
-.table [data-num] {
-  text-align: right;
-}
-
-.table tfoot :is(th, td) {
-  font-weight: 600;
 }
 
 .compare tbody th {
@@ -3114,6 +3266,64 @@
   gap: 20px;
 }
 
+.slide[data-compact] .siteCard {
+  --card-h: 84px;
+}
+
+.slide[data-compact] .siteText {
+  gap: 6px;
+  padding: 0 14px;
+}
+
+.slide[data-compact] .siteName {
+  font-size: 16px;
+}
+
+.slide[data-compact] .siteText .statLabel,
+.slide[data-compact] .siteTotal,
+.slide[data-compact] .siteFoot .fine,
+.slide[data-compact] .planYear {
+  font-size: var(--text-2xs);
+}
+
+.slide[data-compact] .siteMw {
+  padding-right: 14px;
+  font-size: 22px;
+}
+
+.slide[data-compact] .siteFoot {
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.slide[data-compact] .pipelineSide {
+  gap: 28px;
+}
+
+.slide[data-compact] .pipelineSide section {
+  gap: 12px;
+}
+
+.slide[data-compact] .capacity {
+  gap: 16px;
+}
+
+.slide[data-compact] .planRow {
+  grid-template-columns: 40px minmax(0, 1fr) 92px;
+  gap: 12px;
+  height: 40px;
+  padding: 0 14px;
+}
+
+.slide[data-compact] .planBar {
+  height: 4px;
+}
+
+.slide[data-compact] .planValue {
+  font-size: 15px;
+}
+
 .slide[data-compact] .traction {
   gap: 32px;
 }
@@ -3190,11 +3400,7 @@
   font-size: 16px;
 }
 
-/*
- * Tables become a row per entry. The pipeline sets each site over two
- * lines, site and MW then path and status; the comparison puts each row's
- * label over its two cells.
- */
+/* Tables become a row per entry: the comparison puts each row's label over its two cells. */
 .slide[data-compact] .table {
   display: block;
   font-size: 15px;
@@ -3227,28 +3433,6 @@
 
 .slide[data-compact] .table td:empty {
   display: none;
-}
-
-.slide[data-compact] .table:not(.compare) :is(th, td):nth-child(1) {
-  grid-area: 1 / 1;
-}
-
-.slide[data-compact] .table:not(.compare) :is(th, td):nth-child(2) {
-  grid-area: 2 / 1;
-}
-
-.slide[data-compact] .table:not(.compare) :is(th, td):nth-child(3) {
-  grid-area: 1 / 2;
-}
-
-.slide[data-compact] .table:not(.compare) :is(th, td):nth-child(4) {
-  grid-area: 2 / 2;
-  text-align: right;
-}
-
-.slide[data-compact] .table:not(.compare) tbody td:is(:nth-child(2), :nth-child(4)) {
-  font-size: 13px;
-  color: var(--fg-2);
 }
 
 .slide[data-compact] .compare tr {
