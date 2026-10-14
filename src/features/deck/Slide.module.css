@@ -2371,35 +2371,168 @@
   text-align: right;
 }
 
-/* Raise. */
-.raiseLead {
+/* Raise: the cards in a row, as the finance slide's deals, then the first close and the notes under them. */
+.raise {
   display: flex;
   flex-direction: column;
-  gap: calc(2.4 * var(--u));
+  gap: calc(1.5 * var(--u));
 }
 
-.terms,
-.uses,
+.main > .raise {
+  flex: none;
+  margin-block: auto;
+  padding-bottom: calc(0.8 * var(--u));
+}
+
+/* Head and figures on rows shared across the cards, so the figures start level and fill one height. */
+.raiseCard {
+  grid-row: span 2;
+}
+
+.raiseRows,
+.raiseStack,
+.raiseTable {
+  min-height: calc(17 * var(--u));
+}
+
+/* A target to a row, ruled between, its figure set right in the display face. */
+.raiseRows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.raiseRow {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(1.2 * var(--u));
+  border-bottom: 1px solid var(--rule);
+}
+
+.raiseRow:last-child {
+  border-bottom: 0;
+}
+
+.raiseRow dt,
+.raiseTable :is(th, thead td) {
+  font-family: var(--font-mono);
+  font-size: calc(0.66 * var(--u));
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: var(--eyebrow-tracking);
+  text-align: left;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+.raiseRow dd,
+.raiseValue,
+.raiseTable tbody td {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: calc(1.9 * var(--u));
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The layer's label over its terms on the left, its figure on the right. */
+.raiseLayer {
+  align-items: center;
+  padding-block: calc(0.7 * var(--u));
+}
+
+.raiseLayerText {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.3 * var(--u));
+  min-width: 0;
+}
+
+.raiseLayer .dealLayerTerms {
+  text-align: left;
+}
+
+/* Contract and annual columns, a figure's row ruled under it, the head row sharing their height. */
+.raiseTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.raiseTable tr {
+  border-bottom: 1px solid var(--rule);
+}
+
+.raiseTable tbody tr:last-child {
+  border-bottom: 0;
+}
+
+.raiseTable :is(th, td) {
+  padding: 0;
+  vertical-align: middle;
+}
+
+.raiseTable thead :is(th, td) {
+  padding-bottom: calc(0.6 * var(--u));
+}
+
+.raiseTable :is(thead th, tbody td) {
+  padding-left: calc(1 * var(--u));
+  text-align: right;
+  white-space: nowrap;
+}
+
+.raiseTable tbody th {
+  max-width: calc(7 * var(--u));
+}
+
+/* The first close on ink, as the unit slide's highlighted card, the basis and legend in fine print beside it. */
+.raiseFoot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  align-items: center;
+  gap: calc(2 * var(--u));
+}
+
+.raiseClose {
+  --fg-2: var(--color-text-inverse-secondary);
+
+  display: flex;
+  align-items: center;
+  gap: calc(1.4 * var(--u));
+  padding: calc(1 * var(--u)) calc(1.4 * var(--u));
+  background: var(--color-ink);
+  color: var(--color-text-inverse);
+  box-shadow: 0 0 0 1px var(--color-ink);
+}
+
+.raiseCloseValue {
+  font-family: var(--font-display);
+  font-size: calc(3.4 * var(--u));
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.raiseClose .statLabel {
+  max-width: calc(16 * var(--u));
+}
+
+.raiseNotes {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.5 * var(--u));
+}
+
 .credits {
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-.terms li,
-.uses li {
-  padding: calc(0.9 * var(--u)) 0;
-  font-size: calc(1.2 * var(--u));
-}
-
-.uses {
-  margin-top: calc(-1 * var(--u));
-}
-
-.uses .usesTotal {
-  display: flex;
-  justify-content: space-between;
-  font-weight: 600;
 }
 
 /* Team. */
@@ -3831,20 +3964,67 @@
   padding: 12px 0 0;
 }
 
-/* Raise and team. */
-.slide[data-compact] .raiseLead {
-  gap: 20px;
+/* Raise: the cards stack as the deals do, the first close over the notes. */
+.slide[data-compact] .raise {
+  gap: 28px;
 }
 
-.slide[data-compact] :is(.terms, .uses) li {
+.slide[data-compact] .main > .raise {
+  margin-block: 0;
+  padding-bottom: 0;
+}
+
+.slide[data-compact] :is(.raiseRows, .raiseStack, .raiseTable) {
+  min-height: 0;
+}
+
+.slide[data-compact] .raiseRow {
   padding: 10px 0;
-  font-size: 16px;
 }
 
-.slide[data-compact] .uses {
-  margin-top: 0;
+.slide[data-compact] :is(.raiseRow dt, .raiseTable th, .raiseTable thead td) {
+  font-size: var(--text-2xs);
 }
 
+.slide[data-compact] :is(.raiseRow dd, .raiseValue, .raiseTable tbody td) {
+  font-size: 20px;
+}
+
+.slide[data-compact] .raiseTable tbody :is(th, td) {
+  padding-block: 10px;
+}
+
+.slide[data-compact] .raiseTable thead :is(th, td) {
+  padding-bottom: 8px;
+}
+
+.slide[data-compact] .raiseTable tbody th {
+  max-width: none;
+}
+
+.slide[data-compact] .raiseFoot {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.slide[data-compact] .raiseClose {
+  gap: 14px;
+  padding: 14px 16px;
+}
+
+.slide[data-compact] .raiseCloseValue {
+  font-size: 36px;
+}
+
+.slide[data-compact] .raiseClose .statLabel {
+  max-width: none;
+}
+
+.slide[data-compact] .raiseNotes {
+  gap: 8px;
+}
+
+/* Team. */
 .slide[data-compact] .person {
   --h3-size: 34px;
 

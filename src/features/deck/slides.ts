@@ -192,10 +192,22 @@ export type Slide =
     })
   | (Base & {
       kind: "raise";
-      hero: Stat;
-      terms: readonly string[];
-      uses: readonly string[];
-      total: string;
+      /** Set on ink under the cards, beside the note. */
+      firstClose: Stat;
+      cluster: { purpose: string; rows: readonly { label: string; value: string }[] };
+      /** The issuer's capital stack, top to bottom: equity over debt, the most senior last. */
+      capital: {
+        purpose: string;
+        layers: readonly { label: string; kind: "equity" | "debt"; value: string; terms: readonly string[] }[];
+      };
+      /** Each figure over the contract's term and as its yearly average. */
+      revenue: {
+        purpose: string;
+        columns: readonly [string, string];
+        rows: readonly { label: string; contract: string; annual: string }[];
+      };
+      /** Where the figures come from, in small type under the cards. */
+      note: string;
     })
   | (Base & {
       kind: "team";
@@ -600,16 +612,36 @@ export const SLIDES: readonly Slide[] = [
     kind: "raise",
     section: "The raise",
     eyebrow: "The raise",
-    title: "One equity facility for every ZODE cluster.",
-    ground: "ink",
-    hero: { value: "$20M", label: "First close · Preferred project equity" },
-    terms: [
-      "18% preferred return, 1.5x minimum multiple",
-      "Right to fund each subsequent cluster",
-      "Senior GPU debt and prepayments alongside",
-    ],
-    uses: ["Chicago cluster equity", "Chicago lease deposit", "Alberta site acquisition", "Working capital"],
-    total: "$20M",
+    title: "Raising equity for ZODE Super Cluster B, LLC.",
+    ground: "paper",
+    firstClose: { value: "$20M", label: "First close · Preferred equity in ZODE Super Cluster B, LLC" },
+    cluster: {
+      purpose: "NVIDIA B300 compute across six sites",
+      rows: [
+        { label: "Target power", value: "100 MW IT" },
+        { label: "Target nodes", value: "6,400" },
+        { label: "Target GPUs", value: "51,200" },
+        { label: "Target sites", value: "6" },
+      ],
+    },
+    capital: {
+      purpose: "Equity over debt, the most senior last",
+      layers: [
+        { label: "Target equity", kind: "equity", value: "$135M", terms: ["18% pref · 1.5x minimum"] },
+        { label: "Target project debt", kind: "debt", value: "$657M", terms: ["DSCR gap and site loans"] },
+        { label: "Target GPU debt", kind: "debt", value: "$1.24B", terms: ["1.15x DSCR · 3-year term"] },
+      ],
+    },
+    revenue: {
+      purpose: "Take-or-pay at $4.20 per GPU-hour",
+      columns: ["Contract · 5 yr", "Annual"],
+      rows: [
+        { label: "Contract value", contract: "$9.43B", annual: "$1.89B" },
+        { label: "Contract EBITDA", contract: "$7.02B", annual: "$1.40B" },
+        { label: "Contract NOI", contract: "$2.01B", annual: "$403M" },
+      ],
+    },
+    note: "Preliminary, per the project model: 51,200 GPUs at $4.20 per GPU-hour over 5 years, 30% prepaid ($2.83B, alongside); half the sites leased at $170/kW-mo, half bought at $1M per MW and converted at $5M. Project debt fills the GPU debt's DSCR gap at 12% interest-only, with $180M of site loans. NOI is after depreciation, interest and tax. Annual is the contract's yearly average.",
   },
   {
     id: "team",
@@ -636,7 +668,7 @@ export const SLIDES: readonly Slide[] = [
     eyebrow: "ZODE",
     title: "From order to tokens in 90 days.",
     ground: "ink",
-    lede: "Raising a $20M first close in preferred project equity, alongside senior GPU debt and customer prepayments.",
+    lede: "Raising a $20M first close in ZODE Super Cluster B, LLC, alongside project debt, senior GPU debt and customer prepayments.",
     contact: "hello@zode.org · zode.org",
   },
   {

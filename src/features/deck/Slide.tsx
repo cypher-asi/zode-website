@@ -9,7 +9,7 @@ import { StackFigure } from "@/features/home/stack/FullStack";
 import { MacroArt } from "./art/MacroArt";
 import { MemeTV } from "./art/MemeTV";
 import { SiteMap } from "./art/SiteMap";
-import { UnitIcon } from "./art/UnitIcon";
+import { UnitIcon, type UnitIconId } from "./art/UnitIcon";
 import { DEMAND_GAP, DemandChart } from "./charts/DemandChart";
 import { ShortfallByYear, ShortfallChart } from "./charts/ShortfallChart";
 import { StateTileMap } from "./charts/StateTileMap";
@@ -1025,34 +1025,106 @@ function Finance({ slide, active }: { slide: Of<"finance">; active: boolean }): 
   );
 }
 
-function Raise({ slide }: { slide: Of<"raise"> }): ReactElement {
+/** A raise card's head, as the finance slide's deal cards: its icon in a square cell, ruled off from the title. */
+function RaiseHead({
+  icon,
+  title,
+  purpose,
+  playing,
+}: {
+  icon: UnitIconId;
+  title: string;
+  purpose: string;
+  playing: boolean;
+}): ReactElement {
   return (
-    <div className={styles.split}>
-      <div className={styles.raiseLead}>
-        <div {...rise(2)}>
-          <StatBlock stat={slide.hero} highlight size="xl" />
+    <div className={styles.dealHead}>
+      <div className={styles.dealFigure}>
+        <UnitIcon id={icon} light playing={playing} />
+      </div>
+      <div className={styles.dealHeading}>
+        <h3 className={styles.dealTitle}>{title}</h3>
+        <span className={styles.statLabel}>{purpose}</span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The issuer's raise as three cards in a row, as the finance slide's deals:
+ * the cluster's targets, its capital stack as the deals' blocks, and its
+ * revenue over the contract and by year. Under them the first close on ink,
+ * as the unit slide's highlighted card, beside the basis and legend.
+ */
+function Raise({ slide, playing }: { slide: Of<"raise">; playing: boolean }): ReactElement {
+  const { cluster, capital, revenue } = slide;
+  return (
+    <div className={styles.raise}>
+      <ul className={`${styles.deals} ${styles.raiseCards}`}>
+        <li {...rise(2)} className={`${styles.rise} ${styles.deal} ${styles.raiseCard}`}>
+          <RaiseHead icon="node" title="The cluster" purpose={cluster.purpose} playing={playing} />
+          <dl className={styles.raiseRows}>
+            {cluster.rows.map((row) => (
+              <div key={row.label} className={styles.raiseRow}>
+                <dt>{row.label}</dt>
+                <dd>{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </li>
+        <li {...rise(2.4)} className={`${styles.rise} ${styles.deal} ${styles.raiseCard}`}>
+          <RaiseHead icon="prepay" title="The capital" purpose={capital.purpose} playing={playing} />
+          <ol className={`${styles.dealStack} ${styles.raiseStack}`} aria-label="Capital stack">
+            {capital.layers.map((layer) => (
+              <li key={layer.label} className={`${styles.dealLayer} ${styles.raiseLayer}`} data-kind={layer.kind}>
+                <span className={styles.raiseLayerText}>
+                  <span className={styles.dealLayerLabel}>{layer.label}</span>
+                  <span className={styles.dealLayerTerms}>
+                    {layer.terms.map((term) => (
+                      <span key={term}>{term}</span>
+                    ))}
+                  </span>
+                </span>
+                <span className={styles.raiseValue}>{layer.value}</span>
+              </li>
+            ))}
+          </ol>
+        </li>
+        <li {...rise(2.8)} className={`${styles.rise} ${styles.deal} ${styles.raiseCard}`}>
+          <RaiseHead icon="revenue" title="The revenue" purpose={revenue.purpose} playing={playing} />
+          <table className={styles.raiseTable}>
+            <thead>
+              <tr>
+                <td />
+                {revenue.columns.map((column) => (
+                  <th key={column} scope="col">
+                    {column}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {revenue.rows.map((row) => (
+                <tr key={row.label}>
+                  <th scope="row">{row.label}</th>
+                  <td>{row.contract}</td>
+                  <td>{row.annual}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </li>
+      </ul>
+      <section {...rise(3.5)} className={`${styles.rise} ${styles.raiseFoot}`}>
+        <div className={styles.raiseClose}>
+          <span className={styles.raiseCloseValue}>{slide.firstClose.value}</span>
+          <span className={styles.statLabel}>{slide.firstClose.label}</span>
         </div>
-        <ul {...rise(3)} className={`${styles.rise} ${styles.terms}`}>
-          {slide.terms.map((term) => (
-            <li key={term}>{term}</li>
-          ))}
-        </ul>
-        <p {...rise(3.5)} className={`${styles.rise} ${styles.fine}`}>
-          {RAISE_NOTE}
-        </p>
-      </div>
-      <div {...rise(4)} className={`${styles.rise} ${styles.splitSide}`}>
-        <h3 className={styles.label}>Use of funds</h3>
-        <ul className={styles.uses}>
-          {slide.uses.map((use) => (
-            <li key={use}>{use}</li>
-          ))}
-          <li className={styles.usesTotal}>
-            <span>Total</span>
-            <span>{slide.total}</span>
-          </li>
-        </ul>
-      </div>
+        <div className={styles.raiseNotes}>
+          <p className={styles.fine}>{slide.note}</p>
+          <p className={styles.fine}>{RAISE_NOTE}</p>
+        </div>
+      </section>
     </div>
   );
 }
@@ -1212,7 +1284,7 @@ function Body({
     case "finance":
       return <Finance slide={slide} active={active} />;
     case "raise":
-      return <Raise slide={slide} />;
+      return <Raise slide={slide} playing={playing} />;
     case "team":
       return <Team slide={slide} />;
     case "close":
