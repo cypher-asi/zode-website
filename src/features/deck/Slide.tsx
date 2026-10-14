@@ -1145,7 +1145,7 @@ function LinkedInMark(): ReactElement {
 function Team({ slide }: { slide: Of<"team"> }): ReactElement {
   const { founder, network } = slide;
   return (
-    <div className={styles.split}>
+    <div className={styles.split} data-split="team">
       <div className={styles.founder}>
         <div {...rise(2)} className={styles.rise}>
           <p className={styles.label}>{founder.role}</p>

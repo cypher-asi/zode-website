@@ -2529,7 +2529,36 @@
   gap: calc(0.5 * var(--u));
 }
 
-/* Team: the founder and his ventures, then the network's logos by area. */
+/*
+ * Team: the founder and his ventures, then the network's logos by area,
+ * split by a page-grid rule as the problems slide's. The split fills the
+ * body so the rule runs from the head rule to the foot rule, its row
+ * centred as the other splits are.
+ */
+.main > .split[data-split="team"] {
+  --split-gap: calc(5 * var(--u));
+
+  position: relative;
+  flex: 1;
+  align-content: center;
+  gap: var(--split-gap);
+  margin-block: 0;
+}
+
+.split[data-split="team"]::after {
+  content: "";
+  position: absolute;
+  top: calc(-1.8 * var(--u) - var(--pip) / 2);
+  bottom: calc(-1.2 * var(--u) - var(--pip) / 2);
+  left: calc(50% - var(--pip) / 2);
+  width: var(--pip);
+  background:
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 top 0 / var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 bottom 0 / var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--rule), var(--rule)) center / 1px 100% no-repeat;
+  pointer-events: none;
+}
+
 .founder {
   display: flex;
   flex-direction: column;
@@ -4162,6 +4191,10 @@
   --h3-size: 30px;
 
   margin: 6px 0 8px;
+}
+
+.slide[data-compact] .split[data-split="team"]::after {
+  display: none;
 }
 
 .slide[data-compact] .founder {
