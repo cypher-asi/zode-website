@@ -1533,19 +1533,18 @@
   grid-template-columns: var(--card-h) minmax(0, 1fr);
   align-items: stretch;
   height: var(--card-h);
-  background: var(--card);
   color: var(--fg);
   box-shadow: 0 0 0 1px var(--rule);
 }
 
-/* The contract's revenue, on ink to stand out: the ink ground's colours, re-pinned on the card. */
+/* The contract's revenue, on ink to stand out, the rest open to the ground: the ink ground's colours, re-pinned on the card. */
 .unitCard[data-ink] {
-  --card: var(--color-ink);
   --fg: var(--color-text-inverse);
   --fg-2: var(--color-text-inverse-secondary);
   --rule: #2e2e2f;
 
   position: relative;
+  background: var(--color-ink);
   box-shadow: 0 0 0 1px var(--color-ink);
 }
 
