@@ -536,7 +536,7 @@ export const SLIDES: readonly Slide[] = [
           outcome: "Became HF0",
         },
         {
-          company: "Curve Health",
+          company: "Curve Dental",
           href: "https://www.curvedental.com",
           years: "2004–2011",
           title: "Sold to private equity",
