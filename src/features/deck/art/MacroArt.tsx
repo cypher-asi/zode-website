@@ -36,6 +36,28 @@ function arc(cx: number, cy: number, rx: number, from: number, to: number): Pt[]
   return out;
 }
 
+/**
+ * Points round a flat rectangle with corners of radius `r`, by outward normal
+ * angle from `from` to `to`: π faces -x, 1.5π -y, 2π +x, 2.5π +y, up to 3π.
+ * A straight side shares its normal with both its ends; a run takes the first.
+ */
+function rounded(x0: number, y0: number, x1: number, y1: number, r: number, from = Math.PI, to = 3 * Math.PI): Pt[] {
+  const centres: Pt[] = [
+    [x0 + r, y0 + r],
+    [x1 - r, y0 + r],
+    [x1 - r, y1 - r],
+    [x0 + r, y1 - r],
+  ];
+  const ps = centres.flatMap(([cx, cy], q) =>
+    Array.from({ length: 7 }, (_, k) => {
+      const t = Math.PI * (1 + (q + k / 6) / 2);
+      return { t, p: [cx + r * Math.cos(t), cy + r * Math.sin(t)] as const };
+    }),
+  );
+  const at = (a: number) => ps.findIndex(({ t }) => t > a - 1e-6);
+  return ps.slice(at(from), at(to) + 1).map(({ p }) => p);
+}
+
 /** A stack of `n` coins, `t` thick, standing at (x, y). */
 function coins(s: Sketch, x: number, y: number, r: number, n: number, t: number): void {
   const rx = round(r * Math.SQRT2);
@@ -623,29 +645,36 @@ function bolt(s: Sketch, x: number, y: number, z: number, h: number): void {
  */
 function signature(s: Sketch): void {
   const Z = 6;
-  const flat = (ps: readonly Pt[]): P3[] => ps.map(([x, y]) => [x, y, Z]);
-  s.box(-72, -52, 144, 104, 0, Z, { top: styles.sideL, sideL: styles.sideL, sideR: styles.sideR });
-  s.disc([-68, 0, Z], 1.2, styles.ink);
-  s.face(
-    flat([
-      [-64, -44],
-      [64, -44],
-      [64, 44],
-      [-64, 44],
-    ]),
-    styles.top,
-  );
+  const flat = (ps: readonly Pt[], z = Z): P3[] => ps.map(([x, y]) => [x, y, z]);
+  const BEVEL = Z - 1.5;
+  const slab = (from: number, to: number) => rounded(-72, -52, 72, 52, 12, from, to);
+  const band = (from: number, to: number, className: string) =>
+    s.face([...flat(slab(from, to), 0), ...flat(slab(from, to), BEVEL).reverse()], className);
+  band(1.75 * Math.PI, 2.25 * Math.PI, styles.sideR);
+  band(2.25 * Math.PI, 2.75 * Math.PI, styles.sideL);
+  s.line([[30, 52, BEVEL / 2], [52, 52, BEVEL / 2]], styles.edge);
+  s.face(flat(slab(Math.PI, 3 * Math.PI), BEVEL), styles.sideR);
+  s.face(flat(rounded(-70.5, -50.5, 70.5, 50.5, 10.5)), styles.sideL);
+  s.face(flat(rounded(-69, -6, -67.6, 6, 0.7)), styles.ring);
 
-  s.face(
-    flat([
-      [-64, -44],
-      [64, -44],
-      [64, -37],
-      [-64, -37],
-    ]),
-    styles.sideL,
-  );
-  for (const x of [-59, -55, -51]) s.disc([x, -40.5, Z], 1, styles.ring);
+  const screen = (from?: number, to?: number) => flat(rounded(-66, -46, 66, 46, 7, from, to));
+  s.face(screen(), styles.top);
+  s.face(screen(Math.PI, 2 * Math.PI), styles.sideL);
+  for (const x of [-60, -56, -52]) s.disc([x, -42.5, Z], 1, styles.ring);
+  for (const [x, y, u, v] of [
+    [-62, -35, 1, 1],
+    [62, -35, -1, 1],
+    [62, 42, -1, -1],
+    [-62, 42, 1, -1],
+  ])
+    s.line(
+      flat([
+        [x + 4 * u, y],
+        [x, y],
+        [x, y + 4 * v],
+      ]),
+      styles.fine,
+    );
   s.line([[-54, -30, Z], [-14, -30, Z]], styles.edge);
   [-22, -15, -8].forEach((y, k) => s.line([[-54, y, Z], [[34, 22, 28][k], y, Z]], styles.fine));
 
