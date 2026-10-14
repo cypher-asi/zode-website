@@ -532,7 +532,7 @@ export const SLIDES: readonly Slide[] = [
           years: "2020–Present",
           role: "Co-founder, CEO and Executive Chairman",
           description: "Persistent simulation with Samsung, NVIDIA, Epic Games and Lamborghini.",
-          outcome: "Peak valuation of $2 billion",
+          outcome: "Prior valuation of $2 billion",
         },
         {
           company: "Factory ZERO",
