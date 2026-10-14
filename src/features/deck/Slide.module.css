@@ -919,7 +919,7 @@
   color: var(--fg-2);
 }
 
-/* News: the headline figure and takeaway, then the coverage. */
+/* News: the headline figure over the TV, then the coverage. */
 .newsBody {
   display: grid;
   grid-template-columns: calc(24 * var(--u)) minmax(0, 1fr);
@@ -942,13 +942,10 @@
   color: #f04438;
 }
 
-.takeaway {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: calc(1.45 * var(--u));
-  font-weight: 300;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
+/* Takes the column's height left under the figure, the drawing set in its bottom-left corner. */
+.newsTV {
+  flex: 1 1 0;
+  min-height: calc(10 * var(--u));
 }
 
 .newsGrid {
@@ -2822,8 +2819,14 @@
   gap: 16px;
 }
 
-.slide[data-compact] .takeaway {
-  font-size: 18px;
+.slide[data-compact] .newsTV {
+  flex: none;
+  max-width: 320px;
+  min-height: 0;
+}
+
+.slide[data-compact] .newsTV svg {
+  height: auto;
 }
 
 .slide[data-compact] .newsGrid {

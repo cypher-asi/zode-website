@@ -101,7 +101,7 @@ export type Slide =
   | (Base & { kind: "demand" })
   | (Base & { kind: "shortfall" })
   | (Base & { kind: "states" })
-  | (Base & { kind: "news"; takeaway: string })
+  | (Base & { kind: "news" })
   | (Base & {
       kind: "problemSolution";
       columns: readonly [string, string];
@@ -285,8 +285,6 @@ export const SLIDES: readonly Slide[] = [
     eyebrow: "Policy · Local",
     title: "Local pauses are spreading.",
     ground: "ink",
-    takeaway:
-      "Statewide pauses target scale: 50 MW in New York's order, 75 MW for Texas grid hookups, 20 MW in Pennsylvania's bill. A standard ZODE cluster is 4 MW, in an existing powered building.",
     sources: ["dataCenterWatch"],
   },
   {

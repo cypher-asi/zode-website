@@ -7,6 +7,7 @@ import { CabinArt, VIEW as CABIN_VIEW } from "@/features/zode-drawings/CabinArt"
 import { Principles } from "@/features/home/principles/Principles";
 import { StackFigure } from "@/features/home/stack/FullStack";
 import { MacroArt } from "./art/MacroArt";
+import { MemeTV } from "./art/MemeTV";
 import { UnitIcon } from "./art/UnitIcon";
 import { DEMAND_GAP, DemandChart } from "./charts/DemandChart";
 import { ShortfallByYear, ShortfallChart } from "./charts/ShortfallChart";
@@ -405,7 +406,7 @@ function States({ active, compact, policy }: { active: boolean; compact: boolean
   );
 }
 
-function News({ slide }: { slide: Of<"news"> }): ReactElement {
+function News({ active }: { active: boolean }): ReactElement {
   return (
     <div className={styles.newsBody}>
       <div className={styles.newsLead}>
@@ -415,9 +416,9 @@ function News({ slide }: { slide: Of<"news"> }): ReactElement {
             {BLOCKED.detail} · <Cited id="dataCenterWatch">Data Center Watch</Cited>
           </span>
         </div>
-        <p {...rise(3)} className={`${styles.rise} ${styles.takeaway}`}>
-          {slide.takeaway}
-        </p>
+        <div {...rise(3)} className={`${styles.rise} ${styles.newsTV}`}>
+          <MemeTV playing={active} />
+        </div>
       </div>
       <ul className={styles.newsGrid}>
         {NEWS.map((item, i) => (
@@ -1030,7 +1031,7 @@ function Body({
     case "states":
       return <States active={active} compact={compact} policy={policy} />;
     case "news":
-      return <News slide={slide} />;
+      return <News active={active} />;
     case "problemSolution":
       return <ProblemSolution slide={slide} active={active} />;
     case "problems":
