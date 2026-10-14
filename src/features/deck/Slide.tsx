@@ -947,10 +947,17 @@ function Comparison({ slide }: { slide: Of<"comparison"> }): ReactElement {
  * a square cell ruled off from its title, as the unit slide's mini-cards, then
  * what it funds and its capital stack, equity over debt, as blocks at its foot
  * so the stacks stand on one line. Under them the example: one stacked bar, each
- * layer as wide as its share of the total, shaded and tagged by its deal.
+ * layer as wide as its share of the total, shaded by its deal and bracketed
+ * under the deal's name, the deals in the cards' order.
  */
 function Finance({ slide, active }: { slide: Of<"finance">; active: boolean }): ReactElement {
   const { example } = slide;
+  const groups = slide.deals
+    .map((deal) => {
+      const layers = example.layers.filter((layer) => layer.deal === deal.id);
+      return { deal, layers, usd: layers.reduce((sum, layer) => sum + layer.usd, 0) };
+    })
+    .filter((group) => group.layers.length);
   return (
     <div className={styles.finance}>
       <ul className={styles.deals}>
@@ -987,16 +994,23 @@ function Finance({ slide, active }: { slide: Of<"finance">; active: boolean }): 
         <h3 className={styles.label}>{example.title}</h3>
         <div className={styles.stackRow}>
           <ol className={styles.stackBar}>
-            {example.layers.map((layer) => (
-              <li
-                key={layer.label}
-                className={styles.stackSegment}
-                data-deal={layer.deal}
-                style={{ "--usd": layer.usd } as CSSProperties}
-              >
-                <span className={styles.stackTag}>{layer.tag}</span>
-                <span className={styles.stackValue}>{layer.value}</span>
-                <span className={styles.stackLabel}>{layer.label}</span>
+            {groups.map(({ deal, layers, usd }) => (
+              <li key={deal.id} className={styles.stackGroup} style={{ "--usd": usd } as CSSProperties}>
+                <span className={styles.stackGroupName}>{deal.title}</span>
+                <ol className={styles.stackGroupLayers}>
+                  {layers.map((layer) => (
+                    <li
+                      key={layer.label}
+                      className={styles.stackSegment}
+                      data-deal={layer.deal}
+                      style={{ "--usd": layer.usd } as CSSProperties}
+                    >
+                      <span className={styles.stackTag}>{layer.kind === "debt" ? "Debt" : "Equity"}</span>
+                      <span className={styles.stackValue}>{layer.value}</span>
+                      <span className={styles.stackLabel}>{layer.label}</span>
+                    </li>
+                  ))}
+                </ol>
               </li>
             ))}
           </ol>

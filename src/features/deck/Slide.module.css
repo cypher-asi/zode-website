@@ -2119,7 +2119,7 @@
 .finance {
   display: flex;
   flex-direction: column;
-  gap: calc(1.8 * var(--u));
+  gap: calc(1.5 * var(--u));
 }
 
 .main > .finance {
@@ -2251,6 +2251,11 @@
   box-shadow: 0 0 0 1px var(--color-ink);
 }
 
+/* Ink on ink: a hairline of its own between them. */
+.stackSegment[data-deal="compute"] + .stackSegment[data-deal="compute"] {
+  border-left: 1px solid var(--rule);
+}
+
 .stackSegment[data-deal="gpu"] {
   background: linear-gradient(var(--color-surface-active), var(--color-surface-active)), var(--card);
 }
@@ -2262,7 +2267,7 @@
 .stackExample {
   display: flex;
   flex-direction: column;
-  gap: calc(0.9 * var(--u));
+  gap: calc(0.7 * var(--u));
 }
 
 .stackRow {
@@ -2278,13 +2283,50 @@
   list-style: none;
 }
 
-/* As wide as its share of the total, but never too narrow to read. */
+/* Each deal's layers under its name and a bracket spanning them, as wide as their share of the total. */
+.stackGroup {
+  display: flex;
+  flex: var(--usd) 1 0;
+  flex-direction: column;
+  gap: calc(0.35 * var(--u));
+}
+
+.stackGroupName {
+  font-family: var(--font-mono);
+  font-size: calc(0.6 * var(--u));
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--fg);
+}
+
+.stackGroupName::after {
+  content: "";
+  display: block;
+  height: calc(0.4 * var(--u));
+  margin: calc(0.25 * var(--u)) calc(0.2 * var(--u)) 0;
+  border: 1px solid var(--fg-2);
+  border-bottom: 0;
+}
+
+.stackGroupLayers {
+  display: flex;
+  flex: 1;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* As wide as its share of its deal, but never too narrow to read. */
 .stackSegment {
   display: flex;
   flex: var(--usd) 1 0;
   flex-direction: column;
   gap: calc(0.3 * var(--u));
-  min-width: calc(9.5 * var(--u));
+  min-width: calc(11.5 * var(--u));
   padding-block: calc(0.8 * var(--u)) calc(1 * var(--u));
 }
 
@@ -3742,6 +3784,25 @@
 
 .slide[data-compact] .stackBar {
   flex-direction: column;
+  gap: 16px;
+}
+
+.slide[data-compact] .stackGroup {
+  flex: none;
+  gap: 8px;
+}
+
+.slide[data-compact] .stackGroupName {
+  font-size: var(--text-2xs);
+}
+
+.slide[data-compact] .stackGroupLayers {
+  flex-direction: column;
+}
+
+.slide[data-compact] .stackSegment[data-deal="compute"] + .stackSegment[data-deal="compute"] {
+  border-top: 1px solid var(--rule);
+  border-left: 0;
 }
 
 .slide[data-compact] .stackSegment {
