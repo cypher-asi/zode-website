@@ -820,32 +820,69 @@ function interconnect(s: Sketch): void {
   );
 }
 
-/** One SPV per cluster: prepayment, GPU debt and preferred equity stack up inside its boundary and fund the rack. */
+/**
+ * A liquid-cooled GPU rack at (x, y), its front (+x) ruled into GPU trays,
+ * each with a status light, under a top-of-rack switch, a coolant riser at its side.
+ */
+function gpuRack(s: Sketch, x: number, y: number, w: number, d: number, h: number, k: number): void {
+  const X = x + w;
+  s.group(anim(styles.shade, k), () => s.box(x, y, w, d, 0, h));
+  s.face(
+    [
+      [X, y + 2, h - 9],
+      [X, y + d - 2, h - 9],
+      [X, y + d - 2, h - 3],
+      [X, y + 2, h - 3],
+    ],
+    styles.fine,
+  );
+  for (let py = y + 4; py < y + d - 2; py += 3) s.line([[X, py, h - 6], [X, py + 1.2, h - 6]], styles.edge);
+  for (let z = 6; z < h - 10; z += 5) {
+    s.line([[X, y + 2, z], [X, y + d - 2, z]]);
+    s.group(anim(styles.flash, k + z / 5), () => circle(s, ...project([X, y + d - 4, z + 2.5]), 0.9, styles.ring));
+  }
+  s.line([[X, y + 1, 3], [X, y + 1, h - 1]], styles.edge);
+}
+
+/** One SPV per cluster: prepayment, GPU debt and preferred equity stack up inside its boundary and fund the GPU racks. */
 function capitalStack(s: Sketch): void {
-  s.box(-84, -60, 168, 120, -4, 4);
+  s.box(-84, -60, 148, 108, -4, 4);
   s.group(anim(styles.flow), () =>
     s.line(
       [
         [-74, -50],
-        [74, -50],
-        [74, 50],
-        [-74, 50],
+        [54, -50],
+        [54, 38],
+        [-74, 38],
         [-74, -50],
       ],
       styles.dash,
     ),
   );
 
-  const [CX, CY] = [-30, -6];
+  const [CX, CY] = [-46, 6];
   const TRANCHES = [
-    [30, 0, 16],
-    [24, 16, 24],
-    [15, 40, 12],
+    [24, 0, 14],
+    [19, 14, 22],
+    [12, 36, 10],
   ] as const;
   TRANCHES.forEach(([r, z, h], k) =>
     s.group(anim(styles.flow, k), () => s.line([[CX, -84, z + h / 2], [CX, CY - r, z + h / 2]], styles.edge)),
   );
-  s.group(anim(styles.flow, 3), () => s.line([[CX + 30, 12, 1], [24, 12, 1]], styles.edge));
+
+  const [RX, RW, RD, RH] = [24, 22, 18, 58];
+  const RACKS = [-46, -26, -6];
+  s.group(anim(styles.flow, 3), () => {
+    s.line(
+      [
+        [CX + 24, CY, 1],
+        [12, CY, 1],
+        [12, RACKS[0] + RD / 2, 1],
+      ],
+      styles.edge,
+    );
+    for (const y of RACKS) s.line([[12, y + RD / 2, 1], [RX, y + RD / 2, 1]], styles.edge);
+  });
 
   TRANCHES.forEach(([r, z, h], k) =>
     s.group(anim(styles.shade, k * 2), () => {
@@ -861,7 +898,10 @@ function capitalStack(s: Sketch): void {
     }),
   );
 
-  rack(s, 24, -2, 24, 28, 58);
+  RACKS.forEach((y, k) => gpuRack(s, RX, y, RW, RD, RH, k));
+  const MX = RX + 6;
+  for (const y of RACKS) s.line([[MX + 1.5, y + RD / 2, RH], [MX + 1.5, y + RD / 2, RH + 5]], styles.edge);
+  s.box(MX, RACKS[0] + 2, 3, RACKS[2] - RACKS[0] + RD - 4, RH + 5, 3);
 }
 
 /** An SVG motion path through model points, in screen space. */
