@@ -477,7 +477,7 @@ export const SLIDES: readonly Slide[] = [
       { site: "Olds, AB", map: "olds", path: "Purchase", mw: "22.0", status: "LOI, lead position" },
       { site: "Calgary, AB", map: "calgary", path: "Purchase", mw: "13.0", status: "In diligence" },
       { site: "Milton, ON", map: "milton", path: "Joint venture", mw: "6.6", status: "In diligence" },
-      { site: "Mississauga, ON", map: "mississauga", path: "Colocation", mw: "1.2", status: "Awaiting signature" },
+      { site: "Mississauga, ON", map: "mississauga", path: "Colocation", mw: "1.2", status: "In diligence" },
     ],
     total: "66.8",
     capacity: [
