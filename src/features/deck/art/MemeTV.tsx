@@ -7,7 +7,7 @@ const NOTE =
 
 const SCREEN = { x: 12, y: 12, w: 216, h: 112 };
 
-/** The real frame, a 4:3 still pillarboxed on the wide screen. */
+/** The real frame, widened to 16:9 and filling the screen. */
 const PHOTO = "/images/deck/old-man-yells-at-cloud.jpg";
 
 const CHANNELS = ["the Old Man Yells at Cloud meme, drawn", "the Old Man Yells at Cloud frame, in black and white"];
@@ -183,7 +183,7 @@ export function MemeTV({ playing = false }: { playing?: boolean }): ReactElement
               y={SCREEN.y}
               width={SCREEN.w}
               height={SCREEN.h}
-              preserveAspectRatio="xMidYMid meet"
+              preserveAspectRatio="xMidYMid slice"
             />
           )}
           {flips > 0 ? (
