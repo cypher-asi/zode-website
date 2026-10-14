@@ -18,7 +18,7 @@ import { DISCLAIMER, LEGAL_LEGEND, RAISE_NOTE } from "./disclaimer";
 import { BLOCKED, NEWS } from "./news";
 import { GRID_LABELS, STATUS_LABELS, STATUS_ORDER, type GridGate, type PolicyMap, type PolicyState } from "./policyTypes";
 import { AS_OF, MARKET_TIGHTNESS, SOURCES, sourceUrl, type Source, type SourceId } from "./research";
-import type { ContractSide, Logo, Slide, Stat } from "./slides";
+import { SLIDES, type ContractSide, type Logo, type Slide, type Stat } from "./slides";
 import styles from "./Slide.module.css";
 
 type Of<K extends Slide["kind"]> = Extract<Slide, { kind: K }>;
@@ -1221,16 +1221,39 @@ function Close({ slide }: { slide: Of<"close"> }): ReactElement {
   );
 }
 
-const SOURCE_GROUPS: readonly { title: string; ids: readonly SourceId[] }[] = [
-  { title: "Demand and supply", ids: ["bnef", "utilityDive", "epri", "morganStanley", "cbre", "jll", "capex", "zodePricing", "googleTokens", "goldmanTokens"] },
-  {
-    title: "Policy",
-    ids: ["ncsl", "newYork", "texas", "oregon", "ercot", "eei", "moratoriumNation", "dataCenterWatch", "heatmap", "transformers"],
-  },
-];
+type SourceGroup = "Demand and supply" | "Policy" | "Cost and valuation";
 
-/** Set under the news, where the third column has room. */
-const VALUATION_SOURCES: readonly SourceId[] = ["evPerMw"];
+/** Every source's heading on the sources slide, which lists it once a slide cites it. */
+const SOURCE_GROUP: Readonly<Record<SourceId, SourceGroup>> = {
+  bnef: "Demand and supply",
+  utilityDive: "Demand and supply",
+  epri: "Demand and supply",
+  morganStanley: "Demand and supply",
+  cbre: "Demand and supply",
+  jll: "Demand and supply",
+  capex: "Demand and supply",
+  zodePricing: "Demand and supply",
+  googleTokens: "Demand and supply",
+  goldmanTokens: "Demand and supply",
+  ncsl: "Policy",
+  newYork: "Policy",
+  texas: "Policy",
+  oregon: "Policy",
+  ercot: "Policy",
+  eei: "Policy",
+  moratoriumNation: "Policy",
+  dataCenterWatch: "Policy",
+  heatmap: "Policy",
+  transformers: "Policy",
+  cushmanCost: "Cost and valuation",
+  evPerMw: "Cost and valuation",
+};
+
+const CITED = new Set(SLIDES.flatMap((slide) => slide.sources ?? []));
+
+/** A group's cited sources, in the order SOURCE_GROUP lists them. */
+const citedIn = (group: SourceGroup): SourceId[] =>
+  (Object.keys(SOURCE_GROUP) as SourceId[]).filter((id) => CITED.has(id) && SOURCE_GROUP[id] === group);
 
 function Citations({ ids }: { ids: readonly SourceId[] }): ReactElement {
   return (
@@ -1259,12 +1282,19 @@ function Citations({ ids }: { ids: readonly SourceId[] }): ReactElement {
 function Sources(): ReactElement {
   return (
     <div className={styles.sourcesBody}>
-      {SOURCE_GROUPS.map((group, g) => (
-        <div key={group.title} {...rise(2 + g)} className={styles.rise}>
-          <h3 className={styles.label}>{group.title}</h3>
-          <Citations ids={group.ids} />
-        </div>
-      ))}
+      <div {...rise(2)} className={styles.rise}>
+        <h3 className={styles.label}>Demand and supply</h3>
+        <Citations ids={citedIn("Demand and supply")} />
+      </div>
+      <div {...rise(3)} className={styles.rise}>
+        <h3 className={styles.label}>Policy</h3>
+        <Citations ids={citedIn("Policy")} />
+        <p className={styles.fine}>
+          As of {AS_OF}. Each state and local measure on the policy map links to its own source. The dashed grid line
+          on the demand chart is ZODE&rsquo;s illustration, not a third-party forecast. Pipeline, contract and financing
+          figures are ZODE&rsquo;s own and preliminary where noted.
+        </p>
+      </div>
       <div {...rise(4)} className={styles.rise}>
         <h3 className={styles.label}>News</h3>
         <ol className={styles.citations}>
@@ -1278,12 +1308,8 @@ function Sources(): ReactElement {
             </li>
           ))}
         </ol>
-        <h3 className={`${styles.label} ${styles.citationsNext}`}>Valuation</h3>
-        <Citations ids={VALUATION_SOURCES} />
-        <p className={styles.fine}>
-          As of {AS_OF}. The dashed grid line on the demand chart is ZODE&rsquo;s illustration, not a third-party forecast.
-          Pipeline, contract and financing figures are ZODE&rsquo;s own and preliminary where noted.
-        </p>
+        <h3 className={`${styles.label} ${styles.citationsNext}`}>Cost and valuation</h3>
+        <Citations ids={citedIn("Cost and valuation")} />
       </div>
     </div>
   );

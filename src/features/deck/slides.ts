@@ -406,7 +406,7 @@ export const SLIDES: readonly Slide[] = [
         },
       },
     ],
-    sources: ["heatmap", "transformers", "ncsl"],
+    sources: ["heatmap", "transformers", "ncsl", "newYork", "texas"],
   },
   {
     id: "stack",
@@ -553,7 +553,7 @@ export const SLIDES: readonly Slide[] = [
       ],
     },
     network: {
-      title: "Team member and advisor experience",
+      title: "Team and advisors",
       areas: [
         {
           label: "Capital markets",
@@ -622,12 +622,13 @@ export const SLIDES: readonly Slide[] = [
     rows: [
       { label: "Sequencing", them: "Build, then find tenants", us: "Contract first, build second" },
       { label: "Time to tokens", them: "Years", us: "90 days from order" },
-      { label: "Cost per MW", them: "$10–12M", us: "~$5M target on conversions" },
+      { label: "Cost per MW", them: "~$17.6M", us: "~$5M target on conversions" },
       { label: "Site basis", them: "Greenfield at market", us: "Powered buildings near 15¢ on the dollar" },
       { label: "Supply", them: "Allocation queues", us: "Direct with Pegatron, NVIDIA, Tier-1 integrators" },
       { label: "Footprint", them: "One campus", us: "Distributed, sovereign sites" },
     ],
-    note: "Cost per MW on conversions is a target, not yet proven at scale.",
+    note: "Cost per MW on conversions is a target, not yet proven at scale. Greenfield cost is Cushman & Wakefield's 2026 all-in average, excluding chips and GPUs.",
+    sources: ["cushmanCost"],
   },
   {
     id: "finance",
@@ -740,7 +741,7 @@ export const SLIDES: readonly Slide[] = [
     kind: "sources",
     section: "Sources",
     eyebrow: "Sources",
-    title: "Every figure, cited.",
+    title: "All sources.",
     ground: "paper",
   },
 ];

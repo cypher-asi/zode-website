@@ -117,6 +117,12 @@ export const SOURCES = {
     url: "https://www.datacenterknowledge.com/energy-power-supply/why-ai-data-center-projects-face-years-of-delays-after-approval",
     via: "via Data Center Knowledge",
   },
+  cushmanCost: {
+    publisher: "Cushman & Wakefield",
+    title: "2026 Data Center Development Cost Guide",
+    date: "September 3, 2026",
+    url: "https://www.cushmanwakefield.com/en/united-states/insights/data-center-development-cost-guide",
+  },
   capex: {
     publisher: "Amazon, Microsoft, Alphabet and Meta",
     title: "2026 capital expenditure guidance",
