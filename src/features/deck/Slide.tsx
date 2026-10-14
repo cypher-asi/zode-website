@@ -1001,8 +1001,8 @@ function Finance({ slide, active }: { slide: Of<"finance">; active: boolean }): 
             ))}
           </ol>
           <p className={styles.stackTotal}>
-            <span className={styles.label}>Total</span>
             <span className={styles.stackValue}>{example.total}</span>
+            <span className={styles.label}>Total</span>
           </p>
         </div>
         <p className={styles.fine}>{example.note}</p>
