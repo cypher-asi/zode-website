@@ -346,8 +346,8 @@ export const SLIDES: readonly Slide[] = [
   {
     id: "how",
     kind: "steps",
-    section: "How it works",
-    eyebrow: "How it works",
+    section: "How we scale",
+    eyebrow: "How we scale",
     title: "Contract first. Build second.",
     ground: "white",
     steps: [
