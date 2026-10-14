@@ -1,6 +1,8 @@
 import type { CSSProperties, ReactElement } from "react";
 import { Sketch, backToFront, project, round, type Bounds, type P3 } from "@/features/zode-drawings/lineArt";
 import styles from "./MacroArt.module.css";
+import { meltingClock } from "./meltingClock";
+
 export type UnitIconId =
   | "node"
   | "gpu"
@@ -188,24 +190,34 @@ function storage(s: Sketch): void {
 }
 
 /**
- * A stopwatch, standing face on: its case behind, the dial, the hands, the
- * crown, a light sweeping the dial clockwise once a cycle.
+ * A clock melting on a GPU, after Dalí: lying on the die, slumping over its
+ * front edge and running out across the substrate, the dial and hands
+ * drooping with it, a light sweeping the dial clockwise once a cycle.
  */
 function rate(s: Sketch): void {
-  const [R, Y0, Y1] = [24, -3, 3];
-  s.box(-3, Y0 + 1, 6, 4, R + 1, 4);
-  s.box(-5, Y0, 10, 6, R + 5, 3);
-  s.wheel([0, Y0, 0], R, "xz", styles.sideR);
-  s.wheel([0, Y1, 0], R, "xz", styles.top);
-  s.wheel([0, Y1, 0], R - 4, "xz", styles.fine);
-  for (let k = 0; k < 12; k++) {
-    const t = Math.PI / 2 - (k / 12) * Math.PI * 2;
-    const [c, n] = [Math.cos(t), Math.sin(t)];
-    s.line([[c * (R - 4), Y1, n * (R - 4)], [c * (R - (k % 3 ? 6 : 8)), Y1, n * (R - (k % 3 ? 6 : 8))]], styles.edge);
-    lamp(s, [c * (R - 11), Y1, n * (R - 11)], k, 1.1, "150ms");
+  const [SUB, Z0, Z1, DX, DY0, DY1] = [26, 4, 12, 17, -20, 8];
+  s.box(-SUB, -SUB, 2 * SUB, 2 * SUB, 0, Z0);
+  for (let t = -SUB + 5; t <= SUB - 5; t += 6) {
+    s.line([[SUB, t, 1.5], [SUB + 5, t, 1.5]], styles.edge);
+    s.line([[t, SUB, 1.5], [t, SUB + 5, 1.5]], styles.edge);
   }
-  s.line([[0, Y1, 13], [0, Y1, 0], [9, Y1, -5]], styles.edge);
-  s.disc([0, Y1, 0], 1.2, styles.ink);
+  s.box(-DX, DY0, 2 * DX, DY1 - DY0, Z0, Z1 - Z0);
+
+  const { polar, hand } = meltingClock(s, {
+    x: 0,
+    r: 15,
+    thickness: 2,
+    hub: -4,
+    drip: 7,
+    lean: -2.5,
+    corners: [
+      [DY1, Z1, 3],
+      [DY1, Z0, 2.5],
+    ],
+  });
+  for (let k = 0; k < 12; k++) lamp(s, polar(6.5, (k / 12) * Math.PI * 2), k, 1, "150ms");
+  s.line([...hand(6, (5 / 3) * Math.PI).reverse(), ...hand(11, (5 / 6) * Math.PI)], styles.edge);
+  s.disc(polar(0, 0), 1, styles.ink);
 }
 
 /** Profit kept: two stacks of coins pulsing up from the base, a coin settling on the taller. */
@@ -358,13 +370,19 @@ const DRAW: Record<UnitIconId, (s: Sketch) => void> = {
   gpuDebt,
 };
 
-const ART = Object.fromEntries(
-  Object.entries(DRAW).map(([id, draw]) => {
+const ART = new Map<UnitIconId, { items: ReactElement[]; view: Bounds }>();
+
+/** Drawn on first use. */
+function artFor(id: UnitIconId): { items: ReactElement[]; view: Bounds } {
+  let art = ART.get(id);
+  if (!art) {
     const s = new Sketch(styles);
-    draw(s);
-    return [id, { items: s.items, view: s.bounds(3) }];
-  }),
-) as Record<UnitIconId, { items: ReactElement[]; view: Bounds }>;
+    DRAW[id](s);
+    art = { items: s.items, view: s.bounds(3) };
+    ART.set(id, art);
+  }
+  return art;
+}
 
 /**
  * A small isometric line drawing for the unit and finance slides' cards, in
@@ -382,7 +400,7 @@ export function UnitIcon({
   playing?: boolean;
   className?: string;
 }): ReactElement {
-  const { items, view } = ART[id];
+  const { items, view } = artFor(id);
   return (
     <svg
       className={className ? `${styles.art} ${className}` : styles.art}

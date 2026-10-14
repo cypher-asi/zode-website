@@ -14,7 +14,8 @@ import { PodInstance, buildPodTemplates, type PodTemplates } from "./podModel";
  * The factory floor's 3D view, kept out of React: an isometric orthographic
  * camera with pan and zoom, the hall and line rebuilt when the trace's
  * layout changes, and everything that moves set from the trace at the
- * playhead. Frames are drawn only when something changed.
+ * playhead. Frames are drawn only when something changed, and only while
+ * the view is on screen.
  */
 
 export type Selection = { kind: "station"; station: number } | { kind: "pod"; pod: number } | null;
@@ -74,6 +75,7 @@ export class FactoryView {
   private readonly controls: MapControls;
   private readonly raycaster = new THREE.Raycaster();
   private readonly observer: ResizeObserver;
+  private readonly intersection: IntersectionObserver;
   private readonly kit: Kit;
   private readonly mats: Mats;
   private readonly lineMats: LineMaterial[] = [];
@@ -97,6 +99,11 @@ export class FactoryView {
   private readonly podPositions = new Map<number, THREE.Vector3>();
   private raf = 0;
   private down: { x: number; y: number } | null = null;
+  private hover: PointerEvent | null = null;
+  private hoverRaf = 0;
+  private onScreen = true;
+  /** Something changed while the view couldn't be seen; draw it when it can. */
+  private stale = false;
 
   constructor(
     private readonly container: HTMLElement,
@@ -163,6 +170,12 @@ export class FactoryView {
 
     this.observer = new ResizeObserver(() => this.resize());
     this.observer.observe(container);
+    this.intersection = new IntersectionObserver((entries) => {
+      this.onScreen = entries[entries.length - 1].isIntersecting;
+      this.catchUp();
+    });
+    this.intersection.observe(container);
+    document.addEventListener("visibilitychange", this.catchUp);
     this.resize();
   }
 
@@ -272,7 +285,10 @@ export class FactoryView {
 
   dispose(): void {
     cancelAnimationFrame(this.raf);
+    cancelAnimationFrame(this.hoverRaf);
     this.observer.disconnect();
+    this.intersection.disconnect();
+    document.removeEventListener("visibilitychange", this.catchUp);
     this.controls.dispose();
     this.disposeBuild();
     this.kit.dispose();
@@ -494,7 +510,7 @@ export class FactoryView {
 
   // --- Picking ---------------------------------------------------------------------
 
-  private pick(event: PointerEvent): Selection {
+  private pick(event: { clientX: number; clientY: number }): Selection {
     const b = this.build;
     if (!b) return null;
     const rect = this.renderer.domElement.getBoundingClientRect();
@@ -526,7 +542,15 @@ export class FactoryView {
 
   private onPointerMove = (event: PointerEvent) => {
     if (event.pointerType !== "mouse" || event.buttons) return;
-    this.renderer.domElement.style.cursor = this.pick(event) ? "pointer" : "";
+    this.hover = event;
+    if (!this.hoverRaf) this.hoverRaf = requestAnimationFrame(this.hoverTick);
+  };
+
+  private hoverTick = () => {
+    this.hoverRaf = 0;
+    const event = this.hover;
+    this.hover = null;
+    if (event) this.renderer.domElement.style.cursor = this.pick(event) ? "pointer" : "";
   };
 
   // --- Loop ------------------------------------------------------------------------
@@ -542,12 +566,27 @@ export class FactoryView {
     this.invalidate();
   }
 
-  private invalidate() {
-    if (!this.raf) this.raf = requestAnimationFrame(this.tick);
+  private visible(): boolean {
+    return this.onScreen && document.visibilityState !== "hidden";
   }
+
+  private invalidate() {
+    if (!this.visible()) this.stale = true;
+    else if (!this.raf) this.raf = requestAnimationFrame(this.tick);
+  }
+
+  private catchUp = () => {
+    if (!this.stale || !this.visible()) return;
+    this.stale = false;
+    this.invalidate();
+  };
 
   private tick = () => {
     this.raf = 0;
+    if (!this.visible()) {
+      this.stale = true;
+      return;
+    }
     const moving = this.controls.update();
     this.apply();
     this.renderer.render(this.scene, this.camera);

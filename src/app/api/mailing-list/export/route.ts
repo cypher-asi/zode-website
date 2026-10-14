@@ -2,7 +2,7 @@ import { isZodeAdmin } from "@/features/account/admin";
 import { getAccount } from "@/features/account/session";
 import { notFoundResponse } from "@/features/data-room/http";
 import { listSubscribers } from "@/features/mailing-list/subscribers";
-import { isMailingList, isSubscriberStatus } from "@/features/mailing-list/types";
+import { isMailingList, isSubscriberStatus, type Subscriber } from "@/features/mailing-list/types";
 
 const COLUMNS = [
   "list",
@@ -25,6 +25,13 @@ function cell(value: string | Date | null): string {
   return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 
+const line = (s: Subscriber): string =>
+  [s.list, s.email, s.name, s.status, s.userId, s.accountName, s.source, s.createdAt, s.confirmedAt, s.unsubscribedAt]
+    .map(cell)
+    .join(",");
+
+const ROWS_PER_CHUNK = 500;
+
 /** The mailing lists as CSV for ZODE admins, optionally one list and one status only (`?list=news&status=subscribed`). */
 export async function GET(request: Request) {
   const account = await getAccount();
@@ -43,20 +50,24 @@ export async function GET(request: Request) {
       headers: { "Cache-Control": "private, no-store" },
     });
   }
-  if (isSubscriberStatus(status)) subscribers = subscribers.filter((subscriber) => subscriber.status === status);
+  const rows = isSubscriberStatus(status) ? subscribers.filter((subscriber) => subscriber.status === status) : subscribers;
 
-  const lines = [
-    COLUMNS.join(","),
-    ...subscribers.map((s) =>
-      [s.list, s.email, s.name, s.status, s.userId, s.accountName, s.source, s.createdAt, s.confirmedAt, s.unsubscribedAt]
-        .map(cell)
-        .join(","),
-    ),
-  ];
+  const encoder = new TextEncoder();
+  let at = 0;
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(encoder.encode(`${COLUMNS.join(",")}\r\n`));
+    },
+    pull(controller) {
+      if (at >= rows.length) return controller.close();
+      const chunk = rows.slice(at, (at += ROWS_PER_CHUNK));
+      controller.enqueue(encoder.encode(chunk.map((s) => `${line(s)}\r\n`).join("")));
+    },
+  });
   const day = new Date().toISOString().slice(0, 10);
   const parts = ["zode-mailing-list", isMailingList(list) ? list : null, isSubscriberStatus(status) ? status : null, day];
   const file = `${parts.filter(Boolean).join("-")}.csv`;
-  return new Response(`${lines.join("\r\n")}\r\n`, {
+  return new Response(body, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": `attachment; filename="${file}"`,

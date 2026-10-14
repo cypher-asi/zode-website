@@ -20,6 +20,8 @@ const SCENES = ["city", "field", "mountain", "desert", "coast", "snow"] as const
  * tab is visible; under `prefers-reduced-motion` the first scene stays put.
  * Scenes mount one step ahead of the rotation (up to `reach`), so each photo
  * has a full interval to load instead of all six downloading at once.
+ * `sizes` follows `.image`'s width: about 221vw on phones (863px below 391px
+ * wide, where the band's 220px min-height takes over) and 122vw beyond.
  */
 export function FooterScene(): ReactElement {
   const ref = useRef<HTMLDivElement>(null);
@@ -74,7 +76,7 @@ export function FooterScene(): ReactElement {
             alt=""
             width={1600}
             height={600}
-            sizes="(max-width: 900px) 300vw, 125vw"
+            sizes="(max-width: 391px) 863px, (max-width: 900px) 221vw, 125vw"
           />
         ) : null,
       )}

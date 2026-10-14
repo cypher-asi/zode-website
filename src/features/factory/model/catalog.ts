@@ -1,4 +1,5 @@
 import { PODS, type BuildStep, type PodSpec } from "../../home/assembly/podSpec";
+import { DEFAULT_INBOUND, type InboundConfig } from "./inbound";
 
 /*
  * The compute pod production line: its stations, the materials they draw from
@@ -6,8 +7,9 @@ import { PODS, type BuildStep, type PodSpec } from "../../home/assembly/podSpec"
  * one to one onto the compute pod's build steps in podSpec, so every part the
  * line installs is a part of the real pod. Times are in hours.
  *
- * The work content, crews and lead times below are placeholders, not measured
- * figures; replace them as the real factory's numbers come in.
+ * The work content and crews below are placeholders, not measured figures;
+ * replace them as the real factory's numbers come in. Suppliers, lead times
+ * and receiving live in inbound.ts.
  */
 
 export const COMPUTE_POD: PodSpec = PODS.find((pod) => pod.id === "compute")!;
@@ -20,21 +22,19 @@ export interface Material {
   label: string;
   /** Part ids in podSpec that are one unit of this material, by prefix. */
   prefixes: string[];
-  /** Hours from placing an order to the delivery landing in the store. */
-  leadHours: number;
 }
 
 export const MATERIALS: readonly Material[] = [
-  { id: "base", label: "Base frames", prefixes: ["base"], leadHours: 336 },
-  { id: "post", label: "Steel posts", prefixes: ["post-"], leadHours: 168 },
-  { id: "rail", label: "Top rails", prefixes: ["rail-"], leadHours: 168 },
-  { id: "rack-compute", label: "Compute racks", prefixes: ["rack-C"], leadHours: 504 },
-  { id: "rack-network", label: "Network racks", prefixes: ["rack-NS"], leadHours: 504 },
-  { id: "busway", label: "Busway runs", prefixes: ["bus-"], leadHours: 336 },
-  { id: "header", label: "Cooling headers", prefixes: ["w-", "c-"], leadHours: 336 },
-  { id: "tray", label: "Fiber trays", prefixes: ["tray-"], leadHours: 168 },
-  { id: "panel", label: "Wall and end panels", prefixes: ["end-", "rear-", "front-"], leadHours: 252 },
-  { id: "roof", label: "Service roofs", prefixes: ["service-roof"], leadHours: 336 },
+  { id: "base", label: "Base frames", prefixes: ["base"] },
+  { id: "post", label: "Steel posts", prefixes: ["post-"] },
+  { id: "rail", label: "Top rails", prefixes: ["rail-"] },
+  { id: "rack-compute", label: "Compute racks", prefixes: ["rack-C"] },
+  { id: "rack-network", label: "Network racks", prefixes: ["rack-NS"] },
+  { id: "busway", label: "Busway runs", prefixes: ["bus-"] },
+  { id: "header", label: "Cooling headers", prefixes: ["w-", "c-"] },
+  { id: "tray", label: "Fiber trays", prefixes: ["tray-"] },
+  { id: "panel", label: "Wall and end panels", prefixes: ["end-", "rear-", "front-"] },
+  { id: "roof", label: "Service roofs", prefixes: ["service-roof"] },
 ];
 
 /** Index into MATERIALS of the material a pod part is made from, or -1. */
@@ -72,6 +72,8 @@ export interface Scenario {
   reviewHours: number;
   /** Each material is reordered up to this many pods' worth. */
   coverPods: number;
+  /** The receiving dock every order comes in through. */
+  inbound: InboundConfig;
 }
 
 export const DEFAULT_SCENARIO: Scenario = {
@@ -102,6 +104,7 @@ export const DEFAULT_SCENARIO: Scenario = {
   kitHours: 1.5,
   reviewHours: 168,
   coverPods: 56,
+  inbound: DEFAULT_INBOUND,
 };
 
 /** The podSpec build step a station performs; commissioning has none. */

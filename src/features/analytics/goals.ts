@@ -10,6 +10,9 @@ export interface Goal {
   match: string;
 }
 
+/** Tagged on every cached report that counts conversions, so adding or removing a goal shows at once. */
+export const GOALS_TAG = "analytics:goals";
+
 export const listGoals = cache(async (): Promise<Goal[]> => {
   const rows = await db()`select id, label, match_kind, match from analytics_goals order by label`;
   return rows.map((row) => ({

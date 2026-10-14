@@ -2,6 +2,7 @@
 
 import { useRef, useState, type CSSProperties, type ReactElement } from "react";
 import { useInView } from "@/hooks/useInView";
+import { useOnScreen } from "@/hooks/useOnScreen";
 import { STATS, type PlacedSite } from "./sites";
 import styles from "./Network.module.css";
 
@@ -23,6 +24,7 @@ type Props = {
 export function NetworkMap({ view, land, borders, graticule, sites, links }: Props): ReactElement {
   const ref = useRef<HTMLDivElement>(null);
   const shown = useInView(ref, "0px 0px -25% 0px");
+  const onScreen = useOnScreen(ref);
   const [active, setActive] = useState<string | null>(null);
 
   const leave = (id: string) => setActive((current) => (current === id ? null : current));
@@ -32,6 +34,7 @@ export function NetworkMap({ view, land, borders, graticule, sites, links }: Pro
       ref={ref}
       className={styles.root}
       data-shown={shown || undefined}
+      data-offscreen={!onScreen || undefined}
       data-active={active ?? undefined}
     >
       <div className={styles.stage}>

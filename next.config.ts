@@ -63,6 +63,14 @@ const nextConfig: NextConfig = {
   // prefetch it, so navigations paint at once while the rest streams in.
   cacheComponents: true,
   partialPrefetching: true,
+  // Memoizes components and hooks at build time, so a parent's state change
+  // doesn't re-render subtrees whose props are unchanged.
+  reactCompiler: true,
+  experimental: {
+    // Group CSS by which routes import it, so a route downloads close to only
+    // the CSS it uses instead of shared chunks carrying every section's styles.
+    cssChunking: "graph",
+  },
   // Hide the on-screen Next.js dev indicator (bottom-left).
   devIndicators: false,
   // Pin the workspace root so Turbopack ignores the stray lockfile in the home

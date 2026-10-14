@@ -1,13 +1,18 @@
 import "server-only";
-import { db } from "@/lib/db";
+import { cacheLife, cacheTag } from "next/cache";
+import { DB_TAG, db } from "@/lib/db";
 import { BOUNCE_ENGAGED_MS, REALTIME_MINUTES, TIME_ZONE } from "./definitions";
 import { bucketFor, DIMENSIONS, lastDays, NONE, type Dimension, type Filters, type Period } from "./filters";
-import { listGoals, type Goal } from "./goals";
+import { GOALS_TAG, listGoals, type Goal } from "./goals";
 
 /**
  * The Analytics app's reports, straight from analytics_events. Every query
  * is parameterized; the only SQL spliced in is from the allowlists here
  * (columns, sorts), never from the URL.
+ *
+ * The reports are cached on the server by their filters for `minutes`, so
+ * the viewer is checked by the page before calling them. `loadRealtime`
+ * isn't cached, as its page refreshes every few seconds.
  */
 
 export const PAGE_SIZE = 50;
@@ -70,14 +75,18 @@ const anyGoal = (q: Query, goals: Goal[]) => (goals.length ? goals.map((goal) =>
 
 const BOUNCE = `(s.pageviews <= 1 and s.events = 0 and s.engaged_ms < ${BOUNCE_ENGAGED_MS})`;
 
+/** The columns of `ev` that `s`, the goals and the series read. */
+const EV_COLUMNS = ["e.session_id", "e.visitor_id", "e.created_at", "e.kind", "e.name", "e.path", "e.engaged_ms"];
+
 /**
  * `ev`, the rows in scope, and `s`, one row per session that viewed a page:
  * its counts, engaged time, whether it converted and, with `key`, the
  * dimension it arrived with.
  */
 function sessionsCte(q: Query, filters: Filters, period: Period, goals: Goal[], key?: string): string {
+  const columns = key && !EV_COLUMNS.includes(key) ? [...EV_COLUMNS, key] : EV_COLUMNS;
   return `
-    ev as (select e.* from analytics_events e where ${scope(q, filters, period)}),
+    ev as (select ${columns.join(", ")} from analytics_events e where ${scope(q, filters, period)}),
     s as (
       select e.session_id, e.visitor_id,
         ${key ? `(array_agg(${key} order by e.created_at))[1] as key,` : ""}
@@ -132,6 +141,9 @@ async function kpisFor(filters: Filters, period: Period, goals: Goal[]): Promise
 
 /** The headline figures for the period and the one before it. */
 export async function loadKpis(filters: Filters): Promise<{ current: Kpis; previous: Kpis }> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(GOALS_TAG, DB_TAG);
   const goals = await listGoals();
   const [current, previous] = await Promise.all([
     kpisFor(filters, filters.period, goals),
@@ -206,6 +218,9 @@ async function seriesFor(filters: Filters, period: Period): Promise<SeriesPoint[
 
 /** The period's figures over time, and the previous period's for the comparison line. */
 export async function loadTimeseries(filters: Filters): Promise<{ current: SeriesPoint[]; previous: SeriesPoint[] }> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(DB_TAG);
   const [current, previous] = await Promise.all([
     seriesFor(filters, filters.period),
     seriesFor(filters, filters.previous),
@@ -259,9 +274,15 @@ export async function loadPages(
   { sort, dir, page }: Sorting<PageSort>,
   period: Period = filters.period,
 ): Promise<Paged<PageRow>> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(DB_TAG);
   const q = new Query();
   const rows = await q.rows<Record<string, string | number | null>>(`
-    with ev as (select e.* from analytics_events e where ${scope(q, filters, period, { pages: false })}),
+    with ev as (
+      select e.session_id, e.visitor_id, e.created_at, e.kind, e.route, e.path, e.engaged_ms, e.scroll_pct
+      from analytics_events e where ${scope(q, filters, period, { pages: false })}
+    ),
     seq as (
       select e.*,
         count(*) filter (where e.kind = 'event') over w as session_events,
@@ -340,6 +361,9 @@ export async function loadBreakdown(
   { sort, dir, page }: Sorting<BreakdownSort>,
   limit = PAGE_SIZE,
 ): Promise<Paged<BreakdownRow>> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(GOALS_TAG, DB_TAG);
   const goals = await listGoals();
   const q = new Query();
   const rows = await q.rows<Record<string, string | number | null>>(`
@@ -375,9 +399,12 @@ export async function loadBreakdown(
 
 /** Visitors in the period seen for the first time, and those who had been before. */
 export async function loadNewVsReturning(filters: Filters): Promise<{ new: number; returning: number }> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(DB_TAG);
   const q = new Query();
   const [row] = await q.rows<Record<string, number>>(`
-    with ev as (select e.* from analytics_events e where ${scope(q, filters, filters.period)}),
+    with ev as (select e.visitor_id, e.kind from analytics_events e where ${scope(q, filters, filters.period)}),
     v as (select distinct visitor_id from ev where kind = 'pageview'),
     f as (
       select a.visitor_id, min(a.created_at) as first_seen
@@ -400,6 +427,9 @@ export interface EventRow {
 }
 
 export async function loadEvents(filters: Filters): Promise<EventRow[]> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(DB_TAG);
   const q = new Query();
   const rows = await q.rows<Record<string, string | number>>(`
     select e.name, count(*)::int as total, count(distinct e.visitor_id)::int as visitors, count(distinct e.session_id)::int as sessions
@@ -425,6 +455,9 @@ export interface PropRow {
 
 /** One event's properties, e.g. which links an outbound click went to. */
 export async function loadEventProps(filters: Filters, name: string): Promise<PropRow[]> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(DB_TAG);
   const q = new Query();
   const rows = await q.rows<Record<string, string | number>>(`
     select p.key, p.value, count(*)::int as total, count(distinct e.visitor_id)::int as visitors
@@ -454,6 +487,9 @@ export interface GoalRow {
 
 /** Each goal's completions and conversion rate over the sessions in the period. */
 export async function loadGoals(filters: Filters, period: Period = filters.period): Promise<GoalRow[]> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(GOALS_TAG, DB_TAG);
   const goals = await listGoals();
   if (!goals.length) return [];
   const q = new Query();
@@ -464,7 +500,10 @@ export async function loadGoals(filters: Filters, period: Period = filters.perio
       from ev e where ${goalMatch(q, goal)}`,
   );
   const rows = await q.rows<Record<string, number>>(`
-    with ev as (select e.* from analytics_events e where ${scope(q, filters, period)}),
+    with ev as (
+      select e.session_id, e.visitor_id, e.kind, e.name, e.path
+      from analytics_events e where ${scope(q, filters, period)}
+    ),
     total as (select count(distinct session_id)::int as sessions from ev where kind = 'pageview'),
     g as (${parts.join(" union all ")})
     select g.*, total.sessions from g, total
@@ -495,9 +534,15 @@ export async function loadPageFlow(
   column: "route" | "path",
   value: string,
 ): Promise<{ previous: FlowRow[]; next: FlowRow[] }> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(DB_TAG);
   const q = new Query();
   const rows = await q.rows<Record<string, string | number | null>>(`
-    with ev as (select e.* from analytics_events e where ${scope(q, filters, filters.period, { pages: false })} and e.kind = 'pageview'),
+    with ev as (
+      select e.session_id, e.created_at, e.route, e.path
+      from analytics_events e where ${scope(q, filters, filters.period, { pages: false })} and e.kind = 'pageview'
+    ),
     seq as (
       select e.route, e.path,
         lag(e.route) over w as previous_route,

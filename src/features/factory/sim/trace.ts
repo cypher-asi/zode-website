@@ -1,4 +1,5 @@
 import type { FlowPos, Scenario } from "../model/catalog";
+import type { InboundTrace } from "./inbound";
 
 /*
  * Everything a run did, recorded so any moment can be looked up afterwards:
@@ -90,9 +91,13 @@ export interface Trace {
   /** Per station, sorted times its work on a pod ended. */
   stationEnds: number[][];
   stock: StockSeries[];
+  /** On hand at the start, with the orders already on their way left off. */
+  startStock: number[];
   orderUpTo: number[];
   kits: KitTrip[];
   crane: CraneLift[];
+  /** Everything the receiving dock did. */
+  inbound: InboundTrace;
 }
 
 /** Index of the last element of ascending `a` at or before `t`, or -1. */

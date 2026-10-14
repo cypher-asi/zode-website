@@ -107,17 +107,13 @@
   background: color-mix(in srgb, var(--color-white) 18%, transparent);
 }
 
-.item,
-.avatar {
+.item {
   position: relative;
   display: grid;
   place-items: center;
   flex: none;
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
-}
-
-.item {
   width: var(--rail-item);
   height: var(--rail-item);
   padding: 0;
@@ -148,39 +144,6 @@
   display: none;
 }
 
-/*
- * Signed-in initials, read from the `<html>` flags set by `markSignedIn`
- * (signedInCookie.ts), with the person glyph for sessions without them.
- */
-.avatar {
-  width: 32px;
-  height: 32px;
-  margin: 6px 0 4px;
-  border: 1px solid color-mix(in srgb, var(--color-white) 35%, transparent);
-  border-radius: 50%;
-  color: var(--color-white);
-  font-size: var(--text-2xs);
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  transition:
-    background-color var(--duration-base) ease,
-    border-color var(--duration-base) ease,
-    color var(--duration-base) ease;
-}
-
-.avatar::before {
-  content: var(--account-initials);
-}
-
-.avatarGlyph {
-  width: 16px;
-  height: 16px;
-}
-
-:root[data-signed-in="initials"] .avatarGlyph {
-  display: none;
-}
-
 /* The label, shown beside the icon on hover or keyboard focus; always there for screen readers. */
 .tooltip {
   position: absolute;
@@ -205,19 +168,12 @@
     translate var(--duration-fast) ease;
 }
 
-/* The avatar is narrower than the items, so its label starts further out to line up with theirs. */
-.avatar .tooltip {
-  left: calc(100% + 26px);
-}
-
-.item:focus-visible .tooltip,
-.avatar:focus-visible .tooltip {
+.item:focus-visible .tooltip {
   opacity: 1;
   translate: 0 -50%;
 }
 
-.item:focus-visible,
-.avatar:focus-visible {
+.item:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
@@ -327,14 +283,7 @@
     animation: trace 450ms var(--ease-out);
   }
 
-  .avatar:hover {
-    border-color: var(--color-white);
-    background: var(--color-white);
-    color: var(--color-black);
-  }
-
-  .item:hover .tooltip,
-  .avatar:hover .tooltip {
+  .item:hover .tooltip {
     opacity: 1;
     translate: 0 -50%;
   }
@@ -375,7 +324,7 @@
 /*
  * Phones, laid out like an app: PortalTopBar takes the site header's place,
  * the rail becomes a frosted tab bar along the bottom edge (the first apps
- * with their names, then More for the rest, the foot tray and the account),
+ * with their names, then More for the rest and the foot tray),
  * and the panel fills the space between the two, edge to edge.
  */
 @media (max-width: 700px) {
@@ -535,7 +484,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .item,
-  .avatar,
   .tooltip {
     transition: none;
   }

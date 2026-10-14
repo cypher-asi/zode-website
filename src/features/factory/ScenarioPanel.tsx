@@ -113,7 +113,7 @@ export function ScenarioPanel({ scenario, onRun }: ScenarioPanelProps): ReactEle
 }
 
 /** A number input that keeps what's typed and reports only values within its range. */
-function NumberField({
+export function NumberField({
   label,
   value,
   min,

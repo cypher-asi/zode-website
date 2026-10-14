@@ -39,6 +39,11 @@
   fill: var(--fg-2);
 }
 
+/* The bridge is drawn larger than the demand chart, so its notes are set down to read at the same size. */
+.barNote {
+  font-size: 11px;
+}
+
 /* A note linked to its source (DemandChart.tsx), underlined as the slides' inline citations are. */
 .cited text {
   text-decoration: underline;
@@ -211,10 +216,11 @@
   stroke: var(--fg);
 }
 
-/* The net gap in the macro slide's bottleneck red. */
+/* The net gap outlined in the macro slide's bottleneck red, filled with the demand chart's gap tint, flattened so the connector doesn't show through. */
 .barRect[data-kind="net"] {
-  fill: #f04438;
+  fill: color-mix(in srgb, #f04438 28%, var(--bg));
   stroke: #f04438;
+  stroke-width: 1.5;
 }
 
 .barValue[data-kind="net"] {
@@ -309,6 +315,28 @@
 
 .gridMark[data-gate="signoff"] {
   fill: none;
+}
+
+/* A tracked state's tile is a button: outlined when hovered, focused or chosen. */
+.tile[role="button"] {
+  cursor: pointer;
+  outline: none;
+}
+
+.tile[role="button"]:is(:hover, :focus-visible, [data-shown]) .tileRect {
+  stroke: var(--fg);
+  stroke-width: 2;
+}
+
+/* With a legend entry open, the states outside it fade. */
+@media screen {
+  .tile > * {
+    transition: opacity var(--duration-fast) ease;
+  }
+
+  .chart[data-filtered] .tile:not([data-lit]) > * {
+    opacity: 0.25;
+  }
 }
 
 /*

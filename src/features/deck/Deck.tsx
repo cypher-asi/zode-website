@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  startTransition,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -57,6 +58,9 @@ const subscribeCompact = (onChange: () => void) => {
   return () => query.removeEventListener("change", onChange);
 };
 const clamp = (n: number) => Math.min(Math.max(n, 0), TOTAL - 1);
+const EVERY_SLOT: ReadonlySet<number> = new Set(SLIDES.keys());
+/** A slide and its neighbours, kept drawn so the usual step to either one starts without laying it out first. */
+const around = (i: number): ReadonlySet<number> => new Set([clamp(i - 1), i, clamp(i + 1)]);
 
 /** Whether a key press belongs to a control rather than the deck: text fields, menus, and Space on buttons. */
 function ownedByControl(event: KeyboardEvent): boolean {
@@ -64,7 +68,7 @@ function ownedByControl(event: KeyboardEvent): boolean {
   if (!target) return false;
   // `dialog` covers a route modal (e.g. Invest) opened over the deck.
   if (target.closest("input, textarea, select, [contenteditable=true], [role=menu], dialog")) return true;
-  return event.key === " " && target.closest("button, a") !== null;
+  return event.key === " " && target.closest("button, a, [role=button]") !== null;
 }
 
 function ArrowIcon({ flip = false }: { flip?: boolean }): ReactElement {
@@ -80,11 +84,11 @@ function ArrowIcon({ flip = false }: { flip?: boolean }): ReactElement {
  * a control bar that rises from the bottom edge, an overview of every slide
  * and a share menu. The page's ground follows the slide's, so the slide has
  * no visible edge and the header reads its tone from `data-surface`. Every
- * slide stays mounted, inactive ones hidden, so printing (the PDF export)
- * lays them all out one per page. On a portrait phone (`compact`) each slide
- * is a story card instead: reflowed to the screen, scrolling inside itself,
- * drawing its own grid, turned by a swipe or a tap on its edge, with the
- * controls always up.
+ * slide stays mounted, inactive ones hidden and parked unrendered, so
+ * printing (the PDF export) lays them all out one per page. On a portrait
+ * phone (`compact`) each slide is a story card instead: reflowed to the
+ * screen, scrolling inside itself, drawing its own grid, turned by a swipe or
+ * a tap on its edge, with the controls always up.
  */
 /** The cover's ground, standing in while the page reads which slide to open. */
 export function DeckGround(): ReactElement {
@@ -108,7 +112,12 @@ export function Deck({
   const wheel = useRef({ travel: 0, lockedUntil: 0 });
   const [index, setIndex] = useState(() => clamp(initialSlide));
   const [leaving, setLeaving] = useState<number | null>(null);
+  // The slots drawn; every other one is parked. A transition needs a style to start from, and a parked slot's content
+  // keeps the last one it had, so a slot opens and is styled at rest before it plays, and is put at rest before it parks.
+  const [open, setOpen] = useState<ReadonlySet<number>>(() => around(clamp(initialSlide)));
   const [overview, setOverview] = useState(false);
+  // Its 21 thumbnails are whole slides, so they're drawn while the page is idle and kept, rather than on opening.
+  const [overviewDrawn, setOverviewDrawn] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [printing, setPrinting] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
@@ -134,11 +143,15 @@ export function Deck({
     (target: number) => {
       const next = clamp(target);
       if (next === index) return;
+      if (!open.has(next)) {
+        flushSync(() => setOpen((slots) => new Set(slots).add(next)));
+        stageRef.current?.children[next]?.getBoundingClientRect();
+      }
       setLeaving(index);
       setIndex(next);
       setMoved(true);
     },
-    [index],
+    [index, open],
   );
 
   const toggleFullscreen = useCallback(() => {
@@ -149,9 +162,13 @@ export function Deck({
 
   useEffect(() => {
     if (leaving === null) return;
-    const timer = window.setTimeout(() => setLeaving(null), LEAVE_MS);
+    const timer = window.setTimeout(() => {
+      flushSync(() => setLeaving(null));
+      stageRef.current?.getBoundingClientRect();
+      setOpen(around(index));
+    }, LEAVE_MS);
     return () => window.clearTimeout(timer);
-  }, [leaving]);
+  }, [leaving, index]);
 
   // One page grid for the whole deck: its rules follow the open slide's bands, so they glide from slide to slide.
   // Story cards scroll, so there each slide draws its own.
@@ -191,11 +208,12 @@ export function Deck({
     };
   }, [index, compact]);
 
-  // A story card opens at its top, before it paints, wherever it was left.
+  // A story card opens at its top, before it paints, wherever it was left. Only cards scroll, and the write forces a layout.
   useLayoutEffect(() => {
+    if (!compact) return;
     const frame = stageRef.current?.children[index]?.querySelector<HTMLElement>("[data-frame]");
     if (frame) frame.scrollTop = 0;
-  }, [index]);
+  }, [index, compact]);
 
   // The address bar holds the open slide, so reloading or copying it lands here.
   useEffect(() => {
@@ -248,7 +266,8 @@ export function Deck({
     const root = rootRef.current;
     if (!root || overview) return;
     const onWheel = (event: WheelEvent) => {
-      if (event.ctrlKey) return;
+      // A list in a slide that scrolls itself (the states slide's) keeps the wheel.
+      if (event.ctrlKey || (event.target as Element).closest("dialog, [data-deck-scroll]")) return;
       const state = wheel.current;
       const now = performance.now();
       if (now < state.lockedUntil) return;
@@ -266,7 +285,12 @@ export function Deck({
   useEffect(() => {
     const onChange = () => setFullscreen(document.fullscreenElement === document.documentElement);
     // Printing lays out every slide as shown, so their entrances must be settled before the browser paginates.
-    const onBeforePrint = () => flushSync(() => setPrinting(true));
+    // They stay open after, until the next slide's turn parks them at rest.
+    const onBeforePrint = () =>
+      flushSync(() => {
+        setPrinting(true);
+        setOpen(EVERY_SLOT);
+      });
     const onAfterPrint = () => setPrinting(false);
     document.addEventListener("fullscreenchange", onChange);
     window.addEventListener("beforeprint", onBeforePrint);
@@ -281,8 +305,13 @@ export function Deck({
   // The controls follow a mouse to the bottom edge; a touch brings them up for a while.
   useEffect(() => {
     let timer = 0;
+    let near = false;
     const onMove = (event: PointerEvent) => {
-      if (event.pointerType === "mouse") setNearBottom(window.innerHeight - event.clientY < REVEAL_PX);
+      if (event.pointerType !== "mouse") return;
+      const next = window.innerHeight - event.clientY < REVEAL_PX;
+      if (next === near) return;
+      near = next;
+      setNearBottom(near);
     };
     const onDown = (event: PointerEvent) => {
       if (event.pointerType === "mouse") return;
@@ -290,7 +319,10 @@ export function Deck({
       window.clearTimeout(timer);
       timer = window.setTimeout(() => setTouched(false), TOUCH_SHOW_MS);
     };
-    const onLeave = () => setNearBottom(false);
+    const onLeave = () => {
+      near = false;
+      setNearBottom(false);
+    };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerdown", onDown);
     document.documentElement.addEventListener("mouseleave", onLeave);
@@ -300,6 +332,35 @@ export function Deck({
       window.removeEventListener("pointerdown", onDown);
       document.documentElement.removeEventListener("mouseleave", onLeave);
     };
+  }, []);
+
+  // Laid out once, hidden, when the controls first rise and the Slides button comes in reach, so its first opening
+  // reuses that layout rather than making its own. Not while the page settles, where it would stall an entrance.
+  const overviewWarm = useRef(false);
+  useEffect(() => {
+    const overview = overviewRef.current;
+    if (!overviewDrawn || !controls || !overview || overviewWarm.current) return;
+    overview.setAttribute("data-warming", "");
+    let raf = requestAnimationFrame(() => {
+      raf = requestAnimationFrame(() => {
+        overviewWarm.current = true;
+        overview.removeAttribute("data-warming");
+      });
+    });
+    return () => {
+      cancelAnimationFrame(raf);
+      overview.removeAttribute("data-warming");
+    };
+  }, [overviewDrawn, controls]);
+
+  useEffect(() => {
+    const draw = () => startTransition(() => setOverviewDrawn(true));
+    if (typeof requestIdleCallback === "function") {
+      const idle = requestIdleCallback(draw, { timeout: 4000 });
+      return () => cancelIdleCallback(idle);
+    }
+    const timer = window.setTimeout(draw, 1500);
+    return () => window.clearTimeout(timer);
   }, []);
 
   // Opening the overview focuses the current slide's thumbnail.
@@ -312,7 +373,9 @@ export function Deck({
 
   const onPointerDown = (event: ReactPointerEvent) => {
     swipe.current =
-      event.pointerType === "mouse" ? null : { x: event.clientX, y: event.clientY, t: event.timeStamp };
+      event.pointerType === "mouse" || (event.target as Element).closest("dialog, [data-deck-scroll]")
+        ? null
+        : { x: event.clientX, y: event.clientY, t: event.timeStamp };
   };
 
   // A vertical drag scrolls the card, and the browser cancels the pointer, so only horizontal swipes and taps get here.
@@ -327,7 +390,7 @@ export function Deck({
       return;
     }
     if (!compact || Math.hypot(dx, dy) > TAP_SLOP || event.timeStamp - start.t > TAP_MS) return;
-    if ((event.target as Element).closest("a, button, input, select, textarea, label")) return;
+    if ((event.target as Element).closest("a, button, [role=button], input, select, textarea, label")) return;
     const { left, width } = event.currentTarget.getBoundingClientRect();
     const at = (event.clientX - left) / width;
     if (at < TAP_EDGE) go(index - 1);
@@ -369,6 +432,7 @@ export function Deck({
                 key={entry.id}
                 className={styles.slot}
                 data-state={current ? "current" : i < index ? "before" : "after"}
+                data-parked={!open.has(i) || undefined}
                 aria-roledescription="slide"
                 aria-label={`${i + 1} of ${TOTAL}: ${entry.title}`}
                 aria-hidden={!current && !printing}
@@ -379,6 +443,7 @@ export function Deck({
                   index={i}
                   total={TOTAL}
                   active={current || i === leaving || printing}
+                  near={printing || Math.abs(i - index) <= 1}
                   branded={printing}
                   grid={printing || compact}
                   compact={compact}
@@ -502,13 +567,21 @@ export function Deck({
         </div>
       </nav>
 
-      {overview ? (
-        <div ref={overviewRef} className={styles.overview} role="dialog" aria-modal="true" aria-label="All slides">
+      {overview || overviewDrawn ? (
+        <div
+          ref={overviewRef}
+          className={styles.overview}
+          data-open={overview || undefined}
+          inert={!overview}
+          role="dialog"
+          aria-modal="true"
+          aria-label="All slides"
+        >
           <ol className={styles.overviewGrid}>
             {SLIDES.map((entry, i) => (
               <li key={entry.id} className={styles.thumb} data-current={i === index || undefined}>
                 <div className={styles.thumbFrame} inert aria-hidden="true">
-                  <SlideView slide={entry} index={i} total={TOTAL} active policy={policy} />
+                  <SlideView slide={entry} index={i} total={TOTAL} active still policy={policy} />
                 </div>
                 <p className={styles.thumbLabel}>
                   <span>{pad(i + 1)}</span>

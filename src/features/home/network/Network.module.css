@@ -191,6 +191,14 @@
   }
 }
 
+/* The loops hold their phase until the sweep reveals them and whenever the section is out of view. */
+.root:not([data-shown]) .link,
+.root:not([data-shown]) .dot::after,
+.root[data-offscreen] .link,
+.root[data-offscreen] .dot::after {
+  animation-play-state: paused;
+}
+
 .site[data-status="pipeline"] .dot {
   width: 9px;
   height: 9px;

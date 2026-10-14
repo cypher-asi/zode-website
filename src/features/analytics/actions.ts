@@ -1,10 +1,10 @@
 "use server";
 
-import { refresh } from "next/cache";
+import { refresh, updateTag } from "next/cache";
 import { teamAccount } from "@/features/zrm/access";
 import { singleLine } from "@/lib/validation";
 import { isAnalyticsEvent } from "./events";
-import { deleteGoal, saveGoal } from "./goals";
+import { deleteGoal, GOALS_TAG, saveGoal } from "./goals";
 
 export interface GoalFormState {
   readonly error?: string;
@@ -34,6 +34,7 @@ export async function saveGoalAction(_prev: GoalFormState, formData: FormData): 
     console.error("[analytics] couldn't save goal", error);
     return { error: "Couldn't save the goal right now. Please try again." };
   }
+  updateTag(GOALS_TAG);
   refresh();
   return { ok: true };
 }
@@ -47,6 +48,7 @@ export async function deleteGoalAction(id: number): Promise<{ error?: string }> 
     console.error("[analytics] couldn't delete goal", error);
     return { error: "Couldn't remove the goal right now. Please try again." };
   }
+  updateTag(GOALS_TAG);
   refresh();
   return {};
 }

@@ -20,6 +20,8 @@ export type HeaderRoute = {
    * right-hand group sits beside it rather than over its close button.
    */
   readonly clear: number;
+  /** Folds the Back pill down to its arrow, as on the home page. */
+  readonly compactBack: boolean;
   readonly portal: boolean;
   /** Pages with branding of their own (the standalone log in), where the header fades out. */
   readonly hidden: boolean;
@@ -27,7 +29,15 @@ export type HeaderRoute = {
 
 export const BUY_COMPUTE: HeaderAction = { label: "Buy Compute", href: "/buy-compute" };
 
-const SITE: HeaderRoute = { placement: "wide", primary: BUY_COMPUTE, clear: 0, portal: false, hidden: false };
+const SITE: HeaderRoute = {
+  placement: "wide",
+  primary: BUY_COMPUTE,
+  clear: 0,
+  compactBack: false,
+  portal: false,
+  hidden: false,
+};
+const HOME: HeaderRoute = { ...SITE, compactBack: true };
 const DECK: HeaderRoute = { ...SITE, placement: "deck", primary: INVEST_ACTION };
 const PORTAL: HeaderRoute = { ...SITE, placement: "flush", portal: true };
 const HIDDEN: HeaderRoute = { ...SITE, hidden: true };
@@ -61,6 +71,7 @@ function under(pathname: string, path: string): boolean {
 
 /** The header for `pathname`; the same object for routes that share one, so callers can compare by identity. */
 export function headerFor(pathname: string): HeaderRoute {
+  if (pathname === "/") return HOME;
   if (isPortalPath(pathname)) return PORTAL;
   if (under(pathname, "/deck")) return DECK;
   const tool = Object.keys(TOOLS).find((path) => under(pathname, path));

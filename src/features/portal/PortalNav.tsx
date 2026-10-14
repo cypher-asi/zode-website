@@ -57,8 +57,9 @@ function ThemeToggle(): ReactElement {
 }
 
 /**
- * The portal's apps down a black bar in a frosted tray, with the theme toggle,
- * Settings and the account in a tray of their own at the foot; the sidebar beside it lists
+ * The portal's apps down a black bar in a frosted tray, with the theme toggle
+ * and Settings in a tray of their own at the foot (the account sits in the
+ * pinned header, right of Buy Compute); the sidebar beside it lists
  * whichever app you're in. On phones, a tab bar along the bottom: the first
  * apps, then More for the rest, which takes the icon and name of the app
  * you're in when it's one of them.
@@ -114,11 +115,6 @@ export function PortalNav({ access }: { access: NavAccess }): ReactElement {
           <div className={styles.group}>
             <ThemeToggle />
             <RailItem app={settings} current={current.id === "settings"} />
-            {/* Initials come from the `<html>` flags in CSS, as in PinnedHeader, so they never pop in at hydration. */}
-            <Link href={settings.href} className={styles.avatar}>
-              <PortalIcon name="person" className={styles.avatarGlyph} />
-              <span className={styles.tooltip}>Account</span>
-            </Link>
           </div>
         </div>
       </div>

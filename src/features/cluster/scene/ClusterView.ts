@@ -123,8 +123,11 @@ export class ClusterView {
   private readonly structMat: LineMaterial;
   private readonly detailMat: LineMaterial;
   private readonly observer: ResizeObserver;
+  private readonly visibility: IntersectionObserver;
 
   private state: ViewState | null = null;
+  /** False while the viewport is scrolled out of view; frames wait until it returns. */
+  private visible = true;
   private racks: RackObject[] = [];
   private rackBatch: Batch | null = null;
   private floorBatch: Batch | null = null;
@@ -194,6 +197,16 @@ export class ClusterView {
 
     this.observer = new ResizeObserver(() => this.resize());
     this.observer.observe(container);
+    this.visibility = new IntersectionObserver(([entry]) => {
+      this.visible = entry.isIntersecting;
+      if (this.visible) {
+        this.invalidate();
+      } else {
+        cancelAnimationFrame(this.raf);
+        this.raf = 0;
+      }
+    });
+    this.visibility.observe(container);
     this.resize();
   }
 
@@ -228,6 +241,7 @@ export class ClusterView {
   dispose() {
     cancelAnimationFrame(this.raf);
     this.observer.disconnect();
+    this.visibility.disconnect();
     this.controls.dispose();
     for (const b of [this.rackBatch, this.floorBatch, this.cableBatch, this.highlightBatch]) b?.dispose();
     this.fillMat.dispose();
@@ -616,7 +630,7 @@ export class ClusterView {
   }
 
   private invalidate() {
-    if (!this.raf) this.raf = requestAnimationFrame(this.tick);
+    if (!this.raf && this.visible) this.raf = requestAnimationFrame(this.tick);
   }
 
   private tick = (now: number) => {

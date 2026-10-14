@@ -50,7 +50,6 @@
  * cell's overlaps across the 1px gap, so the lines fade in with the cards.
  * Their titles take the display face in Light.
  */
-.newsGrid,
 .facts,
 .deals,
 .stackBar {
@@ -677,7 +676,19 @@
 
 /* The bottleneck in red, the hairlines either side of it too. */
 .chainStep[data-hard] {
+  position: relative;
+  isolation: isolate;
   color: var(--alarm);
+}
+
+/* The glow, a layer under the row that fades rather than a background that recolours, so the pulse stays off the main thread. */
+.chainStep[data-hard]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-color: #2a100e;
+  opacity: 0;
 }
 
 .chainStep[data-hard],
@@ -686,7 +697,7 @@
 }
 
 @media screen and (prefers-reduced-motion: no-preference) {
-  .slide[data-active] .chainStep[data-hard] {
+  .slide[data-active] .chainStep[data-hard]::before {
     animation: alarm-glow 1600ms ease-in-out infinite;
   }
 
@@ -697,7 +708,7 @@
 
 @keyframes alarm-glow {
   50% {
-    background-color: #2a100e;
+    opacity: 1;
   }
 }
 
@@ -720,14 +731,60 @@
   grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
 }
 
-/* Moratorium status in steps of one red, mixed into the ground so a tile's fill and stroke match. */
+/*
+ * Moratorium status in steps of one red, mixed into the ground so a tile's
+ * fill and stroke match. Map and key in halves, split by a page-grid rule as
+ * the problems slide's.
+ */
 .chartBody[data-split="map"] {
   --alarm: #f04438;
   --alarm-2: color-mix(in srgb, var(--alarm) 60%, var(--bg));
   --alarm-3: color-mix(in srgb, var(--alarm) 32%, var(--bg));
   --alarm-4: color-mix(in srgb, var(--alarm) 14%, var(--bg));
+  --split-gap: calc(5 * var(--u));
 
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  position: relative;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--split-gap);
+}
+
+.chartBody[data-split="map"]::after {
+  content: "";
+  position: absolute;
+  top: calc(-1.8 * var(--u) - var(--pip) / 2);
+  bottom: calc(-1.2 * var(--u) - var(--pip) / 2);
+  left: calc(50% - var(--pip) / 2);
+  width: var(--pip);
+  background:
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 top 0 / var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 bottom 0 / var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--rule), var(--rule)) center / 1px 100% no-repeat;
+  pointer-events: none;
+}
+
+.chartBody[data-split="map"] .side :is(.statLabel, .fine) {
+  text-wrap: balance;
+}
+
+/* The policy figures side by side under a hairline, and the fine print set at the foot of the column. */
+.policyStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(2 * var(--u));
+  padding-top: calc(1.4 * var(--u));
+  border-top: 1px solid var(--rule);
+}
+
+.side .policyStats .stat {
+  padding-top: 0;
+}
+
+.chartBody[data-split="map"] .side {
+  align-self: stretch;
+}
+
+.chartBody[data-split="map"] .side > .fine:last-child {
+  margin-top: auto;
 }
 
 /* A chart takes the column's width but gives up height on windows wider than 16:9. */
@@ -855,13 +912,52 @@
   list-style: none;
 }
 
+/*
+ * Each entry toggles its list (PolicyPanel.tsx): tinted on hover and while
+ * pressed. The padding reaches past the column so the swatches stay on its
+ * edge.
+ */
 .status {
+  --pad: calc(0.6 * var(--u));
+
   display: grid;
   grid-template-columns: calc(1.2 * var(--u)) minmax(0, 1fr) auto;
   align-items: center;
   gap: calc(0.9 * var(--u));
-  padding: calc(0.55 * var(--u)) 0;
+  width: calc(100% + 2 * var(--pad));
+  margin: 0 calc(-1 * var(--pad));
+  padding: calc(0.55 * var(--u)) var(--pad);
+  border: 0;
+  background: none;
+  font: inherit;
   font-size: calc(0.92 * var(--u));
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.status:disabled {
+  cursor: default;
+}
+
+@media (hover: hover) {
+  .status:not(:disabled):hover {
+    background: var(--tint);
+  }
+}
+
+.status[aria-pressed="true"] {
+  background: var(--tint);
+}
+
+/* The open panel covers the column but not the entries' overhang, so they're left plain under it. */
+.slide:not([data-compact]) .side[data-open] .status {
+  background: none;
+}
+
+.status:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
 }
 
 .swatch {
@@ -870,29 +966,29 @@
   border: 1px solid var(--rule-strong);
 }
 
-.status[data-status="statewide"] .swatch {
+:is(.status, .measure)[data-status="statewide"] .swatch {
   border-color: var(--alarm);
   background: var(--alarm);
 }
 
-.status[data-status="partial"] .swatch {
+:is(.status, .measure)[data-status="partial"] .swatch {
   border-color: var(--alarm-2);
   background: var(--alarm-2);
 }
 
-.status[data-status="pending"] .swatch {
+:is(.status, .measure)[data-status="pending"] .swatch {
   border-color: var(--alarm-3);
   background: var(--alarm-3);
 }
 
-.status[data-status="failed"] .swatch {
+:is(.status, .measure)[data-status="failed"] .swatch {
   border-style: dashed;
   border-color: var(--alarm-3);
   background: var(--alarm-4);
 }
 
 /* The tiles' count of local pauses, then their grid marks (charts.module.css). */
-.status[data-status="local"] .swatch {
+:is(.status, .measure)[data-status="local"] .swatch {
   display: grid;
   place-items: center;
   font-family: var(--font-mono);
@@ -901,7 +997,7 @@
   color: var(--fg-2);
 }
 
-.status:is([data-status="paused"], [data-status="signoff"]) .swatch {
+:is(.status, .measure):is([data-status="paused"], [data-status="signoff"]) .swatch {
   width: calc(0.7 * var(--u));
   height: calc(0.7 * var(--u));
   justify-self: center;
@@ -909,7 +1005,7 @@
   border-radius: 50%;
 }
 
-.status[data-status="paused"] .swatch {
+:is(.status, .measure)[data-status="paused"] .swatch {
   background: var(--fg);
 }
 
@@ -917,6 +1013,219 @@
   font-family: var(--font-mono);
   font-size: calc(0.8 * var(--u));
   color: var(--fg-2);
+}
+
+/*
+ * A state's or legend entry's measures (PolicyPanel.tsx), drawn over the
+ * whole side column: the head stays, the list scrolls in the height left.
+ * Printed, the figures stand.
+ */
+.chartBody[data-split="map"] .side {
+  position: relative;
+}
+
+.policyPanel {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+/* Positioned parent the overlay scrollbar draws into. */
+.panelFrame {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Native bar hidden; OverlayScrollbar floats over the list's right edge, clear of its text. */
+.panelList {
+  flex: 1;
+  min-height: 0;
+  padding-right: calc(1 * var(--u));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.panelList::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.policyPanel:focus {
+  outline: none;
+}
+
+/* What the panel covers goes out first, and the panel comes in once it's gone, so the two never show through each other. */
+.slide:not([data-compact]) .side[data-open] > :not(.policyPanel) {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .slide:not([data-compact]) .side[data-open] > :not(.policyPanel) {
+    transition: opacity 160ms ease;
+  }
+
+  .policyPanel {
+    animation: panelIn 240ms cubic-bezier(0.2, 0.7, 0.2, 1) 160ms backwards;
+  }
+}
+
+@keyframes panelIn {
+  from {
+    opacity: 0;
+    translate: calc(1.2 * var(--u)) 0;
+  }
+}
+
+@media print {
+  .policyPanel {
+    display: none;
+  }
+}
+
+.panelHead {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: calc(1 * var(--u));
+  padding-bottom: calc(0.8 * var(--u));
+  border-bottom: 1px solid var(--rule);
+  background: var(--bg);
+}
+
+.panelHead .h3 {
+  --h3-size: calc(1.4 * var(--u));
+}
+
+.panelHead .label {
+  margin-top: calc(0.4 * var(--u));
+}
+
+.panelClose {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: calc(2 * var(--u));
+  height: calc(2 * var(--u));
+  padding: 0;
+  border: 1px solid var(--rule-strong);
+  background: none;
+  color: var(--fg);
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+
+.panelClose svg {
+  width: 40%;
+  height: 40%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: square;
+  vector-effect: non-scaling-stroke;
+}
+
+.panelClose:hover {
+  border-color: var(--fg);
+  background: var(--rule);
+}
+
+.panelClose:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.panelGroup > .label {
+  padding: calc(0.6 * var(--u)) 0 calc(0.4 * var(--u));
+}
+
+.measures {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.measure {
+  display: grid;
+  grid-template-columns: calc(0.9 * var(--u)) minmax(0, 1fr);
+  gap: calc(0.8 * var(--u));
+  padding: calc(0.6 * var(--u)) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.measure .swatch {
+  width: calc(0.9 * var(--u));
+  height: calc(0.9 * var(--u));
+  margin-top: calc(0.2 * var(--u));
+}
+
+.measureText {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.25 * var(--u));
+  min-width: 0;
+}
+
+.measureTitle {
+  font-size: calc(0.86 * var(--u));
+  line-height: 1.35;
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
+a.measureTitle {
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+  text-underline-offset: 0.2em;
+}
+
+@media (hover: hover) {
+  a.measureTitle:hover {
+    text-decoration-color: currentColor;
+  }
+}
+
+a.measureTitle:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.newTab {
+  color: var(--fg-2);
+}
+
+.measureMeta {
+  font-family: var(--font-mono);
+  font-size: calc(0.6 * var(--u));
+  letter-spacing: 0.04em;
+  color: var(--fg-2);
+}
+
+.measureNote {
+  font-size: calc(0.74 * var(--u));
+  line-height: 1.45;
+  color: var(--fg-2);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* News: the headline figure over the TV, then the coverage. */
@@ -937,9 +1246,28 @@
   font-size: calc(6.4 * var(--u));
 }
 
-/* The blocked total in the policy slides' red, as the moratorium map's. */
+/*
+ * The blocked total outlined in the policy slides' red, as the moratorium
+ * map's, its glyphs filled with a translucent red that glows, pulsing as the
+ * macro slide's bottleneck does.
+ */
 .newsLead .statValue[data-highlight] {
-  color: #f04438;
+  color: rgba(240, 68, 56, 0.28);
+  -webkit-text-stroke: max(1px, calc(0.08 * var(--u))) #f04438;
+  text-shadow: 0 0 calc(0.6 * var(--u)) rgba(240, 68, 56, 0.35);
+}
+
+@media screen and (prefers-reduced-motion: no-preference) {
+  .slide[data-active] .newsLead .statValue[data-highlight] {
+    animation: alarm-fill 1600ms ease-in-out infinite;
+  }
+}
+
+@keyframes alarm-fill {
+  50% {
+    color: rgba(240, 68, 56, 0.5);
+    text-shadow: 0 0 calc(1 * var(--u)) rgba(240, 68, 56, 0.55);
+  }
 }
 
 /* Takes the column's height left under the figure, the drawing set in its bottom-left corner. */
@@ -948,12 +1276,18 @@
   min-height: calc(10 * var(--u));
 }
 
+/* Hairlines between the cards and none round the outside, drawn behind them as the macro quadrant's. */
 .newsGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-template-rows: repeat(2, minmax(0, 1fr));
   margin: 0;
+  padding: 0;
   list-style: none;
+  background:
+    linear-gradient(var(--rule), var(--rule)) left 33.333% top 0 / 1px 100% no-repeat,
+    linear-gradient(var(--rule), var(--rule)) left 66.667% top 0 / 1px 100% no-repeat,
+    linear-gradient(var(--rule), var(--rule)) center / 100% 1px no-repeat;
 }
 
 .newsCard {
@@ -961,13 +1295,15 @@
   flex-direction: column;
   gap: calc(0.6 * var(--u));
   height: 100%;
+  background: none;
+  box-shadow: none;
   color: inherit;
   text-decoration: none;
 }
 
 @media (hover: hover) {
   .newsCard:hover {
-    background: linear-gradient(var(--tint), var(--tint)), var(--card);
+    background: var(--tint);
   }
 }
 
@@ -1136,10 +1472,11 @@
 }
 
 /*
- * Problem and solution: two columns of cards, a row per problem so each
+ * Problem and solution: two columns of cells, a row per problem so each
  * answer sits level with what it answers, and an empty column between them
  * carrying an arrow drawn in the hairline colour. Rows share the height the
- * head leaves.
+ * head leaves, butted together with a hairline between them and none round
+ * the outside, as the figure cards.
  */
 .problemSolution {
   --alarm: #f04438;
@@ -1147,7 +1484,6 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) calc(6 * var(--u)) minmax(0, 1fr);
   grid-template-rows: auto repeat(3, minmax(0, 1fr));
-  row-gap: calc(1.2 * var(--u));
 }
 
 .psHead,
@@ -1155,6 +1491,10 @@
   display: grid;
   grid-column: 1 / -1;
   grid-template-columns: subgrid;
+}
+
+.psHead {
+  padding-bottom: calc(1.2 * var(--u));
 }
 
 .psHead .label:last-child {
@@ -1169,8 +1509,10 @@
 .psSolution {
   min-height: 0;
   padding: calc(1.2 * var(--u)) calc(1.6 * var(--u));
-  background: var(--card);
-  box-shadow: 0 0 0 1px var(--rule);
+}
+
+.psRow + .psRow :is(.psProblem, .psSolution) {
+  border-top: 1px solid var(--rule);
 }
 
 /* The problem: its drawing, then its name over one figure. */
@@ -1265,7 +1607,7 @@
 }
 
 .solutionFlags {
-  --flag-h: calc(0.9 * var(--u));
+  --flag-h: calc(1.26 * var(--u));
 
   position: absolute;
   right: 0;
@@ -1369,16 +1711,31 @@
   border: 1px solid var(--rule);
 }
 
-/* Stack: the home page's exploded plates, a label leading off each (FullStack.module.css reads these). */
-/* A definite row, so the figure takes its width from the row's height, not the drawing's 300px intrinsic width. */
+/*
+ * Stack: the home page's exploded plates, a label leading off each
+ * (FullStack.module.css reads these). A size container with a definite row,
+ * so the drawing takes the row's height, not its 300px intrinsic width:
+ * `--art` is its width (`--ratio`, width over height, comes from Slide.tsx)
+ * and `--px` one of the home page's pixels, where it's 352px wide. The bottom
+ * margin evens out `.main`'s padding, so the row centres between the head's
+ * and foot's rules.
+ */
 .stack {
+  --art: calc(100cqh * var(--ratio));
+  --px: calc(var(--art) / 352);
+  --text-w: calc(400 * var(--px));
+
   display: grid;
-  grid-template-columns: calc(28 * var(--u)) minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr);
-  gap: calc(4 * var(--u));
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  margin-bottom: calc(0.6 * var(--u));
+  container-type: size;
 }
 
-/* Above the figure, whose full-width box would otherwise swallow text selection. */
+/*
+ * Mirrors the labels: as wide as their text, centred in the room left of the
+ * plates as they are in the room right of them. Above the figure, whose
+ * full-width box would otherwise swallow text selection.
+ */
 .lede {
   position: relative;
   z-index: 1;
@@ -1387,6 +1744,8 @@
   flex-direction: column;
   gap: 1em;
   align-self: center;
+  width: var(--text-w);
+  margin-left: calc((50% - var(--art) / 2 - var(--text-w)) / 2);
   font-size: calc(1.15 * var(--u));
   line-height: 1.55;
   color: var(--fg-2);
@@ -1397,23 +1756,24 @@
 }
 
 /*
- * Spans both columns so the plates sit on the slide's center, whatever the
- * lede's width, and the labels run to the slide's edge. A size container, so
- * the drawing takes the row's height: `--ratio` is its width over height.
+ * Full width, so the plates sit on the slide's center and the labels run to
+ * its edge. The labels scale with the drawing, as on the home page, since
+ * their pitch is the plates' and larger type closes the gaps between them.
+ * The plates sit low in their viewBox (34 units clear above for the tallest
+ * detail and a hovered plate's lift, 10 below, of 668), so `translate` centres
+ * what's drawn rather than the box.
  */
 .stackFigure {
   --ink: var(--color-ink);
-  --art: calc(100cqh * var(--ratio));
   --art-max: var(--art);
   --lead: calc(5.6 * var(--u));
   --label-end: 0px;
-  --px: calc(var(--u) / 16);
-  --text-base: calc(0.9 * var(--u));
-  --eyebrow-size: calc(0.62 * var(--u));
+  --text-base: calc(14 * var(--px));
+  --eyebrow-size: calc(11 * var(--px));
 
-  grid-area: 1 / 1 / 2 / -1;
+  grid-area: 1 / 1;
   height: 100%;
-  container-type: size;
+  translate: 0 -1.8%;
 }
 
 /* Steps: numbered figure cards in one panel, as the design principles slide's. */
@@ -1709,21 +2069,6 @@
     var(--rule);
 }
 
-/* The last year's bar: a flat stroke at the bars' weight, cut square by the cell, with a ripple parked off its left end that the slide runs across at random (see PlanWave). */
-.planWave {
-  display: block;
-  width: 100%;
-  height: calc(1.6 * var(--u));
-  overflow: hidden;
-}
-
-.planWaveLine {
-  fill: none;
-  stroke: var(--fg);
-  stroke-width: calc(0.5 * var(--u));
-  vector-effect: non-scaling-stroke;
-}
-
 .planValue {
   font-size: calc(1.2 * var(--u));
   line-height: 1;
@@ -1900,7 +2245,6 @@
   flex-direction: column;
   gap: calc(1.6 * var(--u));
   padding: calc(1.4 * var(--u)) calc(1.6 * var(--u)) calc(1.5 * var(--u));
-  background: var(--card);
   box-shadow: 0 0 0 1px var(--rule);
 }
 
@@ -1921,7 +2265,11 @@
 .blocks {
   --block: calc(0.9 * var(--u));
   --block-gap: calc(0.22 * var(--u));
-  --block-fill: var(--fg);
+  --block-line: max(1px, calc(0.08 * var(--u)));
+  /* Lit from above and to the left, so the top is lightest and the right face darker than it. */
+  --face-top: color-mix(in srgb, var(--fg) 45%, var(--bg));
+  --face-left: var(--fg);
+  --face-right: color-mix(in srgb, var(--fg) 72%, var(--bg));
 
   display: flex;
   flex-direction: column;
@@ -1937,29 +2285,63 @@
   list-style: none;
 }
 
+/* Sized to the cube's viewBox (CUBE_FACES in Slide.tsx), 26 wide by 30 tall. */
 .block {
   position: relative;
-  width: var(--block);
+  width: calc(var(--block) * 26 / 30);
   height: var(--block);
-  background: var(--block-fill);
 }
 
-.contractCard:not([data-size]) .blocks {
-  --block-fill: var(--accent);
-}
-
-/* The remainder: an empty block, filled from the left to its share of a cluster. */
-.block[data-part] {
-  background: none;
-  box-shadow: inset 0 0 0 1px var(--rule-strong);
-}
-
-.block[data-part]::before {
-  content: "";
+.block svg {
   position: absolute;
-  inset: 0 auto 0 0;
-  width: calc(var(--fill) * 100%);
-  background: var(--block-fill);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.block polygon {
+  stroke: var(--fg);
+  stroke-width: var(--block-line);
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.block [data-face="top"] {
+  fill: var(--face-top);
+}
+
+.block [data-face="left"] {
+  fill: var(--face-left);
+}
+
+.block [data-face="right"] {
+  fill: var(--face-right);
+}
+
+/* The signed figure and its cubes in outline, so they read apart from the LOIs' solid cubes. */
+.contractCard:not([data-size]) .blocks {
+  --block-line: max(1.5px, calc(0.12 * var(--u)));
+  --face-top: none;
+  --face-left: none;
+  --face-right: none;
+}
+
+/* The fill painted over the stroke, so only its outer half shows and overlapping glyph contours don't draw lines inside. */
+.contractCard:not([data-size]) .statValue[data-highlight] {
+  color: var(--bg);
+  -webkit-text-stroke: max(3px, calc(0.3 * var(--u))) var(--fg);
+  paint-order: stroke fill;
+}
+
+/* The remainder: an empty cube, filled from the left to its share of a cluster. The clip leaves room for the stroke past the box. */
+.block[data-part] svg:first-child polygon {
+  fill: none;
+  stroke: var(--rule-strong);
+}
+
+.block[data-part] svg:last-child {
+  clip-path: inset(-0.5em calc((1 - var(--fill)) * 100%) -0.5em -0.5em);
 }
 
 .blockCount {
@@ -2021,6 +2403,7 @@
   display: block;
   width: auto;
   height: calc(var(--h) * var(--u));
+  translate: 0 calc(var(--shift) * 100%);
   filter: brightness(0);
   opacity: 0.6;
 }
@@ -2060,21 +2443,46 @@
   gap: calc(2 * var(--u));
 }
 
-.table {
+/*
+ * Competitive advantage: one panel of cells joined by hairlines, as the unit
+ * slide's cards, its rows sharing the height the note leaves. Each cell
+ * draws the hairlines on its right and bottom, the first column and the head
+ * row their left and top too, so the corner over the axes stays open. ZODE's
+ * column is set on ink, its rows ruled in the ink ground's hairline.
+ */
+.compareBody {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: calc(1.2 * var(--u));
+}
+
+.compare {
   width: 100%;
-  border-collapse: collapse;
-  font-size: calc(1.1 * var(--u));
+  height: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
   font-variant-numeric: tabular-nums;
 }
 
-.table th,
-.table td {
-  padding: calc(1 * var(--u)) calc(1.2 * var(--u)) calc(1 * var(--u)) 0;
+.compare th,
+.compare td {
+  padding: calc(0.5 * var(--u)) calc(1.4 * var(--u));
+  border-right: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
   font-weight: 400;
   text-align: left;
+  vertical-align: middle;
 }
 
-.table thead th {
+.compare thead td {
+  width: calc(15 * var(--u));
+}
+
+.compare thead th {
+  height: calc(2.8 * var(--u));
+  padding-block: 0;
+  border-top: 1px solid var(--rule);
   font-family: var(--font-mono);
   font-size: calc(0.66 * var(--u));
   font-weight: 500;
@@ -2083,36 +2491,65 @@
   color: var(--fg-2);
 }
 
-.table tbody th {
-  font-weight: 500;
-}
-
 .compare tbody th {
-  width: calc(16 * var(--u));
+  border-left: 1px solid var(--rule);
   font-family: var(--font-mono);
   font-size: calc(0.7 * var(--u));
   font-weight: 500;
   letter-spacing: var(--eyebrow-tracking);
   text-transform: uppercase;
-  color: var(--fg-2);
+  color: var(--fg);
 }
 
-.compare td {
-  color: var(--fg-2);
+/* The ink column draws the edge between it and the traditional one. */
+.compare :is(th, td):nth-child(2) {
+  border-right: 0;
 }
 
 .compare [data-us] {
-  padding-left: calc(1.6 * var(--u));
-  font-weight: 500;
+  --fg: var(--color-text-inverse);
+  --fg-2: var(--color-text-inverse-secondary);
+
+  border-color: var(--color-ink) var(--color-ink) #2e2e2f;
+  background: var(--color-ink);
   color: var(--fg);
 }
 
-.compare thead [data-us] {
-  color: var(--fg);
+.compare tbody tr:last-child [data-us] {
+  border-bottom-color: var(--color-ink);
 }
 
-.compare + .fine {
-  margin-top: calc(1.2 * var(--u));
+/* The highlighted axis on the paper grey, ZODE's cell still on ink, its figures larger. */
+.compare tr[data-highlight] > :not([data-us]) {
+  background: var(--color-paper);
+}
+
+.compare tr[data-highlight] .compareValue {
+  font-size: calc(2.2 * var(--u));
+  letter-spacing: -0.025em;
+}
+
+.compareMark {
+  display: block;
+  width: auto;
+  height: calc(0.9 * var(--u));
+}
+
+.compareCell {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.35 * var(--u));
+}
+
+.compareValue {
+  font-size: calc(1.35 * var(--u));
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+
+.compareCell .statLabel {
+  max-width: none;
+  font-size: calc(0.6 * var(--u));
 }
 
 /* Finance: the deals in a row, then the example's capital stack as one bar under them. */
@@ -3456,6 +3893,10 @@
   gap: 28px;
 }
 
+.slide[data-compact] .chartBody[data-split="map"]::after {
+  display: none;
+}
+
 .slide[data-compact] .map {
   max-width: none;
 }
@@ -3466,6 +3907,11 @@
 
 .slide[data-compact] .side .statValue {
   font-size: 30px;
+}
+
+.slide[data-compact] .policyStats {
+  gap: 16px;
+  padding-top: 18px;
 }
 
 .slide[data-compact] .drawnStat {
@@ -3492,9 +3938,11 @@
 }
 
 .slide[data-compact] .status {
+  --pad: 8px;
+
   grid-template-columns: 12px minmax(0, 1fr) auto;
   gap: 12px;
-  padding: 6px 0;
+  padding: 8px var(--pad);
   font-size: 14px;
 }
 
@@ -3507,13 +3955,86 @@
   font-size: 9px;
 }
 
-.slide[data-compact] .status:is([data-status="paused"], [data-status="signoff"]) .swatch {
+.slide[data-compact] :is(.status, .measure):is([data-status="paused"], [data-status="signoff"]) .swatch {
   width: 9px;
   height: 9px;
 }
 
 .slide[data-compact] .count {
   font-size: var(--text-xs);
+}
+
+/* The list runs on down the card, which scrolls, in place of the figures; its head is held at the card's top so the close stays in reach. */
+.slide[data-compact] .policyPanel {
+  position: static;
+  display: block;
+  animation: none;
+  scroll-margin-top: calc(2.4 * var(--u));
+}
+
+.slide[data-compact] .panelList {
+  padding-right: 0;
+  overflow: visible;
+}
+
+@media screen {
+  .slide[data-compact] .side[data-open] .policyStats {
+    display: none;
+  }
+}
+
+.slide[data-compact] .panelHead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  gap: 16px;
+  padding: 18px 0 10px;
+  border-top: 1px solid var(--rule);
+}
+
+.slide[data-compact] .panelHead .h3 {
+  --h3-size: 21px;
+}
+
+.slide[data-compact] .panelHead .label {
+  margin-top: 6px;
+}
+
+.slide[data-compact] .panelClose {
+  width: 40px;
+  height: 40px;
+}
+
+.slide[data-compact] .panelGroup > .label {
+  padding: 12px 0 6px;
+}
+
+.slide[data-compact] .measure {
+  grid-template-columns: 10px minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.slide[data-compact] .measure .swatch {
+  width: 10px;
+  height: 10px;
+  margin-top: 4px;
+}
+
+.slide[data-compact] .measureText {
+  gap: 4px;
+}
+
+.slide[data-compact] .measureTitle {
+  font-size: 15px;
+}
+
+.slide[data-compact] .measureMeta {
+  font-size: var(--text-2xs);
+}
+
+.slide[data-compact] .measureNote {
+  font-size: 13px;
 }
 
 /* News: the lead figure, then a card per row. */
@@ -3540,10 +4061,13 @@
 .slide[data-compact] .newsGrid {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: none;
+  gap: 1px;
+  background: var(--rule);
 }
 
 .slide[data-compact] .newsCard {
   gap: 8px;
+  background: var(--bg);
 }
 
 .slide[data-compact] .newsCard .h3 {
@@ -3635,6 +4159,9 @@
 .slide[data-compact] .psProblem,
 .slide[data-compact] .psSolution {
   padding: 16px 20px;
+  border-top: 0;
+  background: var(--card);
+  box-shadow: 0 0 0 1px var(--rule);
 }
 
 .slide[data-compact] .psProblem {
@@ -3693,7 +4220,7 @@
 }
 
 .slide[data-compact] .solutionFlags {
-  --flag-h: 16px;
+  --flag-h: 22.4px;
 
   position: static;
 }
@@ -3742,6 +4269,13 @@
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: none;
   gap: 24px;
+  margin-bottom: 0;
+  container-type: normal;
+}
+
+.slide[data-compact] .stack .lede {
+  width: auto;
+  margin-left: 0;
 }
 
 /* The home page's restack (FullStack.module.css), its figure following the lede and sized by its content. */
@@ -3754,7 +4288,7 @@
   grid-area: auto;
   height: auto;
   margin-top: 0;
-  container-type: normal;
+  translate: none;
 }
 
 /* Unit: the render first, then the cards one to a row. */
@@ -3840,7 +4374,6 @@
 
 .slide[data-compact] .siteText .statLabel,
 .slide[data-compact] .siteTotal,
-.slide[data-compact] .siteFoot .fine,
 .slide[data-compact] .planYear {
   font-size: var(--text-2xs);
 }
@@ -3877,14 +4410,6 @@
 
 .slide[data-compact] .planBar {
   height: 4px;
-}
-
-.slide[data-compact] .planWave {
-  height: 14px;
-}
-
-.slide[data-compact] .planWaveLine {
-  stroke-width: 4px;
 }
 
 .slide[data-compact] .planValue {
@@ -3924,7 +4449,7 @@
 }
 
 .slide[data-compact] .blocks {
-  --block: 10px;
+  --block: 12px;
   --block-gap: 3px;
 
   gap: 8px;
@@ -3980,54 +4505,65 @@
   font-size: 16px;
 }
 
-/* Tables become a row per entry: the comparison puts each row's label over its two cells. */
-.slide[data-compact] .table {
+/* The comparison: each axis across the card over its two cells, traditional then ZODE, the corner dropped. */
+.slide[data-compact] .compareBody {
+  grid-template-rows: none;
+  gap: 16px;
+}
+
+.slide[data-compact] .compare {
   display: block;
-  font-size: 15px;
+  height: auto;
 }
 
-.slide[data-compact] .table :is(thead, tbody, tfoot) {
+.slide[data-compact] .compare :is(thead, tbody) {
   display: block;
-}
-
-.slide[data-compact] .table tr {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 4px 16px;
-  padding: 12px 0;
-  border-top: 1px solid var(--rule);
-}
-
-.slide[data-compact] .table thead tr {
-  padding-top: 0;
-  border-top: 0;
-}
-
-.slide[data-compact] .table :is(th, td) {
-  padding: 0;
-}
-
-.slide[data-compact] .table thead th {
-  font-size: var(--text-2xs);
-}
-
-.slide[data-compact] .table td:empty {
-  display: none;
 }
 
 .slide[data-compact] .compare tr {
+  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.slide[data-compact] .compare :is(th, td) {
+  padding: 12px 14px;
+}
+
+.slide[data-compact] .compare thead td {
+  display: none;
+}
+
+.slide[data-compact] .compare thead th {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding-block: 0;
+  font-size: var(--text-2xs);
 }
 
 .slide[data-compact] .compare tbody th {
   grid-column: 1 / -1;
-  width: auto;
   font-size: var(--text-2xs);
 }
 
-.slide[data-compact] .compare [data-us] {
-  padding-left: 12px;
+.slide[data-compact] .compare :is(th, td):nth-child(2) {
   border-left: 1px solid var(--rule);
+}
+
+.slide[data-compact] .compareMark {
+  height: 13px;
+}
+
+.slide[data-compact] .compareValue {
+  font-size: 18px;
+}
+
+.slide[data-compact] .compare tr[data-highlight] .compareValue {
+  font-size: 26px;
+}
+
+.slide[data-compact] .compareCell .statLabel {
+  font-size: var(--text-2xs);
 }
 
 /* Finance: the deals and the bar both stack, the bar's layers sized by their figures rather than their widths. */
@@ -4296,4 +4832,13 @@
     translate: calc(-4 * var(--u)) 0;
     transition-duration: 0ms;
   }
+}
+
+/* A still slide (`data-still`, a thumbnail) shows as settled: every entrance at its end, nothing moving, the shared drawings' included. */
+.slide[data-still],
+.slide[data-still] *,
+.slide[data-still] *::before,
+.slide[data-still] *::after {
+  transition: none !important;
+  animation: none !important;
 }

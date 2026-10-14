@@ -1,11 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState, type CSSProperties, type ReactElement, type ReactNode } from "react";
+import {
+  memo,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { NorthAmericaFlags } from "@/components/ui/NorthAmericaFlags";
 import { OverlayScrollbar } from "@/components/ui/OverlayScrollbar";
 import { CabinArt, VIEW as CABIN_VIEW } from "@/features/zode-drawings/CabinArt";
 import { Principles } from "@/features/home/principles/Principles";
 import { StackFigure } from "@/features/home/stack/FullStack";
+import { VIEW as STACK_VIEW } from "@/features/home/stack/StackArt";
 import { MacroArt } from "./art/MacroArt";
 import { MemeTV } from "./art/MemeTV";
 import { SiteMap } from "./art/SiteMap";
@@ -15,8 +25,10 @@ import { ShortfallByYear, ShortfallChart } from "./charts/ShortfallChart";
 import { StateTileMap } from "./charts/StateTileMap";
 import { TokenChart } from "./charts/TokenChart";
 import { DISCLAIMER, LEGAL_LEGEND, RAISE_NOTE } from "./disclaimer";
+import { useLocalPauses } from "./localPauses";
 import { BLOCKED, NEWS } from "./news";
-import { GRID_LABELS, STATUS_LABELS, STATUS_ORDER, type GridGate, type PolicyMap, type PolicyState } from "./policyTypes";
+import { PolicyPanel, type PolicyChoice } from "./PolicyPanel";
+import { LEGEND, LEGEND_LABELS, type PolicyKey, type PolicyMap, type PolicyState } from "./policyTypes";
 import { AS_OF, MARKET_TIGHTNESS, SOURCES, sourceUrl, type Source, type SourceId } from "./research";
 import { SLIDES, type ContractSide, type Logo, type Slide, type Stat } from "./slides";
 import styles from "./Slide.module.css";
@@ -204,7 +216,17 @@ function Cover({ slide, active, compact }: { slide: Of<"cover">; active: boolean
  * captioned in the fewest words; on the right the statement, then the supply
  * chain from capital to offtake as rows, its bottleneck blinking red.
  */
-function Stats({ slide, active, compact }: { slide: Of<"stats">; active: boolean; compact: boolean }): ReactElement {
+function Stats({
+  slide,
+  active,
+  playing,
+  compact,
+}: {
+  slide: Of<"stats">;
+  active: boolean;
+  playing: boolean;
+  compact: boolean;
+}): ReactElement {
   return (
     <div className={styles.macro}>
       <div className={styles.macroLead}>
@@ -215,7 +237,7 @@ function Stats({ slide, active, compact }: { slide: Of<"stats">; active: boolean
               value: stat.value,
               label: stat.label,
               art: true,
-              figure: <MacroArt id={stat.art} playing={active} />,
+              figure: <MacroArt id={stat.art} playing={playing} />,
             })),
             {
               key: "tokens",
@@ -253,7 +275,7 @@ function Stats({ slide, active, compact }: { slide: Of<"stats">; active: boolean
             >
               <span className={styles.label}>{String(i + 1).padStart(2, "0")}</span>
               <div className={styles.chainFigure}>
-                <MacroArt id={step.art} hard={step.hard} playing={active} />
+                <MacroArt id={step.art} hard={step.hard} playing={playing} />
               </div>
               <span className={styles.chainText}>
                 <span className={styles.chainLabel}>{step.label}</span>
@@ -267,7 +289,7 @@ function Stats({ slide, active, compact }: { slide: Of<"stats">; active: boolean
   );
 }
 
-function Demand({ active, compact }: { active: boolean; compact: boolean }): ReactElement {
+function Demand({ active, playing, compact }: { active: boolean; playing: boolean; compact: boolean }): ReactElement {
   return (
     <div className={styles.chartBody}>
       <figure {...rise(2)} className={`${styles.rise} ${styles.figure}`}>
@@ -292,7 +314,7 @@ function Demand({ active, compact }: { active: boolean; compact: boolean }): Rea
           {MARKET_TIGHTNESS.map((item, i) => (
             <li key={item.label} {...rise(4 + i * 0.5)} className={`${styles.rise} ${styles.drawnStat}`}>
               <div className={styles.drawnFigure}>
-                <MacroArt id={item.art} playing={active} />
+                <MacroArt id={item.art} playing={playing} />
               </div>
               <div className={styles.drawnText}>
                 <span className={styles.statValue}>{item.value}</span>
@@ -326,15 +348,13 @@ function Shortfall({ active, compact }: { active: boolean; compact: boolean }): 
   );
 }
 
-const GATES: readonly GridGate[] = ["paused", "signoff"];
-
 type CitedStat = Stat & { source: string; cite: SourceId };
 
 function policyStats(policy: PolicyMap): CitedStat[] {
   const stats: CitedStat[] = [
     {
       value: String(policy.lawmakerStates),
-      label: "States where lawmakers moved to pause new data centers",
+      label: "States whose lawmakers moved to pause data centers",
       source: "ZODE, from NCSL and state legislatures",
       cite: "ncsl",
     },
@@ -344,8 +364,8 @@ function policyStats(policy: PolicyMap): CitedStat[] {
     stats.push({
       value: `${queue} GW`,
       label: peak
-        ? `Of large loads waiting on ERCOT, ${(queue / peak).toFixed(1)}× Texas\u2019s record peak`
-        : "Of large loads waiting on ERCOT",
+        ? `Large loads queued on ERCOT, ${(queue / peak).toFixed(1)}× its record peak`
+        : "Large loads queued on ERCOT",
       source: "ERCOT",
       cite: "ercot",
     });
@@ -353,48 +373,146 @@ function policyStats(policy: PolicyMap): CitedStat[] {
   return stats;
 }
 
-function States({ active, compact, policy }: { active: boolean; compact: boolean; policy: PolicyMap | null }): ReactElement {
+const isGate = (key: PolicyKey) => key === "paused" || key === "signoff";
+
+/** Which states hold a measure under a legend entry. */
+function holding(state: PolicyState, key: PolicyKey): boolean {
+  if (key === "local") return state.localCount > 0;
+  if (isGate(key)) return state.grid?.gate === key;
+  return state.actions.some((action) => action.status === key);
+}
+
+/**
+ * The policy map and its legend. A tracked state's tile or a legend entry
+ * opens its measures in a panel over the side column (PolicyPanel), which
+ * leaves what it covers inert; the same again, its close, Escape or a click
+ * on the map's empty ground shuts it, back on what opened it. Turning the
+ * slide shuts it too. The lists' local pauses load as the slide comes `near`.
+ */
+function States({
+  active,
+  near,
+  compact,
+  policy,
+}: {
+  active: boolean;
+  near: boolean;
+  compact: boolean;
+  policy: PolicyMap | null;
+}): ReactElement {
+  const panelId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [choice, setChoice] = useState<PolicyChoice | null>(null);
+  const pauses = useLocalPauses(policy !== null && (near || choice !== null));
+  const [shown, setShown] = useState(active);
+  if (shown !== active) {
+    setShown(active);
+    if (!active) setChoice(null);
+  }
   const states: PolicyState[] = policy ? Object.values(policy.states) : [];
   const count = (test: (state: PolicyState) => boolean) => states.filter(test).length;
-  const rows = [
-    ...STATUS_ORDER.map((status) => ({
-      key: status,
-      label: STATUS_LABELS[status],
-      n: count((state) => state.status === status),
-    })),
-    { key: "local", label: "Local pauses in effect", n: states.reduce((sum, state) => sum + state.local, 0) },
-    ...GATES.map((gate) => ({ key: gate, label: GRID_LABELS[gate], n: count((state) => state.grid?.gate === gate) })),
-  ];
+  const rows = LEGEND.map((key) => ({
+    key,
+    label: LEGEND_LABELS[key],
+    n:
+      key === "local"
+        ? states.reduce((sum, state) => sum + state.localCount, 0)
+        : count((state) => (isGate(key) ? state.grid?.gate === key : state.status === key)),
+  }));
+  const lit =
+    policy && choice?.key
+      ? new Set(Object.keys(policy.states).filter((state) => holding(policy.states[state], choice.key)))
+      : null;
+
+  const toggle = (next: PolicyChoice) =>
+    setChoice((open) => (open?.state === next.state && open?.key === next.key ? null : next));
+  const covered = Boolean(choice) && !compact;
+  // The opener may sit under the panel, inert until it shuts, so it's focused a frame later.
+  const close = () => {
+    const opener = rootRef.current?.querySelector<HTMLElement>("[aria-pressed=true]");
+    setChoice(null);
+    requestAnimationFrame(() => opener?.focus({ preventScroll: true }));
+  };
+  useEffect(() => {
+    if (!choice) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      event.preventDefault();
+      const opener = rootRef.current?.querySelector<HTMLElement>("[aria-pressed=true]");
+      setChoice(null);
+      requestAnimationFrame(() => opener?.focus({ preventScroll: true }));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [choice]);
+
   return (
-    <div className={styles.chartBody} data-split="map">
-      <figure {...rise(2)} className={`${styles.rise} ${styles.figure} ${styles.map}`}>
-        <StateTileMap active={active} compact={compact} policy={policy} />
+    <div ref={rootRef} className={styles.chartBody} data-split="map">
+      <figure
+        {...rise(2)}
+        className={`${styles.rise} ${styles.figure} ${styles.map}`}
+        onClick={(event) => {
+          if (choice && !(event.target as Element).closest("[role=button]")) close();
+        }}
+      >
+        <StateTileMap
+          active={active}
+          compact={compact}
+          policy={policy}
+          chosen={choice?.state ?? null}
+          lit={lit}
+          controls={panelId}
+          onChoose={(state) => toggle({ state })}
+        />
       </figure>
-      <aside className={styles.side}>
+      <aside className={styles.side} data-open={choice ? "" : undefined}>
         {policy ? (
           <>
-            <ul {...rise(3)} className={`${styles.rise} ${styles.statusList}`}>
+            <ul {...rise(3)} className={`${styles.rise} ${styles.statusList}`} inert={covered}>
               {rows.map((row) => (
-                <li key={row.key} className={styles.status} data-status={row.key}>
-                  <span className={styles.swatch} aria-hidden="true">
-                    {row.key === "local" ? "12" : null}
-                  </span>
-                  <span>{row.label}</span>
-                  <span className={styles.count}>{row.n}</span>
+                <li key={row.key}>
+                  <button
+                    type="button"
+                    className={styles.status}
+                    data-status={row.key}
+                    aria-pressed={choice?.key === row.key}
+                    aria-controls={panelId}
+                    disabled={!row.n}
+                    onClick={() => toggle({ key: row.key })}
+                  >
+                    <span className={styles.swatch} aria-hidden="true">
+                      {row.key === "local" ? "12" : null}
+                    </span>
+                    <span>{row.label}</span>
+                    <span className={styles.count}>{row.n}</span>
+                  </button>
                 </li>
               ))}
             </ul>
-            {policyStats(policy).map((item, i) => (
-              <div key={item.label} {...rise(4 + i)}>
-                <StatBlock stat={item} />
-                <span className={styles.statSource}>
-                  <Cited id={item.cite}>{item.source}</Cited>
-                </span>
-              </div>
-            ))}
-            <p {...rise(6)} className={`${styles.rise} ${styles.fine}`}>
+            {choice ? (
+              <PolicyPanel
+                id={panelId}
+                policy={policy}
+                pauses={pauses}
+                choice={choice}
+                compact={compact}
+                onClose={close}
+              />
+            ) : null}
+            <div {...rise(4)} className={`${styles.rise} ${styles.policyStats}`} inert={covered}>
+              {policyStats(policy).map((item) => (
+                <div key={item.label}>
+                  <StatBlock stat={item} />
+                  <span className={styles.statSource}>
+                    <Cited id={item.cite}>{item.source}</Cited>
+                  </span>
+                </div>
+              ))}
+            </div>
+            <p {...rise(6)} className={`${styles.rise} ${styles.fine}`} inert={covered}>
               Both statewide pauses are executive: New York&rsquo;s at 50 MW, Texas&rsquo;s at 75 MW for grid hookups.
-              {compact ? null : " Hover a state for its actions."} As of {policy.asOf}.
+              {compact ? " Tap" : " Click"} a state or a status for its measures, each linked to its source. As of{" "}
+              {policy.asOf}.
             </p>
           </>
         ) : (
@@ -407,7 +525,7 @@ function States({ active, compact, policy }: { active: boolean; compact: boolean
   );
 }
 
-function News({ active }: { active: boolean }): ReactElement {
+function News({ playing }: { playing: boolean }): ReactElement {
   return (
     <div className={styles.newsBody}>
       <div className={styles.newsLead}>
@@ -418,7 +536,7 @@ function News({ active }: { active: boolean }): ReactElement {
           </span>
         </div>
         <div {...rise(3)} className={`${styles.rise} ${styles.newsTV}`}>
-          <MemeTV playing={active} />
+          <MemeTV playing={playing} />
         </div>
       </div>
       <ul className={styles.newsGrid}>
@@ -426,7 +544,7 @@ function News({ active }: { active: boolean }): ReactElement {
           <li key={item.url} {...rise(3 + i * 0.5)}>
             <a className={styles.newsCard} href={item.url} target="_blank" rel="noreferrer noopener">
               <span className={styles.newsPlace}>{item.place}</span>
-              <h3 className={styles.h3}>{item.headline}</h3>
+              <h3 className={styles.h3}>{item.title}</h3>
               <span className={styles.newsSummary}>{item.summary}</span>
               <span className={styles.newsMeta}>
                 {item.outlet} · {item.date}
@@ -445,7 +563,7 @@ function News({ active }: { active: boolean }): ReactElement {
  * same row, an arrow in the empty column between. The problem that blocks
  * projects outright is drawn in red.
  */
-function ProblemSolution({ slide, active }: { slide: Of<"problemSolution">; active: boolean }): ReactElement {
+function ProblemSolution({ slide, playing }: { slide: Of<"problemSolution">; playing: boolean }): ReactElement {
   return (
     <div className={styles.problemSolution}>
       <div {...rise(1.5)} className={`${styles.rise} ${styles.psHead}`}>
@@ -457,7 +575,7 @@ function ProblemSolution({ slide, active }: { slide: Of<"problemSolution">; acti
         <div key={problem.title} className={styles.psRow}>
           <div {...rise(2 + i)} className={`${styles.rise} ${styles.psProblem}`} data-hard={hard || undefined}>
             <div className={styles.psFigure}>
-              <MacroArt id={art} hard={hard} light={slide.ground !== "ink"} playing={active} />
+              <MacroArt id={art} hard={hard} light={slide.ground !== "ink"} playing={playing} />
             </div>
             <div className={styles.psText}>
               <h3 className={styles.h3}>{problem.title}</h3>
@@ -488,7 +606,7 @@ function ProblemSolution({ slide, active }: { slide: Of<"problemSolution">; acti
  * figure cards, as the macro slide's quadrant: its biggest problem as one
  * large card across the top, titled, and the rest captioned in a row below.
  */
-function Problems({ slide, active }: { slide: Of<"problems">; active: boolean }): ReactElement {
+function Problems({ slide, playing }: { slide: Of<"problems">; playing: boolean }): ReactElement {
   return (
     <div className={styles.problems}>
       {slide.groups.map((group, g) => (
@@ -504,7 +622,7 @@ function Problems({ slide, active }: { slide: Of<"problems">; active: boolean })
               data-hard={group.lead.hard || undefined}
             >
               <div className={styles.problemFigure}>
-                <MacroArt id={group.lead.art} hard={group.lead.hard} playing={active} />
+                <MacroArt id={group.lead.art} hard={group.lead.hard} playing={playing} />
               </div>
               <div className={styles.problemLead}>
                 <p className={`${styles.h3} ${styles.problemTitle}`}>{group.lead.title}</p>
@@ -519,7 +637,7 @@ function Problems({ slide, active }: { slide: Of<"problems">; active: boolean })
                 data-hard={card.hard || undefined}
               >
                 <div className={styles.problemFigure}>
-                  <MacroArt id={card.art} hard={card.hard} playing={active} />
+                  <MacroArt id={card.art} hard={card.hard} playing={playing} />
                 </div>
                 <p className={styles.problemCaption}>{card.title}</p>
               </li>
@@ -569,7 +687,7 @@ function DesignPrinciples({ active }: { active: boolean }): ReactElement {
 
 function Stack({ slide, active, compact }: { slide: Of<"stack">; active: boolean; compact: boolean }): ReactElement {
   return (
-    <div className={styles.stack}>
+    <div className={styles.stack} style={{ "--ratio": STACK_VIEW.w / STACK_VIEW.h } as CSSProperties}>
       <div {...rise(2)} className={`${styles.rise} ${styles.lede}`}>
         {slide.lede.map((paragraph) => (
           <p key={paragraph}>{paragraph}</p>
@@ -581,7 +699,7 @@ function Stack({ slide, active, compact }: { slide: Of<"stack">; active: boolean
 }
 
 /** Numbered cards as the design principles slide's: a drawing over each step, its description always out. */
-function Steps({ slide, active }: { slide: Of<"steps">; active: boolean }): ReactElement {
+function Steps({ slide, playing }: { slide: Of<"steps">; playing: boolean }): ReactElement {
   return (
     <div className={styles.statsBody}>
       <ol className={styles.steps}>
@@ -589,7 +707,7 @@ function Steps({ slide, active }: { slide: Of<"steps">; active: boolean }): Reac
           <li key={step.title} {...rise(2 + i)} className={`${styles.rise} ${styles.step}`}>
             <span className={styles.stepIndex}>{String(i + 1).padStart(2, "0")}</span>
             <div className={styles.stepFigure}>
-              <MacroArt id={step.art} light={slide.ground !== "ink"} playing={active} />
+              <MacroArt id={step.art} light={slide.ground !== "ink"} playing={playing} />
             </div>
             <h3 className={`${styles.h3} ${styles.stepTitle}`}>{step.title}</h3>
             <p className={styles.body}>{step.body}</p>
@@ -612,9 +730,10 @@ function Steps({ slide, active }: { slide: Of<"steps">; active: boolean }): Reac
  * its figures as mini-cards on the left, each an isometric icon in a square
  * cell ruled off from its value and label, the contract's revenue set on
  * ink; on the right the cluster builder's render of it, with the builder and
- * the compute model a new tab away.
+ * the compute model a new tab away. The render loads once the slide is `near`,
+ * as a lazy image in a parked slide never comes into view to load.
  */
-function Unit({ slide, active }: { slide: Of<"unit">; active: boolean }): ReactElement {
+function Unit({ slide, playing, near }: { slide: Of<"unit">; playing: boolean; near: boolean }): ReactElement {
   return (
     <div className={styles.unit}>
       <ul className={styles.unitCards}>
@@ -628,7 +747,7 @@ function Unit({ slide, active }: { slide: Of<"unit">; active: boolean }): ReactE
               data-ink={ink || undefined}
             >
               <div className={styles.unitFigure}>
-                <UnitIcon id={spec.icon} light={!ink} playing={active} />
+                <UnitIcon id={spec.icon} light={!ink} playing={playing} />
               </div>
               <div className={styles.unitText}>
                 <span className={styles.unitValue}>{spec.value}</span>
@@ -645,7 +764,7 @@ function Unit({ slide, active }: { slide: Of<"unit">; active: boolean }): ReactE
             alt="The cluster builder's render of 2,048 B300 GPUs racked in 39 cabinets across four rows"
             fill
             sizes="(max-width: 700px) 100vw, 45vw"
-            loading="eager"
+            loading={near ? "eager" : "lazy"}
           />
         </div>
         <figcaption className={styles.renderCaption}>
@@ -671,7 +790,11 @@ function LogoMark({ logo }: { logo: Logo }): ReactElement {
   const height = Math.sqrt(LOGO_AREA / logo.aspect) * (logo.scale ?? 1);
   return (
     // eslint-disable-next-line @next/next/no-img-element -- the SVG logos scale with the slide
-    <img src={logo.src} alt={logo.name} style={{ "--h": height } as CSSProperties} />
+    <img
+      src={logo.src}
+      alt={logo.name}
+      style={{ "--h": height, "--shift": 0.5 - (logo.center ?? 0.5) } as CSSProperties}
+    />
   );
 }
 
@@ -684,7 +807,24 @@ function ArrowOut(): ReactElement {
   );
 }
 
-/** A contract value as clusters: one block per cluster's worth, the last filled to the remainder. */
+/** An isometric cube's top, left and right faces in a 26 × 30 box. */
+const CUBE_FACES = [
+  { face: "top", points: "13,0 26,7.5 13,15 0,7.5" },
+  { face: "left", points: "0,7.5 13,15 13,30 0,22.5" },
+  { face: "right", points: "13,15 26,7.5 26,22.5 13,30" },
+] as const;
+
+function Cube(): ReactElement {
+  return (
+    <svg viewBox="0 0 26 30">
+      {CUBE_FACES.map(({ face, points }) => (
+        <polygon key={face} data-face={face} points={points} />
+      ))}
+    </svg>
+  );
+}
+
+/** A contract value as clusters: one cube per cluster's worth, the last filled to the remainder. */
 function ComputeBlocks({ usd, unit }: { usd: number; unit: number }): ReactElement {
   const count = usd / unit;
   const full = Math.floor(count);
@@ -693,10 +833,15 @@ function ComputeBlocks({ usd, unit }: { usd: number; unit: number }): ReactEleme
     <div className={styles.blocks}>
       <ul className={styles.blockGrid} aria-hidden="true">
         {Array.from({ length: full }, (_, i) => (
-          <li key={i} className={styles.block} />
+          <li key={i} className={styles.block}>
+            <Cube />
+          </li>
         ))}
         {part > 0.005 ? (
-          <li className={styles.block} data-part style={{ "--fill": part } as CSSProperties} />
+          <li className={styles.block} data-part style={{ "--fill": part } as CSSProperties}>
+            <Cube />
+            <Cube />
+          </li>
         ) : null}
       </ul>
       <span className={styles.blockCount}>{count.toFixed(1)} × 4 MW</span>
@@ -778,70 +923,14 @@ function Traction({ slide }: { slide: Of<"traction"> }): ReactElement {
 /** A dollar figure or range, e.g. "$18.8M" or "$50–75M"; split out with its capture so it alternates with the text. */
 const FIGURE = /(\$[\d.]+(?:–[\d.]+)?[MB])/;
 
-/** The cell in user units; the ripple is a single windowed sine cycle `RIPPLE` wide, parked just left of it. */
-const WAVE_SPAN = 300;
-const WAVE_HEIGHT = 12;
-const RIPPLE = 40;
-const RIPPLE_AMPLITUDE = 1.5;
-/** A flat line well past both ends, with the ripple in [-RIPPLE, 0], so sliding it `WAVE_SPAN + RIPPLE` right carries it across and off. */
-const WAVE_PATH = [
-  `M${-RIPPLE - 20} ${WAVE_HEIGHT / 2}`,
-  ...Array.from({ length: RIPPLE * 2 + 1 }, (_, k) => {
-    const t = k / (RIPPLE * 2);
-    const window = 0.5 - 0.5 * Math.cos(2 * Math.PI * t);
-    const y = WAVE_HEIGHT / 2 + RIPPLE_AMPLITUDE * window * Math.sin(2 * Math.PI * t);
-    return `L${(-RIPPLE + t * RIPPLE).toFixed(1)} ${y.toFixed(2)}`;
-  }),
-  `L${WAVE_SPAN + RIPPLE + 20} ${WAVE_HEIGHT / 2}`,
-].join(" ");
-
-/** How long a ripple takes to cross, and the bounds of the random rest before the next. */
-const RIPPLE_MS = 1600;
-const REST_MS = [1800, 6500] as const;
-
-/**
- * The last year's bar: flat as the others, with a ripple that runs along it
- * at random intervals while the slide is open. Lengths on an SVG element
- * resolve in user units, so the slide is the cell's width plus the ripple's.
- */
-function PlanWave({ active }: { active: boolean }): ReactElement {
-  const ref = useRef<SVGPathElement>(null);
-  useEffect(() => {
-    const path = ref.current;
-    if (!active || !path || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    let timer = 0;
-    let animation: Animation | undefined;
-    const rest = () => REST_MS[0] + Math.random() * (REST_MS[1] - REST_MS[0]);
-    const ripple = () => {
-      animation = path.animate(
-        [{ transform: "translateX(0)" }, { transform: `translateX(${WAVE_SPAN + RIPPLE}px)` }],
-        { duration: RIPPLE_MS, easing: "linear" },
-      );
-      animation.onfinish = () => {
-        timer = window.setTimeout(ripple, rest());
-      };
-    };
-    timer = window.setTimeout(ripple, 800 + Math.random() * 1200);
-    return () => {
-      window.clearTimeout(timer);
-      animation?.cancel();
-    };
-  }, [active]);
-  return (
-    <svg className={styles.planWave} viewBox={`0 0 ${WAVE_SPAN} ${WAVE_HEIGHT}`} preserveAspectRatio="none" aria-hidden="true">
-      <path ref={ref} className={styles.planWaveLine} d={WAVE_PATH} />
-    </svg>
-  );
-}
-
-function Pipeline({ slide, active }: { slide: Of<"pipeline">; active: boolean }): ReactElement {
+function Pipeline({ slide }: { slide: Of<"pipeline"> }): ReactElement {
   const steps = slide.plan.length;
   return (
     <div className={styles.split} data-split="sites">
       <div className={styles.sites}>
         <ul className={styles.siteCards}>
           {slide.sites.map((site, i) => (
-            <li key={site.site} {...rise(2 + i * 0.4)} className={`${styles.rise} ${styles.siteCard}`}>
+            <li key={`${site.map}-${site.mw}`} {...rise(2 + i * 0.4)} className={`${styles.rise} ${styles.siteCard}`}>
               <div className={styles.siteMap}>
                 <SiteMap id={site.map} />
               </div>
@@ -862,7 +951,6 @@ function Pipeline({ slide, active }: { slide: Of<"pipeline">; active: boolean })
           <span className={styles.siteTotal}>
             Total <span>{slide.total} IT MW</span>
           </span>
-          <span className={styles.fine}>Maps © OpenStreetMap contributors</span>
         </p>
       </div>
       <div className={styles.pipelineSide}>
@@ -876,7 +964,7 @@ function Pipeline({ slide, active }: { slide: Of<"pipeline">; active: boolean })
         </section>
         <section className={styles.planSection}>
           <h3 {...rise(4)} className={`${styles.rise} ${styles.label}`}>
-            Plan
+            Master Plan
           </h3>
           <ol className={styles.plan}>
             {slide.plan.map((row, i) => (
@@ -887,11 +975,7 @@ function Pipeline({ slide, active }: { slide: Of<"pipeline">; active: boolean })
                 data-ink={i === steps - 1 || undefined}
               >
                 <span className={styles.planYear}>{row.year}</span>
-                {i === steps - 1 ? (
-                  <PlanWave active={active} />
-                ) : (
-                  <span className={styles.planBar} style={{ "--share": (i + 1) / steps } as CSSProperties} />
-                )}
+                <span className={styles.planBar} style={{ "--share": (i + 1) / steps } as CSSProperties} />
                 <span className={styles.planValue}>{row.value}</span>
               </li>
             ))}
@@ -912,30 +996,51 @@ function Pipeline({ slide, active }: { slide: Of<"pipeline">; active: boolean })
   );
 }
 
+function CompareCell({ stat }: { stat: Stat }): ReactElement {
+  return (
+    <div className={styles.compareCell}>
+      <span className={styles.compareValue}>{stat.value}</span>
+      <span className={styles.statLabel}>{stat.label}</span>
+    </div>
+  );
+}
+
+/**
+ * The comparison as one panel of cells joined by hairlines, as the unit
+ * slide's cards: a row per axis, its name, then the traditional developer's
+ * answer and ZODE's, ZODE's column set on ink as the unit slide's
+ * highlighted card, and the highlighted axis on the paper grey.
+ * The rows fade in one by one, their lines too.
+ */
 function Comparison({ slide }: { slide: Of<"comparison"> }): ReactElement {
   return (
-    <div className={styles.statsBody}>
-      <table {...rise(2)} className={`${styles.rise} ${styles.table} ${styles.compare}`}>
+    <div className={styles.compareBody}>
+      <table className={styles.compare}>
         <thead>
-          <tr>
+          <tr {...rise(1.5)}>
             <td />
             <th scope="col">{slide.columns[0]}</th>
             <th scope="col" data-us>
-              {slide.columns[1]}
+              {/* eslint-disable-next-line @next/next/no-img-element -- the SVG wordmark scales with the slide */}
+              <img className={styles.compareMark} src="/brand/zode-wordmark-white.svg" alt={slide.columns[1]} />
             </th>
           </tr>
         </thead>
         <tbody>
-          {slide.rows.map((row) => (
-            <tr key={row.label}>
+          {slide.rows.map((row, i) => (
+            <tr key={row.label} {...rise(2 + i * 0.35)} data-highlight={i === slide.highlight || undefined}>
               <th scope="row">{row.label}</th>
-              <td>{row.them}</td>
-              <td data-us>{row.us}</td>
+              <td>
+                <CompareCell stat={row.them} />
+              </td>
+              <td data-us>
+                <CompareCell stat={row.us} />
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p {...rise(3)} className={`${styles.rise} ${styles.fine}`}>
+      <p {...rise(2 + slide.rows.length * 0.35)} className={`${styles.rise} ${styles.fine}`}>
         {slide.note}
       </p>
     </div>
@@ -950,7 +1055,7 @@ function Comparison({ slide }: { slide: Of<"comparison"> }): ReactElement {
  * layer as wide as its share of the total, shaded by its deal and bracketed
  * under the deal's name, the deals in the cards' order.
  */
-function Finance({ slide, active }: { slide: Of<"finance">; active: boolean }): ReactElement {
+function Finance({ slide, playing }: { slide: Of<"finance">; playing: boolean }): ReactElement {
   const { example } = slide;
   const groups = slide.deals
     .map((deal) => {
@@ -965,7 +1070,7 @@ function Finance({ slide, active }: { slide: Of<"finance">; active: boolean }): 
           <li key={deal.id} {...rise(2 + i * 0.4)} className={`${styles.rise} ${styles.deal}`}>
             <div className={styles.dealHead}>
               <div className={styles.dealFigure}>
-                <UnitIcon id={deal.icon} light playing={active} />
+                <UnitIcon id={deal.icon} light playing={playing} />
               </div>
               <div className={styles.dealHeading}>
                 <h3 className={styles.dealTitle}>{deal.title}</h3>
@@ -1330,11 +1435,15 @@ function Sources(): ReactElement {
 function Body({
   slide,
   active,
+  playing,
+  near,
   compact,
   policy,
 }: {
   slide: Slide;
   active: boolean;
+  playing: boolean;
+  near: boolean;
   compact: boolean;
   policy: PolicyMap | null;
 }): ReactNode {
@@ -1342,19 +1451,19 @@ function Body({
     case "cover":
       return <Cover slide={slide} active={active} compact={compact} />;
     case "stats":
-      return <Stats slide={slide} active={active} compact={compact} />;
+      return <Stats slide={slide} active={active} playing={playing} compact={compact} />;
     case "demand":
-      return <Demand active={active} compact={compact} />;
+      return <Demand active={active} playing={playing} compact={compact} />;
     case "shortfall":
       return <Shortfall active={active} compact={compact} />;
     case "states":
-      return <States active={active} compact={compact} policy={policy} />;
+      return <States active={active} near={near} compact={compact} policy={policy} />;
     case "news":
-      return <News active={active} />;
+      return <News playing={playing} />;
     case "problemSolution":
-      return <ProblemSolution slide={slide} active={active} />;
+      return <ProblemSolution slide={slide} playing={playing} />;
     case "problems":
-      return <Problems slide={slide} active={active} />;
+      return <Problems slide={slide} playing={playing} />;
     case "solution":
       return <Solution slide={slide} active={active} />;
     case "principles":
@@ -1362,17 +1471,17 @@ function Body({
     case "stack":
       return <Stack slide={slide} active={active} compact={compact} />;
     case "steps":
-      return <Steps slide={slide} active={active} />;
+      return <Steps slide={slide} playing={playing} />;
     case "unit":
-      return <Unit slide={slide} active={active} />;
+      return <Unit slide={slide} playing={playing} near={near} />;
     case "traction":
       return <Traction slide={slide} />;
     case "pipeline":
-      return <Pipeline slide={slide} active={active} />;
+      return <Pipeline slide={slide} />;
     case "comparison":
       return <Comparison slide={slide} />;
     case "finance":
-      return <Finance slide={slide} active={active} />;
+      return <Finance slide={slide} playing={playing} />;
     case "raise":
       return <Raise slide={slide} playing={playing} />;
     case "team":
@@ -1434,17 +1543,22 @@ const pad = (n: number) => String(n).padStart(2, "0");
  * and a foot band with the section name, sources and page number.
  * `grid` draws the rails and rules on the slide itself; the stage turns it
  * off and draws one shared grid over every slide instead, finding the bands
- * by `data-band`. `active` plays its entrance; `branded` adds the wordmark to
- * its foot for print, where the site header isn't on the page. `compact`
- * reflows it as a phone's story card: one column at the site's mobile type
- * sizes, scrolling where it runs long. `policy` is the policy tracker's map
- * for the states slide.
+ * by `data-band`. `active` plays its entrance; with `still` too it shows
+ * settled instead, its entrances at their end and nothing looping, as a
+ * thumbnail. `near` loads its images ahead, for the open slide and its
+ * neighbours. `branded` adds the wordmark to its foot for print, where the
+ * site header isn't on the page. `compact` reflows it as a phone's story
+ * card: one column at the site's mobile type sizes, scrolling where it runs
+ * long. `policy` is the policy tracker's map for the states slide.
+ * Memoized, so turning a slide redraws only the slides whose state changed.
  */
-export function SlideView({
+export const SlideView = memo(function SlideView({
   slide,
   index,
   total,
   active,
+  still = false,
+  near = false,
   branded = false,
   grid = true,
   compact = false,
@@ -1454,11 +1568,14 @@ export function SlideView({
   index: number;
   total: number;
   active: boolean;
+  still?: boolean;
+  near?: boolean;
   branded?: boolean;
   grid?: boolean;
   compact?: boolean;
   policy: PolicyMap | null;
 }): ReactElement {
+  const playing = active && !still;
   const head = hasHead(slide);
   const foot = !NO_FOOT.has(slide.kind);
   const dark = slide.ground === "ink";
@@ -1476,6 +1593,7 @@ export function SlideView({
       data-ground={slide.ground}
       data-kind={slide.kind}
       data-active={active || undefined}
+      data-still={still || undefined}
       data-compact={compact || undefined}
     >
       <div
@@ -1493,7 +1611,7 @@ export function SlideView({
           </header>
         ) : null}
         <div className={styles.main}>
-          <Body slide={slide} active={active} compact={compact} policy={policy} />
+          <Body slide={slide} active={active} playing={playing} near={near} compact={compact} policy={policy} />
         </div>
         {!foot ? (
           mark && <footer className={styles.foot}>{mark}</footer>
@@ -1521,4 +1639,4 @@ export function SlideView({
       </div>
     </div>
   );
-}
+});

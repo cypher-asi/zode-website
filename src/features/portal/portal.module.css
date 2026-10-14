@@ -140,6 +140,17 @@
   border-top: 1px solid var(--color-border);
 }
 
+/*
+ * Rows out of view skip layout and paint, so long lists like leads and
+ * subscribers scroll smoothly. That clips each row to itself: a control that
+ * opens something over its neighbours must use the top layer (a modal
+ * <dialog> or popover), as the row buttons' dialogs do.
+ */
+.list > li {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 68px;
+}
+
 .row {
   display: flex;
   align-items: center;

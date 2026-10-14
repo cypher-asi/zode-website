@@ -1,3 +1,4 @@
+import { FACTORY_FLOWS } from "@/features/factory/model/flows";
 import { LEAD_TYPES } from "@/features/leads/types";
 import { MAILING_LISTS } from "@/features/mailing-list/types";
 import { ROLE_LABELS, ROLE_SLUGS, USER_ROLES, type UserRole } from "@/features/users/types";
@@ -147,14 +148,14 @@ const CAPACITY: PortalApp = {
   links: [{ href: "/portal/capacity/sites", label: "Sites", icon: "capacity" }],
 };
 
-/** The compute pod production line, simulated on its factory floor, for the ZODE team. */
+/** The compute pod factory, simulated, for the ZODE team: its main flows, in the order material moves. */
 const FACTORY: PortalApp = {
   id: "factory",
   label: "Factory",
   icon: "factory",
   href: "/portal/factory",
   team: true,
-  links: [{ href: "/portal/factory", label: "Floor", icon: "factory" }],
+  links: FACTORY_FLOWS.map((flow): NavLink => ({ href: flow.href, label: flow.label, icon: flow.icon })),
 };
 
 /** News and changelog for the public site, written by the ZODE team. */

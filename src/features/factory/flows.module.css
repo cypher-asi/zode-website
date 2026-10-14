@@ -1,0 +1,87 @@
+/* An outlined flow's page: a status note, the numbered steps, and links to the flows either side. */
+.status {
+  max-width: 68ch;
+  margin: 0 0 28px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+
+.outline {
+  display: grid;
+  gap: 0;
+  max-width: 76ch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 12px;
+  padding: 16px 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.number {
+  padding-top: 2px;
+  color: var(--color-text-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.stepTitle {
+  margin: 0 0 4px;
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.stepDetail {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+
+.neighbours {
+  display: flex;
+  gap: 12px;
+  max-width: 76ch;
+  margin-top: 28px;
+}
+
+.neighbour {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+
+.neighbour span {
+  color: var(--color-text-faint);
+  font-size: var(--text-xs);
+}
+
+.neighbour[data-next] {
+  text-align: right;
+}
+
+@media (hover: hover) {
+  .neighbour:hover {
+    border-color: var(--color-border-strong);
+  }
+}
+
+.neighbour:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}

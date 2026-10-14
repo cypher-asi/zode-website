@@ -1,7 +1,8 @@
-import type { CSSProperties, ReactElement } from "react";
+import { useEffect, useRef, type CSSProperties, type ReactElement } from "react";
 import { Sketch, project, rng, round, type Bounds, type P3 } from "@/features/zode-drawings/lineArt";
 import type { MacroArtId } from "../slides";
 import styles from "./MacroArt.module.css";
+import { meltingClock } from "./meltingClock";
 
 /** Props for a group animated while the drawing plays; `k` staggers its start. */
 const anim = (className: string, k = 0) => ({ className, style: { "--k": k } as CSSProperties });
@@ -370,29 +371,31 @@ function outline(s: Sketch, x: number, y: number, w: number, d: number, h: numbe
     s.line([[px, py, 0], [px, py, h]], styles.dash);
 }
 
-/** A stack of permits years deep, beside a clock. */
+/** A stack of permits years deep, a clock melting over its front edge. */
 function regulation(s: Sketch): void {
-  const [W, D, T] = [64, 84, 6];
-  for (let k = 0; k < 9; k++) {
-    const dx = ((k * 5) % 3) * 3 - 3;
-    const dy = ((k * 7) % 3) * 3 - 3;
+  const [W, D, T, N] = [64, 84, 6, 9];
+  const offset = (k: number) => [((k * 5) % 3) * 3 - 3, ((k * 7) % 3) * 3 - 3] as const;
+  for (let k = 0; k < N; k++) {
+    const [dx, dy] = offset(k);
     s.group(anim(styles.shade, k), () => s.box(-64 + dx, -42 + dy, W, D, k * T, T));
   }
-  const z = 9 * T;
-  for (const y of [-26, -16, -6, 4, 14]) s.line([[-54, y, z], [-54 + (y % 4 ? 34 : 44), y, z]], styles.fine);
+  const z = N * T;
+  for (const y of [-34, -24, -14, -4]) s.line([[-54, y, z], [-54 + (y % 4 ? 34 : 44), y, z]], styles.fine);
 
-  const [CX, CY, CZ, R] = [44, 4, 46, 28];
-  s.box(CX - 6, CY - 8, 12, 16, 0, CZ - R + 2);
-  s.wheel([CX, CY, CZ], R, "yz", styles.top);
-  s.wheel([CX, CY, CZ], R - 4, "yz", styles.fine);
-  for (let k = 0; k < 12; k++) {
-    const t = (k / 12) * Math.PI * 2;
-    const [c, n] = [Math.cos(t), Math.sin(t)];
-    s.line([[CX, CY + (R - 8) * c, CZ + (R - 8) * n], [CX, CY + (R - 5) * c, CZ + (R - 5) * n]], styles.edge);
-  }
-  s.line([[CX, CY, CZ], [CX, CY, CZ + R * 0.62]], styles.edge);
-  s.group(anim(styles.flow), () => s.line([[CX, CY, CZ], [CX, CY + R * 0.7, CZ - R * 0.3]], styles.edge));
-  const [hx, hy] = project([CX, CY, CZ]);
+  const [dx, dy] = offset(N - 1);
+  const R = 24;
+  const { polar, hand } = meltingClock(s, {
+    x: -32 + dx,
+    r: R,
+    thickness: 3,
+    hub: -10,
+    drip: 11.5,
+    lean: -4,
+    corners: [[-42 + dy + D, z, 4]],
+  });
+  s.line(hand(R * 0.62, 0), styles.edge);
+  s.group(anim(styles.flow), () => s.line(hand(R * 0.7, (5 / 6) * Math.PI), styles.edge));
+  const [hx, hy] = project(polar(0, 0));
   s.group(anim(styles.flash), () => circle(s, hx, hy, 2.4, styles.ring));
 }
 
@@ -1181,14 +1184,19 @@ const DRAW: Record<MacroArtId, (s: Sketch) => void> = {
   tokenMaze,
 };
 
-/** Each drawing fits its own frame: the cards are small, so legibility wins over a shared scale. */
-const ART = Object.fromEntries(
-  Object.entries(DRAW).map(([id, draw]) => {
+const ART = new Map<MacroArtId, { items: ReactElement[]; view: Bounds }>();
+
+/** Each drawing fits its own frame: the cards are small, so legibility wins over a shared scale. Drawn on first use. */
+function artFor(id: MacroArtId): { items: ReactElement[]; view: Bounds } {
+  let art = ART.get(id);
+  if (!art) {
     const s = new Sketch(styles);
-    draw(s);
-    return [id, { items: s.items, view: s.bounds(6) }];
-  }),
-) as Record<MacroArtId, { items: ReactElement[]; view: Bounds }>;
+    DRAW[id](s);
+    art = { items: s.items, view: s.bounds(6) };
+    ART.set(id, art);
+  }
+  return art;
+}
 
 /**
  * A line drawing for the macro slides, drawn for the ink ground unless
@@ -1206,9 +1214,21 @@ export function MacroArt({
   light?: boolean;
   playing?: boolean;
 }): ReactElement {
-  const { items, view } = ART[id];
+  const ref = useRef<SVGSVGElement>(null);
+  const { items, view } = artFor(id);
+  // The riders' SMIL clock runs even while CSS hides them, so it's held still unless the drawing plays in a shown tab.
+  useEffect(() => {
+    const svg = ref.current;
+    if (!svg) return;
+    const sync = () => (playing && !document.hidden ? svg.unpauseAnimations() : svg.pauseAnimations());
+    sync();
+    if (!playing) return;
+    document.addEventListener("visibilitychange", sync);
+    return () => document.removeEventListener("visibilitychange", sync);
+  }, [playing]);
   return (
     <svg
+      ref={ref}
       className={styles.art}
       viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
       data-hard={hard || undefined}

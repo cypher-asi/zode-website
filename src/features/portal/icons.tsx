@@ -10,6 +10,8 @@ export type PortalIconName =
   | "invest"
   | "capacity"
   | "factory"
+  | "truck"
+  | "outbound"
   | "deployments"
   | "posts"
   | "analytics"
@@ -87,6 +89,20 @@ const GLYPHS: Record<PortalIconName, ReactElement> = {
     <>
       <path pathLength={1} d="M3.25 20.25V10.25l5 3.25v-3.25l5 3.25v-3.25l5 3.25V4.75h2.5v15.5z" />
       <path pathLength={1} d="M7 17h2.5M11.75 17h2.5" />
+    </>
+  ),
+  truck: (
+    <>
+      <rect pathLength={1} x="2.75" y="5.75" width="11" height="10" rx="1.5" />
+      <path pathLength={1} d="M13.75 9.25h3.4l3.1 3.4v3.1h-6.5" />
+      <path pathLength={1} d="M8.75 18a1.75 1.75 0 1 1-3.5 0 1.75 1.75 0 0 1 3.5 0M18.75 18a1.75 1.75 0 1 1-3.5 0 1.75 1.75 0 0 1 3.5 0" />
+    </>
+  ),
+  outbound: (
+    <>
+      <rect pathLength={1} x="2.75" y="6.25" width="11.5" height="11.5" rx="2" />
+      <path pathLength={1} d="M6.25 12h14.5" />
+      <path pathLength={1} d="m17.75 9 3 3-3 3" />
     </>
   ),
   deployments: (

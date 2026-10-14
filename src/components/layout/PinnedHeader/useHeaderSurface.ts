@@ -115,18 +115,49 @@ export function useHeaderSurface(
       node.style.maskImage = mask;
     };
 
+    // Sections such as the assembly line mount late and routes swap the page,
+    // so the faded nodes are re-queried whenever one is added or removed.
+    // Mutation records arrive as microtasks, so `stale` is always set before
+    // the next frame samples.
+    const TRACKED = "[data-top-fade], [data-top-fade-cover]";
+    let fades: HTMLElement[] = [];
+    let coverNodes: HTMLElement[] = [];
+    let stale = true;
+    const tracked = (node: Node) =>
+      node instanceof Element && (node.matches(TRACKED) || node.querySelector(TRACKED) !== null);
+    const structure = new MutationObserver((records) => {
+      if (stale) return;
+      stale = records.some(
+        (record) =>
+          record.type === "attributes" ||
+          [...record.addedNodes].some(tracked) ||
+          [...record.removedNodes].some(tracked),
+      );
+    });
+    structure.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-top-fade", "data-top-fade-cover"],
+    });
+
     const sample = () => {
       frame = 0;
       const brand = brandRef.current;
       const action = groupRef.current;
       if (!brand || !action) return;
 
+      if (stale) {
+        stale = false;
+        fades = Array.from(document.querySelectorAll<HTMLElement>("[data-top-fade]"));
+        coverNodes = Array.from(document.querySelectorAll<HTMLElement>("[data-top-fade-cover]"));
+      }
+
       // Reads first: interleaving them with the mask writes below would force a style recalc per node.
       const brandRect = brand.getBoundingClientRect();
       const actionRect = action.getBoundingClientRect();
       const measured: [HTMLElement, DOMRect][] = [];
-      // Re-queried every frame because sections such as the assembly line mount late.
-      for (const node of document.querySelectorAll<HTMLElement>("[data-top-fade]")) {
+      for (const node of fades) {
         if (!observed.has(node)) {
           // Treated as near until the observer's first report says otherwise.
           observed.add(node);
@@ -140,10 +171,7 @@ export function useHeaderSurface(
         }
       }
       // Covers are pinned to the top, so they're always measured; their masks only change on resize.
-      const covers = Array.from(
-        document.querySelectorAll<HTMLElement>("[data-top-fade-cover]"),
-        (node) => [node, node.getBoundingClientRect()] as const,
-      );
+      const covers = coverNodes.map((node) => [node, node.getBoundingClientRect()] as const);
       const brandUnder = sampleUnder(brand, brandRect);
       const actionUnder = sampleUnder(action, actionRect);
 
@@ -178,13 +206,33 @@ export function useHeaderSurface(
     schedule();
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
-    // Surfaces can also change tone in place, e.g. the deck's ground between slides.
-    const surfaces = new MutationObserver(schedule);
-    surfaces.observe(document.body, { subtree: true, attributes: true, attributeFilter: ["data-surface"] });
+    // Surfaces can also change tone in place, e.g. the deck's ground between
+    // slides, or be swapped for another, e.g. the deck replacing its stand-in ground.
+    const surfaced = (node: Node) =>
+      node instanceof Element && (node.matches("[data-surface]") || node.querySelector("[data-surface]") !== null);
+    const surfaces = new MutationObserver((records) => {
+      if (
+        records.some(
+          (record) =>
+            record.type === "attributes" ||
+            [...record.addedNodes].some(surfaced) ||
+            [...record.removedNodes].some(surfaced),
+        )
+      ) {
+        schedule();
+      }
+    });
+    surfaces.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-surface"],
+    });
     return () => {
       scheduleRef.current = () => {};
       cancelAnimationFrame(frame);
       io.disconnect();
+      structure.disconnect();
       surfaces.disconnect();
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);

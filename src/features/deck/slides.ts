@@ -62,6 +62,8 @@ export interface Logo {
   readonly aspect: number;
   /** Set by eye for marks whose weight or whitespace reads heavy or light at that area. */
   readonly scale?: number;
+  /** Where the lettering's middle sits, as a share of the height from the top, for marks a descender or swoosh pulls off centre. */
+  readonly center?: number;
 }
 
 /** A contract figure, drawn as clusters' worth of contract value. */
@@ -165,7 +167,10 @@ export type Slide =
   | (Base & {
       kind: "comparison";
       columns: readonly [string, string];
-      rows: readonly { label: string; them: string; us: string }[];
+      /** One axis per row, each side's answer as a figure over its detail. */
+      rows: readonly { label: string; them: Stat; us: Stat }[];
+      /** The `highlight` row is set on grey, its figures larger, to stand out. */
+      highlight: number;
       note: string;
     })
   | (Base & {
@@ -283,7 +288,7 @@ export const SLIDES: readonly Slide[] = [
     kind: "shortfall",
     section: "Shortfall",
     eyebrow: "Macro · Shortfall",
-    title: "A 33 GW gap through 2028.",
+    title: "A 33 GW compute crunch through 2028.",
     ground: "ink",
     sources: ["morganStanley"],
   },
@@ -360,7 +365,7 @@ export const SLIDES: readonly Slide[] = [
     kind: "principles",
     section: "Design principles",
     eyebrow: "Solution · Design principles",
-    title: "Sovereign, distributed, sustainable, open.",
+    title: "Designed for humanity.",
     ground: "white",
   },
   {
@@ -415,7 +420,7 @@ export const SLIDES: readonly Slide[] = [
     section: "The stack",
     eyebrow: "Solution · Stack",
     title: "Vertically integrated, from dirt to tokens.",
-    ground: "paper",
+    ground: "white",
     lede: [
       "ZODE builds every layer itself, from the land and power to the network that delivers tokens.",
       "ZODEs are factory-made in North America and ship complete, weather-rated from -40°F to 115°F.",
@@ -473,7 +478,7 @@ export const SLIDES: readonly Slide[] = [
     kind: "traction",
     section: "Traction",
     eyebrow: "Traction",
-    title: "$485M contracted. $20B in LOIs.",
+    title: "Revenue is scaling vertically.",
     ground: "paper",
     block: { usd: 375e6, note: "Each block is one 4 MW cluster, about $375M of contract value." },
     contracted: { value: "$485M", label: "Contracted revenue, signed", usd: 485e6 },
@@ -509,8 +514,8 @@ export const SLIDES: readonly Slide[] = [
         label: "Pipeline",
         logos: [
           { name: "Anthropic", src: `${LOGO_DIR}/anthropic.svg`, aspect: 1024.2 / 115, scale: 0.88 },
-          { name: "OpenAI", src: `${LOGO_DIR}/openai.svg`, aspect: 288 / 78 },
-          { name: "SpaceXAI", src: `${LOGO_DIR}/spacexai.svg`, aspect: 1294 / 158, scale: 1.3 },
+          { name: "OpenAI", src: `${LOGO_DIR}/openai.svg`, aspect: 288 / 78, center: 31 / 78 },
+          { name: "SpaceXAI", src: `${LOGO_DIR}/spacexai.svg`, aspect: 1294 / 158, scale: 1.3, center: 108 / 158 },
         ],
       },
     ],
@@ -576,8 +581,7 @@ export const SLIDES: readonly Slide[] = [
           label: "Manufacturing",
           logos: [
             { name: "SpaceX", src: `${LOGO_DIR}/spacex.svg`, aspect: 400 / 50, scale: 0.95 },
-            { name: "Tesla", src: `${LOGO_DIR}/tesla.svg`, aspect: 993.047 / 100, scale: 0.85 },
-          ],
+            { name: "Tesla", src: `${LOGO_DIR}/tesla.svg`, aspect: 993.047 / 100, scale: 0.85 },          ],
         },
       ],
     },
@@ -588,13 +592,13 @@ export const SLIDES: readonly Slide[] = [
     section: "Pipeline",
     eyebrow: "Pipeline",
     title: "66.8 MW ready to close.",
-    ground: "white",
+    ground: "paper",
     sites: [
-      { site: "Chicago, IL", map: "chicago", path: "Lease", mw: "24.0", status: "Contracted" },
-      { site: "Olds, AB", map: "olds", path: "Purchase", mw: "22.0", status: "LOI, lead position" },
-      { site: "Calgary, AB", map: "calgary", path: "Purchase", mw: "13.0", status: "In diligence" },
-      { site: "Milton, ON", map: "milton", path: "Joint venture", mw: "6.6", status: "In diligence" },
-      { site: "Mississauga, ON", map: "mississauga", path: "Colocation", mw: "1.2", status: "In diligence" },
+      { site: "Illinois", map: "chicago", path: "Lease", mw: "24.0", status: "Contracted" },
+      { site: "Alberta", map: "calgary", path: "Purchase", mw: "22.0", status: "LOI, lead position" },
+      { site: "Alberta", map: "calgary", path: "Purchase", mw: "13.0", status: "In diligence" },
+      { site: "Ontario", map: "milton", path: "Joint venture", mw: "6.6", status: "In diligence" },
+      { site: "Ontario", map: "mississauga", path: "Colocation", mw: "1.2", status: "In diligence" },
     ],
     total: "66.8",
     capacity: [
@@ -617,19 +621,49 @@ export const SLIDES: readonly Slide[] = [
     kind: "comparison",
     section: "Competitive advantage",
     eyebrow: "Competitive advantage",
-    title: "Faster to tokens, at a lower basis.",
-    ground: "white",
-    columns: ["Conventional build", "ZODE"],
+    title: "Speed is currency.",
+    ground: "paper",
+    columns: ["Traditional developers", "ZODE"],
     rows: [
-      { label: "Sequencing", them: "Build, then find tenants", us: "Contract first, build second" },
-      { label: "Time to tokens", them: "Years", us: "90 days from order" },
-      { label: "Cost per MW", them: "~$17.6M", us: "~$5M target on conversions" },
-      { label: "Site basis", them: "Greenfield at market", us: "Powered buildings near 15¢ on the dollar" },
-      { label: "Supply", them: "Allocation queues", us: "Direct with Pegatron, NVIDIA, Tier-1 integrators" },
-      { label: "Footprint", them: "One campus", us: "Distributed, sovereign sites" },
+      {
+        label: "Product",
+        them: { value: "Powered shell", label: "Leased by the kW-month to a tenant" },
+        us: { value: "Compute", label: "Sold by the GPU-hour, dirt to tokens" },
+      },
+      {
+        label: "Sequencing",
+        them: { value: "Build, then lease", label: "Speculative capex ahead of tenants" },
+        us: { value: "Contract, then build", label: "Take-or-pay offtake, 25–30% prepaid" },
+      },
+      {
+        label: "Power",
+        them: { value: "New interconnect", label: "160+ weeks for a substation transformer" },
+        us: { value: "Already energized", label: "Powered buildings and colocation" },
+      },
+      {
+        label: "Site size",
+        them: { value: "100 MW–1 GW+", label: "One campus, over the statewide pause thresholds" },
+        us: { value: "4 MW", label: "Under New York's 50 MW and Texas's 75 MW" },
+      },
+      {
+        label: "Cost per MW",
+        them: { value: "~$17.6M", label: "Greenfield average, excluding GPUs" },
+        us: { value: "~$5M", label: "Target, factory-made into existing buildings" },
+      },
+      {
+        label: "Community",
+        them: { value: "71% oppose", label: "Loud, water-cooled, no local upside" },
+        us: { value: "Community-owned", label: "Quiet, no evaporative water" },
+      },
+      {
+        label: "Time to tokens",
+        them: { value: "3–5 years", label: "Land, permits, substation, then the build" },
+        us: { value: "90 days", label: "From order to production" },
+      },
     ],
-    note: "Cost per MW on conversions is a target, not yet proven at scale. Greenfield cost is Cushman & Wakefield's 2026 all-in average, excluding chips and GPUs.",
-    sources: ["cushmanCost"],
+    highlight: 6,
+    note: "Cost per MW on conversions is a target, not yet proven at scale. Greenfield cost is Cushman & Wakefield's 2026 all-in average, excluding chips and GPUs. Traditional site size and time to tokens are ZODE's estimates for greenfield hyperscale campuses.",
+    sources: ["heatmap", "transformers", "newYork", "texas", "cushmanCost"],
   },
   {
     id: "finance",
@@ -722,10 +756,10 @@ export const SLIDES: readonly Slide[] = [
       rows: [
         { label: "Contract value", contract: "$9.43B", annual: "$1.89B" },
         { label: "Contract EBITDA", contract: "$7.02B", annual: "$1.40B" },
-        { label: "Contract NOI", contract: "$2.01B", annual: "$403M" },
+        { label: "Contract net income", contract: "$2.01B", annual: "$403M" },
       ],
     },
-    note: "Preliminary, per the project model: 51,200 GPUs at $4.20 per GPU-hour over 5 years, 30% prepaid ($2.83B, alongside); half the sites leased at $170/kW-mo, half bought at $1M per MW and converted at $5M. Project debt fills the GPU debt's DSCR gap at 12% interest-only, with $180M of site loans. NOI is after depreciation, interest and tax. Annual is the contract's yearly average.",
+    note: "Preliminary, per the project model: 51,200 GPUs at $4.20 per GPU-hour over 5 years, 30% prepaid ($2.83B, alongside); half the sites leased at $170/kW-mo, half bought at $1M per MW and converted at $5M. Project debt fills the GPU debt's DSCR gap at 12% interest-only, with $180M of site loans. Net income is after depreciation and interest, before income tax. Annual is the contract's yearly average.",
   },
   {
     id: "close",

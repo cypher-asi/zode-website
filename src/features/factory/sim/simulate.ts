@@ -1,5 +1,7 @@
-import { MATERIALS, flowOf, kitOf, podBill, type Scenario } from "../model/catalog";
+import { flowOf, kitOf, podBill, type Scenario } from "../model/catalog";
+import { SUPPLIERS } from "../model/inbound";
 import { Clock, rng, triangular } from "./engine";
+import { HANDLING_OF, SUPPLIER_OF, createInbound } from "./inbound";
 import {
   BLOCKED,
   CRANE,
@@ -24,7 +26,9 @@ import {
  * lane blocks the station behind it. A station builds once its pod is in,
  * its kit is on the pad and, if it lifts, the shared overhead crane is free.
  * Kits are picked from the store as soon as a pad empties, and the store
- * reorders each material up to a set cover on a fixed review cycle.
+ * reorders each material up to a set cover on a fixed review cycle, each
+ * supplier on its own day of it; orders come in through the receiving dock
+ * (inbound.ts) and only count as stock once they're put away.
  */
 
 interface Live {
@@ -35,6 +39,8 @@ interface Live {
   /** Its work at the current station is done. */
   doneHere: boolean;
 }
+
+const mod = (a: number, b: number) => ((a % b) + b) % b;
 
 export function simulate(sc: Scenario): Trace {
   const clock = new Clock();
@@ -51,12 +57,33 @@ export function simulate(sc: Scenario): Trace {
   const onOrder = bill.map(() => 0);
   const K = STATES.length;
 
+  const inbound = createInbound(clock, sc.inbound, sc.seed, horizon, (m, units) => {
+    onOrder[m] -= units;
+    setStock(m, onHand[m] + units);
+  });
+  const supplierOf = bill.map((_, m) => SUPPLIER_OF[HANDLING_OF[m]]);
+  const ofSupplier = (i: number, qty: readonly number[]) => qty.map((q, m) => (supplierOf[m] === i ? q : 0));
+  // Each supplier is ordered on its own day of the cycle, which spreads the dock's week; the phase puts
+  // each one's first truck on the road in the first few days.
+  const phases = SUPPLIERS.map((s, i) => mod(12 + 10 * i - s.leadHours, sc.reviewHours));
+  // The run starts mid-stream: what past order days bought and hasn't arrived is on order, not on the shelf.
+  const perCycle = bill.map((n) => (n * sc.reviewHours) / sc.releaseEveryHours);
+  SUPPLIERS.forEach((s, i) => {
+    for (let ago = sc.reviewHours - phases[i]; ago < s.leadHours; ago += sc.reviewHours) {
+      inbound.order(ofSupplier(i, perCycle), ago).forEach((units, m) => {
+        onOrder[m] += units;
+        onHand[m] = Math.max(0, onHand[m] - units);
+      });
+    }
+  });
+
   const occupant: (Live | null)[] = flow.map(() => null);
   const pods: PodTrace[] = [];
   const releases: number[] = [];
   const doneTimes: number[] = [];
   const kitTrips: KitTrip[] = [];
   const lifts: CraneLift[] = [];
+  const startStock = [...onHand];
   const stock: StockSeries[] = onHand.map((n) => ({ t: [0], onHand: [n] }));
   const series: StateSeries[] = sc.stations.map(() => ({ t: [0], state: [IDLE], cum: new Array(K).fill(0) }));
   const station = sc.stations.map((_, i) => ({ busy: false, kit: !needsKit[i], inbound: false, trip: -1 }));
@@ -178,6 +205,7 @@ export function simulate(sc: Scenario): Trace {
   };
 
   const settle = () => {
+    inbound.settle();
     let changed = true;
     while (changed) {
       changed = false;
@@ -219,19 +247,17 @@ export function simulate(sc: Scenario): Trace {
       backlog++;
     });
   }
-  for (let k = 1; k * sc.reviewHours <= horizon; k++) {
-    clock.at(k * sc.reviewHours, () => {
-      bill.forEach((_, m) => {
-        const qty = orderUpTo[m] - onHand[m] - onOrder[m];
-        if (qty <= 0) return;
-        onOrder[m] += qty;
-        clock.after(MATERIALS[m].leadHours, () => {
-          onOrder[m] -= qty;
-          setStock(m, onHand[m] + qty);
-        });
+  SUPPLIERS.forEach((_, i) => {
+    for (let t = phases[i] || sc.reviewHours; t <= horizon; t += sc.reviewHours) {
+      clock.at(t, () => {
+        const qty = ofSupplier(
+          i,
+          bill.map((_, m) => orderUpTo[m] - onHand[m] - onOrder[m]),
+        );
+        inbound.order(qty).forEach((units, m) => (onOrder[m] += units));
       });
-    });
-  }
+    }
+  });
 
   clock.run(horizon, settle);
 
@@ -262,8 +288,10 @@ export function simulate(sc: Scenario): Trace {
         .sort((a, b) => a - b),
     ),
     stock,
+    startStock,
     orderUpTo,
     kits: kitTrips,
     crane: lifts,
+    inbound: inbound.finish(),
   };
 }

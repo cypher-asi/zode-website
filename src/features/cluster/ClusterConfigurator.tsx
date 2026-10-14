@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { OverlayScrollbar } from "@/components/ui/OverlayScrollbar";
@@ -10,11 +11,19 @@ import { KIND_LABELS, PLATFORMS } from "./model/catalog";
 import type { ClusterConfig, Layer } from "./model/types";
 import { writeConfigParams } from "./model/url";
 import { RackElevation } from "./RackElevation";
-import { ClusterScene, type ClusterSceneHandle } from "./scene/ClusterScene";
+import type { ClusterSceneHandle } from "./scene/ClusterScene";
 import type { Pick } from "./scene/ClusterView";
 import { StatsBar } from "./StatsBar";
 import { LayersPanel, ViewPresets } from "./ViewToolbar";
 import styles from "./ClusterConfigurator.module.css";
+
+// three.js and the scene live in their own chunk so the panels hydrate without
+// waiting on it; `ssr: false` keeps WebGL code off the server. The viewport
+// paints the scene's background color until it arrives.
+const ClusterScene = dynamic(() => import("./scene/ClusterScene").then((m) => m.ClusterScene), {
+  ssr: false,
+  loading: () => null,
+});
 
 const PANEL_ID = "cluster-settings";
 const LAYERS_ID = "cluster-layers";

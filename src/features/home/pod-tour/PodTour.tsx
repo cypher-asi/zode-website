@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactElement } from "react";
 import { TerminalMenu, type TerminalMenuItem } from "@/components/ui/TerminalMenu";
 import { useInView } from "@/hooks/useInView";
+import { useOnScreen } from "@/hooks/useOnScreen";
 import { ANCHORS, CabinArt, DROP, VIEW } from "@/features/zode-drawings/CabinArt";
 import { POD_TOURS, SHELL_HOTSPOTS, type PodId } from "@/features/zode-drawings/podTour";
 import styles from "./PodTour.module.css";
@@ -23,6 +24,7 @@ export function PodTour(): ReactElement {
   const rootRef = useRef<HTMLDivElement>(null);
   const ref = useRef<HTMLDivElement>(null);
   const shown = useInView(ref, "0px 0px -20% 0px");
+  const onScreen = useOnScreen(ref);
   const [pod, setPod] = useState<PodId>("compute");
   const [active, setActive] = useState<string | null>(null);
   const [cutaway, setCutaway] = useState(false);
@@ -72,6 +74,7 @@ export function PodTour(): ReactElement {
           ref={ref}
           className={styles.figure}
           data-shown={shown || undefined}
+          data-offscreen={!onScreen || undefined}
           data-active={active ?? undefined}
         >
           <CabinArt pod={pod} cutaway={cut} active={active} onActive={setActive} />

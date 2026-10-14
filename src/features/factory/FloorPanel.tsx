@@ -97,7 +97,7 @@ export function FloorPanel({ trace, stats, selection, onSelect }: FloorPanelProp
   );
 }
 
-function Kpi({ label, value, detail }: { label: string; value: string; detail?: string }): ReactElement {
+export function Kpi({ label, value, detail }: { label: string; value: string; detail?: string }): ReactElement {
   return (
     <div className={styles.kpi}>
       <dt>{label}</dt>
@@ -233,7 +233,7 @@ function Details({
   );
 }
 
-function Fact({ label, children }: { label: string; children: ReactNode }): ReactElement {
+export function Fact({ label, children }: { label: string; children: ReactNode }): ReactElement {
   return (
     <div className={styles.fact}>
       <dt>{label}</dt>

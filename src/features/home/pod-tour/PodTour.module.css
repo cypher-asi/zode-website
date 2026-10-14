@@ -114,9 +114,13 @@
   translate: 0 0;
 }
 
-/* Packets in the drawing's fiber runs wait until the figure is shown (see lineArt.module.css). */
+/* Packets in the drawing's fiber runs wait until the figure is shown, and hold while it's out of view (see lineArt.module.css). */
 .figure:not([data-shown]) {
   --run-opacity: 0;
+  --run-state: paused;
+}
+
+.figure[data-offscreen] {
   --run-state: paused;
 }
 

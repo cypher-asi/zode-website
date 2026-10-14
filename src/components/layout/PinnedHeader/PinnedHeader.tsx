@@ -166,6 +166,7 @@ export function PinnedHeader(): ReactElement {
           <div className={styles.backClip}>
             <Link
               className={styles.back}
+              data-compact={route.compactBack || undefined}
               href={back ?? lastBack ?? "/"}
               scroll={false}
               title="Back to previous page"
@@ -178,7 +179,9 @@ export function PinnedHeader(): ReactElement {
               <svg className={styles.backChevron} viewBox="0 0 6 10" aria-hidden="true">
                 <path d="M5 1L1 5l4 4" />
               </svg>
-              <span className={styles.backLabel}>Back</span>
+              <span className={styles.backText}>
+                <span className={styles.backLabel}>Back</span>
+              </span>
             </Link>
           </div>
         </div>

@@ -173,6 +173,10 @@
   animation: status-pulse 2.8s ease-out infinite;
 }
 
+.status[data-offscreen] .statusDot::after {
+  animation-play-state: paused;
+}
+
 @keyframes status-pulse {
   0% {
     opacity: 0.7;

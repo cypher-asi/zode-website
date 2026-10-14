@@ -11,6 +11,26 @@
   stroke: currentColor;
   stroke-width: 1;
   opacity: 0.8;
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease;
+}
+
+@media (hover: hover) {
+  .flag:hover {
+    opacity: 1;
+    transform: translateY(calc(var(--flag-h, 19.2px) * -0.06));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flag {
+    transition: none;
+  }
+
+  .flag:hover {
+    transform: none;
+  }
 }
 
 .flag :is(rect, line, path) {

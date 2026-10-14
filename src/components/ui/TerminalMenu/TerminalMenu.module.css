@@ -178,6 +178,11 @@
   }
 }
 
+/* The blink holds while the menu is out of view; the type-in never does, so it ends on time. */
+.menu[data-offscreen]:not([data-typing]) .item .cursor {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .menu[data-typing] .text,
   .menu[data-typing] .cursor,

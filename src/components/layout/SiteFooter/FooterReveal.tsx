@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, type KeyboardEvent, type ReactElement } from "react";
+import { useOnScreen } from "@/hooks/useOnScreen";
 import { FooterNav } from "./FooterNav";
 import styles from "./FooterReveal.module.css";
 
@@ -15,6 +16,8 @@ import styles from "./FooterReveal.module.css";
 export function FooterReveal(): ReactElement {
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const statusRef = useRef<HTMLParagraphElement>(null);
+  const statusOnScreen = useOnScreen(statusRef);
   const navId = useId();
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -61,7 +64,7 @@ export function FooterReveal(): ReactElement {
         >
           A Cypher Company
         </a>
-        <p className={styles.status}>
+        <p ref={statusRef} className={styles.status} data-offscreen={!statusOnScreen || undefined}>
           <span className={styles.statusDot} aria-hidden="true" />
           <span className={styles.statusText}>Network operational</span>
         </p>

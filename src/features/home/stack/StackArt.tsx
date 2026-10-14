@@ -51,7 +51,6 @@ class Sketch extends BaseSketch {
 }
 
 function network(s: Sketch): void {
-  s.slab(PLATE);
   s.inset(H - 7);
 
   const rand = rng(7);
@@ -98,8 +97,6 @@ function network(s: Sketch): void {
 }
 
 function routing(s: Sketch): void {
-  s.slab(PLATE);
-
   const turns: ((x: number, y: number) => P3)[] = [
     (x, y) => [x, y],
     (x, y) => [-y, x],
@@ -124,7 +121,6 @@ function routing(s: Sketch): void {
 }
 
 function compute(s: Sketch): void {
-  s.slab(PLATE);
   s.inset(H - 7);
 
   const size = 16;
@@ -150,8 +146,6 @@ function compute(s: Sketch): void {
 }
 
 function pods(s: Sketch): void {
-  s.slab(PLATE);
-
   const w = 72;
   const d = 24;
   const h = 18;
@@ -179,8 +173,6 @@ function pods(s: Sketch): void {
 }
 
 function power(s: Sketch): void {
-  s.slab(PLATE);
-
   const cells: { x: number; y: number; k: number }[] = [];
   for (const y of [-80, -56]) {
     for (let c = 0; c < 7; c++) cells.push({ x: -78 + c * 23, y, k: c });
@@ -210,8 +202,6 @@ function power(s: Sketch): void {
 }
 
 function land(s: Sketch): void {
-  s.slab(BASE);
-
   for (const z of [-7, -13, -19]) s.line([[H, -H, z], [H, H, z], [-H, H, z]]);
 
   const limit = H - 4;
@@ -249,10 +239,14 @@ function land(s: Sketch): void {
 
 const DRAW: Record<LayerId, (s: Sketch) => void> = { network, routing, compute, pods, power, land };
 
+const thickness = (id: LayerId): number => (id === "land" ? BASE : PLATE);
+
+/** The bare slab, then its detail in a `.detail` group that fades while another plate is hovered. */
 const ART = Object.fromEntries(
   LAYERS.map(({ id }) => {
     const s = new Sketch();
-    DRAW[id](s);
+    s.slab(thickness(id));
+    s.group({ className: styles.detail }, () => DRAW[id](s));
     return [id, s.items];
   }),
 ) as Record<LayerId, ReactElement[]>;
@@ -260,7 +254,7 @@ const ART = Object.fromEntries(
 /** Each slab's projected outline, used as a hover target that stays put while the drawing lifts. */
 const HIT = Object.fromEntries(
   LAYERS.map(({ id }) => {
-    const t = id === "land" ? BASE : PLATE;
+    const t = thickness(id);
     const outline: P3[] = [
       [-H, -H, 0],
       [H, -H, 0],

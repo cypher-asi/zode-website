@@ -82,9 +82,7 @@
 
 .layer {
   transform: translateY(calc(var(--o) * var(--gap) * 1px));
-  transition:
-    transform 1100ms var(--ease-out) calc(var(--i) * 60ms),
-    opacity 200ms ease;
+  transition: transform 1100ms var(--ease-out) calc(var(--i) * 60ms);
 }
 
 /* Only the static `.hit` outlines take the pointer; a moving target under the cursor makes hover flip-flop. */
@@ -214,8 +212,12 @@
   }
 }
 
-.figure[data-active] .layer:not([data-on]) {
-  opacity: 0.28;
+.detail {
+  transition: opacity 200ms ease;
+}
+
+.figure[data-active] .layer:not([data-on]) .detail {
+  opacity: 0;
 }
 
 /* Drawing primitives (see StackArt.tsx). The face shades are artwork, matched to the shared line art. */
@@ -450,6 +452,7 @@
 
   .layer,
   .lift,
+  .detail,
   .label {
     transition: none;
   }

@@ -88,6 +88,11 @@
   transition-delay: 0s;
 }
 
+/* Out of play (`data-parked`, Deck.tsx), a slide skips style, layout and paint, keeping its content's last style for its next entrance. */
+.slot[data-parked] {
+  content-visibility: hidden;
+}
+
 /*
  * The page grid, one for the whole deck: rails down both sides and three
  * rules across, over the top of the head band, under it, and over the foot
@@ -818,6 +823,18 @@
   padding: 8px var(--content-edge) 24px;
   background: var(--deck-bg);
   overscroll-behavior: contain;
+}
+
+/* Drawn ahead and kept while closed, so opening it only shows it; its fade plays on each opening. */
+.overview:not([data-open]) {
+  visibility: hidden;
+}
+
+.overview:not([data-open], [data-warming]) {
+  content-visibility: hidden;
+}
+
+.overview[data-open] {
   animation: overviewIn var(--duration-slow) var(--ease-out);
 }
 
@@ -839,6 +856,9 @@
 
 .thumb {
   position: relative;
+}
+
+.overview[data-open] .thumb {
   animation: overviewIn var(--duration-slow) var(--ease-out) backwards;
 }
 
@@ -935,6 +955,7 @@
     visibility: visible;
     opacity: 1;
     translate: none;
+    content-visibility: visible;
     break-after: page;
     break-inside: avoid;
   }

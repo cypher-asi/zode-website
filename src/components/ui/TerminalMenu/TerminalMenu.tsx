@@ -10,6 +10,7 @@ import {
   type KeyboardEvent,
   type ReactElement,
 } from "react";
+import { useOnScreen } from "@/hooks/useOnScreen";
 import styles from "./TerminalMenu.module.css";
 
 export interface TerminalMenuItem {
@@ -76,6 +77,7 @@ export function TerminalMenu({
   const Root = navigates ? "nav" : "div";
   const rootRef = useRef<HTMLElement>(null);
   const [typing, setTyping] = useState(typeIn);
+  const onScreen = useOnScreen(rootRef);
 
   /*
    * The typing runs in CSS from first paint, so it may finish before
@@ -113,6 +115,7 @@ export function TerminalMenu({
       aria-label={label}
       data-size={size}
       data-typing={typing || undefined}
+      data-offscreen={!onScreen || undefined}
       onKeyDown={onMenuKey}
       onMouseLeave={onHighlight && (() => onHighlight(null))}
       onBlur={onHighlight && onBlur}

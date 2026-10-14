@@ -86,6 +86,7 @@
   /* How far the hover box reaches past the wordmark on either side. */
   --brand-box-x: 14px;
   --brand-indent: 0px;
+  --wordmark-height: 22px;
   --os-gap: 10px;
   --os-size: 26px;
 
@@ -133,7 +134,7 @@
 
 .wordmark {
   display: block;
-  height: 22px;
+  height: var(--wordmark-height);
   width: auto;
   filter: invert(var(--logo-invert, 1));
   transition: filter 200ms ease;
@@ -191,6 +192,8 @@
   justify-content: center;
   width: var(--os-size);
   height: var(--os-size);
+  /* Taller than the wordmark; overhangs it evenly so the row stays the wordmark's height and it sits as on every other page. */
+  margin-block: calc((var(--wordmark-height) - var(--os-size)) / 2);
   border: 1px solid var(--color-black);
   border-radius: var(--radius-inset);
   color: var(--color-black);
@@ -309,9 +312,10 @@
 }
 
 .back {
+  --back-gap: 8px;
+
   display: inline-flex;
   flex: none;
-  gap: 8px;
   align-items: center;
   height: 32px;
   padding: 0 14px 0 12px;
@@ -325,7 +329,44 @@
     background-size var(--duration-slow) var(--ease-in-out),
     background-color 200ms ease,
     box-shadow 200ms ease,
-    color 200ms ease 80ms;
+    color 200ms ease 80ms,
+    padding 360ms var(--ease-in-out);
+}
+
+/* Square around the arrow: the border and padding add up to the pill's height. */
+.back[data-compact] {
+  padding: 0 12px;
+}
+
+/* The label folds into the arrow on the same track as the slot, so the pill narrows rather than swapping. */
+.backText {
+  display: grid;
+  grid-template-columns: 1fr;
+  overflow: hidden;
+  opacity: 1;
+  transition:
+    grid-template-columns 360ms var(--ease-in-out),
+    opacity 220ms ease 140ms;
+}
+
+.back[data-compact] .backText {
+  grid-template-columns: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-columns 360ms var(--ease-in-out),
+    opacity 160ms ease;
+}
+
+.backLabel {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+/* The gap from the arrow, as content rather than padding so the folded track can close all the way. */
+.backLabel::before {
+  content: "";
+  display: inline-block;
+  width: var(--back-gap);
 }
 
 .action[data-media] .back {
@@ -928,6 +969,7 @@ button.menuItem:disabled {
 @media (max-width: 900px) {
   .brandRow {
     --brand-box-x: 11px;
+    --wordmark-height: 18px;
     --os-gap: 8px;
     --os-size: 22px;
   }
@@ -941,10 +983,6 @@ button.menuItem:disabled {
     inset: -8px calc(-1 * var(--brand-box-x));
   }
 
-  .wordmark {
-    height: 18px;
-  }
-
   .action {
     top: calc(19px + env(safe-area-inset-top, 0px));
     font-size: var(--text-2xs);
@@ -955,9 +993,14 @@ button.menuItem:disabled {
   }
 
   .back {
-    gap: 6px;
+    --back-gap: 6px;
+
     height: 28px;
     padding: 0 11px 0 9px;
+  }
+
+  .back[data-compact] {
+    padding: 0 10px;
   }
 
   .avatar {
@@ -988,13 +1031,12 @@ button.menuItem:disabled {
 /* Phones fit the wordmark, Back, the button and the avatar on one row by dropping Back to its chevron. */
 @media (max-width: 480px) {
   .back {
-    justify-content: center;
-    width: 28px;
-    padding: 0;
+    padding: 0 10px;
   }
 
-  .backLabel {
-    display: none;
+  .backText {
+    grid-template-columns: 0fr;
+    opacity: 0;
   }
 }
 
@@ -1059,6 +1101,8 @@ button.menuItem:disabled {
   .backSlot,
   .backSlot[data-shown],
   .back,
+  .backText,
+  .back[data-compact] .backText,
   .primarySlot,
   .primarySlot:not([data-shown]),
   .split,
