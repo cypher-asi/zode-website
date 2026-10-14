@@ -2035,8 +2035,8 @@
   max-width: calc(50% - 4 * var(--u));
 }
 
-/* The title block centres in the room above the company line. */
-.coverText > div {
+/* The title block centres in the room above the legal legend. */
+.coverTitleBlock {
   margin-block: auto;
 }
 
@@ -2104,12 +2104,180 @@
  * The render fills the right half of the page grid: from the top rule to the
  * foot rule, and from the middle out to the right rail.
  */
-.coverImage {
+.coverImage,
+.disclaimerPanel {
   position: absolute;
   top: calc(max(calc(4 * var(--u)), var(--slide-top, 0px) + calc(1.6 * var(--u))) - 1.4 * var(--u));
   right: calc(var(--rail) + 1px);
   bottom: calc(3.6 * var(--u) + var(--slide-bottom, 0px));
   left: calc(50% + 0.5px);
+}
+
+/* The securities legend, along the foot of the cover's text, and its full disclaimer. */
+.disclaimer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(0.7 * var(--u));
+}
+
+.legalLegend {
+  max-width: calc(40 * var(--u));
+}
+
+.disclaimerToggle {
+  font-family: var(--font-mono);
+  font-size: calc(0.62 * var(--u));
+  cursor: pointer;
+}
+
+/* Over the image, in the same box; hidden until the toggle opens it. */
+.disclaimerPanel {
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  padding: calc(1.4 * var(--u)) calc(1.6 * var(--u)) 0 calc(2.4 * var(--u));
+  background: var(--bg);
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    opacity var(--duration-fast) ease,
+    visibility 0s linear var(--duration-fast);
+}
+
+.disclaimerPanel[data-open] {
+  visibility: visible;
+  opacity: 1;
+  transition-delay: 0s;
+}
+
+.disclaimerPanel:focus {
+  outline: none;
+}
+
+.disclaimerHead {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(1 * var(--u));
+  padding-bottom: calc(0.8 * var(--u));
+  border-bottom: 1px solid var(--rule);
+}
+
+.disclaimerClose {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: calc(2 * var(--u));
+  height: calc(2 * var(--u));
+  padding: 0;
+  border: 1px solid var(--rule-strong);
+  background: none;
+  color: var(--fg);
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+
+.disclaimerClose svg {
+  width: 40%;
+  height: 40%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: square;
+  vector-effect: non-scaling-stroke;
+}
+
+.disclaimerClose:hover {
+  border-color: var(--fg);
+  background: var(--rule);
+}
+
+.disclaimerClose:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Positioned parent the overlay scrollbar draws into. */
+.disclaimerFrame {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Native bar hidden; OverlayScrollbar floats over the list's right edge, clear of its text. */
+.disclaimerList {
+  flex: 1;
+  min-height: 0;
+  padding: calc(1 * var(--u)) calc(1 * var(--u)) calc(1.6 * var(--u)) 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.disclaimerList::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.disclaimerSection + .disclaimerSection {
+  margin-top: calc(1 * var(--u));
+}
+
+.disclaimerHeading {
+  margin: 0 0 calc(0.3 * var(--u));
+  font-family: var(--font-mono);
+  font-size: calc(0.6 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--fg);
+}
+
+.disclaimerBody {
+  margin: 0;
+  font-size: calc(0.8 * var(--u));
+  line-height: 1.5;
+  color: var(--fg-2);
+}
+
+/* No pointer on paper: the full text takes the image's place, in two columns, so the first page carries it whole. */
+@media print {
+  .disclaimerToggle,
+  .disclaimerClose {
+    display: none;
+  }
+
+  .disclaimerPanel {
+    visibility: visible;
+    opacity: 1;
+    transition: none;
+  }
+
+  .disclaimerList {
+    overflow: visible;
+    column-count: 2;
+    column-gap: calc(1.6 * var(--u));
+  }
+
+  .disclaimerSection {
+    break-inside: avoid;
+  }
+
+  .disclaimerSection + .disclaimerSection {
+    margin-top: 0;
+    padding-top: calc(0.6 * var(--u));
+  }
+
+  .disclaimerBody {
+    font-size: calc(0.56 * var(--u));
+    line-height: 1.42;
+  }
 }
 
 /* The split: a rule down the middle, from the top rule to the foot rule, with a pip at each crossing. */
@@ -2429,6 +2597,48 @@
 .slide[data-compact] .coverLede {
   margin-top: 16px;
   font-size: 17px;
+}
+
+/* The legend under the title, then the full disclaimer on down the card. */
+.slide[data-compact] .disclaimer {
+  gap: 0;
+  margin-top: 28px;
+}
+
+.slide[data-compact] .legalLegend {
+  max-width: none;
+  padding-bottom: 18px;
+}
+
+.slide[data-compact] .disclaimerPanel {
+  position: static;
+  padding: 0;
+  background: none;
+  visibility: visible;
+  opacity: 1;
+}
+
+.slide[data-compact] .disclaimerHead {
+  padding: 18px 0 10px;
+  border-top: 1px solid var(--rule);
+}
+
+.slide[data-compact] .disclaimerList {
+  padding: 4px 0 0;
+  overflow: visible;
+}
+
+.slide[data-compact] .disclaimerSection + .disclaimerSection {
+  margin-top: 16px;
+}
+
+.slide[data-compact] .disclaimerHeading {
+  margin-bottom: 4px;
+  font-size: var(--text-2xs);
+}
+
+.slide[data-compact] .disclaimerBody {
+  font-size: 13px;
 }
 
 /* Stats, steps, notes and sources: one column. */

@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { useId, useState, type CSSProperties, type ReactElement, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactElement, type ReactNode } from "react";
 import { NorthAmericaFlags } from "@/components/ui/NorthAmericaFlags";
+import { OverlayScrollbar } from "@/components/ui/OverlayScrollbar";
 import { CabinArt, VIEW as CABIN_VIEW } from "@/features/zode-drawings/CabinArt";
 import { Principles } from "@/features/home/principles/Principles";
 import { StackFigure } from "@/features/home/stack/FullStack";
@@ -11,6 +12,7 @@ import { DEMAND_GAP, DemandChart } from "./charts/DemandChart";
 import { ShortfallByYear, ShortfallChart } from "./charts/ShortfallChart";
 import { StateTileMap } from "./charts/StateTileMap";
 import { TokenChart } from "./charts/TokenChart";
+import { DISCLAIMER, LEGAL_LEGEND, RAISE_NOTE } from "./disclaimer";
 import { BLOCKED, NEWS } from "./news";
 import { GRID_LABELS, STATUS_LABELS, STATUS_ORDER, type GridGate, type PolicyMap, type PolicyState } from "./policyTypes";
 import { AS_OF, MARKET_TIGHTNESS, SOURCES, sourceUrl, type Source, type SourceId } from "./research";
@@ -74,13 +76,104 @@ function StatBlock({ stat, highlight = false, size = "md" }: { stat: Stat; highl
   );
 }
 
-function Cover({ slide }: { slide: Of<"cover"> }): ReactElement {
+/**
+ * The cover's securities legend in fine print, and the full disclaimer
+ * behind it: a button opens it in a panel over the cover's image, which its
+ * close, Escape, the button again or turning the slide shuts, back on the
+ * button. On a story card (`compact`) it sets out in full under the legend,
+ * and printed it takes the image's place, so the PDF's first page carries it
+ * whole. Nothing around the panel may take a transform (`.rise`), or it would
+ * position against that instead of the frame.
+ */
+function CoverDisclaimer({ active, compact }: { active: boolean; compact: boolean }): ReactElement {
+  const id = useId();
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
+  const [open, setOpen] = useState(false);
+  const [shown, setShown] = useState(active);
+  if (shown !== active) {
+    setShown(active);
+    if (!active) setOpen(false);
+  }
+  const close = () => {
+    setOpen(false);
+    requestAnimationFrame(() => buttonRef.current?.focus({ preventScroll: true }));
+  };
+  useEffect(() => {
+    if (!open) return;
+    panelRef.current?.focus({ preventScroll: true });
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      event.preventDefault();
+      setOpen(false);
+      requestAnimationFrame(() => buttonRef.current?.focus({ preventScroll: true }));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  return (
+    <div className={styles.disclaimer}>
+      <p {...rise(3)} className={`${styles.rise} ${styles.fine} ${styles.legalLegend}`}>
+        {LEGAL_LEGEND}
+      </p>
+      {compact ? null : (
+        <button
+          ref={buttonRef}
+          type="button"
+          {...rise(3.5)}
+          className={`${styles.rise} ${styles.sourcesToggle} ${styles.disclaimerToggle}`}
+          aria-expanded={open}
+          aria-controls={id}
+          onClick={() => (open ? close() : setOpen(true))}
+        >
+          Important legal information
+        </button>
+      )}
+      <section
+        ref={panelRef}
+        id={id}
+        className={styles.disclaimerPanel}
+        data-open={open || undefined}
+        aria-labelledby={`${id}-title`}
+        tabIndex={-1}
+        data-deck-scroll=""
+      >
+        <header className={styles.disclaimerHead}>
+          <h3 id={`${id}-title`} className={styles.label}>
+            Important legal information
+          </h3>
+          {compact ? null : (
+            <button type="button" className={styles.disclaimerClose} onClick={close} aria-label="Close">
+              <svg viewBox="0 0 12 12" aria-hidden="true">
+                <path d="M1 1l10 10M11 1L1 11" />
+              </svg>
+            </button>
+          )}
+        </header>
+        <div className={styles.disclaimerFrame}>
+          <div id={`${id}-list`} className={styles.disclaimerList}>
+            {DISCLAIMER.map((section) => (
+              <section key={section.heading} className={styles.disclaimerSection}>
+                <h4 className={styles.disclaimerHeading}>{section.heading}</h4>
+                <p className={styles.disclaimerBody}>{section.body}</p>
+              </section>
+            ))}
+          </div>
+          <OverlayScrollbar targetId={`${id}-list`} showOnHover />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function Cover({ slide, active, compact }: { slide: Of<"cover">; active: boolean; compact: boolean }): ReactElement {
   return (
     <div className={styles.cover}>
       <div className={styles.coverText}>
         {/* eslint-disable-next-line @next/next/no-img-element -- the SVG wordmark scales with the slide */}
         <img className={styles.printMark} src="/brand/zode-wordmark-white.svg" alt="ZODE" />
-        <div>
+        <div className={styles.coverTitleBlock}>
           <h2 {...rise(1)} className={`${styles.rise} ${styles.display} ${styles.coverTitle}`}>
             {slide.title}
           </h2>
@@ -88,6 +181,7 @@ function Cover({ slide }: { slide: Of<"cover"> }): ReactElement {
             {slide.lede}
           </p>
         </div>
+        <CoverDisclaimer active={active} compact={compact} />
       </div>
       <div className={styles.coverImage} data-media data-surface="light">
         <Image
@@ -796,6 +890,9 @@ function Raise({ slide }: { slide: Of<"raise"> }): ReactElement {
             <li key={term}>{term}</li>
           ))}
         </ul>
+        <p {...rise(3.5)} className={`${styles.rise} ${styles.fine}`}>
+          {RAISE_NOTE}
+        </p>
       </div>
       <div {...rise(4)} className={`${styles.rise} ${styles.splitSide}`}>
         <h3 className={styles.label}>Use of funds</h3>
@@ -923,7 +1020,7 @@ function Body({
 }): ReactNode {
   switch (slide.kind) {
     case "cover":
-      return <Cover slide={slide} />;
+      return <Cover slide={slide} active={active} compact={compact} />;
     case "stats":
       return <Stats slide={slide} active={active} compact={compact} />;
     case "demand":
