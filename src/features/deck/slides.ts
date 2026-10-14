@@ -57,8 +57,21 @@ export interface ProblemGroup {
 export interface Logo {
   readonly name: string;
   readonly src: string;
-  /** Height in slide units, set by eye so the marks read at one size. */
-  readonly height: number;
+  /** The SVG's viewBox width over its height; marks are sized to one area from it. */
+  readonly aspect: number;
+  /** Set by eye for marks whose weight or whitespace reads heavy or light at that area. */
+  readonly scale?: number;
+}
+
+/** A contract figure, drawn as clusters' worth of contract value. */
+export interface ContractFigure extends Stat {
+  readonly usd: number;
+}
+
+/** One side of the contract: its terms. */
+export interface ContractSide {
+  readonly title: string;
+  readonly rows: readonly { label: string; value: string }[];
 }
 
 interface Base {
@@ -71,8 +84,6 @@ interface Base {
   readonly ground: Ground;
   /** Cited on the slide's foot and gathered in the appendix. */
   readonly sources?: readonly SourceId[];
-  /** A small row of logos at the foot's start. */
-  readonly logos?: readonly Logo[];
 }
 
 const LOGO_DIR = "/images/deck/logos";
@@ -123,11 +134,16 @@ export type Slide =
     })
   | (Base & {
       kind: "traction";
-      hero: Stat;
-      /** Set under the hero, smaller, joined with a plus. */
-      plus: Stat;
-      details: readonly { label: string; value: string }[];
-      notes: readonly { title: string; body: string }[];
+      /** Contract value of one 4 MW cluster: both figures are drawn as blocks of it. */
+      block: { usd: number; note: string };
+      /** The large card. */
+      contracted: ContractFigure;
+      /** The mini-card under it. */
+      loi: ContractFigure;
+      demand: ContractSide;
+      supply: ContractSide;
+      /** Rows of logos across the foot of the body, one per stage. */
+      customers: readonly { label: string; logos: readonly Logo[] }[];
     })
   | (Base & {
       kind: "pipeline";
@@ -405,26 +421,45 @@ export const SLIDES: readonly Slide[] = [
     section: "Traction",
     eyebrow: "Traction",
     title: "$485M contracted. $20B in LOIs.",
-    ground: "ink",
-    hero: { value: "$485M", label: "Contracted revenue, signed" },
-    plus: { value: "$20B", label: "In letters of intent" },
-    details: [
-      { label: "Anchor contract", value: "$376.8M · Chicago, IL" },
-      { label: "Capacity", value: "2,048 B300 · 256 nodes · ~4 MW" },
-      { label: "Price and term", value: "$4.20 per GPU-hour · 5 years" },
-      { label: "Prepayment", value: "$103.6M (27.5%)" },
-      { label: "Delivery", value: "February 2027" },
-    ],
-    notes: [
-      { title: "Second offtake.", body: "Take-or-pay MSA signed July 2026. Being resized to 64 nodes on a 3-year term." },
-      { title: "Power partner.", body: "LOI executed September 2026 for access to 928 MW across MT, ND, KY and TX." },
-    ],
-    logos: [
-      { name: "Anthropic", src: `${LOGO_DIR}/anthropic.svg`, height: 0.72 },
-      { name: "Crusoe", src: `${LOGO_DIR}/crusoe.svg`, height: 1.08 },
-      { name: "Thinking Machines", src: `${LOGO_DIR}/thinking-machines.svg`, height: 0.66 },
-      { name: "Together AI", src: `${LOGO_DIR}/together-ai.svg`, height: 1.08 },
-      { name: "San Francisco Compute Company", src: `${LOGO_DIR}/sf-compute.svg`, height: 1.08 },
+    ground: "paper",
+    block: { usd: 375e6, note: "Each block is one 4 MW cluster, about $375M of contract value." },
+    contracted: { value: "$485M", label: "Contracted revenue, signed", usd: 485e6 },
+    loi: { value: "$20B", label: "In letters of intent", usd: 20e9 },
+    demand: {
+      title: "Real life demand-side contract",
+      rows: [
+        { label: "Contract value", value: "$376.8M" },
+        { label: "Capacity", value: "2,048 B300 · 256 nodes · ~4 MW" },
+        { label: "Price and term", value: "$4.20 per GPU-hour · 5 years" },
+        { label: "Prepayment", value: "$103.6M (27.5%)" },
+        { label: "Delivery", value: "February 2027" },
+      ],
+    },
+    supply: {
+      title: "Real life supply-side contract",
+      rows: [
+        { label: "Colocation lease", value: "$170/kW-mo · ~$8.2M/yr per 4 MW + NNN and electricity" },
+        { label: "Building conversion", value: "$5M per MW · ~$20M per 4 MW" },
+      ],
+    },
+    customers: [
+      {
+        label: "LOI",
+        logos: [
+          { name: "Crusoe", src: `${LOGO_DIR}/crusoe.svg`, aspect: 119 / 29, scale: 1.1 },
+          { name: "Thinking Machines", src: `${LOGO_DIR}/thinking-machines.svg`, aspect: 1114.8 / 70, scale: 1.1 },
+          { name: "Together AI", src: `${LOGO_DIR}/together-ai.svg`, aspect: 119 / 26, scale: 1.12 },
+          { name: "San Francisco Compute Company", src: `${LOGO_DIR}/sf-compute.svg`, aspect: 2000 / 336, scale: 1.05 },
+        ],
+      },
+      {
+        label: "Pipeline",
+        logos: [
+          { name: "Anthropic", src: `${LOGO_DIR}/anthropic.svg`, aspect: 1024.2 / 115, scale: 0.88 },
+          { name: "OpenAI", src: `${LOGO_DIR}/openai.svg`, aspect: 288 / 78 },
+          { name: "SpaceXAI", src: `${LOGO_DIR}/spacexai.svg`, aspect: 1294 / 158, scale: 1.3 },
+        ],
+      },
     ],
   },
   {

@@ -14,7 +14,7 @@ import { TokenChart } from "./charts/TokenChart";
 import { BLOCKED, NEWS } from "./news";
 import { GRID_LABELS, STATUS_LABELS, STATUS_ORDER, type GridGate, type PolicyMap, type PolicyState } from "./policyTypes";
 import { AS_OF, MARKET_TIGHTNESS, SOURCES, sourceUrl, type Source, type SourceId } from "./research";
-import type { Slide, Stat } from "./slides";
+import type { ContractSide, Logo, Slide, Stat } from "./slides";
 import styles from "./Slide.module.css";
 
 type Of<K extends Slide["kind"]> = Extract<Slide, { kind: K }>;
@@ -567,36 +567,96 @@ function Unit({ slide, active }: { slide: Of<"unit">; active: boolean }): ReactE
   );
 }
 
+/** Square slide units every logo covers, its height found from its aspect, so long and compact marks weigh the same. */
+const LOGO_AREA = 7;
+
+function LogoMark({ logo }: { logo: Logo }): ReactElement {
+  const height = Math.sqrt(LOGO_AREA / logo.aspect) * (logo.scale ?? 1);
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- the SVG logos scale with the slide
+    <img src={logo.src} alt={logo.name} style={{ "--h": height } as CSSProperties} />
+  );
+}
+
+/** A contract value as clusters: one block per cluster's worth, the last filled to the remainder. */
+function ComputeBlocks({ usd, unit }: { usd: number; unit: number }): ReactElement {
+  const count = usd / unit;
+  const full = Math.floor(count);
+  const part = count - full;
+  return (
+    <div className={styles.blocks}>
+      <ul className={styles.blockGrid} aria-hidden="true">
+        {Array.from({ length: full }, (_, i) => (
+          <li key={i} className={styles.block} />
+        ))}
+        {part > 0.005 ? (
+          <li className={styles.block} data-part style={{ "--fill": part } as CSSProperties} />
+        ) : null}
+      </ul>
+      <span className={styles.blockCount}>{count.toFixed(1)} × 4 MW</span>
+    </div>
+  );
+}
+
+function ContractTerms({ side, delay }: { side: ContractSide; delay: number }): ReactElement {
+  return (
+    <section className={styles.contractSide}>
+      <h3 {...rise(delay)} className={`${styles.rise} ${styles.figLabel} ${styles.contractTitle}`}>
+        {side.title}
+      </h3>
+      <dl className={styles.details}>
+        {side.rows.map((row, i) => (
+          <div key={row.label} {...rise(delay + 0.5 + i * 0.4)} className={`${styles.rise} ${styles.detail}`}>
+            <dt>{row.label}</dt>
+            <dd>{row.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+/**
+ * The signed total in a large card and the LOIs in a mini-card under it,
+ * each drawn as blocks of one 4 MW cluster's contract value so the two read
+ * against each other; the demand side's terms and the supply side's costs
+ * on the right; the customers by stage across the foot of the body.
+ */
 function Traction({ slide }: { slide: Of<"traction"> }): ReactElement {
   return (
-    <div className={styles.split}>
-      <div className={styles.heroPair}>
-        <div {...rise(2)}>
-          <StatBlock stat={slide.hero} highlight size="xl" />
+    <div className={styles.traction}>
+      <div className={styles.split}>
+        <div className={styles.contractCards}>
+          <div {...rise(2)} className={`${styles.rise} ${styles.contractCard}`}>
+            <StatBlock stat={slide.contracted} highlight size="xl" />
+            <ComputeBlocks usd={slide.contracted.usd} unit={slide.block.usd} />
+          </div>
+          <div {...rise(2.5)} className={`${styles.rise} ${styles.contractCard}`} data-size="mini">
+            <StatBlock stat={slide.loi} />
+            <ComputeBlocks usd={slide.loi.usd} unit={slide.block.usd} />
+          </div>
+          <p {...rise(3)} className={`${styles.rise} ${styles.fine}`}>
+            {slide.block.note}
+          </p>
         </div>
-        <div {...rise(2.5)} className={`${styles.rise} ${styles.heroPlus}`}>
-          <span className={styles.plusSign} aria-hidden="true">
-            +
-          </span>
-          <StatBlock stat={slide.plus} size="lg" />
+        <div className={styles.contractSides}>
+          <ContractTerms side={slide.demand} delay={3} />
+          <ContractTerms side={slide.supply} delay={5.5} />
         </div>
       </div>
-      <div className={styles.splitSide}>
-        <dl className={styles.details}>
-          {slide.details.map((row, i) => (
-            <div key={row.label} {...rise(3 + i * 0.5)} className={`${styles.rise} ${styles.detail}`}>
-              <dt className={styles.label}>{row.label}</dt>
-              <dd>{row.value}</dd>
-            </div>
-          ))}
-        </dl>
-        <div className={styles.notes}>
-          {slide.notes.map((note, i) => (
-            <p key={note.title} {...rise(6 + i)} className={`${styles.rise} ${styles.body}`}>
-              <strong className={styles.strong}>{note.title}</strong> {note.body}
-            </p>
-          ))}
-        </div>
+      <div className={styles.customers}>
+        {slide.customers.map((group, i) => (
+          <div key={group.label} {...rise(7 + i * 0.5)} className={`${styles.rise} ${styles.customerGroup}`}>
+            <span className={styles.figLabel}>{group.label}</span>
+            <ul className={styles.logos}>
+              {group.logos.map((logo) => (
+                <li key={logo.name}>
+                  <LogoMark logo={logo} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -956,7 +1016,7 @@ const pad = (n: number) => String(n).padStart(2, "0");
  * One 16:9 slide. Everything is sized in container units of the stage, so a
  * slide reads the same full-screen, in the overview and on a printed page.
  * Content slides share one page grid: a head band with the title, the body,
- * and a foot band with the section name, logos, sources and page number.
+ * and a foot band with the section name, sources and page number.
  * `grid` draws the rails and rules on the slide itself; the stage turns it
  * off and draws one shared grid over every slide instead, finding the bands
  * by `data-band`. `active` plays its entrance; `branded` adds the wordmark to
@@ -1033,16 +1093,6 @@ export function SlideView({
               <p className={styles.footLabel}>
                 {slide.meta} · {slide.eyebrow}
               </p>
-            ) : null}
-            {slide.logos ? (
-              <ul className={styles.logos}>
-                {slide.logos.map((logo) => (
-                  <li key={logo.name}>
-                    {/* eslint-disable-next-line @next/next/no-img-element -- the SVG logos scale with the slide */}
-                    <img src={logo.src} alt={logo.name} style={{ "--h": logo.height } as CSSProperties} />
-                  </li>
-                ))}
-              </ul>
             ) : null}
             <div className={styles.footEnd}>
               {slide.sources ? <FootSources ids={slide.sources} inline={compact} /> : null}

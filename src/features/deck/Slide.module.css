@@ -296,7 +296,7 @@
   min-height: 0;
 }
 
-/* Sources, then logos, in a band of the same height on every slide; the print wordmark takes the far end. */
+/* The section name, then the sources, in a band of the same height on every slide; the print wordmark takes the far end. */
 .foot {
   display: flex;
   align-items: center;
@@ -383,29 +383,6 @@
   flex: none;
   width: auto;
   height: calc(1 * var(--u));
-}
-
-/* Other companies' marks, flattened to the slide's quiet text tone. */
-.logos {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: calc(0.8 * var(--u)) calc(2.4 * var(--u));
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.logos img {
-  display: block;
-  width: auto;
-  height: calc(var(--h) * var(--u));
-  filter: brightness(0);
-  opacity: 0.6;
-}
-
-.slide[data-ground="ink"] .logos img {
-  filter: brightness(0) invert(1);
 }
 
 .sources {
@@ -1673,26 +1650,157 @@
   gap: calc(2 * var(--u));
 }
 
-/* Traction's two headline figures: the signed total, then the LOIs joined with a plus. */
-.heroPair {
+/* Traction: the contract cards and both sides of the contract, then the customers across the foot of the body. */
+.traction {
   display: grid;
-  gap: calc(2.4 * var(--u));
-  align-content: start;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: calc(2 * var(--u));
 }
 
-.heroPlus {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: calc(1.2 * var(--u));
-  align-items: start;
+.traction > .split {
+  align-items: stretch;
+  min-height: 0;
 }
 
-.plusSign {
-  padding-top: calc(1.2 * var(--u));
-  font-size: calc(4.4 * var(--u));
-  font-weight: 300;
-  line-height: 1;
+.contractCards {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 1px;
+}
+
+.contractCard {
+  display: flex;
+  flex-direction: column;
+  gap: calc(1.6 * var(--u));
+  padding: calc(1.4 * var(--u)) calc(1.6 * var(--u)) calc(1.5 * var(--u));
+  background: var(--card);
+  box-shadow: 0 0 0 1px var(--rule);
+}
+
+/* The LOIs: the figure beside its blocks, in a short card. */
+.contractCard[data-size="mini"] {
+  display: grid;
+  grid-template-columns: calc(11 * var(--u)) minmax(0, 1fr);
+  align-items: center;
+  gap: calc(1.6 * var(--u));
+  padding-block: calc(1 * var(--u));
+}
+
+.contractCards > .fine {
+  margin-top: calc(0.9 * var(--u));
+}
+
+/* One size of block in both cards, so the two figures compare by count. */
+.blocks {
+  --block: calc(0.9 * var(--u));
+  --block-gap: calc(0.22 * var(--u));
+  --block-fill: var(--fg);
+
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.6 * var(--u));
+}
+
+.blockGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--block-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.block {
+  position: relative;
+  width: var(--block);
+  height: var(--block);
+  background: var(--block-fill);
+}
+
+.contractCard:not([data-size]) .blocks {
+  --block-fill: var(--accent);
+}
+
+/* The remainder: an empty block, filled from the left to its share of a cluster. */
+.block[data-part] {
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--rule-strong);
+}
+
+.block[data-part]::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--fill) * 100%);
+  background: var(--block-fill);
+}
+
+.blockCount {
+  font-family: var(--font-mono);
+  font-size: calc(0.62 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
   color: var(--fg-2);
+}
+
+/* The demand side's terms at the top, the supply side's costs at the bottom. */
+.contractSides {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: calc(2 * var(--u));
+}
+
+.contractTitle {
+  padding-bottom: calc(0.6 * var(--u));
+  border-bottom: 1px solid var(--rule);
+  color: var(--fg);
+}
+
+.contractSide .detail {
+  padding: calc(0.55 * var(--u)) 0;
+}
+
+.contractSide .detail dd {
+  font-size: calc(1.05 * var(--u));
+}
+
+/* The customers by stage, each group under its column of the split. */
+.customers {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: calc(5 * var(--u));
+  padding-top: calc(1.4 * var(--u));
+}
+
+.customerGroup {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.9 * var(--u));
+}
+
+/* Other companies' marks, flattened to the slide's quiet text tone. */
+.logos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(0.8 * var(--u)) calc(2.4 * var(--u));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.logos img {
+  display: block;
+  width: auto;
+  height: calc(var(--h) * var(--u));
+  filter: brightness(0);
+  opacity: 0.6;
+}
+
+.slide[data-ground="ink"] .logos img {
+  filter: brightness(0) invert(1);
 }
 
 .details {
@@ -2235,7 +2343,7 @@
   padding: 14px 16px 16px;
 }
 
-/* The foot closes the card: section name, logos, then the sources in full; the bar carries the page number. */
+/* The foot closes the card: section name, then the sources in full; the bar carries the page number. */
 .slide[data-compact] .foot {
   flex-wrap: wrap;
   gap: 12px 20px;
@@ -2278,14 +2386,6 @@
 
 .slide[data-compact] .sources {
   max-width: none;
-}
-
-.slide[data-compact] .logos {
-  gap: 12px 20px;
-}
-
-.slide[data-compact] .logos img {
-  height: calc(var(--h) * 14px);
 }
 
 /* Cover: the render under the top rule, rail to rail and taking the height the title leaves, then the title. */
@@ -2801,17 +2901,65 @@
   gap: 20px;
 }
 
-.slide[data-compact] .heroPair {
-  gap: 20px;
+.slide[data-compact] .traction {
+  gap: 32px;
 }
 
-.slide[data-compact] .heroPlus {
+.slide[data-compact] .contractCard {
+  gap: 16px;
+  padding: 16px 18px 18px;
+}
+
+.slide[data-compact] .contractCard[data-size="mini"] {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+
+.slide[data-compact] .contractCards > .fine {
+  margin-top: 10px;
+  font-size: var(--text-2xs);
+}
+
+.slide[data-compact] .blocks {
+  --block: 10px;
+  --block-gap: 3px;
+
+  gap: 8px;
+}
+
+.slide[data-compact] .blockCount {
+  font-size: var(--text-2xs);
+}
+
+.slide[data-compact] .contractSides {
+  gap: 28px;
+}
+
+.slide[data-compact] .contractTitle {
+  padding-bottom: 8px;
+  font-size: var(--text-2xs);
+}
+
+.slide[data-compact] .customers {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  padding-top: 20px;
+}
+
+.slide[data-compact] .customerGroup {
   gap: 12px;
 }
 
-.slide[data-compact] .plusSign {
-  padding-top: 6px;
-  font-size: 44px;
+.slide[data-compact] .customerGroup .figLabel {
+  font-size: var(--text-2xs);
+}
+
+.slide[data-compact] .logos {
+  gap: 14px 24px;
+}
+
+.slide[data-compact] .logos img {
+  height: calc(var(--h) * 14px);
 }
 
 .slide[data-compact] .detail {
