@@ -2267,7 +2267,11 @@
   background: linear-gradient(var(--color-surface-tint), var(--color-surface-tint)), var(--card);
 }
 
+/* `--brace` and `--brace-gap`: the deals' names and brackets under the bar, which the total clears to stand level with its blocks. */
 .stackExample {
+  --brace: calc(1.5 * var(--u));
+  --brace-gap: calc(0.35 * var(--u));
+
   display: flex;
   flex-direction: column;
   gap: calc(0.7 * var(--u));
@@ -2286,15 +2290,17 @@
   list-style: none;
 }
 
-/* Each deal's layers under its name and a bracket spanning them, as wide as their share of the total. */
+/* Each deal's layers over a bracket spanning them and its name, as wide as their share of the total. */
 .stackGroup {
   display: flex;
   flex: var(--usd) 1 0;
   flex-direction: column;
-  gap: calc(0.35 * var(--u));
+  gap: var(--brace-gap);
 }
 
 .stackGroupName {
+  order: 1;
+  height: var(--brace);
   font-family: var(--font-mono);
   font-size: calc(0.6 * var(--u));
   font-weight: 500;
@@ -2305,13 +2311,13 @@
   color: var(--fg);
 }
 
-.stackGroupName::after {
+.stackGroupName::before {
   content: "";
   display: block;
   height: calc(0.4 * var(--u));
-  margin: calc(0.25 * var(--u)) calc(0.2 * var(--u)) 0;
+  margin: 0 calc(0.2 * var(--u)) calc(0.25 * var(--u));
   border: 1px solid var(--fg-2);
-  border-bottom: 0;
+  border-top: 0;
 }
 
 .stackGroupLayers {
@@ -2361,7 +2367,7 @@
   justify-content: flex-end;
   gap: calc(0.3 * var(--u));
   margin: 0;
-  padding: calc(1 * var(--u)) 0 calc(1.2 * var(--u)) calc(1.6 * var(--u));
+  padding: calc(1 * var(--u)) 0 calc(1.2 * var(--u) + var(--brace) + var(--brace-gap)) calc(1.6 * var(--u));
   text-align: right;
 }
 
@@ -3787,7 +3793,7 @@
 
 .slide[data-compact] .stackBar {
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
 }
 
 .slide[data-compact] .stackGroup {
@@ -3796,6 +3802,7 @@
 }
 
 .slide[data-compact] .stackGroupName {
+  height: auto;
   font-size: var(--text-2xs);
 }
 
