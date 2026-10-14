@@ -77,18 +77,19 @@ function extrude(s: Sketch, outline: readonly Pt[], y0: number, y1: number): voi
   );
 }
 
-/** A GPU node: a server tray, its front vented, eight GPU modules on its board. */
+/** A GPU node: a server tray, its front vented, eight GPU modules on its board as cubes. */
 function node(s: Sketch): void {
   const [X, Y, W, D, H] = [-32, -22, 64, 44, 8];
   s.box(X, Y, W, D, 0, H);
   for (let x = X + 6; x < X + W - 14; x += 4) s.line([[x, Y + D, 2], [x, Y + D, H - 2]]);
   lamp(s, [X + W - 8, Y + D, H / 2], 0);
   lamp(s, [X + W - 4, Y + D, H / 2], 1);
+  const C = 11;
   const modules: { x: number; y: number }[] = [];
-  for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) modules.push({ x: X + 5 + i * 15, y: Y + 5 + j * 18 });
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) modules.push({ x: X + 5 + i * 15, y: Y + 7 + j * 19 });
   modules
     .sort(backToFront)
-    .forEach(({ x, y }, k) => s.group(anim(styles.shade, k), () => s.box(x, y, 11, 14, H, 5)));
+    .forEach(({ x, y }, k) => s.group(anim(styles.shade, k), () => s.box(x, y, C, C, H, C)));
 }
 
 /** A GPU package: the substrate, its pins, and the lidded die, current running round it. */
