@@ -220,7 +220,8 @@ export type Slide =
       founder: {
         role: string;
         name: string;
-        linkedin: string;
+        /** Drawn as marks beside the role, in this order. */
+        social: readonly { network: "linkedin" | "github" | "x"; label: string; href: string }[];
         /** The ventures, under a label of their own. */
         main: {
           title: string;
@@ -534,12 +535,16 @@ export const SLIDES: readonly Slide[] = [
     kind: "team",
     section: "Leadership",
     eyebrow: "Leadership",
-    title: "Led by a four-time founder.",
+    title: "Led by a three-time founder.",
     ground: "paper",
     founder: {
       role: "Founder and CEO",
       name: "Matthew J. Dorey",
-      linkedin: "https://www.linkedin.com/in/frank-wilder/",
+      social: [
+        { network: "linkedin", label: "LinkedIn", href: "https://www.linkedin.com/in/frank-wilder/" },
+        { network: "github", label: "GitHub", href: "https://github.com/real-n3o" },
+        { network: "x", label: "X", href: "https://x.com/real_n3o" },
+      ],
       main: {
         title: "Main quests",
         ventures: [
