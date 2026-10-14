@@ -1048,27 +1048,24 @@ function riders(s: Sketch, path: string, dur: number, n: number, draw: () => voi
   for (let k = 0; k < n; k++) rider(s, path, dur, (-k * dur) / n, k % 2 === 1, draw);
 }
 
-/** Neurons per layer of the die's net, input to output. */
-const NET = [3, 5, 6, 5, 2];
-const NET_X = [-46, -23, 0, 23, 46];
-const netY = (n: number, j: number) => {
-  const span = Math.min(64, (n - 1) * 14);
-  return n > 1 ? -span / 2 + (j * span) / (n - 1) : 0;
-};
+/** Centres of the die's compute tiles, `TILE` across, a channel between each. */
+const TILE_X = [-44, -22, 0, 22, 44];
+const TILE_Y = [-22, 0, 22];
+const TILE = 14;
 
 /**
  * Tokens made like an advanced chip on a line: energy rides the feed rail in
- * on the left onto the die's power bus, fires through a layered net of
- * neurons over every connection at once, and leaves on the right as coins
- * down the output conveyor.
+ * on the left onto the die's power bus, its grid of compute tiles fires in
+ * waves from input to output with pulses hopping tile to tile along the
+ * channels, and the tokens leave on the right as coins down the conveyor.
  */
 function tokenMaze(s: Sketch): void {
   const TOP = 10;
   const random = rng(7);
 
   s.box(-96, -66, 192, 132, 0, 4);
-  for (let x = -90; x <= 86; x += 8) s.box(x, 66, 4, 2, 1, 2);
-  for (let y = -60; y <= 58; y += 8) if (y < -46 || y > -28) s.box(96, y, 2, 4, 1, 2);
+  for (let x = -88; x <= 84; x += 16) s.box(x, 66, 4, 2, 1, 2);
+  for (let y = -58; y <= 56; y += 16) if (y < -46 || y > -28) s.box(96, y, 2, 4, 1, 2);
   s.box(-74, -50, 148, 100, 4, 3);
   for (let k = 0; k < 4; k++) {
     const x = -58 + k * 30;
@@ -1087,24 +1084,25 @@ function tokenMaze(s: Sketch): void {
     styles.fine,
   );
 
-  const neurons = NET.map((n, i) => Array.from({ length: n }, (_, j): P3 => [NET_X[i], netY(n, j), TOP]));
-  const links: [P3, P3][] = [];
-  for (let i = 0; i < neurons.length - 1; i++) for (const a of neurons[i]) for (const b of neurons[i + 1]) links.push([a, b]);
-  for (const [a, b] of links) s.line([a, b]);
+  const half = TILE / 2;
+  const lane = (TILE_X[1] - TILE_X[0]) / 2;
+  for (const x of TILE_X.slice(1)) s.line([[x - lane, -37, TOP], [x - lane, 37, TOP]]);
+  for (const y of TILE_Y.slice(1)) s.line([[-59, y - lane, TOP], [59, y - lane, TOP]]);
 
   const BUS_X = -56;
   const FEED: P3[] = [
     [-124, 33, TOP],
     [-62, 33, TOP],
     [BUS_X, 33, TOP],
-    [BUS_X, neurons[0][0][1], TOP],
+    [BUS_X, TILE_Y[0], TOP],
   ];
   s.line(FEED.slice(1), styles.edge);
-  for (const [x, y] of neurons[0]) s.line([[BUS_X, y, TOP], [x, y, TOP]], styles.edge);
+  for (const y of TILE_Y) s.line([[BUS_X, y, TOP], [TILE_X[0] - half, y, TOP]], styles.edge);
 
-  const OUT_X = 54;
-  const exits = neurons[neurons.length - 1].map(([x, y]): P3[] => [
-    [x, y, TOP],
+  const OUT_X = 55;
+  const LAST = TILE_X[TILE_X.length - 1];
+  const exits = TILE_Y.map((y): P3[] => [
+    [LAST + half, y, TOP],
     [OUT_X, y, TOP],
     [OUT_X, -37, TOP],
     [62, -37, TOP],
@@ -1115,13 +1113,22 @@ function tokenMaze(s: Sketch): void {
     [134, -37, TOP],
   ];
 
-  neurons
-    .flat()
-    .sort((a, b) => a[0] + a[1] - (b[0] + b[1]))
-    .forEach(([x, y]) => {
-      s.box(x - 3, y - 3, 6, 6, TOP, 2.5);
-      s.group(anim(styles.flash, Math.floor(random() * 9)), () => s.disc([x, y, TOP + 2.5], 2.2, styles.ring));
-    });
+  const square = (x: number, y: number, r: number, className: string) =>
+    s.face(
+      [
+        [x - r, y - r, TOP],
+        [x + r, y - r, TOP],
+        [x + r, y + r, TOP],
+        [x - r, y + r, TOP],
+      ],
+      className,
+    );
+  TILE_X.forEach((x, c) =>
+    TILE_Y.forEach((y) => {
+      square(x, y, half, styles.sideL);
+      s.group(anim(styles.flash, c + Math.floor(random() * 2) / 2), () => square(x, y, 3.5, styles.ring));
+    }),
+  );
 
   s.box(-124, 28, 62, 10, 0, TOP);
   for (let x = -120; x < -62; x += 6) s.line([[x, 28, TOP], [x, 38, TOP]]);
@@ -1133,10 +1140,20 @@ function tokenMaze(s: Sketch): void {
 
   const spark = () => s.disc([0, 0, 0], 1.5, styles.ink);
   riders(s, motion(FEED), 3, 8, spark);
-  links.forEach(([a, b], k) => {
-    const dur = 0.8 + random();
-    rider(s, motion([a, b]), dur, -random() * dur, k % 2 === 1, spark);
-  });
+  for (let k = 0; k < 28; k++) {
+    const c = Math.floor(random() * (TILE_X.length - 1));
+    const r = Math.floor(random() * TILE_Y.length);
+    const to = Math.min(TILE_Y.length - 1, Math.max(0, r + Math.floor(random() * 3) - 1));
+    const [x0, x1, y0, y1] = [TILE_X[c], TILE_X[c + 1], TILE_Y[r], TILE_Y[to]];
+    const hop: P3[] = [
+      [x0, y0, TOP],
+      [x0 + lane, y0, TOP],
+      [x0 + lane, y1, TOP],
+      [x1, y1, TOP],
+    ];
+    const dur = 0.7 + 0.5 * random();
+    rider(s, motion(hop), dur, -random() * dur, k % 2 === 1, spark);
+  }
   for (const route of exits) riders(s, motion(route), 1.6, 4, spark);
   riders(s, motion(OUT), 3.5, 8, () => coins(s, 0, 0, 3.8, 1, 2.2));
 }
