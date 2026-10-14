@@ -30,7 +30,8 @@ export type MacroArtId =
   | "signature"
   | "interconnect"
   | "capitalStack"
-  | "tokenMaze";
+  | "tokenMaze"
+  | "storage";
 
 /** One link in the chain from capital to offtake; `hard` marks the bottleneck. */
 export interface ChainStep {
@@ -111,7 +112,15 @@ export type Slide =
       /** Each entry starts its own line. */
       statement: readonly string[];
     })
-  | (Base & { kind: "unit"; specs: readonly Stat[]; highlight: number; image: string })
+  | (Base & {
+      kind: "unit";
+      /** The `highlight` card is set on ink, to stand out. */
+      specs: readonly (Stat & { art: MacroArtId })[];
+      highlight: number;
+      image: string;
+      /** Open in a new tab, under the image. */
+      links: readonly { label: string; href: string }[];
+    })
   | (Base & {
       kind: "traction";
       hero: Stat;
@@ -374,15 +383,19 @@ export const SLIDES: readonly Slide[] = [
     title: "One standard cluster: 2,048 GPUs in 4 MW.",
     ground: "paper",
     specs: [
-      { value: "256", label: "Nodes · 8× NVIDIA B300 each" },
-      { value: "~4 MW", label: "Critical IT load, direct liquid cooling" },
-      { value: "800G", label: "Quantum-X800 InfiniBand fabric" },
-      { value: "2 PB", label: "High-performance storage" },
-      { value: "$4.20", label: "Contracted price per GPU-hour, 5-year term" },
-      { value: "$75M", label: "Annual contracted revenue at $4.20/GPU-hr" },
+      { value: "256", label: "Nodes · 8× NVIDIA B300 each", art: "compute" },
+      { value: "~4 MW", label: "Critical IT load, direct liquid cooling", art: "power" },
+      { value: "800G", label: "Quantum-X800 InfiniBand fabric", art: "interconnect" },
+      { value: "2 PB", label: "High-performance storage", art: "storage" },
+      { value: "$4.20", label: "Contracted price per GPU-hour, 5-year term", art: "signature" },
+      { value: "$75M", label: "Annual contracted revenue at $4.20/GPU-hr", art: "capital" },
     ],
     highlight: 5,
-    image: "/images/future-home/zode-cutaway.jpg",
+    image: "/images/deck/cluster-2048.png",
+    links: [
+      { label: "Open in the cluster builder", href: "/cluster-builder?nodes=256&tb=8" },
+      { label: "Open the compute model", href: "/compute-model" },
+    ],
   },
   {
     id: "traction",

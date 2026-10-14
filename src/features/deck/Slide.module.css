@@ -1488,18 +1488,99 @@
   font-size: calc(0.85 * var(--u));
 }
 
-/* Unit: the spec sheet beside the cutaway. */
+/* Unit: the cluster's figures as mini-cards, then the builder's render of it. */
 .unit {
+  --split-gap: calc(5 * var(--u));
+
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) calc(36 * var(--u));
-  gap: calc(4 * var(--u));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--split-gap);
 }
 
-.specGrid {
+/* The split, as the problems slide's: a rule down the gap from the head rule to the foot rule, a pip at each crossing. */
+.unit::after {
+  content: "";
+  position: absolute;
+  top: calc(-1.8 * var(--u) - var(--pip) / 2);
+  bottom: calc(-1.2 * var(--u) - var(--pip) / 2);
+  left: calc(50% - var(--pip) / 2);
+  width: var(--pip);
+  background:
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 top 0 / var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--pip-color), var(--pip-color)) left 0 bottom 0 / var(--pip) var(--pip) no-repeat,
+    linear-gradient(var(--rule), var(--rule)) center / 1px 100% no-repeat;
+  pointer-events: none;
+}
+
+/* Joined by hairlines into one panel, as the other card sets. */
+.unitCards {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-content: start;
-  gap: calc(2.4 * var(--u)) calc(3 * var(--u));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  padding: 1px;
+  list-style: none;
+}
+
+/* A drawing, a hairline, then the figure. */
+.unitCard {
+  display: grid;
+  grid-template-columns: calc(5.4 * var(--u)) minmax(0, 1fr);
+  align-items: stretch;
+  min-height: calc(8.4 * var(--u));
+  background: var(--card);
+  color: var(--fg);
+  box-shadow: 0 0 0 1px var(--rule);
+}
+
+/* The contract's revenue, on ink to stand out: the ink ground's colours, re-pinned on the card. */
+.unitCard[data-ink] {
+  --card: var(--color-ink);
+  --fg: var(--color-text-inverse);
+  --fg-2: var(--color-text-inverse-secondary);
+  --rule: #2e2e2f;
+
+  position: relative;
+  box-shadow: 0 0 0 1px var(--color-ink);
+}
+
+.unitFigure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: calc(1 * var(--u)) calc(0.8 * var(--u));
+}
+
+.unitFigure > svg {
+  height: auto;
+  max-height: calc(4.4 * var(--u));
+}
+
+.unitText {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: calc(0.5 * var(--u));
+  min-width: 0;
+  padding: calc(1 * var(--u)) calc(1.2 * var(--u));
+  border-left: 1px solid var(--rule);
+}
+
+.unitValue {
+  font-size: calc(2 * var(--u));
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.unitText .statLabel {
+  font-size: calc(0.6 * var(--u));
+  text-wrap: balance;
 }
 
 .render {
@@ -1513,8 +1594,53 @@
 }
 
 .renderImage {
-  aspect-ratio: 1024 / 540;
+  aspect-ratio: 1500 / 938;
   border-radius: calc(0.4 * var(--u));
+  box-shadow: 0 0 0 1px var(--rule);
+}
+
+.renderCaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: calc(0.4 * var(--u)) calc(1.6 * var(--u));
+  margin-top: calc(0.8 * var(--u));
+}
+
+.renderCaption .figLabel {
+  margin: 0;
+}
+
+.renderLinks {
+  display: flex;
+  gap: calc(0.8 * var(--u));
+  font-family: var(--font-mono);
+  font-size: calc(0.62 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.renderLinks a {
+  color: var(--fg);
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+  text-underline-offset: 0.25em;
+  transition: text-decoration-color var(--duration-base) ease;
+}
+
+.renderLinks a:hover {
+  text-decoration-color: currentColor;
+}
+
+.renderLinks a + a::before {
+  content: "·";
+  display: inline-block;
+  margin-right: calc(0.8 * var(--u));
+  color: var(--fg-2);
+  text-decoration: none;
 }
 
 .renderImage img,
@@ -1535,8 +1661,7 @@
 }
 
 /* Bodies sized to their content sit just above the middle of the room under the title. */
-.main > .split,
-.main > .unit {
+.main > .split {
   flex: none;
   margin-block: auto;
   padding-bottom: calc(2.4 * var(--u));
@@ -2054,7 +2179,7 @@
   padding-bottom: 32px;
 }
 
-.slide[data-compact] .main > :is(.split, .unit) {
+.slide[data-compact] .main > .split {
   margin-block: 0;
   padding-bottom: 0;
 }
@@ -2611,19 +2736,63 @@
   container-type: normal;
 }
 
-/* Unit: the cutaway first, then the specs two up. */
+/* Unit: the render first, then the cards one to a row. */
 .slide[data-compact] .unit {
   grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: none;
   gap: 28px;
+}
+
+.slide[data-compact] .unit::after {
+  display: none;
 }
 
 .slide[data-compact] .render {
   order: -1;
 }
 
-.slide[data-compact] .specGrid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px 20px;
+.slide[data-compact] .unitCards {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.slide[data-compact] .unitCard {
+  grid-template-columns: 72px minmax(0, 1fr);
+  min-height: 0;
+}
+
+.slide[data-compact] .unitFigure {
+  padding: 14px 10px;
+}
+
+.slide[data-compact] .unitFigure > svg {
+  max-height: 44px;
+}
+
+.slide[data-compact] .unitText {
+  gap: 6px;
+  padding: 14px 16px;
+}
+
+.slide[data-compact] .unitValue {
+  font-size: 26px;
+}
+
+.slide[data-compact] .unitText .statLabel,
+.slide[data-compact] .renderLinks {
+  font-size: var(--text-2xs);
+}
+
+.slide[data-compact] .renderCaption {
+  margin-top: 10px;
+}
+
+.slide[data-compact] .renderLinks {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slide[data-compact] .renderLinks a + a::before {
+  content: none;
 }
 
 /* Two-column slides stack, the lead first. */

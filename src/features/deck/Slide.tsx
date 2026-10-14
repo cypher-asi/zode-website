@@ -510,27 +510,57 @@ function Steps({ slide, active }: { slide: Of<"steps">; active: boolean }): Reac
   );
 }
 
-function Unit({ slide }: { slide: Of<"unit"> }): ReactElement {
+/**
+ * The cluster, two halves split by a page-grid rule as the problems slide:
+ * its figures as mini-cards on the left, each a drawing ruled off from its
+ * value and label, the contract's revenue set on ink; on the right the
+ * cluster builder's render of it, with the builder and the compute model a
+ * new tab away.
+ */
+function Unit({ slide, active }: { slide: Of<"unit">; active: boolean }): ReactElement {
   return (
     <div className={styles.unit}>
-      <div className={styles.specGrid}>
-        {slide.specs.map((spec, i) => (
-          <div key={spec.label} {...rise(2 + i * 0.5)}>
-            <StatBlock stat={spec} highlight={i === slide.highlight} />
-          </div>
-        ))}
-      </div>
+      <ul className={styles.unitCards}>
+        {slide.specs.map((spec, i) => {
+          const ink = i === slide.highlight;
+          return (
+            <li
+              key={spec.label}
+              {...rise(2 + i * 0.4)}
+              className={`${styles.rise} ${styles.unitCard}`}
+              data-ink={ink || undefined}
+            >
+              <div className={styles.unitFigure}>
+                <MacroArt id={spec.art} light={!ink} playing={active} />
+              </div>
+              <div className={styles.unitText}>
+                <span className={styles.unitValue}>{spec.value}</span>
+                <span className={styles.statLabel}>{spec.label}</span>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
       <figure {...rise(3)} className={`${styles.rise} ${styles.render}`}>
         <div className={styles.renderImage} data-media>
           <Image
             src={slide.image}
-            alt="A cutaway render of a ZODE's interior"
+            alt="The cluster builder's render of 2,048 B300 GPUs racked in 39 cabinets across four rows"
             fill
-            sizes="(max-width: 700px) 100vw, 40vw"
+            sizes="(max-width: 700px) 100vw, 45vw"
             loading="eager"
           />
         </div>
-        <figcaption className={styles.figLabel}>FIG. 02 — ZODE, cutaway</figcaption>
+        <figcaption className={styles.renderCaption}>
+          <span className={styles.figLabel}>FIG. 02 — Cluster builder, 256 nodes · 2,048 B300</span>
+          <span className={styles.renderLinks}>
+            {slide.links.map((link) => (
+              <a key={link.href} href={link.href} target="_blank" rel="noopener">
+                {link.label} <span aria-hidden="true">↗</span>
+              </a>
+            ))}
+          </span>
+        </figcaption>
       </figure>
     </div>
   );
@@ -856,7 +886,7 @@ function Body({
     case "steps":
       return <Steps slide={slide} active={active} />;
     case "unit":
-      return <Unit slide={slide} />;
+      return <Unit slide={slide} active={active} />;
     case "traction":
       return <Traction slide={slide} />;
     case "pipeline":
