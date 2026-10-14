@@ -1272,7 +1272,7 @@ function ContributionGraph({ data }: { data: Contributions }): ReactElement {
   const months = Array.from({ length: weeks }, (_, w) => w).filter((w) => w === 0 || monthOf(w) !== monthOf(w - 1));
   const total = data.total.toLocaleString("en-US");
   return (
-    <figure className={styles.contrib}>
+    <figure className={styles.contrib} style={{ "--weeks": weeks } as CSSProperties}>
       <figcaption className={styles.contribHead}>
         <span className={styles.label}>{total} GitHub contributions in the last year</span>
         <span className={styles.contribKey} aria-hidden="true">
@@ -1283,7 +1283,7 @@ function ContributionGraph({ data }: { data: Contributions }): ReactElement {
           More
         </span>
       </figcaption>
-      <div className={styles.contribMonths} style={{ "--weeks": weeks } as CSSProperties} aria-hidden="true">
+      <div className={styles.contribMonths} aria-hidden="true">
         {months.map((w) => (
           <span key={w} style={{ gridColumnStart: w + 1 }}>
             {MONTHS[monthOf(w)]}
@@ -1313,8 +1313,8 @@ function ContributionGraph({ data }: { data: Contributions }): ReactElement {
 
 /**
  * The founder on the left, the ventures ruled under the name as main
- * quests, each company's years tagged on the right, the side quests as one
- * small line of links, and a year of commits under them;
+ * quests, each company's years and outcome on the right, the side quests as one
+ * small line of links, and any year of commits under them;
  * on the right the team and advisors as rows of logos by area.
  */
 function Team({ slide }: { slide: Of<"team"> }): ReactElement {
@@ -1342,7 +1342,9 @@ function Team({ slide }: { slide: Of<"team"> }): ReactElement {
               ))}
             </ul>
           </div>
-          <h3 className={`${styles.h3} ${styles.person}`}>{founder.name}</h3>
+          <h3 className={`${styles.h3} ${styles.person}`}>
+            {founder.name} <span className={styles.alias}>(aka {founder.alias})</span>
+          </h3>
         </div>
         <section className={styles.quests}>
           <h4 {...rise(2.6)} className={`${styles.rise} ${styles.figLabel}`}>
@@ -1351,17 +1353,15 @@ function Team({ slide }: { slide: Of<"team"> }): ReactElement {
           <ul className={styles.ventures}>
             {founder.main.ventures.map((venture, i) => (
               <li key={venture.company} {...rise(3 + i * 0.4)} className={`${styles.rise} ${styles.venture}`}>
-                <div className={styles.ventureHead}>
-                  <span className={styles.ventureName}>
-                    <OutLink href={venture.href}>{venture.company}</OutLink>
-                  </span>
-                  <span className={styles.years}>{venture.years}</span>
-                </div>
+                <span className={styles.ventureName}>
+                  <OutLink href={venture.href}>{venture.company}</OutLink>
+                </span>
+                <span className={styles.years}>{venture.years}</span>
                 <p className={styles.ventureRole}>{venture.role}</p>
-                <p className={styles.ventureText}>{venture.description}</p>
                 <p className={`${styles.ventureText} ${styles.ventureOutcome}`}>
                   <OutLink href={venture.outcomeHref}>{venture.outcome}</OutLink>
                 </p>
+                <p className={styles.ventureText}>{venture.description}</p>
               </li>
             ))}
           </ul>
@@ -1376,9 +1376,11 @@ function Team({ slide }: { slide: Of<"team"> }): ReactElement {
             ))}
           </ul>
         </section>
-        <div {...rise(4.6)} className={styles.rise}>
-          <ContributionGraph data={founder.contributions} />
-        </div>
+        {founder.contributions && (
+          <div {...rise(4.6)} className={styles.rise}>
+            <ContributionGraph data={founder.contributions} />
+          </div>
+        )}
       </div>
       <section className={styles.network}>
         <h3 {...rise(4)} className={`${styles.rise} ${styles.figLabel}`}>

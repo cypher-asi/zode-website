@@ -1,6 +1,6 @@
 import type { SiteMapId } from "./art/siteMaps";
 import type { UnitIconId } from "./art/UnitIcon";
-import { FOUNDER_CONTRIBUTIONS, type Contributions } from "./github";
+import type { Contributions } from "./github";
 import type { SourceId } from "./research";
 
 /** A slide's background; ink is the one dark ground. */
@@ -220,6 +220,8 @@ export type Slide =
       founder: {
         role: string;
         name: string;
+        /** Set smaller after the name. */
+        alias: string;
         /** Drawn as marks beside the role, in this order. */
         social: readonly { network: "linkedin" | "github" | "x"; label: string; href: string }[];
         /** The ventures, under a label of their own. */
@@ -238,8 +240,8 @@ export type Slide =
         };
         /** Set much smaller under the ventures, as one line of links. */
         side: { title: string; links: readonly { label: string; href: string }[] };
-        /** Drawn under the side projects. */
-        contributions: Contributions;
+        /** Drawn under the side projects; `FOUNDER_CONTRIBUTIONS` in `./github`. */
+        contributions?: Contributions;
       };
       /** The team, alliances and advisors, by area. */
       network: { title: string; areas: readonly { label: string; logos: readonly Logo[] }[] };
@@ -540,6 +542,7 @@ export const SLIDES: readonly Slide[] = [
     founder: {
       role: "Founder and CEO",
       name: "Matthew J. Dorey",
+      alias: "n3o",
       social: [
         { network: "linkedin", label: "LinkedIn", href: "https://www.linkedin.com/in/frank-wilder/" },
         { network: "github", label: "GitHub", href: "https://github.com/real-n3o" },
@@ -578,13 +581,12 @@ export const SLIDES: readonly Slide[] = [
         title: "Side quests",
         links: [
           { label: "cypher.net", href: "https://cypher.net" },
-          { label: "zode.tech", href: "https://zode.tech" },
+          { label: "zero.tech", href: "https://zero.tech" },
           { label: "zchain.org", href: "https://zchain.org" },
           { label: "aura.ai", href: "https://aura.ai" },
           { label: "zine.live", href: "https://zine.live" },
         ],
       },
-      contributions: FOUNDER_CONTRIBUTIONS,
     },
     network: {
       title: "Team members and strategic advisors from",
