@@ -120,8 +120,9 @@ alter table data_rooms add column if not exists address text;
 alter table data_rooms add column if not exists city text;
 alter table data_rooms add column if not exists place_id text;
 
--- One row per invited email. A row grants access only once its invite link has
--- been accepted by a signed-in ZOS account with that email, which binds user_id.
+-- One row per invited email. A row grants access only once a ZOS account with
+-- that email joins, from the invite link or straight away when it already
+-- exists, which binds user_id.
 create table if not exists data_room_members (
   id uuid primary key default gen_random_uuid(),
   room_id uuid not null references data_rooms (id) on delete cascade,
@@ -140,6 +141,8 @@ create table if not exists data_room_members (
 create unique index if not exists data_room_members_room_user_idx
   on data_room_members (room_id, user_id) where user_id is not null;
 create index if not exists data_room_members_user_idx on data_room_members (user_id) where user_id is not null;
+-- Each open portal polls for invites to its account's email.
+create index if not exists data_room_members_pending_email_idx on data_room_members (email) where accepted_at is null;
 
 create table if not exists data_room_folders (
   id uuid primary key default gen_random_uuid(),

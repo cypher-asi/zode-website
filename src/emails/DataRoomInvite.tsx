@@ -14,6 +14,8 @@ export interface DataRoomInviteProps {
   expiresOn: string;
   /** The invitee signs ZODE's mutual NDA before they can open the room. */
   requiresMnda: boolean;
+  /** The room is already in the invitee's portal, and `inviteUrl` opens it. */
+  shared?: boolean;
 }
 
 type Props = DataRoomInviteProps & { logoSrc?: string };
@@ -23,31 +25,38 @@ export const dataRoomInviteSubject = (props: DataRoomInviteProps): string =>
 
 /** Sent to anyone invited to a data room, with or without a ZODE account. */
 export default function DataRoomInvite(props: Props): ReactElement {
-  const { roomName, inviterName, inviterEmail, roleLabel, inviteUrl, expiresOn, requiresMnda } = props;
+  const { roomName, inviterName, inviterEmail, roleLabel, inviteUrl, expiresOn, requiresMnda, shared } = props;
 
   const rows: EmailRow[] = [
     { label: "Data room", value: roomName },
     { label: "Access", value: roleLabel },
     { label: "Invited by", value: inviterEmail },
-    ...(requiresMnda ? [{ label: "Before you enter", value: "Sign the mutual NDA" }] : []),
+    ...(requiresMnda && !shared ? [{ label: "Before you enter", value: "Sign the mutual NDA" }] : []),
   ];
 
   return (
     <Layout preview={`${inviterName} invited you to the ${roomName} data room on ZODE.`} logoSrc={props.logoSrc}>
-      <Legend>Data room invite</Legend>
+      <Legend>{shared ? "Data room shared" : "Data room invite"}</Legend>
       <Heading
         as="h1"
         style={{ margin: "0 0 20px", fontSize: "26px", lineHeight: "32px", fontWeight: 600, color: color.ink }}
       >
-        You&apos;ve been invited to {roomName}.
+        {shared ? <>{roomName} is now in your portal.</> : <>You&apos;ve been invited to {roomName}.</>}
       </Heading>
-      <Text style={text.paragraph}>
-        {inviterName} shared a private data room with you on ZODE. Open the link below and sign in with this email
-        address. If you don&apos;t have a ZODE account yet, you can create one from the same page.
-        {requiresMnda
-          ? " Before the room opens, you'll sign ZODE's mutual nondisclosure agreement on that page; it takes a minute, and you get a signed copy by email."
-          : null}
-      </Text>
+      {shared ? (
+        <Text style={text.paragraph}>
+          {inviterName} shared a private data room with your ZODE account. It&apos;s already in your portal; open it
+          below, signed in with this email address.
+        </Text>
+      ) : (
+        <Text style={text.paragraph}>
+          {inviterName} shared a private data room with you on ZODE. Open the link below and sign in with this email
+          address. If you don&apos;t have a ZODE account yet, you can create one from the same page.
+          {requiresMnda
+            ? " Before the room opens, you'll sign ZODE's mutual nondisclosure agreement on that page; it takes a minute, and you get a signed copy by email."
+            : null}
+        </Text>
+      )}
 
       <Rows rows={rows} />
 
@@ -69,7 +78,9 @@ export default function DataRoomInvite(props: Props): ReactElement {
       <Rule />
 
       <Text style={{ ...text.fineprint, margin: "0 0 8px" }}>
-        This link is personal to you and works until {expiresOn}. Views and downloads in the data room are recorded.
+        {shared
+          ? "Views and downloads in the data room are recorded."
+          : `This link is personal to you and works until ${expiresOn}. Views and downloads in the data room are recorded.`}
       </Text>
       <Text style={{ ...text.fineprint, margin: 0 }}>
         Weren&apos;t expecting this? You can ignore it, or write to{" "}

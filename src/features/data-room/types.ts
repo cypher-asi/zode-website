@@ -148,3 +148,16 @@ export interface ActionState {
   readonly error?: string;
   readonly ok?: string;
 }
+
+/** A pending invite, by the emailed link's token or, in the portal, by its member row. */
+export type InviteRef = { token: string } | { memberId: string };
+
+/** An invite waiting on the signed-in account, shown in its portal. */
+export interface PendingInvite {
+  memberId: string;
+  roomName: string;
+  role: RoomRole;
+  invitedBy: string | null;
+  /** The invite requires the MNDA and the account hasn't signed one yet. */
+  needsMnda: boolean;
+}

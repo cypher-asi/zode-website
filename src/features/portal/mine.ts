@@ -8,9 +8,9 @@ import type { Account } from "@/features/account/zos";
 import type { OrderSummary } from "@/features/configurator/orders";
 import type { Contract } from "@/features/contracts/contracts";
 import { canCreateRooms } from "@/features/data-room/rooms";
-import type { RoomSummary } from "@/features/data-room/types";
+import type { PendingInvite, RoomSummary } from "@/features/data-room/types";
 import { userIdFor } from "@/features/users/users";
-import { loadContracts, loadOrders, loadRooms } from "./data";
+import { loadContracts, loadOrders, loadPendingInvites, loadRooms } from "./data";
 
 /*
  * One loader per portal page for the signed-in account's own data, `null`
@@ -67,14 +67,18 @@ export async function loadMyContracts(): Mine<{ team: boolean; contracts: Contra
   return { account, team, contracts };
 }
 
-/** Data rooms: the account's rooms, and whether it can open new ones. */
-export async function loadMyRooms(): Mine<{ rooms: RoomSummary[] | null; canCreate: boolean }> {
+/** Data rooms: the account's rooms, invites waiting on it, and whether it can open new ones. */
+export async function loadMyRooms(): Mine<{ rooms: RoomSummary[] | null; invites: PendingInvite[]; canCreate: boolean }> {
   "use cache: private";
   cacheLife("minutes");
   const account = await getAccount();
   if (!account) return null;
-  const [rooms, canCreate] = await Promise.all([loadRooms(account.userId), canCreateRooms(account)]);
-  return { account, rooms, canCreate };
+  const [rooms, invites, canCreate] = await Promise.all([
+    loadRooms(account.userId),
+    loadPendingInvites(account),
+    canCreateRooms(account),
+  ]);
+  return { account, rooms, invites, canCreate };
 }
 
 /** Settings: the account's photo, its ZODE user id, and its role. */

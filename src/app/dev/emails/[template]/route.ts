@@ -31,7 +31,12 @@ const TEMPLATES: Record<string, (search: URLSearchParams) => ReactElement> = {
   investor: () => createElement(InvestorRequestNotification, { ...PREVIEW_INVESTOR, logoSrc: PREVIEW_LOGO }),
   welcome: () => createElement(Welcome, { ...PREVIEW_ACCOUNT, logoSrc: PREVIEW_LOGO }),
   registration: () => createElement(RegistrationNotification, { ...PREVIEW_ACCOUNT, logoSrc: PREVIEW_LOGO }),
-  "data-room-invite": () => createElement(DataRoomInvite, { ...PREVIEW_DATA_ROOM_INVITE, logoSrc: PREVIEW_LOGO }),
+  "data-room-invite": (search) =>
+    createElement(DataRoomInvite, {
+      ...PREVIEW_DATA_ROOM_INVITE,
+      ...(search.has("shared") ? { shared: true, inviteUrl: "https://zode.org/portal/data-rooms/preview-room" } : {}),
+      logoSrc: PREVIEW_LOGO,
+    }),
   "team-invite": (search) =>
     createElement(TeamInvite, {
       ...PREVIEW_TEAM_INVITE,
@@ -57,7 +62,7 @@ const TEMPLATES: Record<string, (search: URLSearchParams) => ReactElement> = {
  * Development only: an email rendered with sample data, e.g.
  * /dev/emails/confirmation, /dev/emails/notification?mode=rent,
  * /dev/emails/engineer, /dev/emails/investor, /dev/emails/welcome, /dev/emails/registration,
- * /dev/emails/data-room-invite, /dev/emails/team-invite?role=member, /dev/emails/mailing-list-confirm?list=changelog, /dev/emails/mnda?audience=team,
+ * /dev/emails/data-room-invite?shared, /dev/emails/team-invite?role=member, /dev/emails/mailing-list-confirm?list=changelog, /dev/emails/mnda?audience=team,
  * or add `&text` for the plain-text part.
  */
 export async function GET(request: Request, { params }: { params: Promise<{ template: string }> }): Promise<Response> {

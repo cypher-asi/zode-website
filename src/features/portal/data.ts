@@ -1,9 +1,11 @@
 import "server-only";
 import { cache } from "react";
+import type { Account } from "@/features/account/zos";
 import { listOrdersByUser, type OrderSummary } from "@/features/configurator/orders";
 import { listAllContracts, listContractsForUser, type Contract } from "@/features/contracts/contracts";
+import { listPendingInvites } from "@/features/data-room/invites";
 import { listRoomNamesForUser, listRoomsForUser } from "@/features/data-room/rooms";
-import type { RoomSummary } from "@/features/data-room/types";
+import type { PendingInvite, RoomSummary } from "@/features/data-room/types";
 import { listLeads } from "@/features/leads/leads";
 import type { Lead } from "@/features/leads/types";
 import { listSubscribers } from "@/features/mailing-list/subscribers";
@@ -26,6 +28,14 @@ export function loadRoomNames(userId: string): Promise<{ id: string; name: strin
   return listRoomNamesForUser(userId).catch((error: unknown) => {
     console.error("Failed to load data room names", error);
     return null;
+  });
+}
+
+/** Data room invites waiting on the account, newest first; none when they couldn't be loaded. */
+export function loadPendingInvites(account: Account): Promise<PendingInvite[]> {
+  return listPendingInvites(account).catch((error: unknown) => {
+    console.error("Failed to load data room invites", error);
+    return [];
   });
 }
 

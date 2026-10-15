@@ -4,7 +4,7 @@ import type { OrderSummary } from "@/features/configurator/orders";
 import type { ComputeContract, Contract } from "@/features/contracts/contracts";
 import bar from "@/features/data-room/room.module.css";
 import { siteMapSrc } from "@/features/data-room/rooms";
-import { roomKindLabel, type RoomSummary } from "@/features/data-room/types";
+import { roomKindLabel, type PendingInvite, type RoomSummary } from "@/features/data-room/types";
 import { StatusButton } from "@/features/leads/StatusButton";
 import { customerOrderStatus, leadSource, leadType, statusLabel, type Lead } from "@/features/leads/types";
 import { SUBSCRIBER_STATUSES, mailingList, type Subscriber } from "@/features/mailing-list/types";
@@ -113,6 +113,41 @@ export function RoomList({ rooms }: { rooms: RoomSummary[] }): ReactElement {
         </li>
       ))}
     </ul>
+  );
+}
+
+/** Data room invites waiting on the account; each opens the room's join page, signing the MNDA first if it must. */
+export function InviteList({ invites }: { invites: PendingInvite[] }): ReactElement {
+  return (
+    <section className={styles.section} aria-label="Invitations">
+      <div className={styles.sectionHead}>
+        <h2 className={styles.sectionTitle}>Invitations</h2>
+      </div>
+      <ul className={styles.list}>
+        {invites.map((invite) => (
+          <li key={invite.memberId}>
+            <Link className={styles.row} href={`/portal/data-rooms/join/${invite.memberId}`}>
+              <span className={styles.rowIcon}>
+                <PortalIcon name="site" />
+              </span>
+              <span className={styles.rowMain}>
+                <span className={styles.rowTitle}>{invite.roomName}</span>
+                <span className={styles.rowMeta}>
+                  {invite.invitedBy ? `${invite.invitedBy} invited you` : "You're invited"} as{" "}
+                  {invite.role === "admin" ? "an Admin" : "a Viewer"}
+                </span>
+              </span>
+              <span className={styles.rowEnd}>
+                <span className={styles.pill} data-strong="">
+                  {invite.needsMnda ? "Sign MNDA to join" : "Accept"}
+                </span>
+                <Chevron />
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

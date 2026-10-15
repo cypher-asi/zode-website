@@ -40,15 +40,19 @@ function describe(event: AuditEvent): { subject: string; detail: string } {
         detail: typeof d.from === "string" ? `Was “${d.from}”` : "",
       };
     case "invite":
-      return { subject: String(d.email ?? ""), detail: `As ${roleName(d.role)}${d.requiresMnda ? ", MNDA required" : ""}` };
+      return {
+        subject: String(d.email ?? ""),
+        detail: `As ${roleName(d.role)}${d.requiresMnda ? ", MNDA required" : ""}${d.shared ? ", shared with their account" : ""}`,
+      };
     case "mnda_sign":
       return { subject: String(d.entity ?? ""), detail: `Agreement ${String(d.mndaId ?? "")}` };
     case "invite_resend":
+      return { subject: String(d.email ?? ""), detail: d.shared ? "Shared with their account" : "" };
     case "invite_revoke":
     case "remove":
       return { subject: String(d.email ?? ""), detail: d.role ? roleName(d.role) : "" };
     case "accept":
-      return { subject: String(d.email ?? ""), detail: `As ${roleName(d.role)}` };
+      return { subject: String(d.email ?? ""), detail: `As ${roleName(d.role)}${d.auto ? ", automatically" : ""}` };
     case "role_change":
       return { subject: String(d.email ?? ""), detail: `${roleName(d.from)} to ${roleName(d.to)}` };
     case "move":

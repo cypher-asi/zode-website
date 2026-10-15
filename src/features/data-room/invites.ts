@@ -4,8 +4,9 @@ import type { Account } from "@/features/account/zos";
 import { hasSignedMnda } from "@/features/mnda/mndas";
 import { db } from "@/lib/db";
 import { siteOrigin } from "@/lib/site";
-import { normalizeEmail } from "./rooms";
-import type { RoomRole } from "./types";
+import { recordEvents } from "./audit";
+import { isUuid, normalizeEmail } from "./rooms";
+import type { InviteRef, PendingInvite, RoomRole } from "./types";
 
 const INVITE_TTL_DAYS = 14;
 
@@ -18,6 +19,9 @@ function newToken(): { token: string; hash: string; expiresAt: Date } {
 
 /** Where an invite link points; only the emailed copy of the token exists, the database keeps its hash. */
 export const inviteUrl = (token: string, origin = siteOrigin()): string => `${origin}/data-rooms/invite/${token}`;
+
+/** Where the email points once the room is already shared with the invitee's account. */
+export const roomUrl = (roomId: string, origin = siteOrigin()): string => `${origin}/portal/data-rooms/${roomId}`;
 
 export interface IssuedInvite {
   memberId: string;
@@ -89,62 +93,171 @@ export interface InviteDetails {
   requiresMnda: boolean;
 }
 
-export async function findInvite(token: string): Promise<InviteDetails | null> {
-  if (!/^[A-Za-z0-9_-]{20,100}$/.test(token)) return null;
-  const [row] = await db()`
+const TOKEN_RE = /^[A-Za-z0-9_-]{20,100}$/;
+
+const toInvite = (row: Record<string, unknown>): InviteDetails => ({
+  memberId: String(row.id),
+  roomId: String(row.room_id),
+  roomName: String(row.name),
+  email: String(row.email),
+  role: row.role as RoomRole,
+  invitedBy: row.invited_by_email == null ? null : String(row.invited_by_email),
+  expired: !row.invite_expires_at || new Date(row.invite_expires_at as string).getTime() <= Date.now(),
+  requiresMnda: Boolean(row.requires_mnda),
+});
+
+/** A pending invite by its link's token or its member row; `ref` may come straight from the browser. */
+export async function findInvite(ref: InviteRef): Promise<InviteDetails | null> {
+  if (typeof ref !== "object" || ref === null) return null;
+  const sql = db();
+  if ("token" in ref) {
+    if (typeof ref.token !== "string" || !TOKEN_RE.test(ref.token)) return null;
+    const [row] = await sql`
+      select m.id, m.room_id, r.name, m.email, m.role, m.invited_by_email, m.invite_expires_at, m.requires_mnda
+      from data_room_members m
+      join data_rooms r on r.id = m.room_id
+      where m.invite_token_hash = ${hashToken(ref.token)} and m.accepted_at is null
+    `;
+    return row ? toInvite(row) : null;
+  }
+  if (!("memberId" in ref) || !isUuid(ref.memberId)) return null;
+  const [row] = await sql`
     select m.id, m.room_id, r.name, m.email, m.role, m.invited_by_email, m.invite_expires_at, m.requires_mnda
     from data_room_members m
     join data_rooms r on r.id = m.room_id
-    where m.invite_token_hash = ${hashToken(token)} and m.accepted_at is null
+    where m.id = ${ref.memberId} and m.accepted_at is null
   `;
-  if (!row) return null;
-  return {
-    memberId: String(row.id),
-    roomId: String(row.room_id),
-    roomName: String(row.name),
-    email: String(row.email),
-    role: row.role as RoomRole,
-    invitedBy: row.invited_by_email == null ? null : String(row.invited_by_email),
-    expired: !row.invite_expires_at || new Date(row.invite_expires_at as string).getTime() <= Date.now(),
-    requiresMnda: Boolean(row.requires_mnda),
-  };
+  return row ? toInvite(row) : null;
 }
 
 export type AcceptResult =
-  | { ok: true; roomId: string; role: RoomRole; email: string }
+  | { ok: true; roomId: string; role: RoomRole; email: string; alreadyMember: boolean }
   | { ok: false; reason: "invalid" | "expired" | "email-mismatch" | "mnda-required" };
 
-/**
- * Binds a pending invite to the signed-in account. The token proves the
- * account holder received mail at the invited address, which ZOS registration
- * alone doesn't, so the email must match as well. An invite that requires the
- * MNDA can't be accepted until this account has signed one.
- */
-export async function acceptInvite(token: string, account: Account): Promise<AcceptResult> {
-  const invite = await findInvite(token);
-  if (!invite) return { ok: false, reason: "invalid" };
-  if (invite.expired) return { ok: false, reason: "expired" };
-  if (normalizeEmail(account.email) !== invite.email) return { ok: false, reason: "email-mismatch" };
+type Bindable = Pick<InviteDetails, "memberId" | "roomId" | "role" | "email" | "requiresMnda">;
 
+/** Puts `userId` in the invite's room, unless the MNDA it requires is still unsigned. */
+async function bindInvite(invite: Bindable, userId: string): Promise<AcceptResult> {
+  const joined = (alreadyMember: boolean): AcceptResult => ({
+    ok: true,
+    roomId: invite.roomId,
+    role: invite.role,
+    email: invite.email,
+    alreadyMember,
+  });
   const sql = db();
   const [existing] = await sql`
     select id from data_room_members
-    where room_id = ${invite.roomId} and user_id = ${account.userId} and accepted_at is not null
+    where room_id = ${invite.roomId} and user_id = ${userId} and accepted_at is not null
   `;
   if (existing) {
     // Already in the room under another address; the spare invite has nothing left to grant.
     await sql`delete from data_room_members where id = ${invite.memberId}`;
-    return { ok: true, roomId: invite.roomId, role: invite.role, email: invite.email };
+    return joined(true);
   }
-  if (invite.requiresMnda && !(await hasSignedMnda(account.userId))) return { ok: false, reason: "mnda-required" };
+  if (invite.requiresMnda && !(await hasSignedMnda(userId))) return { ok: false, reason: "mnda-required" };
 
   const [row] = await sql`
     update data_room_members
-    set user_id = ${account.userId}, accepted_at = now(), invite_token_hash = null, invite_expires_at = null
+    set user_id = ${userId}, accepted_at = now(), invite_token_hash = null, invite_expires_at = null
     where id = ${invite.memberId} and accepted_at is null
     returning id
   `;
-  return row
-    ? { ok: true, roomId: invite.roomId, role: invite.role, email: invite.email }
-    : { ok: false, reason: "invalid" };
+  return row ? joined(false) : { ok: false, reason: "invalid" };
+}
+
+/**
+ * Binds a pending invite to the signed-in account it was sent to. ZOS doesn't
+ * verify addresses, so the account's email matching the invite's is what
+ * grants it, with or without the emailed link.
+ */
+export async function acceptInvite(ref: InviteRef, account: Account): Promise<AcceptResult> {
+  const invite = await findInvite(ref);
+  if (!invite) return { ok: false, reason: "invalid" };
+  if (invite.expired) return { ok: false, reason: "expired" };
+  if (normalizeEmail(account.email) !== invite.email) return { ok: false, reason: "email-mismatch" };
+  return bindInvite(invite, account.userId);
+}
+
+/**
+ * Shares a just-issued invite with the account already signed up with its
+ * email, if any, so it needn't follow the link. `null` leaves the invite
+ * pending: there's no such account, or it has yet to sign a required MNDA.
+ */
+export async function shareWithAccount(
+  roomId: string,
+  invite: IssuedInvite,
+): Promise<Extract<AcceptResult, { ok: true }> | null> {
+  const [account] = await db()`
+    select user_id from account_directory where lower(email) = ${invite.email} order by last_seen_at desc limit 1
+  `;
+  if (!account) return null;
+  const result = await bindInvite({ ...invite, roomId }, String(account.user_id));
+  return result.ok ? result : null;
+}
+
+/** Unexpired invites to the account's email, for rooms it isn't in yet. */
+async function pendingInvitesFor(account: Account): Promise<InviteDetails[]> {
+  const rows = await db()`
+    select m.id, m.room_id, r.name, m.email, m.role, m.invited_by_email, m.invite_expires_at, m.requires_mnda
+    from data_room_members m
+    join data_rooms r on r.id = m.room_id
+    where m.email = ${normalizeEmail(account.email)} and m.accepted_at is null and m.invite_expires_at > now()
+      and not exists (
+        select 1 from data_room_members a
+        where a.room_id = m.room_id and a.user_id = ${account.userId} and a.accepted_at is not null
+      )
+    order by m.invited_at desc
+  `;
+  return rows.map(toInvite);
+}
+
+/** Invites the account can join from its portal, without the emailed link. */
+export async function listPendingInvites(account: Account): Promise<PendingInvite[]> {
+  const invites = await pendingInvitesFor(account);
+  const signed = invites.some((invite) => invite.requiresMnda) && (await hasSignedMnda(account.userId));
+  return invites.map((invite) => ({
+    memberId: invite.memberId,
+    roomName: invite.roomName,
+    role: invite.role,
+    invitedBy: invite.invitedBy,
+    needsMnda: invite.requiresMnda && !signed,
+  }));
+}
+
+/**
+ * Joins every pending invite to the account's email that doesn't wait on an
+ * unsigned MNDA: those sent before it signed up, or opened by an MNDA it just signed.
+ */
+export async function claimPendingInvites(account: Account): Promise<void> {
+  const invites = await pendingInvitesFor(account);
+  if (!invites.length) return;
+  const signed = await hasSignedMnda(account.userId);
+  const joined: Extract<AcceptResult, { ok: true }>[] = [];
+  for (const invite of invites) {
+    if (invite.requiresMnda && !signed) continue;
+    const result = await bindInvite(invite, account.userId);
+    if (result.ok && !result.alreadyMember) joined.push(result);
+  }
+  await recordEvents(
+    joined.map((result) => ({
+      roomId: result.roomId,
+      account,
+      action: "accept" as const,
+      detail: { email: result.email, role: result.role, auto: true },
+    })),
+  );
+}
+
+/** Changes whenever the account's rooms or pending invites do, so an open portal knows to refresh. */
+export async function roomsVersion(account: Account): Promise<string> {
+  const rows = await db()`
+    select m.id, m.role, m.accepted_at is not null as active, m.requires_mnda, r.name
+    from data_room_members m
+    join data_rooms r on r.id = m.room_id
+    where (m.user_id = ${account.userId} and m.accepted_at is not null)
+      or (m.email = ${normalizeEmail(account.email)} and m.accepted_at is null and m.invite_expires_at > now())
+    order by m.id
+  `;
+  return createHash("sha256").update(JSON.stringify(rows)).digest("base64url").slice(0, 16);
 }

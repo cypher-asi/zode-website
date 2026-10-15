@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { sendRegistrationEmails } from "@/emails/send";
 import { trackServerEvent } from "@/features/analytics/server";
+import { claimPendingInvites } from "@/features/data-room/invites";
 import { RATE_LIMITED, clientIp, withinLimits } from "@/lib/rateLimit";
 import { isEmail, singleLine } from "@/lib/validation";
 import { MIN_PASSWORD_LENGTH } from "./password";
@@ -40,8 +41,24 @@ export async function login(_prevState: AuthFormState, formData: FormData): Prom
     return { error: describeZosError(error, "login", "Couldn't log in right now. Please try again."), email };
   }
 
+  const next = safeNext(formData.get("next"));
   await createAccountSession(account);
-  redirect(safeNext(formData.get("next")));
+  await joinInvitedRooms(account, next);
+  redirect(next);
+}
+
+/**
+ * Data rooms shared with this email before the account signed in; a failure
+ * leaves them in the portal to accept. Skipped on the way to an invite link,
+ * which would otherwise find its invite already used; accepting it joins the rest.
+ */
+async function joinInvitedRooms(account: Account, next: string): Promise<void> {
+  if (next.startsWith("/data-rooms/invite/")) return;
+  try {
+    await claimPendingInvites(account);
+  } catch (error) {
+    console.error("[account] couldn't join invited data rooms", error);
+  }
 }
 
 export interface RegisterState {
@@ -81,8 +98,10 @@ export async function register(_prevState: RegisterState, formData: FormData): P
 
   after(() => sendRegistrationEmails(account, values.inviteCode));
   await trackServerEvent("account_registered", { invited: Boolean(values.inviteCode) }, account);
+  const next = safeNext(formData.get("next"));
   await createAccountSession(account);
-  redirect(safeNext(formData.get("next")));
+  await joinInvitedRooms(account, next);
+  redirect(next);
 }
 
 /** Clears the session; callers decide whether to navigate (see `useLogout`). */

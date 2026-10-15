@@ -16,10 +16,13 @@ import { recordEvent, recordEvents } from "./audit";
 import { blobInfo, deleteBlobs, deleteRoomBlobs, roomBlobPrefix } from "./blob";
 import {
   acceptInvite,
+  claimPendingInvites,
   findInvite,
   inviteUrl,
   issueInvite,
   reissueInvite,
+  roomUrl,
+  shareWithAccount,
   type AcceptResult,
   type IssuedInvite,
 } from "./invites";
@@ -43,7 +46,15 @@ import {
   setRoomSite,
   type RoomAccess,
 } from "./rooms";
-import { ROLES, isRoomKind, roomKindLabel, type ActionState, type RoomKind, type RoomRole } from "./types";
+import {
+  ROLES,
+  isRoomKind,
+  roomKindLabel,
+  type ActionState,
+  type InviteRef,
+  type RoomKind,
+  type RoomRole,
+} from "./types";
 
 const MAX_ADDRESS_LENGTH = 500;
 
@@ -66,7 +77,8 @@ const roleLabel = (role: RoomRole): string => ROLES.find((r) => r.id === role)?.
 
 const expiresOn = new Intl.DateTimeFormat("en-US", { dateStyle: "long", timeZone: "UTC" });
 
-function emailInvite(access: RoomAccess, invite: IssuedInvite): void {
+/** `shared` when the invitee's account already joined, so the email opens the room rather than the invite. */
+function emailInvite(access: RoomAccess, invite: IssuedInvite, shared: boolean): void {
   after(() =>
     sendDataRoomInvite(
       invite.email,
@@ -75,9 +87,10 @@ function emailInvite(access: RoomAccess, invite: IssuedInvite): void {
         inviterName: access.account.displayName,
         inviterEmail: access.account.email,
         roleLabel: roleLabel(invite.role),
-        inviteUrl: inviteUrl(invite.token),
+        inviteUrl: shared ? roomUrl(access.room.id) : inviteUrl(invite.token),
         expiresOn: expiresOn.format(invite.expiresAt),
         requiresMnda: invite.requiresMnda,
+        shared,
       },
       invite.token.slice(0, 16),
     ),
@@ -419,24 +432,32 @@ export async function inviteMembersAction(roomId: string, _prev: ActionState, fo
   if (invalid) return { error: `${invalid} is not a valid email.` };
   if (!(await withinInviteLimits(roomId, access, emails.length))) return { error: RATE_LIMITED };
 
+  const shared: string[] = [];
   const invited: string[] = [];
   const existing: string[] = [];
   for (const email of emails) {
     const invite = await issueInvite(roomId, email, role, access.account.email.toLowerCase(), requiresMnda);
-    if (!invite) {
+    const joined = invite && (await shareWithAccount(roomId, invite));
+    if (!invite || joined?.alreadyMember) {
       existing.push(email);
       continue;
     }
-    invited.push(email);
-    emailInvite(access, invite);
-    await recordEvent({ roomId, account: access.account, action: "invite", detail: { email, role, requiresMnda } });
+    (joined ? shared : invited).push(email);
+    emailInvite(access, invite, Boolean(joined));
+    await recordEvent({
+      roomId,
+      account: access.account,
+      action: "invite",
+      detail: { email, role, requiresMnda, ...(joined ? { shared: true } : {}) },
+    });
   }
 
   refresh();
   const parts = [];
+  if (shared.length) parts.push(`Shared with ${shared.join(", ")}.`);
   if (invited.length) parts.push(`Invited ${invited.join(", ")}.`);
   if (existing.length) parts.push(`${existing.join(", ")} already ${existing.length === 1 ? "has" : "have"} access.`);
-  return invited.length ? { ok: parts.join(" ") } : { error: parts.join(" ") };
+  return shared.length || invited.length ? { ok: parts.join(" ") } : { error: parts.join(" ") };
 }
 
 export async function resendInviteAction(roomId: string, memberId: string): Promise<ActionState> {
@@ -446,10 +467,20 @@ export async function resendInviteAction(roomId: string, memberId: string): Prom
   const invite = isUuid(memberId) ? await reissueInvite(roomId, memberId, access.account.email.toLowerCase()) : null;
   if (!invite) return { error: "That invite was already accepted or removed." };
 
-  emailInvite(access, invite);
-  await recordEvent({ roomId, account: access.account, action: "invite_resend", detail: { email: invite.email } });
+  const joined = await shareWithAccount(roomId, invite);
+  if (joined?.alreadyMember) {
+    refresh();
+    return { ok: `${invite.email} already has access.` };
+  }
+  emailInvite(access, invite, Boolean(joined));
+  await recordEvent({
+    roomId,
+    account: access.account,
+    action: "invite_resend",
+    detail: { email: invite.email, ...(joined ? { shared: true } : {}) },
+  });
   refresh();
-  return { ok: `Sent a new link to ${invite.email}.` };
+  return { ok: joined ? `Shared with ${invite.email}.` : `Sent a new link to ${invite.email}.` };
 }
 
 export async function changeRoleAction(roomId: string, memberId: string, role: RoomRole): Promise<ActionState> {
@@ -505,8 +536,9 @@ const ACCEPT_ERRORS: Record<Extract<AcceptResult, { ok: false }>["reason"], stri
   "mnda-required": "Sign the mutual NDA to open this data room.",
 };
 
-async function joinRoom(token: string, account: Account): Promise<ActionState> {
-  const result = await acceptInvite(token, account);
+/** Joins the invite's room, and any others an MNDA just signed has opened, then goes into the room. */
+async function joinRoom(ref: InviteRef, account: Account): Promise<ActionState> {
+  const result = await acceptInvite(ref, account);
   if (!result.ok) return { error: ACCEPT_ERRORS[result.reason] };
   await recordEvent({
     roomId: result.roomId,
@@ -514,27 +546,25 @@ async function joinRoom(token: string, account: Account): Promise<ActionState> {
     action: "accept",
     detail: { email: result.email, role: result.role },
   });
+  await claimPendingInvites(account);
   redirect(`/portal/data-rooms/${result.roomId}`);
 }
 
-export async function acceptInviteAction(token: string): Promise<ActionState> {
+export async function acceptInviteAction(ref: InviteRef): Promise<ActionState> {
   const account = await getAccount();
   if (!account) return { error: "Log in to accept this invite." };
-  return joinRoom(token, account);
+  return joinRoom(ref, account);
 }
 
-/**
- * For invites that require the MNDA: signs it as the invited, signed-in
- * account (its email already proven by the invite link), then joins the room.
- */
+/** For invites that require the MNDA: signs it as the invited, signed-in account, then joins the room. */
 export async function signMndaAndAcceptInviteAction(
-  token: string,
+  ref: InviteRef,
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
   const account = await getAccount();
   if (!account) return { error: "Log in to accept this invite." };
-  const invite = await findInvite(token);
+  const invite = await findInvite(ref);
   if (!invite) return { error: ACCEPT_ERRORS.invalid };
   if (invite.expired) return { error: ACCEPT_ERRORS.expired };
   if (normalizeEmail(account.email) !== invite.email) return { error: ACCEPT_ERRORS["email-mismatch"] };
@@ -562,5 +592,5 @@ export async function signMndaAndAcceptInviteAction(
       detail: { mndaId: mnda.id, entity: mnda.party.entityName, email: invite.email },
     });
   }
-  return joinRoom(token, account);
+  return joinRoom(ref, account);
 }
