@@ -1,9 +1,8 @@
-import { createHash } from "node:crypto";
 import { Fragment, type ReactElement, type ReactNode } from "react";
 import Link from "next/link";
 import { multiple, pct, usdShort } from "@/features/compute-model/format";
 import { GPUS_PER_NODE, OPERATING_MONTHS } from "@/features/compute-model/model/inputs";
-import { STATIC_MAP, mapsConfigured } from "@/features/deployments/places";
+import { STATIC_MAP } from "@/features/deployments/places";
 import {
   DILIGENCE_FIELDS,
   STATUS_LABELS,
@@ -21,6 +20,7 @@ import {
 } from "./summary";
 import { CapitalStack, type CapitalSource } from "./CapitalStack";
 import { Icon } from "./icons";
+import { siteMapSrc } from "./rooms";
 import { SiteMap } from "./SiteMap";
 import { googleMapsHref, type RoomSite } from "./types";
 import styles from "./Summary.module.css";
@@ -493,8 +493,7 @@ function Deal({
 /** Where the site is, linked to Google Maps, over a satellite preview when Maps is set up. */
 function Site({ roomId, site }: { roomId: string; site: RoomSite }) {
   const href = googleMapsHref(site);
-  // Browsers keep the map for a day, so a new address needs a new URL.
-  const version = createHash("sha256").update(`${site.address}\n${site.placeId ?? ""}`).digest("hex").slice(0, 12);
+  const src = siteMapSrc(roomId, site);
   return (
     <section className={styles.section} aria-labelledby="site-heading">
       <div className={styles.sectionHead}>
@@ -503,6 +502,7 @@ function Site({ roomId, site }: { roomId: string; site: RoomSite }) {
         </h2>
         <a href={href} target="_blank" rel="noopener noreferrer" className={styles.modelLink}>
           Google Maps
+          <Icon name="external" />
         </a>
       </div>
       <p className={styles.lede}>
@@ -510,9 +510,9 @@ function Site({ roomId, site }: { roomId: string; site: RoomSite }) {
           {site.address}
         </a>
       </p>
-      {mapsConfigured() ? (
+      {src ? (
         <SiteMap
-          src={`/api/data-rooms/${roomId}/map?v=${version}`}
+          src={src}
           href={href}
           alt={`Satellite map of ${site.address}`}
           width={STATIC_MAP.width}
@@ -628,9 +628,10 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
             <h2 id="economics-heading" className={styles.heading}>
               Economics
             </h2>
-            <Link href={x.modelHref} className={styles.modelLink}>
+            <a href={x.modelHref} target="_blank" rel="noopener noreferrer" className={styles.modelLink}>
               Compute model
-            </Link>
+              <Icon name="external" />
+            </a>
           </div>
           <p className={styles.lede}>{economicsLede}</p>
           <ul className={styles.keyFigures}>

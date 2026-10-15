@@ -42,6 +42,7 @@ export interface RoomSummary {
   name: string;
   kind: RoomKind;
   role: RoomRole;
+  site: RoomSite | null;
   createdAt: string;
   fileCount: number;
 }

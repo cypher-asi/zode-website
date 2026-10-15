@@ -1,9 +1,11 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import { isTeam } from "@/features/account/admin";
 import { getAccount, requireAccount } from "@/features/account/session";
 import type { Account } from "@/features/account/zos";
+import { mapsConfigured } from "@/features/deployments/places";
 import { db } from "@/lib/db";
 import {
   leaseEconomics,
@@ -87,7 +89,7 @@ export async function requireRoomRole(roomId: string, minRole: RoomRole = "viewe
 
 export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
   const rows = await db()`
-    select r.id, r.name, r.kind, r.created_at, m.role,
+    select r.id, r.name, r.kind, r.address, r.city, r.place_id, r.created_at, m.role,
       (select count(*) from data_room_files f where f.room_id = r.id and f.deleted_at is null) as file_count
     from data_room_members m
     join data_rooms r on r.id = m.room_id
@@ -99,6 +101,7 @@ export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
     name: String(row.name),
     kind: row.kind as RoomKind,
     role: row.role as RoomRole,
+    site: toRoomSite(row),
     createdAt: iso(row.created_at),
     fileCount: Number(row.file_count),
   }));
@@ -157,6 +160,16 @@ export const toRoomSite = (row: Record<string, unknown>): RoomSite | null =>
 export async function getRoomSite(roomId: string): Promise<RoomSite | null> {
   const [row] = await db()`select address, city, place_id from data_rooms where id = ${roomId}`;
   return row ? toRoomSite(row) : null;
+}
+
+/**
+ * The site's satellite map, from the room's map route; null when Maps isn't
+ * set up. Browsers keep the map for a day, so a new address needs a new URL.
+ */
+export function siteMapSrc(roomId: string, site: RoomSite): string | null {
+  if (!mapsConfigured()) return null;
+  const version = createHash("sha256").update(`${site.address}\n${site.placeId ?? ""}`).digest("hex").slice(0, 12);
+  return `/api/data-rooms/${roomId}/map?v=${version}`;
 }
 
 /** `null` clears the address. */

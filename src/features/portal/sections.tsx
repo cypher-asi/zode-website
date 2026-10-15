@@ -3,7 +3,8 @@ import Link from "next/link";
 import type { OrderSummary } from "@/features/configurator/orders";
 import type { ComputeContract, Contract } from "@/features/contracts/contracts";
 import bar from "@/features/data-room/room.module.css";
-import { roleLabel, roomKindLabel, type RoomSummary } from "@/features/data-room/types";
+import { siteMapSrc } from "@/features/data-room/rooms";
+import { roomKindLabel, type RoomSummary } from "@/features/data-room/types";
 import { StatusButton } from "@/features/leads/StatusButton";
 import { customerOrderStatus, leadSource, leadType, statusLabel, type Lead } from "@/features/leads/types";
 import { SUBSCRIBER_STATUSES, mailingList, type Subscriber } from "@/features/mailing-list/types";
@@ -11,6 +12,7 @@ import { kindLabel, type Post } from "@/features/posts/types";
 import { RoleButton } from "@/features/users/RoleButton";
 import { ROLE_LABELS, type User } from "@/features/users/types";
 import { PortalIcon } from "./icons";
+import { RoomThumb } from "./RoomThumb";
 import { RESOURCE_LINKS, TOOL_LINKS, type NavLink } from "./nav";
 import styles from "./portal.module.css";
 
@@ -91,18 +93,20 @@ export function RoomList({ rooms }: { rooms: RoomSummary[] }): ReactElement {
       {rooms.map((room) => (
         <li key={room.id}>
           <Link className={styles.row} href={`/portal/data-rooms/${room.id}`} data-room="">
-            <span className={styles.rowIcon}>
-              <PortalIcon name="rooms" />
+            <span className={`${styles.rowIcon} ${styles.roomThumb}`}>
+              <RoomThumb
+                src={room.site ? siteMapSrc(room.id, room.site) : null}
+                fallback={<PortalIcon name="site" />}
+              />
             </span>
             <span className={styles.rowMain}>
               <span className={styles.rowTitle}>{room.name}</span>
               <span className={styles.rowMeta}>
-                {roomKindLabel(room.kind)} · {plural(room.fileCount, "file")} · Created{" "}
-                {date.format(new Date(room.createdAt))}
+                {plural(room.fileCount, "file")} · Created {date.format(new Date(room.createdAt))}
               </span>
             </span>
             <span className={styles.rowEnd}>
-              <span className={styles.pill}>{roleLabel(room.role)}</span>
+              <span className={styles.pill}>{roomKindLabel(room.kind)}</span>
               <Chevron />
             </span>
           </Link>

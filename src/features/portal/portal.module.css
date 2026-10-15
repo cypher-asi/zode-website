@@ -197,6 +197,26 @@ a.row:focus-visible {
   height: 20px;
 }
 
+/* The site's satellite map, its pin at the centre of the crop. */
+.roomThumb {
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.roomThumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.roomThumb svg {
+  width: 26px;
+  height: 26px;
+}
+
 .rowMain {
   flex: 1;
   min-width: 0;
@@ -332,8 +352,8 @@ a.row:focus-visible {
     flex-basis: 0;
   }
 
-  /* Room names need the width more; the room itself shows the role. */
-  .row[data-room] .pill {
-    display: none;
+  .roomThumb {
+    width: 48px;
+    height: 48px;
   }
 }
