@@ -49,7 +49,7 @@ const TOOLS: Record<string, HeaderRoute> = {
   "/cluster-builder": { ...SITE, placement: "tight", primary: null, clear: 440 },
 };
 
-const HIDDEN_PATHS = ["/login", "/register", "/dev"];
+const HIDDEN_PATHS = ["/login", "/register", "/dev", "/company-profile"];
 
 /** Routes `app/@modal` intercepts: a link to one opens it over the current page; only a hard load shows it as a page. */
 export const MODAL_PATHS: ReadonlySet<string> = new Set(["/invest", "/talk-to-an-engineer", "/login", "/register"]);

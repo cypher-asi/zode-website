@@ -1,0 +1,513 @@
+/*
+ * One US Letter sheet, sized in inches so the screen and the printed page
+ * match. Section labels and figure captions follow the deck's mono caps;
+ * the drawings read `--ink` and `--accent` from their hosts here.
+ */
+@page {
+  size: letter;
+  margin: 0;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  min-height: 100vh;
+  padding: 32px 16px 64px;
+  background: var(--color-paper);
+}
+
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  width: 8.5in;
+  max-width: 100%;
+}
+
+.print {
+  padding: 8px 14px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: var(--color-ink);
+  color: var(--color-text-inverse);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--duration-base) ease;
+}
+
+.print:hover {
+  background: var(--color-primary-hover);
+}
+
+.print:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.sheet {
+  --rule: var(--color-border);
+  --muted: var(--color-text-secondary);
+  --logo-u: 9px;
+
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 0.14in;
+  width: 8.5in;
+  height: 11in;
+  overflow: hidden;
+  padding: 0.42in 0.5in 0.36in;
+  background: var(--color-white);
+  box-shadow: var(--shadow-card);
+  color: var(--color-text-primary);
+  font-size: 8.5pt;
+  line-height: 1.4;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.sheet a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.sheet :is(h1, h2, h3, p, ul, figure, table) {
+  margin: 0;
+}
+
+.sheet ul {
+  padding: 0;
+  list-style: none;
+}
+
+.masthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.12in;
+  border-bottom: 1px solid var(--color-ink);
+}
+
+.wordmark {
+  display: block;
+  width: auto;
+  height: 0.2in;
+}
+
+.meta,
+.label,
+.caption,
+.rowLabel,
+.role,
+.url,
+.years {
+  font-family: var(--font-mono);
+  font-size: 6.5pt;
+  letter-spacing: var(--caps-tracking);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1in;
+  min-width: 0;
+}
+
+.label {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--rule);
+  font-weight: 400;
+  color: var(--color-text-primary);
+}
+
+.index {
+  color: var(--color-text-tertiary);
+}
+
+/* 01: copy beside the pod drawing, then the four principles. */
+.what {
+  gap: 0.14in;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 3.1in;
+  gap: 0.3in;
+  align-items: center;
+}
+
+.heroCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.09in;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 23pt;
+  font-weight: 300;
+  line-height: 1.05;
+  letter-spacing: var(--h1-tracking);
+  text-wrap: balance;
+}
+
+.lede {
+  font-size: 10.5pt;
+  line-height: 1.35;
+}
+
+.body,
+.small {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 7.5pt;
+  line-height: 1.4;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 0.04in;
+  border-top: 1px solid var(--rule);
+}
+
+.facts li {
+  padding-top: 0.07in;
+}
+
+.pod {
+  --ink: var(--color-ink);
+  --accent: var(--color-accent-strong);
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.caption {
+  text-align: right;
+}
+
+.principles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+}
+
+.principle {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0.08in 0.1in 0.1in;
+  background: var(--color-white);
+}
+
+.principleArt {
+  --ink: var(--color-ink);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 0.44in;
+  margin-bottom: 2px;
+}
+
+.principleArt svg {
+  width: auto;
+  height: 100%;
+}
+
+.principleTitle {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  font-family: var(--font-display);
+  font-size: 12pt;
+  font-weight: 300;
+  line-height: 1.1;
+}
+
+.principleTitle .index {
+  font-family: var(--font-mono);
+  font-size: 6.5pt;
+}
+
+/* Figures: a value over its caption. */
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.statValue {
+  font-family: var(--font-display);
+  font-size: 13pt;
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.stat[data-large] .statValue {
+  font-size: 17pt;
+}
+
+.statLabel {
+  font-size: 7pt;
+  line-height: 1.3;
+  color: var(--muted);
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.3in;
+}
+
+.pair[data-split="foot"] {
+  grid-template-columns: minmax(0, 1fr) 1.95in;
+}
+
+.stats {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 0.15in;
+}
+
+/* 02: the sites ready to close, one ruled row each. */
+.sites {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 7.5pt;
+}
+
+.sites :is(th, td) {
+  padding: 3px 6px 3px 0;
+  border-top: 1px solid var(--rule);
+  text-align: left;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.sites td {
+  color: var(--muted);
+}
+
+.sites .mw {
+  padding-right: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+/* 03 and 04: logos by stage or discipline, each row under its label. */
+.logoRows {
+  display: flex;
+  flex-direction: column;
+}
+
+.logoRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0.08in 0;
+  border-top: 1px solid var(--rule);
+}
+
+.logos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 0.2in;
+  align-items: center;
+}
+
+.logos img {
+  display: block;
+  width: auto;
+  height: calc(var(--h) * var(--logo-u));
+  translate: 0 calc(var(--shift) * 100%);
+  filter: brightness(0);
+  opacity: 0.7;
+}
+
+.team {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.3in;
+}
+
+.founder,
+.network {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.network .logoRow {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.15in;
+}
+
+.network .rowLabel {
+  flex: none;
+  width: 1.05in;
+}
+
+.network .logoRow:first-child {
+  margin-top: 4px;
+}
+
+.person {
+  font-family: var(--font-display);
+  font-size: 16pt;
+  font-weight: 300;
+  line-height: 1.1;
+}
+
+.ventures {
+  display: flex;
+  flex-direction: column;
+  margin-top: 5px;
+}
+
+.ventures li {
+  display: grid;
+  grid-template-columns: 0.95in minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 0.12in;
+  padding: 4px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.ventureName {
+  font-weight: 500;
+}
+
+.years {
+  grid-row: 2;
+  grid-column: 1;
+}
+
+.ventures .small {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  align-self: center;
+}
+
+.outcome {
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--color-text-primary);
+}
+
+/* 05: four link cards; 06: set on ink. */
+.resources {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+}
+
+.resource {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  height: 100%;
+  padding: 0.08in 0.09in;
+  background: var(--color-white);
+}
+
+.resourceLabel {
+  font-weight: 500;
+}
+
+.resource .url {
+  margin-top: auto;
+  padding-top: 3px;
+  font-size: 5.5pt;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--color-text-primary);
+}
+
+.urlPart {
+  white-space: nowrap;
+}
+
+.contact {
+  --muted: var(--color-text-inverse-secondary);
+  --rule: rgba(246, 246, 243, 0.18);
+
+  gap: 4px;
+  padding: 0.1in 0.14in 0.12in;
+  background: var(--color-bg-inverse);
+  color: var(--color-text-inverse);
+}
+
+.contact .label {
+  margin-bottom: 4px;
+  color: var(--color-text-inverse);
+}
+
+.contact .index {
+  color: var(--muted);
+}
+
+.email {
+  font-family: var(--font-display);
+  font-size: 15pt;
+  font-weight: 300;
+  line-height: 1.15;
+}
+
+.contact .url {
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.fine {
+  margin-top: auto;
+  padding-top: 0.08in;
+  border-top: 1px solid var(--rule);
+  font-size: 6pt;
+  line-height: 1.4;
+  color: var(--color-text-tertiary);
+}
+
+@media print {
+  .page {
+    display: block;
+    min-height: 0;
+    padding: 0;
+    background: none;
+  }
+
+  .toolbar {
+    display: none;
+  }
+
+  .sheet {
+    box-shadow: none;
+  }
+
+  .sheet *,
+  .sheet *::before,
+  .sheet *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
