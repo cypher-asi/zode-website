@@ -154,6 +154,61 @@ export interface LeaseTerms {
   sources: DiligenceSource[];
 }
 
+/** A delivery phase; power is the running total once it is delivered. */
+export interface LeasePhase {
+  name: string;
+  grossMw: number;
+  /** Rent is charged on it. */
+  itMw: number;
+  /** YYYY-MM-DD target commencement. */
+  targetDate: string;
+  /** USD, due when the phase is ready for service. */
+  prepaidRent: number;
+}
+
+/** A payment of a fixed amount on a milestone. */
+export interface LeasePayment {
+  /** USD. */
+  amount: number;
+  trigger: string;
+}
+
+/** Security the tenant posts, such as an escrow, a letter of credit or a guaranty. */
+export interface LeaseSecurity {
+  label: string;
+  /** USD; null when the lease leaves it open. */
+  amount: number | null;
+  note: string;
+}
+
+export interface LeaseTermItem {
+  label: string;
+  value: string;
+  note?: string;
+}
+
+/** A lease's drafted or signed terms beyond the running costs the model takes. */
+export interface LeaseDeal {
+  /** Where the terms stand, such as "Draft sublease, Oct 9, 2026". */
+  status: string;
+  termYears: number;
+  renewals: { count: number; years: number };
+  phases: LeasePhase[];
+  security: LeaseSecurity[];
+  /** When the capital contribution is paid; sums to its amount. */
+  capitalSchedule: LeasePayment[];
+  /** Each prepaid rent payment is credited against base rent over this many months. */
+  prepaidCreditMonths: number;
+  /** Fixed term of the agreement behind the operations fee. */
+  operationsTermYears?: number;
+  /** Utility power is billed at cost with PUE capped here. */
+  pueCap?: number;
+  /** Exit, delay and expansion terms, in display order. */
+  otherTerms: LeaseTermItem[];
+  note: string;
+  sources: DiligenceSource[];
+}
+
 /** What diligence found for a site ZODE would lease or rent colo space in; everything else comes from the compute model. */
 export interface LeaseEconomics {
   rent: LeaseTerms;
@@ -162,6 +217,7 @@ export interface LeaseEconomics {
   criticalItMw: CriticalIt;
   fx: Fx;
   futurePower?: FuturePower;
+  deal?: LeaseDeal;
 }
 
 interface SummaryBase {
@@ -183,6 +239,7 @@ export function economicsSources(summary: DiligenceSummary): DiligenceSource[] {
       ...e.capitalContribution.sources,
       ...e.criticalItMw.sources,
       ...(e.futurePower?.sources ?? []),
+      ...(e.deal?.sources ?? []),
     ];
   }
   const e = summary.economics;

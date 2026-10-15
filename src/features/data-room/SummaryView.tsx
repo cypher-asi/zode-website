@@ -14,6 +14,9 @@ import {
   type DiligenceSource,
   type DiligenceStatus,
   type DiligenceSummary,
+  type LeaseDeal,
+  type LeaseEconomics,
+  type LeaseTerms,
   type Money,
   type PurchaseEconomics,
   type SummaryEconomics,
@@ -176,6 +179,18 @@ const moneyFigure = (label: string, money: Money, usd: number | null): Figure =>
 });
 
 const perKwMonth = (usd: number) => `$${Number(usd.toFixed(2))} / kW-mo`;
+
+const perKwh = (usd: number) => `$${usd.toFixed(3)} / kWh`;
+
+const mw = (n: number) => `${Number(n.toFixed(2))} MW`;
+
+const HOURS_PER_MONTH = 8760 / 12;
+
+/** Year 1 cost of one kWh of IT load: rent, operations and NNN spread over the month, plus utility power at the PUE. */
+const allInPerKwh = (rent: LeaseTerms) =>
+  (rent.baseLease + rent.operations + rent.nnn) / HOURS_PER_MONTH + rent.electricityRate * rent.pue;
+
+const prepaidTotal = (deal: LeaseDeal) => deal.phases.reduce((total, p) => total + p.prepaidRent, 0);
 
 /** The figures that differ by deal: what a purchase pays for the site, or what a lease or colo costs. */
 function siteFigures(summary: Summary): Figure[] {
@@ -501,13 +516,35 @@ function Deal({
     },
   ];
 
+  return <TermGroups id="deal" title="Deal terms" groups={groups} notes={notes} roomId={roomId} names={names} />;
+}
+
+/** Groups of label and value rows, with each figure's reasoning and sources behind a disclosure. */
+function TermGroups({
+  id,
+  title,
+  lede,
+  groups,
+  notes,
+  roomId,
+  names,
+}: {
+  id: string;
+  title: string;
+  lede?: string;
+  groups: { title: string; terms: Term[] }[];
+  notes: Figure[];
+  roomId: string;
+  names: Map<string, string>;
+}) {
   return (
-    <section className={styles.section} aria-labelledby="deal-heading">
+    <section className={styles.section} aria-labelledby={`${id}-heading`}>
       <div className={styles.sectionHead}>
-        <h2 id="deal-heading" className={styles.heading}>
-          Deal terms
+        <h2 id={`${id}-heading`} className={styles.heading}>
+          {title}
         </h2>
       </div>
+      {lede ? <p className={styles.lede}>{lede}</p> : null}
       <div className={styles.dealGroups}>
         {groups.map((group) => (
           <div key={group.title} className={styles.dealGroup}>
@@ -555,6 +592,189 @@ function Deal({
   );
 }
 
+/** A lease's headline terms: its phases, the security and non-recurring charges it asks for, its running rates and how it ends. */
+function LeaseTermsSection({
+  roomId,
+  e,
+  deal,
+  names,
+}: {
+  roomId: string;
+  e: LeaseEconomics;
+  deal: LeaseDeal;
+  names: Map<string, string>;
+}) {
+  const { rent } = e;
+  const full = deal.phases.at(-1);
+  const capital = toUsd(e.capitalContribution, e.fx);
+  const prepaid = prepaidTotal(deal);
+  const pue = deal.pueCap ?? rent.pue;
+  const escalation = `${pct(rent.leaseEscalation, 1)} / yr escalation`;
+  const fullKw = (full?.itMw ?? 0) * 1000;
+  const fullRent = rent.baseLease * fullKw;
+  const fullRecurring = (rent.baseLease + rent.operations + rent.nnn) * fullKw;
+
+  const groups: { title: string; terms: Term[] }[] = [
+    {
+      title: "Headline terms",
+      terms: [
+        ...(full
+          ? [
+              {
+                label: "Gross power",
+                value: mw(full.grossMw),
+                note: `${plural(deal.phases.length, "phase", "phases")} to ${monthYear(utcDate(full.targetDate))}`,
+              },
+              { label: "IT power", value: mw(full.itMw), note: "Rent is charged on each phase's IT power" },
+            ]
+          : []),
+        {
+          label: "Term",
+          value: plural(deal.termYears, "year", "years"),
+          note: `From the last phase, then ${deal.renewals.count} × ${deal.renewals.years}-year renewals`,
+        },
+        { label: "Base rent", value: perKwMonth(rent.baseLease), note: escalation },
+        { label: "Rent at full build", value: `${usdShort(fullRent, 2)} / mo`, note: `${usdShort(fullRent * 12)} a year, before escalation` },
+        {
+          label: "All-in price per kWh",
+          value: perKwh(allInPerKwh(rent)),
+          note: "Per IT kWh in year 1: rent, operations, NNN and power",
+          estimate: rent.estimate,
+        },
+        {
+          label: "Non-recurring charges",
+          value: capital === null ? "Not priced" : usdShort(capital + prepaid, 2),
+          note: "Capital contribution and prepaid rent",
+        },
+      ],
+    },
+    {
+      title: "Phases",
+      terms: [
+        ...deal.phases.map((p, i) => {
+          const before = i > 0 ? deal.phases[i - 1].grossMw : 0;
+          return {
+            label: `${p.name}, ${longDate(utcDate(p.targetDate))}`,
+            value: `${mw(p.itMw)} IT`,
+            note: `${i > 0 ? `+${mw(p.grossMw - before)}, ` : ""}${mw(p.grossMw)} gross · ${usdShort(p.prepaidRent, 2)} prepaid rent`,
+          };
+        }),
+        {
+          label: "Prepaid rent credit",
+          value: plural(deal.prepaidCreditMonths, "month", "months"),
+          note: "Each payment is credited against base rent",
+        },
+      ],
+    },
+    {
+      title: "Deposits and security",
+      terms: deal.security.map((s) => ({
+        label: s.label,
+        value: s.amount === null ? "Open" : usdShort(s.amount),
+        note: s.note,
+      })),
+    },
+    {
+      title: "Non-recurring charges",
+      terms: [
+        {
+          label: "Capital contribution",
+          value: capital === null ? "Not priced" : usdShort(capital, 2),
+          note: `${plural(deal.capitalSchedule.length, "payment", "payments")}, not credited against rent`,
+          estimate: e.capitalContribution.estimate,
+        },
+        ...deal.capitalSchedule.map((p) => ({
+          label: p.trigger,
+          value: usdShort(p.amount, 2),
+          note: capital ? `${pct(p.amount / capital, 0)} of the capital contribution` : undefined,
+        })),
+        {
+          label: "Prepaid rent",
+          value: usdShort(prepaid, 2),
+          note: `Paid as each phase is ready for service, credited over ${deal.prepaidCreditMonths} months`,
+        },
+      ],
+    },
+    {
+      title: "Recurring charges",
+      terms: [
+        { label: "Base rent", value: perKwMonth(rent.baseLease), note: escalation },
+        {
+          label: "Operations fee",
+          value: perKwMonth(rent.operations),
+          note: deal.operationsTermYears ? `Fixed ${deal.operationsTermYears}-year term, ${escalation}` : escalation,
+        },
+        {
+          label: "NNN",
+          value: perKwMonth(rent.nnn),
+          note: "Operating costs and taxes passed through",
+          estimate: rent.estimate,
+        },
+        {
+          label: "Electricity",
+          value: perKwh(rent.electricityRate),
+          note: deal.pueCap ? `At cost, PUE capped at ${pue.toFixed(2)}` : `At ${pue.toFixed(2)} PUE`,
+          estimate: rent.estimate,
+        },
+        {
+          label: "Power per IT kWh",
+          value: perKwh(rent.electricityRate * pue),
+          note: `The utility rate at ${pue.toFixed(2)} PUE`,
+          estimate: rent.estimate,
+        },
+        {
+          label: "Monthly at full build",
+          value: `${usdShort(fullRecurring, 2)} / mo`,
+          note: "Rent, operations and NNN, before power",
+          estimate: rent.estimate,
+        },
+      ],
+    },
+    { title: "Exit and remedies", terms: deal.otherTerms },
+  ];
+
+  const notes: Figure[] = [
+    {
+      label: "Lease",
+      value: plural(deal.termYears, "year", "years"),
+      detail: deal.note,
+      sources: deal.sources,
+    },
+  ];
+
+  return (
+    <TermGroups
+      id="lease"
+      title="Lease terms"
+      lede={deal.status}
+      groups={groups}
+      notes={notes}
+      roomId={roomId}
+      names={names}
+    />
+  );
+}
+
+/** With lease terms, Economics summarizes the Lease terms section below it. */
+function leaseKeyFigures(cluster: KeyFigure[], year1Revenue: number, e: LeaseEconomics, deal: LeaseDeal): KeyFigure[] {
+  const capital = toUsd(e.capitalContribution, e.fx);
+  const deposit = deal.security.find((s) => s.amount !== null);
+  const first = deal.phases[0];
+  return [
+    ...cluster,
+    { label: "Revenue, year 1", value: usdShort(year1Revenue) },
+    { label: "Base rent", value: perKwMonth(e.rent.baseLease) },
+    { label: "All-in price per kWh", value: perKwh(allInPerKwh(e.rent)), estimate: e.rent.estimate },
+    {
+      label: "Non-recurring charges",
+      value: capital === null ? "Not priced" : usdShort(capital + prepaidTotal(deal)),
+      estimate: e.capitalContribution.estimate,
+    },
+    ...(deposit?.amount != null ? [{ label: deposit.label, value: usdShort(deposit.amount) }] : []),
+    ...(first ? [{ label: `${first.name} target`, value: monthYear(utcDate(first.targetDate)) }] : []),
+  ];
+}
+
 /** Where the site is, linked to Google Maps, over a satellite preview when Maps is set up. */
 function Site({ roomId, site }: { roomId: string; site: RoomSite }) {
   const href = googleMapsHref(site);
@@ -598,6 +818,7 @@ function Site({ roomId, site }: { roomId: string; site: RoomSite }) {
 export function SummaryView({ roomId, summary }: { roomId: string; summary: Summary }): ReactElement {
   const e = summary.economics;
   const deal = summary.kind === "purchase" ? summary.economics.deal : undefined;
+  const lease = summary.kind !== "purchase" ? summary.economics : undefined;
   const it = criticalIt(summary);
   const x = summaryEconomics(summary);
   const r = x.result;
@@ -672,7 +893,9 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
         { label: "Total project cost", value: usdShort(r.siteCost + r.totalCapex), estimate: cost.estimate },
         { label: "Equity capital", value: usdShort(r.prefEquity), estimate: deal.financing.estimate },
       ]
-    : [
+    : lease?.deal
+      ? leaseKeyFigures(cluster, r.year1Revenue, lease, lease.deal)
+      : [
         ...cluster,
         { label: "Revenue, year 1", value: usdShort(r.year1Revenue) },
         { label: "Upfront cost", value: cost.usd === null ? "Not priced" : usdShort(cost.usd), estimate: cost.estimate },
@@ -683,7 +906,11 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
         utcDate(deal.closingDate),
       )}: ${plural(x.nodes, "B300 node", "B300 nodes")} after ${plural(deal.conversionMonths, "month", "months")} of conversion, ` +
       `revenue from ${monthYear(r.monthly.dates[r.firstOperatingMonth])}.`
-    : `${plural(x.nodes, "B300 node", "B300 nodes")} on ${
+    : lease?.deal?.phases.length
+      ? `A ${lease.deal.termYears}-year ${summary.kind === "colo" ? "colo agreement" : "lease"} of ${mw(lease.deal.phases.at(-1)!.itMw)} IT in ` +
+        `${plural(lease.deal.phases.length, "phase", "phases")} from ${monthYear(utcDate(lease.deal.phases[0].targetDate))}: ` +
+        `${plural(x.nodes, "B300 node", "B300 nodes")} at full build, base case.`
+      : `${plural(x.nodes, "B300 node", "B300 nodes")} on ${
         summary.kind === "purchase" ? "an owned" : summary.kind === "colo" ? "a colo" : "a leased"
       } site, base case.`;
 
@@ -798,6 +1025,7 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
       {deal && summary.kind === "purchase" ? (
         <Deal roomId={roomId} e={summary.economics} deal={deal} x={x} names={summary.sourceNames} />
       ) : null}
+      {lease?.deal ? <LeaseTermsSection roomId={roomId} e={lease} deal={lease.deal} names={summary.sourceNames} /> : null}
     </div>
   );
 }

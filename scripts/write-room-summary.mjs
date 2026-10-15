@@ -31,6 +31,21 @@
  * falls back to the model's standard GPU contract. `conversionCost.perMw: true`
  * prices conversion per MW of critical IT instead of as a total.
  *
+ * A lease or colo may add a `deal`, its drafted or signed terms, which the
+ * summary shows as its Lease terms section. Amounts are USD; phase power is the
+ * running total once each phase is delivered, and the capital schedule sums to
+ * the capital contribution:
+ *
+ *   "deal": {
+ *     "status": "Draft sublease, Oct 9, 2026", "termYears": 15, "renewals": { "count": 3, "years": 5 },
+ *     "phases": [{ "name": "Phase 1", "grossMw": 5, "itMw": 3.8, "targetDate": "2027-01-31", "prepaidRent": 5884615 }],
+ *     "security": [{ "label": "Escrow deposit", "amount": 9000000, "note": "..." }],
+ *     "capitalSchedule": [{ "amount": 7750000, "trigger": "Permit approval" }],
+ *     "prepaidCreditMonths": 18, "operationsTermYears": 7, "pueCap": 1.3,
+ *     "otherTerms": [{ "label": "Early termination", "value": "Remaining base rent", "note": "..." }],
+ *     "note": "...", "sources": []
+ *   }
+ *
  * Any room may add `futurePower`, the facility power the site could grow to,
  * which the summary shows beside today's power:
  *
@@ -108,8 +123,15 @@ for (const key of KEYS) {
 
 const e = input.economics ?? {};
 const deal = !lease && e.deal !== undefined;
+const leaseDeal = lease && e.deal !== undefined;
 const MONEY_KEYS = lease ? ["capitalContribution"] : ["purchasePrice", "conversionCost"];
-const ALLOWED = [...MONEY_KEYS, deal ? "deal" : "criticalItMw", "fx", "futurePower", ...(lease ? ["rent"] : ["siteResidual"])];
+const ALLOWED = [
+  ...MONEY_KEYS,
+  deal ? "deal" : "criticalItMw",
+  "fx",
+  "futurePower",
+  ...(lease ? ["rent", "deal"] : ["siteResidual"]),
+];
 const future = e.futurePower !== undefined;
 const unknown = Object.keys(e).filter((key) => !ALLOWED.includes(key));
 if (unknown.length) problems.push(`economics: unknown for a ${room.kind} room${deal ? " with a deal" : ""}: ${unknown.join(", ")}`);
@@ -183,6 +205,73 @@ if (lease) {
   text(rent.note, "economics.rent.note");
   paths(rent.sources, "economics.rent.sources");
 }
+if (leaseDeal) {
+  const d = e.deal ?? {};
+  const where = "economics.deal";
+  const LEASE_DEAL_KEYS = [
+    "status",
+    "termYears",
+    "renewals",
+    "phases",
+    "security",
+    "capitalSchedule",
+    "prepaidCreditMonths",
+    "operationsTermYears",
+    "pueCap",
+    "otherTerms",
+    "note",
+    "sources",
+  ];
+  const extraDeal = Object.keys(d).filter((key) => !LEASE_DEAL_KEYS.includes(key));
+  if (extraDeal.length) problems.push(`${where}: unknown ${extraDeal.join(", ")}`);
+  const list = (value, at) => {
+    if (Array.isArray(value)) return value;
+    problems.push(`${at}: expected a list`);
+    return [];
+  };
+  text(d.status, `${where}.status`);
+  between(d.termYears, 1, 99, `${where}.termYears`);
+  between(d.renewals?.count, 0, 10, `${where}.renewals.count`);
+  between(d.renewals?.years, 0, 50, `${where}.renewals.years`);
+  const phases = list(d.phases, `${where}.phases`);
+  if (!phases.length) problems.push(`${where}.phases: at least one phase`);
+  phases.forEach((p, i) => {
+    const at = `${where}.phases[${i}]`;
+    text(p.name, `${at}.name`);
+    between(p.grossMw, 0.1, 1000, `${at}.grossMw`);
+    between(p.itMw, 0.1, 1000, `${at}.itMw`);
+    date(p.targetDate, `${at}.targetDate`);
+    number(p.prepaidRent, `${at}.prepaidRent`);
+    const before = phases[i - 1];
+    if (before && (p.grossMw < before.grossMw || p.itMw < before.itMw)) problems.push(`${at}: power is a running total`);
+    if (before && p.targetDate < before.targetDate) problems.push(`${at}.targetDate: on or after the phase before`);
+  });
+  list(d.security, `${where}.security`).forEach((s, i) => {
+    text(s.label, `${where}.security[${i}].label`);
+    number(s.amount, `${where}.security[${i}].amount`, true);
+    text(s.note, `${where}.security[${i}].note`);
+  });
+  const schedule = list(d.capitalSchedule, `${where}.capitalSchedule`);
+  schedule.forEach((p, i) => {
+    number(p.amount, `${where}.capitalSchedule[${i}].amount`);
+    text(p.trigger, `${where}.capitalSchedule[${i}].trigger`);
+  });
+  const scheduled = schedule.reduce((total, p) => total + (typeof p.amount === "number" ? p.amount : 0), 0);
+  const capital = e.capitalContribution?.amount;
+  if (schedule.length && typeof capital === "number" && e.capitalContribution.currency === "USD" && Math.abs(scheduled - capital) > 1) {
+    problems.push(`${where}.capitalSchedule: sums to ${scheduled}, not the capital contribution's ${capital}`);
+  }
+  between(d.prepaidCreditMonths, 0, 120, `${where}.prepaidCreditMonths`);
+  if (d.operationsTermYears !== undefined) between(d.operationsTermYears, 1, 99, `${where}.operationsTermYears`);
+  if (d.pueCap !== undefined) between(d.pueCap, 1, 2, `${where}.pueCap`);
+  list(d.otherTerms, `${where}.otherTerms`).forEach((t, i) => {
+    text(t.label, `${where}.otherTerms[${i}].label`);
+    text(t.value, `${where}.otherTerms[${i}].value`);
+    if (t.note !== undefined) text(t.note, `${where}.otherTerms[${i}].note`);
+  });
+  text(d.note, `${where}.note`);
+  paths(d.sources, `${where}.sources`);
+}
 if (!deal) {
   number(e.criticalItMw?.value, "economics.criticalItMw.value");
   flag(e.criticalItMw?.estimate, "economics.criticalItMw.estimate");
@@ -253,6 +342,7 @@ const dealWithSources = () => {
 const economics = {
   ...Object.fromEntries(MONEY_KEYS.map((key) => [key, withSources(key)])),
   ...(lease ? { rent: withSources("rent") } : {}),
+  ...(leaseDeal ? { deal: withSources("deal") } : {}),
   ...(deal ? { deal: dealWithSources() } : { criticalItMw: withSources("criticalItMw") }),
   ...(future ? { futurePower: withSources("futurePower") } : {}),
   fx: e.fx,
@@ -267,16 +357,20 @@ if (unresolved.length) {
 
 const citing = [
   ...Object.values(diligence),
-  ...[...MONEY_KEYS, ...(lease ? ["rent"] : []), ...(deal ? [] : ["criticalItMw"]), ...(future ? ["futurePower"] : [])].map(
-    (key) => economics[key],
-  ),
+  ...[
+    ...MONEY_KEYS,
+    ...(lease ? ["rent"] : []),
+    ...(leaseDeal ? ["deal"] : []),
+    ...(deal ? [] : ["criticalItMw"]),
+    ...(future ? ["futurePower"] : []),
+  ].map((key) => economics[key]),
   ...(deal
     ? [economics.deal.facilityPower, economics.deal.contract, economics.deal.deposit, economics.deal.financing].filter(Boolean)
     : []),
 ];
 const citedFiles = new Set(citing.flatMap(cited)).size;
 console.log(
-  `[summary] "${room.name}" (${room.kind}): ${KEYS.length} answers${deal ? ", deal terms" : ""}, ${citedFiles} cited files, all resolved.`,
+  `[summary] "${room.name}" (${room.kind}): ${KEYS.length} answers${deal ? ", deal terms" : leaseDeal ? ", lease terms" : ""}, ${citedFiles} cited files, all resolved.`,
 );
 
 if (args["dry-run"]) {
