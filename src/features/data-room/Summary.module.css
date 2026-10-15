@@ -108,7 +108,7 @@
   text-transform: uppercase;
 }
 
-/* Outlined in caps like the header's Buy compute button, filling from the bottom on hover. */
+/* A muted tint in caps at rest, filling from the bottom on hover like the header's Buy compute button. */
 .modelLink {
   display: inline-flex;
   flex: none;
@@ -116,10 +116,11 @@
   gap: 6px;
   height: 28px;
   padding: 0 10px 0 12px;
-  border: 1px solid var(--color-text-primary);
   border-radius: var(--radius-control);
-  background: linear-gradient(var(--color-text-primary), var(--color-text-primary)) no-repeat bottom / 100% 0%;
-  color: var(--color-text-primary);
+  background:
+    linear-gradient(var(--color-text-primary), var(--color-text-primary)) no-repeat bottom / 100% 0%,
+    var(--color-surface-tint);
+  color: var(--color-text-secondary);
   font-size: var(--caps-size);
   font-weight: 500;
   letter-spacing: var(--caps-tracking);
@@ -211,6 +212,10 @@
   margin: 0;
   padding: 12px 0 8px;
   list-style: none;
+}
+
+.keyFigures[data-count="3"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .keyFigure {

@@ -133,6 +133,29 @@ function Sources({ roomId, sources, names }: { roomId: string; sources: Diligenc
   );
 }
 
+interface KeyFigure {
+  label: string;
+  value: string;
+  estimate?: boolean;
+}
+
+/** Headline numbers in a grid, largest type on the page after the headings. */
+function KeyFigures({ figures }: { figures: KeyFigure[] }) {
+  return (
+    <ul className={styles.keyFigures} data-count={figures.length}>
+      {figures.map((f) => (
+        <li key={f.label} className={styles.keyFigure}>
+          <span className={styles.keyValue}>{f.value}</span>
+          <span className={styles.keyLabel}>
+            {f.label}
+            {f.estimate ? <span className={styles.est}> · est.</span> : null}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 interface Figure {
   label: string;
   value: string;
@@ -548,6 +571,18 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
       estimate: it.estimate,
       sources: it.sources,
     },
+    ...(e.futurePower
+      ? [
+          {
+            label: "Future potential",
+            value: `${Number(e.futurePower.mw.toFixed(2))} MW`,
+            note: "Facility power",
+            detail: e.futurePower.note,
+            estimate: e.futurePower.estimate,
+            sources: e.futurePower.sources,
+          },
+        ]
+      : []),
     {
       label: "B300 nodes",
       value: x.nodes.toLocaleString("en-US"),
@@ -587,7 +622,7 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
 
   const cost = upfront(summary);
   // With deal terms, Economics summarizes the Deal section below it: one figure or two from each group.
-  const keyFigures = deal
+  const keyFigures: KeyFigure[] = deal
     ? [
         { label: "Equity IRR", value: irr(r.equityIrr) },
         { label: "Equity multiple", value: x.equityMultiple === null ? "n.a." : multiple(x.equityMultiple) },
@@ -618,6 +653,24 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
         summary.kind === "purchase" ? "an owned" : summary.kind === "colo" ? "a colo" : "a leased"
       } site, base case.`;
 
+  const powerFigures: KeyFigure[] = [
+    {
+      label: "Facility power",
+      value: `${Number((deal ? deal.facilityPower.mw : x.criticalItMw * i.pue).toFixed(2))} MW`,
+      estimate: it.estimate,
+    },
+    { label: "IT power", value: `${Number(x.criticalItMw.toFixed(2))} MW`, estimate: it.estimate },
+    ...(e.futurePower
+      ? [
+          {
+            label: "Future potential",
+            value: `${Number(e.futurePower.mw.toFixed(2))} MW`,
+            estimate: e.futurePower.estimate,
+          },
+        ]
+      : []),
+  ];
+
   const items = DILIGENCE_FIELDS.flatMap(({ key, label }) => {
     const item = summary.diligence[key];
     return item ? [{ key, label, item }] : [];
@@ -638,17 +691,7 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
             </a>
           </div>
           <p className={styles.lede}>{economicsLede}</p>
-          <ul className={styles.keyFigures}>
-            {keyFigures.map((f) => (
-              <li key={f.label} className={styles.keyFigure}>
-                <span className={styles.keyValue}>{f.value}</span>
-                <span className={styles.keyLabel}>
-                  {f.label}
-                  {f.estimate ? <span className={styles.est}> · est.</span> : null}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <KeyFigures figures={keyFigures} />
           {deal ? <CapitalStack sources={capitalStack(x)} /> : null}
           <details className={styles.more}>
             <summary className={styles.moreHead}>
@@ -684,6 +727,7 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
             </h2>
           </div>
           <p className={styles.lede}>{diligenceLede(items.map(({ item }) => item.status))}</p>
+          <KeyFigures figures={powerFigures} />
           <ul className={styles.list}>
             {items.map(({ key, label, item }) => (
               <li key={key}>

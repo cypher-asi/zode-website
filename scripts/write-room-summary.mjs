@@ -31,6 +31,11 @@
  * falls back to the model's standard GPU contract. `conversionCost.perMw: true`
  * prices conversion per MW of critical IT instead of as a total.
  *
+ * Any room may add `futurePower`, the facility power the site could grow to,
+ * which the summary shows beside today's power:
+ *
+ *   "futurePower": { "mw": 14, "estimate": true, "note": "...", "sources": [] }
+ *
  * Details and notes may use blank lines between paragraphs, "- " lines for a
  * list and **bold** for a lead-in.
  *
@@ -104,7 +109,8 @@ for (const key of KEYS) {
 const e = input.economics ?? {};
 const deal = !lease && e.deal !== undefined;
 const MONEY_KEYS = lease ? ["capitalContribution"] : ["purchasePrice", "conversionCost"];
-const ALLOWED = [...MONEY_KEYS, deal ? "deal" : "criticalItMw", "fx", ...(lease ? ["rent"] : ["siteResidual"])];
+const ALLOWED = [...MONEY_KEYS, deal ? "deal" : "criticalItMw", "fx", "futurePower", ...(lease ? ["rent"] : ["siteResidual"])];
+const future = e.futurePower !== undefined;
 const unknown = Object.keys(e).filter((key) => !ALLOWED.includes(key));
 if (unknown.length) problems.push(`economics: unknown for a ${room.kind} room${deal ? " with a deal" : ""}: ${unknown.join(", ")}`);
 const money = (value, where) => {
@@ -162,6 +168,13 @@ if (deal) {
   flag(f.estimate, "economics.deal.financing.estimate");
   text(f.note, "economics.deal.financing.note");
   paths(f.sources, "economics.deal.financing.sources");
+}
+if (future) {
+  const f = e.futurePower ?? {};
+  between(f.mw, 0.1, 1000, "economics.futurePower.mw");
+  flag(f.estimate, "economics.futurePower.estimate");
+  text(f.note, "economics.futurePower.note");
+  paths(f.sources, "economics.futurePower.sources");
 }
 if (lease) {
   const rent = e.rent ?? {};
@@ -241,6 +254,7 @@ const economics = {
   ...Object.fromEntries(MONEY_KEYS.map((key) => [key, withSources(key)])),
   ...(lease ? { rent: withSources("rent") } : {}),
   ...(deal ? { deal: dealWithSources() } : { criticalItMw: withSources("criticalItMw") }),
+  ...(future ? { futurePower: withSources("futurePower") } : {}),
   fx: e.fx,
   ...(lease || e.siteResidual === undefined ? {} : { siteResidual: e.siteResidual }),
 };
@@ -253,7 +267,9 @@ if (unresolved.length) {
 
 const citing = [
   ...Object.values(diligence),
-  ...[...MONEY_KEYS, ...(lease ? ["rent"] : []), ...(deal ? [] : ["criticalItMw"])].map((key) => economics[key]),
+  ...[...MONEY_KEYS, ...(lease ? ["rent"] : []), ...(deal ? [] : ["criticalItMw"]), ...(future ? ["futurePower"] : [])].map(
+    (key) => economics[key],
+  ),
   ...(deal
     ? [economics.deal.facilityPower, economics.deal.contract, economics.deal.deposit, economics.deal.financing].filter(Boolean)
     : []),

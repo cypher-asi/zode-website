@@ -76,6 +76,14 @@ export interface FacilityPower {
   sources: DiligenceSource[];
 }
 
+/** The facility power the site could grow to beyond what it's sized on today, by diligence's best reading. */
+export interface FuturePower {
+  mw: number;
+  estimate: boolean;
+  note: string;
+  sources: DiligenceSource[];
+}
+
 /** A bank loan against the purchase price plus conversion; equity pays the rest. */
 export interface SiteFinancing {
   /** Loan / purchase price plus conversion. */
@@ -125,6 +133,7 @@ export interface PurchaseEconomics {
   /** Share of the purchase price recovered at exit; the model's default when absent. */
   siteResidual?: number;
   deal?: AcquisitionTerms;
+  futurePower?: FuturePower;
 }
 
 /** The lease's running costs, in USD, as the compute model takes them. */
@@ -152,6 +161,7 @@ export interface LeaseEconomics {
   capitalContribution: Money;
   criticalItMw: CriticalIt;
   fx: Fx;
+  futurePower?: FuturePower;
 }
 
 interface SummaryBase {
@@ -168,10 +178,16 @@ export type DiligenceSummary = SummaryBase &
 export function economicsSources(summary: DiligenceSummary): DiligenceSource[] {
   if (summary.kind !== "purchase") {
     const e = summary.economics;
-    return [...e.rent.sources, ...e.capitalContribution.sources, ...e.criticalItMw.sources];
+    return [
+      ...e.rent.sources,
+      ...e.capitalContribution.sources,
+      ...e.criticalItMw.sources,
+      ...(e.futurePower?.sources ?? []),
+    ];
   }
   const e = summary.economics;
   return [
+    ...(e.futurePower?.sources ?? []),
     ...e.purchasePrice.sources,
     ...e.conversionCost.sources,
     ...(e.criticalItMw?.sources ?? []),
