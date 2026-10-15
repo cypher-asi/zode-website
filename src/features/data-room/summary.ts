@@ -331,6 +331,10 @@ export interface SummaryEconomics {
   inputs: ModelInputs;
   result: ModelResult;
   lifetimeRevenue: number;
+  /** Net revenue over the first 12 months with every tranche running; year 1 when the cluster ships at once. */
+  fullBuildRevenue: number;
+  /** UTC milliseconds of the first of those months. */
+  fullBuildFrom: number;
   /** The forecast's month 0: a deal's closing date, otherwise next month. */
   start: StartDate;
   /** Level monthly payment on the site loan; 0 without one. */
@@ -519,18 +523,21 @@ export function summaryEconomics(summary: DiligenceSummary, at?: StartDate): Sum
   const result = runModel(inputs, start, phasing);
   const params = new URLSearchParams();
   writeInputParams(inputs, params);
+  const lastShip = phasing?.tranches.at(-1)?.shipMonth ?? inputs.shipMonth;
   return {
     criticalItMw: it.value,
     nodes,
     inputs,
     result,
     lifetimeRevenue: result.monthly.netRevenue.reduce((total, v) => total + v, 0),
+    fullBuildRevenue: result.monthly.netRevenue.slice(lastShip + 1, lastShip + 13).reduce((total, v) => total + v, 0),
+    fullBuildFrom: result.monthly.dates[lastShip + 1],
     start,
     siteLoanPayment,
     capitalReserve,
     phasing,
     deposits,
-    equity: equityReturns(result, phasing?.tranches.at(-1)?.shipMonth ?? inputs.shipMonth),
+    equity: equityReturns(result, lastShip),
     modelHref: `/compute-model?${params}`,
   };
 }

@@ -832,7 +832,7 @@ function leaseKeyFigures(cluster: KeyFigure[], x: SummaryEconomics, e: LeaseEcon
   const first = deal.phases[0];
   return [
     ...cluster,
-    { label: "Revenue, year 1", value: usdShort(r.year1Revenue) },
+    { label: `Annual revenue, ${mw(x.criticalItMw)} IT`, value: usdShort(x.fullBuildRevenue) },
     { label: "Base rent", value: perKwMonth(e.rent.baseLease) },
     { label: "All-in price per kWh", value: perKwh(allInPerKwh(e.rent)), estimate: e.rent.estimate },
     {
@@ -930,9 +930,14 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
     },
     {
       label: "Revenue potential",
-      value: `${usdShort(r.year1Revenue)} / yr`,
-      note: "Year 1 net",
-      detail: `Year 1 net revenue. ${usdShort(x.lifetimeRevenue)} over ${OPERATING_MONTHS / 12} years of operation, ${usdShort(r.contractValue)} of it under the ${i.contractMonths}-month contract.`,
+      value: `${usdShort(x.phasing ? x.fullBuildRevenue : r.year1Revenue)} / yr`,
+      note: x.phasing ? `Net, all ${mw(x.criticalItMw)} of IT` : "Year 1 net",
+      detail:
+        (x.phasing
+          ? `Net revenue over the first 12 months with all ${mw(x.criticalItMw)} of IT running, from ${monthYear(x.fullBuildFrom)}; ` +
+            `${usdShort(r.year1Revenue)} in the first 12 months from ${lease?.deal?.phases[0].name ?? "the first phase"}, as the phases ramp. `
+          : "Year 1 net revenue. ") +
+        `${usdShort(x.lifetimeRevenue)} over ${OPERATING_MONTHS / 12} years of operation, ${usdShort(r.contractValue)} of it under the ${i.contractMonths}-month contract.`,
     },
   ];
 
