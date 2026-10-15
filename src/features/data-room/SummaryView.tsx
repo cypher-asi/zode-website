@@ -593,6 +593,8 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
         { label: "Equity multiple", value: x.equityMultiple === null ? "n.a." : multiple(x.equityMultiple) },
         { label: "Annual revenue", value: usdShort(r.year1Revenue) },
         { label: "Annual net income", value: usdShort(r.year1NetProfit) },
+        { label: "B300 nodes", value: x.nodes.toLocaleString("en-US"), estimate: it.estimate },
+        { label: "GPUs", value: r.gpus.toLocaleString("en-US"), estimate: it.estimate },
         { label: "GPU price", value: `$${i.contractPrice.toFixed(2)} / hr`, estimate: deal.contract?.estimate ?? true },
         { label: "Contract term", value: contractTerm(i.contractMonths), estimate: deal.contract?.estimate ?? true },
         { label: "Total project cost", value: usdShort(r.siteCost + r.totalCapex), estimate: cost.estimate },
@@ -603,6 +605,8 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
         { label: "Revenue, year 1", value: usdShort(r.year1Revenue) },
         { label: "Upfront cost", value: cost.usd === null ? "Not priced" : usdShort(cost.usd), estimate: cost.estimate },
         { label: "Critical IT", value: `${Number(x.criticalItMw.toFixed(2))} MW`, estimate: it.estimate },
+        { label: "B300 nodes", value: x.nodes.toLocaleString("en-US"), estimate: it.estimate },
+        { label: "GPUs", value: r.gpus.toLocaleString("en-US"), estimate: it.estimate },
       ];
   const price = summary.kind === "purchase" ? toUsd(summary.economics.purchasePrice, summary.economics.fx) : null;
   const economicsLede = deal
