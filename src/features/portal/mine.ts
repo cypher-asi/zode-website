@@ -1,5 +1,5 @@
 import "server-only";
-import { cacheLife } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { isTeam, isZodeAdmin } from "@/features/account/admin";
 import { avatarUrl, loadRequestProfile } from "@/features/account/profile";
@@ -7,7 +7,7 @@ import { getAccount } from "@/features/account/session";
 import type { Account } from "@/features/account/zos";
 import type { OrderSummary } from "@/features/configurator/orders";
 import type { Contract } from "@/features/contracts/contracts";
-import { canCreateRooms } from "@/features/data-room/rooms";
+import { accountRoomsTag, canCreateRooms } from "@/features/data-room/rooms";
 import type { PendingInvite, RoomSummary } from "@/features/data-room/types";
 import { userIdFor } from "@/features/users/users";
 import { loadContracts, loadOrders, loadPendingInvites, loadRooms } from "./data";
@@ -39,6 +39,7 @@ export async function loadMyHome(): Mine<{
   cacheLife("minutes");
   const account = await getAccount();
   if (!account) return null;
+  cacheTag(accountRoomsTag(account.userId));
   const [team, rooms, orders, contracts] = await Promise.all([
     isTeam(account),
     loadRooms(account.userId),
@@ -73,6 +74,7 @@ export async function loadMyRooms(): Mine<{ rooms: RoomSummary[] | null; invites
   cacheLife("minutes");
   const account = await getAccount();
   if (!account) return null;
+  cacheTag(accountRoomsTag(account.userId));
   const [rooms, invites, canCreate] = await Promise.all([
     loadRooms(account.userId),
     loadPendingInvites(account),

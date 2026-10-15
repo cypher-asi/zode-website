@@ -1,18 +1,16 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-
-const POLL_MS = 10_000;
+import { refreshMyRoomsAction } from "@/features/data-room/actions";
 
 /**
- * Refreshes the portal when the account's rooms or invites change elsewhere,
- * e.g. a room shared with it, so they appear without a reload. Polls while the
- * tab is visible, and as soon as it's shown again. `version` is what the
- * current render was built from.
+ * Keeps the portal's rooms and invites current: the server pushes the
+ * account's rooms fingerprint over an event stream whenever it changes, e.g.
+ * a room shared with it, and the page re-renders when that differs from the
+ * one it was built from (`version`). A change while the tab is hidden waits
+ * until it's shown. The browser reconnects the stream by itself.
  */
 export function RoomsWatcher({ version }: { version: string }): null {
-  const router = useRouter();
   const seen = useRef(version);
 
   useEffect(() => {
@@ -20,34 +18,32 @@ export function RoomsWatcher({ version }: { version: string }): null {
   }, [version]);
 
   useEffect(() => {
-    let busy = false;
-    const check = async () => {
-      if (busy || document.visibilityState !== "visible") return;
-      busy = true;
-      try {
-        const res = await fetch("/api/data-rooms/mine", { cache: "no-store" });
-        if (!res.ok) return;
-        const { v } = (await res.json()) as { v?: string };
-        if (typeof v === "string" && v !== seen.current) {
-          seen.current = v;
-          router.refresh();
-        }
-      } catch {
-        // Offline or mid-deploy; the next tick tries again.
-      } finally {
-        busy = false;
+    let stale = false;
+    const refresh = () => {
+      if (document.visibilityState === "visible") {
+        stale = false;
+        void refreshMyRoomsAction();
+      } else {
+        stale = true;
       }
     };
-    const onVisible = () => void check();
-    const id = window.setInterval(onVisible, POLL_MS);
-    document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("focus", onVisible);
-    return () => {
-      window.clearInterval(id);
-      document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("focus", onVisible);
+    const onVisible = () => {
+      if (stale && document.visibilityState === "visible") refresh();
     };
-  }, [router]);
+
+    const source = new EventSource("/api/data-rooms/events");
+    source.addEventListener("rooms", (event) => {
+      const next = (event as MessageEvent<string>).data;
+      if (next === seen.current) return;
+      seen.current = next;
+      refresh();
+    });
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      source.close();
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
 
   return null;
 }

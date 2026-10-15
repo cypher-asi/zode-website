@@ -141,8 +141,42 @@ create table if not exists data_room_members (
 create unique index if not exists data_room_members_room_user_idx
   on data_room_members (room_id, user_id) where user_id is not null;
 create index if not exists data_room_members_user_idx on data_room_members (user_id) where user_id is not null;
--- Each open portal polls for invites to its account's email.
+-- Each open portal looks up the invites to its account's email when told they changed.
 create index if not exists data_room_members_pending_email_idx on data_room_members (email) where accepted_at is null;
+
+-- Tells open portals whose rooms or invites just changed, by account and by
+-- email, on the `data_room_access` channel (see src/features/data-room/live.ts).
+-- A room's name, kind or address changing tells each of its members; deleting
+-- a room cascades to its member rows, which tell them.
+create or replace function notify_data_room_access() returns trigger language plpgsql as $$
+begin
+  if tg_table_name = 'data_room_members' then
+    if tg_op in ('UPDATE', 'DELETE') then
+      perform pg_notify('data_room_access', json_build_object('u', old.user_id, 'e', old.email)::text);
+    end if;
+    if tg_op in ('INSERT', 'UPDATE') then
+      perform pg_notify('data_room_access', json_build_object('u', new.user_id, 'e', new.email)::text);
+    end if;
+  else
+    perform pg_notify('data_room_access', json_build_object('u', m.user_id, 'e', m.email)::text)
+    from data_room_members m
+    where m.room_id = new.id;
+  end if;
+  return null;
+end
+$$;
+
+drop trigger if exists data_room_members_notify on data_room_members;
+create trigger data_room_members_notify
+  after insert or update or delete on data_room_members
+  for each row execute function notify_data_room_access();
+
+drop trigger if exists data_rooms_notify on data_rooms;
+create trigger data_rooms_notify
+  after update on data_rooms
+  for each row
+  when (old.name is distinct from new.name or old.kind is distinct from new.kind or old.address is distinct from new.address)
+  execute function notify_data_room_access();
 
 create table if not exists data_room_folders (
   id uuid primary key default gen_random_uuid(),

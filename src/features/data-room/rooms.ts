@@ -28,6 +28,9 @@ export const normalizeEmail = (email: string): string => email.trim().toLowerCas
 
 export const MAX_NAME_LENGTH = 200;
 
+/** Tags the account's cached room lists, so a pushed change can expire them (see `refreshMyRoomsAction`). */
+export const accountRoomsTag = (userId: string): string => `data-rooms:${userId}`;
+
 /** Live bytes a room may hold; uploads past this are refused. */
 export const ROOM_QUOTA_BYTES = 50 * 1024 ** 3;
 

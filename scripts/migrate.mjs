@@ -23,12 +23,25 @@ if (!url) {
 
 const schema = await readFile(new URL("../db/schema.sql", import.meta.url), "utf8");
 
-// The HTTP driver runs one statement per query.
-const statements = schema
-  .replace(/--.*$/gm, "")
-  .split(";")
-  .map((s) => s.trim())
-  .filter(Boolean);
+/** The HTTP driver runs one statement per query; semicolons inside `$$` function bodies don't end one. */
+function splitStatements(text) {
+  const statements = [];
+  let current = "";
+  let inBody = false;
+  for (const part of text.split(/(\$\$|;)/)) {
+    if (part === "$$") inBody = !inBody;
+    if (part === ";" && !inBody) {
+      statements.push(current);
+      current = "";
+    } else {
+      current += part;
+    }
+  }
+  statements.push(current);
+  return statements.map((s) => s.trim()).filter(Boolean);
+}
+
+const statements = splitStatements(schema.replace(/--.*$/gm, ""));
 
 const sql = neon(url);
 for (const statement of statements) {

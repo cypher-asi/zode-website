@@ -1,6 +1,6 @@
 "use server";
 
-import { refresh } from "next/cache";
+import { refresh, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { sendDataRoomInvite, sendMndaEmails } from "@/emails/send";
@@ -29,6 +29,7 @@ import {
 import {
   MAX_NAME_LENGTH,
   ROOM_QUOTA_BYTES,
+  accountRoomsTag,
   canCreateRooms,
   countOtherAdmins,
   createRoom,
@@ -525,6 +526,18 @@ export async function removeMemberAction(roomId: string, memberId: string): Prom
   if (member.userId === access.account.userId) redirect("/portal/data-rooms");
   refresh();
   return {};
+}
+
+/**
+ * Re-renders the page with the account's rooms fresh, for an open portal told
+ * over the event stream that they changed; the expired tag makes this render
+ * wait for new data rather than show the cached rooms.
+ */
+export async function refreshMyRoomsAction(): Promise<void> {
+  const account = await getAccount();
+  if (!account) return;
+  updateTag(accountRoomsTag(account.userId));
+  refresh();
 }
 
 // Invites

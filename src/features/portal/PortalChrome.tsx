@@ -1,9 +1,10 @@
 import "server-only";
 import type { ReactElement } from "react";
-import { cacheLife } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { isTeam, isZodeAdmin } from "@/features/account/admin";
 import { getAccount } from "@/features/account/session";
 import { roomsVersion } from "@/features/data-room/invites";
+import { accountRoomsTag } from "@/features/data-room/rooms";
 import { loadRoomNames } from "./data";
 import type { NavAccess } from "./nav";
 import { PortalNav } from "./PortalNav";
@@ -21,6 +22,7 @@ async function loadChrome(): Promise<{ access: NavAccess; rooms: SidebarRoom[] |
   cacheLife("minutes");
   const account = await getAccount();
   if (!account) return { access: { admin: false, team: false }, rooms: null, version: null };
+  cacheTag(accountRoomsTag(account.userId));
   const [admin, team, rooms, version] = await Promise.all([
     isZodeAdmin(account),
     isTeam(account),
