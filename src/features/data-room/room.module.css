@@ -161,6 +161,17 @@
     0 0 0 0.5px rgba(0, 0, 0, 0.06);
 }
 
+.iconTab {
+  justify-content: center;
+  width: 36px;
+  padding: 0;
+}
+
+.tabIcon {
+  width: 18px;
+  height: 18px;
+}
+
 .body {
   display: flex;
   flex: 1;
@@ -174,7 +185,7 @@
   border-radius: 0;
 }
 
-/* Members and Activity scroll inside the frame. */
+/* Members, Activity and Settings scroll inside the frame. */
 .scroll {
   flex: 1;
   min-height: 0;
@@ -198,6 +209,10 @@
   .tab {
     flex: 1 0 auto;
     justify-content: center;
+  }
+
+  .iconTab {
+    flex: none;
   }
 }
 

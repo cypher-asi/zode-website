@@ -15,7 +15,8 @@ export async function generateMetadata({ params }: LayoutProps<"/portal/data-roo
 
 /**
  * A data room fills the viewport beside the portal's icons, with a Files tab
- * that opens on the summary; admins also get Members and Activity, and a Share button.
+ * that opens on the summary; admins also get Members, Activity, a Settings
+ * gear and a Share button.
  */
 export default async function DataRoomLayout({
   children,
