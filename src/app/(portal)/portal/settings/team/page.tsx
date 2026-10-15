@@ -2,13 +2,10 @@ import type { Metadata } from "next";
 import { Suspense, type ReactElement } from "react";
 import { notFound } from "next/navigation";
 import { isTeam, isZodeAdmin } from "@/features/account/admin";
-import { LogoutButton } from "@/features/account/LogoutButton";
 import { requireAccount } from "@/features/account/session";
-import ui from "@/features/data-room/ui.module.css";
 import { PortalLoading } from "@/features/portal/PortalLoading";
-import { Empty, PageHeader } from "@/features/portal/sections";
+import { Empty } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
-import { SettingsTabs } from "@/features/settings/SettingsTabs";
 import settings from "@/features/settings/settings.module.css";
 import { AddToTeamForm } from "@/features/team/AddToTeamForm";
 import { InviteTeamForm } from "@/features/team/InviteTeamForm";
@@ -28,20 +25,12 @@ const orNull = <T,>(promise: Promise<T>, what: string): Promise<T | null> =>
     return null;
   });
 
-/** The ZODE team. Everyone on it sees who else is; super admins invite, add and remove people. */
+/** The ZODE team. Everyone on it sees who else is; super admins invite, add and remove people. The layout holds the header. */
 export default function TeamPage(): ReactElement {
   return (
-    <div className={styles.page}>
-      <PageHeader
-        title="Settings"
-        subtitle="The ZODE team, who can open data rooms. Super admins choose who's on it."
-        tabs={<SettingsTabs current="team" />}
-        actions={<LogoutButton className={ui.button} />}
-      />
-      <Suspense fallback={<PortalLoading header={false} nested />}>
-        <Team />
-      </Suspense>
-    </div>
+    <Suspense fallback={<PortalLoading header={false} nested />}>
+      <Team />
+    </Suspense>
   );
 }
 

@@ -4,35 +4,42 @@ import { io } from "next/cache";
 import ui from "@/features/data-room/ui.module.css";
 import { orLogIn } from "@/features/portal/mine";
 import { PortalLoading } from "@/features/portal/PortalLoading";
-import { Empty, PageHeader } from "@/features/portal/sections";
-import styles from "@/features/portal/portal.module.css";
+import { Empty } from "@/features/portal/sections";
+import { TabbedPageHeader, type HeaderTab } from "@/features/portal/TabbedPageHeader";
 import { DeploymentList } from "./DeploymentList";
-import { DeploymentTabs, type DeploymentScope } from "./DeploymentTabs";
 import { todayIso } from "./format";
 import { loadDeployments, loadViewer } from "./view";
 
+export type DeploymentScope = "active" | "all";
+
 const HREFS: Record<DeploymentScope, string> = { active: "/portal/deployments", all: "/portal/deployments/all" };
 
-/** The Deployments list, active ones or all of them, for every signed-in account; the ZODE team can add one. */
+const TABS: readonly HeaderTab[] = [
+  { href: HREFS.active, label: "Active", title: "Deployments", subtitle: "GPU deployments live and rolling out." },
+  { href: HREFS.all, label: "All", title: "Deployments", subtitle: "Every GPU deployment, planned to completed." },
+];
+
+/** The Deployments header, its Active and All tabs, and for the ZODE team a way to add one. */
+export function DeploymentsHeader(): ReactElement {
+  return (
+    <TabbedPageHeader
+      tabs={TABS}
+      label="Deployments"
+      actions={
+        <Suspense fallback={null}>
+          <NewButton />
+        </Suspense>
+      }
+    />
+  );
+}
+
+/** The Deployments list, active ones or all of them, for every signed-in account. */
 export function DeploymentsIndex({ scope }: { scope: DeploymentScope }): ReactElement {
   return (
-    <div className={styles.page}>
-      <PageHeader
-        title="Deployments"
-        subtitle={
-          scope === "active" ? "GPU deployments live and rolling out." : "Every GPU deployment, planned to completed."
-        }
-        tabs={<DeploymentTabs current={scope} />}
-        actions={
-          <Suspense fallback={null}>
-            <NewButton />
-          </Suspense>
-        }
-      />
-      <Suspense fallback={<PortalLoading header={false} nested />}>
-        <Deployments scope={scope} />
-      </Suspense>
-    </div>
+    <Suspense fallback={<PortalLoading header={false} nested />}>
+      <Deployments scope={scope} />
+    </Suspense>
   );
 }
 

@@ -31,3 +31,13 @@ export function PortalLoading({ header = true, nested = false }: { header?: bool
     </div>
   );
 }
+
+/** Placeholder for the header a tabbed app's layout holds, while it checks what the account may see. */
+export function PortalLoadingHeader(): ReactElement {
+  return (
+    <div className={`${styles.header} ${styles.appear}`} aria-hidden="true">
+      <span className={styles.title} />
+      <span className={styles.subtitle} />
+    </div>
+  );
+}

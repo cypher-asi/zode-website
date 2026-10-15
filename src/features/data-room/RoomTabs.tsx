@@ -1,22 +1,11 @@
 "use client";
 
 import type { ReactElement } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { PortalIcon, type PortalIconName } from "@/features/portal/icons";
-import styles from "./room.module.css";
-
-interface RoomTab {
-  href: string;
-  label: string;
-  /** Shown in place of the label, which becomes the tab's accessible name and tooltip. */
-  icon?: PortalIconName;
-}
+import { RouteTabs, type PortalTab } from "@/features/portal/PortalTabs";
 
 export function RoomTabs({ roomId, isAdmin }: { roomId: string; isAdmin: boolean }): ReactElement {
-  const pathname = usePathname();
   const base = `/portal/data-rooms/${roomId}`;
-  const tabs: RoomTab[] = [
+  const tabs: PortalTab[] = [
     { href: base, label: "Files" },
     ...(isAdmin
       ? [
@@ -27,20 +16,5 @@ export function RoomTabs({ roomId, isAdmin }: { roomId: string; isAdmin: boolean
       : []),
   ];
 
-  return (
-    <nav className={styles.tabs} aria-label="Data room sections">
-      {tabs.map((tab) => (
-        <Link
-          key={tab.href}
-          href={tab.href}
-          className={tab.icon ? `${styles.tab} ${styles.iconTab}` : styles.tab}
-          aria-current={pathname === tab.href ? "page" : undefined}
-          aria-label={tab.icon ? tab.label : undefined}
-          title={tab.icon ? tab.label : undefined}
-        >
-          {tab.icon ? <PortalIcon name={tab.icon} className={styles.tabIcon} /> : tab.label}
-        </Link>
-      ))}
-    </nav>
-  );
+  return <RouteTabs tabs={tabs} label="Data room sections" />;
 }

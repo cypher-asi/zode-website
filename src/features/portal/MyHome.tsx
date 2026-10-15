@@ -2,36 +2,23 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { loadMyHome, orLogIn } from "./mine";
-import { Empty, OrderList, PageHeader, RoomList, Section, ToolList } from "./sections";
+import { Empty, OrderList, RoomList, Section, ToolList } from "./sections";
 import styles from "./portal.module.css";
-import { HomeTabs } from "@/features/team-dashboard/HomeTabs";
 
 const RECENT = 3;
 
 /**
- * Home's Mine tab, header included, since it greets the account by name. On
- * `/portal` the ZODE team are sent on to the Team tab; `/portal/mine` keeps them here.
+ * Home's Mine tab, under the greeting its layout holds. On `/portal` the ZODE
+ * team are sent on to the Team tab; `/portal/mine` keeps them here.
  */
 export async function MyHome({ path }: { path: "/portal" | "/portal/mine" }): Promise<ReactElement> {
-  const { account, team, rooms, orders, contracts } = orLogIn(await loadMyHome(), path);
+  const { team, rooms, orders, contracts } = orLogIn(await loadMyHome(), path);
   if (team && path === "/portal") redirect("/portal/team");
-  const firstName = account.displayName.trim().split(/\s+/)[0] || account.displayName;
   const files = rooms?.reduce((sum, room) => sum + room.fileCount, 0);
   const figure = (value: number | undefined) => (value === undefined ? "—" : value.toLocaleString("en-US"));
 
   return (
-    <div className={styles.page}>
-      <PageHeader
-        title={`Welcome back, ${firstName}`}
-        subtitle={
-          <>
-            {account.email}
-            {account.primaryZid ? <> · {account.primaryZid}</> : null}
-          </>
-        }
-        tabs={team ? <HomeTabs current="mine" /> : null}
-      />
-
+    <>
       <div className={styles.stats}>
         <Link className={styles.stat} href="/portal/data-rooms">
           <span className={styles.statValue}>{figure(rooms?.length)}</span>
@@ -74,6 +61,6 @@ export async function MyHome({ path }: { path: "/portal" | "/portal/mine" }): Pr
       </Section>
 
       <ToolList />
-    </div>
+    </>
   );
 }

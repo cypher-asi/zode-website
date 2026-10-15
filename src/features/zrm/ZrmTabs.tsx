@@ -1,25 +1,14 @@
 "use client";
 
 import type { ReactElement } from "react";
-import styles from "@/features/data-room/room.module.css";
+import { PortalTabs } from "@/features/portal/PortalTabs";
 import { KINDS, KIND_LABELS } from "./types";
-import { useZrm, ZrmLink } from "./ZrmProvider";
+import { useZrm } from "./ZrmProvider";
+
+const TABS = KINDS.map((kind) => ({ href: `/portal/zrm/${kind}`, label: KIND_LABELS[kind].plural }));
 
 /** People, Companies and Opportunities, at the top right of ZRM. */
 export function ZrmTabs(): ReactElement {
-  const { segments } = useZrm();
-  return (
-    <nav className={styles.tabs} aria-label="ZRM sections">
-      {KINDS.map((kind) => (
-        <ZrmLink
-          key={kind}
-          href={`/portal/zrm/${kind}`}
-          className={styles.tab}
-          aria-current={segments[0] === kind ? "page" : undefined}
-        >
-          {KIND_LABELS[kind].plural}
-        </ZrmLink>
-      ))}
-    </nav>
-  );
+  const { segments, go } = useZrm();
+  return <PortalTabs tabs={TABS} label="ZRM sections" active={`/portal/zrm/${segments[0]}`} onSelect={go} />;
 }

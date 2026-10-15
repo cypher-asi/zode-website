@@ -4,7 +4,11 @@
   min-height: 0;
   overflow: hidden;
   padding: 32px 36px 40px;
-  /* Held back briefly so quick navigations swap straight to the content without a flash. */
+}
+
+/* Held back briefly so quick navigations swap straight to the content without a flash. */
+.page,
+.appear {
   animation: appear var(--duration-fast) ease 150ms both;
 }
 
@@ -106,6 +110,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .page,
+  .appear,
   .title,
   .subtitle,
   .icon,

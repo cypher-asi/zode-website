@@ -3,10 +3,8 @@ import { Suspense, type ReactElement } from "react";
 import Link from "next/link";
 import { isZodeAdmin } from "@/features/account/admin";
 import { PortalLoading } from "@/features/portal/PortalLoading";
-import { Empty, PageHeader } from "@/features/portal/sections";
-import styles from "@/features/portal/portal.module.css";
+import { Empty } from "@/features/portal/sections";
 import dash from "@/features/team-dashboard/dashboard.module.css";
-import { HomeTabs } from "@/features/team-dashboard/HomeTabs";
 import { loadVisitorSummary } from "@/features/analytics/queries";
 import { MetricCard } from "@/features/team-dashboard/MetricCard";
 import { loadTeamMetrics, type TeamMetrics } from "@/features/team-dashboard/metrics";
@@ -46,19 +44,13 @@ type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 /**
  * The ZODE team's figures at a glance, Home's Team tab: capacity, the
  * opportunity pipeline, contracts and subscribers, each with its history.
+ * The layout holds the header.
  */
 export default function TeamDashboardPage({ searchParams }: { searchParams: SearchParams }): ReactElement {
   return (
-    <div className={styles.page}>
-      <PageHeader
-        title="Team dashboard"
-        subtitle="ZODE's capacity, pipeline, contracts and audience, tracked daily."
-        tabs={<HomeTabs current="team" />}
-      />
-      <Suspense fallback={<PortalLoading header={false} nested />}>
-        <Dashboard searchParams={searchParams} />
-      </Suspense>
-    </div>
+    <Suspense fallback={<PortalLoading header={false} nested />}>
+      <Dashboard searchParams={searchParams} />
+    </Suspense>
   );
 }
 

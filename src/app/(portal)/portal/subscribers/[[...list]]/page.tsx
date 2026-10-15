@@ -4,19 +4,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { isZodeAdmin } from "@/features/account/admin";
 import { requireAccount } from "@/features/account/session";
-import {
-  MAILING_LISTS,
-  SUBSCRIBER_STATUSES,
-  isMailingList,
-  isSubscriberStatus,
-  mailingList,
-  type MailingList,
-} from "@/features/mailing-list/types";
+import { SUBSCRIBER_STATUSES, isMailingList, isSubscriberStatus, mailingList } from "@/features/mailing-list/types";
 import { loadSubscribers } from "@/features/portal/data";
 import { PortalLoading } from "@/features/portal/PortalLoading";
-import { Empty, PageHeader, SubscriberList } from "@/features/portal/sections";
+import { Empty, SubscriberList } from "@/features/portal/sections";
 import tabs from "@/features/data-room/room.module.css";
-import ui from "@/features/data-room/ui.module.css";
 import styles from "@/features/portal/portal.module.css";
 import admin from "@/features/posts/PostEditor.module.css";
 
@@ -25,24 +17,19 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const LIST_TABS: readonly { id: MailingList | "all"; label: string; href: string }[] = [
-  { id: "all", label: "All", href: "/portal/subscribers" },
-  ...MAILING_LISTS.map((list) => ({ id: list.id, label: list.label, href: `/portal/subscribers/${list.id}` })),
-];
-
 /**
  * Everyone on the mailing lists, or one list, and which of them have ZODE
- * accounts. Someone on both lists is a row on each. ZODE admins only.
+ * accounts. Someone on both lists is a row on each. ZODE admins only. The
+ * layout holds the header.
  */
 export default function SubscribersPage({ params, searchParams }: PageProps<"/portal/subscribers/[[...list]]">): ReactElement {
   return (
-    <Suspense fallback={<PortalLoading />}>
+    <Suspense fallback={<PortalLoading header={false} nested />}>
       <Subscribers params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
-/** The whole page, header included, since its title, tabs and export follow the URL. */
 async function Subscribers({
   params,
   searchParams,
@@ -74,37 +61,8 @@ async function Subscribers({
     { id: "all", label: "All", href: base },
     ...SUBSCRIBER_STATUSES.map((s) => ({ ...s, href: `${base}?status=${s.id}` })),
   ];
-  const exportQuery = new URLSearchParams({ ...(list ? { list } : {}), ...(filter ? { status: filter } : {}) }).toString();
-
   return (
-    <div className={styles.page}>
-      <PageHeader
-        title={list ? `${mailingList(list).label} subscribers` : "Subscribers"}
-        subtitle={
-          list
-            ? `The ${mailingList(list).label} mailing list. Only subscribed addresses have confirmed by email.`
-            : "Both mailing lists, a row per list. Only subscribed addresses have confirmed by email."
-        }
-        tabs={
-          <nav className={tabs.tabs} aria-label="Mailing lists">
-            {LIST_TABS.map((tab) => (
-              <Link
-                key={tab.id}
-                href={tab.href}
-                className={tabs.tab}
-                aria-current={(list ?? "all") === tab.id ? "page" : undefined}
-              >
-                {tab.label}
-              </Link>
-            ))}
-          </nav>
-        }
-        actions={
-          <a className={ui.button} href={`/api/mailing-list/export${exportQuery ? `?${exportQuery}` : ""}`} download>
-            Export CSV
-          </a>
-        }
-      />
+    <>
       {subscribers ? (
         <div className={styles.stats}>
           {stats.map((stat) => (
@@ -140,6 +98,6 @@ async function Subscribers({
               : "No one has signed up yet. The forms are on the News and Changelog pages."}
         </Empty>
       )}
-    </div>
+    </>
   );
 }

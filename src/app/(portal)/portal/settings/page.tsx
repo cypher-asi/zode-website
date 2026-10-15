@@ -1,48 +1,26 @@
 import type { Metadata } from "next";
 import { Suspense, type ReactElement } from "react";
-import { LogoutButton } from "@/features/account/LogoutButton";
-import ui from "@/features/data-room/ui.module.css";
 import { SettingsSubscription } from "@/features/mailing-list/SettingsSubscription";
 import { DevDbSwitch } from "@/features/portal/DevDbSwitch";
 import { loadMySettings, orLogIn } from "@/features/portal/mine";
 import { PortalLoading } from "@/features/portal/PortalLoading";
-import { PageHeader } from "@/features/portal/sections";
 import { devDbSwitchAvailable, devDbTarget } from "@/lib/db";
 import styles from "@/features/portal/portal.module.css";
 import { AvatarField } from "@/features/settings/AvatarField";
 import { NameForm } from "@/features/settings/NameForm";
-import { SettingsTabs } from "@/features/settings/SettingsTabs";
 import settings from "@/features/settings/settings.module.css";
 
 export const metadata: Metadata = {
   title: "Settings | ZODE",
 };
 
-/** Your profile as the portal shows it, and the ZOS account behind it. */
+/** Your profile as the portal shows it, and the ZOS account behind it. The layout holds the header. */
 export default function SettingsPage(): ReactElement {
   return (
-    <div className={styles.page}>
-      <PageHeader
-        title="Settings"
-        subtitle="Your profile and account."
-        tabs={
-          <Suspense fallback={null}>
-            <TeamTabs />
-          </Suspense>
-        }
-        actions={<LogoutButton className={ui.button} />}
-      />
-      <Suspense fallback={<PortalLoading header={false} nested />}>
-        <Settings />
-      </Suspense>
-    </div>
+    <Suspense fallback={<PortalLoading header={false} nested />}>
+      <Settings />
+    </Suspense>
   );
-}
-
-/** The tabs over to the team, for the ZODE team. */
-async function TeamTabs(): Promise<ReactElement | null> {
-  const mine = await loadMySettings();
-  return mine?.team ? <SettingsTabs current="account" /> : null;
 }
 
 async function Settings(): Promise<ReactElement> {

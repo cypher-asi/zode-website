@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 /** Signed-in home: who you are, your figures at a glance, and the latest rooms and orders. The ZODE team land on Team. */
 export default function HomePage(): ReactElement {
   return (
-    <Suspense fallback={<PortalLoading />}>
+    <Suspense fallback={<PortalLoading header={false} nested />}>
       <MyHome path="/portal" />
     </Suspense>
   );

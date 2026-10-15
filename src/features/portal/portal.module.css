@@ -40,6 +40,20 @@
   white-space: nowrap;
 }
 
+/* TabbedPageHeader's title and subtitle as a tab switches them. */
+@media (prefers-reduced-motion: no-preference) {
+  .swapIn {
+    animation: swap-in var(--duration-base) var(--ease-out);
+  }
+}
+
+@keyframes swap-in {
+  from {
+    opacity: 0;
+    translate: 0 2px;
+  }
+}
+
 .section + .section {
   margin-top: 40px;
 }

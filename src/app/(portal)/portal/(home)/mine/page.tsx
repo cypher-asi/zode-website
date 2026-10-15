@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 /** Home's Mine tab for the ZODE team, whose `/portal` opens on Team. */
 export default function MyHomePage(): ReactElement {
   return (
-    <Suspense fallback={<PortalLoading />}>
+    <Suspense fallback={<PortalLoading header={false} nested />}>
       <MyHome path="/portal/mine" />
     </Suspense>
   );

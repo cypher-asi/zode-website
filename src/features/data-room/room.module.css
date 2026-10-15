@@ -105,6 +105,7 @@
 /* A quiet segmented control: the current tab lifts out as a white chip. 44px tall with its 36px tabs. */
 /* Scrolls sideways when its tabs outgrow a narrow window, e.g. every user role on a phone. */
 .tabs {
+  position: relative;
   display: flex;
   gap: 2px;
   max-width: 100%;
@@ -121,8 +122,9 @@
   display: none;
 }
 
-/* Radius is the track's less its padding, so the chip sits concentrically. */
+/* Radius is the track's less its padding, so the chip sits concentrically. Positioned to paint over PortalTabs' chip. */
 .tab {
+  position: relative;
   display: inline-flex;
   flex: none;
   align-items: center;
@@ -152,13 +154,45 @@
   outline-offset: 1px;
 }
 
-.tab[aria-current="page"] {
+.tab[aria-current="page"],
+.chip {
   background: var(--color-bg);
   color: var(--color-text-primary);
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.1),
     0 1px 1px rgba(0, 0, 0, 0.04),
     0 0 0 0.5px rgba(0, 0, 0, 0.06);
+}
+
+/*
+ * PortalTabs' sliding chip, placed on the open tab by script; until then, and
+ * without script, the open tab draws its own. Hidden rather than parked at
+ * zero, so it appears in place instead of sliding in from the left.
+ */
+.chip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: none;
+  border-radius: 7px;
+  pointer-events: none;
+}
+
+.tabs[data-chip] > .chip {
+  display: block;
+}
+
+.tabs[data-chip] > .tab[aria-current="page"] {
+  background: transparent;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .chip {
+    transition:
+      translate var(--duration-base) var(--ease-out),
+      width var(--duration-base) var(--ease-out);
+  }
 }
 
 .iconTab {

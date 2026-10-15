@@ -5,22 +5,13 @@ import { isZodeAdmin } from "@/features/account/admin";
 import { requireAccount } from "@/features/account/session";
 import { loadUsers } from "@/features/portal/data";
 import { PortalLoading } from "@/features/portal/PortalLoading";
-import { Empty, PageHeader, UserList } from "@/features/portal/sections";
-import { InviteUserButton } from "@/features/users/InviteUserButton";
+import { Empty, UserList } from "@/features/portal/sections";
 import { ROLE_LABELS, ROLE_SLUGS, roleForSlug, type UserRole } from "@/features/users/types";
-import { UsersTabs } from "@/features/users/UsersTabs";
 import styles from "@/features/portal/portal.module.css";
 
 export const metadata: Metadata = {
   title: "Users | ZODE",
   robots: { index: false, follow: false },
-};
-
-const SUBTITLES: Record<UserRole | "all", string> = {
-  all: "Everyone who has signed in, by ZODE user id. New accounts start as Regular.",
-  member: "Everyone who isn't on the ZODE team: newsletter sign-ups, room guests and customers.",
-  team: "The ZODE team, who can open data rooms, ZRM and Posts.",
-  super_admin: "Everything the Team can do, plus every account's records and anyone's role.",
 };
 
 const EMPTY: Record<UserRole | "all", string> = {
@@ -30,16 +21,15 @@ const EMPTY: Record<UserRole | "all", string> = {
   super_admin: "No super admins yet.",
 };
 
-/** Every account that has signed in, or those with one role, by ZODE user id. Super admins only. */
+/** Every account that has signed in, or those with one role, by ZODE user id. Super admins only. The layout holds the header. */
 export default function UsersPage({ params }: PageProps<"/portal/users/[[...role]]">): ReactElement {
   return (
-    <Suspense fallback={<PortalLoading />}>
+    <Suspense fallback={<PortalLoading header={false} nested />}>
       <Users params={params} />
     </Suspense>
   );
 }
 
-/** The whole page, header included, since its title and tabs follow the URL. */
 async function Users({ params }: { params: PageProps<"/portal/users/[[...role]]">["params"] }): Promise<ReactElement> {
   const { role: segments } = await params;
   const role = segments ? roleForSlug(segments[0]) : null;
@@ -51,22 +41,14 @@ async function Users({ params }: { params: PageProps<"/portal/users/[[...role]]"
   const shown = users && role ? users.filter((user) => user.role === role) : users;
 
   return (
-    <div className={styles.page}>
-      <PageHeader
-        title={role ? ROLE_LABELS[role] : "Users"}
-        subtitle={SUBTITLES[role ?? "all"]}
-        tabs={<UsersTabs current={role ?? "all"} />}
-        actions={<InviteUserButton defaultRole={role === "team" ? "team" : "member"} />}
-      />
-      <section className={styles.section} aria-label={role ? ROLE_LABELS[role] : "Users"}>
-        {shown === null ? (
-          <Empty>Users couldn&apos;t be loaded right now. Please try again shortly.</Empty>
-        ) : shown.length ? (
-          <UserList users={shown} selfZosUserId={account.userId} />
-        ) : (
-          <Empty>{EMPTY[role ?? "all"]}</Empty>
-        )}
-      </section>
-    </div>
+    <section className={styles.section} aria-label={role ? ROLE_LABELS[role] : "Users"}>
+      {shown === null ? (
+        <Empty>Users couldn&apos;t be loaded right now. Please try again shortly.</Empty>
+      ) : shown.length ? (
+        <UserList users={shown} selfZosUserId={account.userId} />
+      ) : (
+        <Empty>{EMPTY[role ?? "all"]}</Empty>
+      )}
+    </section>
   );
 }

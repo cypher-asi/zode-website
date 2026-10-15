@@ -1,12 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense, type ReactElement } from "react";
-import Link from "next/link";
-import { ContractTabs } from "@/features/contracts/ContractTabs";
-import ui from "@/features/data-room/ui.module.css";
 import { loadAllContracts } from "@/features/portal/data";
 import { PortalLoading } from "@/features/portal/PortalLoading";
-import { ContractList, Empty, PageHeader } from "@/features/portal/sections";
-import styles from "@/features/portal/portal.module.css";
+import { ContractList, Empty } from "@/features/portal/sections";
 import { requireTeam } from "@/features/zrm/access";
 
 export const metadata: Metadata = {
@@ -17,21 +13,9 @@ export const metadata: Metadata = {
 /** Every MNDA anyone has signed, including those signed while logged out, and every compute contract. The ZODE team only. */
 export default function AllContractsPage(): ReactElement {
   return (
-    <div className={styles.page}>
-      <PageHeader
-        title="Contracts"
-        subtitle="Every agreement signed with ZODE."
-        tabs={<ContractTabs current="all" />}
-        actions={
-          <Link href="/portal/contracts/new" className={ui.primary}>
-            Record contract
-          </Link>
-        }
-      />
-      <Suspense fallback={<PortalLoading header={false} nested />}>
-        <AllContracts />
-      </Suspense>
-    </div>
+    <Suspense fallback={<PortalLoading header={false} nested />}>
+      <AllContracts />
+    </Suspense>
   );
 }
 
