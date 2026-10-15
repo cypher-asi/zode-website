@@ -1,0 +1,125 @@
+/* The capital stack: one bar, equity first, each source shaded lighter down the stack. */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 0 12px;
+}
+
+.stack [data-source="equity"] {
+  --tone: var(--color-accent-strong);
+}
+
+.stack [data-source="projectDebt"] {
+  --tone: color-mix(in srgb, var(--color-accent-strong) 78%, var(--color-bg-elevated));
+}
+
+.stack [data-source="mortgage"] {
+  --tone: color-mix(in srgb, var(--color-accent-strong) 58%, var(--color-bg-elevated));
+}
+
+.stack [data-source="prepayment"] {
+  --tone: color-mix(in srgb, var(--color-accent-strong) 40%, var(--color-bg-elevated));
+}
+
+.stack [data-source="gpu"] {
+  --tone: color-mix(in srgb, var(--color-accent-strong) 24%, var(--color-bg-elevated));
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.value {
+  font-size: var(--text-base);
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.note {
+  margin: -6px 0 0;
+  overflow: hidden;
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bar {
+  display: flex;
+  gap: 2px;
+  height: 14px;
+}
+
+.segment {
+  flex-basis: 0;
+  min-width: 4px;
+  padding: 0;
+  border: 0;
+  background: var(--tone);
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.segment:first-child {
+  border-radius: var(--radius-pill) 0 0 var(--radius-pill);
+}
+
+.segment:last-child {
+  border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+}
+
+.segment:only-child {
+  border-radius: var(--radius-pill);
+}
+
+.segment:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.stack[data-active] .segment:not([data-active]),
+.stack[data-active] .legendItem:not([data-active]) {
+  opacity: 0.35;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.15s ease;
+}
+
+.swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tone);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segment,
+  .legendItem {
+    transition: none;
+  }
+}
