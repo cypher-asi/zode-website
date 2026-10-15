@@ -88,9 +88,20 @@ export interface SiteFinancing {
   sources: DiligenceSource[];
 }
 
+/** The customer contract the cluster is sold on; merchant rates follow its term. */
+export interface GpuContract {
+  pricePerGpuHour: number;
+  months: number;
+  estimate: boolean;
+  note: string;
+  sources: DiligenceSource[];
+}
+
 /** An acquisition's agreed terms. The model starts at closing and the cluster ships when conversion ends. */
 export interface AcquisitionTerms {
   facilityPower: FacilityPower;
+  /** The model's standard contract when absent. */
+  contract?: GpuContract;
   /** Paid at signing and credited against the purchase price. */
   deposit: Money;
   /** YYYY-MM-DD. */
@@ -162,7 +173,14 @@ export function economicsSources(summary: DiligenceSummary): DiligenceSource[] {
     ...e.purchasePrice.sources,
     ...e.conversionCost.sources,
     ...(e.criticalItMw?.sources ?? []),
-    ...(e.deal ? [...e.deal.facilityPower.sources, ...e.deal.deposit.sources, ...e.deal.financing.sources] : []),
+    ...(e.deal
+      ? [
+          ...e.deal.facilityPower.sources,
+          ...(e.deal.contract?.sources ?? []),
+          ...e.deal.deposit.sources,
+          ...e.deal.financing.sources,
+        ]
+      : []),
   ];
 }
 
@@ -304,7 +322,7 @@ export function summaryEconomics(summary: DiligenceSummary, at?: StartDate): Sum
       siteResidual: e.siteResidual ?? DEFAULT_INPUTS.siteResidual,
     };
     if (e.deal) {
-      const { facilityPower, conversionMonths, financing, closingDate } = e.deal;
+      const { facilityPower, contract, conversionMonths, financing, closingDate } = e.deal;
       const loan = (inputs.sitePurchase + inputs.siteConversionPerMw * clusterMw) * financing.ltv;
       siteLoanPayment = levelPayment(loan, financing.rate, financing.amortizationYears);
       capitalReserve = Math.round(siteLoanPayment * financing.reserveMonths);
@@ -312,6 +330,8 @@ export function summaryEconomics(summary: DiligenceSummary, at?: StartDate): Sum
       inputs = {
         ...inputs,
         pue: facilityPower.pue,
+        contractPrice: contract?.pricePerGpuHour ?? DEFAULT_INPUTS.contractPrice,
+        contractMonths: contract?.months ?? DEFAULT_INPUTS.contractMonths,
         shipMonth: conversionMonths,
         leadMonths: Math.min(DEFAULT_INPUTS.leadMonths, conversionMonths),
         siteLtv: financing.ltv,

@@ -18,6 +18,7 @@
  *
  *   "deal": {
  *     "facilityPower": { "mw": 8, "pue": 1.3, "estimate": true, "note": "...", "sources": [] },
+ *     "contract": { "pricePerGpuHour": 4.8, "months": 48, "estimate": true, "note": "...", "sources": [] },
  *     "deposit": { "amount": 500000, "currency": "CAD", "estimate": false, "note": "...", "sources": [] },
  *     "conditionDate": "2026-10-30",
  *     "closingDate": "2026-11-30",
@@ -26,7 +27,8 @@
  *                    "estimate": true, "note": "...", "sources": [] }
  *   }
  *
- * Critical IT is then facility power over PUE. `conversionCost.perMw: true`
+ * Critical IT is then facility power over PUE; `contract` is optional and
+ * falls back to the model's standard GPU contract. `conversionCost.perMw: true`
  * prices conversion per MW of critical IT instead of as a total.
  *
  * Details and notes may use blank lines between paragraphs, "- " lines for a
@@ -125,7 +127,7 @@ const between = (value, min, max, where) => {
 };
 if (deal) {
   const d = e.deal ?? {};
-  const DEAL_KEYS = ["facilityPower", "deposit", "conditionDate", "closingDate", "conversionMonths", "financing"];
+  const DEAL_KEYS = ["facilityPower", "contract", "deposit", "conditionDate", "closingDate", "conversionMonths", "financing"];
   const extraDeal = Object.keys(d).filter((key) => !DEAL_KEYS.includes(key));
   if (extraDeal.length) problems.push(`economics.deal: unknown ${extraDeal.join(", ")}`);
   const power = d.facilityPower ?? {};
@@ -134,6 +136,15 @@ if (deal) {
   flag(power.estimate, "economics.deal.facilityPower.estimate");
   text(power.note, "economics.deal.facilityPower.note");
   paths(power.sources, "economics.deal.facilityPower.sources");
+  if (d.contract !== undefined) {
+    const c = d.contract ?? {};
+    between(c.pricePerGpuHour, 0.5, 20, "economics.deal.contract.pricePerGpuHour");
+    between(c.months, 6, 72, "economics.deal.contract.months");
+    if (!Number.isInteger(c.months)) problems.push("economics.deal.contract.months: whole months");
+    flag(c.estimate, "economics.deal.contract.estimate");
+    text(c.note, "economics.deal.contract.note");
+    paths(c.sources, "economics.deal.contract.sources");
+  }
   money(d.deposit, "economics.deal.deposit");
   date(d.conditionDate, "economics.deal.conditionDate");
   date(d.closingDate, "economics.deal.closingDate");
@@ -218,6 +229,7 @@ const dealWithSources = () => {
   const part = (key) => ({ ...d[key], sources: resolve(d[key].sources, `economics.deal.${key}`) });
   return {
     facilityPower: part("facilityPower"),
+    ...(d.contract === undefined ? {} : { contract: part("contract") }),
     deposit: part("deposit"),
     conditionDate: d.conditionDate,
     closingDate: d.closingDate,
@@ -242,7 +254,9 @@ if (unresolved.length) {
 const citing = [
   ...Object.values(diligence),
   ...[...MONEY_KEYS, ...(lease ? ["rent"] : []), ...(deal ? [] : ["criticalItMw"])].map((key) => economics[key]),
-  ...(deal ? [economics.deal.facilityPower, economics.deal.deposit, economics.deal.financing] : []),
+  ...(deal
+    ? [economics.deal.facilityPower, economics.deal.contract, economics.deal.deposit, economics.deal.financing].filter(Boolean)
+    : []),
 ];
 const citedFiles = new Set(citing.flatMap(cited)).size;
 console.log(

@@ -259,13 +259,25 @@ function Deal({
         { label: "IT power", value: `${Number(x.criticalItMw.toFixed(2))} MW`, note: `At ${power.pue.toFixed(2)} PUE` },
         { label: "Platform", value: "NVIDIA B300", note: `${GPUS_PER_NODE}-GPU nodes at ${i.kwPerNode} kW` },
         { label: "Nodes", value: x.nodes.toLocaleString("en-US"), note: `${r.gpus.toLocaleString("en-US")} GPUs` },
+        {
+          label: "GPU price",
+          value: `$${i.contractPrice.toFixed(2)} / GPU-hr`,
+          note: "Contracted rate",
+          estimate: deal.contract?.estimate ?? true,
+        },
+        {
+          label: "Contract term",
+          value: i.contractMonths % 12 === 0 ? plural(i.contractMonths / 12, "year", "years") : plural(i.contractMonths, "month", "months"),
+          note: "Merchant rates after",
+          estimate: deal.contract?.estimate ?? true,
+        },
         { label: "Annual revenue", value: usdShort(r.year1Revenue), note: "Year 1 net revenue" },
         { label: "Annual EBITDA", value: usdShort(r.year1Ebitda), note: "Year 1, after SPV costs" },
         { label: "Annual net income", value: usdShort(r.year1NetProfit), note: "Year 1, after depreciation and interest" },
         {
           label: "Contract value",
           value: usdShort(r.contractValue),
-          note: `${i.contractMonths} months at $${i.contractPrice.toFixed(2)} / GPU-hr`,
+          note: "Contracted revenue over the term",
         },
       ],
     },
@@ -382,6 +394,18 @@ function Deal({
       estimate: power.estimate,
       sources: power.sources,
     },
+    ...(deal.contract
+      ? [
+          {
+            label: "GPU contract",
+            value: `$${deal.contract.pricePerGpuHour.toFixed(2)} / GPU-hr`,
+            note: plural(deal.contract.months, "month", "months"),
+            detail: deal.contract.note,
+            estimate: deal.contract.estimate,
+            sources: deal.contract.sources,
+          },
+        ]
+      : []),
     moneyFigure("Deposit", deal.deposit, deposit),
     {
       label: "Financing",
