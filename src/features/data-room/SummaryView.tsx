@@ -232,6 +232,7 @@ function Deal({
   const conversion = conversionUsd(e, x.criticalItMw);
   // The model's own site basis, so down payment and loan add up to what it lends against.
   const basis = r.siteCost - i.sitePurchase * i.siteClosingCosts;
+  const siteConversion = r.siteCost - i.sitePurchase * (1 + i.siteClosingCosts);
   const firstRevenue = r.monthly.dates[r.firstOperatingMonth];
   const closing = utcDate(deal.closingDate);
   const nativeNote = (money: Money) =>
@@ -306,7 +307,7 @@ function Deal({
         {
           label: "Total project cost",
           value: usdShort(r.siteCost + r.totalCapex),
-          note: `Site ${usdShort(r.siteCost)}, cluster ${usdShort(r.totalCapex)}`,
+          note: `Purchase ${usdShort(r.siteCost - siteConversion)}, conversion ${usdShort(siteConversion)}, compute ${usdShort(r.totalCapex)}`,
         },
         {
           label: "Site value at exit",
