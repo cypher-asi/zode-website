@@ -65,7 +65,7 @@ function sectionReadouts(id: SectionId, i: ModelInputs, r: ModelResult) {
       if (i.siteMode === 0) {
         const lease = { label: "Lease / month", value: usdShort(r.year1Lease), detail: "Year 1 average, base + NNN + ops" };
         if (r.siteCost <= 0) return [lease, power];
-        return [{ label: "Capital contribution", value: usdShort(r.siteCost), detail: "Paid to the landlord at order" }, lease, power];
+        return [{ label: "Capital contribution", value: usdShort(r.siteCost), detail: "Paid to the landlord at the start" }, lease, power];
       }
       return [
         { label: "Site cost", value: usdShort(r.siteCost), detail: "Purchase, closing and conversion" },

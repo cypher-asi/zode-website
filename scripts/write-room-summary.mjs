@@ -13,6 +13,22 @@
  * - lease or colo: rent terms (USD base rent, escalation, NNN, operations fee,
  *   power rate and PUE), the capital contribution, critical IT MW and the FX rate.
  *
+ * A purchase under terms swaps `criticalItMw` for a `deal`, which the summary
+ * shows as its Deal section and the model runs from closing:
+ *
+ *   "deal": {
+ *     "facilityPower": { "mw": 8, "pue": 1.3, "estimate": true, "note": "...", "sources": [] },
+ *     "deposit": { "amount": 500000, "currency": "CAD", "estimate": false, "note": "...", "sources": [] },
+ *     "conditionDate": "2026-10-30",
+ *     "closingDate": "2026-11-30",
+ *     "conversionMonths": 8,
+ *     "financing": { "ltv": 0.5, "rate": 0.075, "amortizationYears": 25, "reserveMonths": 6,
+ *                    "estimate": true, "note": "...", "sources": [] }
+ *   }
+ *
+ * Critical IT is then facility power over PUE. `conversionCost.perMw: true`
+ * prices conversion per MW of critical IT instead of as a total.
+ *
  * Details and notes may use blank lines between paragraphs, "- " lines for a
  * list and **bold** for a lead-in.
  *
@@ -84,17 +100,57 @@ for (const key of KEYS) {
 }
 
 const e = input.economics ?? {};
+const deal = !lease && e.deal !== undefined;
 const MONEY_KEYS = lease ? ["capitalContribution"] : ["purchasePrice", "conversionCost"];
-const ALLOWED = [...MONEY_KEYS, "criticalItMw", "fx", ...(lease ? ["rent"] : ["siteResidual"])];
+const ALLOWED = [...MONEY_KEYS, deal ? "deal" : "criticalItMw", "fx", ...(lease ? ["rent"] : ["siteResidual"])];
 const unknown = Object.keys(e).filter((key) => !ALLOWED.includes(key));
-if (unknown.length) problems.push(`economics: unknown for a ${room.kind} room: ${unknown.join(", ")}`);
-for (const key of MONEY_KEYS) {
-  const money = e[key] ?? {};
-  number(money.amount, `economics.${key}.amount`, true);
-  if (!["USD", e.fx?.currency].includes(money.currency)) problems.push(`economics.${key}.currency: USD or the fx currency`);
-  flag(money.estimate, `economics.${key}.estimate`);
-  text(money.note, `economics.${key}.note`);
-  paths(money.sources, `economics.${key}.sources`);
+if (unknown.length) problems.push(`economics: unknown for a ${room.kind} room${deal ? " with a deal" : ""}: ${unknown.join(", ")}`);
+const money = (value, where) => {
+  const m = value ?? {};
+  number(m.amount, `${where}.amount`, true);
+  if (!["USD", e.fx?.currency].includes(m.currency)) problems.push(`${where}.currency: USD or the fx currency`);
+  flag(m.estimate, `${where}.estimate`);
+  text(m.note, `${where}.note`);
+  paths(m.sources, `${where}.sources`);
+};
+for (const key of MONEY_KEYS) money(e[key], `economics.${key}`);
+if (!lease && e.conversionCost?.perMw !== undefined) flag(e.conversionCost.perMw, "economics.conversionCost.perMw");
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const date = (value, where) => {
+  if (!DATE.test(value ?? "") || Number.isNaN(Date.parse(value))) problems.push(`${where}: expected YYYY-MM-DD`);
+};
+const between = (value, min, max, where) => {
+  number(value, where);
+  if (typeof value === "number" && (value < min || value > max)) problems.push(`${where}: expected ${min} to ${max}`);
+};
+if (deal) {
+  const d = e.deal ?? {};
+  const DEAL_KEYS = ["facilityPower", "deposit", "conditionDate", "closingDate", "conversionMonths", "financing"];
+  const extraDeal = Object.keys(d).filter((key) => !DEAL_KEYS.includes(key));
+  if (extraDeal.length) problems.push(`economics.deal: unknown ${extraDeal.join(", ")}`);
+  const power = d.facilityPower ?? {};
+  between(power.mw, 0.1, 1000, "economics.deal.facilityPower.mw");
+  between(power.pue, 1, 2, "economics.deal.facilityPower.pue");
+  flag(power.estimate, "economics.deal.facilityPower.estimate");
+  text(power.note, "economics.deal.facilityPower.note");
+  paths(power.sources, "economics.deal.facilityPower.sources");
+  money(d.deposit, "economics.deal.deposit");
+  date(d.conditionDate, "economics.deal.conditionDate");
+  date(d.closingDate, "economics.deal.closingDate");
+  if (DATE.test(d.conditionDate ?? "") && DATE.test(d.closingDate ?? "") && d.closingDate < d.conditionDate) {
+    problems.push("economics.deal.closingDate: on or after the condition date");
+  }
+  // The model forecasts 85 months, so six years of operation must follow conversion.
+  between(d.conversionMonths, 0, 12, "economics.deal.conversionMonths");
+  if (!Number.isInteger(d.conversionMonths)) problems.push("economics.deal.conversionMonths: whole months");
+  const f = d.financing ?? {};
+  between(f.ltv, 0, 0.9, "economics.deal.financing.ltv");
+  between(f.rate, 0, 0.3, "economics.deal.financing.rate");
+  between(f.amortizationYears, 1, 40, "economics.deal.financing.amortizationYears");
+  between(f.reserveMonths, 0, 24, "economics.deal.financing.reserveMonths");
+  flag(f.estimate, "economics.deal.financing.estimate");
+  text(f.note, "economics.deal.financing.note");
+  paths(f.sources, "economics.deal.financing.sources");
 }
 if (lease) {
   const rent = e.rent ?? {};
@@ -103,13 +159,15 @@ if (lease) {
   text(rent.note, "economics.rent.note");
   paths(rent.sources, "economics.rent.sources");
 }
-number(e.criticalItMw?.value, "economics.criticalItMw.value");
-flag(e.criticalItMw?.estimate, "economics.criticalItMw.estimate");
-text(e.criticalItMw?.note, "economics.criticalItMw.note");
-paths(e.criticalItMw?.sources, "economics.criticalItMw.sources");
+if (!deal) {
+  number(e.criticalItMw?.value, "economics.criticalItMw.value");
+  flag(e.criticalItMw?.estimate, "economics.criticalItMw.estimate");
+  text(e.criticalItMw?.note, "economics.criticalItMw.note");
+  paths(e.criticalItMw?.sources, "economics.criticalItMw.sources");
+}
 text(e.fx?.currency, "economics.fx.currency");
 number(e.fx?.usdPerUnit, "economics.fx.usdPerUnit");
-if (!/^\d{4}-\d{2}-\d{2}$/.test(e.fx?.asOf ?? "")) problems.push("economics.fx.asOf: expected YYYY-MM-DD");
+if (!DATE.test(e.fx?.asOf ?? "")) problems.push("economics.fx.asOf: expected YYYY-MM-DD");
 text(e.fx?.source, "economics.fx.source");
 if (!lease && e.siteResidual !== undefined) number(e.siteResidual, "economics.siteResidual");
 
@@ -155,25 +213,41 @@ const diligence = Object.fromEntries(
   }),
 );
 const withSources = (key) => ({ ...e[key], sources: resolve(e[key].sources, `economics.${key}`) });
+const dealWithSources = () => {
+  const d = e.deal;
+  const part = (key) => ({ ...d[key], sources: resolve(d[key].sources, `economics.deal.${key}`) });
+  return {
+    facilityPower: part("facilityPower"),
+    deposit: part("deposit"),
+    conditionDate: d.conditionDate,
+    closingDate: d.closingDate,
+    conversionMonths: d.conversionMonths,
+    financing: part("financing"),
+  };
+};
 const economics = {
   ...Object.fromEntries(MONEY_KEYS.map((key) => [key, withSources(key)])),
   ...(lease ? { rent: withSources("rent") } : {}),
-  criticalItMw: withSources("criticalItMw"),
+  ...(deal ? { deal: dealWithSources() } : { criticalItMw: withSources("criticalItMw") }),
   fx: e.fx,
   ...(lease || e.siteResidual === undefined ? {} : { siteResidual: e.siteResidual }),
 };
+const cited = (x) => x.sources.map((s) => s.fileId);
 
 if (unresolved.length) {
   for (const line of unresolved) console.error(`  not in the room: ${line}`);
   fail(`${unresolved.length} source(s) don't name a live file in "${room.name}".`);
 }
 
-const cited = new Set(
-  [...Object.values(diligence), ...[...MONEY_KEYS, ...(lease ? ["rent"] : []), "criticalItMw"].map((key) => economics[key])].flatMap(
-    (x) => x.sources.map((s) => s.fileId),
-  ),
-).size;
-console.log(`[summary] "${room.name}" (${room.kind}): ${KEYS.length} answers, ${cited} cited files, all resolved.`);
+const citing = [
+  ...Object.values(diligence),
+  ...[...MONEY_KEYS, ...(lease ? ["rent"] : []), ...(deal ? [] : ["criticalItMw"])].map((key) => economics[key]),
+  ...(deal ? [economics.deal.facilityPower, economics.deal.deposit, economics.deal.financing] : []),
+];
+const citedFiles = new Set(citing.flatMap(cited)).size;
+console.log(
+  `[summary] "${room.name}" (${room.kind}): ${KEYS.length} answers${deal ? ", deal terms" : ""}, ${citedFiles} cited files, all resolved.`,
+);
 
 if (args["dry-run"]) {
   console.log("[summary] dry run: nothing written.");

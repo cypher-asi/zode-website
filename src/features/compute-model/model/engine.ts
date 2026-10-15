@@ -152,7 +152,7 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
   const depreciable =
     (equipCost * (1 + i.spareShare) * (1 + useTax + i.importTax) + i.setupCost) * (1 - i.bookResidual);
   // Facility: a leased site pays rent and any capital contribution; a purchased one pays its price,
-  // closing and conversion at order
+  // closing and conversion at the forecast start
   const purchased = i.siteMode === 1;
   const sitePrice = purchased ? i.sitePurchase : 0;
   const siteConversion = purchased ? i.siteConversionPerMw * itMw : 0;
@@ -268,7 +268,7 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
     const additions = equipment[m] + spares[m] + importTax + purchaseTax + setup;
     capex[m] =
       equipment[m] + setup + purchaseTax + spares[m] - equipment[m] * i.deposit + (m === order ? equipCost * i.deposit : 0) + importTax;
-    if (m === order) capex[m] += siteCost;
+    if (m === 0) capex[m] += siteCost;
 
     const carrying = recovery[m] || ending[m] ? Math.max(0, nbv - depreciation[m]) : 0;
     nbv = Math.max(0, nbv + additions - depreciation[m] - carrying);
@@ -291,7 +291,7 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
   const admin = zeros().map((_, m) => (i.adminPerYear / 12) * (1 + i.adminEscalation) ** Math.floor(m / 12));
   const legal = zeros().map((_, m) => (m === 0 ? i.legalCosts : 0));
 
-  // Site bank loan: drawn at order, level payments, the balance repaid when the site is sold
+  // Site bank loan: drawn at the forecast start, level payments, the balance repaid when the site is sold
   const siteDraws = zeros();
   const siteInterest = zeros();
   const sitePrincipal = zeros();
@@ -309,8 +309,8 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
       const scheduled = Math.min(open, Math.max(0, payment - siteInterest[m]));
       siteService[m] = siteInterest[m] + scheduled;
       sitePrincipal[m] = recovery[m] || ending[m] ? open : scheduled;
-      siteDraws[m] = m === order ? siteLoan : 0;
-      siteFeeExpense[m] = m === order ? siteFees : 0;
+      siteDraws[m] = m === 0 ? siteLoan : 0;
+      siteFeeExpense[m] = m === 0 ? siteFees : 0;
       balance = Math.max(0, open + siteDraws[m] - sitePrincipal[m]);
       siteDebt[m] = balance;
     }

@@ -96,7 +96,7 @@ export interface ModelInputs {
   leaseEscalation: number;
   /**
    * A leased site: the tenant's capital contribution to the landlord's build-out,
-   * per MW of critical IT load. Equity-funded capex at order, never recovered.
+   * per MW of critical IT load. Equity-funded capex at the forecast start, never recovered.
    */
   leaseContributionPerMw: number;
   nnn: number;
@@ -107,7 +107,7 @@ export interface ModelInputs {
   idleLoad: number;
   fixedEscalation: number;
   /**
-   * A purchased site: price, closing costs and conversion are capex at order,
+   * A purchased site: price, closing costs and conversion are capex at the forecast start,
    * never depreciated, part funded by a bank loan and the rest by equity.
    */
   sitePurchase: number;
@@ -119,9 +119,9 @@ export interface ModelInputs {
   siteLtv: number;
   siteRate: number;
   siteAmortizationYears: number;
-  /** Bank origination fee / site loan, expensed at order. */
+  /** Bank origination fee / site loan, expensed at the forecast start. */
   siteLoanFee: number;
-  /** Placement fee / site equity raised, expensed at order. */
+  /** Placement fee / site equity raised, expensed at the forecast start. */
   siteEquityFee: number;
   /** Share of the site purchase price recovered when the deployment ends. */
   siteResidual: number;
@@ -535,7 +535,7 @@ export const SECTIONS: readonly SectionDef[] = [
       {
         key: "leaseContributionPerMw",
         label: "Tenant capital contribution / critical MW",
-        note: "Paid to the landlord toward the build-out at order; not recovered at exit.",
+        note: "Paid to the landlord toward the build-out at the forecast start; not recovered at exit.",
         kind: "range",
         format: "usdPerMw",
         min: 0,
