@@ -206,6 +206,10 @@ const longDate = (ms: number) =>
 /** "Aug 2027". */
 const monthYear = (ms: number) => new Date(ms).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
 
+/** "4 years", or "30 months" when the term isn't whole years. */
+const contractTerm = (months: number) =>
+  months % 12 === 0 ? plural(months / 12, "year", "years") : plural(months, "month", "months");
+
 /** A source's share of the capital stack. */
 const share = (amount: number, total: number) => (total > 0 ? `${pct(amount / total, 0)} of capital` : "");
 
@@ -267,7 +271,7 @@ function Deal({
         },
         {
           label: "Contract term",
-          value: i.contractMonths % 12 === 0 ? plural(i.contractMonths / 12, "year", "years") : plural(i.contractMonths, "month", "months"),
+          value: contractTerm(i.contractMonths),
           note: "Merchant rates after",
           estimate: deal.contract?.estimate ?? true,
         },
@@ -472,7 +476,7 @@ function Deal({
 
 /**
  * The deal at a glance: a line and four numbers from the standard compute
- * model, or six summarizing the deal terms when the room has them, beside the
+ * model, or eight summarizing the deal terms when the room has them, beside the
  * diligence answers, confirmed first; the deal terms follow in full. Every
  * figure's reasoning, the model's assumptions and each answer's sources sit
  * behind a disclosure.
@@ -540,6 +544,8 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
         { label: "Equity multiple", value: x.equityMultiple === null ? "n.a." : multiple(x.equityMultiple) },
         { label: "Annual revenue", value: usdShort(r.year1Revenue) },
         { label: "Annual net income", value: usdShort(r.year1NetProfit) },
+        { label: "GPU price", value: `$${i.contractPrice.toFixed(2)} / hr`, estimate: deal.contract?.estimate ?? true },
+        { label: "Contract term", value: contractTerm(i.contractMonths), estimate: deal.contract?.estimate ?? true },
         { label: "Total project cost", value: usdShort(r.siteCost + r.totalCapex), estimate: cost.estimate },
         { label: "Equity capital", value: usdShort(r.prefEquity), estimate: deal.financing.estimate },
       ]
