@@ -917,7 +917,7 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
   const powerFigures: KeyFigure[] = [
     {
       label: "Facility power",
-      value: `${Number((deal ? deal.facilityPower.mw : x.criticalItMw * i.pue).toFixed(2))} MW`,
+      value: `${Number((deal ? deal.facilityPower.mw : (lease?.deal?.phases.at(-1)?.grossMw ?? x.criticalItMw * i.pue)).toFixed(2))} MW`,
       estimate: it.estimate,
     },
     { label: "IT power", value: `${Number(x.criticalItMw.toFixed(2))} MW`, estimate: it.estimate },
