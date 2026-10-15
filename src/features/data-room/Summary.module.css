@@ -1,11 +1,15 @@
 /* The room's summary: the deal at a glance, details behind disclosures. */
 .summary {
   container: summary / inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   max-width: 1200px;
   margin: 0 auto;
 }
 
-.columns {
+.columns,
+.dealGroups {
   display: grid;
   gap: 16px;
 }
@@ -14,6 +18,67 @@
   .columns {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .dealGroups {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 32px;
+  }
+}
+
+/* An acquisition's terms: four groups of label and value rows. */
+.dealGroup {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-top: 8px;
+}
+
+.groupHeading {
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.terms {
+  margin: 0;
+}
+
+.term {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+}
+
+.term + .term {
+  border-top: 1px solid var(--color-border);
+}
+
+.termLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.termNote {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.termValue {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
 }
 
 .section {
@@ -262,7 +327,7 @@
 }
 
 .status[data-status="confirmed"] {
-  color: var(--color-text-tertiary);
+  color: var(--color-success);
 }
 
 .status[data-status="claimed"] {
