@@ -268,12 +268,65 @@ export interface SummaryEconomics {
   siteLoanPayment: number;
   /** Cash held from closing to exit against the site loan; 0 without a deal. */
   capitalReserve: number;
-  /** All distributions over all equity contributed. */
-  equityMultiple: number | null;
-  /** UTC milliseconds of the first month distributions have returned the equity paid in. */
-  paybackDate: number | null;
+  equity: EquityReturns;
   /** The same case, open in the compute model. */
   modelHref: string;
+}
+
+/**
+ * What each class of equity puts in and takes out, and when. Preferred funds
+ * all the equity for its fixed return and minimum multiple; common puts in
+ * nothing and takes what's left once preferred is paid. Dates are UTC
+ * milliseconds, null when the month never comes.
+ */
+export interface EquityReturns {
+  prefIn: number;
+  /** First and last contribution before revenue starts; later ones are small top-ups. */
+  prefInFrom: number | null;
+  prefInTo: number | null;
+  prefOut: number;
+  prefMultiple: number | null;
+  prefIrr: number | null;
+  prefFirstOut: number | null;
+  /** Distributions have returned the capital paid in by then. */
+  prefPayback: number | null;
+  /** The return and minimum multiple are paid; common takes the rest from here. */
+  prefPaid: number | null;
+  commonOut: number;
+  commonFrom: number | null;
+  commonTo: number | null;
+}
+
+function equityReturns(result: ModelResult): EquityReturns {
+  const { dates, prefContributions, prefDistributions, commonDistributions } = result.monthly;
+  const at = (m: number) => (m < 0 ? null : dates[m]);
+  const paid = (values: readonly number[], m: number) => values[m] > 0.5;
+  const first = (values: readonly number[]) => values.findIndex((_, m) => paid(values, m));
+  const last = (values: readonly number[], before = values.length) =>
+    values.slice(0, before).findLastIndex((_, m) => paid(values, m));
+  const prefOut = prefDistributions.reduce((total, v) => total + v, 0);
+  let paidIn = 0;
+  let paidOut = 0;
+  const payback = dates.findIndex((_, m) => {
+    paidIn += prefContributions[m];
+    paidOut += prefDistributions[m];
+    return paidIn > 0 && paidOut >= paidIn;
+  });
+  const commonFrom = first(commonDistributions);
+  return {
+    prefIn: result.prefEquity,
+    prefInFrom: at(first(prefContributions)),
+    prefInTo: at(last(prefContributions, result.firstOperatingMonth + 1)),
+    prefOut,
+    prefMultiple: result.prefMoic,
+    prefIrr: result.prefIrr,
+    prefFirstOut: at(first(prefDistributions)),
+    prefPayback: at(payback),
+    prefPaid: commonFrom >= 0 ? dates[commonFrom] : prefOut > 0 ? at(last(prefDistributions)) : null,
+    commonOut: commonDistributions.reduce((total, v) => total + v, 0),
+    commonFrom: at(commonFrom),
+    commonTo: at(last(commonDistributions)),
+  };
 }
 
 export const toUsd = (money: Money, fx: Fx): number | null =>
@@ -366,9 +419,6 @@ export function summaryEconomics(summary: DiligenceSummary, at?: StartDate): Sum
   }
 
   const result = runModel(inputs, start);
-  const { cumulativeEquity, cumulativeDistributions, dates } = result.monthly;
-  const paidIn = cumulativeEquity[cumulativeEquity.length - 1];
-  const payback = cumulativeDistributions.findIndex((out, m) => m > 0 && out >= cumulativeEquity[m] && cumulativeEquity[m] > 0);
   const params = new URLSearchParams();
   writeInputParams(inputs, params);
   return {
@@ -380,8 +430,7 @@ export function summaryEconomics(summary: DiligenceSummary, at?: StartDate): Sum
     start,
     siteLoanPayment,
     capitalReserve,
-    equityMultiple: paidIn > 0 ? cumulativeDistributions[cumulativeDistributions.length - 1] / paidIn : null,
-    paybackDate: payback < 0 ? null : dates[payback],
+    equity: equityReturns(result),
     modelHref: `/compute-model?${params}`,
   };
 }

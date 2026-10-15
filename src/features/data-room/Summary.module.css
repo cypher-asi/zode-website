@@ -81,6 +81,18 @@
   color: var(--color-text-primary);
 }
 
+/* A column of cards; the last fills what's left so both columns end level. */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.stack > :last-child {
+  flex: 1;
+}
+
 .section {
   display: flex;
   flex-direction: column;

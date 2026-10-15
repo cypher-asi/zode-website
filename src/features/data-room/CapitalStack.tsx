@@ -12,11 +12,26 @@ export interface CapitalSource {
   cost: string;
 }
 
+/** What a class of equity takes out over the deal, and when. */
+export interface Payout {
+  key: "pref" | "common";
+  label: string;
+  amount: number;
+  note: string;
+}
+
 /**
  * All the capital that enters the project as one bar, each source as wide as
  * its share. Hovering or focusing a source reads out its amount and cost.
+ * Below it, what each class of equity takes out.
  */
-export function CapitalStack({ sources }: { sources: CapitalSource[] }): ReactElement | null {
+export function CapitalStack({
+  sources,
+  payouts = [],
+}: {
+  sources: CapitalSource[];
+  payouts?: Payout[];
+}): ReactElement | null {
   const [active, setActive] = useState<CapitalSource["key"] | null>(null);
   const shown = sources.filter((s) => s.amount > 0);
   const total = shown.reduce((sum, s) => sum + s.amount, 0);
@@ -63,6 +78,22 @@ export function CapitalStack({ sources }: { sources: CapitalSource[] }): ReactEl
           </span>
         ))}
       </figcaption>
+      {payouts.length ? (
+        <dl className={styles.payouts}>
+          {payouts.map((p) => (
+            <div key={p.key} className={styles.payout} data-source={p.key === "pref" ? "equity" : "common"}>
+              <dt className={styles.payoutLabel}>
+                <span className={styles.payoutName}>
+                  <span className={styles.swatch} aria-hidden="true" />
+                  {p.label}
+                </span>
+                <span className={styles.payoutNote}>{p.note}</span>
+              </dt>
+              <dd className={styles.payoutValue}>{usdShort(p.amount)}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
     </figure>
   );
 }

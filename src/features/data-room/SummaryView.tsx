@@ -18,7 +18,7 @@ import {
   type PurchaseEconomics,
   type SummaryEconomics,
 } from "./summary";
-import { CapitalStack, type CapitalSource } from "./CapitalStack";
+import { CapitalStack, type CapitalSource, type Payout } from "./CapitalStack";
 import { Icon } from "./icons";
 import { siteMapSrc } from "./rooms";
 import { SiteMap } from "./SiteMap";
@@ -241,6 +241,37 @@ const contractTerm = (months: number) =>
 /** A source's share of the capital stack. */
 const share = (amount: number, total: number) => (total > 0 ? `${pct(amount / total, 0)} of capital` : "");
 
+/** "Nov 2026 to Jul 2027", or one month when both fall in it. */
+const span = (from: number | null, to: number | null) =>
+  from === null ? "" : to === null || monthYear(from) === monthYear(to) ? monthYear(from) : `${monthYear(from)} to ${monthYear(to)}`;
+
+const prefTerms = (i: SummaryEconomics["inputs"]) => `${pct(i.prefReturn, 0)} preferred return, ${multiple(i.minMoic, 1)} minimum`;
+
+/** What preferred and common take out of a deal, and over which months. */
+function payouts(x: SummaryEconomics): Payout[] {
+  const q = x.equity;
+  return [
+    {
+      key: "pref",
+      label: "Preferred equity",
+      amount: q.prefOut,
+      note: [
+        q.prefMultiple === null ? "" : multiple(q.prefMultiple),
+        `${irr(q.prefIrr)} IRR`,
+        span(q.prefFirstOut, q.prefPaid),
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    },
+    {
+      key: "common",
+      label: "Common",
+      amount: q.commonOut,
+      note: ["No capital in", span(q.commonFrom, q.commonTo)].filter(Boolean).join(" · "),
+    },
+  ];
+}
+
 /** Every source of capital that enters a deal, equity first; the site loan splits into what it lends against. */
 function capitalStack(x: SummaryEconomics): CapitalSource[] {
   const r = x.result;
@@ -248,7 +279,7 @@ function capitalStack(x: SummaryEconomics): CapitalSource[] {
   const mortgage = i.sitePurchase * i.siteLtv;
   const siteTerms = `${pct(i.siteRate, 2)}, ${i.siteAmortizationYears}-yr amortization`;
   return [
-    { key: "equity", label: "Preferred equity", amount: r.prefEquity, cost: `${pct(i.prefReturn, 1)} preferred return` },
+    { key: "equity", label: "Preferred equity", amount: r.prefEquity, cost: prefTerms(i) },
     { key: "projectDebt", label: "Project debt", amount: r.siteLoan - mortgage, cost: `On conversion, ${siteTerms}` },
     { key: "mortgage", label: "Mortgage", amount: mortgage, cost: `On the purchase price, ${siteTerms}` },
     {
@@ -292,7 +323,8 @@ function Deal({
 
   const capital = capitalStack(x);
   const totalCapital = capital.reduce((total, c) => total + c.amount, 0);
-  const months = x.paybackDate === null ? null : Math.round((x.paybackDate - closing) / (DAY * 30.4375));
+  const q = x.equity;
+  const months = q.prefPayback === null ? null : Math.round((q.prefPayback - closing) / (DAY * 30.4375));
 
   const groups: { title: string; terms: Term[] }[] = [
     {
@@ -413,18 +445,28 @@ function Deal({
           value: usdShort(c.amount),
           note: [share(c.amount, totalCapital), c.cost].filter(Boolean).join(" · "),
         })),
-        { label: "Equity IRR", value: irr(r.equityIrr), note: `On ${usdShort(r.prefEquity)} of equity` },
+        { label: "Preferred IRR", value: irr(q.prefIrr), note: prefTerms(i) },
+        {
+          label: "Preferred multiple",
+          value: q.prefMultiple === null ? "n.a." : multiple(q.prefMultiple),
+          note: `${usdShort(q.prefIn)} paid in ${span(q.prefInFrom, q.prefInTo)}, ${usdShort(q.prefOut)} back`,
+        },
+        {
+          label: "Preferred payback",
+          value: q.prefPayback === null ? "Not reached" : monthYear(q.prefPayback),
+          note: [
+            months === null ? "" : `Capital back ${months} months from closing`,
+            q.prefPaid === null ? "" : `paid in full ${monthYear(q.prefPaid)}`,
+          ]
+            .filter(Boolean)
+            .join(", "),
+        },
+        {
+          label: "Common distributions",
+          value: usdShort(q.commonOut),
+          note: ["No capital in", span(q.commonFrom, q.commonTo)].filter(Boolean).join(", "),
+        },
         { label: "Project IRR", value: irr(r.projectIrr), note: "Before GPU debt" },
-        {
-          label: "Equity multiple",
-          value: x.equityMultiple === null ? "n.a." : multiple(x.equityMultiple),
-          note: "All distributions over equity",
-        },
-        {
-          label: "Payback",
-          value: x.paybackDate === null ? "Not reached" : monthYear(x.paybackDate),
-          note: months === null ? undefined : `${months} months from closing`,
-        },
       ],
     },
   ];
@@ -595,12 +637,6 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
       note: "Year 1 net",
       detail: `Year 1 net revenue. ${usdShort(x.lifetimeRevenue)} over ${OPERATING_MONTHS / 12} years of operation, ${usdShort(r.contractValue)} of it under the ${i.contractMonths}-month contract.`,
     },
-    {
-      label: "IRR potential",
-      value: irr(r.equityIrr),
-      note: "Equity IRR",
-      detail: `Equity IRR on ${usdShort(r.prefEquity)} of equity. Project IRR before GPU debt ${irr(r.projectIrr)}; preferred ${irr(r.prefIrr)}.`,
-    },
   ];
 
   const fx = e.fx.currency === "USD" ? "" : ` ${e.fx.currency} converted at ${e.fx.usdPerUnit} USD (${e.fx.asOf}).`;
@@ -622,26 +658,24 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
 
   const cost = upfront(summary);
   // With deal terms, Economics summarizes the Deal section below it: one figure or two from each group.
+  const cluster: KeyFigure[] = [
+    { label: "B300 nodes", value: x.nodes.toLocaleString("en-US"), estimate: it.estimate },
+    { label: "GPUs", value: r.gpus.toLocaleString("en-US"), estimate: it.estimate },
+  ];
   const keyFigures: KeyFigure[] = deal
     ? [
-        { label: "Equity IRR", value: irr(r.equityIrr) },
-        { label: "Equity multiple", value: x.equityMultiple === null ? "n.a." : multiple(x.equityMultiple) },
+        ...cluster,
         { label: "Annual revenue", value: usdShort(r.year1Revenue) },
         { label: "Annual net income", value: usdShort(r.year1NetProfit) },
-        { label: "B300 nodes", value: x.nodes.toLocaleString("en-US"), estimate: it.estimate },
-        { label: "GPUs", value: r.gpus.toLocaleString("en-US"), estimate: it.estimate },
         { label: "GPU price", value: `$${i.contractPrice.toFixed(2)} / hr`, estimate: deal.contract?.estimate ?? true },
         { label: "Contract term", value: contractTerm(i.contractMonths), estimate: deal.contract?.estimate ?? true },
         { label: "Total project cost", value: usdShort(r.siteCost + r.totalCapex), estimate: cost.estimate },
         { label: "Equity capital", value: usdShort(r.prefEquity), estimate: deal.financing.estimate },
       ]
     : [
-        { label: "Equity IRR", value: irr(r.equityIrr) },
+        ...cluster,
         { label: "Revenue, year 1", value: usdShort(r.year1Revenue) },
         { label: "Upfront cost", value: cost.usd === null ? "Not priced" : usdShort(cost.usd), estimate: cost.estimate },
-        { label: "Critical IT", value: `${Number(x.criticalItMw.toFixed(2))} MW`, estimate: it.estimate },
-        { label: "B300 nodes", value: x.nodes.toLocaleString("en-US"), estimate: it.estimate },
-        { label: "GPUs", value: r.gpus.toLocaleString("en-US"), estimate: it.estimate },
       ];
   const price = summary.kind === "purchase" ? toUsd(summary.economics.purchasePrice, summary.economics.fx) : null;
   const economicsLede = deal
@@ -692,7 +726,7 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
           </div>
           <p className={styles.lede}>{economicsLede}</p>
           <KeyFigures figures={keyFigures} />
-          {deal ? <CapitalStack sources={capitalStack(x)} /> : null}
+          {deal ? <CapitalStack sources={capitalStack(x)} payouts={payouts(x)} /> : null}
           <details className={styles.more}>
             <summary className={styles.moreHead}>
               Figures and assumptions
@@ -720,36 +754,46 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
           </details>
         </section>
 
-        <section className={styles.section} aria-labelledby="diligence-heading">
-          <div className={styles.sectionHead}>
-            <h2 id="diligence-heading" className={styles.heading}>
-              Diligence
-            </h2>
-          </div>
-          <p className={styles.lede}>{diligenceLede(items.map(({ item }) => item.status))}</p>
-          <KeyFigures figures={powerFigures} />
-          <ul className={styles.list}>
-            {items.map(({ key, label, item }) => (
-              <li key={key}>
-                <details className={styles.row}>
-                  <summary className={styles.rowHead}>
-                    <span className={styles.dot} data-status={item.status} aria-hidden="true" />
-                    <span className={styles.rowLabel}>{label}</span>
-                    <span className={styles.status} data-status={item.status} title={STATUS_HINTS[item.status]}>
-                      {STATUS_LABELS[item.status]}
-                    </span>
-                    <Icon name="chevron" className={styles.chevron} />
-                  </summary>
-                  <div className={styles.rowBody}>
-                    <p className={styles.headline}>{item.headline}</p>
-                    <Prose text={item.detail} />
-                    <Sources roomId={roomId} sources={item.sources} names={summary.sourceNames} />
-                  </div>
-                </details>
-              </li>
-            ))}
-          </ul>
-        </section>
+        <div className={styles.stack}>
+          <section className={styles.section} aria-labelledby="power-heading">
+            <div className={styles.sectionHead}>
+              <h2 id="power-heading" className={styles.heading}>
+                Power
+              </h2>
+            </div>
+            <KeyFigures figures={powerFigures} />
+          </section>
+
+          <section className={styles.section} aria-labelledby="diligence-heading">
+            <div className={styles.sectionHead}>
+              <h2 id="diligence-heading" className={styles.heading}>
+                Diligence
+              </h2>
+            </div>
+            <p className={styles.lede}>{diligenceLede(items.map(({ item }) => item.status))}</p>
+            <ul className={styles.list}>
+              {items.map(({ key, label, item }) => (
+                <li key={key}>
+                  <details className={styles.row}>
+                    <summary className={styles.rowHead}>
+                      <span className={styles.dot} data-status={item.status} aria-hidden="true" />
+                      <span className={styles.rowLabel}>{label}</span>
+                      <span className={styles.status} data-status={item.status} title={STATUS_HINTS[item.status]}>
+                        {STATUS_LABELS[item.status]}
+                      </span>
+                      <Icon name="chevron" className={styles.chevron} />
+                    </summary>
+                    <div className={styles.rowBody}>
+                      <p className={styles.headline}>{item.headline}</p>
+                      <Prose text={item.detail} />
+                      <Sources roomId={roomId} sources={item.sources} names={summary.sourceNames} />
+                    </div>
+                  </details>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
       </div>
       {deal && summary.kind === "purchase" ? (
         <Deal roomId={roomId} e={summary.economics} deal={deal} x={x} names={summary.sourceNames} />
