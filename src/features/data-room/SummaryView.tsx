@@ -396,14 +396,9 @@ function Deal({
     <section className={styles.section} aria-labelledby="deal-heading">
       <div className={styles.sectionHead}>
         <h2 id="deal-heading" className={styles.heading}>
-          Deal
+          Deal terms
         </h2>
       </div>
-      <p className={styles.lede}>
-        {price === null ? "Unpriced" : usdShort(price)} acquisition closing {longDate(closing)}, converted in{" "}
-        {plural(deal.conversionMonths, "month", "months")}: {plural(x.nodes, "B300 node", "B300 nodes")} on{" "}
-        {Number(power.mw.toFixed(2))} MW, {irr(r.equityIrr)} equity IRR.
-      </p>
       <div className={styles.dealGroups}>
         {groups.map((group) => (
           <div key={group.title} className={styles.dealGroup}>
@@ -453,8 +448,10 @@ function Deal({
 
 /**
  * The deal at a glance: a line and four numbers from the standard compute
- * model, then the diligence answers, confirmed first. Every figure's reasoning,
- * the model's assumptions and each answer's sources sit behind a disclosure.
+ * model, or six summarizing the deal terms when the room has them, beside the
+ * diligence answers, confirmed first; the deal terms follow in full. Every
+ * figure's reasoning, the model's assumptions and each answer's sources sit
+ * behind a disclosure.
  */
 export function SummaryView({ roomId, summary }: { roomId: string; summary: Summary }): ReactElement {
   const e = summary.economics;
@@ -512,15 +509,31 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
     `power at $${i.electricityRate.toFixed(3)} per kWh. ${site}${fx}`;
 
   const cost = upfront(summary);
-  const keyFigures = [
-    { label: "Equity IRR", value: irr(r.equityIrr) },
-    { label: "Revenue, year 1", value: usdShort(r.year1Revenue) },
-    { label: "Upfront cost", value: cost.usd === null ? "Not priced" : usdShort(cost.usd), estimate: cost.estimate },
-    { label: "Critical IT", value: `${Number(x.criticalItMw.toFixed(2))} MW`, estimate: it.estimate },
-  ];
-  const economicsLede = `${plural(x.nodes, "B300 node", "B300 nodes")} on ${
-    summary.kind === "purchase" ? "an owned" : summary.kind === "colo" ? "a colo" : "a leased"
-  } site, base case.`;
+  // With deal terms, Economics summarizes the Deal section below it: one figure or two from each group.
+  const keyFigures = deal
+    ? [
+        { label: "Equity IRR", value: irr(r.equityIrr) },
+        { label: "Equity multiple", value: x.equityMultiple === null ? "n.a." : multiple(x.equityMultiple) },
+        { label: "Annual revenue", value: usdShort(r.year1Revenue) },
+        { label: "Annual net income", value: usdShort(r.year1NetProfit) },
+        { label: "Total project cost", value: usdShort(r.siteCost + r.totalCapex), estimate: cost.estimate },
+        { label: "Equity capital", value: usdShort(r.prefEquity), estimate: deal.financing.estimate },
+      ]
+    : [
+        { label: "Equity IRR", value: irr(r.equityIrr) },
+        { label: "Revenue, year 1", value: usdShort(r.year1Revenue) },
+        { label: "Upfront cost", value: cost.usd === null ? "Not priced" : usdShort(cost.usd), estimate: cost.estimate },
+        { label: "Critical IT", value: `${Number(x.criticalItMw.toFixed(2))} MW`, estimate: it.estimate },
+      ];
+  const price = summary.kind === "purchase" ? toUsd(summary.economics.purchasePrice, summary.economics.fx) : null;
+  const economicsLede = deal
+    ? `${price === null ? "An unpriced" : `A ${usdShort(price)}`} acquisition of ${Number(deal.facilityPower.mw.toFixed(2))} MW closing ${longDate(
+        utcDate(deal.closingDate),
+      )}: ${plural(x.nodes, "B300 node", "B300 nodes")} after ${plural(deal.conversionMonths, "month", "months")} of conversion, ` +
+      `revenue from ${monthYear(r.monthly.dates[r.firstOperatingMonth])}.`
+    : `${plural(x.nodes, "B300 node", "B300 nodes")} on ${
+        summary.kind === "purchase" ? "an owned" : summary.kind === "colo" ? "a colo" : "a leased"
+      } site, base case.`;
 
   const items = DILIGENCE_FIELDS.flatMap(({ key, label }) => {
     const item = summary.diligence[key];
@@ -529,9 +542,6 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
 
   return (
     <div className={styles.summary}>
-      {deal && summary.kind === "purchase" ? (
-        <Deal roomId={roomId} e={summary.economics} deal={deal} x={x} names={summary.sourceNames} />
-      ) : null}
       <div className={styles.columns}>
         <section className={styles.section} aria-labelledby="economics-heading">
           <div className={styles.sectionHead}>
@@ -611,6 +621,9 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
           </ul>
         </section>
       </div>
+      {deal && summary.kind === "purchase" ? (
+        <Deal roomId={roomId} e={summary.economics} deal={deal} x={x} names={summary.sourceNames} />
+      ) : null}
     </div>
   );
 }
