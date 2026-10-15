@@ -89,8 +89,15 @@ const GLYPHS: Record<PortalIconName, ReactElement> = {
   capacity: <path pathLength={1} d="M13.25 2.75 4.75 13.5h7l-1 7.75 8.5-10.75h-7z" />,
   factory: (
     <>
-      <path pathLength={1} d="M3.25 20.25V10.25l5 3.25v-3.25l5 3.25v-3.25l5 3.25V4.75h2.5v15.5z" />
-      <path pathLength={1} d="M7 17h2.5M11.75 17h2.5" />
+      <path
+        pathLength={1}
+        d="M10.5 5.75A6.25 6.25 0 0 0 7.01 6.82L5.42 5.5A8.25 8.25 0 0 0 4 6.92L5.32 8.51A6.25 6.25 0 0 0 4.36 10.81L2.31 10.99A8.25 8.25 0 0 0 2.31 13.01L4.36 13.19A6.25 6.25 0 0 0 5.32 15.49L4 17.08A8.25 8.25 0 0 0 5.42 18.5L7.01 17.18A6.25 6.25 0 0 0 10.5 18.25"
+      />
+      <path pathLength={1} d="M12.5 12H19M12.5 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0M21 12a1 1 0 1 1-2 0 1 1 0 0 1 2 0" />
+      <path
+        pathLength={1}
+        d="M10.5 5.75H13l2 2h.75M10.5 18.25H13l2-2h.75M17.75 7.75a1 1 0 1 1-2 0 1 1 0 0 1 2 0M17.75 16.25a1 1 0 1 1-2 0 1 1 0 0 1 2 0"
+      />
     </>
   ),
   truck: (
@@ -251,17 +258,17 @@ const GLYPHS: Record<PortalIconName, ReactElement> = {
     </>
   ),
   back: <path pathLength={1} d="M14.75 5.25 8 12l6.75 6.75" />,
+  panel: (
+    <>
+      <rect pathLength={1} x="3.75" y="4.75" width="16.5" height="14.5" rx="3" />
+      <path pathLength={1} d="M9.25 4.75v14.5" />
+    </>
+  ),
   site: (
     <>
       <circle pathLength={1} cx="12" cy="12" r="8.75" />
       <path pathLength={1} d="M3.25 12h17.5" />
       <path pathLength={1} d="M12 3.25c2.4 2.4 3.5 5.3 3.5 8.75s-1.1 6.35-3.5 8.75c-2.4-2.4-3.5-5.3-3.5-8.75S9.6 5.65 12 3.25z" />
-    </>
-  ),
-  panel: (
-    <>
-      <rect pathLength={1} x="3.75" y="4.75" width="16.5" height="14.5" rx="3" />
-      <path pathLength={1} d="M9.25 4.75v14.5" />
     </>
   ),
 };
