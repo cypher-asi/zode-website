@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PortalIcon } from "./icons";
 import { activeApp, portalApps, TAB_BAR_APPS, type NavAccess, type PortalApp } from "./nav";
-import { usePortalTheme } from "./PortalFrame";
+import { usePortalRail, usePortalTheme } from "./PortalFrame";
 import { PortalMoreSheet } from "./PortalMoreSheet";
 import styles from "./shell.module.css";
 
@@ -56,11 +56,32 @@ function ThemeToggle(): ReactElement {
   );
 }
 
+const RAIL_ID = "portal-rail";
+
+/** Widens the rail to show each app's name beside its icon, or narrows it back to icons. */
+function RailToggle(): ReactElement {
+  const { expanded, toggle } = usePortalRail();
+  const name = expanded ? "Collapse menu" : "Expand menu";
+  return (
+    <button
+      type="button"
+      className={styles.item}
+      aria-expanded={expanded}
+      aria-controls={RAIL_ID}
+      onClick={toggle}
+    >
+      <PortalIcon name="panel" className={styles.icon} />
+      <span className={styles.tooltip}>{name}</span>
+    </button>
+  );
+}
+
 /**
- * The portal's apps down a black bar in a frosted tray, with the theme toggle
- * and Settings in a tray of their own at the foot (the account sits in the
- * pinned header, right of Buy Compute); the sidebar beside it lists
- * whichever app you're in. On phones, a tab bar along the bottom: the first
+ * The portal's apps down a black bar in a frosted tray, with the rail's
+ * expand toggle, the theme toggle and Settings in a tray of their own at the
+ * foot (the account sits in the pinned header, right of Buy Compute); the
+ * sidebar beside it lists whichever app you're in. Expanded, the rail shows
+ * each app's name beside its icon. On phones, a tab bar along the bottom: the first
  * apps, then More for the rest, which takes the icon and name of the app
  * you're in when it's one of them.
  */
@@ -78,7 +99,7 @@ export function PortalNav({ access }: { access: NavAccess }): ReactElement {
   const inMore = extra.find(({ id }) => id === current.id);
 
   return (
-    <nav className={styles.rail} aria-label="Portal">
+    <nav id={RAIL_ID} className={styles.rail} aria-label="Portal">
       <div className={styles.tray}>
         <div className={styles.bar}>
           <div className={styles.group}>
@@ -113,6 +134,7 @@ export function PortalNav({ access }: { access: NavAccess }): ReactElement {
       <div className={styles.tray}>
         <div className={styles.bar}>
           <div className={styles.group}>
+            <RailToggle />
             <ThemeToggle />
             <RailItem app={settings} current={current.id === "settings"} />
           </div>

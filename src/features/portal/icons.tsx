@@ -35,6 +35,7 @@ export type PortalIconName =
   | "moon"
   | "more"
   | "back"
+  | "panel"
   | "site";
 
 /*
@@ -255,6 +256,12 @@ const GLYPHS: Record<PortalIconName, ReactElement> = {
       <circle pathLength={1} cx="12" cy="12" r="8.75" />
       <path pathLength={1} d="M3.25 12h17.5" />
       <path pathLength={1} d="M12 3.25c2.4 2.4 3.5 5.3 3.5 8.75s-1.1 6.35-3.5 8.75c-2.4-2.4-3.5-5.3-3.5-8.75S9.6 5.65 12 3.25z" />
+    </>
+  ),
+  panel: (
+    <>
+      <rect pathLength={1} x="3.75" y="4.75" width="16.5" height="14.5" rx="3" />
+      <path pathLength={1} d="M9.25 4.75v14.5" />
     </>
   ),
 };

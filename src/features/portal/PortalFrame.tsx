@@ -16,6 +16,8 @@ import {
 import { createPortal } from "react-dom";
 import { InlineScript } from "./InlineScript";
 import { SIDEBAR_MEDIA } from "./nav";
+import { PORTAL_RAIL_SCRIPT } from "./rail";
+import { togglePortalRail, usePortalRailCookie } from "./railStore";
 import styles from "./shell.module.css";
 import { PORTAL_THEME_SCRIPT, type PortalTheme } from "./theme";
 import { togglePortalTheme, usePortalThemeCookie } from "./themeStore";
@@ -67,6 +69,11 @@ const ThemeContext = createContext<{ theme: PortalTheme; toggle: () => void }>({
   toggle: () => {},
 });
 
+const RailContext = createContext<{ expanded: boolean; toggle: () => void }>({
+  expanded: false,
+  toggle: () => {},
+});
+
 const subscribeWide = (onChange: () => void) => {
   const query = window.matchMedia(SIDEBAR_MEDIA);
   query.addEventListener("change", onChange);
@@ -79,7 +86,8 @@ const subscribeWide = (onChange: () => void) => {
  * inside; the pinned header, mounted above it, follows the same cookie. The
  * server renders light; an inline script switches a hard load to dark before
  * it paints. The browser's theme colour (the status bar, in the installed
- * app) follows along.
+ * app) follows along. The rail's expanded or collapsed state rides on its own
+ * cookie and script the same way.
  */
 export function PortalFrame({ children }: { children: ReactNode }): ReactElement {
   const [dock, setDock] = useState<HTMLElement | null>(null);
@@ -87,6 +95,7 @@ export function PortalFrame({ children }: { children: ReactNode }): ReactElement
   const [dockFilled, claimDock] = useClaims();
   const [extraFilled, claimExtra] = useClaims();
   const theme = usePortalThemeCookie();
+  const rail = usePortalRailCookie();
   const wide = useSyncExternalStore(
     subscribeWide,
     () => window.matchMedia(SIDEBAR_MEDIA).matches,
@@ -106,6 +115,7 @@ export function PortalFrame({ children }: { children: ReactNode }): ReactElement
   }, [theme]);
 
   const themeValue = useMemo(() => ({ theme, toggle: togglePortalTheme }), [theme]);
+  const railValue = useMemo(() => ({ expanded: rail === "expanded", toggle: togglePortalRail }), [rail]);
   const sidebarValue = useMemo(
     () => ({
       wide,
@@ -122,12 +132,21 @@ export function PortalFrame({ children }: { children: ReactNode }): ReactElement
 
   return (
     <ThemeContext value={themeValue}>
-      <SidebarContext value={sidebarValue}>
-        <div ref={frameRef} className={styles.frame} data-theme={theme} suppressHydrationWarning>
-          <InlineScript html={PORTAL_THEME_SCRIPT} />
-          {children}
-        </div>
-      </SidebarContext>
+      <RailContext value={railValue}>
+        <SidebarContext value={sidebarValue}>
+          <div
+            ref={frameRef}
+            className={styles.frame}
+            data-theme={theme}
+            data-rail={rail}
+            suppressHydrationWarning
+          >
+            {/* One script: React's hydration can't match two sibling inline scripts. */}
+            <InlineScript html={`${PORTAL_THEME_SCRIPT};${PORTAL_RAIL_SCRIPT}`} />
+            {children}
+          </div>
+        </SidebarContext>
+      </RailContext>
     </ThemeContext>
   );
 }
@@ -135,6 +154,11 @@ export function PortalFrame({ children }: { children: ReactNode }): ReactElement
 /** The portal's current theme, and a toggle that flips it and remembers the choice. */
 export function usePortalTheme(): { theme: PortalTheme; toggle: () => void } {
   return use(ThemeContext);
+}
+
+/** Whether the rail shows its apps' names, and a toggle that flips it and remembers the choice. */
+export function usePortalRail(): { expanded: boolean; toggle: () => void } {
+  return use(RailContext);
 }
 
 /** The ref callback for the sidebar's dock slot. */

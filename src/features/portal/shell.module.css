@@ -12,13 +12,17 @@
  * `--portal-gap` above the bottom. Side by side, every panel (the two trays, the sidebar
  * and the panel) is `--panel-gap` from the next.
  *
- * `--sidebar-space` is zero under 1100px, where the sidebar is hidden. Under
- * 700px the portal lays out like an app instead; see the phone block below.
+ * `--sidebar-space` is zero under 1100px, where the sidebar is hidden. The
+ * rail can expand to show its apps' names, widening `--tray-width`; see the
+ * expanded block below. Under 700px the portal lays out like an app instead;
+ * see the phone block below.
  */
 .frame {
   --tray-pad: 6px;
   --tray-width: 64px;
   --rail-item: 40px;
+  /* Between the bar's edge and a collapsed rail's centred item, which an expanded rail's items keep. */
+  --rail-inset: 5px;
   --sidebar-width: 288px;
   --panel-gap: 12px;
   --sidebar-space: 0px;
@@ -317,7 +321,86 @@
   .frame {
     --tray-width: 60px;
     --rail-item: 38px;
+    --rail-inset: 4px;
     --header-bottom: calc(47px + env(safe-area-inset-top, 0px));
+  }
+}
+
+/*
+ * Expanded (`data-rail`, from RailToggle), the rail widens to show each
+ * app's name beside its icon, and the sidebar and panel, placed off
+ * `--tray-width`, move over with it. The icons keep their place: the group's
+ * `--rail-inset` plus the item's padding put them where the centred item did.
+ */
+@media (min-width: 701px) {
+  .rail {
+    transition: width var(--duration-base) var(--ease-out);
+  }
+
+  .panel {
+    transition: left var(--duration-base) var(--ease-out);
+  }
+
+  .frame[data-rail="expanded"] {
+    --tray-width: 188px;
+  }
+
+  .frame[data-rail="expanded"] .group {
+    align-items: stretch;
+    align-self: stretch;
+    padding: 0 var(--rail-inset);
+  }
+
+  .frame[data-rail="expanded"] .item:not(.more) {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 12px;
+    width: auto;
+    padding: 0 calc((var(--rail-item) - 24px) / 2);
+    overflow: hidden;
+  }
+
+  /* The tooltip, which holds each item's full name, sits beside the icon as its label. */
+  .frame[data-rail="expanded"] .item .tooltip {
+    position: static;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    padding: 0;
+    background: none;
+    color: inherit;
+    font-size: var(--text-sm);
+    text-align: left;
+    text-overflow: ellipsis;
+    box-shadow: none;
+    opacity: 1;
+    translate: none;
+    transition: none;
+  }
+
+  .frame[data-rail="expanded"] .divider {
+    align-self: stretch;
+    width: auto;
+    margin: 4px calc((var(--rail-item) - 24px) / 2);
+  }
+}
+
+@media (min-width: 701px) and (max-width: 900px) {
+  .frame[data-rail="expanded"] {
+    --tray-width: 176px;
+  }
+}
+
+@media (min-width: 701px) and (prefers-reduced-motion: no-preference) {
+  .frame[data-rail="expanded"] .item .tooltip {
+    animation: label-in var(--duration-base) ease;
+  }
+}
+
+@keyframes label-in {
+  from {
+    opacity: 0;
   }
 }
 
@@ -483,6 +566,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .rail,
+  .panel,
   .item,
   .tooltip {
     transition: none;
