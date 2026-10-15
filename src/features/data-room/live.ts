@@ -32,16 +32,16 @@ const store = globalThis as typeof globalThis & { [HUBS_KEY]?: Map<string, Hub> 
 const hubs = (store[HUBS_KEY] ??= new Map());
 
 /**
- * The database `db()` reads, unpooled: LISTEN needs a session of its own,
- * which Neon's pooler (PgBouncer in transaction mode) doesn't keep.
+ * The database `db()` reads, on its direct host: LISTEN needs a session of its
+ * own, which Neon's pooler (PgBouncer in transaction mode) doesn't keep. A
+ * Neon endpoint's direct host is its pooled one without `-pooler`.
  */
 function listenUrl(): string {
-  const url =
-    devDbTarget() === "prod"
-      ? process.env.DATABASE_URL_PROD
-      : (process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL);
+  const url = devDbTarget() === "prod" ? process.env.DATABASE_URL_PROD : process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL is not configured");
-  return url.replace("-pooler.", ".");
+  const parsed = new URL(url);
+  parsed.hostname = parsed.hostname.replace(/-pooler(?=\.)/, "");
+  return parsed.toString();
 }
 
 function hubFor(url: string): Hub {
