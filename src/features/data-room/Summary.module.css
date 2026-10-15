@@ -324,11 +324,35 @@
 }
 
 .detail {
-  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   max-width: 72ch;
   font-size: var(--text-sm);
   line-height: 1.55;
   color: var(--color-text-secondary);
+}
+
+.detail p {
+  margin: 0;
+}
+
+.detail ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: -4px 0 0;
+  padding-left: 1.1em;
+  list-style: disc;
+}
+
+.detail li::marker {
+  color: var(--color-text-tertiary);
+}
+
+.detail strong {
+  font-weight: 600;
+  color: var(--color-text-primary);
 }
 
 .sources {

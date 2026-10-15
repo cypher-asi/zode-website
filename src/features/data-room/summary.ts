@@ -36,6 +36,7 @@ export interface DiligenceSource {
 
 export interface DiligenceItem {
   headline: string;
+  /** Paragraphs separated by blank lines; lines starting with "- " form a list; `**bold**` marks lead-ins. */
   detail: string;
   status: DiligenceStatus;
   sources: DiligenceSource[];

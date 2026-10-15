@@ -13,6 +13,9 @@
  * - lease or colo: rent terms (USD base rent, escalation, NNN, operations fee,
  *   power rate and PUE), the capital contribution, critical IT MW and the FX rate.
  *
+ * Details and notes may use blank lines between paragraphs, "- " lines for a
+ * list and **bold** for a lead-in.
+ *
  * Sources are paths inside the room, such as "05 Power and Electrical/04 .../file.pdf";
  * each must name one live file, and is stored with that file's id so later
  * renames and moves keep the link.

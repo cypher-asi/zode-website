@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { Fragment, type ReactElement, type ReactNode } from "react";
 import Link from "next/link";
 import { pct, usdShort } from "@/features/compute-model/format";
 import { GPUS_PER_NODE, OPERATING_MONTHS } from "@/features/compute-model/model/inputs";
@@ -23,8 +23,8 @@ const native = (amount: number, currency: string) =>
 
 const irr = (n: number | null) => (n === null ? "n.a." : pct(n, 1));
 
-/** Diligence rows lead with what needs attention. */
-const SEVERITY: DiligenceStatus[] = ["risk", "gap", "claimed", "confirmed"];
+/** Diligence rows lead with what the room confirms. */
+const STATUS_ORDER: DiligenceStatus[] = ["confirmed", "claimed", "gap", "risk"];
 
 const STATUS_HINTS: Record<DiligenceStatus, string> = {
   confirmed: "Rests on records in the room",
@@ -52,6 +52,47 @@ function diligenceLede(statuses: DiligenceStatus[]): string {
   ]
     .filter(Boolean)
     .join(" ");
+}
+
+/** `**bold**` spans; everything else stays plain text. */
+function inline(text: string): ReactNode[] {
+  return text.split(/\*\*(.+?)\*\*/g).map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : part));
+}
+
+/**
+ * A summary's reasoning: blank lines separate paragraphs, and lines starting
+ * with "- " form a list, optionally under a lead-in line.
+ */
+function Prose({ text }: { text: string }) {
+  const blocks = text
+    .split(/\n\s*\n/)
+    .map((block) =>
+      block
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean),
+    )
+    .filter((lines) => lines.length);
+  return (
+    <div className={styles.detail}>
+      {blocks.map((lines, i) => {
+        const isItem = (line: string) => line.startsWith("- ");
+        const lead = isItem(lines[0]) ? null : lines[0];
+        const rest = lead === null ? lines : lines.slice(1);
+        if (!rest.length || !rest.every(isItem)) return <p key={i}>{inline(lines.join(" "))}</p>;
+        return (
+          <Fragment key={i}>
+            {lead === null ? null : <p>{inline(lead)}</p>}
+            <ul>
+              {rest.map((line, j) => (
+                <li key={j}>{inline(line.slice(2))}</li>
+              ))}
+            </ul>
+          </Fragment>
+        );
+      })}
+    </div>
+  );
 }
 
 function Sources({ roomId, sources, names }: { roomId: string; sources: DiligenceSource[]; names: Map<string, string> }) {
@@ -143,7 +184,7 @@ function upfront(summary: Summary): { usd: number | null; estimate: boolean } {
 
 /**
  * The deal at a glance: a line and four numbers from the standard compute
- * model, then the diligence answers, worst first. Every figure's reasoning,
+ * model, then the diligence answers, confirmed first. Every figure's reasoning,
  * the model's assumptions and each answer's sources sit behind a disclosure.
  */
 export function SummaryView({ roomId, summary }: { roomId: string; summary: Summary }): ReactElement {
@@ -207,7 +248,7 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
   const items = DILIGENCE_FIELDS.flatMap(({ key, label }) => {
     const item = summary.diligence[key];
     return item ? [{ key, label, item }] : [];
-  }).sort((a, b) => SEVERITY.indexOf(a.item.status) - SEVERITY.indexOf(b.item.status));
+  }).sort((a, b) => STATUS_ORDER.indexOf(a.item.status) - STATUS_ORDER.indexOf(b.item.status));
 
   return (
     <div className={styles.summary}>
@@ -249,7 +290,7 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
                     </span>
                     <span className={styles.figureValue}>{f.value}</span>
                   </div>
-                  <p className={styles.detail}>{f.detail}</p>
+                  <Prose text={f.detail} />
                   {f.sources?.length ? (
                     <Sources roomId={roomId} sources={f.sources} names={summary.sourceNames} />
                   ) : null}
@@ -281,7 +322,7 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
                   </summary>
                   <div className={styles.rowBody}>
                     <p className={styles.headline}>{item.headline}</p>
-                    <p className={styles.detail}>{item.detail}</p>
+                    <Prose text={item.detail} />
                     <Sources roomId={roomId} sources={item.sources} names={summary.sourceNames} />
                   </div>
                 </details>
