@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { TeamDashboard } from "@/features/team-dashboard/TeamDashboard";
 import { loadMyHome, orLogIn } from "./mine";
 import { Empty, OrderList, RoomList, Section, ToolList } from "./sections";
 import styles from "./portal.module.css";
@@ -9,11 +9,13 @@ const RECENT = 3;
 
 /**
  * Home's Mine tab, under the greeting its layout holds. On `/portal` the ZODE
- * team are sent on to the Team tab; `/portal/mine` keeps them here.
+ * team get the Team tab instead; `/portal/mine` keeps them here. It's shown in
+ * place rather than redirected to, since a prerendered component that throws
+ * trips React's dev performance track ("cannot have a negative time stamp").
  */
 export async function MyHome({ path }: { path: "/portal" | "/portal/mine" }): Promise<ReactElement> {
-  const { team, rooms, orders, contracts } = orLogIn(await loadMyHome(), path);
-  if (team && path === "/portal") redirect("/portal/team");
+  const { account, team, rooms, orders, contracts } = orLogIn(await loadMyHome(), path);
+  if (team && path === "/portal") return <TeamDashboard account={account} />;
   const files = rooms?.reduce((sum, room) => sum + room.fileCount, 0);
   const figure = (value: number | undefined) => (value === undefined ? "—" : value.toLocaleString("en-US"));
 

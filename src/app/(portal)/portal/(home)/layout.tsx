@@ -41,6 +41,7 @@ async function HomeHeader(): Promise<ReactElement | null> {
         },
         {
           href: "/portal/team",
+          aliases: team ? ["/portal"] : undefined,
           label: "Team",
           title: "Team dashboard",
           subtitle: "ZODE's capacity, pipeline, contracts and audience, tracked daily.",

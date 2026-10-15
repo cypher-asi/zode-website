@@ -11,6 +11,8 @@ export interface HeaderTab extends PortalTab {
   subtitle?: ReactNode;
   /** Ahead of the header's own actions while this tab is open. */
   actions?: ReactNode;
+  /** Other paths that show this tab's page, e.g. an app's root. */
+  aliases?: readonly string[];
 }
 
 /**
@@ -32,7 +34,9 @@ export function TabbedPageHeader({
   actions?: ReactNode;
 }): ReactElement {
   const pathname = usePathname();
-  const [active, select] = useTabNavigation(tabs.find((tab) => tab.href === pathname)?.href);
+  const [active, select] = useTabNavigation(
+    tabs.find((tab) => tab.href === pathname || tab.aliases?.includes(pathname))?.href,
+  );
   const tab = tabs.find(({ href }) => href === active) ?? tabs[0];
   // The title only eases in on a switch, not as the page first paints.
   const [switched, setSwitched] = useState(false);
