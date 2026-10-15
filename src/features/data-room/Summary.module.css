@@ -129,6 +129,41 @@
   color: var(--color-text-primary);
 }
 
+.siteAddress {
+  color: inherit;
+  text-decoration-color: var(--color-border-strong);
+  text-underline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .siteAddress:hover {
+    text-decoration-color: currentColor;
+  }
+}
+
+/* The satellite preview, cropped to a strip on wide summaries. */
+.siteMap {
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-inset);
+  background: var(--color-surface-tint);
+}
+
+.siteMap img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 640 / 280;
+  object-fit: cover;
+}
+
+@container summary (min-width: 820px) {
+  .siteMap img {
+    aspect-ratio: 16 / 5;
+  }
+}
+
 .keyFigures {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

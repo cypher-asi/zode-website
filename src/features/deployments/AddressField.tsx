@@ -31,12 +31,14 @@ interface AddressFieldProps {
   address: string | null;
   city: string | null;
   placeId: string | null;
+  label?: string;
 }
 
 /**
  * The data center address, picked from Google's suggestions, and its city,
  * which fills in from the picked place. Typing over a picked address clears
- * the city; without the Places key the address is typed by hand.
+ * the city; without the Places key, or for accounts outside the ZODE team,
+ * the address is typed by hand.
  */
 export function AddressField(props: AddressFieldProps): ReactElement {
   const id = useId();
@@ -73,7 +75,7 @@ export function AddressField(props: AddressFieldProps): ReactElement {
           `/api/places?q=${encodeURIComponent(query)}&session=${encodeURIComponent(session.current)}`,
           { signal: controller.signal },
         );
-        if (res.status === 503) setUnavailable(true);
+        if (res.status === 503 || res.status === 404) setUnavailable(true);
         else if (res.ok) setResults((await res.json()) as PlaceSuggestion[]);
       } catch {
         // Aborted by the next keystroke, or offline; the last suggestions stay.
@@ -171,7 +173,7 @@ export function AddressField(props: AddressFieldProps): ReactElement {
     <div className={styles.addressRow} data-wide="">
       <div className={ui.field}>
         <label htmlFor={`${id}-address`} className={ui.label}>
-          Data center address
+          {props.label ?? "Data center address"}
         </label>
         <input
           ref={fieldRef}

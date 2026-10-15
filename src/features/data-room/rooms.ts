@@ -12,6 +12,7 @@ import {
   type RoomKind,
   type RoomMember,
   type RoomRole,
+  type RoomSite,
   type RoomSummary,
   type RoomTree,
 } from "./types";
@@ -142,6 +143,29 @@ export async function setRoomKind(roomId: string, from: RoomKind, to: RoomKind):
     sql`update data_rooms set kind = ${to} where id = ${roomId}`,
     ...(leaseEconomics(from) === leaseEconomics(to) ? [] : [sql`delete from data_room_summaries where room_id = ${roomId}`]),
   ]);
+}
+
+export const toRoomSite = (row: Record<string, unknown>): RoomSite | null =>
+  row.address == null
+    ? null
+    : {
+        address: String(row.address),
+        city: row.city == null ? null : String(row.city),
+        placeId: row.place_id == null ? null : String(row.place_id),
+      };
+
+export async function getRoomSite(roomId: string): Promise<RoomSite | null> {
+  const [row] = await db()`select address, city, place_id from data_rooms where id = ${roomId}`;
+  return row ? toRoomSite(row) : null;
+}
+
+/** `null` clears the address. */
+export async function setRoomSite(roomId: string, site: RoomSite | null): Promise<void> {
+  await db()`
+    update data_rooms
+    set address = ${site?.address ?? null}, city = ${site?.city ?? null}, place_id = ${site?.placeId ?? null}
+    where id = ${roomId}
+  `;
 }
 
 export async function deleteRoom(roomId: string): Promise<void> {

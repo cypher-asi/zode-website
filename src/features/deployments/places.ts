@@ -23,6 +23,39 @@ interface AddressComponent {
 
 const apiKey = (): string | undefined => process.env.GOOGLE_MAPS_API_KEY || undefined;
 
+export const mapsConfigured = (): boolean => Boolean(apiKey());
+
+/** Large enough for a full-width summary strip; `scale: 2` doubles it for sharp screens. */
+export const STATIC_MAP = { width: 640, height: 280 };
+
+/**
+ * A satellite map with road labels around `address`, pinned, from the Maps
+ * Static API; null when unconfigured or Google won't draw it.
+ */
+export async function staticMap(address: string): Promise<{ body: ArrayBuffer; contentType: string } | null> {
+  const key = apiKey();
+  if (!key) return null;
+  const params = new URLSearchParams({
+    center: address,
+    zoom: "17",
+    size: `${STATIC_MAP.width}x${STATIC_MAP.height}`,
+    scale: "2",
+    maptype: "hybrid",
+    markers: address,
+    key,
+  });
+  const res = await fetch(`https://maps.googleapis.com/maps/api/staticmap?${params}`, {
+    cache: "no-store",
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  const contentType = res.headers.get("content-type") ?? "";
+  if (!res.ok || !contentType.startsWith("image/")) {
+    console.error(`[places] static map answered ${res.status}: ${(await res.text()).slice(0, 300)}`);
+    return null;
+  }
+  return { body: await res.arrayBuffer(), contentType };
+}
+
 const NO_STORE = { "Cache-Control": "private, no-store" };
 
 export const placesJson = (body: unknown, status = 200): Response => Response.json(body, { status, headers: NO_STORE });

@@ -34,6 +34,11 @@ function describe(event: AuditEvent): { subject: string; detail: string } {
       return { subject: String(d.to ?? ""), detail: `Was “${String(d.from ?? "")}”` };
     case "room_kind_change":
       return { subject: kindName(d.to), detail: `Was ${kindName(d.from)}` };
+    case "room_address_change":
+      return {
+        subject: typeof d.to === "string" ? d.to : "Removed",
+        detail: typeof d.from === "string" ? `Was “${d.from}”` : "",
+      };
     case "invite":
       return { subject: String(d.email ?? ""), detail: `As ${roleName(d.role)}${d.requiresMnda ? ", MNDA required" : ""}` };
     case "mnda_sign":

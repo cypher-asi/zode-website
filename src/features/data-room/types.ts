@@ -23,6 +23,20 @@ export const roomKindLabel = (kind: RoomKind): string => ROOM_KINDS.find((k) => 
 /** A purchase's summary holds purchase economics; a lease's and a colo's hold lease economics. */
 export const leaseEconomics = (kind: RoomKind): boolean => kind !== "purchase";
 
+/** Where the site is; `city` and `placeId` are null when the address was typed rather than picked. */
+export interface RoomSite {
+  address: string;
+  city: string | null;
+  placeId: string | null;
+}
+
+/** The site in Google Maps: the picked place when there is one, else a search for the address. */
+export function googleMapsHref(site: RoomSite): string {
+  const params = new URLSearchParams({ api: "1", query: site.address });
+  if (site.placeId) params.set("query_place_id", site.placeId);
+  return `https://www.google.com/maps/search/?${params}`;
+}
+
 export interface RoomSummary {
   id: string;
   name: string;
@@ -88,6 +102,7 @@ export type AuditAction =
   | "room_create"
   | "room_rename"
   | "room_kind_change"
+  | "room_address_change"
   | "invite"
   | "invite_resend"
   | "invite_revoke"
@@ -107,6 +122,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   room_create: "Created room",
   room_rename: "Renamed room",
   room_kind_change: "Changed type",
+  room_address_change: "Changed address",
   invite: "Invited",
   invite_resend: "Resent invite",
   invite_revoke: "Revoked invite",

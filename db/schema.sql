@@ -114,6 +114,12 @@ alter table data_rooms add column if not exists kind text not null default 'purc
 alter table data_rooms drop constraint if exists data_rooms_kind_check;
 alter table data_rooms add constraint data_rooms_kind_check check (kind in ('purchase', 'lease', 'colo'));
 
+-- The site's address, which the summary links to Google Maps and previews as a
+-- map. city and place_id come from the Google place it was picked from, when it was.
+alter table data_rooms add column if not exists address text;
+alter table data_rooms add column if not exists city text;
+alter table data_rooms add column if not exists place_id text;
+
 -- One row per invited email. A row grants access only once its invite link has
 -- been accepted by a signed-in ZOS account with that email, which binds user_id.
 create table if not exists data_room_members (

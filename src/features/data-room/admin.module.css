@@ -168,6 +168,17 @@
   gap: 10px;
 }
 
+.addressForm {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.addressForm > :first-child {
+  align-self: stretch;
+}
+
 .dangerZone {
   display: flex;
   align-items: center;

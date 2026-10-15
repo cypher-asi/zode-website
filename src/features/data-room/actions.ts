@@ -10,7 +10,8 @@ import { createMnda, hasSignedMnda, signFailure, type ExecutedMnda } from "@/fea
 import { parseMnda } from "@/features/mnda/parse";
 import { db } from "@/lib/db";
 import { RATE_LIMITED, withinLimits } from "@/lib/rateLimit";
-import { isEmail } from "@/lib/validation";
+import { isPlaceId } from "@/features/deployments/types";
+import { isEmail, singleLine } from "@/lib/validation";
 import { recordEvent, recordEvents } from "./audit";
 import { blobInfo, deleteBlobs, deleteRoomBlobs, roomBlobPrefix } from "./blob";
 import {
@@ -32,15 +33,19 @@ import {
   folderExists,
   folderSubtree,
   getMember,
+  getRoomSite,
   isUuid,
   normalizeEmail,
   renameRoom,
   roomAccess,
   roomUsage,
   setRoomKind,
+  setRoomSite,
   type RoomAccess,
 } from "./rooms";
 import { ROLES, isRoomKind, roomKindLabel, type ActionState, type RoomKind, type RoomRole } from "./types";
+
+const MAX_ADDRESS_LENGTH = 500;
 
 const NO_ACCESS: ActionState = { error: "You don't have permission to do that. Try reloading the page." };
 
@@ -117,6 +122,34 @@ export async function changeRoomKindAction(roomId: string, kind: RoomKind): Prom
   await recordEvent({ roomId, account: access.account, action: "room_kind_change", detail: { from: access.room.kind, to: kind } });
   refresh();
   return { ok: `Room type changed to ${roomKindLabel(kind)}.` };
+}
+
+/** Saves the site address from the address field, or clears it when the field is empty. */
+export async function setRoomAddressAction(roomId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
+  const access = await roomAccess(roomId, "admin");
+  if (!access) return NO_ACCESS;
+  const field = (key: string) => {
+    const value = formData.get(key);
+    return typeof value === "string" ? singleLine(value) : "";
+  };
+  const address = field("address");
+  if (address.length > MAX_ADDRESS_LENGTH) return { error: "That address is too long." };
+  const placeId = address ? field("place_id") : "";
+  if (placeId && !isPlaceId(placeId)) return { error: "Pick the address from the list again." };
+  const city = placeId ? field("city") : "";
+  if (city.length > MAX_NAME_LENGTH) return { error: "That city is too long." };
+
+  const before = await getRoomSite(roomId);
+  if ((before?.address ?? "") === address && (before?.placeId ?? "") === placeId) return {};
+  await setRoomSite(roomId, address ? { address, city: city || null, placeId: placeId || null } : null);
+  await recordEvent({
+    roomId,
+    account: access.account,
+    action: "room_address_change",
+    detail: { from: before?.address ?? null, to: address || null },
+  });
+  refresh();
+  return { ok: address ? "Address saved." : "Address removed." };
 }
 
 export async function deleteRoomAction(roomId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {

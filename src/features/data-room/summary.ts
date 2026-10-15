@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { nextMonthStart, runModel, type ModelResult, type StartDate } from "@/features/compute-model/model/engine";
 import { DEFAULT_INPUTS, type ModelInputs } from "@/features/compute-model/model/inputs";
 import { writeInputParams } from "@/features/compute-model/model/url";
+import { toRoomSite } from "./rooms";
+import type { RoomSite } from "./types";
 
 /** The diligence questions every room's summary answers, in display order. */
 export const DILIGENCE_FIELDS = [
@@ -200,14 +202,15 @@ export async function hasDiligenceSummary(roomId: string): Promise<boolean> {
 
 /**
  * The room's summary, or null before diligence is written. `sourceNames` maps
- * each cited file that is still live to its current name.
+ * each cited file that is still live to its current name; `site` is the room's
+ * address, when it has one.
  */
 export async function getDiligenceSummary(
   roomId: string,
-): Promise<(DiligenceSummary & { sourceNames: Map<string, string> }) | null> {
+): Promise<(DiligenceSummary & { sourceNames: Map<string, string>; site: RoomSite | null }) | null> {
   const sql = db();
   const [row] = await sql`
-    select s.diligence, s.economics, s.updated_at, s.updated_by_email, r.kind
+    select s.diligence, s.economics, s.updated_at, s.updated_by_email, r.kind, r.address, r.city, r.place_id
     from data_room_summaries s
     join data_rooms r on r.id = s.room_id
     where s.room_id = ${roomId}
@@ -230,7 +233,11 @@ export async function getDiligenceSummary(
         where room_id = ${roomId} and deleted_at is null and id = any(${[...new Set(ids)]}::uuid[])
       `
     : [];
-  return { ...summary, sourceNames: new Map(files.map((f) => [String(f.id), String(f.name)])) };
+  return {
+    ...summary,
+    sourceNames: new Map(files.map((f) => [String(f.id), String(f.name)])),
+    site: toRoomSite(row),
+  };
 }
 
 export interface SummaryEconomics {

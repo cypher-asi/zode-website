@@ -2,9 +2,10 @@
 
 import { useActionState, useOptimistic, useState, useTransition, type ReactElement } from "react";
 import { Select } from "@/components/ui/Select";
-import { changeRoomKindAction, deleteRoomAction, renameRoomAction } from "./actions";
+import { AddressField } from "@/features/deployments/AddressField";
+import { changeRoomKindAction, deleteRoomAction, renameRoomAction, setRoomAddressAction } from "./actions";
 import { Dialog, type DialogProps } from "./Dialog";
-import { ROOM_KINDS, leaseEconomics, roomKindLabel, type ActionState, type RoomKind } from "./types";
+import { ROOM_KINDS, leaseEconomics, roomKindLabel, type ActionState, type RoomKind, type RoomSite } from "./types";
 import styles from "./admin.module.css";
 import ui from "./ui.module.css";
 
@@ -16,10 +17,12 @@ interface RoomSettingsPanelProps {
   roomKind: RoomKind;
   /** The room has a diligence summary, whose economics a change to or from a purchase discards. */
   hasSummary: boolean;
+  site: RoomSite | null;
 }
 
-export function RoomSettingsPanel({ roomId, roomName, roomKind, hasSummary }: RoomSettingsPanelProps): ReactElement {
+export function RoomSettingsPanel({ roomId, roomName, roomKind, hasSummary, site }: RoomSettingsPanelProps): ReactElement {
   const [renameState, rename, renaming] = useActionState(renameRoomAction.bind(null, roomId), {});
+  const [addressState, saveAddress, savingAddress] = useActionState(setRoomAddressAction.bind(null, roomId), {});
   const [kindState, setKindState] = useState<ActionState>({});
   const [kind, setKind] = useOptimistic(roomKind);
   const [pending, startTransition] = useTransition();
@@ -82,6 +85,20 @@ export function RoomSettingsPanel({ roomId, roomName, roomKind, hasSummary }: Ro
         </div>
         {kindState.error ? <p className={ui.error}>{kindState.error}</p> : null}
         {kindState.ok ? <p className={ui.ok}>{kindState.ok}</p> : null}
+
+        <form action={saveAddress} className={styles.addressForm}>
+          <AddressField
+            label="Site address"
+            address={site?.address ?? null}
+            city={site?.city ?? null}
+            placeId={site?.placeId ?? null}
+          />
+          <button type="submit" className={ui.button} disabled={savingAddress}>
+            {savingAddress ? "Saving…" : "Save"}
+          </button>
+        </form>
+        {addressState.error ? <p className={ui.error}>{addressState.error}</p> : null}
+        {addressState.ok ? <p className={ui.ok}>{addressState.ok}</p> : null}
 
         <div className={styles.dangerZone}>
           <div>

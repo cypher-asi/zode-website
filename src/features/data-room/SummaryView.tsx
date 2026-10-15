@@ -1,7 +1,9 @@
+import { createHash } from "node:crypto";
 import { Fragment, type ReactElement, type ReactNode } from "react";
 import Link from "next/link";
 import { multiple, pct, usdShort } from "@/features/compute-model/format";
 import { GPUS_PER_NODE, OPERATING_MONTHS } from "@/features/compute-model/model/inputs";
+import { STATIC_MAP, mapsConfigured } from "@/features/deployments/places";
 import {
   DILIGENCE_FIELDS,
   STATUS_LABELS,
@@ -17,10 +19,13 @@ import {
   type PurchaseEconomics,
   type SummaryEconomics,
 } from "./summary";
+import { CapitalStack, type CapitalSource } from "./CapitalStack";
 import { Icon } from "./icons";
+import { SiteMap } from "./SiteMap";
+import { googleMapsHref, type RoomSite } from "./types";
 import styles from "./Summary.module.css";
 
-type Summary = DiligenceSummary & { sourceNames: Map<string, string> };
+type Summary = DiligenceSummary & { sourceNames: Map<string, string>; site: RoomSite | null };
 
 /** "CAD 31.5M"; USD keeps its dollar sign. */
 const native = (amount: number, currency: string) =>
@@ -213,6 +218,26 @@ const contractTerm = (months: number) =>
 /** A source's share of the capital stack. */
 const share = (amount: number, total: number) => (total > 0 ? `${pct(amount / total, 0)} of capital` : "");
 
+/** Every source of capital that enters a deal, equity first; the site loan splits into what it lends against. */
+function capitalStack(x: SummaryEconomics): CapitalSource[] {
+  const r = x.result;
+  const i = x.inputs;
+  const mortgage = i.sitePurchase * i.siteLtv;
+  const siteTerms = `${pct(i.siteRate, 2)}, ${i.siteAmortizationYears}-yr amortization`;
+  return [
+    { key: "equity", label: "Preferred equity", amount: r.prefEquity, cost: `${pct(i.prefReturn, 1)} preferred return` },
+    { key: "projectDebt", label: "Project debt", amount: r.siteLoan - mortgage, cost: `On conversion, ${siteTerms}` },
+    { key: "mortgage", label: "Mortgage", amount: mortgage, cost: `On the purchase price, ${siteTerms}` },
+    {
+      key: "prepayment",
+      label: "Customer prepayment",
+      amount: r.prepayment,
+      cost: `${pct(i.prepaymentShare, 0)} of contract value`,
+    },
+    { key: "gpu", label: "GPU financing", amount: r.loan, cost: `${pct(i.interestRate, 2)} over ${i.loanMonths} months` },
+  ];
+}
+
 /** The headline terms of an acquisition, its financing and what each source of capital funds, from the same model run as Economics. */
 function Deal({
   roomId,
@@ -242,16 +267,7 @@ function Deal({
   const nativeNote = (money: Money) =>
     money.amount !== null && money.currency !== "USD" ? native(money.amount, money.currency) : undefined;
 
-  const capital = [
-    { label: "Equity capital", amount: r.prefEquity, cost: `${pct(i.prefReturn, 1)} preferred return` },
-    { label: "Conversion debt", amount: r.siteLoan, cost: `${pct(i.siteRate, 2)}, ${i.siteAmortizationYears}-yr amortization` },
-    {
-      label: "Customer prepayment",
-      amount: r.prepayment,
-      cost: `${pct(i.prepaymentShare, 0)} of contract value`,
-    },
-    { label: "GPU debt", amount: r.loan, cost: `${pct(i.interestRate, 2)} over ${i.loanMonths} months` },
-  ];
+  const capital = capitalStack(x);
   const totalCapital = capital.reduce((total, c) => total + c.amount, 0);
   const months = x.paybackDate === null ? null : Math.round((x.paybackDate - closing) / (DAY * 30.4375));
 
@@ -474,6 +490,39 @@ function Deal({
   );
 }
 
+/** Where the site is, linked to Google Maps, over a satellite preview when Maps is set up. */
+function Site({ roomId, site }: { roomId: string; site: RoomSite }) {
+  const href = googleMapsHref(site);
+  // Browsers keep the map for a day, so a new address needs a new URL.
+  const version = createHash("sha256").update(`${site.address}\n${site.placeId ?? ""}`).digest("hex").slice(0, 12);
+  return (
+    <section className={styles.section} aria-labelledby="site-heading">
+      <div className={styles.sectionHead}>
+        <h2 id="site-heading" className={styles.heading}>
+          Site
+        </h2>
+        <a href={href} target="_blank" rel="noopener noreferrer" className={styles.modelLink}>
+          Google Maps
+        </a>
+      </div>
+      <p className={styles.lede}>
+        <a href={href} target="_blank" rel="noopener noreferrer" className={styles.siteAddress}>
+          {site.address}
+        </a>
+      </p>
+      {mapsConfigured() ? (
+        <SiteMap
+          src={`/api/data-rooms/${roomId}/map?v=${version}`}
+          href={href}
+          alt={`Satellite map of ${site.address}`}
+          width={STATIC_MAP.width}
+          height={STATIC_MAP.height}
+        />
+      ) : null}
+    </section>
+  );
+}
+
 /**
  * The deal at a glance: a line and four numbers from the standard compute
  * model, or eight summarizing the deal terms when the room has them, beside the
@@ -572,6 +621,7 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
 
   return (
     <div className={styles.summary}>
+      {summary.site ? <Site roomId={roomId} site={summary.site} /> : null}
       <div className={styles.columns}>
         <section className={styles.section} aria-labelledby="economics-heading">
           <div className={styles.sectionHead}>
@@ -594,6 +644,7 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
               </li>
             ))}
           </ul>
+          {deal ? <CapitalStack sources={capitalStack(x)} /> : null}
           <details className={styles.more}>
             <summary className={styles.moreHead}>
               Figures and assumptions
