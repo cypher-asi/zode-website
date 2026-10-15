@@ -1,35 +1,20 @@
 import type { Metadata } from "next";
 import { Suspense, type ReactElement } from "react";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { isZodeAdmin } from "@/features/account/admin";
 import { requireAccount } from "@/features/account/session";
 import { loadUsers } from "@/features/portal/data";
 import { PortalLoading } from "@/features/portal/PortalLoading";
 import { Empty, PageHeader, UserList } from "@/features/portal/sections";
-import { listPendingTeamInvites, type PendingTeamInvite } from "@/features/team/invites";
-import { PendingTeamInvites } from "@/features/team/TeamList";
 import { InviteUserButton } from "@/features/users/InviteUserButton";
-import {
-  ROLE_LABELS,
-  ROLE_SLUGS,
-  USER_ROLES,
-  roleForSlug,
-  type InviteRole,
-  type UserRole,
-} from "@/features/users/types";
-import tabs from "@/features/data-room/room.module.css";
+import { ROLE_LABELS, ROLE_SLUGS, roleForSlug, type UserRole } from "@/features/users/types";
+import { UsersTabs } from "@/features/users/UsersTabs";
 import styles from "@/features/portal/portal.module.css";
 
 export const metadata: Metadata = {
   title: "Users | ZODE",
   robots: { index: false, follow: false },
 };
-
-const TABS: readonly { id: UserRole | "all"; label: string; href: string }[] = [
-  { id: "all", label: "All", href: "/portal/users" },
-  ...USER_ROLES.map((role) => ({ id: role, label: ROLE_LABELS[role], href: `/portal/users/${ROLE_SLUGS[role]}` })),
-];
 
 const SUBTITLES: Record<UserRole | "all", string> = {
   all: "Everyone who has signed in, by ZODE user id. New accounts start as Regular.",
@@ -62,10 +47,7 @@ async function Users({ params }: { params: PageProps<"/portal/users/[[...role]]"
 
   const account = await requireAccount(role ? `/portal/users/${ROLE_SLUGS[role]}` : "/portal/users");
   if (!(await isZodeAdmin(account))) notFound();
-  const [users, invites] = await Promise.all([
-    loadUsers(),
-    role === "super_admin" ? Promise.resolve<PendingTeamInvite[]>([]) : loadInvites(role ?? undefined),
-  ]);
+  const users = await loadUsers();
   const shown = users && role ? users.filter((user) => user.role === role) : users;
 
   return (
@@ -73,20 +55,7 @@ async function Users({ params }: { params: PageProps<"/portal/users/[[...role]]"
       <PageHeader
         title={role ? ROLE_LABELS[role] : "Users"}
         subtitle={SUBTITLES[role ?? "all"]}
-        tabs={
-          <nav className={tabs.tabs} aria-label="User types">
-            {TABS.map((tab) => (
-              <Link
-                key={tab.id}
-                href={tab.href}
-                className={tabs.tab}
-                aria-current={(role ?? "all") === tab.id ? "page" : undefined}
-              >
-                {tab.label}
-              </Link>
-            ))}
-          </nav>
-        }
+        tabs={<UsersTabs current={role ?? "all"} />}
         actions={<InviteUserButton defaultRole={role === "team" ? "team" : "member"} />}
       />
       <section className={styles.section} aria-label={role ? ROLE_LABELS[role] : "Users"}>
@@ -98,24 +67,6 @@ async function Users({ params }: { params: PageProps<"/portal/users/[[...role]]"
           <Empty>{EMPTY[role ?? "all"]}</Empty>
         )}
       </section>
-      {invites?.length ? (
-        <section className={styles.section} aria-labelledby="users-invites">
-          <div className={styles.sectionHead}>
-            <h2 id="users-invites" className={styles.sectionTitle}>
-              Pending invites
-            </h2>
-          </div>
-          <PendingTeamInvites invites={invites} />
-        </section>
-      ) : null}
     </div>
   );
-}
-
-/** Invites not yet accepted, for one role or all; `null` hides the section when they couldn't be loaded. */
-function loadInvites(role: InviteRole | undefined): Promise<PendingTeamInvite[] | null> {
-  return listPendingTeamInvites(role).catch((error: unknown) => {
-    console.error("[users] couldn't load invites", error);
-    return null;
-  });
 }

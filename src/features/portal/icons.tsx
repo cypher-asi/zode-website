@@ -27,6 +27,7 @@ export type PortalIconName =
   | "shield"
   | "settings"
   | "person"
+  | "invite"
   | "cluster"
   | "recurring"
   | "chart"
@@ -203,6 +204,13 @@ const GLYPHS: Record<PortalIconName, ReactElement> = {
     <>
       <circle pathLength={1} cx="12" cy="8.5" r="3.75" />
       <path pathLength={1} d="M5.5 20a6.5 6 0 0 1 13 0" />
+    </>
+  ),
+  invite: (
+    <>
+      <circle pathLength={1} cx="10" cy="8.5" r="3.75" />
+      <path pathLength={1} d="M3.5 20a6.5 6 0 0 1 11.5-3.85" />
+      <path pathLength={1} d="M19 14.25v5.5M16.25 17h5.5" />
     </>
   ),
   cluster: (

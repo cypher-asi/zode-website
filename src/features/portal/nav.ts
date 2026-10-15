@@ -217,6 +217,7 @@ const ADMIN_APPS: readonly PortalApp[] = [
       ...USER_ROLES.map(
         (role): NavLink => ({ href: `/portal/users/${ROLE_SLUGS[role]}`, label: ROLE_LABELS[role], icon: ROLE_ICONS[role] }),
       ),
+      { href: "/portal/users/invites", label: "Invites", icon: "invite" },
     ],
   },
 ];
