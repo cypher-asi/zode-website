@@ -32,14 +32,16 @@
  * prices conversion per MW of critical IT instead of as a total.
  *
  * A lease or colo may add a `deal`, its drafted or signed terms, which the
- * summary shows as its Lease terms section. Amounts are USD; phase power is the
- * running total once each phase is delivered, and the capital schedule sums to
- * the capital contribution:
+ * summary shows as its Lease terms section and capital stack. Amounts are USD;
+ * phase power is the running total once each phase is delivered, the model
+ * ships a tranche of nodes as each one is ready, and the capital schedule sums
+ * to the capital contribution. Security marked `cash` is a deposit ZODE's
+ * equity funds; letters of credit and guaranties stay off the capital stack:
  *
  *   "deal": {
  *     "status": "Draft sublease, Oct 9, 2026", "termYears": 15, "renewals": { "count": 3, "years": 5 },
  *     "phases": [{ "name": "Phase 1", "grossMw": 5, "itMw": 3.8, "targetDate": "2027-01-31", "prepaidRent": 5884615 }],
- *     "security": [{ "label": "Escrow deposit", "amount": 9000000, "note": "..." }],
+ *     "security": [{ "label": "Escrow deposit", "amount": 9000000, "cash": true, "note": "..." }],
  *     "capitalSchedule": [{ "amount": 7750000, "trigger": "Permit approval" }],
  *     "prepaidCreditMonths": 18, "operationsTermYears": 7, "pueCap": 1.3,
  *     "otherTerms": [{ "label": "Early termination", "value": "Remaining base rent", "note": "..." }],
@@ -249,6 +251,8 @@ if (leaseDeal) {
   list(d.security, `${where}.security`).forEach((s, i) => {
     text(s.label, `${where}.security[${i}].label`);
     number(s.amount, `${where}.security[${i}].amount`, true);
+    if (s.cash !== undefined) flag(s.cash, `${where}.security[${i}].cash`);
+    if (s.cash && s.amount === null) problems.push(`${where}.security[${i}]: a cash deposit needs an amount`);
     text(s.note, `${where}.security[${i}].note`);
   });
   const schedule = list(d.capitalSchedule, `${where}.capitalSchedule`);

@@ -307,6 +307,79 @@ function capitalStack(x: SummaryEconomics): CapitalSource[] {
   ];
 }
 
+/**
+ * A lease's capital, with no facility debt: equity pays the deposits, the rest
+ * of the non-recurring charges and what the IT equipment needs beyond its GPU
+ * financing and customer prepayment. Letters of credit and guaranties are
+ * secured by others and stay off it.
+ */
+function leaseCapitalStack(x: SummaryEconomics, deal: LeaseDeal): CapitalSource[] {
+  const r = x.result;
+  const i = x.inputs;
+  const charges = r.siteCost + r.prepaidRent;
+  const deposits = Math.min(x.deposits, charges);
+  const posted = deal.security.filter((s) => s.cash).map((s) => s.label.toLowerCase());
+  return [
+    {
+      key: "deposits",
+      label: "Deposits",
+      amount: deposits,
+      cost: `Equity: ${posted.join(" and ") || "cash deposits"} at signing, drawn first against the charges`,
+    },
+    {
+      key: "charges",
+      label: "Non-recurring charges",
+      amount: charges - deposits,
+      cost: "Equity: capital contribution and prepaid rent, less deposits",
+    },
+    { key: "itEquity", label: "IT equipment equity", amount: Math.max(0, r.prefEquity - charges), cost: `Equity: ${prefTerms(i)}` },
+    {
+      key: "prepayment",
+      label: "Customer prepayment",
+      amount: r.prepayment,
+      cost: `${pct(i.prepaymentShare, 0)} of contract value`,
+    },
+    { key: "gpu", label: "GPU financing", amount: r.loan, cost: `${pct(i.interestRate, 2)} over ${i.loanMonths} months` },
+  ];
+}
+
+/** Each source of capital with its share, then what preferred and common take out; payback counts from `from`. */
+function capitalTerms(x: SummaryEconomics, capital: CapitalSource[], from: { at: number; label: string }): Term[] {
+  const r = x.result;
+  const q = x.equity;
+  const total = capital.reduce((sum, c) => sum + c.amount, 0);
+  const months = q.prefPayback === null ? null : Math.round((q.prefPayback - from.at) / (DAY * 30.4375));
+  return [
+    ...capital.map((c) => ({
+      label: c.label,
+      value: usdShort(c.amount),
+      note: [share(c.amount, total), c.cost].filter(Boolean).join(" · "),
+    })),
+    { label: "Preferred IRR", value: irr(q.prefIrr), note: prefTerms(x.inputs) },
+    {
+      label: "Preferred multiple",
+      value: q.prefMultiple === null ? "n.a." : multiple(q.prefMultiple),
+      note: `${usdShort(q.prefIn)} paid in ${span(q.prefInFrom, q.prefInTo)}, ${usdShort(q.prefOut)} back`,
+    },
+    {
+      label: "Preferred payback",
+      value: q.prefPayback === null ? "Not reached" : monthYear(q.prefPayback),
+      note: [
+        months === null ? "" : `Capital back ${months} months from ${from.label}`,
+        q.prefPaid === null ? "" : `paid in full ${monthYear(q.prefPaid)}`,
+      ]
+        .filter(Boolean)
+        .join(", "),
+    },
+    {
+      label: "Common distributions",
+      value: usdShort(q.commonOut),
+      note: ["No capital in", span(q.commonFrom, q.commonTo)].filter(Boolean).join(", "),
+    },
+    { label: "Project IRR", value: irr(r.projectIrr), note: "Before GPU debt" },
+  ];
+}
+
 /** The headline terms of an acquisition, its financing and what each source of capital funds, from the same model run as Economics. */
 function Deal({
   roomId,
@@ -335,11 +408,6 @@ function Deal({
   const closing = utcDate(deal.closingDate);
   const nativeNote = (money: Money) =>
     money.amount !== null && money.currency !== "USD" ? native(money.amount, money.currency) : undefined;
-
-  const capital = capitalStack(x);
-  const totalCapital = capital.reduce((total, c) => total + c.amount, 0);
-  const q = x.equity;
-  const months = q.prefPayback === null ? null : Math.round((q.prefPayback - closing) / (DAY * 30.4375));
 
   const groups: { title: string; terms: Term[] }[] = [
     {
@@ -452,38 +520,7 @@ function Deal({
         },
       ],
     },
-    {
-      title: "Capital stack and IRR",
-      terms: [
-        ...capital.map((c) => ({
-          label: c.label,
-          value: usdShort(c.amount),
-          note: [share(c.amount, totalCapital), c.cost].filter(Boolean).join(" · "),
-        })),
-        { label: "Preferred IRR", value: irr(q.prefIrr), note: prefTerms(i) },
-        {
-          label: "Preferred multiple",
-          value: q.prefMultiple === null ? "n.a." : multiple(q.prefMultiple),
-          note: `${usdShort(q.prefIn)} paid in ${span(q.prefInFrom, q.prefInTo)}, ${usdShort(q.prefOut)} back`,
-        },
-        {
-          label: "Preferred payback",
-          value: q.prefPayback === null ? "Not reached" : monthYear(q.prefPayback),
-          note: [
-            months === null ? "" : `Capital back ${months} months from closing`,
-            q.prefPaid === null ? "" : `paid in full ${monthYear(q.prefPaid)}`,
-          ]
-            .filter(Boolean)
-            .join(", "),
-        },
-        {
-          label: "Common distributions",
-          value: usdShort(q.commonOut),
-          note: ["No capital in", span(q.commonFrom, q.commonTo)].filter(Boolean).join(", "),
-        },
-        { label: "Project IRR", value: irr(r.projectIrr), note: "Before GPU debt" },
-      ],
-    },
+    { title: "Capital stack and IRR", terms: capitalTerms(x, capitalStack(x), { at: closing, label: "closing" }) },
   ];
 
   const notes: Figure[] = [
@@ -597,11 +634,13 @@ function LeaseTermsSection({
   roomId,
   e,
   deal,
+  x,
   names,
 }: {
   roomId: string;
   e: LeaseEconomics;
   deal: LeaseDeal;
+  x: SummaryEconomics;
   names: Map<string, string>;
 }) {
   const { rent } = e;
@@ -613,6 +652,27 @@ function LeaseTermsSection({
   const fullKw = (full?.itMw ?? 0) * 1000;
   const fullRent = rent.baseLease * fullKw;
   const fullRecurring = (rent.baseLease + rent.operations + rent.nnn) * fullKw;
+
+  // Equity called before Phase 1 ships, then while each phase is the latest to ship.
+  const { dates, prefContributions } = x.result.monthly;
+  const ships = (x.phasing?.tranches ?? []).map((t) => t.shipMonth);
+  const called = (from: number, to: number) => prefContributions.slice(from, to).reduce((total, v) => total + v, 0);
+  const calls: Term[] = ships.length
+    ? [
+        {
+          label: `Before ${deal.phases[0].name}`,
+          value: usdShort(called(0, ships[0])),
+          note: `From ${monthYear(dates[0])}: the capital contribution, legal costs and cash reserve`,
+        },
+        ...ships.map((ship, k) => ({
+          label: `${deal.phases[k].name}, ${monthYear(dates[ship])}`,
+          value: usdShort(called(ship, ships[k + 1] ?? dates.length)),
+          note: `Prepaid rent and ${plural(x.phasing!.tranches[k].nodes, "node", "nodes")} beyond their financing and prepayment${
+            k === ships.length - 1 ? ", with later top-ups" : ""
+          }`,
+        })),
+      ]
+    : [];
 
   const groups: { title: string; terms: Term[] }[] = [
     {
@@ -730,6 +790,15 @@ function LeaseTermsSection({
         },
       ],
     },
+    {
+      title: "Capital stack and IRR",
+      terms: capitalTerms(
+        x,
+        leaseCapitalStack(x, deal).filter((c) => c.amount > 0),
+        { at: dates[0], label: "the first call" },
+      ),
+    },
+    ...(calls.length ? [{ title: "Equity by phase", terms: calls }] : []),
     { title: "Exit and remedies", terms: deal.otherTerms },
   ];
 
@@ -756,13 +825,14 @@ function LeaseTermsSection({
 }
 
 /** With lease terms, Economics summarizes the Lease terms section below it. */
-function leaseKeyFigures(cluster: KeyFigure[], year1Revenue: number, e: LeaseEconomics, deal: LeaseDeal): KeyFigure[] {
+function leaseKeyFigures(cluster: KeyFigure[], x: SummaryEconomics, e: LeaseEconomics, deal: LeaseDeal): KeyFigure[] {
+  const r = x.result;
   const capital = toUsd(e.capitalContribution, e.fx);
   const deposit = deal.security.find((s) => s.amount !== null);
   const first = deal.phases[0];
   return [
     ...cluster,
-    { label: "Revenue, year 1", value: usdShort(year1Revenue) },
+    { label: "Revenue, year 1", value: usdShort(r.year1Revenue) },
     { label: "Base rent", value: perKwMonth(e.rent.baseLease) },
     { label: "All-in price per kWh", value: perKwh(allInPerKwh(e.rent)), estimate: e.rent.estimate },
     {
@@ -772,6 +842,12 @@ function leaseKeyFigures(cluster: KeyFigure[], year1Revenue: number, e: LeaseEco
     },
     ...(deposit?.amount != null ? [{ label: deposit.label, value: usdShort(deposit.amount) }] : []),
     ...(first ? [{ label: `${first.name} target`, value: monthYear(utcDate(first.targetDate)) }] : []),
+    {
+      label: "Total project cost",
+      value: usdShort(r.siteCost + r.prepaidRent + r.totalCapex),
+      estimate: e.capitalContribution.estimate,
+    },
+    { label: "Equity capital", value: usdShort(r.prefEquity), estimate: e.rent.estimate },
   ];
 }
 
@@ -864,7 +940,13 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
   const site =
     summary.kind !== "purchase"
       ? `${summary.kind === "colo" ? "Colo space" : "Site leased"}: base rent at $${i.baseLease} per kW-month escalating ${pct(i.leaseEscalation, 1)} a year, ` +
-        `NNN and operations at $${i.nnn + i.operations} per kW-month, the capital contribution funded by equity and not recovered.`
+        `NNN and operations at $${i.nnn + i.operations} per kW-month, the capital contribution funded by equity and not recovered` +
+        (x.phasing && lease?.deal
+          ? `; the cluster ships in ${plural(x.phasing.tranches.length, "tranche", "tranches")} as each phase is ready for service, ` +
+            `each paying its prepaid rent then, credited back over ${plural(lease.deal.prepaidCreditMonths, "month", "months")}, ` +
+            `with the forecast starting ${monthYear(r.monthly.dates[0])} when ${lease.deal.phases[0].name}'s nodes are ordered. ` +
+            `There's no facility debt; cash deposits are drawn first against the charges, and letters of credit and guaranties, secured by others, stay off the capital stack.`
+          : ".")
       : deal
         ? `Site owned: bought and converted from closing on ${longDate(utcDate(deal.closingDate))}, the cluster shipping after ${plural(deal.conversionMonths, "month", "months")} of conversion; ` +
           `${pct(i.siteLtv, 0)} of purchase and conversion on a bank loan at ${pct(i.siteRate, 2)} over ${i.siteAmortizationYears} years with a ${pct(i.siteLoanFee, 1)} fee, ` +
@@ -894,7 +976,7 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
         { label: "Equity capital", value: usdShort(r.prefEquity), estimate: deal.financing.estimate },
       ]
     : lease?.deal
-      ? leaseKeyFigures(cluster, r.year1Revenue, lease, lease.deal)
+      ? leaseKeyFigures(cluster, x, lease, lease.deal)
       : [
         ...cluster,
         { label: "Revenue, year 1", value: usdShort(r.year1Revenue) },
@@ -953,7 +1035,11 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
           </div>
           <p className={styles.lede}>{economicsLede}</p>
           <KeyFigures figures={keyFigures} />
-          {deal ? <CapitalStack sources={capitalStack(x)} payouts={payouts(x)} /> : null}
+          {deal ? (
+            <CapitalStack sources={capitalStack(x)} payouts={payouts(x)} />
+          ) : lease?.deal ? (
+            <CapitalStack sources={leaseCapitalStack(x, lease.deal)} payouts={payouts(x)} />
+          ) : null}
           <details className={styles.more}>
             <summary className={styles.moreHead}>
               Figures and assumptions
@@ -1025,7 +1111,9 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
       {deal && summary.kind === "purchase" ? (
         <Deal roomId={roomId} e={summary.economics} deal={deal} x={x} names={summary.sourceNames} />
       ) : null}
-      {lease?.deal ? <LeaseTermsSection roomId={roomId} e={lease} deal={lease.deal} names={summary.sourceNames} /> : null}
+      {lease?.deal ? (
+        <LeaseTermsSection roomId={roomId} e={lease} deal={lease.deal} x={x} names={summary.sourceNames} />
+      ) : null}
     </div>
   );
 }

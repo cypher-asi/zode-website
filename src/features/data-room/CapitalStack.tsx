@@ -5,7 +5,7 @@ import { pct, usdShort } from "@/features/compute-model/format";
 import styles from "./CapitalStack.module.css";
 
 export interface CapitalSource {
-  key: "equity" | "projectDebt" | "mortgage" | "prepayment" | "gpu";
+  key: "equity" | "deposits" | "charges" | "itEquity" | "projectDebt" | "mortgage" | "prepayment" | "gpu";
   label: string;
   amount: number;
   /** What the source costs, in a few words. */

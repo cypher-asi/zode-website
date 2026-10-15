@@ -1,6 +1,12 @@
 import "server-only";
 import { db } from "@/lib/db";
-import { nextMonthStart, runModel, type ModelResult, type StartDate } from "@/features/compute-model/model/engine";
+import {
+  nextMonthStart,
+  runModel,
+  type ModelResult,
+  type Phasing,
+  type StartDate,
+} from "@/features/compute-model/model/engine";
 import { DEFAULT_INPUTS, type ModelInputs } from "@/features/compute-model/model/inputs";
 import { writeInputParams } from "@/features/compute-model/model/url";
 import { toRoomSite } from "./rooms";
@@ -178,6 +184,12 @@ export interface LeaseSecurity {
   label: string;
   /** USD; null when the lease leaves it open. */
   amount: number | null;
+  /**
+   * A cash deposit ZODE posts at signing, which equity funds and the landlord
+   * draws first against the non-recurring charges. A letter of credit or
+   * guaranty is secured by others and stays off the capital stack.
+   */
+  cash?: boolean;
   note: string;
 }
 
@@ -325,6 +337,10 @@ export interface SummaryEconomics {
   siteLoanPayment: number;
   /** Cash held from closing to exit against the site loan; 0 without a deal. */
   capitalReserve: number;
+  /** A phased lease's cluster, shipped a tranche per phase; absent when it ships at once. */
+  phasing?: Phasing;
+  /** A lease's cash deposits, drawn first against its non-recurring charges; 0 without any. */
+  deposits: number;
   equity: EquityReturns;
   /** The same case, open in the compute model. */
   modelHref: string;
@@ -338,7 +354,7 @@ export interface SummaryEconomics {
  */
 export interface EquityReturns {
   prefIn: number;
-  /** First and last contribution before revenue starts; later ones are small top-ups. */
+  /** First and last contribution before the last tranche's revenue starts; later ones are small top-ups. */
   prefInFrom: number | null;
   prefInTo: number | null;
   prefOut: number;
@@ -354,7 +370,7 @@ export interface EquityReturns {
   commonTo: number | null;
 }
 
-function equityReturns(result: ModelResult): EquityReturns {
+function equityReturns(result: ModelResult, lastShip: number): EquityReturns {
   const { dates, prefContributions, prefDistributions, commonDistributions } = result.monthly;
   const at = (m: number) => (m < 0 ? null : dates[m]);
   const paid = (values: readonly number[], m: number) => values[m] > 0.5;
@@ -373,7 +389,7 @@ function equityReturns(result: ModelResult): EquityReturns {
   return {
     prefIn: result.prefEquity,
     prefInFrom: at(first(prefContributions)),
-    prefInTo: at(last(prefContributions, result.firstOperatingMonth + 1)),
+    prefInTo: at(last(prefContributions, lastShip + 2)),
     prefOut,
     prefMultiple: result.prefMoic,
     prefIrr: result.prefIrr,
@@ -413,12 +429,16 @@ const levelPayment = (loan: number, rate: number, years: number) => {
  * critical IT power carries. A purchase pays its price and conversion upfront
  * with no base lease; a lease or colo pays its rent terms and capital
  * contribution. A purchase with deal terms starts at closing, ships when
- * conversion ends and takes its site loan and capital reserve. Every other
- * input keeps the model's default.
+ * conversion ends and takes its site loan and capital reserve. A lease with
+ * phases starts when Phase 1's nodes are ordered and ships a tranche as each
+ * phase is ready for service, paying its prepaid rent then. Every other input
+ * keeps the model's default.
  */
 export function summaryEconomics(summary: DiligenceSummary, at?: StartDate): SummaryEconomics {
   const it = criticalIt(summary);
-  const nodes = Math.max(0, Math.floor((it.value * 1000) / DEFAULT_INPUTS.kwPerNode));
+  const nodesFor = (mw: number) => Math.max(0, Math.floor((mw * 1000) / DEFAULT_INPUTS.kwPerNode));
+  const phases = summary.kind !== "purchase" ? (summary.economics.deal?.phases ?? []) : [];
+  const nodes = nodesFor(phases.length ? phases[phases.length - 1].itMw : it.value);
   // Upfront site spend is charged per MW of the cluster's IT load, so spread the site's total over it.
   const clusterMw = (nodes * DEFAULT_INPUTS.kwPerNode) / 1000;
   const perMw = (usd: number | null) => (clusterMw > 0 ? Math.round((usd ?? 0) / clusterMw) : 0);
@@ -427,8 +447,28 @@ export function summaryEconomics(summary: DiligenceSummary, at?: StartDate): Sum
   let start = at ?? nextMonthStart();
   let siteLoanPayment = 0;
   let capitalReserve = 0;
+  let phasing: Phasing | undefined;
+  let deposits = 0;
   if (summary.kind !== "purchase") {
-    const { rent, capitalContribution, fx } = summary.economics;
+    const { rent, capitalContribution, fx, deal } = summary.economics;
+    deposits = (deal?.security ?? []).reduce((total, s) => total + (s.cash ? (s.amount ?? 0) : 0), 0);
+    if (deal && phases.length) {
+      const [year, month] = phases[0].targetDate.split("-").map(Number);
+      const order = new Date(Date.UTC(year, month - 1 - DEFAULT_INPUTS.leadMonths, 1));
+      start = at ?? { year: order.getUTCFullYear(), month: order.getUTCMonth(), day: 1 };
+      const monthOf = (date: string) => {
+        const [y, m] = date.split("-").map(Number);
+        return (y - start.year) * 12 + (m - 1 - start.month);
+      };
+      phasing = {
+        tranches: phases.map((p, k) => ({
+          nodes: nodesFor(p.itMw) - (k > 0 ? nodesFor(phases[k - 1].itMw) : 0),
+          shipMonth: monthOf(p.targetDate),
+          prepaidRent: p.prepaidRent,
+        })),
+        prepaidCreditMonths: deal.prepaidCreditMonths,
+      };
+    }
     inputs = {
       ...DEFAULT_INPUTS,
       nodes,
@@ -440,6 +480,7 @@ export function summaryEconomics(summary: DiligenceSummary, at?: StartDate): Sum
       electricityRate: rent.electricityRate,
       pue: rent.pue,
       leaseContributionPerMw: perMw(toUsd(capitalContribution, fx)),
+      shipMonth: phasing?.tranches[0].shipMonth ?? DEFAULT_INPUTS.shipMonth,
     };
   } else {
     const e = summary.economics;
@@ -475,7 +516,7 @@ export function summaryEconomics(summary: DiligenceSummary, at?: StartDate): Sum
     }
   }
 
-  const result = runModel(inputs, start);
+  const result = runModel(inputs, start, phasing);
   const params = new URLSearchParams();
   writeInputParams(inputs, params);
   return {
@@ -487,7 +528,9 @@ export function summaryEconomics(summary: DiligenceSummary, at?: StartDate): Sum
     start,
     siteLoanPayment,
     capitalReserve,
-    equity: equityReturns(result),
+    phasing,
+    deposits,
+    equity: equityReturns(result, phasing?.tranches.at(-1)?.shipMonth ?? inputs.shipMonth),
     modelHref: `/compute-model?${params}`,
   };
 }

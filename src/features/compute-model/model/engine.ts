@@ -1,9 +1,9 @@
 /**
  * The ZODE GPU SPV model, ported from ZODE_GPU_SPV_Model.xlsm for one
- * deployment. Months run 0 to LAST_MONTH like the workbook's columns, and
- * each stage follows its sheet: Deployments and Facility Costs, the GPU
- * Financing loan sizing, debt schedule and reserve, then the Equity
- * waterfall and the Summary rollups.
+ * deployment, or several shipped in tranches. Months run 0 to LAST_MONTH like
+ * the workbook's columns, and each stage follows its sheet: Deployments and
+ * Facility Costs, the GPU Financing loan sizing, debt schedule and reserve,
+ * then the Equity waterfall and the Summary rollups.
  */
 import {
   CONTRACT_CURVE,
@@ -40,6 +40,26 @@ export interface MonthlySeries {
   electricity: number[];
 }
 
+/** One shipment of the cluster, ordered `leadMonths` before its ship month and operating from the month after. */
+export interface Tranche {
+  nodes: number;
+  shipMonth: number;
+  /** Base rent paid upfront in the ship month, as a phased lease asks once a phase is ready for service. */
+  prepaidRent: number;
+}
+
+/**
+ * A cluster that ships in tranches, as a phased lease delivers its space. Each
+ * tranche is a deployment with its own contract, customer prepayment, share of
+ * the GPU loan and six years of operation; the site, cash reserve and equity
+ * are shared. The inputs' `nodes` and `shipMonth` give way to the tranches'.
+ */
+export interface Phasing {
+  tranches: Tranche[];
+  /** Each tranche's prepaid rent comes back in equal parts over this many months of operation. */
+  prepaidCreditMonths: number;
+}
+
 export interface Period {
   label: string;
   /** First and one-past-last month index. */
@@ -69,6 +89,8 @@ export interface ModelResult {
   year1Electricity: number;
   /** Purchase price, closing costs and conversion; a leased site's capital contribution. */
   siteCost: number;
+  /** A phased lease's rent paid upfront, credited back over the months after each tranche ships. */
+  prepaidRent: number;
   siteLoan: number;
   /** Site cost and financing fees not covered by the bank loan. */
   siteEquity: number;
@@ -111,10 +133,8 @@ export interface ModelResult {
   checks: Check[];
 }
 
-const MONTHS = LAST_MONTH + 1;
 const HOURS = 24;
 
-const zeros = () => new Array<number>(MONTHS).fill(0);
 const sum = (values: readonly number[], from = 0, to = values.length) => {
   let total = 0;
   for (let i = from; i < to; i++) total += values[i];
@@ -132,25 +152,30 @@ export function nextMonthStart(now = new Date()): StartDate {
   return { year: d.getUTCFullYear(), month: d.getUTCMonth(), day: 1 };
 }
 
-export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
+export function runModel(inputs: ModelInputs, start: StartDate, phasing?: Phasing): ModelResult {
   const i = inputs;
-  const ship = i.shipMonth;
-  const order = ship - i.leadMonths;
+  const tranches: Tranche[] = phasing?.tranches.length
+    ? [...phasing.tranches].sort((a, b) => a.shipMonth - b.shipMonth)
+    : [{ nodes: i.nodes, shipMonth: i.shipMonth, prepaidRent: 0 }];
+  const creditMonths = Math.max(1, phasing?.prepaidCreditMonths ?? 1);
+  const firstShip = tranches[0].shipMonth;
+  const lastShip = tranches[tranches.length - 1].shipMonth;
+  // The workbook's 85 months, or longer so the last tranche still runs its six years.
+  const last = Math.max(LAST_MONTH, lastShip + OPERATING_MONTHS);
+  const months = last + 1;
+  const zeros = () => new Array<number>(months).fill(0);
   const term = i.contractMonths;
   const loanTerm = i.loanMonths;
   const io = i.interestOnlyMonths;
   const sale = i.forcedSaleMonth;
-  const firstOp = ship + 1;
-  const lastContract = ship + term;
+  const firstOp = firstShip + 1;
+  const lastContract = lastShip + term;
 
   const nodePlusIt = i.nodeCost * (1 + i.itShare);
-  const equipCost = i.nodes * nodePlusIt;
   const useTax = i.purchaseTax * (1 - i.taxExempt);
-  const itMw = (i.nodes * i.kwPerNode) / 1000;
-  const itKw = itMw * 1000;
-  const gpus = i.nodes * GPUS_PER_NODE;
-  const depreciable =
-    (equipCost * (1 + i.spareShare) * (1 + useTax + i.importTax) + i.setupCost) * (1 - i.bookResidual);
+  const nodes = sum(tranches.map((t) => t.nodes));
+  const itMw = (nodes * i.kwPerNode) / 1000;
+  const gpus = nodes * GPUS_PER_NODE;
   // Facility: a leased site pays rent and any capital contribution; a purchased one pays its price,
   // closing and conversion at the forecast start
   const purchased = i.siteMode === 1;
@@ -165,128 +190,208 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
   // Calendar
   const dates = zeros();
   const days = zeros();
-  for (let m = 0; m < MONTHS; m++) {
+  for (let m = 0; m < months; m++) {
     const y = start.year;
     const mo = start.month + m;
     const dim = daysInMonth(y, mo);
     days[m] = dim;
     dates[m] = Date.UTC(y, mo, Math.min(start.day, dim));
   }
-
-  // Deployment flags
-  const age = zeros().map((_, m) => m - ship);
-  const acq = age.map((a) => (a === 0 ? 1 : 0));
-  const forced = age.map((a) => (sale > 0 && a >= sale ? 1 : 0));
-  const recovery = age.map((a) => (sale > 0 && a === sale + i.recoveryDelay ? 1 : 0));
-  const ending = age.map((a, m) => (a === OPERATING_MONTHS && forced[m] === 0 ? 1 : 0));
-  const op = age.map((a) => (a > 0 && a <= OPERATING_MONTHS && (sale === 0 || a < sale) ? 1 : 0));
-  const contract = age.map((a) => (a > 0 && a <= term ? 1 : 0));
   const escalation = (rate: number, a: number) => (1 + rate) ** Math.max(0, roundUp(a / 12) - 1);
 
-  // Deployments: revenue
-  const scheduled = zeros();
-  const merchantUtil = zeros();
-  const netRevenue = zeros();
-  const contractedRevenue = zeros();
-  for (let m = 0; m < MONTHS; m++) {
-    const a = age[m];
-    const gpuHours = gpus * days[m] * HOURS;
-    const rate = CONTRACT_CURVE[clampIndex(roundUp(a / 12), CONTRACT_CURVE.length)] * i.contractPrice * contract[m];
-    scheduled[m] = gpuHours * i.contractedShare * rate;
+  /** Deployments and Facility Costs for one tranche: its flags, revenue, costs, capex and assets by month. */
+  const deploy = (t: Tranche) => {
+    const ship = t.shipMonth;
+    const order = ship - i.leadMonths;
+    const equipCost = t.nodes * nodePlusIt;
+    const itKw = t.nodes * i.kwPerNode;
+    const trancheGpus = t.nodes * GPUS_PER_NODE;
+    const depreciable =
+      (equipCost * (1 + i.spareShare) * (1 + useTax + i.importTax) + i.setupCost) * (1 - i.bookResidual);
 
-    const year = clampIndex(roundUp((a - term) / 12), 5);
-    const price = i.merchantPrices[year] * i.merchantPriceFactor * op[m];
-    const ramp = a === 1 ? i.rampMonth1 : a === 2 ? i.rampMonth2 : 1;
-    merchantUtil[m] = Math.min(1, i.merchantUtilization[year] * i.utilizationFactor * ramp) * op[m];
+    // Deployment flags
+    const age = zeros().map((_, m) => m - ship);
+    const acq = age.map((a) => (a === 0 ? 1 : 0));
+    const forced = age.map((a) => (sale > 0 && a >= sale ? 1 : 0));
+    const recovery = age.map((a) => (sale > 0 && a === sale + i.recoveryDelay ? 1 : 0));
+    const ending = age.map((a, m) => (a === OPERATING_MONTHS && forced[m] === 0 ? 1 : 0));
+    const op = age.map((a) => (a > 0 && a <= OPERATING_MONTHS && (sale === 0 || a < sale) ? 1 : 0));
+    const contract = age.map((a) => (a > 0 && a <= term ? 1 : 0));
 
-    contractedRevenue[m] = scheduled[m] * op[m];
-    const merchant = gpuHours * (1 - i.contractedShare * contract[m]) * price * merchantUtil[m];
-    const gross = contractedRevenue[m] + merchant;
-    netRevenue[m] = gross - gross * i.slaCredits - merchant * (1 - i.slaCredits) * i.marketplaceFee;
-  }
-  const contractValue = sum(scheduled);
-  const totalPrepayment = contractValue * i.prepaymentShare;
+    // Revenue
+    const scheduled = zeros();
+    const merchantUtil = zeros();
+    const netRevenue = zeros();
+    const contractedRevenue = zeros();
+    for (let m = 0; m < months; m++) {
+      const a = age[m];
+      const gpuHours = trancheGpus * days[m] * HOURS;
+      const rate = CONTRACT_CURVE[clampIndex(roundUp(a / 12), CONTRACT_CURVE.length)] * i.contractPrice * contract[m];
+      scheduled[m] = gpuHours * i.contractedShare * rate;
 
-  // Deployments and Facility Costs: costs, capex, assets
-  const leaseCost = zeros();
-  const electricity = zeros();
-  const opex = zeros();
-  const ebitda = zeros();
-  const depreciation = zeros();
-  const collections = zeros();
-  const prepayment = zeros();
-  const capex = zeros();
-  const equipment = zeros();
-  const spares = zeros();
-  const netBookValue = zeros();
-  const gain = zeros();
-  const writeOff = zeros();
-  const refund = zeros();
-  const disposalProceeds = zeros();
-  const incomeBefore = zeros();
+      const year = clampIndex(roundUp((a - term) / 12), 5);
+      const price = i.merchantPrices[year] * i.merchantPriceFactor * op[m];
+      const ramp = a === 1 ? i.rampMonth1 : a === 2 ? i.rampMonth2 : 1;
+      merchantUtil[m] = Math.min(1, i.merchantUtilization[year] * i.utilizationFactor * ramp) * op[m];
 
-  let receivables = 0;
-  let nbv = 0;
-  let unearned = 0;
-  for (let m = 0; m < MONTHS; m++) {
-    const a = age[m];
-    const fixed = escalation(i.fixedEscalation, a) * op[m];
+      contractedRevenue[m] = scheduled[m] * op[m];
+      const merchant = gpuHours * (1 - i.contractedShare * contract[m]) * price * merchantUtil[m];
+      const gross = contractedRevenue[m] + merchant;
+      netRevenue[m] = gross - gross * i.slaCredits - merchant * (1 - i.slaCredits) * i.marketplaceFee;
+    }
+    const contractValue = sum(scheduled);
+    const totalPrepayment = contractValue * i.prepaymentShare;
 
-    const rent = purchased ? 0 : i.baseLease * escalation(i.leaseEscalation, a) * op[m];
-    const lease = itKw * (rent + (i.nnn + i.operations) * fixed);
-    const share = i.contractedShare * contract[m];
-    const load = i.idleLoad + (1 - i.idleLoad) * (share + (1 - share) * merchantUtil[m]);
-    const kwh = itKw * i.pue * days[m] * HOURS * load * op[m];
-    const power = kwh * i.electricityRate * escalation(i.electricityEscalation, a);
-    const insurance = (equipCost * i.insuranceRate) / 12;
-    const support = (equipCost * i.supportRate) / 12;
-    const perDeployment = i.internet + i.remoteHands + i.software + i.overhead + i.otherInsurance / 12;
-    const beforeContingency = lease + power + (insurance + support + perDeployment) * fixed;
-    leaseCost[m] = lease;
-    electricity[m] = power;
-    opex[m] = beforeContingency * (1 + i.contingency) + netRevenue[m] * i.managementFee;
-    ebitda[m] = netRevenue[m] - opex[m];
+    // Costs, capex, assets
+    const leaseCost = zeros();
+    const electricity = zeros();
+    const opex = zeros();
+    const ebitda = zeros();
+    const depreciation = zeros();
+    const collections = zeros();
+    const prepayment = zeros();
+    const capex = zeros();
+    const equipment = zeros();
+    const spares = zeros();
+    const netBookValue = zeros();
+    const gain = zeros();
+    const writeOff = zeros();
+    const refund = zeros();
+    const disposalProceeds = zeros();
+    const incomeBefore = zeros();
+    const rentPrepaid = zeros();
+    const rentCredit = zeros();
 
-    depreciation[m] = a > 0 && a <= i.depreciationMonths ? (depreciable / i.depreciationMonths) * op[m] : 0;
+    let receivables = 0;
+    let nbv = 0;
+    let unearned = 0;
+    for (let m = 0; m < months; m++) {
+      const a = age[m];
+      const fixed = escalation(i.fixedEscalation, a) * op[m];
 
-    const prepayCredit = contractedRevenue[m] * i.prepaymentShare;
-    const closingReceivables = Math.max(0, netRevenue[m] - prepayCredit) * Math.min(1, i.receivableDays / days[m]);
-    collections[m] = forced[m] ? 0 : netRevenue[m] - prepayCredit - (closingReceivables - receivables);
-    const saleStarts = forced[m] === 1 && (m === 0 || forced[m - 1] === 0);
-    writeOff[m] = saleStarts && m > 0 ? receivables : 0;
-    refund[m] = saleStarts && m > 0 ? unearned : 0;
-    receivables = closingReceivables;
+      const rent = purchased ? 0 : i.baseLease * escalation(i.leaseEscalation, a) * op[m];
+      const lease = itKw * (rent + (i.nnn + i.operations) * fixed);
+      const share = i.contractedShare * contract[m];
+      const load = i.idleLoad + (1 - i.idleLoad) * (share + (1 - share) * merchantUtil[m]);
+      const kwh = itKw * i.pue * days[m] * HOURS * load * op[m];
+      const power = kwh * i.electricityRate * escalation(i.electricityEscalation, a);
+      const insurance = (equipCost * i.insuranceRate) / 12;
+      const support = (equipCost * i.supportRate) / 12;
+      const perDeployment = i.internet + i.remoteHands + i.software + i.overhead + i.otherInsurance / 12;
+      const beforeContingency = lease + power + (insurance + support + perDeployment) * fixed;
+      leaseCost[m] = lease;
+      electricity[m] = power;
+      opex[m] = beforeContingency * (1 + i.contingency) + netRevenue[m] * i.managementFee;
+      ebitda[m] = netRevenue[m] - opex[m];
+      // Rent is expensed as it accrues; the prepaid part is paid at shipment and its credits lower the rent paid after.
+      rentPrepaid[m] = t.prepaidRent * acq[m];
+      rentCredit[m] = a > 0 && a <= creditMonths ? t.prepaidRent / creditMonths : 0;
 
-    prepayment[m] = m === order ? totalPrepayment : 0;
-    unearned = unearned + prepayment[m] - prepayCredit - refund[m];
+      depreciation[m] = a > 0 && a <= i.depreciationMonths ? (depreciable / i.depreciationMonths) * op[m] : 0;
 
-    equipment[m] = equipCost * acq[m];
-    spares[m] = equipment[m] * i.spareShare;
-    const importTax = equipment[m] * (1 + i.spareShare) * i.importTax;
-    const purchaseTax = equipment[m] * (1 + i.spareShare) * useTax;
-    const setup = i.setupCost * acq[m];
-    const additions = equipment[m] + spares[m] + importTax + purchaseTax + setup;
-    capex[m] =
-      equipment[m] + setup + purchaseTax + spares[m] - equipment[m] * i.deposit + (m === order ? equipCost * i.deposit : 0) + importTax;
-    if (m === 0) capex[m] += siteCost;
+      const prepayCredit = contractedRevenue[m] * i.prepaymentShare;
+      const closingReceivables = Math.max(0, netRevenue[m] - prepayCredit) * Math.min(1, i.receivableDays / days[m]);
+      collections[m] = forced[m] ? 0 : netRevenue[m] - prepayCredit - (closingReceivables - receivables);
+      const saleStarts = forced[m] === 1 && (m === 0 || forced[m - 1] === 0);
+      writeOff[m] = saleStarts && m > 0 ? receivables : 0;
+      refund[m] = saleStarts && m > 0 ? unearned : 0;
+      receivables = closingReceivables;
 
-    const carrying = recovery[m] || ending[m] ? Math.max(0, nbv - depreciation[m]) : 0;
-    nbv = Math.max(0, nbv + additions - depreciation[m] - carrying);
-    netBookValue[m] = nbv;
+      prepayment[m] = m === order ? totalPrepayment : 0;
+      unearned = unearned + prepayment[m] - prepayCredit - refund[m];
 
-    const recoveryFactor = i.recovery[clampIndex(roundUp(a / 12), 5)];
-    const forcedProceeds =
-      Math.max(
-        0,
-        equipCost * (1 - i.hardwareDecline) ** Math.max(0, a / 12) * recoveryFactor * (1 - i.sellingCosts) -
-          i.workoutCost * i.recoveryDelay,
-      ) * recovery[m];
-    const terminal = equipCost * i.terminalResale * (1 - i.sellingCosts) * ending[m];
-    const siteExit = recovery[m] || ending[m];
-    disposalProceeds[m] = forcedProceeds + terminal + (siteExit ? siteProceeds : 0);
-    gain[m] = forcedProceeds + terminal - carrying + (siteExit ? siteProceeds - siteCost : 0);
-    incomeBefore[m] = ebitda[m] - depreciation[m] + gain[m] - writeOff[m];
-  }
+      equipment[m] = equipCost * acq[m];
+      spares[m] = equipment[m] * i.spareShare;
+      const importTax = equipment[m] * (1 + i.spareShare) * i.importTax;
+      const purchaseTax = equipment[m] * (1 + i.spareShare) * useTax;
+      const setup = i.setupCost * acq[m];
+      const additions = equipment[m] + spares[m] + importTax + purchaseTax + setup;
+      capex[m] =
+        equipment[m] + setup + purchaseTax + spares[m] - equipment[m] * i.deposit + (m === order ? equipCost * i.deposit : 0) + importTax;
+
+      const carrying = recovery[m] || ending[m] ? Math.max(0, nbv - depreciation[m]) : 0;
+      nbv = Math.max(0, nbv + additions - depreciation[m] - carrying);
+      netBookValue[m] = nbv;
+
+      const recoveryFactor = i.recovery[clampIndex(roundUp(a / 12), 5)];
+      const forcedProceeds =
+        Math.max(
+          0,
+          equipCost * (1 - i.hardwareDecline) ** Math.max(0, a / 12) * recoveryFactor * (1 - i.sellingCosts) -
+            i.workoutCost * i.recoveryDelay,
+        ) * recovery[m];
+      const terminal = equipCost * i.terminalResale * (1 - i.sellingCosts) * ending[m];
+      disposalProceeds[m] = forcedProceeds + terminal;
+      gain[m] = forcedProceeds + terminal - carrying;
+      incomeBefore[m] = ebitda[m] - depreciation[m] + gain[m] - writeOff[m];
+    }
+    // Committed customer cash beyond the equipment deposit, held from order to shipment.
+    const committedCash = Math.max(0, totalPrepayment - equipCost * i.deposit);
+    const committed = zeros().map((_, m) => (m >= order && m < ship ? committedCash : 0));
+
+    return {
+      age,
+      acq,
+      recovery,
+      ending,
+      contract,
+      contractValue,
+      totalPrepayment,
+      committed,
+      equipment,
+      spares,
+      netRevenue,
+      leaseCost,
+      electricity,
+      opex,
+      ebitda,
+      depreciation,
+      collections,
+      prepayment,
+      capex,
+      netBookValue,
+      gain,
+      writeOff,
+      refund,
+      disposalProceeds,
+      incomeBefore,
+      rentPrepaid,
+      rentCredit,
+    };
+  };
+  type Deployment = ReturnType<typeof deploy>;
+  type Series = { [K in keyof Deployment]: Deployment[K] extends number[] ? K : never }[keyof Deployment];
+
+  const deployments = tranches.map(deploy);
+  const total = (key: Series) => zeros().map((_, m) => deployments.reduce((s, d) => s + d[key][m], 0));
+  const netRevenue = total("netRevenue");
+  const leaseCost = total("leaseCost");
+  const electricity = total("electricity");
+  const opex = total("opex");
+  const ebitda = total("ebitda");
+  const depreciation = total("depreciation");
+  const collections = total("collections");
+  const prepayment = total("prepayment");
+  const capex = total("capex");
+  const equipment = total("equipment");
+  const netBookValue = total("netBookValue");
+  const writeOff = total("writeOff");
+  const refund = total("refund");
+  const rentPrepaid = total("rentPrepaid");
+  const rentCredit = total("rentCredit");
+  const committed = total("committed");
+  const contract = zeros().map((_, m) => (deployments.some((d) => d.contract[m]) ? 1 : 0));
+  const contractValue = sum(deployments.map((d) => d.contractValue));
+  const totalPrepayment = sum(deployments.map((d) => d.totalPrepayment));
+
+  // The site is bought or contributed at the forecast start and leaves with the last tranche.
+  const lastDeployment = deployments[deployments.length - 1];
+  const siteExit = zeros().map((_, m) => (lastDeployment.recovery[m] || lastDeployment.ending[m] ? 1 : 0));
+  capex[0] += siteCost;
+  const disposalProceeds = total("disposalProceeds").map((v, m) => v + (siteExit[m] ? siteProceeds : 0));
+  const siteGain = siteExit.map((exit) => (exit ? siteProceeds - siteCost : 0));
+  const gain = total("gain").map((v, m) => v + siteGain[m]);
+  const incomeBefore = total("incomeBefore").map((v, m) => v + siteGain[m]);
 
   const admin = zeros().map((_, m) => (i.adminPerYear / 12) * (1 + i.adminEscalation) ** Math.floor(m / 12));
   const legal = zeros().map((_, m) => (m === 0 ? i.legalCosts : 0));
@@ -303,12 +408,12 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
     const n = i.siteAmortizationYears * 12;
     const payment = siteLoan <= 0 ? 0 : r > 0 ? (siteLoan * r) / (1 - (1 + r) ** -n) : siteLoan / n;
     let balance = 0;
-    for (let m = 0; m < MONTHS; m++) {
+    for (let m = 0; m < months; m++) {
       const open = balance;
       siteInterest[m] = open * r;
       const scheduled = Math.min(open, Math.max(0, payment - siteInterest[m]));
       siteService[m] = siteInterest[m] + scheduled;
-      sitePrincipal[m] = recovery[m] || ending[m] ? open : scheduled;
+      sitePrincipal[m] = siteExit[m] ? open : scheduled;
       siteDraws[m] = m === 0 ? siteLoan : 0;
       siteFeeExpense[m] = m === 0 ? siteFees : 0;
       balance = Math.max(0, open + siteDraws[m] - sitePrincipal[m]);
@@ -318,41 +423,51 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
 
   // GPU Financing: loan sizing
   const totalCapex = sum(capex) - siteCost;
-  const eligible = sum(equipment) / (1 + i.itShare) * (1 + i.itShare * i.financeIt) + sum(spares) * i.financeSpares;
+  const eligibleBy = deployments.map(
+    (d) => (sum(d.equipment) / (1 + i.itShare)) * (1 + i.itShare * i.financeIt) + sum(d.spares) * i.financeSpares,
+  );
+  const eligible = sum(eligibleBy);
+  // Each tranche draws its share of the loan when it ships and repays it on its own schedule.
+  const shares = eligibleBy.map((e) => (eligible > 0 ? e / eligible : 1 / deployments.length));
   const feeGrossUp = 1 - i.originationFee * i.financeFee;
   // As in the workbook, the gap counts site spend too, less what the site's own bank loan covers.
   const fundingGap = Math.max(0, sum(capex) - siteLoan - totalPrepayment);
   const requestedLoan = Math.min(eligible * (1 - i.deposit), fundingGap) / feeGrossUp;
 
   const perDollarService = zeros();
-  let perDollarOpen = 0;
-  let perDollarPaid = 0;
-  for (let m = 0; m < MONTHS; m++) {
-    if (m > 0) perDollarOpen = Math.max(0, perDollarOpen + acq[m - 1] - perDollarPaid);
-    const a = age[m];
-    perDollarPaid =
-      recovery[m] || ending[m] || a >= loanTerm
-        ? perDollarOpen
-        : a > io
-          ? Math.min(perDollarOpen, 1 / (loanTerm - io))
-          : 0;
-    perDollarService[m] = perDollarPaid + (perDollarOpen * i.interestRate) / 12;
-  }
-  // The site loan's scheduled payments come first, as rent would on a leased site.
+  deployments.forEach((d, k) => {
+    let perDollarOpen = 0;
+    let perDollarPaid = 0;
+    for (let m = 0; m < months; m++) {
+      if (m > 0) perDollarOpen = Math.max(0, perDollarOpen + d.acq[m - 1] - perDollarPaid);
+      const a = d.age[m];
+      perDollarPaid =
+        d.recovery[m] || d.ending[m] || a >= loanTerm
+          ? perDollarOpen
+          : a > io
+            ? Math.min(perDollarOpen, 1 / (loanTerm - io))
+            : 0;
+      perDollarService[m] += shares[k] * (perDollarPaid + (perDollarOpen * i.interestRate) / 12);
+    }
+  });
+  // The site loan's scheduled payments come first, as rent would on a leased site. Rent counts as it
+  // accrues, so the loan isn't sized on prepaid rent's temporary credits.
   const sizingCash = zeros().map(
     (_, m) =>
       collections[m] - opex[m] - Math.max(0, incomeBefore[m]) * i.incomeTax - admin[m] - legal[m] - siteService[m],
   );
 
+  // Loan quarters run from the first shipment until the last tranche's term ends.
+  const loanSpan = lastShip - firstShip + loanTerm;
   /** Months of the loan quarter ending at `m`, or null when `m` isn't a quarter end. */
   const quarter = (m: number): [number, number] | null => {
-    const a = age[m];
-    if (!(a > 0 && a <= loanTerm && (a % 3 === 0 || a === loanTerm))) return null;
-    return [ship + 3 * Math.floor((a - 1) / 3) + 1, m + 1];
+    const a = m - firstShip;
+    if (!(a > 0 && a <= loanSpan && (a % 3 === 0 || a === loanSpan))) return null;
+    return [firstShip + 3 * Math.floor((a - 1) / 3) + 1, m + 1];
   };
 
   let maxDscrLoan = Infinity;
-  for (let m = 0; m < MONTHS; m++) {
+  for (let m = 0; m < months; m++) {
     const q = quarter(m);
     if (!q) continue;
     const service = sum(perDollarService, ...q);
@@ -362,31 +477,42 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
   const loan = i.financing ? Math.min(maxDscrLoan, requestedLoan) : 0;
   const dscrFundingGap = i.financing ? Math.max(0, requestedLoan - maxDscrLoan) * feeGrossUp : 0;
 
-  // GPU Financing: debt schedule
-  const draws = acq.map((f) => loan * f);
-  const fees = draws.map((d) => d * i.originationFee);
-  const totalFees = sum(fees);
+  // GPU Financing: debt schedule, tranche by tranche
+  const draws = zeros();
+  const fees = zeros();
   const interest = zeros();
   const principal = zeros();
   const feeAmortization = zeros();
   const debtBalance = zeros();
-  let debt = 0;
-  let unamortized = 0;
-  for (let m = 0; m < MONTHS; m++) {
-    const a = age[m];
-    const open = debt;
-    interest[m] = (open * i.interestRate) / 12;
-    const scheduledPrincipal = a > io ? Math.min(open, loan / (loanTerm - io)) : 0;
-    const exit = recovery[m] || ending[m] || a >= loanTerm ? Math.max(0, open - scheduledPrincipal) : 0;
-    principal[m] = scheduledPrincipal + exit;
-    debt = Math.max(0, open + draws[m] - principal[m]);
-    debtBalance[m] = debt;
+  /** The original loan of each tranche still owing, which the reserve is sized on. */
+  const outstandingLoans = zeros();
+  deployments.forEach((d, k) => {
+    const trancheLoan = loan * shares[k];
+    const trancheFees = trancheLoan * i.originationFee;
+    let debt = 0;
+    let unamortized = 0;
+    for (let m = 0; m < months; m++) {
+      const a = d.age[m];
+      const open = debt;
+      const draw = trancheLoan * d.acq[m];
+      const fee = draw * i.originationFee;
+      const scheduledPrincipal = a > io ? Math.min(open, trancheLoan / (loanTerm - io)) : 0;
+      const exit = d.recovery[m] || d.ending[m] || a >= loanTerm ? Math.max(0, open - scheduledPrincipal) : 0;
+      debt = Math.max(0, open + draw - scheduledPrincipal - exit);
 
-    const feeOpen = unamortized;
-    feeAmortization[m] =
-      open > 0 && debt < 0.01 ? feeOpen : a > 0 ? Math.min(feeOpen, totalFees / loanTerm) : 0;
-    unamortized = Math.max(0, feeOpen + fees[m] - feeAmortization[m]);
-  }
+      const feeOpen = unamortized;
+      const amortized = open > 0 && debt < 0.01 ? feeOpen : a > 0 ? Math.min(feeOpen, trancheFees / loanTerm) : 0;
+      unamortized = Math.max(0, feeOpen + fee - amortized);
+
+      draws[m] += draw;
+      fees[m] += fee;
+      interest[m] += (open * i.interestRate) / 12;
+      principal[m] += scheduledPrincipal + exit;
+      feeAmortization[m] += amortized;
+      debtBalance[m] += debt;
+      if (debt > 0.01) outstandingLoans[m] += trancheLoan;
+    }
+  });
   const debtService = zeros().map((_, m) => interest[m] + principal[m]);
 
   const siteFinancing = zeros().map((_, m) => siteInterest[m] + siteFeeExpense[m]);
@@ -394,9 +520,9 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
     (_, m) => Math.max(0, incomeBefore[m] - interest[m] - feeAmortization[m] - siteFinancing[m]) * i.incomeTax,
   );
   const taxBenefit = zeros().map((_, m) => Math.max(0, incomeBefore[m]) * i.incomeTax - tax[m]);
-  const operatingCash = zeros().map((_, m) => collections[m] - opex[m] - tax[m]);
+  const operatingCash = zeros().map((_, m) => collections[m] + rentCredit[m] - opex[m] - tax[m]);
   const projectCash = zeros().map(
-    (_, m) => operatingCash[m] - capex[m] + prepayment[m] + disposalProceeds[m] - refund[m],
+    (_, m) => operatingCash[m] - capex[m] - rentPrepaid[m] + prepayment[m] + disposalProceeds[m] - refund[m],
   );
   const portfolioCash = zeros().map(
     (_, m) =>
@@ -413,7 +539,7 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
 
   let minQuarterlyDscr: number | null = null;
   let dscrBreaches = 0;
-  for (let m = 0; m < MONTHS; m++) {
+  for (let m = 0; m < months; m++) {
     const q = quarter(m);
     if (!q) continue;
     const service = sum(interest, ...q) + sum(principal, ...q);
@@ -423,7 +549,7 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
     if (dscr < i.minDscr - 1e-8) dscrBreaches++;
   }
   let minMonthlyDscr: number | null = null;
-  for (let m = 0; m < MONTHS; m++) {
+  for (let m = 0; m < months; m++) {
     if (debtService[m] > 0.01) {
       const dscr = cashForDebt[m] / debtService[m];
       minMonthlyDscr = minMonthlyDscr === null ? dscr : Math.min(minMonthlyDscr, dscr);
@@ -437,7 +563,6 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
       : i.reserveMethod === 2
         ? i.reserveShare
         : 0;
-  const committedCash = Math.max(0, totalPrepayment - equipCost * i.deposit);
 
   const prefContributions = zeros();
   const prefDistributions = zeros();
@@ -454,10 +579,10 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
   let paidIn = 0;
   let paidOut = 0;
   let allOut = 0;
-  for (let m = 0; m < MONTHS; m++) {
-    const required = (m < LAST_MONTH ? i.minCash : 0) + (m >= order && m < ship ? committedCash : 0);
+  for (let m = 0; m < months; m++) {
+    const required = (m < last ? i.minCash : 0) + committed[m];
 
-    const reserveRequired = debtBalance[m] > 0.01 ? loan * reserveFactor : 0;
+    const reserveRequired = outstandingLoans[m] * reserveFactor;
     const funded = draws[m] * reserveFactor;
     const used = Math.min(reserve + funded, debtService[m], Math.max(0, debtService[m] - cashForDebt[m]));
     const released = Math.max(0, reserve + funded - used - reserveRequired);
@@ -517,14 +642,14 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
       (interest[m] + feeAmortization[m] + siteInterest[m]) * contract[m],
   );
 
-  const year1 = (values: readonly number[]) => sum(values, Math.min(firstOp, MONTHS), Math.min(firstOp + 12, MONTHS));
+  const year1 = (values: readonly number[]) => sum(values, Math.min(firstOp, months), Math.min(firstOp + 12, months));
   const year1Service = year1(debtService);
 
   const periods: Period[] = [{ label: "Startup", from: 0, to: firstOp }];
   for (let y = 0; y < 6; y++) {
-    periods.push({ label: `Year ${y + 1}`, from: firstOp + 12 * y, to: Math.min(MONTHS, firstOp + 12 * (y + 1)) });
+    periods.push({ label: `Year ${y + 1}`, from: firstOp + 12 * y, to: Math.min(months, firstOp + 12 * (y + 1)) });
   }
-  if (firstOp + 72 < MONTHS) periods.push({ label: "Remaining", from: firstOp + 72, to: MONTHS });
+  if (firstOp + 72 < months) periods.push({ label: "Remaining", from: firstOp + 72, to: months });
 
   const prefEquity = sum(prefContributions);
   const prefPaid = sum(prefDistributions);
@@ -535,7 +660,7 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
 
   // Short enough that two or three sit on one line beside the page title.
   const checks: Check[] = [];
-  if (ship < i.leadMonths) {
+  if (tranches.some((t) => t.shipMonth < i.leadMonths)) {
     checks.push({ id: "lead", message: "Ships before the order lead time" });
   }
   if (io >= loanTerm) {
@@ -568,6 +693,7 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
     year1Lease: year1(leaseCost) / 12,
     year1Electricity: year1(electricity) / 12,
     siteCost,
+    prepaidRent: sum(rentPrepaid),
     siteLoan,
     siteEquity: siteCost + siteFees - siteLoan,
     year1SiteService: year1(siteService) / 12,
@@ -600,7 +726,7 @@ export function runModel(inputs: ModelInputs, start: StartDate): ModelResult {
     minMonthlyDscr,
     year1Dscr: year1Service > 0.01 ? year1(cashForDebt) / year1Service : null,
     dscrBreaches,
-    debtAtEnd: debtBalance[LAST_MONTH] + siteDebt[LAST_MONTH],
+    debtAtEnd: debtBalance[last] + siteDebt[last],
 
     monthly: {
       dates,

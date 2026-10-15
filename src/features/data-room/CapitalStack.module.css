@@ -7,15 +7,19 @@
   padding: 4px 0 12px;
 }
 
-.stack [data-source="equity"] {
+.stack [data-source="equity"],
+.stack [data-source="deposits"] {
   --tone: var(--color-accent-strong);
 }
 
-.stack [data-source="projectDebt"] {
+/* A lease's equity runs deposits, the rest of the non-recurring charges, then the IT equipment's share. */
+.stack [data-source="projectDebt"],
+.stack [data-source="charges"] {
   --tone: color-mix(in srgb, var(--color-accent-strong) 78%, var(--color-bg-elevated));
 }
 
-.stack [data-source="mortgage"] {
+.stack [data-source="mortgage"],
+.stack [data-source="itEquity"] {
   --tone: color-mix(in srgb, var(--color-accent-strong) 58%, var(--color-bg-elevated));
 }
 
