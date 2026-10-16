@@ -24,7 +24,7 @@ export async function MyHome({ path }: { path: "/portal" | "/portal/mine" }): Pr
       <div className={styles.stats}>
         <Link className={styles.stat} href="/portal/data-rooms">
           <span className={styles.statValue}>{figure(rooms?.length)}</span>
-          <span className={styles.statLabel}>Data rooms</span>
+          <span className={styles.statLabel}>Data Rooms</span>
         </Link>
         <Link className={styles.stat} href="/portal/data-rooms">
           <span className={styles.statValue}>{figure(files)}</span>

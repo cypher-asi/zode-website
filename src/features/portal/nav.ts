@@ -91,7 +91,7 @@ export const ORDER_MODES: readonly { id: "buy" | "rent"; label: string; icon: Po
 
 const ROOMS: PortalApp = {
   id: "rooms",
-  label: "Data rooms",
+  label: "Data Rooms",
   tabLabel: "Rooms",
   icon: "rooms",
   href: "/portal/data-rooms",

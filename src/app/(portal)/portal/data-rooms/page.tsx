@@ -7,7 +7,7 @@ import { Empty, InviteList, PageHeader, RoomList } from "@/features/portal/secti
 import styles from "@/features/portal/portal.module.css";
 
 export const metadata: Metadata = {
-  title: "Data rooms | ZODE",
+  title: "Data Rooms | ZODE",
   robots: { index: false, follow: false },
 };
 
@@ -16,7 +16,7 @@ export default function DataRoomsPage(): ReactElement {
   return (
     <div className={styles.page}>
       <PageHeader
-        title="Data rooms"
+        title="Data Rooms"
         subtitle="Private documents, with every view and download tracked."
         actions={
           <Suspense fallback={null}>

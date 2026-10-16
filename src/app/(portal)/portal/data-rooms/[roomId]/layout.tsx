@@ -32,7 +32,7 @@ export default async function DataRoomLayout({
       <header className={styles.bar}>
         <div className={styles.titleGroup}>
           <Link href="/portal/data-rooms" className={styles.crumb}>
-            Data rooms
+            Data Rooms
             <svg viewBox="0 0 16 16" aria-hidden="true">
               <path d="M6 3.5 10.5 8 6 12.5" />
             </svg>
