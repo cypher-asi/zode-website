@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { isEmail, multiLine, singleLine } from "@/lib/validation";
 import { isUuid, teamAccount } from "./access";
-import { CHILDREN, TABLES, fieldsFor, isChildKind, type ChildKind, type FieldSpec } from "./fields";
+import { CHILDREN, SITE_MENU_FIELDS, TABLES, fieldsFor, isChildKind, type ChildKind, type FieldSpec } from "./fields";
 import { ZRM_TAGS } from "./queries";
 import { isRecordKind, listHref, recordHref, type ActionState, type RecordKind } from "./types";
 
@@ -64,7 +64,6 @@ function parseField(field: FieldSpec, raw: FormDataEntryValue | null): { value: 
     case "company":
     case "person":
     case "stage":
-    case "group":
     case "status":
     case "room":
       return isUuid(value) ? { value } : fail("isn't one of the choices");
@@ -198,6 +197,27 @@ export async function setSiteStatusAction(id: string, statusId: string): Promise
     await db()`update capacity_sites set status_id = ${statusId}, updated_at = now() where id = ${id}`;
   } catch (error) {
     if (isStaleReference(error)) return { error: "That status no longer exists. Reload and try again." };
+    throw error;
+  }
+  revalidate("sites");
+  return { saved: true };
+}
+
+/** Sets one of the fields a site's right-click menu offers, or clears it with an empty value. */
+export async function setSiteFieldAction(id: string, key: string, value: string): Promise<ActionState> {
+  if (!(await teamAccount())) return NO_ACCESS;
+  const field = SITE_MENU_FIELDS.find((f) => f.key === key);
+  if (!field || !isUuid(id)) return NO_ACCESS;
+  const parsed = parseField(field, value);
+  if ("error" in parsed) return parsed;
+  try {
+    const result = await db().query(`update capacity_sites set "${field.key}" = $1, updated_at = now() where id = $2 returning id`, [
+      parsed.value,
+      id,
+    ]);
+    if (result.length === 0) return MISSING;
+  } catch (error) {
+    if (isStaleReference(error)) return { error: `That ${field.label.toLowerCase()} no longer exists. Reload and try again.` };
     throw error;
   }
   revalidate("sites");

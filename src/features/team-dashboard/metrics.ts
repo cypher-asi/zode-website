@@ -1,6 +1,15 @@
 import "server-only";
 import { db } from "@/lib/db";
 
+/** Capacity's statuses, furthest along first, each with the metric holding its sites' total IT. */
+export const CAPACITY_STATUSES = [
+  { status: "Closed", metric: "capacity_status_closed_mw" },
+  { status: "Contracted", metric: "capacity_status_contracted_mw" },
+  { status: "LOI", metric: "capacity_status_loi_mw" },
+  { status: "Negotiation", metric: "capacity_status_negotiation_mw" },
+  { status: "Prospect", metric: "capacity_status_prospect_mw" },
+] as const;
+
 /**
  * Every figure the team dashboard tracks, as stored in team_metric_snapshots.
  * Renaming one orphans its history, so add new names rather than reuse old ones.
@@ -8,6 +17,7 @@ import { db } from "@/lib/db";
 export const METRICS = [
   "capacity_contracted_mw",
   "capacity_pipeline_mw",
+  ...CAPACITY_STATUSES.map((entry) => entry.metric),
   "opportunities_open",
   "opportunities_pipeline_usd",
   "contracts_total",
@@ -35,20 +45,22 @@ export interface TeamMetrics {
   rangeDays: number;
 }
 
+/** The total IT of the sites on `statuses`, as a scalar subquery. */
+const capacityOn = (...statuses: string[]): string => `
+          (select coalesce(sum(s.total_it_mw), 0) from capacity_sites s
+           join capacity_statuses st on st.id = s.status_id where st.name in (${statuses.map((name) => `'${name}'`).join(", ")}))`;
+
 /**
  * Every metric computed now, as the CTE `m (metric, value)`. Capacity counts
- * Contracted and Live sites as contracted and every site not Passed as
- * pipeline; an opportunity is open until it reaches the last pipeline stage.
+ * Contracted and Closed sites as contracted and every site as pipeline; an
+ * opportunity is open until it reaches the last pipeline stage.
  */
 const CURRENT = `
     m (metric, value) as (
       values
-        ('capacity_contracted_mw',
-          (select coalesce(sum(s.total_it_mw), 0) from capacity_sites s
-           join capacity_statuses st on st.id = s.status_id where st.name in ('Contracted', 'Live'))),
-        ('capacity_pipeline_mw',
-          (select coalesce(sum(s.total_it_mw), 0) from capacity_sites s
-           join capacity_statuses st on st.id = s.status_id where st.name <> 'Passed')),
+        ('capacity_contracted_mw', ${capacityOn("Contracted", "Closed")}),
+        ('capacity_pipeline_mw', (select coalesce(sum(total_it_mw), 0) from capacity_sites)),
+        ${CAPACITY_STATUSES.map(({ status, metric }) => `('${metric}', ${capacityOn(status)}),`).join("\n        ")}
         ('opportunities_open',
           (select count(*) from zrm_opportunities o join zrm_stages g on g.id = o.stage_id
            where g.position < (select max(position) from zrm_stages))),

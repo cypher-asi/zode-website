@@ -97,12 +97,6 @@ export interface OpportunityRow {
   type_ids: string[];
 }
 
-export interface SiteGroup {
-  id: string;
-  name: string;
-  position: number;
-}
-
 export interface SiteStatus {
   id: string;
   name: string;
@@ -114,11 +108,11 @@ export interface SiteRow {
   id: string;
   name: string;
   address: string | null;
-  group_id: string | null;
   status_id: string;
   provider_name: string | null;
   customer_name: string | null;
   deal_type: string | null;
+  site_stage: string | null;
   initial_it_mw: number | null;
   secondary_it_mw: number | null;
   total_it_mw: number;
@@ -144,7 +138,6 @@ export interface ZrmData {
   types: ZrmType[];
   stages: Stage[];
   sites: SiteRow[];
-  groups: SiteGroup[];
   statuses: SiteStatus[];
   rooms: SiteRoom[];
 }
@@ -242,8 +235,6 @@ export interface Site {
   id: string;
   name: string;
   address: string | null;
-  group_id: string | null;
-  group_name: string | null;
   status_id: string;
   status_name: string;
   status_color: string;
@@ -251,6 +242,7 @@ export interface Site {
   provider_name: string | null;
   term_years: number | null;
   deal_type: string | null;
+  site_stage: string | null;
   initial_it_mw: number | null;
   secondary_it_mw: number | null;
   total_it_mw: number;

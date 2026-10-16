@@ -6,9 +6,10 @@
  *
  *   npm run capacity:import
  *
- * Additive: sites are matched on `seed_key` (their group and name), missing
- * ones are inserted and existing ones left alone, so edits made in Capacity
- * survive a re-run. Companies match on name, case-insensitively; brokers on
+ * Additive: sites are matched on `seed_key` (the sheet section they sit in
+ * and their name), missing ones are inserted and existing ones left alone, so
+ * edits made in Capacity survive a re-run. A site's section also picks the
+ * status it starts on. Companies match on name, case-insensitively; brokers on
  * first name and firm. The sheet's Total rows aren't imported, since
  * Capacity sums the sites itself, and its "Link" cells carried no addresses.
  *
@@ -30,7 +31,7 @@ const SOURCE = "Capacity sheet";
  * power rate, upfront, conversion, RFS, extras]. RFS is `YYYY-MM-DD`; the
  * sheet's "2027" for Missouri is the first of that year.
  */
-const GROUPS = {
+const SECTIONS = {
   "Critical Path": [
     ["Chicago", "801 S Canal", "Alonsar", 15, "Lease", 3.8, 20.2, 170, 0.1, 9_000_000, null, "2027-02-05",
       { customer: "SourceM3D", broker: "Chad", contract: 377_782_272, annual: 75_556_454, room: "801 S Canal, Chicago" }],
@@ -38,13 +39,13 @@ const GROUPS = {
       { customer: "SF Compute", contract: 33_730_560, annual: 11_243_520 }],
     ["Milton", "8250 Lawson Road", "137 Edge Compute Inc.", 5, "JV", 1.39, 5.22, 185, 0.13, 10_000_000, 26_440_000, "2026-03-31",
       { customer: "SF Compute", broker: "Carlos", firm: "XIRR" }],
-    ["Olds", "6102 48th Avenue Road", "SNDL INC.", null, "Buy", 22, 0, 0, 0.12, 18_000_000, 88_000_000, "2026-03-31",
+    ["Olds", "6102 48th Avenue Road", "SNDL INC.", null, "Purchase", 22, 0, 0, 0.12, 18_000_000, 88_000_000, "2026-03-31",
       { broker: "Casey", firm: "JLL", room: "6102-6402 48 Avenue" }],
-    ["Calgary", "5430 30 Street SE", "Balil", null, "Buy", 8, 5, 0, 0.12, 10_000_000, 32_000_000, "2026-03-31",
+    ["Calgary", "5430 30 Street SE", "Balil", null, "Purchase", 8, 5, 0, 0.12, 10_000_000, 32_000_000, "2026-03-31",
       { broker: "Mitch", firm: "Baxtell", room: "5430 30 Street SE" }],
   ],
   LOI: [
-    ["Alaska", "Alaska", null, 10, "Buy", 5, 15, null, null, null, null, "2027-03-31"],
+    ["Alaska", "Alaska", null, 10, "Purchase", 5, 15, null, null, null, null, "2027-03-31"],
     ["West Texas position I", "Permian Basin, Texas", "Syaala", 10, "Lease", 5.6, 0, null, null, null, null, "2027-03-31"],
     ["West Texas position II", "Texas", "Syaala", 10, "Lease", 6, 0, null, null, null, null, "2027-03-31"],
     ["Philadelphia position", "Pennsylvania", "Syaala", 10, "Lease", 3.25, 0, null, null, null, null, "2027-03-31"],
@@ -55,45 +56,45 @@ const GROUPS = {
     ["Missouri", "Missouri", "Big Watt", 10, "Lease", 350, 450, null, null, null, null, "2027-01-01"],
   ],
   Atlas: [
-    ["Montana Current", "Montana", "Atlas", null, "Buy", 68, 100],
-    ["North Dakota Current", "Williams County, North Dakota", "Atlas", null, "Buy", 227, 210],
-    ["Kentucky Current", "McCracken County, Kentucky", "Atlas", null, "Buy", 22, 33],
-    ["Texas", "Grimes County, Texas", "Atlas", null, "Buy", 68, 200],
+    ["Montana Current", "Montana", "Atlas", null, "Purchase", 68, 100],
+    ["North Dakota Current", "Williams County, North Dakota", "Atlas", null, "Purchase", 227, 210],
+    ["Kentucky Current", "McCracken County, Kentucky", "Atlas", null, "Purchase", 22, 33],
+    ["Texas", "Grimes County, Texas", "Atlas", null, "Purchase", 68, 200],
   ],
   Metroplex: [
-    ["102 CCI-Beach II", "5401 N. Beach Street Fort Worth", "102 CCI-Beach II, LP", null, "Buy", 4.3, 7.3, ...blank(5), {
+    ["102 CCI-Beach II", "5401 N. Beach Street Fort Worth", "102 CCI-Beach II, LP", null, "Purchase", 4.3, 7.3, ...blank(5), {
       notes:
         "431,579 SF | 277/480V AC (2x4000, 2x3000) | Three diesel-powered 2,000 KVA emergency electrical generators in enclosures in north service yard. Provides back-up power for building services + 1 backup. Skid-mounted ASTs ~7,500 gal each.",
     }],
-    ["108 CCI-Richardson II", "2200 E. George Bush Turnpike Richardson", "108 CCI-Richardson II, LP", null, "Buy", 1.8, 1.6, ...blank(5), {
+    ["108 CCI-Richardson II", "2200 E. George Bush Turnpike Richardson", "108 CCI-Richardson II, LP", null, "Purchase", 1.8, 1.6, ...blank(5), {
       notes:
         "176,831 SF | 480/277V AC (4,000A) | Diesel-powered 750 KVA emergency generator in concrete-fenced yard near central plant. Backup power to lab areas, cooling, fire/safety, lighting, elevators. Skid-mounted AST.",
     }],
-    ["112 CCI-D 5000 HQ Owner", "5000 Headquarters Drive Plano", "112 CCI-D 5000 HQ Owner, LLC", null, "Buy", 1.7, 3.3, ...blank(5), {
+    ["112 CCI-D 5000 HQ Owner", "5000 Headquarters Drive Plano", "112 CCI-D 5000 HQ Owner, LLC", null, "Purchase", 1.7, 3.3, ...blank(5), {
       notes:
         "167,420 SF | 277/480V AC (2x3,000A) | Two diesel generators (750 & 2,000 KVA) in south service yard. Chassis day tanks supplied by ~2,500-gal AST. Pad-mounted transformers, copper wiring in metallic conduit.",
     }],
-    ["114 CCI-Plano I", "6400 Legacy Drive Plano", "114 CCI-Plano I, LP", null, "Buy", 2.3, 1, ...blank(5), {
+    ["114 CCI-Plano I", "6400 Legacy Drive Plano", "114 CCI-Plano I, LP", null, "Purchase", 2.3, 1, ...blank(5), {
       notes:
         "227,577 SF | 277/480V AC (4000A) | Two Cummins diesel generators (450 KVA life-safety, 1,000 KVA UPS computer room). Westinghouse 4,000A switchgear in basement, dual busduct risers.",
     }],
-    ["117 CCI-Amon Carter Blvd I", "4255-4333 Amon Carter Blvd. Fort Worth", "CCI", null, "Buy", 13, -9.7, ...blank(5), {
+    ["117 CCI-Amon Carter Blvd I", "4255-4333 Amon Carter Blvd. Fort Worth", "CCI", null, "Purchase", 13, -9.7, ...blank(5), {
       notes:
         "1,303,302 SF | 277/480V AC (4,000A) | CUP has five 1,400 KVA diesel generators (2nd fl garage); AACU has one 400 KVA generator in south yard. Significantly lower than conservative estimate - check PCA.",
     }],
-    ["125 CCI-Irving VII-A", "6000 Connection Irving", "127 CCI-Freeway Office Properties I, LP", null, "Buy", 2.9, 5.1, ...blank(5), {
+    ["125 CCI-Irving VII-A", "6000 Connection Irving", "127 CCI-Freeway Office Properties I, LP", null, "Purchase", 2.9, 5.1, ...blank(5), {
       notes:
         "287,581 SF | 480/277V service; 208/120V panels (4000, 4000, 1600) | Two diesel-powered emergency generators located on the property.",
     }],
-    ["171 CCI-Richardson I", "2701 & 2703 North Central Expy Richardson", "300 CCI-Clay Road I, LP", null, "Buy", 1.7, 2.9, ...blank(5), {
+    ["171 CCI-Richardson I", "2701 & 2703 North Central Expy Richardson", "300 CCI-Clay Road I, LP", null, "Purchase", 1.7, 2.9, ...blank(5), {
       notes:
         "173,847 SF | 277/480V (1600, 4000) | 2703: Diesel ~150 kVA emergency generator near cooling tower. 2701: Two diesel ~300 kVA emergency generators in mechanical yard.",
     }],
-    ["115 CCI-6501 Legacy", "6501 Legacy Drive Plano", "115 CCI-D 6501 Legacy Owner", null, "Buy", 18.3, 21.6, ...blank(5), {
+    ["115 CCI-6501 Legacy", "6501 Legacy Drive Plano", "115 CCI-D 6501 Legacy Owner", null, "Purchase", 18.3, 21.6, ...blank(5), {
       notes:
         "1,829,795 SF | 277/480V AC (12x4000A) | Two Magna Max 2,000 KVA generators (Bldg F & C) with 660-gal fuel tanks. Vault transformers (6,000 kVA & 4,000 kVA). 12x4,000A feeds from substation.",
     }],
-    ["116 CCI-Richland Hills I", "9151 Blvd 26 North Richland Hills", "116 CCI - Richland Hills I, LP", null, "Buy", 2.4, 1, ...blank(5), {
+    ["116 CCI-Richland Hills I", "9151 Blvd 26 North Richland Hills", "116 CCI - Richland Hills I, LP", null, "Purchase", 2.4, 1, ...blank(5), {
       notes:
         "235,075 SF | 277/480V AC (4000A) | One emergency generator serving each of the 2 buildings, backup power for base building systems and IT systems integrated with UPS.",
     }],
@@ -121,18 +122,17 @@ function blank(n) {
 }
 
 /** Where a site starts out; the team moves it from there. */
-function statusFor(group, extras) {
-  if (group === "Critical Path") return extras.customer ? "Contracted" : "Diligence";
-  if (group === "LOI") return "LOI";
+function statusFor(section, extras) {
+  if (section === "Critical Path") return extras.customer ? "Contracted" : "Negotiation";
+  if (section === "LOI") return "LOI";
   return "Prospect";
 }
 
 const sql = neon(url);
 
-const byName = async (table) =>
-  new Map((await sql.query(`select id, lower(name) as name from ${table}`)).map((row) => [row.name, row.id]));
-const groupIds = await byName("capacity_groups");
-const statusIds = await byName("capacity_statuses");
+const statusIds = new Map(
+  (await sql`select id, lower(name) as name from capacity_statuses`).map((row) => [row.name, row.id]),
+);
 
 const counts = { companies: 0, people: 0, sites: 0, rooms: 0 };
 
@@ -167,18 +167,15 @@ async function personId(firstName, firmId) {
   return row.id;
 }
 
-for (const [group, sites] of Object.entries(GROUPS)) {
-  const groupId = groupIds.get(group.toLowerCase());
-  if (!groupId) throw new Error(`[capacity:import] no group "${group}"; run npm run db:migrate first.`);
+for (const [section, sites] of Object.entries(SECTIONS)) {
   for (const [name, address, provider, term, type, initial, secondary, kwRate, powerRate, upfront, conversion, rfs, extras = {}] of sites) {
-    const statusId = statusIds.get(statusFor(group, extras).toLowerCase());
+    const statusId = statusIds.get(statusFor(section, extras).toLowerCase());
     if (!statusId) throw new Error(`[capacity:import] no status for ${name}; run npm run db:migrate first.`);
     const firmId = await companyId(extras.firm);
     const site = {
-      seed_key: `${group}:${name}`.toLowerCase(),
+      seed_key: `${section}:${name}`.toLowerCase(),
       name,
       address,
-      group_id: groupId,
       status_id: statusId,
       provider_company_id: await companyId(provider),
       term_years: term ?? null,

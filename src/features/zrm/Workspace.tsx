@@ -1,15 +1,32 @@
 "use client";
 
-import { Fragment, memo, useDeferredValue, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactElement, type ReactNode } from "react";
+import {
+  Fragment,
+  memo,
+  startTransition,
+  useCallback,
+  useDeferredValue,
+  useMemo,
+  useOptimistic,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import Link from "next/link";
 import { useSelectedLayoutSegments } from "next/navigation";
 import { Select } from "@/components/ui/Select";
 import { Splitter } from "@/components/ui/Splitter";
 import { PortalLoading } from "@/features/portal/PortalLoading";
+import { deleteRecordAction, setActiveAction, setSiteFieldAction } from "./actions";
 import { Icon } from "./bits";
 import { companiesConfig, opportunitiesConfig, peopleConfig, sitesConfig, type ListConfig } from "./columns";
-import { KIND_LABELS, recordHref, type RecordKind } from "./types";
-import { GroupNav } from "./GroupNav";
+import { SiteMenu } from "./SiteMenu";
+import { StatusNav } from "./StatusNav";
+import { KIND_LABELS, recordHref, type RecordKind, type SiteRow } from "./types";
 import { TypeNav } from "./TypeNav";
 import { goOnClick, useZrmData, useZrmNavigate, useZrmRoute } from "./ZrmProvider";
 import styles from "./zrm.module.css";
@@ -39,6 +56,9 @@ interface RowProps<T> {
   selected: boolean;
   go: (href: string) => void;
   prefetch: (href: string) => void;
+  /** Opens the row's menu at a point in the window, on right-click or the keyboard's menu key. */
+  onMenu?: (row: T, x: number, y: number) => void;
+  menuOpen?: boolean;
 }
 
 /**
@@ -46,7 +66,17 @@ interface RowProps<T> {
  * rows it leaves and lands on. Prefetched on hover or focus rather than as it
  * scrolls into view, as a list can hold thousands.
  */
-const Row = memo(function Row<T extends ListRow>({ kind, row, config, style, selected, go, prefetch }: RowProps<T>): ReactElement {
+const Row = memo(function Row<T extends ListRow>({
+  kind,
+  row,
+  config,
+  style,
+  selected,
+  go,
+  prefetch,
+  onMenu,
+  menuOpen,
+}: RowProps<T>): ReactElement {
   const href = recordHref(kind, row.id);
   return (
     <Link
@@ -57,9 +87,29 @@ const Row = memo(function Row<T extends ListRow>({ kind, row, config, style, sel
       onMouseEnter={() => prefetch(href)}
       onFocus={() => prefetch(href)}
       onClick={goOnClick(go, href)}
+      onContextMenu={
+        onMenu
+          ? (event: MouseEvent<HTMLAnchorElement>) => {
+              event.preventDefault();
+              onMenu(row, event.clientX, event.clientY);
+            }
+          : undefined
+      }
+      onKeyDown={
+        onMenu
+          ? (event: KeyboardEvent<HTMLAnchorElement>) => {
+              if (event.key !== "ContextMenu" && !(event.shiftKey && event.key === "F10")) return;
+              event.preventDefault();
+              const box = event.currentTarget.getBoundingClientRect();
+              onMenu(row, box.left + 24, box.bottom);
+            }
+          : undefined
+      }
       className={styles.row}
       style={style}
       aria-current={selected ? "page" : undefined}
+      aria-haspopup={onMenu ? "menu" : undefined}
+      data-menu-open={menuOpen ? "" : undefined}
     >
       {config.columns.map((column) => (
         <span
@@ -88,6 +138,8 @@ function RecordList<T extends ListRow>({
   selectedId,
   filterValues,
   onFilterChange,
+  onRowMenu,
+  menuRowId,
 }: {
   kind: RecordKind;
   rows: readonly T[];
@@ -95,6 +147,8 @@ function RecordList<T extends ListRow>({
   selectedId: string | null;
   filterValues: Readonly<Record<string, string>>;
   onFilterChange: (key: string, value: string) => void;
+  onRowMenu?: (row: T, x: number, y: number) => void;
+  menuRowId?: string | null;
 }): ReactElement {
   const { go, prefetch } = useZrmNavigate();
   const [query, setQuery] = useState("");
@@ -249,6 +303,8 @@ function RecordList<T extends ListRow>({
                   selected={row.id === selectedId}
                   go={go}
                   prefetch={prefetch}
+                  onMenu={onRowMenu}
+                  menuOpen={row.id === menuRowId}
                 />
               ))}
               {totaled ? (
@@ -304,9 +360,9 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
       people: peopleConfig(typeMap),
       companies: companiesConfig(typeMap),
       opportunities: opportunitiesConfig(typeMap),
-      sites: sitesConfig(data.groups, data.statuses),
+      sites: sitesConfig(data.statuses),
     };
-  }, [data.types, data.groups, data.statuses]);
+  }, [data.types, data.statuses]);
 
   const kind = kinds.find((k) => k === segment);
   /** The open list's filters, shared by its toolbar and the sidebar's types, and cleared on switching lists. */
@@ -315,6 +371,31 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
   const filterValues = filters.values;
   const setFilter = (key: string, value: string) =>
     setFilters((current) => ({ ...current, values: { ...current.values, [key]: value } }));
+
+  const { go } = useZrmNavigate();
+  /** Sites with the menu's changes applied while they save, so a site moves to its new status at once. */
+  const [sites, editSite] = useOptimistic(data.sites, (rows: SiteRow[], edit: { id: string; patch: Partial<SiteRow> }) =>
+    rows.map((row) => (row.id === edit.id ? { ...row, ...edit.patch } : row)),
+  );
+  const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  const openSiteMenu = useCallback((row: SiteRow, x: number, y: number) => setMenu({ id: row.id, x, y }), []);
+  const closeSiteMenu = useCallback(
+    (restoreFocus: boolean) => {
+      setMenu(null);
+      if (!restoreFocus || !menu) return;
+      requestAnimationFrame(() => containerRef.current?.querySelector<HTMLElement>(`[data-id="${menu.id}"]`)?.focus());
+    },
+    [menu],
+  );
+  const menuSite = menu ? sites.find((site) => site.id === menu.id) : undefined;
+
+  const saveSite = (id: string, patch: Partial<SiteRow>, save: () => Promise<unknown>) => {
+    setMenu(null);
+    startTransition(async () => {
+      editSite({ id, patch });
+      await save();
+    });
+  };
 
   if (!kind) return <>{children}</>;
 
@@ -342,9 +423,19 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
       types = typeNav(data.opportunities);
       break;
     case "sites":
-      list = <RecordList key={kind} kind={kind} rows={data.sites} config={configs.sites} {...common} />;
+      list = (
+        <RecordList
+          key={kind}
+          kind={kind}
+          rows={sites}
+          config={configs.sites}
+          onRowMenu={openSiteMenu}
+          menuRowId={menu?.id ?? null}
+          {...common}
+        />
+      );
       types = (
-        <GroupNav rows={data.sites} groups={data.groups} value={filterValues.group ?? ""} onChange={(value) => setFilter("group", value)} />
+        <StatusNav rows={sites} statuses={data.statuses} value={filterValues.status ?? ""} onChange={(value) => setFilter("status", value)} />
       );
       break;
   }
@@ -373,6 +464,27 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
             {loading && !shownChild ? <PortalLoading header={false} /> : children}
           </section>
         </>
+      ) : null}
+      {kind === "sites" && menu && menuSite ? (
+        <SiteMenu
+          key={`${menu.id}:${menu.x}:${menu.y}`}
+          site={menuSite}
+          x={menu.x}
+          y={menu.y}
+          statuses={data.statuses}
+          onOpen={() => {
+            setMenu(null);
+            go(recordHref("sites", menuSite.id));
+          }}
+          onChange={(key, value) =>
+            saveSite(menuSite.id, { [key]: key === "status_id" ? value : value || null }, () =>
+              setSiteFieldAction(menuSite.id, key, value),
+            )
+          }
+          onPin={() => saveSite(menuSite.id, { active: !menuSite.active }, () => setActiveAction("sites", menuSite.id, !menuSite.active))}
+          onDelete={async () => (await deleteRecordAction("sites", menuSite.id)).error}
+          onClose={closeSiteMenu}
+        />
       ) : null}
     </div>
   );

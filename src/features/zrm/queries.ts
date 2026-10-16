@@ -16,7 +16,6 @@ import type {
   PersonRow,
   Related,
   Site,
-  SiteGroup,
   SiteRoom,
   SiteRow,
   SiteStatus,
@@ -91,8 +90,8 @@ const typesQuery = (sql: Sql) => sql`select id, name, color from zrm_types order
 const stagesQuery = (sql: Sql) => sql`select id, name, position from zrm_stages order by position, name`;
 
 const sitesQuery = (sql: Sql) => sql`
-  select s.id, s.name, s.address, s.group_id, s.status_id,
-    pc.name as provider_name, cc.name as customer_name, s.deal_type,
+  select s.id, s.name, s.address, s.status_id,
+    pc.name as provider_name, cc.name as customer_name, s.deal_type, s.site_stage,
     s.initial_it_mw::float8 as initial_it_mw, s.secondary_it_mw::float8 as secondary_it_mw,
     s.total_it_mw::float8 as total_it_mw, s.upfront::float8 as upfront, s.conversion::float8 as conversion,
     s.contract_value::float8 as contract_value, s.annual_revenue::float8 as annual_revenue,
@@ -102,8 +101,6 @@ const sitesQuery = (sql: Sql) => sql`
   left join zrm_companies cc on cc.id = s.customer_company_id
   order by s.created_at, lower(s.name)
 `;
-
-const groupsQuery = (sql: Sql) => sql`select id, name, position from capacity_groups order by position, name`;
 
 const statusesQuery = (sql: Sql) => sql`select id, name, position, color from capacity_statuses order by position, name`;
 
@@ -151,19 +148,17 @@ async function listRooms(): Promise<SiteRoom[]> {
   return (await roomsQuery(db())) as SiteRoom[];
 }
 
-async function listLookups(): Promise<Pick<ZrmData, "types" | "stages" | "groups" | "statuses">> {
+async function listLookups(): Promise<Pick<ZrmData, "types" | "stages" | "statuses">> {
   "use cache";
   cacheLife("minutes");
   cacheTag(ZRM_TAGS.lookups, DB_TAG);
   const sql = db();
-  const [types, stages, groups, statuses] = await sql.transaction(
-    [typesQuery(sql), stagesQuery(sql), groupsQuery(sql), statusesQuery(sql)],
-    { readOnly: true },
-  );
+  const [types, stages, statuses] = await sql.transaction([typesQuery(sql), stagesQuery(sql), statusesQuery(sql)], {
+    readOnly: true,
+  });
   return {
     types: types as ZrmType[],
     stages: stages as Stage[],
-    groups: groups as SiteGroup[],
     statuses: statuses as SiteStatus[],
   };
 }
@@ -401,9 +396,9 @@ export async function getSiteDetail(id: string): Promise<SiteDetail | null> {
   const [[site], notes] = await sql.transaction(
     [
       sql`
-        select s.id, s.name, s.address, s.group_id, g.name as group_name,
+        select s.id, s.name, s.address,
           s.status_id, st.name as status_name, st.color as status_color,
-          s.provider_company_id, pc.name as provider_name, s.term_years, s.deal_type,
+          s.provider_company_id, pc.name as provider_name, s.term_years, s.deal_type, s.site_stage,
           s.initial_it_mw::float8 as initial_it_mw, s.secondary_it_mw::float8 as secondary_it_mw,
           s.total_it_mw::float8 as total_it_mw, s.kw_rate::float8 as kw_rate, s.power_rate::float8 as power_rate,
           s.upfront::float8 as upfront, s.conversion::float8 as conversion, s.rfs_date::text as rfs_date,
@@ -415,7 +410,6 @@ export async function getSiteDetail(id: string): Promise<SiteDetail | null> {
           s.notes, s.active, s.created_at, s.updated_at
         from capacity_sites s
         join capacity_statuses st on st.id = s.status_id
-        left join capacity_groups g on g.id = s.group_id
         left join zrm_companies pc on pc.id = s.provider_company_id
         left join zrm_companies cc on cc.id = s.customer_company_id
         left join zrm_companies fc on fc.id = s.firm_company_id

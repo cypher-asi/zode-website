@@ -7,7 +7,7 @@ import { loadVisitorSummary } from "@/features/analytics/queries";
 import { Empty } from "@/features/portal/sections";
 import dash from "./dashboard.module.css";
 import { MetricCard } from "./MetricCard";
-import { loadTeamMetrics, type TeamMetrics } from "./metrics";
+import { CAPACITY_STATUSES, loadTeamMetrics, type TeamMetrics } from "./metrics";
 
 const RANGES = [
   { days: 30, label: "30d" },
@@ -40,8 +40,9 @@ function visitorChange(current: number, previous: number, days: number) {
 }
 
 /**
- * The ZODE team's figures at a glance, Home's Team tab: capacity, the
- * opportunity pipeline, contracts and subscribers, each with its history.
+ * The ZODE team's figures at a glance, Home's Team tab: capacity by status
+ * (statuses with none left out), the opportunity pipeline, contracts and
+ * subscribers, each with its history.
  * `account` must already be checked to be on the team.
  */
 export async function TeamDashboard({
@@ -87,15 +88,20 @@ export async function TeamDashboard({
         <Empty>The team&apos;s figures couldn&apos;t be loaded right now. Please try again shortly.</Empty>
       ) : (
         <div className={dash.grid}>
-          <MetricCard
-            label="Capacity contracted"
-            href="/portal/capacity/sites"
-            value={metrics.current.capacity_contracted_mw}
-            format={megawatts}
-            detail={`${megawatts(metrics.current.capacity_pipeline_mw)} in the pipeline`}
-            points={metrics.series.capacity_contracted_mw}
-            rangeDays={rangeDays}
-          />
+          {CAPACITY_STATUSES.filter(({ metric }) => metrics.current[metric] > 0).map(({ status, metric }) => (
+            <MetricCard
+              key={metric}
+              label={`Capacity · ${status}`}
+              href="/portal/capacity/sites"
+              value={metrics.current[metric]}
+              format={megawatts}
+              detail={`${Math.round((metrics.current[metric] / metrics.current.capacity_pipeline_mw) * 100)}% of ${megawatts(
+                metrics.current.capacity_pipeline_mw,
+              )}`}
+              points={metrics.series[metric]}
+              rangeDays={rangeDays}
+            />
+          ))}
           <MetricCard
             label="Open opportunities"
             href="/portal/zrm/opportunities"

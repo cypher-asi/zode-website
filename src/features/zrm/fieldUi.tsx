@@ -73,7 +73,6 @@ export function fieldValue(field: FieldSpec, record: object): ReactNode {
     case "room":
       return <ZrmLink href={roomHref(String(value))}>{String((field.display ? read(record, field.display) : null) ?? "Open")}</ZrmLink>;
     case "stage":
-    case "group":
       return <Badge>{String(field.display ? read(record, field.display) : value)}</Badge>;
     case "status": {
       const color = read(record, "status_color");
@@ -119,7 +118,6 @@ export function FieldInput({
     field.type === "company" ||
     field.type === "person" ||
     field.type === "stage" ||
-    field.type === "group" ||
     field.type === "status" ||
     field.type === "room" ||
     field.type === "choice"
@@ -130,7 +128,6 @@ export function FieldInput({
       company: () => options.companies,
       person: () => options.people,
       stage: () => named(options.stages),
-      group: () => named(options.groups),
       status: () => named(options.statuses),
       room: () => named(options.rooms),
       choice: () => (field.options ?? []).map((value) => ({ value, label: value })),

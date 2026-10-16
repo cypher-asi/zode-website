@@ -13,6 +13,19 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+/* Opening a record widens its pane in from the right edge, the divider sliding over to its place. */
+@media (min-width: 701px) and (prefers-reduced-motion: no-preference) {
+  .workspace[data-view="detail"] {
+    animation: open-detail 360ms var(--ease-out);
+  }
+}
+
+@keyframes open-detail {
+  from {
+    grid-template-columns: calc(100% - 9px) 9px minmax(0, 0fr);
+  }
+}
+
 /* A container, so the list drops its wide-only columns whenever its pane is narrow, not only on phones. */
 .listPane {
   display: flex;
@@ -177,6 +190,107 @@
   font-size: var(--text-2xs);
   letter-spacing: var(--caps-tracking);
   text-transform: uppercase;
+}
+
+.row[data-menu-open] {
+  background: var(--color-surface-hover);
+}
+
+/* A row's right-click menu, styled like the data room's row menus; submenus open beside it, or to its left near the window's edge. */
+.contextMenu {
+  position: fixed;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  padding: 4px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-inset);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-md);
+}
+
+.contextMenu[data-sub] {
+  position: absolute;
+  top: -5px;
+  left: calc(100% + 4px);
+  min-width: 180px;
+}
+
+.contextMenu[data-flip] .contextMenu[data-sub] {
+  right: calc(100% + 4px);
+  left: auto;
+}
+
+.contextSub {
+  position: relative;
+}
+
+.contextItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: var(--radius-inset);
+  background: transparent;
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.contextItem:hover,
+.contextItem:focus-visible,
+.contextItem[aria-expanded="true"] {
+  background: var(--color-surface-hover);
+  outline: 0;
+}
+
+.contextItem[data-danger] {
+  color: var(--color-danger);
+}
+
+.contextValue {
+  flex: 1;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-weight: 400;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contextIcon {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.contextValue + .contextIcon {
+  color: var(--color-text-secondary);
+}
+
+.contextItem[role="menuitemradio"] .contextIcon {
+  visibility: hidden;
+}
+
+.contextItem[aria-checked="true"] .contextIcon {
+  visibility: visible;
+}
+
+.contextSeparator {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--color-border);
 }
 
 .row:focus-visible {
@@ -454,6 +568,58 @@
 
 .section + .section {
   border-top: 1px solid var(--color-border);
+}
+
+/*
+ * Each record (and each tab) rises in from the header down, a section at a
+ * time. Its panel remounts per record, so this replays as the record changes,
+ * but not as a section is edited and saved in place.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .detailHeader,
+  .detailTabs,
+  .sections > * {
+    animation: rise var(--duration-slow) var(--ease-out) calc(var(--i, 0) * 40ms + 40ms) backwards;
+  }
+
+  .detailTabs {
+    --i: 1;
+  }
+
+  .sections > :nth-child(1) {
+    --i: 2;
+  }
+
+  .sections > :nth-child(2) {
+    --i: 3;
+  }
+
+  .sections > :nth-child(3) {
+    --i: 4;
+  }
+
+  .sections > :nth-child(4) {
+    --i: 5;
+  }
+
+  .sections > :nth-child(5) {
+    --i: 6;
+  }
+
+  .sections > :nth-child(6) {
+    --i: 7;
+  }
+
+  .sections > :nth-child(n + 7) {
+    --i: 8;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
 }
 
 .sectionHead {

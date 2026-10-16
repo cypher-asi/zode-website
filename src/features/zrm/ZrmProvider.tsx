@@ -20,7 +20,6 @@ import {
   type Option,
   type RecordAppId,
   type RecordKind,
-  type SiteGroup,
   type SiteRoom,
   type SiteStatus,
   type Stage,
@@ -161,7 +160,6 @@ export interface RefOptions {
   companies: Option[];
   people: Option[];
   stages: Stage[];
-  groups: SiteGroup[];
   statuses: SiteStatus[];
   rooms: SiteRoom[];
 }
@@ -176,7 +174,6 @@ export function useRefOptions(): RefOptions {
         label: [[person.first_name, person.last_name].filter(Boolean).join(" "), person.company_name].filter(Boolean).join(" · "),
       })),
       stages: data.stages,
-      groups: data.groups,
       statuses: data.statuses,
       rooms: data.rooms,
     }),

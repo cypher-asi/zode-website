@@ -10,7 +10,6 @@ import {
   type OpportunityRow,
   type PersonRow,
   type RecordKind,
-  type SiteGroup,
   type SiteRow,
   type SiteStatus,
   type ZrmType,
@@ -209,13 +208,12 @@ const moneyTotals = (rows: readonly SiteRow[]): string[] =>
     .filter(([, total]) => total > 0)
     .map(([label, total]) => `${formatMoney(total)} ${label}`);
 
-export function sitesConfig(groups: readonly SiteGroup[], statuses: readonly SiteStatus[]): ListConfig<SiteRow> {
-  const groupOf = new Map(groups.map((group) => [group.id, group]));
+export function sitesConfig(statuses: readonly SiteStatus[]): ListConfig<SiteRow> {
   const statusOf = new Map(statuses.map((status) => [status.id, status]));
   return {
     noun: ["site", "sites"],
     searchText: (s) =>
-      lower(s.name, s.address, s.provider_name, s.customer_name, s.deal_type, groupOf.get(s.group_id ?? "")?.name, statusOf.get(s.status_id)?.name),
+      lower(s.name, s.address, s.provider_name, s.customer_name, s.deal_type, s.site_stage, statusOf.get(s.status_id)?.name),
     summary: (rows) => [formatMw(sum(rows, (s) => s.total_it_mw)), ...moneyTotals(rows)].join(" · "),
     filters: [
       {
@@ -227,16 +225,6 @@ export function sitesConfig(groups: readonly SiteGroup[], statuses: readonly Sit
           return statuses.filter((status) => used.has(status.id)).map((status) => ({ value: status.id, label: status.name }));
         },
         test: (s, value) => s.status_id === value,
-      },
-      {
-        key: "group",
-        label: "Filter by group",
-        all: "All groups",
-        options: (rows) => {
-          const used = new Set(rows.map((s) => s.group_id));
-          return groups.filter((group) => used.has(group.id)).map((group) => ({ value: group.id, label: group.name }));
-        },
-        test: (s, value) => s.group_id === value,
         sidebar: true,
       },
     ],
@@ -262,16 +250,6 @@ export function sitesConfig(groups: readonly SiteGroup[], statuses: readonly Sit
         wideOnly: true,
         sortValue: (s) => s.provider_name?.toLowerCase() ?? null,
         render: (s) => s.provider_name,
-      },
-      {
-        key: "group",
-        header: "Group",
-        width: "minmax(0, 1fr)",
-        sortValue: (s) => groupOf.get(s.group_id ?? "")?.position ?? null,
-        render: (s) => {
-          const group = groupOf.get(s.group_id ?? "");
-          return group ? <Badge>{group.name}</Badge> : null;
-        },
       },
       {
         key: "total",

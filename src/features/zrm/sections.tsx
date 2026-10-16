@@ -99,9 +99,6 @@ function savedRecord(record: object, fields: readonly FieldSpec[], formData: For
       case "stage":
         next[field.display] = named(data.stages, value);
         break;
-      case "group":
-        next[field.display] = named(data.groups, value);
-        break;
       case "room":
         next[field.display] = named(data.rooms, value);
         break;

@@ -2,8 +2,8 @@ import type { RecordKind } from "./types";
 
 /**
  * How a field is edited and shown. References (`company`, `person`, `stage`,
- * `group`, `status`, `room`) hold an id, with its name alongside in the record
- * under `display`. `decimal`, unlike `money`, takes fractions and negatives.
+ * `status`, `room`) hold an id, with its name alongside in the record under
+ * `display`. `decimal`, unlike `money`, takes fractions and negatives.
  */
 export type FieldType =
   | "text"
@@ -20,7 +20,6 @@ export type FieldType =
   | "company"
   | "person"
   | "stage"
-  | "group"
   | "status"
   | "room";
 
@@ -54,15 +53,18 @@ const decimal = of("decimal");
 const money = of("money");
 const company: FieldSpec = { key: "company_id", label: "Company", type: "company", display: "company_name" };
 
-export const DEAL_TYPES = ["Lease", "JV", "Buy"] as const;
+export const DEAL_TYPES = ["Lease", "Purchase", "JV"] as const;
+
+/** How built out a site is, furthest first. */
+export const SITE_STAGES = ["Operational DC", "Retrofit", "Powered Shell", "Powered Land", "Land"] as const;
 
 const site = {
   name: text("name", "Site", true),
   address: text("address", "Address"),
-  group: { key: "group_id", label: "Group", type: "group", display: "group_name" },
   status: { key: "status_id", label: "Status", type: "status", required: true, display: "status_name" },
+  stage: { key: "site_stage", label: "Stage", type: "choice", options: SITE_STAGES },
   provider: { key: "provider_company_id", label: "Provider", type: "company", display: "provider_name" },
-  dealType: { key: "deal_type", label: "Type", type: "choice", options: DEAL_TYPES },
+  dealType: { key: "deal_type", label: "Deal type", type: "choice", options: DEAL_TYPES },
   initial: decimal("initial_it_mw", "Initial IT (MW)"),
   secondary: decimal("secondary_it_mw", "Secondary IT (MW)"),
 } satisfies Record<string, FieldSpec>;
@@ -182,8 +184,8 @@ export const SECTIONS: Record<RecordKind, readonly SectionSpec[]> = {
       fields: [
         site.name,
         site.address,
-        site.group,
         site.status,
+        site.stage,
         site.provider,
         site.dealType,
         { key: "term_years", label: "Term (years)", type: "int" },
@@ -235,8 +237,11 @@ export const CREATE_FIELDS: Record<RecordKind, readonly FieldSpec[]> = {
   people: [text("first_name", "First name", true), text("last_name", "Last name"), text("title", "Title"), company, email("email", "Email")],
   companies: [text("name", "Name", true), text("domain", "Domain"), text("industry", "Industry"), url("website", "Website")],
   opportunities: SECTIONS.opportunities[0]!.fields.filter((field) => field.key !== "owner_notes"),
-  sites: [site.name, site.address, site.group, site.status, site.provider, site.dealType, site.initial, site.secondary],
+  sites: [site.name, site.address, site.status, site.stage, site.provider, site.dealType, site.initial, site.secondary],
 };
+
+/** The site fields a list row's right-click menu sets directly. */
+export const SITE_MENU_FIELDS = [site.status, site.stage, site.dealType] as const;
 
 /** The fields a section's form saves, leaving out read-only ones. */
 export const fieldsFor = (kind: RecordKind, section: string): readonly FieldSpec[] | undefined =>

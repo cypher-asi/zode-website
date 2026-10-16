@@ -637,21 +637,10 @@ create index if not exists zrm_notes_opportunity_idx on zrm_notes (opportunity_i
 
 -- Capacity: the team's data center sites, beside ZRM in the portal and
 -- linked into it, their provider, customer and broker's firm being ZRM
--- companies and their broker a ZRM person. A site's group is the part of the
--- pipeline sheet it sits in (Critical Path, LOI, a portfolio like Atlas); its
--- status is where the deal stands. `seed_key` lets `npm run capacity:import`
--- re-run without duplicating. `active` pins a site to the top of its list.
-create table if not exists capacity_groups (
-  id uuid primary key default gen_random_uuid(),
-  name text not null unique,
-  position integer not null default 0
-);
-
-insert into capacity_groups (name, position)
-select g.name, g.position
-from (values ('Critical Path', 0), ('LOI', 1), ('Atlas', 2), ('Metroplex', 3), ('Misc', 4)) as g (name, position)
-where not exists (select 1 from capacity_groups);
-
+-- companies and their broker a ZRM person. A site's status is where the deal
+-- stands, and the list is organized by it, furthest along first. `seed_key`
+-- lets `npm run capacity:import` re-run without duplicating. `active` pins a
+-- site to the top of its list.
 create table if not exists capacity_statuses (
   id uuid primary key default gen_random_uuid(),
   name text not null unique,
@@ -659,24 +648,29 @@ create table if not exists capacity_statuses (
   color text not null default '#94A3B8'
 );
 
+-- The earlier Diligence and Live statuses carry on as Negotiation and Closed,
+-- keeping their sites; the five are then kept in this order and colour, and
+-- any other status is retired below, once capacity_sites exists.
+update capacity_statuses set name = 'Negotiation'
+where name = 'Diligence' and not exists (select 1 from capacity_statuses where name = 'Negotiation');
+
+update capacity_statuses set name = 'Closed'
+where name = 'Live' and not exists (select 1 from capacity_statuses where name = 'Closed');
+
 insert into capacity_statuses (name, position, color)
-select s.name, s.position, s.color
-from (
-  values ('Prospect', 0, '#94A3B8'), ('LOI', 1, '#60A5FA'), ('Diligence', 2, '#F59E0B'),
-    ('Contracted', 3, '#8B5CF6'), ('Live', 4, '#22C55E'), ('Passed', 5, '#EF4444')
-) as s (name, position, color)
-where not exists (select 1 from capacity_statuses);
+values ('Closed', 0, '#22C55E'), ('Contracted', 1, '#8B5CF6'), ('LOI', 2, '#60A5FA'),
+  ('Negotiation', 3, '#F59E0B'), ('Prospect', 4, '#94A3B8')
+on conflict (name) do update set position = excluded.position, color = excluded.color;
 
 create table if not exists capacity_sites (
   id uuid primary key default gen_random_uuid(),
   seed_key text unique,
   name text not null,
   address text,
-  group_id uuid references capacity_groups (id) on delete set null,
   status_id uuid not null references capacity_statuses (id),
   provider_company_id uuid references zrm_companies (id) on delete set null,
   term_years integer,
-  deal_type text check (deal_type in ('Lease', 'JV', 'Buy')),
+  deal_type text check (deal_type in ('Lease', 'Purchase', 'JV')),
   -- MW. Secondary can be negative where the second phase revises the first down.
   initial_it_mw numeric(10, 2),
   secondary_it_mw numeric(10, 2),
@@ -701,7 +695,6 @@ create table if not exists capacity_sites (
   updated_at timestamptz not null default now()
 );
 
-create index if not exists capacity_sites_group_idx on capacity_sites (group_id);
 create index if not exists capacity_sites_status_idx on capacity_sites (status_id);
 create index if not exists capacity_sites_provider_idx on capacity_sites (provider_company_id);
 create index if not exists capacity_sites_customer_idx on capacity_sites (customer_company_id);
@@ -713,6 +706,35 @@ create index if not exists capacity_sites_broker_idx on capacity_sites (broker_p
 alter table capacity_sites add column if not exists data_room_id uuid references data_rooms (id) on delete set null;
 
 create index if not exists capacity_sites_data_room_idx on capacity_sites (data_room_id) where data_room_id is not null;
+
+-- Sites were once sorted into the sheet's groups (Critical Path, Atlas, ...);
+-- they're organized by status alone now.
+alter table capacity_sites drop column if exists group_id;
+
+drop table if exists capacity_groups;
+
+-- Sites on a retired status (Passed) start over as prospects.
+update capacity_sites set status_id = (select id from capacity_statuses where name = 'Prospect')
+where status_id in (
+  select id from capacity_statuses where name not in ('Closed', 'Contracted', 'LOI', 'Negotiation', 'Prospect')
+);
+
+delete from capacity_statuses where name not in ('Closed', 'Contracted', 'LOI', 'Negotiation', 'Prospect');
+
+-- Lease, purchase or joint venture; purchases were once recorded as Buy.
+alter table capacity_sites drop constraint if exists capacity_sites_deal_type_check;
+
+update capacity_sites set deal_type = 'Purchase' where deal_type = 'Buy';
+
+alter table capacity_sites add constraint capacity_sites_deal_type_check check (deal_type in ('Lease', 'Purchase', 'JV'));
+
+-- How built out the site is, from bare land to a running data center.
+alter table capacity_sites add column if not exists site_stage text;
+
+alter table capacity_sites drop constraint if exists capacity_sites_site_stage_check;
+
+alter table capacity_sites add constraint capacity_sites_site_stage_check
+  check (site_stage in ('Operational DC', 'Retrofit', 'Powered Shell', 'Powered Land', 'Land'));
 
 -- Sites take notes too, so a note hangs off exactly one person, company,
 -- opportunity or site. The check is dropped and re-added under one name so
