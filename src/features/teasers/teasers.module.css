@@ -51,6 +51,33 @@
   font-weight: 500;
 }
 
+.offer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+}
+
+.offerPhase {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.offerPhase input {
+  accent-color: var(--color-ink);
+}
+
+.offerPhase strong {
+  margin-right: 6px;
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
 @media (max-width: 1100px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);

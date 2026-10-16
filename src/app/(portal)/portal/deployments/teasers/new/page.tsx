@@ -5,6 +5,7 @@ import { PortalLoading } from "@/features/portal/PortalLoading";
 import { Empty, PageHeader } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
 import { draftFromDeployment } from "@/features/teasers/draft";
+import { OfferPicker } from "@/features/teasers/OfferPicker";
 import { TeaserForm } from "@/features/teasers/TeaserForm";
 import { DeploymentPicker } from "@/features/teasers/TeaserList";
 import { requireTeam } from "@/features/zrm/access";
@@ -26,7 +27,7 @@ export default function NewTeaserPage({ searchParams }: PageProps<"/portal/deplo
 async function NewTeaser({
   searchParams,
 }: Pick<PageProps<"/portal/deployments/teasers/new">, "searchParams">): Promise<ReactElement> {
-  const { deployment: raw } = await searchParams;
+  const { deployment: raw, phase } = await searchParams;
   const deploymentId = typeof raw === "string" ? raw : null;
   const account = await requireTeam(
     `/portal/deployments/teasers/new${deploymentId ? `?deployment=${encodeURIComponent(deploymentId)}` : ""}`,
@@ -43,13 +44,23 @@ async function NewTeaser({
     );
   }
 
+  const picked = [phase ?? []]
+    .flat()
+    .map(Number)
+    .filter((i) => Number.isInteger(i) && i >= 0 && i < deployment.phases.length);
+  const phases = picked.length ? picked : null;
+  const draft = draftFromDeployment(deployment, { name: account.displayName, email: account.email }, phases);
+
   return (
     <div className={styles.page}>
       <PageHeader
         title="New teaser"
         subtitle={`Filled in from ${deployment.name}. Edit anything, then create it to preview and export the PDF.`}
       />
-      <TeaserForm teaser={draftFromDeployment(deployment, { name: account.displayName, email: account.email })} />
+      {deployment.phases.length > 1 ? (
+        <OfferPicker key={phases?.join() ?? "all"} deployment={deployment} phases={phases} />
+      ) : null}
+      <TeaserForm key={phases?.join() ?? "all"} teaser={draft} />
     </div>
   );
 }

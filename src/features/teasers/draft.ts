@@ -36,12 +36,33 @@ const listOf = (items: readonly string[]): string =>
 const cut = (text: string, max: number): string => (text.length <= max ? text : `${text.slice(0, max - 3).trimEnd()}...`);
 
 /**
- * A teaser for `deployment`, every figure written out from it as text for the
- * team to edit, with `contact` as who to reach. Nothing internal (notes,
- * credit, the data room) is copied.
+ * The part of `deployment` a teaser offers: the phases at `phases` (indexes
+ * into its RFS-ordered phases) and only their nodes, or all of it when that's
+ * every phase, none, or null.
  */
-export function draftFromDeployment(deployment: Deployment, contact: { name: string; email: string }): TeaserInput {
-  const d = deployment;
+export function offeringOf(deployment: Deployment, phases: readonly number[] | null): Deployment {
+  const chosen = deployment.phases.filter((_, i) => phases?.includes(i));
+  if (!chosen.length || chosen.length === deployment.phases.length) return deployment;
+  return {
+    ...deployment,
+    phases: chosen,
+    nodes: chosen.reduce((sum, phase) => sum + phase.nodes, 0),
+    platform: chosen[0].platform,
+  };
+}
+
+/**
+ * A teaser for the `phases` of `deployment` (see `offeringOf`), every figure
+ * written out from them as text for the team to edit, with `contact` as who to
+ * reach. Nothing internal (notes, credit, the data room) is copied.
+ */
+export function draftFromDeployment(
+  deployment: Deployment,
+  contact: { name: string; email: string },
+  phases: readonly number[] | null = null,
+): TeaserInput {
+  const d = offeringOf(deployment, phases);
+  const partial = d !== deployment;
   const totals = totalsOf(d);
   const shares = totals.byPlatform.filter((share) => share.gpus > 0);
   const place = d.city ?? d.address?.split("\n")[0] ?? null;
@@ -120,7 +141,7 @@ export function draftFromDeployment(deployment: Deployment, contact: { name: str
   ].slice(0, LIMITS.terms);
 
   return {
-    name: cut(d.name, LIMITS.name),
+    name: cut(partial ? `${d.name} · ${platformSummary(shares)}` : d.name, LIMITS.name),
     deploymentId: d.id,
     eyebrow: cut([place, first ? `Available ${monthOf(first.rfsOn)}` : null].filter(Boolean).join(" · "), LIMITS.eyebrow),
     headline: cut(headline, LIMITS.headline),
