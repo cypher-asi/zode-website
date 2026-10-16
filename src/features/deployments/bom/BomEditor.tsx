@@ -1,51 +1,34 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition, type ReactElement } from "react";
+import { Fragment, useMemo, useRef, useState, useTransition, type ReactElement } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { buildCluster } from "@/features/cluster/model/build";
-import { SLOT_SECTIONS, SLOTS } from "@/features/cluster/model/slots";
+import { SLOT_SECTIONS, SLOTS, slotById, type Slot } from "@/features/cluster/model/slots";
 import ui from "@/features/data-room/ui.module.css";
 import d from "../deployments.module.css";
-import { formatCount, formatUsd } from "../format";
-import type { Deployment } from "../types";
-import { saveBomAction } from "./actions";
-import { phaseCoverage } from "./coverage";
+import { formatCount, formatUsd, plural } from "../format";
+import { platformLabel, type Deployment } from "../types";
+import { saveBomLinesAction } from "./actions";
+import { phaseCoverage, stillNeeded, type SlotCoverage } from "./coverage";
+import { qty, slotFill, Status } from "./BomOverview";
 import { phaseCluster, phaseLabel } from "./phase";
-import { lineUsd, type Bom, type BomItem, type ItemStatus } from "./types";
+import { formatCents, lineUsd, type Bom, type BomLine, type QuoteItem } from "./types";
 import styles from "./bom.module.css";
 
-interface QuoteDraft {
-  id: string;
-  vendor: string;
-  reference: string;
-  quotedOn: string;
-  validUntil: string;
-  quotedTotal: string;
-  fileId: string;
-  notes: string;
-}
-
-interface FillDraft {
-  slotId: string;
-  units: string;
-}
-
-interface ItemDraft {
+interface LineDraft {
   key: number;
   phaseId: string;
-  quoteId: string;
-  quoteSection: string;
+  /** "" for a line no slot stands for. */
+  slotId: string;
+  /** "" for a line typed in, not picked from a quote. */
+  quoteItemId: string;
   partNumber: string;
+  manufacturer: string;
   description: string;
   quantity: string;
-  quotedQuantity: string;
   unitUsd: string;
-  status: ItemStatus;
-  excludedReason: string;
-  leadTime: string;
   notes: string;
-  fills: FillDraft[];
 }
 
 const str = (value: number | string | null): string => (value === null ? "" : String(value));
@@ -55,154 +38,283 @@ const numberOr = (raw: string, fallback: number | null): number | null => {
   return raw.trim() && Number.isFinite(value) ? value : fallback;
 };
 
-const itemDraft = (key: number, item: BomItem): ItemDraft => ({
-  key,
-  phaseId: item.phaseId ?? "",
-  quoteId: item.quoteId ?? "",
-  quoteSection: item.quoteSection,
-  partNumber: item.partNumber ?? "",
-  description: item.description,
-  quantity: str(item.quantity),
-  quotedQuantity: str(item.quotedQuantity),
-  unitUsd: str(item.unitUsd),
-  status: item.status,
-  excludedReason: item.excludedReason ?? "",
-  leadTime: item.leadTime ?? "",
-  notes: item.notes ?? "",
-  fills: item.fills.map((fill) => ({ slotId: fill.slotId, units: str(fill.unitsPerItem) })),
-});
-
-/** The draft as the save action and the coverage both read it; blank figures read as nothing. */
-const itemOf = (draft: ItemDraft): Omit<BomItem, "id"> => ({
-  phaseId: orNull(draft.phaseId),
-  quoteId: orNull(draft.quoteId),
-  quoteSection: draft.quoteSection.trim(),
+/** The draft as the save action and the coverage both read it; a blank quantity reads as none. */
+const lineOf = (draft: LineDraft): BomLine => ({
+  id: String(draft.key),
+  phaseId: draft.phaseId,
+  slotId: draft.slotId || null,
+  quoteItemId: draft.quoteItemId || null,
   partNumber: orNull(draft.partNumber),
+  manufacturer: orNull(draft.manufacturer),
   description: draft.description.trim(),
   quantity: numberOr(draft.quantity, 0)!,
-  quotedQuantity: numberOr(draft.quotedQuantity, null),
   unitUsd: numberOr(draft.unitUsd, null),
-  status: draft.status,
-  excludedReason: orNull(draft.excludedReason),
-  leadTime: orNull(draft.leadTime),
   notes: orNull(draft.notes),
-  fills: draft.fills
-    .filter((fill) => fill.slotId)
-    .map((fill) => ({ slotId: fill.slotId, unitsPerItem: numberOr(fill.units, 1)! })),
 });
+
+const ellipsis = (text: string, max: number) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
 
 const SLOT_GROUPS = SLOT_SECTIONS.map((section) => ({
   label: section.label,
   slots: SLOTS.filter((slot) => slot.section === section.id),
 }));
 
-function SlotPicker({ value, onChange }: { value: string; onChange: (slotId: string) => void }): ReactElement {
+const X_ICON = (
+  <svg viewBox="0 0 16 16" aria-hidden="true">
+    <path d="M4 4l8 8M12 4l-8 8" />
+  </svg>
+);
+
+interface ItemGroup {
+  label: string;
+  items: { id: string; label: string }[];
+}
+
+function LineRow({
+  line,
+  item,
+  groups,
+  fit,
+  onChange,
+  onPick,
+  onRemove,
+}: {
+  line: LineDraft;
+  /** The quote item it was picked from, as the quote has it now. */
+  item: QuoteItem | null;
+  groups: readonly ItemGroup[];
+  /** What the slot still needs besides the slot's other lines; null when nothing says. */
+  fit: number | null;
+  onChange: (patch: Partial<LineDraft>) => void;
+  onPick: (itemId: string) => void;
+  onRemove: () => void;
+}): ReactElement {
+  const read = lineOf(line);
+  const quotedUnit = item?.unitUsd ?? null;
   return (
-    <select className={ui.input} aria-label="Slot" value={value} onChange={(event) => onChange(event.target.value)}>
-      <option value="">Choose a slot</option>
-      {SLOT_GROUPS.map((group) => (
-        <optgroup key={group.label} label={group.label}>
-          {group.slots.map((slot) => (
-            <option key={slot.id} value={slot.id}>
-              {slot.label}
-            </option>
+    <tr>
+      <td className={styles.pickCell}>
+        <select
+          className={ui.input}
+          aria-label="Quote item"
+          value={item ? line.quoteItemId : ""}
+          onChange={(event) => onPick(event.target.value)}
+        >
+          <option value="">Typed in, not from a quote</option>
+          {groups.map((group) => (
+            <optgroup key={group.label} label={group.label}>
+              {group.items.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </optgroup>
           ))}
-        </optgroup>
-      ))}
-    </select>
+        </select>
+      </td>
+      <td>
+        <input
+          className={ui.input}
+          aria-label="Part number"
+          value={line.partNumber}
+          onChange={(event) => onChange({ partNumber: event.target.value })}
+        />
+      </td>
+      <td>
+        <input
+          className={ui.input}
+          aria-label="Manufacturer"
+          value={line.manufacturer}
+          onChange={(event) => onChange({ manufacturer: event.target.value })}
+        />
+      </td>
+      <td>
+        <input
+          className={ui.input}
+          aria-label="Description"
+          value={line.description}
+          onChange={(event) => onChange({ description: event.target.value })}
+        />
+      </td>
+      <td data-narrow="">
+        <input
+          className={ui.input}
+          inputMode="decimal"
+          aria-label="Quantity"
+          value={line.quantity}
+          onChange={(event) => onChange({ quantity: event.target.value })}
+        />
+        {fit !== null && fit > 0 && Math.abs(fit - read.quantity) > 1e-6 ? (
+          <button
+            type="button"
+            className={styles.inlineAction}
+            title="Set the quantity to what the slot still needs"
+            onClick={() => onChange({ quantity: str(fit) })}
+          >
+            Fit to {qty(fit)}
+          </button>
+        ) : item?.quantity != null ? (
+          <span className={styles.sub}>Quoted {qty(item.quantity)}</span>
+        ) : null}
+      </td>
+      <td data-narrow="">
+        <input
+          className={ui.input}
+          inputMode="decimal"
+          aria-label="Unit price"
+          placeholder="Included"
+          value={line.unitUsd}
+          onChange={(event) => onChange({ unitUsd: event.target.value })}
+        />
+        {item && quotedUnit !== read.unitUsd ? (
+          <button
+            type="button"
+            className={styles.inlineAction}
+            title="Use the quote's unit price"
+            onClick={() => onChange({ unitUsd: str(quotedUnit) })}
+          >
+            Quote: {quotedUnit === null ? "included" : formatCents(quotedUnit)}
+          </button>
+        ) : null}
+      </td>
+      <td className={styles.nowrap}>{read.unitUsd === null ? "Included" : formatCents(lineUsd(read))}</td>
+      <td>
+        <button type="button" className={ui.iconButton} aria-label="Remove line" onClick={onRemove}>
+          {X_ICON}
+        </button>
+      </td>
+    </tr>
   );
 }
 
 /**
- * The ZODE team's editor for a deployment's BOM: its quotes, each linked to a
- * file in the deployment's data room, and every quoted line with the phase it
- * belongs to and the cluster-builder slots it fills, or why it's left out.
- * Each phase's coverage follows the lines as they're edited.
+ * The ZODE team's editor for a deployment's BOM. Each phase's slots take
+ * lines picked from the quotes' price lists (edited on the Quotes tab):
+ * picking an item copies its part number, manufacturer, description and unit
+ * price, and the quantity is sized to what the slot needs, so every line
+ * shows what it costs.
  */
-export function BomEditor({
-  deployment,
-  bom,
-  files,
-}: {
-  deployment: Deployment;
-  bom: Bom;
-  files: readonly { id: string; name: string }[];
-}): ReactElement {
+export function BomEditor({ deployment, bom }: { deployment: Deployment; bom: Bom }): ReactElement {
   const router = useRouter();
   const [saving, startSaving] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [quotes, setQuotes] = useState<QuoteDraft[]>(() =>
-    bom.quotes.map((quote) => ({
-      id: quote.id,
-      vendor: quote.vendor,
-      reference: quote.reference ?? "",
-      quotedOn: quote.quotedOn ?? "",
-      validUntil: quote.validUntil ?? "",
-      quotedTotal: str(quote.quotedTotalUsd),
-      fileId: quote.dataRoomFileId ?? "",
-      notes: quote.notes ?? "",
+  const [lines, setLines] = useState<LineDraft[]>(() =>
+    bom.lines.map((line, key) => ({
+      key,
+      phaseId: line.phaseId,
+      slotId: line.slotId ?? "",
+      quoteItemId: line.quoteItemId ?? "",
+      partNumber: line.partNumber ?? "",
+      manufacturer: line.manufacturer ?? "",
+      description: line.description,
+      quantity: str(line.quantity),
+      unitUsd: str(line.unitUsd),
+      notes: line.notes ?? "",
     })),
   );
-  const [items, setItems] = useState<ItemDraft[]>(() => bom.items.map((item, i) => itemDraft(i, item)));
-  const nextKey = useRef(items.length);
-  const defaultPhase = deployment.phases[0]?.id ?? "";
+  const nextKey = useRef(lines.length);
+  const [phaseId, setPhaseId] = useState(
+    () => (deployment.phases.find((p) => bom.lines.some((line) => line.phaseId === p.id)) ?? deployment.phases[0])?.id ?? "",
+  );
 
-  const coverages = useMemo(() => {
-    const read = items.map((draft, i) => ({ ...itemOf(draft), id: String(i) }));
-    return deployment.phases.flatMap((phase, index) => {
-      const cluster = phaseCluster(deployment, phase);
-      if (!cluster) return [];
-      const coverage = phaseCoverage(
-        buildCluster(cluster.config),
-        cluster.copies,
-        read.filter((item) => item.phaseId === phase.id),
-      );
-      return [{ phase, index, coverage }];
-    });
-  }, [items, deployment]);
+  const clusters = useMemo(
+    () =>
+      new Map(
+        deployment.phases.map((phase) => {
+          const cluster = phaseCluster(deployment, phase);
+          return [phase.id, { cluster, model: cluster ? buildCluster(cluster.config) : null }];
+        }),
+      ),
+    [deployment],
+  );
+  const read = useMemo(() => lines.map(lineOf), [lines]);
+  const coverages = useMemo(
+    () =>
+      new Map(
+        deployment.phases.map((phase) => {
+          const { cluster, model } = clusters.get(phase.id)!;
+          return [phase.id, phaseCoverage(model, cluster?.copies ?? 1, read.filter((line) => line.phaseId === phase.id))];
+        }),
+      ),
+    [deployment.phases, clusters, read],
+  );
 
-  const updateQuote = (id: string, patch: Partial<QuoteDraft>) =>
-    setQuotes((rows) => rows.map((row) => (row.id === id ? { ...row, ...patch } : row)));
-  const updateItem = (key: number, patch: Partial<ItemDraft>) =>
-    setItems((rows) => rows.map((row) => (row.key === key ? { ...row, ...patch } : row)));
-  const addItem = (quoteId: string, quoteSection: string) =>
-    setItems((rows) => {
-      const draft = itemDraft(nextKey.current++, {
-        id: "",
-        phaseId: defaultPhase || null,
-        quoteId: quoteId || null,
-        quoteSection,
-        partNumber: null,
+  const quoteItems = useMemo(() => new Map(bom.items.map((item) => [item.id, item])), [bom.items]);
+  const groups = useMemo<ItemGroup[]>(
+    () =>
+      bom.quotes.flatMap((quote) => {
+        const sections = new Map<string, ItemGroup["items"]>();
+        for (const item of bom.items) {
+          if (item.quoteId !== quote.id) continue;
+          const name = [item.partNumber, item.description].filter(Boolean).join(" · ") || "Untitled item";
+          const price = item.unitUsd === null ? "included" : formatCents(item.unitUsd);
+          sections.set(item.section, [
+            ...(sections.get(item.section) ?? []),
+            { id: item.id, label: `${ellipsis(name, 80)} · ${price}` },
+          ]);
+        }
+        return [...sections].map(([section, options]) => ({
+          label: `${quote.vendor || "Untitled quote"} · ${section || "Items"}`,
+          items: options,
+        }));
+      }),
+    [bom.quotes, bom.items],
+  );
+
+  const updateLine = (key: number, patch: Partial<LineDraft>) =>
+    setLines((rows) => rows.map((row) => (row.key === key ? { ...row, ...patch } : row)));
+  const addLine = (slotId: string) =>
+    setLines((rows) => [
+      ...rows,
+      {
+        key: nextKey.current++,
+        phaseId,
+        slotId,
+        quoteItemId: "",
+        partNumber: "",
+        manufacturer: "",
         description: "",
-        quantity: 1,
-        quotedQuantity: null,
-        unitUsd: null,
-        status: "use",
-        excludedReason: null,
-        leadTime: null,
-        notes: null,
-        fills: [],
-      });
-      const last = rows.findLastIndex((row) => row.quoteId === quoteId);
-      return last < 0 ? [...rows, draft] : [...rows.slice(0, last + 1), draft, ...rows.slice(last + 1)];
+        quantity: "",
+        unitUsd: "",
+        notes: "",
+      },
+    ]);
+
+  const coverage = coverages.get(phaseId);
+  const phaseIndex = deployment.phases.findIndex((p) => p.id === phaseId);
+  const phase = deployment.phases[phaseIndex];
+  const { cluster } = clusters.get(phaseId) ?? { cluster: null };
+
+  /** What the line's slot still needs once its other lines in this phase are counted. */
+  const fitFor = (line: LineDraft, row: SlotCoverage | undefined): number | null =>
+    row
+      ? stillNeeded(
+          row,
+          read.filter((other) => other.phaseId === line.phaseId && other.slotId === row.slot.id && other.id !== String(line.key)),
+        )
+      : null;
+
+  const pick = (line: LineDraft, row: SlotCoverage | undefined, itemId: string) => {
+    const item = quoteItems.get(itemId);
+    if (!item) {
+      updateLine(line.key, { quoteItemId: "" });
+      return;
+    }
+    const fit = fitFor(line, row);
+    updateLine(line.key, {
+      quoteItemId: item.id,
+      partNumber: item.partNumber ?? "",
+      manufacturer: item.manufacturer ?? "",
+      description: item.description,
+      unitUsd: str(item.unitUsd),
+      quantity: str(fit !== null && fit > 0 ? fit : (item.quantity ?? 1)),
     });
+  };
 
   const save = () => {
     setError(null);
     startSaving(async () => {
-      const result = await saveBomAction(deployment.id, {
-        quotes: quotes.map((quote) => ({
-          id: quote.id,
-          vendor: quote.vendor.trim(),
-          reference: orNull(quote.reference),
-          quotedOn: orNull(quote.quotedOn),
-          validUntil: orNull(quote.validUntil),
-          quotedTotalUsd: numberOr(quote.quotedTotal, null),
-          dataRoomFileId: orNull(quote.fileId),
-          notes: orNull(quote.notes),
-        })),
-        items: items.map(itemOf),
-      });
+      const result = await saveBomLinesAction(deployment.id, read);
       if (result.error) {
         setError(result.error);
         return;
@@ -212,368 +324,184 @@ export function BomEditor({
     });
   };
 
-  const groups = [
-    ...quotes.map((quote) => ({ id: quote.id, title: quote.vendor || "Untitled quote" })),
-    { id: "", title: "Not from a quote" },
-  ];
-  const fileChoices = [{ id: "", name: "No file linked" }, ...files];
+  const lineRows = (rows: readonly LineDraft[], row: SlotCoverage | undefined) =>
+    rows.map((line) => (
+      <LineRow
+        key={line.key}
+        line={line}
+        item={quoteItems.get(line.quoteItemId) ?? null}
+        groups={groups}
+        fit={fitFor(line, row)}
+        onChange={(patch) => updateLine(line.key, patch)}
+        onPick={(itemId) => pick(line, row, itemId)}
+        onRemove={() => setLines((all) => all.filter((other) => other.key !== line.key))}
+      />
+    ));
+
+  const phaseLines = lines.filter((line) => line.phaseId === phaseId);
+  const shownSlots = new Set(coverage?.slots.map((row) => row.slot.id));
+  const otherLines = phaseLines.filter((line) => !line.slotId || !slotById(line.slotId));
+  const addable: { label: string; slots: Slot[] }[] = SLOT_GROUPS.map((group) => ({
+    label: group.label,
+    slots: group.slots.filter((slot) => !shownSlots.has(slot.id)),
+  })).filter((group) => group.slots.length);
 
   return (
     <div className={styles.editor}>
-      <section className={d.block} aria-label="Coverage">
-        <h2 className={d.blockTitle}>Coverage</h2>
-        {coverages.length ? (
-          <ul className={styles.lines}>
-            {coverages.map(({ phase, index, coverage }) => (
-              <li key={phase.id}>
-                <strong>{phaseLabel(phase, index)}</strong>: {formatUsd(coverage.totalUsd)} ·{" "}
-                {coverage.counts.covered + coverage.counts.over} of {coverage.slots.length} slots covered
-                {coverage.gaps ? ` · ${coverage.gaps} to fill` : ""}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className={d.muted}>No phase is on a platform the cluster builder has slots for.</p>
-        )}
-      </section>
-
-      <section className={d.block} aria-label="Quotes">
+      <section className={d.block} aria-label="Line items">
         <div className={styles.head}>
-          <h2 className={d.blockTitle}>Quotes</h2>
-          <button
-            type="button"
-            className={ui.button}
-            onClick={() =>
-              setQuotes((rows) => [
-                ...rows,
-                {
-                  id: crypto.randomUUID(),
-                  vendor: "",
-                  reference: "",
-                  quotedOn: "",
-                  validUntil: "",
-                  quotedTotal: "",
-                  fileId: "",
-                  notes: "",
-                },
-              ])
-            }
-          >
-            Add quote
-          </button>
+          <h2 className={d.blockTitle}>Line items</h2>
         </div>
-        {!deployment.dataRoomId ? (
-          <p className={d.muted}>Link the deployment to a data room to attach each quote&apos;s file.</p>
-        ) : null}
-        {quotes.map((quote) => (
-          <div key={quote.id} className={styles.quoteForm}>
-            <label className={ui.field}>
-              <span className={ui.label}>Vendor *</span>
-              <input
-                className={ui.input}
-                value={quote.vendor}
-                maxLength={300}
-                onChange={(event) => updateQuote(quote.id, { vendor: event.target.value })}
-              />
-            </label>
-            <label className={ui.field}>
-              <span className={ui.label}>Quote #</span>
-              <input
-                className={ui.input}
-                value={quote.reference}
-                maxLength={300}
-                onChange={(event) => updateQuote(quote.id, { reference: event.target.value })}
-              />
-            </label>
-            <label className={ui.field}>
-              <span className={ui.label}>Quoted on</span>
-              <input
-                type="date"
-                className={ui.input}
-                value={quote.quotedOn}
-                onChange={(event) => updateQuote(quote.id, { quotedOn: event.target.value })}
-              />
-            </label>
-            <label className={ui.field}>
-              <span className={ui.label}>Valid until</span>
-              <input
-                type="date"
-                className={ui.input}
-                value={quote.validUntil}
-                onChange={(event) => updateQuote(quote.id, { validUntil: event.target.value })}
-              />
-            </label>
-            <label className={ui.field}>
-              <span className={ui.label}>Stated total (USD)</span>
-              <input
-                className={ui.input}
-                inputMode="decimal"
-                value={quote.quotedTotal}
-                onChange={(event) => updateQuote(quote.id, { quotedTotal: event.target.value })}
-              />
-            </label>
-            <label className={ui.field}>
-              <span className={ui.label}>File in the data room</span>
-              <select
-                className={ui.input}
-                value={quote.fileId}
-                disabled={!deployment.dataRoomId}
-                onChange={(event) => updateQuote(quote.id, { fileId: event.target.value })}
-              >
-                {fileChoices.map((file) => (
-                  <option key={file.id} value={file.id}>
-                    {file.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className={ui.field} data-wide="">
-              <span className={ui.label}>Notes</span>
-              <textarea
-                className={ui.textarea}
-                rows={2}
-                maxLength={2000}
-                value={quote.notes}
-                onChange={(event) => updateQuote(quote.id, { notes: event.target.value })}
-              />
-            </label>
-            <div className={styles.quoteFormFoot}>
-              <span className={d.muted}>
-                {formatCount(items.filter((item) => item.quoteId === quote.id).length)} lines
-              </span>
+        {deployment.phases.length ? (
+          <div className={styles.tabs} role="group" aria-label="Phase">
+            {deployment.phases.map((p, i) => (
               <button
+                key={p.id}
                 type="button"
-                className={ui.danger}
-                onClick={() => {
-                  setQuotes((rows) => rows.filter((row) => row.id !== quote.id));
-                  setItems((rows) => rows.filter((row) => row.quoteId !== quote.id));
-                }}
+                className={styles.tab}
+                aria-pressed={p.id === phaseId}
+                onClick={() => setPhaseId(p.id)}
               >
-                Remove quote and its lines
+                {phaseLabel(p, i)} · {formatUsd(coverages.get(p.id)?.totalUsd ?? 0)}
               </button>
-            </div>
+            ))}
           </div>
-        ))}
-      </section>
+        ) : (
+          <p className={d.muted}>Add a phase to the deployment first: each phase has its own BOM.</p>
+        )}
 
-      {groups.map((group) => {
-        const rows = items.filter((item) => item.quoteId === group.id);
-        if (!group.id && !rows.length) {
-          return (
-            <div key="none">
-              <button type="button" className={ui.button} onClick={() => addItem("", "")}>
-                Add a line not from a quote
-              </button>
-            </div>
-          );
-        }
-        const total = rows.reduce((sum, row) => {
-          const item = itemOf(row);
-          return item.status === "use" ? sum + lineUsd(item) : sum;
-        }, 0);
-        return (
-          <section key={group.id || "none"} className={d.block} aria-label={`${group.title} lines`}>
-            <div className={styles.head}>
-              <h2 className={d.blockTitle}>
-                {group.title} · {formatCount(rows.length)} lines · {formatUsd(total)} in BOM
-              </h2>
-              <button
-                type="button"
-                className={ui.button}
-                onClick={() => addItem(group.id, rows.at(-1)?.quoteSection ?? "")}
-              >
-                Add line
-              </button>
-            </div>
+        {phase && coverage ? (
+          <>
+            <p className={d.muted}>
+              {formatCount(phase.nodes)} {platformLabel(phase.platform)} nodes.{" "}
+              {cluster
+                ? `Slots are what ${cluster.copies > 1 ? `${cluster.copies} × ` : ""}a ${formatCount(cluster.config.nodes)}-node cluster needs${coverage.gaps ? `; ${coverage.gaps} still to fill` : ""}.`
+                : `The cluster builder has no ${platformLabel(phase.platform)} rack yet, so add the slots this phase's lines fill.`}{" "}
+              Total {formatCents(coverage.totalUsd)} over {plural(phaseLines.length, "line")}.
+            </p>
             <div className={styles.tableWrap}>
               <table className={`${styles.table} ${styles.editTable}`}>
                 <thead>
                   <tr>
                     <th scope="col" data-text="">
-                      Section
+                      From quote
                     </th>
                     <th scope="col" data-text="">
                       Part #
                     </th>
                     <th scope="col" data-text="">
+                      Manufacturer
+                    </th>
+                    <th scope="col" data-text="">
                       Description
                     </th>
-                    <th scope="col" data-text="">
-                      Phase
-                    </th>
                     <th scope="col">Qty</th>
-                    <th scope="col">Quoted qty</th>
                     <th scope="col">Unit $</th>
-                    <th scope="col" data-text="">
-                      Status
-                    </th>
-                    <th scope="col" data-text="">
-                      Slots
-                    </th>
+                    <th scope="col">Line total</th>
                     <th scope="col">
                       <span className={styles.srOnly}>Remove</span>
                     </th>
                   </tr>
                 </thead>
-                <tbody>
-                  {rows.map((row) => (
-                    <tr key={row.key} data-excluded={row.status === "excluded" ? "" : undefined}>
-                      <td>
-                        <input
-                          className={ui.input}
-                          aria-label="Section"
-                          value={row.quoteSection}
-                          onChange={(event) => updateItem(row.key, { quoteSection: event.target.value })}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          className={ui.input}
-                          aria-label="Part number"
-                          value={row.partNumber}
-                          onChange={(event) => updateItem(row.key, { partNumber: event.target.value })}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          className={ui.input}
-                          aria-label="Description"
-                          value={row.description}
-                          onChange={(event) => updateItem(row.key, { description: event.target.value })}
-                        />
-                      </td>
-                      <td>
-                        <select
-                          className={ui.input}
-                          aria-label="Phase"
-                          value={row.phaseId}
-                          onChange={(event) => updateItem(row.key, { phaseId: event.target.value })}
-                        >
-                          <option value="">No phase</option>
-                          {deployment.phases.map((phase, i) => (
-                            <option key={phase.id} value={phase.id}>
-                              {phaseLabel(phase, i)}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td data-narrow="">
-                        <input
-                          className={ui.input}
-                          inputMode="decimal"
-                          aria-label="Quantity"
-                          value={row.quantity}
-                          onChange={(event) => updateItem(row.key, { quantity: event.target.value })}
-                        />
-                      </td>
-                      <td data-narrow="">
-                        <input
-                          className={ui.input}
-                          inputMode="decimal"
-                          aria-label="Quoted quantity"
-                          placeholder="Same"
-                          value={row.quotedQuantity}
-                          onChange={(event) => updateItem(row.key, { quotedQuantity: event.target.value })}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          className={ui.input}
-                          inputMode="decimal"
-                          aria-label="Unit price"
-                          placeholder="Included"
-                          value={row.unitUsd}
-                          onChange={(event) => updateItem(row.key, { unitUsd: event.target.value })}
-                        />
-                      </td>
-                      <td>
-                        <select
-                          className={ui.input}
-                          aria-label="Status"
-                          value={row.status}
-                          onChange={(event) => updateItem(row.key, { status: event.target.value as ItemStatus })}
-                        >
-                          <option value="use">In BOM</option>
-                          <option value="excluded">Excluded</option>
-                        </select>
-                      </td>
-                      <td>
-                        {row.status === "excluded" ? (
-                          <input
-                            className={ui.input}
-                            aria-label="Why it's excluded"
-                            placeholder="Why it's left out"
-                            value={row.excludedReason}
-                            onChange={(event) => updateItem(row.key, { excludedReason: event.target.value })}
-                          />
-                        ) : (
-                          <div className={styles.fills}>
-                            {row.fills.map((fill, i) => (
-                              <div key={i} className={styles.fill}>
-                                <SlotPicker
-                                  value={fill.slotId}
-                                  onChange={(slotId) =>
-                                    updateItem(row.key, {
-                                      fills: row.fills.map((f, j) => (j === i ? { ...f, slotId } : f)),
-                                    })
-                                  }
-                                />
-                                <input
-                                  className={ui.input}
-                                  inputMode="decimal"
-                                  aria-label="Units per item"
-                                  title="Slot units each item covers"
-                                  value={fill.units}
-                                  onChange={(event) =>
-                                    updateItem(row.key, {
-                                      fills: row.fills.map((f, j) => (j === i ? { ...f, units: event.target.value } : f)),
-                                    })
-                                  }
-                                />
+                {SLOT_SECTIONS.map((section) => {
+                  const rows = coverage.slots.filter((row) => row.slot.section === section.id);
+                  if (!rows.length) return null;
+                  return (
+                    <tbody key={section.id}>
+                      <tr data-group="">
+                        <th colSpan={6}>{section.label}</th>
+                        <th className={styles.nowrap}>{formatUsd(coverage.sectionUsd.get(section.id) ?? 0)}</th>
+                        <th />
+                      </tr>
+                      {rows.map((row) => (
+                        <Fragment key={row.slot.id}>
+                          <tr data-slot="">
+                            <th colSpan={6} data-text="">
+                              <span className={styles.slotHead}>
+                                <span>{row.slot.label}</span>
+                                <span className={styles.sub}>{slotFill(row)}</span>
+                                {row.status !== "unchecked" ? <Status row={row} /> : null}
                                 <button
                                   type="button"
-                                  className={ui.iconButton}
-                                  aria-label="Remove slot"
-                                  onClick={() => updateItem(row.key, { fills: row.fills.filter((_, j) => j !== i) })}
+                                  className={styles.inlineAction}
+                                  onClick={() => addLine(row.slot.id)}
                                 >
-                                  <svg viewBox="0 0 16 16" aria-hidden="true">
-                                    <path d="M4 4l8 8M12 4l-8 8" />
-                                  </svg>
+                                  Add line
                                 </button>
-                              </div>
-                            ))}
-                            <div>
-                              <button
-                                type="button"
-                                className={ui.button}
-                                onClick={() => updateItem(row.key, { fills: [...row.fills, { slotId: "", units: "1" }] })}
-                              >
-                                Add slot
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className={ui.iconButton}
-                          aria-label="Remove line"
-                          onClick={() => setItems((all) => all.filter((item) => item.key !== row.key))}
-                        >
-                          <svg viewBox="0 0 16 16" aria-hidden="true">
-                            <path d="M4 4l8 8M12 4l-8 8" />
-                          </svg>
+                              </span>
+                            </th>
+                            <td className={styles.nowrap}>{row.usd ? formatCents(row.usd) : ""}</td>
+                            <td />
+                          </tr>
+                          {lineRows(
+                            phaseLines.filter((line) => line.slotId === row.slot.id),
+                            row,
+                          )}
+                        </Fragment>
+                      ))}
+                    </tbody>
+                  );
+                })}
+                <tbody>
+                  <tr data-group="">
+                    <th colSpan={6}>
+                      <span className={styles.slotHead}>
+                        <span>Other line items</span>
+                        <button type="button" className={styles.inlineAction} onClick={() => addLine("")}>
+                          Add line
                         </button>
+                      </span>
+                    </th>
+                    <th className={styles.nowrap}>{formatUsd(coverage.sectionUsd.get("other") ?? 0)}</th>
+                    <th />
+                  </tr>
+                  {otherLines.length ? (
+                    lineRows(otherLines, undefined)
+                  ) : (
+                    <tr>
+                      <td data-text="" colSpan={8}>
+                        <span className={styles.sub}>Costs no slot stands for, like a section subtotal.</span>
                       </td>
                     </tr>
-                  ))}
+                  )}
+                </tbody>
+                <tbody>
+                  <tr data-total="">
+                    <th colSpan={6} data-text="">
+                      {phaseLabel(phase, phaseIndex)} total
+                    </th>
+                    <td className={styles.nowrap}>{formatCents(coverage.totalUsd)}</td>
+                    <td />
+                  </tr>
                 </tbody>
               </table>
             </div>
-          </section>
-        );
-      })}
+            {addable.length ? (
+              <label className={styles.addSlot}>
+                <span className={ui.label}>Add a line to another slot</span>
+                <select
+                  className={ui.input}
+                  value=""
+                  onChange={(event) => {
+                    if (event.target.value) addLine(event.target.value);
+                  }}
+                >
+                  <option value="">Choose a slot</option>
+                  {addable.map((group) => (
+                    <optgroup key={group.label} label={group.label}>
+                      {group.slots.map((slot) => (
+                        <option key={slot.id} value={slot.id}>
+                          {slot.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+          </>
+        ) : null}
+      </section>
 
       <div className={styles.sticky}>
         {error ? (

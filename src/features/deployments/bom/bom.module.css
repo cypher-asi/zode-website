@@ -1,4 +1,4 @@
-/* A deployment's bill of materials: quote cards, slot coverage per phase, each quote in full, and the editor. */
+/* A deployment's bill of materials: each phase's line items by slot, the quotes they're picked from, and the editor. */
 
 .head {
   display: flex;
@@ -200,6 +200,20 @@
   padding-left: 28px;
 }
 
+.table tr[data-continued] {
+  border-top-style: dashed;
+}
+
+.slotCell {
+  min-width: 180px;
+}
+
+.slotCell .status {
+  margin-top: 4px;
+  font-size: var(--text-xs);
+  font-weight: 400;
+}
+
 .nowrap {
   white-space: nowrap;
 }
@@ -300,6 +314,19 @@
   gap: 28px;
 }
 
+.quoteEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px clamp(14px, 2vw, 22px) 0;
+}
+
+.quoteEditor .sticky {
+  margin: 0 calc(-1 * clamp(14px, 2vw, 22px));
+  padding-right: clamp(14px, 2vw, 22px);
+  padding-left: clamp(14px, 2vw, 22px);
+}
+
 .quoteForm {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -335,18 +362,83 @@
   width: 96px;
 }
 
-.fills {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 260px;
+.editTable td[data-narrow] .sub,
+.editTable td[data-narrow] .inlineAction {
+  margin-top: 4px;
 }
 
-.fill {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 72px 28px;
-  gap: 4px;
-  align-items: center;
+.pickCell {
+  min-width: 240px;
+}
+
+.descCell {
+  min-width: 220px;
+}
+
+.table tr[data-slot] th {
+  padding-top: 12px;
+  font-weight: 600;
+}
+
+.slotHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.slotHead .sub {
+  display: inline;
+  margin: 0;
+}
+
+.inlineAction {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.inlineAction:hover {
+  color: var(--color-text-primary);
+}
+
+.slotHead .inlineAction {
+  margin-left: auto;
+}
+
+.priceList {
+  grid-column: 1 / -1;
+}
+
+.priceList > summary {
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.priceList > summary + * {
+  margin-top: 10px;
+}
+
+.priceList > div:last-child {
+  margin-top: 10px;
+}
+
+.addSlot {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 360px;
 }
 
 .sticky {

@@ -53,12 +53,15 @@ export async function deleteBlobs(pathnames: string[]): Promise<void> {
   }
 }
 
-/** Removes every blob under a room's prefix, including uploads that were never registered. */
-export async function deleteRoomBlobs(roomId: string): Promise<void> {
+/** Removes every blob under `prefix`, including uploads that were never registered. */
+export async function deleteBlobsUnder(prefix: string): Promise<void> {
   let cursor: string | undefined;
   do {
-    const page = await list({ prefix: roomBlobPrefix(roomId), cursor, limit: 1000 });
+    const page = await list({ prefix, cursor, limit: 1000 });
     await deleteBlobs(page.blobs.map((blob) => blob.pathname));
     cursor = page.hasMore ? page.cursor : undefined;
   } while (cursor);
 }
+
+/** Removes every blob under a room's prefix. */
+export const deleteRoomBlobs = (roomId: string): Promise<void> => deleteBlobsUnder(roomBlobPrefix(roomId));

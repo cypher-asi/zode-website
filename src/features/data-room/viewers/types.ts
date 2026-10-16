@@ -1,4 +1,4 @@
-import type { RoomFile } from "../types";
+import type { PreviewFile } from "../types";
 
 /** A fixed scale (1 = 100%), or fit the content to the panel. */
 export type Zoom = number | "fit";
@@ -6,7 +6,7 @@ export type Zoom = number | "fit";
 export interface ViewerProps {
   /** Same-origin, access-checked URL of the file's bytes. */
   url: string;
-  file: RoomFile;
+  file: PreviewFile;
   zoom: Zoom;
   /** Reports what "fit" currently works out to, so zooming in or out starts from it. */
   onFitScale: (scale: number) => void;

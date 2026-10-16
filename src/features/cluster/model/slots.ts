@@ -4,10 +4,11 @@ import type { ClusterModel, PartKind } from "./types";
 
 /*
  * Everything a cluster needs to run, as slots a deployment's bill of
- * materials fills with quoted lines (src/features/deployments/bom). Each slot
- * works out how many it needs from the built cluster, so a change to the
- * configuration shows straight away what the BOM is short of. Slot ids are
- * stored with the BOM: renaming one means migrating deployment_bom_fills.
+ * materials fills with lines picked from its quotes
+ * (src/features/deployments/bom). Each slot works out how many it needs from
+ * the built cluster, so a change to the configuration shows straight away
+ * what the BOM is short of. Slot ids are stored with the BOM: renaming one
+ * means migrating deployment_bom_lines.
  */
 
 export type SlotSection =

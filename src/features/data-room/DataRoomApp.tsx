@@ -16,6 +16,7 @@ import { formatBytes } from "./fileKinds";
 import { FileTree, ancestorsOf, folderPath, indexTree, type TreeAction } from "./FileTree";
 import { Icon } from "./icons";
 import { MAX_ARCHIVE_BYTES, type RoomFile, type RoomTree } from "./types";
+import { UploadList } from "./UploadList";
 import { useUploads } from "./useUploads";
 import { SummaryPanel, Viewer, type RoomSummary } from "./Viewer";
 import styles from "./DataRoomApp.module.css";
@@ -246,8 +247,6 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId, summary }: D
     archiveRef.current?.requestSubmit();
   };
 
-  const activeUploads = uploads.items.filter((item) => item.status === "uploading" || item.status === "queued").length;
-
   return (
     <div ref={containerRef} className={styles.app} data-view={openFile || summaryOpen ? "viewer" : "tree"}>
       <SidebarDock>
@@ -331,29 +330,7 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId, summary }: D
             summary={summary ? { open: summaryOpen, onOpen: openSummary } : undefined}
           />
 
-          {uploads.items.length ? (
-            <div className={styles.uploads} aria-live="polite">
-              <div className={styles.uploadsHeader}>
-                <span>{activeUploads ? `Uploading ${activeUploads} file${activeUploads === 1 ? "" : "s"}…` : "Uploads"}</span>
-                {activeUploads ? null : (
-                  <button type="button" onClick={uploads.dismiss}>
-                    Dismiss
-                  </button>
-                )}
-              </div>
-              <ul>
-                {uploads.items.map((item) => (
-                  <li key={item.id} data-status={item.status}>
-                    <span className={styles.uploadName}>{item.name}</span>
-                    <span className={styles.uploadState}>
-                      {item.status === "error" ? item.error : item.status === "done" ? "Done" : `${item.progress}%`}
-                    </span>
-                    <span className={styles.uploadBar} style={{ width: `${item.progress}%` }} />
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
+          <UploadList uploads={uploads} />
 
           {notice ? (
             <p className={styles.notice} role="alert">

@@ -15,7 +15,7 @@ import dynamic from "next/dynamic";
 import { OverlayScrollbar } from "@/components/ui/OverlayScrollbar";
 import { fileKind, formatBytes, typeLabel, type FileKind } from "./fileKinds";
 import { FileGlyph, Icon } from "./icons";
-import type { RoomFile } from "./types";
+import type { PreviewFile, RoomFile } from "./types";
 import type { ViewerProps, Zoom } from "./viewers/types";
 import styles from "./Viewer.module.css";
 import ui from "./ui.module.css";
@@ -94,27 +94,52 @@ export function Viewer({ roomId, file, onBack }: { roomId: string; file: RoomFil
       </div>
     );
   }
-  return <FileViewer roomId={roomId} file={file} onBack={onBack} />;
-}
-
-function FileViewer({ roomId, file, onBack }: { roomId: string; file: RoomFile; onBack: () => void }): ReactElement {
-  const kind = fileKind(file.name);
-  const Preview = VIEWERS[kind];
-  const url = `/api/data-rooms/${roomId}/files/${file.id}`;
-
   return (
-    <PreviewFrame
-      name={file.name}
-      meta={`${typeLabel(file.name)} · ${formatBytes(file.sizeBytes)} · Added ${uploaded.format(new Date(file.createdAt))}`}
-      kind={kind}
-      downloadUrl={`${url}?download=1`}
-      downloadName={file.name}
-      zoomable={Boolean(Preview) && ZOOMABLE.has(kind)}
+    <FilePreview
+      url={`/api/data-rooms/${roomId}/files/${file.id}`}
+      file={file}
       leading={
         <button type="button" className={`${ui.iconButton} ${styles.back}`} onClick={onBack} aria-label="Back to files">
           <Icon name="back" />
         </button>
       }
+    />
+  );
+}
+
+/**
+ * Any file in the preview frame, by the previewer for its kind, or its details
+ * and Download where there's none. `url` serves its bytes inline, and as an
+ * attachment with `?download=1`.
+ */
+export function FilePreview({
+  url,
+  file,
+  meta,
+  leading,
+  trailing,
+}: {
+  url: string;
+  file: PreviewFile;
+  /** Unset, its type, size and when it was added. */
+  meta?: ReactNode;
+  leading?: ReactNode;
+  trailing?: ReactNode;
+}): ReactElement {
+  const kind = fileKind(file.name);
+  const Preview = VIEWERS[kind];
+  const downloadUrl = `${url}${url.includes("?") ? "&" : "?"}download=1`;
+
+  return (
+    <PreviewFrame
+      name={file.name}
+      meta={meta ?? `${typeLabel(file.name)} · ${formatBytes(file.sizeBytes)} · Added ${uploaded.format(new Date(file.createdAt))}`}
+      kind={kind}
+      downloadUrl={downloadUrl}
+      downloadName={file.name}
+      zoomable={Boolean(Preview) && ZOOMABLE.has(kind)}
+      leading={leading}
+      trailing={trailing}
     >
       {(zoom, onFitScale) =>
         Preview ? (
@@ -124,7 +149,7 @@ function FileViewer({ roomId, file, onBack }: { roomId: string; file: RoomFile; 
             <FileGlyph kind={kind} className={styles.bigGlyph} />
             <p className={styles.unsupportedName}>{file.name}</p>
             <p>Preview isn&apos;t available for {typeLabel(file.name)} files. Download it to open it on your device.</p>
-            <a className={ui.primary} href={`${url}?download=1`} download={file.name}>
+            <a className={ui.primary} href={downloadUrl} download={file.name}>
               <Icon name="download" />
               Download {formatBytes(file.sizeBytes)}
             </a>

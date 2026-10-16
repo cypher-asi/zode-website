@@ -64,7 +64,7 @@ export function ClusterConfigurator({
 
   const model = useMemo(() => buildCluster(config), [config]);
   const update = (patch: Partial<ClusterConfig>) => setConfig((c) => ({ ...c, ...patch }));
-  const coverage = useMemo(() => (bom ? phaseCoverage(model, copies, bom.items) : null), [bom, model, copies]);
+  const coverage = useMemo(() => (bom ? phaseCoverage(model, copies, bom.lines) : null), [bom, model, copies]);
   const flags = useMemo(() => {
     if (!coverage) return null;
     const out = new Map<PartKind, PartFlag>();

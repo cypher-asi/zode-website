@@ -1,10 +1,11 @@
 /**
- * Copies the Pegatron and Computacenter B300 quotes into a deployment
- * phase's BOM in DATABASE_URL, line by line under each quote's own sections,
- * with every line's cluster-builder slots (src/features/cluster/model/slots.ts).
- * Lines the cluster doesn't need stay in, excluded with the reason. Gives the
- * phase its builder config when it has none, then prints how the BOM covers
- * its slots.
+ * Copies the Pegatron and Computacenter B300 quotes into a deployment in
+ * DATABASE_URL as price lists, item by item under each quote's own sections,
+ * and builds a phase's BOM from them: a line for every item that fills a
+ * cluster-builder slot (src/features/cluster/model/slots.ts), plus any
+ * priced item no slot stands for. Items the cluster doesn't need stay on the
+ * quote, with the reason in their notes. Gives the phase its builder config
+ * when it has none, then prints how the BOM covers its slots.
  *
  *   npm run bom:import                                                    (dev)
  *   node --env-file=.env.production.local scripts/import-bom.mjs          (production)
@@ -15,7 +16,8 @@
  * network is taken as quoted, so a larger phase shows what it still needs.
  * Each quote is linked to the file of the same name in the deployment's data
  * room, when it has one. Re-runnable: a quote is matched on `seed_key` and
- * skipped once imported. `--dry-run` writes nothing.
+ * skipped once imported, though its items still get any manufacturer they
+ * lack. `--dry-run` writes nothing.
  */
 import { randomUUID } from "node:crypto";
 import { registerHooks } from "node:module";
@@ -65,8 +67,9 @@ const CLUSTER = {
 
 /**
  * `[partNumber, description, quantity, unitUsd, fills, extra]`. `fills` maps
- * slot ids to the slot units each item covers; `extra` sets `lead`, `notes`
- * or `excluded` (the reason). A null `unitUsd` is priced inside another line.
+ * slot ids to the slot units each item covers; `extra` sets `lead`, `notes`,
+ * `mfr` (the manufacturer, when it isn't the section's) or `excluded` (why
+ * the BOM leaves it out). A null `unitUsd` is priced inside another line.
  */
 const line = (partNumber, description, quantity, unitUsd, fills = {}, extra = {}) => ({
   partNumber,
@@ -76,6 +79,9 @@ const line = (partNumber, description, quantity, unitUsd, fills = {}, extra = {}
   fills: extra.excluded ? {} : fills,
   ...extra,
 });
+
+/** The quote's "Nvidia compatible" third-party optics and fiber. */
+const EO = "Third party (NVIDIA compatible)";
 
 const EO_DUPLICATE = (pn, lead) =>
   `Third-party duplicate of ${pn}, quoted for 4-6 week delivery against ${lead} for the NVIDIA part. Swap it in if lead time matters.`;
@@ -101,26 +107,28 @@ const PEGATRON = {
   sections: [
     {
       title: "AI Server (L6 or L7 Barebone)",
+      manufacturer: "Pegatron",
       per: { quoted: 128, phase: (nodes) => nodes },
       lines: [
         line("AS402-2A1-8H2", "AS402-2A1-8H2 4U 2-Socket Intel Xeon Processors, B300 (Ark)", 1, 530_901, { gpu_node: 1 }, {
           notes: "Per-unit subtotal of $541,519.02 less the warranty line below.",
         }),
         line(null, "L6 barebone AS402-2A1-8H2 4U", 1, null),
-        line(null, "GPU B300 DLC: GPU HGX B300 NVL8 PC", 1, null, { gpu_baseboard: 1 }),
+        line(null, "GPU B300 DLC: GPU HGX B300 NVL8 PC", 1, null, { gpu_baseboard: 1 }, { mfr: "NVIDIA" }),
         line(null, "Assembly and integration: AS402-2A1-8H2 4U (direct liquid cooling)", 1, null, { node_integration: 1 }),
         line("1.5meter", "Power cord (North America) C19 to C20, 1.5 meter, 16A, 14AWG", 10, null, { node_power_cord: 1 }),
-        line(null, "Intel Xeon 6776P (64-core) 2.3GHz, Max Turbo 3.9GHz, 336M cache, TDP 350W", 2, null, { node_cpu: 1 }),
+        line(null, "Intel Xeon 6776P (64-core) 2.3GHz, Max Turbo 3.9GHz, 336M cache, TDP 350W", 2, null, { node_cpu: 1 }, { mfr: "Intel" }),
         line(null, "RDIMM DDR5 6400MT/s, 96GB", 32, null, { node_memory: 1 }),
         line(null, "SSD U.2: PCIe 4.0 U.2 7mm 960GB (1DWPD)", 2, null, { node_boot_drive: 1 }),
-        line(null, "U.2 NVMe: PCIe 5.0 U.2 PM9D3a 3.84TB", 6, null, { node_nvme: 1 }),
-        line(null, "NVIDIA B3220 crypto disabled, PCIe 5.0 x16, QSFP112 2-port 200GbE", 2, null, { node_frontend_nic: 1 }),
+        line(null, "U.2 NVMe: PCIe 5.0 U.2 PM9D3a 3.84TB", 6, null, { node_nvme: 1 }, { mfr: "Samsung" }),
+        line(null, "NVIDIA B3220 crypto disabled, PCIe 5.0 x16, QSFP112 2-port 200GbE", 2, null, { node_frontend_nic: 1 }, { mfr: "NVIDIA" }),
         line(null, "Trusted Platform Module (TPM) 2.0 TPM-SPI", 1, null),
         line("L6 3YR Parts", "Warranty: 3 years RTV (parts only, one way)", 1, 10_618.02, { node_warranty: 1 }),
       ],
     },
     {
       title: "Rack",
+      manufacturer: "Pegatron",
       per: { quoted: 16, phase: (nodes) => nodes / CLUSTER.density },
       lines: [
         line(null, '48U 19" rack', 1, 33_874.92, { cabinet: 1 }, {
@@ -139,6 +147,7 @@ const PEGATRON = {
     },
     {
       title: "In rack CDU",
+      manufacturer: "Pegatron",
       per: { quoted: 16, phase: (nodes) => nodes / CLUSTER.density },
       lines: [
         line("KC0150", "In-rack CDU", 1, 74_782, { cdu: 1 }),
@@ -162,19 +171,22 @@ const COMPUTACENTER = {
   sections: [
     {
       title: "Network, Management Nodes, Storage Racks & PDUs, OOB",
+      manufacturer: "Vertiv",
       lines: [
         line("VP7N60AC", "rPDU, Switched Outlet Level Monitoring EC, 60A, 208V Delta, 17.2kW, Vertical, (48) Combination C13/C19, 10ft / 3m power cord with 3P+E (IP67), Black Powder Coat", 12, null, { rack_pdu: 1 }, {
           notes: "Networking and storage racks.",
         }),
         line("VR3357", "Vertiv VR Rack - 48U Server Rack Enclosure, 800x1200mm, 19-inch Cabinet (VR3357) - 2265x800x1200mm (HxWxD), 77% perforated doors, Side", 6, null, { cabinet: 1 }),
-        line("OM2232-L", "32 SERIAL PT64GBSSD DOCKER SPT 1GBE SFP4G LTEDUAL ACC14 PWR CRD, 3-YR Foundation Support", 1, null, { console_server: 1 }),
+        line("OM2232-L", "32 SERIAL PT64GBSSD DOCKER SPT 1GBE SFP4G LTEDUAL ACC14 PWR CRD, 3-YR Foundation Support", 1, null, { console_server: 1 }, { mfr: "Opengear" }),
         line(null, "Section subtotal: PDUs, racks and console server above", 1, 75_000, {}, {
+          mfr: null,
           notes: "The quote prices this section as a $75,000 subtotal, its unit prices TBD.",
         }),
       ],
     },
     {
       title: "CPU Compute",
+      manufacturer: "Dell",
       lines: [
         line("210-BNMV", "PowerEdge R7725 Server (control plane)", 6, 53_038.312533333316, { mgmt_server: 1 }, { lead: "90 Days" }),
         line("321-BLDM", "Chassis with up to 8 E3.S NVMe Direct Drives", 6, null),
@@ -220,18 +232,21 @@ const COMPUTACENTER = {
         line("770-BECC", "ReadyRails Sliding Rails Without Cable Management Arm", 2, null),
         line("865-BBMY", "ProSupport and Next Business Day Onsite Service, 36 Month(s)", 2, 2_277.6805888888885, { server_support: 1 }),
         line("797-XUFETA+P2CMI36", "NVIDIA Unified Fabric Manager (UFM) Enterprise + Business Standard - Subscription - Up to 1000 InfiniBand Adapters (HCAs) - 3 Year", 516, 137.65333333333334, { fabric_manager_license: 1 }, {
+          mfr: "NVIDIA",
           notes: "512 GPUs and 4 UFM adapters.",
         }),
         line("797-XNMX1K+P2CMI36", "SVCS NMX SUBSCRIPTION SW W/BUS STAND (PER MANAGED GPU) 3 YR", 516, 137.48888888888888, {}, {
+          mfr: "NVIDIA",
           excluded:
             "NMX manages NVLink switch trays, which only NVL72 racks have; HGX B300 nodes keep NVLink inside each node, so there's nothing for it to manage.",
         }),
-        line("UPGR-CUM-NETQ2-SUB-10G-3YR", "NetQ On-Prem 10G or greater switch SW subscription with Business Standard support, 3Y", 12, 1_481.4833333333333, { switch_monitoring_license: 1 }),
-        line("UPGR-CUM-NETQ2-SUB-1G-3YR", "NetQ On-Prem 1G or greater switch SW subscription with Business Standard support, 3Y", 10, 1_481.4833333333333, { switch_monitoring_license: 1 }),
+        line("UPGR-CUM-NETQ2-SUB-10G-3YR", "NetQ On-Prem 10G or greater switch SW subscription with Business Standard support, 3Y", 12, 1_481.4833333333333, { switch_monitoring_license: 1 }, { mfr: "NVIDIA" }),
+        line("UPGR-CUM-NETQ2-SUB-1G-3YR", "NetQ On-Prem 1G or greater switch SW subscription with Business Standard support, 3Y", 10, 1_481.4833333333333, { switch_monitoring_license: 1 }, { mfr: "NVIDIA" }),
       ],
     },
     {
       title: "Networking Switches",
+      manufacturer: "NVIDIA",
       lines: [
         line("Q3400-RA (920-9B36F-00RX-8S0)", "NVDA Q3400-RA, 4U, 144 port via 72 OSFP224 ports, 8 AC, Managed C2P (I/P) Airflow", 12, 96_716.36956521738, { fabric_switch: 1 }, {
           lead: "20-24 Weeks",
@@ -252,6 +267,7 @@ const COMPUTACENTER = {
     },
     {
       title: "InfiniBand / Ethernet Optics & Cables",
+      manufacturer: "NVIDIA",
       lines: [
         line("MMS4A00-XM", "NVDA twin port, 1.6Tbps, 2x800 XDR, OSFP, 2xMPO12, 1310 SMF, up to 500m, 2xDR4 finned, IHS", 832, 2_257, { switch_transceiver: 1 }, { lead: "30-24 weeks" }),
         line("MMS4A20-XM800", "NVDA, single port 800Gbps XDR, OSFP, MPO12, 1310nm SMF, DR4, up to 500m, flat top", 512, 1_593.445652173913, { node_transceiver: 1 }, { lead: "30-34 Weeks" }),
@@ -259,37 +275,41 @@ const COMPUTACENTER = {
         line("MMS4X00-NS400", "NVIDIA Single port transceiver, 400Gbps, NDR, OSFP, MPO, 1310nm SMF, up to 500m, flat top", 4, 952.8913043478261, {}, { lead: "20-26 Weeks" }),
         line("MMS4A00-XM-EO", "1600Gbps, 2xDR4, Twin-port OSFP, 2xMPO, 1310nm Single Mode (500m) Transceiver - Nvidia Compatible", 832, 1_361.111111111111, {}, {
           lead: "4-6 weeks",
+          mfr: EO,
           excluded: EO_DUPLICATE("MMS4A00-XM", "30-34 weeks"),
         }),
         line("MMS4A20-XM800-EO", "800Gbps, DR4 Single-port OSFP, MPO, 1310nm Single Mode, RHS (500m) Transceiver - Nvidia Compatible", 512, 1_086.6666666666667, {}, {
           lead: "4-6 weeks",
+          mfr: EO,
           excluded: EO_DUPLICATE("MMS4A20-XM800", "30-34 weeks"),
         }),
-        line("MMS4X00-NM-T-EO", "800Gbps Twin-port OSFP 2x400Gb/s Ethernet Single Mode 2xDR4 500m - Nvidia Compatible", 216, 558.8235294117648, { frontend_optics: 1 }, { lead: "4-6 weeks" }),
-        line("MMS1X00-NS400-T-EO", "400GBase-DR4 QSFP112 Transceiver (SMF, 100m, MPO-12 APC) Nvidia Compatible", 164, 464.7058823529412, { frontend_optics: 1 }, { lead: "4-6 weeks" }),
-        line("MMS1V00-WM-EO", "NVIDIA 400G QDFP-DD DR4 SMF optical transceiver - Nvidia Compatible", 12, 481.25, { frontend_optics: 1 }, { lead: "4-6 weeks" }),
-        line("MMS1V70-CM-EO", "100GBase-DR QSFP28 Single Lambda Transceiver (SMF, 1310nm, 500m, LC, DOM, with FEC) Mellanox Compatible", 20, 170.58823529411765, { wan_optics: 1 }, { lead: "4-6 weeks" }),
-        line("MMA1L10-CR-EO", "Mellanox optical module, 100GbE, 100Gb/s, QSFP28, LC-LC, 1310nm, LR4, up to 10km", 4, 285, { wan_optics: 1 }, { lead: "4-6 weeks" }),
-        line("MFP7E30-N010-EO", "MPO12 APC to MPO12 APC Singlemode Passive Fiber Cable, 10m", 398, 32.5, { fabric_fiber: 1 }, { lead: "4-6 weeks" }),
-        line("MFP7E30-N020-EO", "MPO12 APC to MPO12 APC Singlemode Passive Fiber Cable, 20m", 776, 40, { fabric_fiber: 1 }, { lead: "4-6 weeks" }),
-        line("MFP7E30-N030-EO", "MPO12 APC to MPO12 APC Singlemode Passive Fiber Cable, 30m", 312, 52.5, { fabric_fiber: 1 }, { lead: "4-6 weeks" }),
-        line("MFP7E40-N010-EO", "MPO12 APC to 2x MPO12 APC Singlemode Passive Fiber Splitter Cable, 10m", 10, 36.25, { frontend_optics: 1 }, { lead: "4-6 weeks" }),
-        line("MFP7E40-N020-EO", "MPO12 APC to 2x MPO12 APC Singlemode Passive Fiber Splitter Cable, 20m", 10, 48.75, { frontend_optics: 1 }, { lead: "4-6 weeks" }),
-        line("EO-MPO(F)4LCSDY-20M", "MTP-F to 4xLC Duplex Single Mode OS2 Breakout Cable - 20M", 4, 52.5, { wan_optics: 1 }, { lead: "4-6 weeks" }),
-        line("EO-MPO(F)4LCSDY-50M", "MTP-F to 4xLC Duplex Single Mode OS2 Breakout Cable - 50M", 4, 72.5, { wan_optics: 1 }, { lead: "4-6 weeks" }),
+        line("MMS4X00-NM-T-EO", "800Gbps Twin-port OSFP 2x400Gb/s Ethernet Single Mode 2xDR4 500m - Nvidia Compatible", 216, 558.8235294117648, { frontend_optics: 1 }, { lead: "4-6 weeks", mfr: EO }),
+        line("MMS1X00-NS400-T-EO", "400GBase-DR4 QSFP112 Transceiver (SMF, 100m, MPO-12 APC) Nvidia Compatible", 164, 464.7058823529412, { frontend_optics: 1 }, { lead: "4-6 weeks", mfr: EO }),
+        line("MMS1V00-WM-EO", "NVIDIA 400G QDFP-DD DR4 SMF optical transceiver - Nvidia Compatible", 12, 481.25, { frontend_optics: 1 }, { lead: "4-6 weeks", mfr: EO }),
+        line("MMS1V70-CM-EO", "100GBase-DR QSFP28 Single Lambda Transceiver (SMF, 1310nm, 500m, LC, DOM, with FEC) Mellanox Compatible", 20, 170.58823529411765, { wan_optics: 1 }, { lead: "4-6 weeks", mfr: EO }),
+        line("MMA1L10-CR-EO", "Mellanox optical module, 100GbE, 100Gb/s, QSFP28, LC-LC, 1310nm, LR4, up to 10km", 4, 285, { wan_optics: 1 }, { lead: "4-6 weeks", mfr: EO }),
+        line("MFP7E30-N010-EO", "MPO12 APC to MPO12 APC Singlemode Passive Fiber Cable, 10m", 398, 32.5, { fabric_fiber: 1 }, { lead: "4-6 weeks", mfr: EO }),
+        line("MFP7E30-N020-EO", "MPO12 APC to MPO12 APC Singlemode Passive Fiber Cable, 20m", 776, 40, { fabric_fiber: 1 }, { lead: "4-6 weeks", mfr: EO }),
+        line("MFP7E30-N030-EO", "MPO12 APC to MPO12 APC Singlemode Passive Fiber Cable, 30m", 312, 52.5, { fabric_fiber: 1 }, { lead: "4-6 weeks", mfr: EO }),
+        line("MFP7E40-N010-EO", "MPO12 APC to 2x MPO12 APC Singlemode Passive Fiber Splitter Cable, 10m", 10, 36.25, { frontend_optics: 1 }, { lead: "4-6 weeks", mfr: EO }),
+        line("MFP7E40-N020-EO", "MPO12 APC to 2x MPO12 APC Singlemode Passive Fiber Splitter Cable, 20m", 10, 48.75, { frontend_optics: 1 }, { lead: "4-6 weeks", mfr: EO }),
+        line("EO-MPO(F)4LCSDY-20M", "MTP-F to 4xLC Duplex Single Mode OS2 Breakout Cable - 20M", 4, 52.5, { wan_optics: 1 }, { lead: "4-6 weeks", mfr: EO }),
+        line("EO-MPO(F)4LCSDY-50M", "MTP-F to 4xLC Duplex Single Mode OS2 Breakout Cable - 50M", 4, 72.5, { wan_optics: 1 }, { lead: "4-6 weeks", mfr: EO }),
       ],
     },
     {
       title: "VAST SW & SMC Ebox Storage 1PB",
+      manufacturer: "VAST Data",
       lines: [
         line("SW-U-1", "VAST capacity: 1TB Useable 1-Month Gemini Services Term", 1206, 389.27, { storage_software: 1 }),
         line("SW-CORE-1", "VAST cores: Single CPU Core 1-Month Gemini Services Term (768 licensable CPU cores in scope)", 768, 669.6, { storage_software: 1 }),
         line("INSTALL", "VAST Data Installation Services", 1, 19_200, { storage_install: 1 }),
-        line("AS -1115HS-TNR-OTO-1", "SMC 138 Ebox Nodes / 64 Core - 9 x 15.36TB Drives", 12, 118_146.81, { storage_node: 1 }, { lead: "90 Days" }),
+        line("AS -1115HS-TNR-OTO-1", "SMC 138 Ebox Nodes / 64 Core - 9 x 15.36TB Drives", 12, 118_146.81, { storage_node: 1 }, { lead: "90 Days", mfr: "Supermicro" }),
       ],
     },
     {
       title: "Firewalls (Fortinet 3000G HA)",
+      manufacturer: "Fortinet",
       lines: [
         line("FG-3000G", "FORTIGATE-3000G 6 X 100GE QSFP28 SLOTS 16 X 10GE SFP+/25GE", 2, 115_115, { firewall: 1 }, { lead: "60 Days" }),
         line("FC-10-G3K0G-247-02-36", "FORTIGATE-3000G 3YR FORTICARE PREMIUM SUPPORT", 2, 72_800, { firewall_support: 1 }),
@@ -302,10 +322,11 @@ const COMPUTACENTER = {
     },
     {
       title: "Spares",
-      lines: [line(null, "Spares", 1, 225_000, { spares: 1 }, { notes: "Allowance; the quote lists the price as TBD." })],
+      lines: [line(null, "Spares", 1, 225_000, { spares: 1 }, { notes: "Allowance; the quote lists the price as TBD.", mfr: null })],
     },
     {
       title: "Professional Services",
+      manufacturer: "Computacenter",
       lines: [
         line("CC-PS", "Integration Center & Field Engineering Services: Deploy, Cabling, Implementation", 1, 850_000, { integration_services: 1 }),
         line("CC-PS", "Configuration Services", 1, 300_000, { configuration_services: 1 }),
@@ -313,6 +334,7 @@ const COMPUTACENTER = {
     },
     {
       title: "Freight",
+      manufacturer: "Computacenter",
       lines: [
         line("Freight", "Inbound shipping to the CC Integration Center for items purchased from Computacenter", 1, 5_000, { freight: 1 }),
         line("Freight", "Dedicated truck from CC-IC to Zode colo", 8, 15_000, { freight: 1 }),
@@ -349,46 +371,106 @@ if (phase.platform !== CLUSTER.platform || !NODE_SIZES.includes(phase.nodes)) {
 }
 const phaseName = phase.name ?? `Phase ${phases.indexOf(phase) + 1}`;
 
-/** The quote's lines as BOM items for the phase, each with the quote's own quantity when the phase takes another. */
+/**
+ * The quote's lines as price-list items at the quantities it prices, each
+ * with what the phase takes of it: `taken`, scaled from the quote's own
+ * cluster for a section with `per`.
+ */
 function itemsOf(quote) {
   return quote.sections.flatMap((section) => {
     const quoted = section.per?.quoted ?? 1;
     const taken = section.per?.phase(phase.nodes) ?? 1;
     return section.lines.map((l) => ({
       ...l,
+      id: randomUUID(),
       section: section.title,
-      quantity: l.quantity * taken,
-      quotedQuantity: quoted === taken ? null : l.quantity * quoted,
+      manufacturer: "mfr" in l ? l.mfr : (section.manufacturer ?? null),
+      quantity: l.quantity * quoted,
+      taken: l.quantity * taken,
     }));
   });
 }
 
-const sumUsd = (items, qty) => items.reduce((sum, i) => sum + (i.unitUsd === null ? 0 : qty(i) * i.unitUsd), 0);
+/**
+ * The phase's BOM lines from the quote's items: one for each slot an item
+ * fills, in slot units, and one for a priced item the BOM keeps that fills
+ * none. An item the BOM leaves out, or that's priced inside another and
+ * fills no slot, has no line.
+ */
+function linesOf(items) {
+  return items.flatMap((i) => {
+    if (i.excluded) return [];
+    const base = {
+      quote_item_id: i.id,
+      part_number: i.partNumber,
+      manufacturer: i.manufacturer,
+      description: i.description,
+      notes: i.notes ?? null,
+    };
+    const fills = Object.entries(i.fills);
+    if (!fills.length) return i.unitUsd === null ? [] : [{ ...base, slot_id: null, quantity: i.taken, unit_usd: i.unitUsd }];
+    return fills.map(([slot_id, units]) => ({
+      ...base,
+      slot_id,
+      quantity: i.taken * units,
+      unit_usd: i.unitUsd === null ? null : i.unitUsd / units,
+    }));
+  });
+}
+
+const lineUsd = (l) => (l.unit_usd === null ? 0 : l.quantity * l.unit_usd);
+const sumUsd = (rows, usd) => rows.reduce((sum, r) => sum + usd(r), 0);
 const money = (v) => v.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
-const existing = await sql`select seed_key from deployment_quotes where seed_key is not null`;
-const seeded = new Set(existing.map((r) => r.seed_key));
+const existing = await sql`select id, seed_key from deployment_quotes where seed_key is not null`;
+const seeded = new Map(existing.map((r) => [r.seed_key, r.id]));
 const [{ next_position: firstQuotePosition }] =
   await sql`select coalesce(max(position) + 1, 0) as next_position from deployment_quotes where deployment_id = ${deployment.id}`;
-const [{ next_position: firstItemPosition }] =
-  await sql`select coalesce(max(position) + 1, 0) as next_position from deployment_bom_items where deployment_id = ${deployment.id}`;
+const [{ next_position: firstLinePosition }] =
+  await sql`select coalesce(max(position) + 1, 0) as next_position from deployment_bom_lines where deployment_id = ${deployment.id}`;
 const files = deployment.data_room_id
   ? await sql`select id, name from data_room_files where room_id = ${deployment.data_room_id} and deleted_at is null`
   : [];
 
 let quotePosition = firstQuotePosition;
-let itemPosition = firstItemPosition;
+let linePosition = firstLinePosition;
 let failed = false;
 /** With `--dry-run`, the lines that would be written, for the coverage below. */
 const planned = [];
 
 for (const quote of [PEGATRON, COMPUTACENTER]) {
-  if (seeded.has(quote.seed_key)) {
-    console.log(`[bom:import] ${quote.vendor} ${quote.reference}: already imported, skipped.`);
+  const items = itemsOf(quote);
+  const seededId = seeded.get(quote.seed_key);
+  if (seededId) {
+    // Quotes imported before items had a manufacturer get theirs, matched on part number and description.
+    const known = items
+      .filter((i) => i.manufacturer)
+      .map((i) => ({ part_number: i.partNumber, description: i.description, manufacturer: i.manufacturer }));
+    const updated = DRY_RUN
+      ? []
+      : await sql`
+          update deployment_quote_items q set manufacturer = k.manufacturer
+          from jsonb_to_recordset(${JSON.stringify(known)}::jsonb) as k(part_number text, description text, manufacturer text)
+          where q.quote_id = ${seededId} and q.manufacturer is null
+            and q.part_number is not distinct from k.part_number and q.description = k.description
+          returning q.id`;
+    const lines = DRY_RUN
+      ? []
+      : await sql`
+          update deployment_bom_lines l set manufacturer = i.manufacturer
+          from deployment_quote_items i
+          where i.id = l.quote_item_id and i.quote_id = ${seededId}
+            and l.manufacturer is null and i.manufacturer is not null
+          returning l.id`;
+    console.log(
+      `[bom:import] ${quote.vendor} ${quote.reference}: already imported, skipped` +
+        (updated.length || lines.length
+          ? `; gave ${updated.length} of its items and ${lines.length} BOM lines their manufacturer.`
+          : "."),
+    );
     continue;
   }
-  const items = itemsOf(quote);
-  const quotedUsd = sumUsd(items, (i) => i.quotedQuantity ?? i.quantity);
+  const quotedUsd = sumUsd(items, (i) => (i.unitUsd === null ? 0 : i.quantity * i.unitUsd));
   if (Math.abs(quotedUsd - quote.quoted_total_usd) >= 1) {
     console.error(`[bom:import] ${quote.vendor}: lines total ${money(quotedUsd)} against the quote's ${money(quote.quoted_total_usd)}; not imported.`);
     failed = true;
@@ -397,41 +479,29 @@ for (const quote of [PEGATRON, COMPUTACENTER]) {
 
   const quoteId = randomUUID();
   const file = files.find((f) => f.name === quote.file) ?? null;
-  const rows = items.map((i) => ({
-    id: randomUUID(),
-    quote_section: i.section,
-    position: itemPosition++,
+  const itemRows = items.map((i, position) => ({
+    id: i.id,
+    position,
+    section: i.section,
     part_number: i.partNumber,
+    manufacturer: i.manufacturer,
     description: i.description,
     quantity: i.quantity,
-    quoted_quantity: i.quotedQuantity,
     unit_usd: i.unitUsd,
-    status: i.excluded ? "excluded" : "use",
-    excluded_reason: i.excluded ?? null,
     lead_time: i.lead ?? null,
-    notes: i.notes ?? null,
-    fills: i.fills,
+    notes: [i.notes, i.excluded ? `Left out of the BOM: ${i.excluded}` : null].filter(Boolean).join(" ") || null,
   }));
-  const fills = rows.flatMap((r) =>
-    Object.entries(r.fills).map(([slot_id, units_per_item]) => ({ item_id: r.id, slot_id, units_per_item })),
-  );
+  const lineRows = linesOf(items).map((l) => ({ ...l, position: linePosition++ }));
 
-  const excluded = rows.filter((r) => r.status === "excluded").length;
   console.log(
-    `[bom:import] ${quote.vendor} ${quote.reference}: ${rows.length} lines (${excluded} excluded), ${money(quotedUsd)} as quoted, ` +
-      `${money(sumUsd(items.filter((i) => !i.excluded), (i) => i.quantity))} in ${phaseName}. ` +
+    `[bom:import] ${quote.vendor} ${quote.reference}: ${itemRows.length} items, ${money(quotedUsd)} as quoted; ` +
+      `${lineRows.length} BOM lines, ${money(sumUsd(lineRows, lineUsd))} in ${phaseName}. ` +
       (file ? `Linked to ${file.name}.` : deployment.data_room_id ? `No "${quote.file}" in the data room.` : "No data room to link.") +
       (DRY_RUN ? " Not written (dry run)." : ""),
   );
   if (DRY_RUN) {
     planned.push(
-      ...rows.map((r) => ({
-        id: r.id,
-        quantity: r.quantity,
-        unitUsd: r.unit_usd,
-        status: r.status,
-        fills: Object.entries(r.fills).map(([slotId, unitsPerItem]) => ({ slotId, unitsPerItem })),
-      })),
+      ...lineRows.map((l, i) => ({ id: `planned-${planned.length + i}`, slotId: l.slot_id, quantity: l.quantity, unitUsd: l.unit_usd })),
     );
     continue;
   }
@@ -444,18 +514,22 @@ for (const quote of [PEGATRON, COMPUTACENTER]) {
         (${quoteId}, ${deployment.id}, ${quotePosition++}, ${quote.vendor}, ${quote.reference}, ${quote.quoted_on},
          ${quote.valid_until}, ${quote.quoted_total_usd}, ${file?.id ?? null}, ${quote.notes}, ${quote.seed_key})`,
     sql`
-      insert into deployment_bom_items
-        (id, deployment_id, phase_id, quote_id, quote_section, position, part_number, description,
-         quantity, quoted_quantity, unit_usd, status, excluded_reason, lead_time, notes)
-      select r.id, ${deployment.id}, ${phase.id}, ${quoteId}, r.quote_section, r.position, r.part_number, r.description,
-             r.quantity, r.quoted_quantity, r.unit_usd, r.status, r.excluded_reason, r.lead_time, r.notes
-      from jsonb_to_recordset(${JSON.stringify(rows)}::jsonb) as r(
-        id uuid, quote_section text, position integer, part_number text, description text, quantity numeric,
-        quoted_quantity numeric, unit_usd numeric, status text, excluded_reason text, lead_time text, notes text)`,
+      insert into deployment_quote_items
+        (id, quote_id, position, section, part_number, manufacturer, description, quantity, unit_usd, lead_time, notes)
+      select r.id, ${quoteId}, r.position, r.section, r.part_number, r.manufacturer, r.description, r.quantity,
+             r.unit_usd, r.lead_time, r.notes
+      from jsonb_to_recordset(${JSON.stringify(itemRows)}::jsonb) as r(
+        id uuid, position integer, section text, part_number text, manufacturer text, description text,
+        quantity numeric, unit_usd numeric, lead_time text, notes text)`,
     sql`
-      insert into deployment_bom_fills (item_id, slot_id, units_per_item)
-      select f.item_id, f.slot_id, f.units_per_item
-      from jsonb_to_recordset(${JSON.stringify(fills)}::jsonb) as f(item_id uuid, slot_id text, units_per_item numeric)`,
+      insert into deployment_bom_lines
+        (deployment_id, phase_id, slot_id, position, quote_item_id, part_number, manufacturer, description,
+         quantity, unit_usd, notes)
+      select ${deployment.id}, ${phase.id}, r.slot_id, r.position, r.quote_item_id, r.part_number, r.manufacturer,
+             r.description, r.quantity, r.unit_usd, r.notes
+      from jsonb_to_recordset(${JSON.stringify(lineRows)}::jsonb) as r(
+        slot_id text, position integer, quote_item_id uuid, part_number text, manufacturer text, description text,
+        quantity numeric, unit_usd numeric, notes text)`,
   ]);
 }
 
@@ -474,16 +548,12 @@ const config = configFromJson(saved.cluster_config ?? (DRY_RUN ? cluster : null)
 if (config) {
   const stored = (
     await sql`
-      select i.id, i.quantity::float8 as quantity, i.unit_usd::float8 as unit_usd, i.status,
-             coalesce(json_agg(json_build_object('slotId', f.slot_id, 'unitsPerItem', f.units_per_item::float8))
-               filter (where f.slot_id is not null), '[]') as fills
-      from deployment_bom_items i left join deployment_bom_fills f on f.item_id = i.id
-      where i.phase_id = ${phase.id}
-      group by i.id`
-  ).map((r) => ({ id: r.id, quantity: r.quantity, unitUsd: r.unit_usd, status: r.status, fills: r.fills }));
-  const items = [...stored, ...planned];
-  const coverage = phaseCoverage(buildCluster(config), saved.cluster_copies, items);
-  console.log(`[bom:import] ${deployment.name} ${phaseName}: ${money(coverage.totalUsd)} in use across ${items.length} lines.`);
+      select id, slot_id, quantity::float8 as quantity, unit_usd::float8 as unit_usd
+      from deployment_bom_lines where phase_id = ${phase.id}`
+  ).map((r) => ({ id: r.id, slotId: r.slot_id, quantity: r.quantity, unitUsd: r.unit_usd }));
+  const lines = [...stored, ...planned];
+  const coverage = phaseCoverage(buildCluster(config), saved.cluster_copies, lines);
+  console.log(`[bom:import] ${deployment.name} ${phaseName}: ${money(coverage.totalUsd)} across ${lines.length} BOM lines.`);
   for (const row of coverage.slots) {
     if (row.status === "covered") continue;
     const note = row.slot.optional ? " (optional)" : "";

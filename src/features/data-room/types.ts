@@ -63,6 +63,9 @@ export interface RoomFile {
   createdAt: string;
 }
 
+/** What the viewer needs of any file it previews, a room's or another's, like a deployment quote's. */
+export type PreviewFile = Pick<RoomFile, "name" | "sizeBytes" | "createdAt">;
+
 /**
  * Largest selection one zip download may hold. The zip streams through a
  * function that must finish within its time limit; bigger selections go by folder.

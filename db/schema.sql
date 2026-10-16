@@ -1034,15 +1034,16 @@ alter table deployment_phases add column if not exists cluster_config jsonb;
 alter table deployment_phases add column if not exists cluster_copies integer not null default 1
   check (cluster_copies > 0);
 
--- A deployment's bill of materials, the ZODE team's only. Each vendor quote
--- links to its file in the deployment's data room, and its lines are copied
--- in full under the quote's own section headings. A line belongs to one
--- phase, and fills cluster-builder slots (src/features/cluster/model/slots.ts)
--- through deployment_bom_fills; lines the BOM doesn't use stay, `excluded`
--- with the reason. `quoted_quantity` keeps the vendor's quantity when the
--- phase takes a different one at the quoted unit price, so the quote's own
--- total can still be checked. `unit_usd` is null for a line priced inside
--- another (a server's CPUs). Totals are worked out in code, never stored.
+-- A deployment's bill of materials, the ZODE team's only. Vendor quotes are
+-- price lists: each links to its file in the deployment's data room, and its
+-- items keep the vendor's part numbers, manufacturers, descriptions, unit
+-- prices and quantities under the quote's own section headings. The BOM is
+-- its own line items, one phase's each: a line fills a cluster-builder slot
+-- (src/features/cluster/model/slots.ts), or none for a cost no slot stands
+-- for, with what it copied from the quote item it was picked from, at the
+-- quantity the phase needs. Nothing has to add up to a quote. `unit_usd` is
+-- null for an item priced inside another (a server's CPUs). Totals are worked
+-- out in code, never stored.
 create table if not exists deployment_quotes (
   id uuid primary key default gen_random_uuid(),
   deployment_id uuid not null references deployments (id) on delete cascade,
@@ -1061,33 +1062,80 @@ create table if not exists deployment_quotes (
 
 create index if not exists deployment_quotes_deployment_idx on deployment_quotes (deployment_id, position);
 
-create table if not exists deployment_bom_items (
+-- The quote's own file, uploaded on the deployment's Quotes tab to the
+-- private Blob store under deployments/<id>/quotes/, the ZODE team's only.
+-- It takes the place of `data_room_file_id`, which links a file already in
+-- the deployment's data room instead.
+alter table deployment_quotes add column if not exists file_pathname text unique;
+alter table deployment_quotes add column if not exists file_name text;
+alter table deployment_quotes add column if not exists file_content_type text;
+alter table deployment_quotes add column if not exists file_size_bytes bigint check (file_size_bytes >= 0);
+alter table deployment_quotes add column if not exists file_uploaded_at timestamptz;
+
+create table if not exists deployment_quote_items (
   id uuid primary key default gen_random_uuid(),
-  deployment_id uuid not null references deployments (id) on delete cascade,
-  phase_id uuid references deployment_phases (id) on delete cascade,
-  quote_id uuid references deployment_quotes (id) on delete cascade,
-  quote_section text not null default '',
+  quote_id uuid not null references deployment_quotes (id) on delete cascade,
   position integer not null default 0,
+  section text not null default '',
   part_number text,
+  manufacturer text,
   description text not null,
-  quantity numeric(14, 2) not null check (quantity >= 0),
-  quoted_quantity numeric(14, 2) check (quoted_quantity >= 0),
+  quantity numeric(14, 2) check (quantity >= 0),
   unit_usd numeric(18, 6) check (unit_usd >= 0),
-  status text not null default 'use' check (status in ('use', 'excluded')),
-  excluded_reason text,
   lead_time text,
   notes text
 );
 
-create index if not exists deployment_bom_items_deployment_idx on deployment_bom_items (deployment_id, position);
+create index if not exists deployment_quote_items_quote_idx on deployment_quote_items (quote_id, position);
 
-create table if not exists deployment_bom_fills (
-  item_id uuid not null references deployment_bom_items (id) on delete cascade,
-  slot_id text not null,
-  -- Slot units each of the line's quantity covers: 8 for a server SKU that brings 8 drives.
-  units_per_item numeric(12, 4) not null default 1 check (units_per_item > 0),
-  primary key (item_id, slot_id)
+create table if not exists deployment_bom_lines (
+  id uuid primary key default gen_random_uuid(),
+  deployment_id uuid not null references deployments (id) on delete cascade,
+  phase_id uuid not null references deployment_phases (id) on delete cascade,
+  slot_id text,
+  position integer not null default 0,
+  quote_item_id uuid references deployment_quote_items (id) on delete set null,
+  part_number text,
+  manufacturer text,
+  description text not null,
+  quantity numeric(14, 2) not null check (quantity >= 0),
+  unit_usd numeric(18, 6) check (unit_usd >= 0),
+  notes text
 );
+
+create index if not exists deployment_bom_lines_deployment_idx on deployment_bom_lines (deployment_id, position);
+
+-- The BOM was once the quotes' own lines, each filling slots through
+-- deployment_bom_fills. Each quoted line becomes a quote item, and each line
+-- in use a BOM line per slot it filled; priced lines that filled no slot
+-- stay in the BOM with none.
+do $$
+begin
+  if to_regclass('deployment_bom_items') is not null then
+    insert into deployment_quote_items (
+      id, quote_id, position, section, part_number, description, quantity, unit_usd, lead_time, notes
+    )
+    select i.id, i.quote_id, i.position, i.quote_section, i.part_number, i.description,
+      coalesce(i.quoted_quantity, i.quantity), i.unit_usd, i.lead_time,
+      nullif(concat_ws(' ', i.notes, case when i.status = 'excluded' then 'Left out of the BOM: ' || i.excluded_reason end), '')
+    from deployment_bom_items i
+    where i.quote_id is not null
+    on conflict (id) do nothing;
+
+    insert into deployment_bom_lines (
+      deployment_id, phase_id, slot_id, position, quote_item_id, part_number, description, quantity, unit_usd, notes
+    )
+    select i.deployment_id, i.phase_id, f.slot_id, i.position, case when i.quote_id is not null then i.id end,
+      i.part_number, i.description, i.quantity * coalesce(f.units_per_item, 1),
+      i.unit_usd / coalesce(f.units_per_item, 1), i.notes
+    from deployment_bom_items i
+    left join deployment_bom_fills f on f.item_id = i.id
+    where i.status = 'use' and i.phase_id is not null and (f.slot_id is not null or i.unit_usd is not null);
+
+    drop table deployment_bom_fills;
+    drop table deployment_bom_items;
+  end if;
+end $$;
 
 -- One-page compute offering teasers, written by the ZODE team for a
 -- deployment, listed on its page and deleted with it, and exported as a PDF

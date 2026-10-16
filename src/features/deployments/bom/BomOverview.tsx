@@ -1,206 +1,161 @@
 "use client";
 
-import { useMemo, useState, type ReactElement } from "react";
+import { Fragment, useMemo, type ReactElement } from "react";
 import Link from "next/link";
 import { buildCluster } from "@/features/cluster/model/build";
 import { GPUS_PER_NODE } from "@/features/cluster/model/catalog";
-import { SLOT_SECTIONS, slotById } from "@/features/cluster/model/slots";
+import { SLOT_SECTIONS } from "@/features/cluster/model/slots";
 import ui from "@/features/data-room/ui.module.css";
 import d from "../deployments.module.css";
-import { formatCount, formatDay, formatUsd } from "../format";
+import { TabLink } from "../DeploymentTabs";
+import { formatCount, formatUsd, plural } from "../format";
 import { platformLabel, type Deployment, type Phase } from "../types";
 import { STATUS_LABELS, phaseCoverage, type SlotCoverage } from "./coverage";
 import { phaseBuilderHref, phaseCluster, phaseLabel } from "./phase";
-import { formatCents, lineUsd, quoteSections, quoteTotals, type Bom, type BomItem, type Quote } from "./types";
+import { formatCents, lineUsd, type Bom, type BomLine, type Quote, type QuoteItem } from "./types";
 import styles from "./bom.module.css";
 
-const fileHref = (roomId: string, fileId: string) => `/portal/data-rooms/${roomId}?file=${encodeURIComponent(fileId)}`;
-
-const qty = (value: number) => formatCount(Math.round(value * 100) / 100);
+export const qty = (value: number) => formatCount(Math.round(value * 100) / 100);
 
 export function Status({ row }: { row: Pick<SlotCoverage, "status" | "slot"> }): ReactElement {
   const optional = row.slot.optional && row.status === "missing";
   return (
     <span className={styles.status} data-status={row.status} data-optional={optional ? "" : undefined}>
-      {optional ? "Not quoted (optional)" : STATUS_LABELS[row.status]}
+      {optional ? "Not in BOM (optional)" : STATUS_LABELS[row.status]}
     </span>
   );
 }
 
-/** Who a line came from and what it is, e.g. "Pegatron · AS402-2A1-8H2". */
-const lineName = (item: BomItem, quotes: ReadonlyMap<string, Quote>) =>
-  [item.quoteId ? quotes.get(item.quoteId)?.vendor : null, item.partNumber ?? item.description].filter(Boolean).join(" · ");
+/** What a slot needs against what its lines bring, e.g. "128 of 128". */
+export function slotFill(row: Pick<SlotCoverage, "slot" | "required" | "filled" | "lines">): string {
+  if (row.slot.unit === "lot") return row.lines.length ? "Lot" : "Lot, not in BOM";
+  return row.required === null ? `${qty(row.filled)} in BOM` : `${qty(row.filled)} of ${qty(row.required)}`;
+}
 
-function QuoteCard({
-  quote,
-  bom,
-  roomId,
-  today,
-}: {
-  quote: Quote;
-  bom: Bom;
-  roomId: string | null;
-  today: string;
-}): ReactElement {
-  const totals = quoteTotals(quote, bom.items);
-  const lines = bom.items.filter((item) => item.quoteId === quote.id);
-  const excluded = lines.filter((item) => item.status === "excluded").length;
-  const expired = quote.validUntil !== null && quote.validUntil < today;
+interface Lookup {
+  items: ReadonlyMap<string, QuoteItem>;
+  quotes: ReadonlyMap<string, Quote>;
+}
+
+const vendorOf = (line: BomLine, { items, quotes }: Lookup): string | null => {
+  const item = line.quoteItemId ? items.get(line.quoteItemId) : undefined;
+  return item ? (quotes.get(item.quoteId)?.vendor ?? null) : null;
+};
+
+function LineCells({ line, lookup }: { line: BomLine; lookup: Lookup }): ReactElement {
+  const vendor = vendorOf(line, lookup);
   return (
-    <article className={styles.quote}>
-      <div className={styles.head}>
-        <h3 className={styles.quoteVendor}>{quote.vendor}</h3>
-        {expired ? (
-          <span className={styles.badge} data-tone="danger">
-            Expired
-          </span>
+    <>
+      <td data-text="">
+        {line.partNumber ? <span className={styles.part}>{line.partNumber}</span> : null}
+        <span className={line.partNumber ? styles.sub : undefined}>{line.description}</span>
+        {line.notes ? <span className={styles.sub}>{line.notes}</span> : null}
+      </td>
+      <td data-text="">
+        {vendor ?? <span className={styles.sub}>Not from a quote</span>}
+        {line.manufacturer && line.manufacturer !== vendor ? (
+          <span className={styles.sub}>{line.manufacturer}</span>
         ) : null}
-      </div>
-      <p className={styles.quoteMeta}>
-        {[
-          quote.reference ? `Quote ${quote.reference}` : null,
-          quote.quotedOn ? formatDay(quote.quotedOn) : null,
-          quote.validUntil ? `valid until ${formatDay(quote.validUntil)}` : null,
-        ]
-          .filter(Boolean)
-          .join(" · ") || "No reference"}
-      </p>
-      <dl className={styles.quoteFigures}>
-        <div>
-          <dt>Quoted total</dt>
-          <dd>{formatCents(quote.quotedTotalUsd ?? totals.quotedUsd)}</dd>
-        </div>
-        <div>
-          <dt>In this BOM</dt>
-          <dd>{formatUsd(totals.bomUsd)}</dd>
-        </div>
-        <div>
-          <dt>Lines</dt>
-          <dd>
-            {formatCount(lines.length)}
-            {excluded ? <span className={styles.sub}>{formatCount(excluded)} excluded</span> : null}
-          </dd>
-        </div>
-        <div>
-          <dt>Lines vs. quote</dt>
-          <dd>
-            {totals.matches ? (
-              <span className={styles.badge} data-tone="success">
-                Match
-              </span>
-            ) : (
-              <span className={styles.badge} data-tone="danger">
-                Off by {formatCents(Math.abs(totals.quotedUsd - (quote.quotedTotalUsd ?? 0)))}
-              </span>
-            )}
-          </dd>
-        </div>
-      </dl>
-      {quote.dataRoomFileId && roomId ? (
-        <Link className={d.link} href={fileHref(roomId, quote.dataRoomFileId)} prefetch={false}>
-          {quote.dataRoomFileName}
-        </Link>
-      ) : (
-        <p className={d.muted}>No file linked{roomId ? "" : ": link a data room to the deployment first"}.</p>
-      )}
-      {quote.notes ? <p className={styles.quoteMeta}>{quote.notes}</p> : null}
-    </article>
+      </td>
+      <td className={styles.nowrap}>{qty(line.quantity)}</td>
+      <td className={styles.nowrap}>{line.unitUsd === null ? "Included" : formatCents(line.unitUsd)}</td>
+      <td className={styles.nowrap}>{line.unitUsd === null ? "" : formatCents(lineUsd(line))}</td>
+    </>
   );
 }
 
-/** One quote as the vendor sent it, under its own section headings, with each line's slots or why it's left out. */
-function FullQuote({ quote, bom }: { quote: Quote; bom: Bom }): ReactElement {
-  const sections = quoteSections(quote.id, bom.items);
-  const totals = quoteTotals(quote, bom.items);
+/** The phase's BOM line by line, under the slot each fills, with every line's cost and the subtotals. */
+function LineTable({
+  slots,
+  other,
+  sectionUsd,
+  totalUsd,
+  lookup,
+}: ReturnType<typeof phaseCoverage> & { lookup: Lookup }): ReactElement {
   return (
     <div className={styles.tableWrap}>
       <table className={styles.table}>
         <thead>
           <tr>
             <th scope="col" data-text="">
-              Part #
+              Slot
             </th>
             <th scope="col" data-text="">
-              Description
+              Item
+            </th>
+            <th scope="col" data-text="">
+              Vendor
             </th>
             <th scope="col">Qty</th>
             <th scope="col">Unit</th>
-            <th scope="col">Extended</th>
-            <th scope="col" data-text="">
-              Slot
-            </th>
+            <th scope="col">Line total</th>
           </tr>
         </thead>
-        {sections.map((section) => {
-          const subtotal = section.items.reduce(
-            (sum, item) => sum + lineUsd(item, item.quotedQuantity ?? item.quantity),
-            0,
-          );
+        {SLOT_SECTIONS.map((section) => {
+          const rows = slots.filter((row) => row.slot.section === section.id);
+          if (!rows.length) return null;
           return (
-            <tbody key={section.title}>
+            <tbody key={section.id}>
               <tr data-group="">
-                <th colSpan={6}>{section.title || "Lines"}</th>
+                <th colSpan={5}>{section.label}</th>
+                <th className={styles.nowrap}>{formatUsd(sectionUsd.get(section.id) ?? 0)}</th>
               </tr>
-              {section.items.map((item) => {
-                const quoted = item.quotedQuantity ?? item.quantity;
+              {rows.map((row) => {
+                const head = (
+                  <th scope="row" data-text="" rowSpan={Math.max(row.lines.length, 1)} className={styles.slotCell}>
+                    {row.slot.label}
+                    <span className={styles.sub}>{slotFill(row)}</span>
+                    {row.status !== "unchecked" ? <Status row={row} /> : null}
+                  </th>
+                );
+                if (!row.lines.length) {
+                  return (
+                    <tr key={row.slot.id} data-empty="">
+                      {head}
+                      <td data-text="" colSpan={5}>
+                        <span className={styles.sub}>Nothing in this slot</span>
+                      </td>
+                    </tr>
+                  );
+                }
                 return (
-                  <tr
-                    key={item.id}
-                    data-excluded={item.status === "excluded" ? "" : undefined}
-                    data-included={item.unitUsd === null ? "" : undefined}
-                  >
-                    <td data-text="" className={styles.part}>
-                      {item.partNumber ?? "—"}
-                    </td>
-                    <td data-text="" data-strike="">
-                      {item.description}
-                      {item.leadTime ? <span className={styles.sub}>Lead time {item.leadTime}</span> : null}
-                      {item.notes ? <span className={styles.sub}>{item.notes}</span> : null}
-                    </td>
-                    <td className={styles.nowrap}>
-                      {qty(quoted)}
-                      {item.quotedQuantity !== null && item.quotedQuantity !== item.quantity ? (
-                        <span className={styles.sub}>{qty(item.quantity)} in BOM</span>
-                      ) : null}
-                    </td>
-                    <td className={styles.nowrap}>{item.unitUsd === null ? "Included" : formatCents(item.unitUsd)}</td>
-                    <td className={styles.nowrap}>{item.unitUsd === null ? "" : formatCents(lineUsd(item, quoted))}</td>
-                    <td data-text="">
-                      {item.status === "excluded" ? (
-                        <span className={styles.sub}>Excluded: {item.excludedReason ?? "no reason given"}</span>
-                      ) : item.fills.length ? (
-                        <ul className={styles.lines}>
-                          {item.fills.map((fill) => (
-                            <li key={fill.slotId}>
-                              {slotById(fill.slotId)?.label ?? fill.slotId}
-                              {fill.unitsPerItem !== 1 ? ` × ${qty(fill.unitsPerItem)}` : ""}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <span className={styles.sub}>No slot</span>
-                      )}
-                    </td>
-                  </tr>
+                  <Fragment key={row.slot.id}>
+                    {row.lines.map((line, i) => (
+                      <tr key={line.id} data-continued={i ? "" : undefined}>
+                        {i === 0 ? head : null}
+                        <LineCells line={line} lookup={lookup} />
+                      </tr>
+                    ))}
+                  </Fragment>
                 );
               })}
-              <tr data-total="">
-                <th colSpan={4} data-text="">
-                  Subtotal
-                </th>
-                <td className={styles.nowrap}>{formatCents(subtotal)}</td>
-                <td />
-              </tr>
             </tbody>
           );
         })}
+        {other.length ? (
+          <tbody>
+            <tr data-group="">
+              <th colSpan={5}>Other line items</th>
+              <th className={styles.nowrap}>{formatUsd(sectionUsd.get("other") ?? 0)}</th>
+            </tr>
+            {other.map((line, i) => (
+              <tr key={line.id} data-continued={i ? "" : undefined}>
+                {i === 0 ? (
+                  <th scope="row" data-text="" rowSpan={other.length} className={styles.slotCell}>
+                    No slot
+                  </th>
+                ) : null}
+                <LineCells line={line} lookup={lookup} />
+              </tr>
+            ))}
+          </tbody>
+        ) : null}
         <tbody>
           <tr data-total="">
-            <th colSpan={4} data-text="">
-              Quote total{quote.quotedTotalUsd !== null ? ` (stated ${formatCents(quote.quotedTotalUsd)})` : ""}
+            <th colSpan={5} data-text="">
+              Phase total
             </th>
-            <td className={styles.nowrap}>{formatCents(totals.quotedUsd)}</td>
-            <td />
+            <td className={styles.nowrap}>{formatCents(totalUsd)}</td>
           </tr>
         </tbody>
       </table>
@@ -212,236 +167,132 @@ function PhaseBom({
   deployment,
   phase,
   index,
-  bom,
-  quotes,
+  lines,
+  lookup,
 }: {
   deployment: Deployment;
   phase: Phase;
   index: number;
-  bom: Bom;
-  quotes: ReadonlyMap<string, Quote>;
+  lines: readonly BomLine[];
+  lookup: Lookup;
 }): ReactElement {
   const cluster = useMemo(() => phaseCluster(deployment, phase), [deployment, phase]);
-  const items = useMemo(() => bom.items.filter((item) => item.phaseId === phase.id), [bom.items, phase.id]);
   const model = useMemo(() => (cluster ? buildCluster(cluster.config) : null), [cluster]);
-  const coverage = useMemo(
-    () => (model && cluster ? phaseCoverage(model, cluster.copies, items) : null),
-    [model, cluster, items],
-  );
+  const coverage = useMemo(() => phaseCoverage(model, cluster?.copies ?? 1, lines), [model, cluster, lines]);
   const title = `${phaseLabel(phase, index)} · ${formatCount(phase.nodes)} ${platformLabel(phase.platform)} nodes`;
-
-  if (!cluster || !model || !coverage) {
-    return (
-      <section className={styles.phase} aria-label={title}>
-        <h3 className={styles.phaseTitle}>{title}</h3>
-        <p className={d.muted}>
-          The cluster builder has no {platformLabel(phase.platform)} rack yet, so this phase has no slots to fill.
-          {items.length ? ` ${formatCount(items.length)} lines are recorded against it.` : ""}
-        </p>
-      </section>
-    );
-  }
-
-  const builderNodes = cluster.config.nodes * cluster.copies;
-  const needed = coverage.slots.filter((row) => !row.slot.optional);
+  const nodes = cluster ? cluster.config.nodes * cluster.copies : phase.nodes;
+  const needed = coverage.slots.filter((row) => !row.slot.optional && row.required !== null && row.required > 0);
   const covered = needed.filter((row) => row.status === "covered" || row.status === "over").length;
+
   return (
     <section className={styles.phase} aria-label={title}>
       <div className={styles.head}>
         <div>
           <h3 className={styles.phaseTitle}>{title}</h3>
           <p className={d.muted}>
-            Checked against {cluster.copies > 1 ? `${cluster.copies} × ` : ""}a {formatCount(cluster.config.nodes)}-node
-            cluster, {cluster.config.rackU}U racks of {cluster.config.density}
-            {cluster.derived ? ", worked out from the phase" : ""}.
+            {cluster
+              ? `Checked against ${cluster.copies > 1 ? `${cluster.copies} × ` : ""}a ${formatCount(cluster.config.nodes)}-node cluster, ${cluster.config.rackU}U racks of ${cluster.config.density}${cluster.derived ? ", worked out from the phase" : ""}.`
+              : `The cluster builder has no ${platformLabel(phase.platform)} rack yet, so nothing checks what this phase needs.`}
           </p>
         </div>
-        <Link className={ui.button} href={phaseBuilderHref(deployment.id, phase.id)} prefetch={false}>
-          Open in cluster builder
-        </Link>
+        {cluster ? (
+          <Link className={ui.button} href={phaseBuilderHref(deployment.id, phase.id)} prefetch={false}>
+            Open in cluster builder
+          </Link>
+        ) : null}
       </div>
-      {builderNodes !== phase.nodes ? (
+      {cluster && nodes !== phase.nodes ? (
         <p className={styles.warn}>
-          The builder&apos;s cluster has {formatCount(builderNodes)} nodes and the phase {formatCount(phase.nodes)}. Set
-          the phase&apos;s cluster in the cluster builder.
+          The builder&apos;s cluster has {formatCount(nodes)} nodes and the phase {formatCount(phase.nodes)}. Set the
+          phase&apos;s cluster in the cluster builder.
         </p>
       ) : null}
-      <div className={styles.figures}>
-        <div className={styles.figure}>
-          <span className={styles.figureValue}>{formatUsd(coverage.totalUsd)}</span>
-          <span className={styles.figureLabel}>BOM total</span>
-        </div>
-        <div className={styles.figure}>
-          <span className={styles.figureValue}>{formatUsd(coverage.totalUsd / builderNodes)}</span>
-          <span className={styles.figureLabel}>Per node</span>
-        </div>
-        <div className={styles.figure}>
-          <span className={styles.figureValue}>{formatUsd(coverage.totalUsd / (builderNodes * GPUS_PER_NODE))}</span>
-          <span className={styles.figureLabel}>Per GPU</span>
-        </div>
-        <div className={styles.figure}>
-          <span className={styles.figureValue}>
-            {covered} of {needed.length}
-          </span>
-          <span className={styles.figureLabel}>
-            Slots covered{coverage.gaps ? ` · ${coverage.gaps} to fill` : ""}
-          </span>
-        </div>
-      </div>
-
-      <div className={styles.tableWrap}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th scope="col" data-text="">
-                Slot
-              </th>
-              <th scope="col">Needed</th>
-              <th scope="col">Quoted</th>
-              <th scope="col" data-text="">
-                Status
-              </th>
-              <th scope="col" data-text="">
-                Filled by
-              </th>
-            </tr>
-          </thead>
-          {SLOT_SECTIONS.map((section) => {
-            const rows = coverage.slots.filter((row) => row.slot.section === section.id);
-            if (!rows.length) return null;
-            return (
-              <tbody key={section.id}>
-                <tr data-group="">
-                  <th colSpan={4}>{section.label}</th>
-                  <th className={styles.nowrap}>{formatUsd(coverage.sectionUsd.get(section.id) ?? 0)}</th>
-                </tr>
-                {rows.map((row) => (
-                  <tr key={row.slot.id}>
-                    <th scope="row" data-text="">
-                      {row.slot.label}
-                    </th>
-                    <td>{row.slot.unit === "lot" ? "Lot" : qty(row.required)}</td>
-                    <td>{row.slot.unit === "lot" ? (row.lines.length ? "Yes" : "—") : qty(row.filled)}</td>
-                    <td data-text="">
-                      <Status row={row} />
-                    </td>
-                    <td data-text="">
-                      {row.lines.length ? (
-                        <ul className={styles.lines}>
-                          {row.lines.map(({ item, units }) => (
-                            <li key={item.id}>
-                              {lineName(item, quotes)} · {qty(units)}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : null}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            );
-          })}
-          {coverage.unslotted.length ? (
-            <tbody>
-              <tr data-group="">
-                <th colSpan={4}>Not tied to a slot</th>
-                <th className={styles.nowrap}>{formatUsd(coverage.sectionUsd.get("other") ?? 0)}</th>
-              </tr>
-              {coverage.unslotted.map((item) => (
-                <tr key={item.id}>
-                  <th scope="row" data-text="">
-                    {lineName(item, quotes)}
-                    {item.partNumber ? <span className={styles.sub}>{item.description}</span> : null}
-                  </th>
-                  <td />
-                  <td>{qty(item.quantity)}</td>
-                  <td data-text="">{item.unitUsd === null ? "Included" : formatUsd(lineUsd(item))}</td>
-                  <td />
-                </tr>
-              ))}
-            </tbody>
-          ) : null}
-        </table>
-      </div>
-
-      {coverage.excluded.length ? (
-        <details>
-          <summary className={d.muted}>{formatCount(coverage.excluded.length)} quoted lines left out</summary>
-          <ul className={styles.lines}>
-            {coverage.excluded.map((item) => (
-              <li key={item.id}>
-                {lineName(item, quotes)} × {qty(item.quantity)}: {item.excludedReason ?? "no reason given"}
-              </li>
-            ))}
-          </ul>
-        </details>
-      ) : null}
+      {lines.length || cluster ? (
+        <>
+          <div className={styles.figures}>
+            <div className={styles.figure}>
+              <span className={styles.figureValue}>{formatUsd(coverage.totalUsd)}</span>
+              <span className={styles.figureLabel}>BOM total · {plural(lines.length, "line")}</span>
+            </div>
+            <div className={styles.figure}>
+              <span className={styles.figureValue}>{nodes ? formatUsd(coverage.totalUsd / nodes) : "—"}</span>
+              <span className={styles.figureLabel}>Per node</span>
+            </div>
+            {cluster ? (
+              <div className={styles.figure}>
+                <span className={styles.figureValue}>{formatUsd(coverage.totalUsd / (nodes * GPUS_PER_NODE))}</span>
+                <span className={styles.figureLabel}>Per GPU</span>
+              </div>
+            ) : null}
+            {cluster ? (
+              <div className={styles.figure}>
+                <span className={styles.figureValue}>
+                  {covered} of {needed.length}
+                </span>
+                <span className={styles.figureLabel}>
+                  Slots covered{coverage.gaps ? ` · ${coverage.gaps} to fill` : ""}
+                </span>
+              </div>
+            ) : null}
+          </div>
+          <LineTable {...coverage} lookup={lookup} />
+        </>
+      ) : (
+        <p className={d.muted}>No BOM lines yet.</p>
+      )}
     </section>
   );
 }
 
 /**
- * The deployment's bill of materials for the ZODE team: its vendor quotes,
- * each phase's slot coverage against the cluster builder, and every quote in
- * full under its own headings.
+ * The deployment's bill of materials for the ZODE team: each phase line by
+ * line under the cluster-builder slots, with what every line costs. The
+ * quotes they're picked from have their own tab.
  */
-export function BomOverview({
-  deployment,
-  bom,
-  today,
-}: {
-  deployment: Deployment;
-  bom: Bom;
-  today: string;
-}): ReactElement {
-  const [shown, setShown] = useState<string | null>(null);
-  const quotes = useMemo(() => new Map(bom.quotes.map((quote) => [quote.id, quote])), [bom.quotes]);
-  const open = shown ? quotes.get(shown) : null;
-  const unphased = bom.items.filter((item) => !item.phaseId).length;
+export function BomOverview({ deployment, bom }: { deployment: Deployment; bom: Bom }): ReactElement {
+  const lookup = useMemo<Lookup>(
+    () => ({
+      items: new Map(bom.items.map((item) => [item.id, item])),
+      quotes: new Map(bom.quotes.map((quote) => [quote.id, quote])),
+    }),
+    [bom.items, bom.quotes],
+  );
+  const byPhase = useMemo(() => {
+    const out = new Map<string, BomLine[]>();
+    for (const line of bom.lines) out.set(line.phaseId, [...(out.get(line.phaseId) ?? []), line]);
+    return out;
+  }, [bom.lines]);
+  const total = bom.lines.reduce((sum, line) => sum + lineUsd(line), 0);
 
   return (
     <section className={d.block} aria-label="Bill of materials">
       <div className={styles.head}>
-        <h2 className={d.blockTitle}>Bill of materials</h2>
+        <h2 className={d.blockTitle}>
+          Bill of materials{bom.lines.length ? ` · ${formatUsd(total)}` : ""}
+        </h2>
         <Link className={ui.button} href={`/portal/deployments/${deployment.id}/bom/edit`}>
           Edit BOM
         </Link>
       </div>
 
-      {bom.quotes.length ? (
-        <div className={styles.quotes}>
-          {bom.quotes.map((quote) => (
-            <QuoteCard key={quote.id} quote={quote} bom={bom} roomId={deployment.dataRoomId} today={today} />
-          ))}
-        </div>
-      ) : (
-        <p className={d.muted}>No quotes yet. Add them in the BOM editor, then fill each phase&apos;s slots.</p>
-      )}
-
       {deployment.phases.map((phase, i) => (
-        <PhaseBom key={phase.id} deployment={deployment} phase={phase} index={i} bom={bom} quotes={quotes} />
+        <PhaseBom
+          key={phase.id}
+          deployment={deployment}
+          phase={phase}
+          index={i}
+          lines={byPhase.get(phase.id) ?? []}
+          lookup={lookup}
+        />
       ))}
-      {unphased ? <p className={d.muted}>{formatCount(unphased)} lines aren&apos;t assigned to a phase.</p> : null}
 
-      {bom.quotes.length ? (
-        <section className={styles.phase} aria-label="Quotes in full">
-          <h3 className={styles.phaseTitle}>Quotes in full</h3>
-          <div className={styles.tabs}>
-            {bom.quotes.map((quote) => (
-              <button
-                key={quote.id}
-                type="button"
-                className={styles.tab}
-                aria-pressed={shown === quote.id}
-                onClick={() => setShown(shown === quote.id ? null : quote.id)}
-              >
-                {quote.vendor}
-              </button>
-            ))}
-          </div>
-          {open ? <FullQuote quote={open} bom={bom} /> : null}
-        </section>
-      ) : null}
+      <p className={d.muted}>
+        Lines are picked from{" "}
+        <TabLink tab="quotes" className={d.link}>
+          {bom.quotes.length ? `the ${plural(bom.quotes.length, "quote")}` : "the quotes"}
+        </TabLink>
+        , whose part numbers, manufacturers and unit prices they copy.
+      </p>
     </section>
   );
 }

@@ -3,51 +3,62 @@ import { cacheLife, cacheTag } from "next/cache";
 import type { ClusterConfig } from "@/features/cluster/model/types";
 import { isUuid } from "@/features/zrm/access";
 import { DB_TAG, db } from "@/lib/db";
-import { EMPTY_BOM, type Bom, type BomFill, type BomItem, type ItemStatus, type Quote } from "./types";
+import { EMPTY_BOM, type Bom, type BomLine, type Quote, type QuoteItem } from "./types";
 
 /** Every BOM read is cached under this tag, which saving updates. */
 export const BOM_TAG = "deployment-bom";
 
-export type QuoteInput = Omit<Quote, "dataRoomFileName">;
-export type BomItemInput = Omit<BomItem, "id">;
-export interface BomInput {
-  quotes: QuoteInput[];
-  items: BomItemInput[];
+/** Every quote file a deployment uploads is stored under this prefix in the private Blob store. */
+export const quoteBlobPrefix = (deploymentId: string): string => `deployments/${deploymentId}/quotes/`;
+
+export type QuoteInput = Omit<Quote, "file">;
+export type BomLineInput = Omit<BomLine, "id">;
+
+/** An uploaded file, as Blob storage reports it. */
+export interface StoredQuoteFile {
+  pathname: string;
+  name: string;
+  contentType: string;
+  sizeBytes: number;
 }
 
 const str = (value: unknown): string | null => (value == null ? null : String(value));
 const num = (value: unknown): number | null => (value == null ? null : Number(value));
+const iso = (value: unknown): string => new Date(value as string | Date).toISOString();
 
-/** The deployment's quotes and lines. Money comes back as `::float8` and dates as `::text`, as for deployments. */
+/** The deployment's quotes, their items and its BOM lines. Money comes back as `::float8` and dates as `::text`, as for deployments. */
 export async function getBom(deploymentId: string): Promise<Bom> {
   "use cache";
   cacheLife("minutes");
   cacheTag(BOM_TAG, DB_TAG);
   if (!isUuid(deploymentId)) return EMPTY_BOM;
   const sql = db();
-  const [quotes, items] = await Promise.all([
+  const [quotes, items, lines] = await Promise.all([
     sql`
       select q.id, q.vendor, q.reference, q.quoted_on::text as quoted_on, q.valid_until::text as valid_until,
-        q.quoted_total_usd::float8 as quoted_total_usd, q.data_room_file_id, f.name as file_name, q.notes
+        q.quoted_total_usd::float8 as quoted_total_usd, q.data_room_file_id, q.notes,
+        q.file_name, q.file_content_type, q.file_size_bytes::float8 as file_size_bytes, q.file_uploaded_at,
+        f.name as room_file_name, f.content_type as room_file_type, f.size_bytes::float8 as room_file_size,
+        f.created_at as room_file_created_at
       from deployment_quotes q
       left join data_room_files f on f.id = q.data_room_file_id and f.deleted_at is null
       where q.deployment_id = ${deploymentId}
       order by q.position, q.created_at
     `,
     sql`
-      select i.id, i.phase_id, i.quote_id, i.quote_section, i.part_number, i.description,
-        i.quantity::float8 as quantity, i.quoted_quantity::float8 as quoted_quantity, i.unit_usd::float8 as unit_usd,
-        i.status, i.excluded_reason, i.lead_time, i.notes,
-        coalesce(
-          (select json_agg(json_build_object('slotId', f.slot_id, 'unitsPerItem', f.units_per_item::float8)
-              order by f.slot_id)
-            from deployment_bom_fills f where f.item_id = i.id),
-          '[]'::json
-        ) as fills
-      from deployment_bom_items i
-      left join deployment_quotes q on q.id = i.quote_id
-      where i.deployment_id = ${deploymentId}
-      order by q.position nulls last, q.created_at, i.position
+      select i.id, i.quote_id, i.section, i.part_number, i.manufacturer, i.description,
+        i.quantity::float8 as quantity, i.unit_usd::float8 as unit_usd, i.lead_time, i.notes
+      from deployment_quote_items i
+      join deployment_quotes q on q.id = i.quote_id
+      where q.deployment_id = ${deploymentId}
+      order by q.position, q.created_at, i.position
+    `,
+    sql`
+      select id, phase_id, slot_id, quote_item_id, part_number, manufacturer, description,
+        quantity::float8 as quantity, unit_usd::float8 as unit_usd, notes
+      from deployment_bom_lines
+      where deployment_id = ${deploymentId}
+      order by position
     `,
   ]);
   return {
@@ -59,113 +70,245 @@ export async function getBom(deploymentId: string): Promise<Bom> {
         quotedOn: str(row.quoted_on),
         validUntil: str(row.valid_until),
         quotedTotalUsd: num(row.quoted_total_usd),
-        dataRoomFileId: row.file_name == null ? null : str(row.data_room_file_id),
-        dataRoomFileName: str(row.file_name),
+        dataRoomFileId: row.room_file_name == null ? null : str(row.data_room_file_id),
+        file:
+          row.file_name != null
+            ? {
+                name: String(row.file_name),
+                sizeBytes: Number(row.file_size_bytes ?? 0),
+                contentType: String(row.file_content_type ?? "application/octet-stream"),
+                createdAt: iso(row.file_uploaded_at),
+                source: "upload",
+              }
+            : row.room_file_name != null
+              ? {
+                  name: String(row.room_file_name),
+                  sizeBytes: Number(row.room_file_size ?? 0),
+                  contentType: String(row.room_file_type ?? "application/octet-stream"),
+                  createdAt: iso(row.room_file_created_at),
+                  source: "data-room",
+                }
+              : null,
         notes: str(row.notes),
       }),
     ),
     items: items.map(
-      (row): BomItem => ({
+      (row): QuoteItem => ({
         id: String(row.id),
-        phaseId: str(row.phase_id),
-        quoteId: str(row.quote_id),
-        quoteSection: String(row.quote_section),
+        quoteId: String(row.quote_id),
+        section: String(row.section),
         partNumber: str(row.part_number),
+        manufacturer: str(row.manufacturer),
         description: String(row.description),
-        quantity: Number(row.quantity),
-        quotedQuantity: num(row.quoted_quantity),
+        quantity: num(row.quantity),
         unitUsd: num(row.unit_usd),
-        status: row.status as ItemStatus,
-        excludedReason: str(row.excluded_reason),
         leadTime: str(row.lead_time),
         notes: str(row.notes),
-        fills: row.fills as BomFill[],
+      }),
+    ),
+    lines: lines.map(
+      (row): BomLine => ({
+        id: String(row.id),
+        phaseId: String(row.phase_id),
+        slotId: str(row.slot_id),
+        quoteItemId: str(row.quote_item_id),
+        partNumber: str(row.part_number),
+        manufacturer: str(row.manufacturer),
+        description: String(row.description),
+        quantity: Number(row.quantity),
+        unitUsd: num(row.unit_usd),
+        notes: str(row.notes),
       }),
     ),
   };
 }
 
-/** Quote ids among `ids` that belong to a deployment other than `deploymentId`. */
-export async function foreignQuoteIds(deploymentId: string, ids: readonly string[]): Promise<string[]> {
-  if (!ids.length) return [];
+/** Where a quote's file is: its uploaded blob, or the data room file it links. Null when it has neither. */
+export async function quoteFileSource(
+  deploymentId: string,
+  quoteId: string,
+): Promise<{ pathname: string; name: string; contentType: string; sizeBytes: number } | null> {
+  if (!isUuid(deploymentId) || !isUuid(quoteId)) return null;
+  const [row] = await db()`
+    select q.file_pathname, q.file_name, q.file_content_type, q.file_size_bytes::float8 as file_size_bytes,
+      f.blob_pathname, f.name as room_file_name, f.content_type as room_file_type, f.size_bytes::float8 as room_file_size
+    from deployment_quotes q
+    join deployments d on d.id = q.deployment_id
+    left join data_room_files f
+      on f.id = q.data_room_file_id and f.room_id = d.data_room_id and f.deleted_at is null
+    where q.id = ${quoteId} and q.deployment_id = ${deploymentId}
+  `;
+  if (!row) return null;
+  if (row.file_pathname != null) {
+    return {
+      pathname: String(row.file_pathname),
+      name: String(row.file_name),
+      contentType: String(row.file_content_type ?? "application/octet-stream"),
+      sizeBytes: Number(row.file_size_bytes ?? 0),
+    };
+  }
+  if (row.blob_pathname != null) {
+    return {
+      pathname: String(row.blob_pathname),
+      name: String(row.room_file_name),
+      contentType: String(row.room_file_type ?? "application/octet-stream"),
+      sizeBytes: Number(row.room_file_size ?? 0),
+    };
+  }
+  return null;
+}
+
+/** Quote item ids among these that belong to a deployment other than `deploymentId`. */
+export async function foreignItemIds(deploymentId: string, itemIds: readonly string[]): Promise<string[]> {
+  if (!itemIds.length) return [];
   const rows = await db()`
-    select id from deployment_quotes where id = any(${ids}::uuid[]) and deployment_id <> ${deploymentId}
+    select i.id from deployment_quote_items i join deployment_quotes q on q.id = i.quote_id
+    where i.id = any(${itemIds}::uuid[]) and q.deployment_id <> ${deploymentId}
   `;
   return rows.map((row) => String(row.id));
 }
 
+/** A new quote at the end of the deployment's, named `vendor`, with `file` as its own. */
+export async function createQuote(deploymentId: string, vendor: string, file: StoredQuoteFile | null): Promise<string | null> {
+  const [row] = await db()`
+    insert into deployment_quotes (
+      deployment_id, position, vendor, file_pathname, file_name, file_content_type, file_size_bytes, file_uploaded_at
+    )
+    select d.id, coalesce((select max(position) + 1 from deployment_quotes where deployment_id = d.id), 0), ${vendor},
+      ${file?.pathname ?? null}, ${file?.name ?? null}, ${file?.contentType ?? null}, ${file?.sizeBytes ?? null},
+      ${file ? new Date().toISOString() : null}
+    from deployments d where d.id = ${deploymentId}
+    returning id
+  `;
+  return row ? String(row.id) : null;
+}
+
 /**
- * Replaces the deployment's BOM in one transaction: quotes keep their ids
- * (and import keys), a quote left out goes with its lines, and every line and
- * fill is written again. Checking that phases, quotes and files belong to the
- * deployment is the caller's.
+ * Saves one quote's details and replaces its items: items keep their ids, so
+ * BOM lines stay linked to them, and an item left out goes, its lines keeping
+ * what they copied. Checking `dataRoomFileId` is the caller's.
  */
-export async function saveBom(deploymentId: string, input: BomInput): Promise<void> {
+export async function saveQuote(deploymentId: string, quote: QuoteInput, items: readonly QuoteItem[]): Promise<boolean> {
   const sql = db();
-  const quoteIds = input.quotes.map((quote) => quote.id);
-  const items = input.items.map((item, position) => ({ ...item, id: crypto.randomUUID(), position }));
-  const itemRows = items.map((item) => ({
+  const rows = items.map((item, position) => ({
     id: item.id,
-    phase_id: item.phaseId,
-    quote_id: item.quoteId,
-    quote_section: item.quoteSection,
-    position: item.position,
+    position,
+    section: item.section,
     part_number: item.partNumber,
+    manufacturer: item.manufacturer,
     description: item.description,
     quantity: item.quantity,
-    quoted_quantity: item.quotedQuantity,
     unit_usd: item.unitUsd,
-    status: item.status,
-    excluded_reason: item.excludedReason,
     lead_time: item.leadTime,
     notes: item.notes,
   }));
-  const fillRows = items.flatMap((item) =>
-    item.fills.map((fill) => ({ item_id: item.id, slot_id: fill.slotId, units_per_item: fill.unitsPerItem })),
-  );
+  const [updated] = await sql.transaction([
+    sql`
+      update deployment_quotes set
+        vendor = ${quote.vendor}, reference = ${quote.reference}, quoted_on = ${quote.quotedOn},
+        valid_until = ${quote.validUntil}, quoted_total_usd = ${quote.quotedTotalUsd},
+        data_room_file_id = ${quote.dataRoomFileId}, notes = ${quote.notes}
+      where id = ${quote.id} and deployment_id = ${deploymentId}
+      returning id
+    `,
+    sql`
+      delete from deployment_quote_items i
+      using deployment_quotes q
+      where q.id = i.quote_id and q.id = ${quote.id} and q.deployment_id = ${deploymentId}
+        and not (i.id = any(${items.map((item) => item.id)}::uuid[]))
+    `,
+    sql`
+      insert into deployment_quote_items (
+        id, quote_id, position, section, part_number, manufacturer, description, quantity, unit_usd, lead_time, notes
+      )
+      select r.id, q.id, r.position, r.section, r.part_number, r.manufacturer, r.description, r.quantity,
+        r.unit_usd, r.lead_time, r.notes
+      from jsonb_to_recordset(${JSON.stringify(rows)}::jsonb) as r (
+        id uuid, position integer, section text, part_number text, manufacturer text,
+        description text, quantity numeric, unit_usd numeric, lead_time text, notes text
+      )
+      join deployment_quotes q on q.id = ${quote.id} and q.deployment_id = ${deploymentId}
+      on conflict (id) do update set
+        position = excluded.position, section = excluded.section, part_number = excluded.part_number,
+        manufacturer = excluded.manufacturer, description = excluded.description, quantity = excluded.quantity,
+        unit_usd = excluded.unit_usd, lead_time = excluded.lead_time, notes = excluded.notes
+      where deployment_quote_items.quote_id = excluded.quote_id
+    `,
+  ]);
+  return updated.length > 0;
+}
 
+export async function renameQuote(deploymentId: string, quoteId: string, vendor: string): Promise<boolean> {
+  const rows = await db()`
+    update deployment_quotes set vendor = ${vendor} where id = ${quoteId} and deployment_id = ${deploymentId} returning id
+  `;
+  return rows.length > 0;
+}
+
+/**
+ * Sets the quote's own file, or clears it with null. Resolves with the blob it
+ * had, for the caller to delete, or undefined when the quote is gone.
+ */
+export async function setQuoteFile(
+  deploymentId: string,
+  quoteId: string,
+  file: StoredQuoteFile | null,
+): Promise<string | null | undefined> {
+  const [row] = await db()`
+    update deployment_quotes q set
+      file_pathname = ${file?.pathname ?? null}, file_name = ${file?.name ?? null},
+      file_content_type = ${file?.contentType ?? null}, file_size_bytes = ${file?.sizeBytes ?? null},
+      file_uploaded_at = ${file ? new Date().toISOString() : null}
+    from (select id, file_pathname from deployment_quotes where id = ${quoteId} and deployment_id = ${deploymentId}) prev
+    where q.id = prev.id
+    returning prev.file_pathname
+  `;
+  return row ? str(row.file_pathname) : undefined;
+}
+
+/** Deletes the quote and its items; BOM lines picked from them keep what they copied. Resolves with its blob, for the caller to delete. */
+export async function deleteQuote(deploymentId: string, quoteId: string): Promise<string | null | undefined> {
+  const [row] = await db()`
+    delete from deployment_quotes where id = ${quoteId} and deployment_id = ${deploymentId} returning file_pathname
+  `;
+  return row ? str(row.file_pathname) : undefined;
+}
+
+/**
+ * Replaces the deployment's BOM lines. A line's phase must be the
+ * deployment's, and its quote item is kept only when it's one of the
+ * deployment's quotes'.
+ */
+export async function saveBomLines(deploymentId: string, lines: readonly BomLineInput[]): Promise<void> {
+  const sql = db();
+  const rows = lines.map((line, position) => ({
+    phase_id: line.phaseId,
+    slot_id: line.slotId,
+    position,
+    quote_item_id: line.quoteItemId,
+    part_number: line.partNumber,
+    manufacturer: line.manufacturer,
+    description: line.description,
+    quantity: line.quantity,
+    unit_usd: line.unitUsd,
+    notes: line.notes,
+  }));
   await sql.transaction([
-    sql`delete from deployment_bom_items where deployment_id = ${deploymentId}`,
+    sql`delete from deployment_bom_lines where deployment_id = ${deploymentId}`,
     sql`
-      delete from deployment_quotes
-      where deployment_id = ${deploymentId} and not (id = any(${quoteIds}::uuid[]))
-    `,
-    ...input.quotes.map(
-      (q, position) => sql`
-        insert into deployment_quotes (
-          id, deployment_id, position, vendor, reference, quoted_on, valid_until, quoted_total_usd,
-          data_room_file_id, notes
-        )
-        select ${q.id}, id, ${position}, ${q.vendor}, ${q.reference}, ${q.quotedOn}, ${q.validUntil},
-          ${q.quotedTotalUsd}, ${q.dataRoomFileId}, ${q.notes}
-        from deployments where id = ${deploymentId}
-        on conflict (id) do update set
-          position = excluded.position, vendor = excluded.vendor, reference = excluded.reference,
-          quoted_on = excluded.quoted_on, valid_until = excluded.valid_until,
-          quoted_total_usd = excluded.quoted_total_usd, data_room_file_id = excluded.data_room_file_id,
-          notes = excluded.notes
-        where deployment_quotes.deployment_id = excluded.deployment_id
-      `,
-    ),
-    sql`
-      insert into deployment_bom_items (
-        id, deployment_id, phase_id, quote_id, quote_section, position, part_number, description, quantity,
-        quoted_quantity, unit_usd, status, excluded_reason, lead_time, notes
+      insert into deployment_bom_lines (
+        deployment_id, phase_id, slot_id, position, quote_item_id, part_number, manufacturer, description,
+        quantity, unit_usd, notes
       )
-      select r.id, d.id, r.phase_id, r.quote_id, r.quote_section, r.position, r.part_number, r.description,
-        r.quantity, r.quoted_quantity, r.unit_usd, r.status, r.excluded_reason, r.lead_time, r.notes
-      from jsonb_to_recordset(${JSON.stringify(itemRows)}::jsonb) as r (
-        id uuid, phase_id uuid, quote_id uuid, quote_section text, position integer, part_number text,
-        description text, quantity numeric, quoted_quantity numeric, unit_usd numeric, status text,
-        excluded_reason text, lead_time text, notes text
+      select p.deployment_id, p.id, r.slot_id, r.position, i.id, r.part_number, r.manufacturer, r.description,
+        r.quantity, r.unit_usd, r.notes
+      from jsonb_to_recordset(${JSON.stringify(rows)}::jsonb) as r (
+        phase_id uuid, slot_id text, position integer, quote_item_id uuid, part_number text, manufacturer text,
+        description text, quantity numeric, unit_usd numeric, notes text
       )
-      join deployments d on d.id = ${deploymentId}
-    `,
-    sql`
-      insert into deployment_bom_fills (item_id, slot_id, units_per_item)
-      select r.item_id, r.slot_id, r.units_per_item
-      from jsonb_to_recordset(${JSON.stringify(fillRows)}::jsonb) as r (item_id uuid, slot_id text, units_per_item numeric)
-      where exists (select 1 from deployment_bom_items i where i.id = r.item_id)
+      join deployment_phases p on p.id = r.phase_id and p.deployment_id = ${deploymentId}
+      left join deployment_quote_items i on i.id = r.quote_item_id
+        and i.quote_id in (select id from deployment_quotes where deployment_id = ${deploymentId})
     `,
   ]);
 }

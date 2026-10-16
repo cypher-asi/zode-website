@@ -3,13 +3,21 @@ import { Suspense, type ReactElement } from "react";
 import Link from "next/link";
 import { io } from "next/cache";
 import { notFound } from "next/navigation";
+import { listFileNames } from "@/features/data-room/rooms";
 import ui from "@/features/data-room/ui.module.css";
 import { getBom } from "@/features/deployments/bom/bom";
 import { BomOverview } from "@/features/deployments/bom/BomOverview";
+import { QuotesApp } from "@/features/deployments/bom/QuotesApp";
 import { getDeploymentFor } from "@/features/deployments/deployments";
 import detail from "@/features/deployments/deployments.module.css";
 import { DeploymentDetail } from "@/features/deployments/DeploymentDetail";
-import { DeploymentTabPanel, DeploymentTabs, DeploymentTabSwitch } from "@/features/deployments/DeploymentTabs";
+import {
+  DeploymentTabPanel,
+  DeploymentTabs,
+  DeploymentTabSwitch,
+  isDeploymentTab,
+  tabHref,
+} from "@/features/deployments/DeploymentTabs";
 import { todayIso } from "@/features/deployments/format";
 import { ShareLink } from "@/features/deployments/ShareLink";
 import { statusLabel } from "@/features/deployments/types";
@@ -28,7 +36,8 @@ export const metadata: Metadata = {
 
 /**
  * One deployment, for every signed-in account, with its PDF; the ZODE team can
- * edit it and switch to its BOM tab (`?tab=bom`).
+ * edit it and switch to its BOM tab (`?tab=bom`) and its Quotes tab
+ * (`?tab=quotes`, with `&quote=<id>` open).
  */
 export default function DeploymentPage({ params, searchParams }: PageProps<"/portal/deployments/[id]">): ReactElement {
   return (
@@ -39,18 +48,27 @@ export default function DeploymentPage({ params, searchParams }: PageProps<"/por
 }
 
 async function Deployment({ params, searchParams }: PageProps<"/portal/deployments/[id]">): Promise<ReactElement> {
-  const [{ id }, { tab }] = await Promise.all([params, searchParams]);
+  const [{ id }, query] = await Promise.all([params, searchParams]);
   const base = `/portal/deployments/${id}`;
-  const viewer = orLogIn(await loadViewer(), tab === "bom" ? `${base}?tab=bom` : base);
+  const tab = isDeploymentTab(query.tab) ? query.tab : "summary";
+  const quoteId = typeof query.quote === "string" ? query.quote : null;
+  const viewer = orLogIn(
+    await loadViewer(),
+    tab === "quotes" && quoteId ? `${tabHref(base, tab)}&quote=${encodeURIComponent(quoteId)}` : tabHref(base, tab),
+  );
   const deployment = await getDeploymentFor(id, viewer);
   if (!deployment) notFound();
   await io();
-  const [teasers, bom] = viewer.team
-    ? await Promise.all([listTeasersFor(deployment.id), getBom(deployment.id)])
-    : [null, null];
+  const [teasers, bom, roomFiles] = viewer.team
+    ? await Promise.all([
+        listTeasersFor(deployment.id),
+        getBom(deployment.id),
+        deployment.dataRoomId ? listFileNames(deployment.dataRoomId) : Promise.resolve([]),
+      ])
+    : [null, null, []];
 
   return (
-    <DeploymentTabs base={base} initial={bom && tab === "bom" ? "bom" : "summary"}>
+    <DeploymentTabs base={base} initial={bom ? tab : "summary"}>
       <div className={styles.page}>
         <PageHeader
           title={deployment.name}
@@ -86,11 +104,22 @@ async function Deployment({ params, searchParams }: PageProps<"/portal/deploymen
           {teasers ? <DeploymentTeasers deploymentId={deployment.id} teasers={teasers} /> : null}
         </DeploymentTabPanel>
         {bom ? (
-          <DeploymentTabPanel tab="bom">
-            <div className={detail.detail}>
-              <BomOverview deployment={deployment} bom={bom} today={todayIso()} />
-            </div>
-          </DeploymentTabPanel>
+          <>
+            <DeploymentTabPanel tab="bom">
+              <div className={detail.detail}>
+                <BomOverview deployment={deployment} bom={bom} />
+              </div>
+            </DeploymentTabPanel>
+            <DeploymentTabPanel tab="quotes">
+              <QuotesApp
+                deployment={deployment}
+                bom={bom}
+                roomFiles={[...roomFiles].sort((a, b) => a.name.localeCompare(b.name))}
+                initialQuoteId={quoteId}
+                today={todayIso()}
+              />
+            </DeploymentTabPanel>
+          </>
         ) : null}
       </div>
     </DeploymentTabs>

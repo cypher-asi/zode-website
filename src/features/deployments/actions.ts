@@ -2,6 +2,7 @@
 
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
+import { deleteBlobsUnder } from "@/features/data-room/blob";
 import { userIdFor } from "@/features/users/users";
 import { isUuid, teamAccount } from "@/features/zrm/access";
 import { multiLine, singleLine } from "@/lib/validation";
@@ -15,6 +16,7 @@ import {
   setAccess,
   type DeploymentInput,
 } from "./deployments";
+import { quoteBlobPrefix } from "./bom/bom";
 import {
   ACCESS_OPTIONS,
   COOLING,
@@ -247,6 +249,7 @@ export async function deleteDeploymentAction(id: string): Promise<DeploymentForm
     return { error: "This deployment no longer exists." };
   }
   await deleteDeployment(id);
+  await deleteBlobsUnder(quoteBlobPrefix(id));
   updateTag(DEPLOYMENTS_TAG);
   redirect("/portal/deployments/all");
 }

@@ -1,11 +1,20 @@
 /*
- * A deployment's bill of materials: vendor quotes copied in line by line,
- * each line filling cluster-builder slots for one phase. Shared by the
- * deployment page, the BOM editor and the cluster builder, so none of them
- * total a quote differently.
+ * A deployment's bill of materials. Vendor quotes are price lists to pick
+ * from; the BOM is its own line items, each filling a cluster-builder slot of
+ * one phase at the quantity the phase needs. Shared by the deployment page,
+ * the BOM editor and the cluster builder, so none of them cost a line
+ * differently.
  */
 
-export type ItemStatus = "use" | "excluded";
+/** The file a quote came as. */
+export interface QuoteFile {
+  name: string;
+  sizeBytes: number;
+  contentType: string;
+  createdAt: string;
+  /** Uploaded on the Quotes tab, or linked from the deployment's data room. */
+  source: "upload" | "data-room";
+}
 
 export interface Quote {
   id: string;
@@ -14,74 +23,88 @@ export interface Quote {
   /** `YYYY-MM-DD`. */
   quotedOn: string | null;
   validUntil: string | null;
-  /** The total the quote states, to check its lines against. */
+  /** The total the quote states. */
   quotedTotalUsd: number | null;
+  /** A data room file linked as the quote's; an uploaded file takes its place. */
   dataRoomFileId: string | null;
-  dataRoomFileName: string | null;
+  file: QuoteFile | null;
   notes: string | null;
 }
 
-export interface BomFill {
-  slotId: string;
-  /** Slot units each of the line's quantity covers. */
-  unitsPerItem: number;
-}
+/** Same-origin, team-only URL of a quote's file; `?download=1` sends it as an attachment. */
+export const quoteFileUrl = (deploymentId: string, quoteId: string): string =>
+  `/api/deployments/${deploymentId}/quotes/${quoteId}/file`;
 
-export interface BomItem {
+/** One item a quote prices, as the vendor lists it. */
+export interface QuoteItem {
   id: string;
-  phaseId: string | null;
-  quoteId: string | null;
-  /** The heading the line sits under on its quote. */
-  quoteSection: string;
+  quoteId: string;
+  /** The heading it sits under on its quote. */
+  section: string;
   partNumber: string | null;
+  manufacturer: string | null;
   description: string;
-  quantity: number;
-  /** The quote's own quantity, when the phase takes a different one. */
-  quotedQuantity: number | null;
-  /** Null when the line is priced inside another, like a server's CPUs. */
+  /** How many the quote prices. */
+  quantity: number | null;
+  /** Null when it's priced inside another item, like a server's CPUs. */
   unitUsd: number | null;
-  status: ItemStatus;
-  excludedReason: string | null;
   leadTime: string | null;
   notes: string | null;
-  fills: BomFill[];
+}
+
+/** One line of a phase's BOM. Its item details are copied from the quote item it was picked from, then its own. */
+export interface BomLine {
+  id: string;
+  phaseId: string;
+  /** Null for a cost no slot stands for. */
+  slotId: string | null;
+  quoteItemId: string | null;
+  partNumber: string | null;
+  manufacturer: string | null;
+  description: string;
+  quantity: number;
+  /** Null when it's priced inside another line. */
+  unitUsd: number | null;
+  notes: string | null;
 }
 
 export interface Bom {
   quotes: Quote[];
   /** In quote order, then as each quote lists them. */
-  items: BomItem[];
+  items: QuoteItem[];
+  lines: BomLine[];
 }
 
-export const EMPTY_BOM: Bom = { quotes: [], items: [] };
+export const EMPTY_BOM: Bom = { quotes: [], items: [], lines: [] };
 
 const cents = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 });
 
 /** e.g. "$53,038.31", for unit prices. */
 export const formatCents = (value: number): string => cents.format(value);
 
-/** What the line comes to at `quantity`; a line priced inside another comes to nothing. */
-export const lineUsd = (item: Pick<BomItem, "quantity" | "unitUsd">, quantity = item.quantity): number =>
-  item.unitUsd === null ? 0 : quantity * item.unitUsd;
+/** What a line or item comes to at `quantity`; one priced inside another comes to nothing. */
+export const lineUsd = (line: { quantity: number | null; unitUsd: number | null }): number =>
+  line.unitUsd === null || line.quantity === null ? 0 : line.quantity * line.unitUsd;
 
-/** The quote's lines at its own quantities, excluded ones too, against what it states. */
-export function quoteTotals(quote: Quote, items: readonly BomItem[]): { quotedUsd: number; bomUsd: number; matches: boolean } {
-  const lines = items.filter((item) => item.quoteId === quote.id);
-  const quotedUsd = lines.reduce((sum, item) => sum + lineUsd(item, item.quotedQuantity ?? item.quantity), 0);
-  const bomUsd = lines.filter((item) => item.status === "use").reduce((sum, item) => sum + lineUsd(item), 0);
-  return {
-    quotedUsd,
-    bomUsd,
-    matches: quote.quotedTotalUsd === null || Math.abs(quotedUsd - quote.quotedTotalUsd) < 1,
-  };
-}
+/** What the quote's items come to at its own quantities. */
+export const quoteItemsUsd = (quoteId: string, items: readonly QuoteItem[]): number =>
+  items.filter((item) => item.quoteId === quoteId).reduce((sum, item) => sum + lineUsd(item), 0);
 
-/** The quote's sections in the order it lists them, each with its lines. */
-export function quoteSections(quoteId: string, items: readonly BomItem[]): { title: string; items: BomItem[] }[] {
-  const sections = new Map<string, BomItem[]>();
+/** The quote's sections in the order it lists them, each with its items. */
+export function quoteSections(quoteId: string, items: readonly QuoteItem[]): { title: string; items: QuoteItem[] }[] {
+  const sections = new Map<string, QuoteItem[]>();
   for (const item of items) {
     if (item.quoteId !== quoteId) continue;
-    sections.set(item.quoteSection, [...(sections.get(item.quoteSection) ?? []), item]);
+    sections.set(item.section, [...(sections.get(item.section) ?? []), item]);
   }
-  return [...sections].map(([title, lines]) => ({ title, items: lines }));
+  return [...sections].map(([title, rows]) => ({ title, items: rows }));
 }
+
+/** The vendor each quote item came from, by item id. */
+export const vendorsByItem = (bom: Pick<Bom, "quotes" | "items">): Record<string, string> => {
+  const vendors = new Map(bom.quotes.map((quote) => [quote.id, quote.vendor]));
+  return Object.fromEntries(bom.items.map((item) => [item.id, vendors.get(item.quoteId) ?? ""]));
+};
+
+/** What a line is called: its part number, else its description. */
+export const lineName = (line: Pick<BomLine, "partNumber" | "description">): string => line.partNumber ?? line.description;

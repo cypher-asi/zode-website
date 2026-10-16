@@ -4,7 +4,7 @@ import { useState, useTransition, type ReactElement } from "react";
 import Link from "next/link";
 import { savePhaseClusterAction } from "@/features/deployments/bom/actions";
 import { STATUS_LABELS, type PhaseCoverage, type SlotCoverage } from "@/features/deployments/bom/coverage";
-import { formatCents, type BomItem } from "@/features/deployments/bom/types";
+import { formatCents, lineName, lineUsd, type BomLine } from "@/features/deployments/bom/types";
 import { count } from "./format";
 import { GPUS_PER_NODE } from "./model/catalog";
 import { SLOT_SECTIONS } from "./model/slots";
@@ -21,8 +21,8 @@ export interface BuilderBom {
   /** The phase's saved config; null while it's worked out from the phase. */
   savedConfig: ClusterConfig | null;
   copies: number;
-  items: BomItem[];
-  /** Each quote's vendor, by quote id. */
+  lines: BomLine[];
+  /** The vendor of each quote item the lines came from, by item id. */
   vendors: Record<string, string>;
 }
 
@@ -151,9 +151,9 @@ export function BomPanel({
                   <span className={styles.count}>
                     {row.slot.unit === "lot"
                       ? row.lines.length
-                        ? "Quoted"
-                        : "Not quoted"
-                      : `${qty(row.filled)} / ${qty(row.required)}`}
+                        ? "In BOM"
+                        : "Not in BOM"
+                      : `${qty(row.filled)} / ${qty(row.required ?? 0)}`}
                   </span>
                 </li>
               ))}
@@ -161,9 +161,9 @@ export function BomPanel({
           </div>
         );
       })}
-      {coverage.unslotted.length ? (
+      {coverage.other.length ? (
         <p className={styles.note}>
-          {count(coverage.unslotted.length)} quoted lines don&apos;t fill a slot; see them on the deployment.
+          {count(coverage.other.length)} BOM lines don&apos;t fill a slot; see them on the deployment.
         </p>
       ) : null}
     </section>
@@ -182,15 +182,17 @@ export function PartBom({ rows, vendors }: { rows: readonly SlotCoverage[]; vend
               <Dot row={row} />
               <span>{row.slot.label}</span>
               <span className={styles.count}>
-                {qty(row.filled)} / {qty(row.required)}
+                {qty(row.filled)} / {qty(row.required ?? 0)}
               </span>
             </p>
             <ul className={styles.lines}>
-              {row.lines.map(({ item }) => (
-                <li key={item.id}>
-                  <strong>{item.quoteId ? vendors[item.quoteId] : "Unquoted"}</strong>{" "}
-                  {item.partNumber ?? item.description} × {qty(item.quantity)}
-                  {item.unitUsd !== null ? ` at ${formatCents(item.unitUsd)}` : " (included)"}
+              {row.lines.map((line) => (
+                <li key={line.id}>
+                  <strong>{(line.quoteItemId && vendors[line.quoteItemId]) || line.manufacturer || "Unquoted"}</strong>{" "}
+                  {lineName(line)} × {qty(line.quantity)}
+                  {line.unitUsd !== null
+                    ? ` at ${formatCents(line.unitUsd)} = ${usd.format(lineUsd(line))}`
+                    : " (included)"}
                 </li>
               ))}
             </ul>

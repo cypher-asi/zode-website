@@ -5,6 +5,7 @@ import type { ClusterConfig } from "@/features/cluster/model/types";
 import { configFromParams, writeConfigParams } from "@/features/cluster/model/url";
 import { getBom } from "@/features/deployments/bom/bom";
 import { phaseCluster, phaseLabel } from "@/features/deployments/bom/phase";
+import { vendorsByItem } from "@/features/deployments/bom/types";
 import { getDeploymentFor } from "@/features/deployments/deployments";
 import { loadViewer } from "@/features/deployments/view";
 import styles from "./page.module.css";
@@ -50,8 +51,8 @@ async function loadBom(
       phaseNodes: phase.nodes,
       savedConfig: cluster.derived ? null : cluster.config,
       copies: cluster.copies,
-      items: bom.items.filter((item) => item.phaseId === phase.id),
-      vendors: Object.fromEntries(bom.quotes.map((quote) => [quote.id, quote.vendor])),
+      lines: bom.lines.filter((line) => line.phaseId === phase.id),
+      vendors: vendorsByItem(bom),
     },
   };
 }
