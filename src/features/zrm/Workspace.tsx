@@ -7,7 +7,6 @@ import {
   useCallback,
   useDeferredValue,
   useMemo,
-  useOptimistic,
   useRef,
   useState,
   type CSSProperties,
@@ -372,11 +371,8 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
   const setFilter = (key: string, value: string) =>
     setFilters((current) => ({ ...current, values: { ...current.values, [key]: value } }));
 
-  const { go } = useZrmNavigate();
-  /** Sites with the menu's changes applied while they save, so a site moves to its new status at once. */
-  const [sites, editSite] = useOptimistic(data.sites, (rows: SiteRow[], edit: { id: string; patch: Partial<SiteRow> }) =>
-    rows.map((row) => (row.id === edit.id ? { ...row, ...edit.patch } : row)),
-  );
+  const { go, editRow } = useZrmNavigate();
+  const sites = data.sites;
   const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const openSiteMenu = useCallback((row: SiteRow, x: number, y: number) => setMenu({ id: row.id, x, y }), []);
   const closeSiteMenu = useCallback(
@@ -389,10 +385,11 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
   );
   const menuSite = menu ? sites.find((site) => site.id === menu.id) : undefined;
 
+  /** Applies the menu's change to the row while it saves, so a site moves to its new status at once. */
   const saveSite = (id: string, patch: Partial<SiteRow>, save: () => Promise<unknown>) => {
     setMenu(null);
     startTransition(async () => {
-      editSite({ id, patch });
+      editRow({ kind: "sites", id, patch });
       await save();
     });
   };

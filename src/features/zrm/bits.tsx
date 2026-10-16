@@ -2,7 +2,7 @@ import type { CSSProperties, ReactElement, ReactNode } from "react";
 import { initials, type ZrmType } from "./types";
 import styles from "./zrm.module.css";
 
-type IconName = "search" | "plus" | "star" | "trash" | "back" | "close" | "sort" | "check" | "next";
+type IconName = "search" | "plus" | "star" | "trash" | "back" | "close" | "sort" | "check" | "next" | "external";
 
 const GLYPHS: Record<IconName, ReactElement> = {
   search: (
@@ -19,6 +19,7 @@ const GLYPHS: Record<IconName, ReactElement> = {
   sort: <path d="m4.5 6.5 3.5-3 3.5 3M4.5 9.5l3.5 3 3.5-3" />,
   check: <path d="m3.5 8.5 3 3 6-7" />,
   next: <path d="M6 3.5 10.5 8 6 12.5" />,
+  external: <path d="M9 3.5h3.5V7M12.5 3.5 7 9M11 9.5v3H3.5V5h3" />,
 };
 
 export function Icon({ name, className }: { name: IconName; className?: string }): ReactElement {

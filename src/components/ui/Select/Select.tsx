@@ -31,6 +31,8 @@ export interface SelectProps {
   /** Submits the value with the surrounding form through a hidden input. */
   name?: string;
   size?: "md" | "sm";
+  /** `ghost` reads as plain text until hovered or focused, for a value edited in place. */
+  variant?: "ghost";
   /** Which edge of the trigger the panel lines up with. */
   align?: "start" | "end";
   disabled?: boolean;
@@ -66,6 +68,7 @@ export function Select({
   placeholder,
   name,
   size = "md",
+  variant,
   align = "start",
   disabled,
   id: triggerId,
@@ -230,7 +233,7 @@ export function Select({
       <button
         ref={triggerRef}
         type="button"
-        className={size === "sm" ? `${styles.trigger} ${styles.sm}` : styles.trigger}
+        className={[styles.trigger, size === "sm" && styles.sm, variant === "ghost" && styles.ghost].filter(Boolean).join(" ")}
         disabled={disabled}
         popoverTarget={panelId}
         aria-haspopup="listbox"

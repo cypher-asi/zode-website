@@ -13,16 +13,21 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-/* Opening a record widens its pane in from the right edge, the divider sliding over to its place. */
-@media (min-width: 701px) and (prefers-reduced-motion: no-preference) {
-  .workspace[data-view="detail"] {
-    animation: open-detail 360ms var(--ease-out);
+/*
+ * The list alone keeps the divider's and the record's tracks at nothing, so
+ * the panes slide whenever they resize: a record opening in from the right
+ * edge, closing back into it, or the divider moved from the keyboard. The
+ * Splitter writes drags and window resizes past the transition.
+ */
+@media (min-width: 701px) {
+  .workspace[data-view="list"] {
+    grid-template-columns: 100% 0px minmax(0, 0fr);
   }
 }
 
-@keyframes open-detail {
-  from {
-    grid-template-columns: calc(100% - 9px) 9px minmax(0, 0fr);
+@media (min-width: 701px) and (prefers-reduced-motion: no-preference) {
+  .workspace {
+    transition: grid-template-columns 360ms var(--ease-out);
   }
 }
 
@@ -671,6 +676,147 @@
   text-decoration-color: currentColor;
 }
 
+/*
+ * A value edited in place. The negative margins let its hover and input
+ * boxes reach past the text, which stays in line with the labels, and its
+ * 24px box keeps each row the same height while it's edited.
+ */
+.inline {
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  margin: -2px -6px;
+}
+
+.inlineValue {
+  flex: 1;
+  min-width: 0;
+  min-height: 24px;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: text;
+  transition: background var(--duration-fast) ease;
+}
+
+.inlineValue:hover {
+  background: var(--color-surface-hover);
+}
+
+.inlineValue:focus-visible,
+.itemSummary:focus-visible,
+.typesValue:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 0;
+}
+
+.inlineEmpty,
+.inlineSelectEmpty button {
+  color: var(--color-text-tertiary);
+}
+
+.inlineInput {
+  composes: input from "../../components/ui/Field/Field.module.css";
+  display: block;
+  width: calc(100% + 12px);
+  height: 24px;
+  margin: -2px -6px;
+  padding: 0 5px;
+  border-radius: 6px;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.inlineInput[data-multiline] {
+  height: auto;
+  min-height: 48px;
+  padding: 2px 5px;
+  field-sizing: content;
+  resize: vertical;
+}
+
+.inlineSelect {
+  max-width: 100%;
+}
+
+.inlineOpen {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  color: var(--color-text-secondary);
+  opacity: 0;
+  transition:
+    opacity var(--duration-fast) ease,
+    background var(--duration-fast) ease;
+}
+
+.inlineOpen svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.inline:hover .inlineOpen,
+.inline:focus-within .inlineOpen {
+  opacity: 1;
+}
+
+.inlineOpen:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+@media (hover: none) {
+  .inlineOpen {
+    opacity: 1;
+  }
+}
+
+.inlineError {
+  margin: 4px 0 0;
+}
+
+/* A company's types: the badges open the picker, whose checkboxes save as they're ticked. */
+.typesValue {
+  display: block;
+  margin: -4px -6px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.typesValue:hover {
+  background: var(--color-surface-hover);
+}
+
+.typesPicker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.typesValue + .typesPicker {
+  margin-top: 12px;
+}
+
 .long {
   white-space: pre-wrap;
 }
@@ -703,6 +849,34 @@
 
 .item:hover {
   background: var(--color-surface-hover);
+}
+
+/* Open, its fields' own hover shows against the pane rather than the row's. */
+.item[data-open] {
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.itemSummary {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.itemFields {
+  margin-top: 10px;
+  padding: 10px 6px 2px;
+  border-top: 1px solid var(--color-border);
 }
 
 .itemBody {

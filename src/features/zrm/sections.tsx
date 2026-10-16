@@ -1,14 +1,25 @@
 "use client";
 
-import { Fragment, useActionState, useId, useOptimistic, useState, useTransition, type ReactElement, type ReactNode } from "react";
+import {
+  Fragment,
+  useActionState,
+  useId,
+  useOptimistic,
+  useRef,
+  useState,
+  useTransition,
+  type KeyboardEvent,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import ui from "@/features/data-room/ui.module.css";
-import { multiLine, singleLine } from "@/lib/validation";
-import { addChildAction, deleteChildAction, saveFieldsAction, setCompanyTypesAction } from "./actions";
+import { addChildAction, addCompanyTypeAction, deleteChildAction, saveChildFieldAction, toggleCompanyTypeAction } from "./actions";
 import { Badge, Icon } from "./bits";
 import { CHILDREN, type ChildKind, type FieldSpec, type SectionSpec } from "./fields";
-import { FieldInput, fieldValue } from "./fieldUi";
-import { personName, recordHref, type ActionState, type RecordKind, type Related, type ZrmData, type ZrmType } from "./types";
-import { useZrmData, ZrmLink } from "./ZrmProvider";
+import { FieldInput } from "./fieldUi";
+import { InlineField, RecordField } from "./InlineField";
+import { recordHref, type ActionState, type RecordKind, type Related, type ZrmType } from "./types";
+import { useZrmNavigate, ZrmLink } from "./ZrmProvider";
 import styles from "./zrm.module.css";
 
 const INITIAL: ActionState = {};
@@ -22,14 +33,6 @@ function Section({ title, action, children }: { title: string; action?: ReactNod
       </div>
       {children}
     </section>
-  );
-}
-
-function EditButton({ label, onClick }: { label: string; onClick: () => void }): ReactElement {
-  return (
-    <button type="button" className={ui.linkButton} onClick={onClick} aria-label={label}>
-      Edit
-    </button>
   );
 }
 
@@ -54,66 +57,34 @@ function FormActions({ pending, onCancel, label = "Save" }: { pending: boolean; 
   );
 }
 
-const numberFrom = (value: string): number => Number(value.replace(/[$,\s]/g, ""));
-
-/** The record with a section's submitted values, cleaned as `saveFieldsAction` cleans them, and its linked records' names. */
-function savedRecord(record: object, fields: readonly FieldSpec[], formData: FormData, data: ZrmData): object {
-  const next: Record<string, unknown> = { ...record };
-  const named = (items: readonly { id: string; name: string }[], value: string) => items.find((item) => item.id === value)?.name ?? null;
-  for (const field of fields) {
-    if (field.readOnly) continue;
-    const raw = formData.get(field.key);
-    const input = typeof raw === "string" ? raw : "";
-    if (field.type === "list") {
-      next[field.key] = [...new Set(input.split(/[,\n]/).map(singleLine).filter(Boolean))];
-      continue;
-    }
-    const value = field.type === "textarea" ? multiLine(input) : singleLine(input);
-    if (!value) {
-      next[field.key] = null;
-      if (field.display) next[field.display] = null;
-      continue;
-    }
-    switch (field.type) {
-      case "url":
-        next[field.key] = /^https?:\/\//i.test(value) ? value : `https://${value}`;
-        break;
-      case "int":
-      case "decimal":
-      case "money":
-        next[field.key] = numberFrom(value);
-        break;
-      default:
-        next[field.key] = value;
-    }
-    if (!field.display) continue;
-    switch (field.type) {
-      case "company":
-        next[field.display] = named(data.companies, value);
-        break;
-      case "person": {
-        const person = data.people.find((p) => p.id === value);
-        next[field.display] = person ? personName(person) : null;
-        break;
-      }
-      case "stage":
-        next[field.display] = named(data.stages, value);
-        break;
-      case "room":
-        next[field.display] = named(data.rooms, value);
-        break;
-      case "status": {
-        const status = data.statuses.find((s) => s.id === value);
-        next[field.display] = status?.name ?? null;
-        if (status) next.status_color = status.color;
-        break;
-      }
-    }
-  }
-  return next;
+/** Fields listed as labels and values, each value edited in place by `field`. */
+function InlineFields({
+  fields,
+  render,
+}: {
+  fields: readonly FieldSpec[];
+  render: (field: FieldSpec, labelId: string) => ReactNode;
+}): ReactElement {
+  const prefix = useId();
+  return (
+    <dl className={styles.fields}>
+      {fields.map((field) => {
+        const labelId = `${prefix}-${field.key}`;
+        return (
+          <Fragment key={field.key}>
+            <dt id={labelId}>
+              {field.label}
+              {field.required ? " *" : ""}
+            </dt>
+            <dd>{render(field, labelId)}</dd>
+          </Fragment>
+        );
+      })}
+    </dl>
+  );
 }
 
-/** A group of a record's fields, read as a list and edited in place. */
+/** A group of a record's fields, every one listed, filled or not, and each edited in place. */
 export function FieldSection({
   kind,
   id,
@@ -125,57 +96,12 @@ export function FieldSection({
   section: SectionSpec;
   record: object;
 }): ReactElement {
-  const formId = useId();
-  const { data } = useZrmData();
-  const [editing, setEditing] = useState(false);
-  /** The record as the form saves it, shown until the server's re-render lands, or dropped for the form and its error. */
-  const [saving, setSaving] = useOptimistic<object | null>(null);
-  const [state, action, pending] = useActionState(async (prev: ActionState, formData: FormData) => {
-    setSaving(savedRecord(record, section.fields, formData, data));
-    const result = await saveFieldsAction(kind, id, section.id, prev, formData);
-    if (result.saved) setEditing(false);
-    return result;
-  }, INITIAL);
-
-  if (editing && !saving) {
-    return (
-      <Section title={section.title}>
-        <form action={action} className={styles.form}>
-          <div className={styles.formGrid}>
-            {section.fields
-              .filter((field) => !field.readOnly)
-              .map((field) => (
-                <FieldInput key={field.key} field={field} record={record} idPrefix={formId} />
-              ))}
-          </div>
-          <FormError state={state} />
-          <FormActions pending={pending} onCancel={() => setEditing(false)} />
-        </form>
-      </Section>
-    );
-  }
-
-  const filled = section.fields
-    .map((field) => ({ field, value: fieldValue(field, saving ?? record) }))
-    .filter((entry) => entry.value !== null);
-
   return (
-    <Section
-      title={section.title}
-      action={saving ? null : <EditButton label={`Edit ${section.title.toLowerCase()}`} onClick={() => setEditing(true)} />}
-    >
-      {filled.length > 0 ? (
-        <dl className={styles.fields}>
-          {filled.map(({ field, value }) => (
-            <Fragment key={field.key}>
-              <dt>{field.label}</dt>
-              <dd>{value}</dd>
-            </Fragment>
-          ))}
-        </dl>
-      ) : (
-        <p className={styles.none}>Nothing yet.</p>
-      )}
+    <Section title={section.title}>
+      <InlineFields
+        fields={section.fields}
+        render={(field, labelId) => <RecordField kind={kind} id={id} field={field} record={record} labelId={labelId} />}
+      />
     </Section>
   );
 }
@@ -200,7 +126,68 @@ function RemoveButton({ child, id, label }: { child: ChildKind; id: string; labe
   );
 }
 
-/** Rows under a record, e.g. its experience or notes, with a form to add one and a button to remove each. */
+/**
+ * A row under a record, read as its summary; a click on the summary opens its
+ * fields under it, each edited in place, and another click or Escape closes them.
+ */
+function ChildItem<T extends { id: string }>({
+  child,
+  item,
+  noun,
+  render,
+}: {
+  child: ChildKind;
+  item: T;
+  noun: string;
+  render: (item: T) => ReactNode;
+}): ReactElement {
+  const fieldsId = useId();
+  const [open, setOpen] = useState(false);
+  const summaryRef = useRef<HTMLButtonElement>(null);
+
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "Escape" || event.defaultPrevented) return;
+    event.preventDefault();
+    setOpen(false);
+    summaryRef.current?.focus();
+  };
+
+  return (
+    <li className={styles.item} data-open={open || undefined}>
+      <div className={styles.itemBody}>
+        <button
+          ref={summaryRef}
+          type="button"
+          className={styles.itemSummary}
+          aria-expanded={open}
+          aria-controls={fieldsId}
+          title={open ? `Close this ${noun}` : `Edit this ${noun}`}
+          onClick={() => setOpen(!open)}
+        >
+          {render(item)}
+        </button>
+        {open ? (
+          <div id={fieldsId} className={styles.itemFields} onKeyDown={onKeyDown}>
+            <InlineFields
+              fields={CHILDREN[child].fields}
+              render={(field, labelId) => (
+                <InlineField
+                  field={field}
+                  record={item}
+                  labelId={labelId}
+                  save={(value) => saveChildFieldAction(child, item.id, field.key, value)}
+                />
+              )}
+            />
+          </div>
+        ) : null}
+      </div>
+      <RemoveButton child={child} id={item.id} label={`Remove ${noun}`} />
+    </li>
+  );
+}
+
+/** Rows under a record, e.g. its experience or notes, each edited in place, with a form to add one and a button to remove each. */
 export function ChildSection<T extends { id: string }>({
   title,
   child,
@@ -259,10 +246,7 @@ export function ChildSection<T extends { id: string }>({
     items.length > 0 ? (
       <ul className={styles.items}>
         {items.map((item) => (
-          <li key={item.id} className={styles.item}>
-            <div className={styles.itemBody}>{render(item)}</div>
-            <RemoveButton child={child} id={item.id} label={`Remove ${noun}`} />
-          </li>
+          <ChildItem key={item.id} child={child} item={item} noun={noun} render={render} />
         ))}
       </ul>
     ) : adding ? null : (
@@ -294,7 +278,11 @@ export function ChildSection<T extends { id: string }>({
   );
 }
 
-/** A company's types, chosen from the shared list, with room to add a new one. */
+/**
+ * A company's types, chosen from the shared list: a click on them (or on Add)
+ * opens every type as a checkbox that saves as it's ticked, with room to name
+ * a new one. The company's row in the list shows each change at once.
+ */
 export function TypesSection({
   companyId,
   current,
@@ -304,42 +292,109 @@ export function TypesSection({
   current: readonly ZrmType[];
   all: readonly ZrmType[];
 }): ReactElement {
-  const [editing, setEditing] = useState(false);
-  const [state, action, pending] = useActionState(async (prev: ActionState, formData: FormData) => {
-    const result = await setCompanyTypesAction(companyId, prev, formData);
-    if (result.saved) setEditing(false);
-    return result;
-  }, INITIAL);
-  const checked = new Set(current.map((type) => type.id));
+  const pickerId = useId();
+  const { editRow } = useZrmNavigate();
+  const [open, setOpen] = useState(false);
+  const [ids, setIds] = useOptimistic(current.map((type) => type.id));
+  const [name, setName] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [adding, startAdding] = useTransition();
+  const [, startTransition] = useTransition();
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const checked = new Set(ids);
+  const shown = all.filter((type) => checked.has(type.id));
 
-  if (editing) {
-    return (
-      <Section title="Type">
-        <form action={action} className={styles.form}>
+  const toggle = (typeId: string, on: boolean) =>
+    startTransition(async () => {
+      const next = on ? [...ids, typeId] : ids.filter((id) => id !== typeId);
+      setIds(next);
+      editRow({ kind: "companies", id: companyId, patch: { type_ids: next } });
+      const result = await toggleCompanyTypeAction(companyId, typeId, on);
+      setError(result.error ?? null);
+    });
+
+  const add = () => {
+    const typeName = name.trim();
+    if (!typeName) return;
+    startAdding(async () => {
+      const result = await addCompanyTypeAction(companyId, typeName);
+      setError(result.error ?? null);
+      if (result.saved) setName("");
+    });
+  };
+
+  const close = () => {
+    setOpen(false);
+    toggleRef.current?.focus();
+  };
+
+  return (
+    <Section
+      title="Type"
+      action={
+        <button
+          ref={toggleRef}
+          type="button"
+          className={ui.linkButton}
+          aria-expanded={open}
+          aria-controls={pickerId}
+          onClick={() => setOpen(!open)}
+        >
+          {open ? "Done" : "Add"}
+        </button>
+      }
+    >
+      {shown.length > 0 ? (
+        <button type="button" className={styles.typesValue} aria-label="Edit types" onClick={() => setOpen(true)}>
+          <TypeList types={shown} />
+        </button>
+      ) : open ? null : (
+        <p className={styles.none}>None yet.</p>
+      )}
+      {open ? (
+        <div
+          id={pickerId}
+          className={styles.typesPicker}
+          onKeyDown={(event) => {
+            if (event.key !== "Escape" || event.defaultPrevented) return;
+            event.preventDefault();
+            close();
+          }}
+        >
           <div className={styles.checks}>
             {all.map((type) => (
               <label key={type.id} className={styles.check}>
-                <input type="checkbox" name="type" value={type.id} defaultChecked={checked.has(type.id)} />
+                <input type="checkbox" checked={checked.has(type.id)} onChange={(event) => toggle(type.id, event.target.checked)} />
                 {type.name}
               </label>
             ))}
           </div>
           <div className={ui.field}>
-            <label className={ui.label} htmlFor={`new-type-${companyId}`}>
+            <label className={ui.label} htmlFor={`${pickerId}-new`}>
               New type
             </label>
-            <input id={`new-type-${companyId}`} name="new_type" className={ui.input} maxLength={60} />
+            <input
+              id={`${pickerId}-new`}
+              className={ui.input}
+              maxLength={60}
+              value={name}
+              disabled={adding}
+              placeholder="Name it and press Enter"
+              onChange={(event) => setName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter") return;
+                event.preventDefault();
+                add();
+              }}
+            />
           </div>
-          <FormError state={state} />
-          <FormActions pending={pending} onCancel={() => setEditing(false)} />
-        </form>
-      </Section>
-    );
-  }
-
-  return (
-    <Section title="Type" action={<EditButton label="Edit types" onClick={() => setEditing(true)} />}>
-      <TypeList types={current} />
+        </div>
+      ) : null}
+      {error ? (
+        <p className={ui.error} role="alert">
+          {error}
+        </p>
+      ) : null}
     </Section>
   );
 }

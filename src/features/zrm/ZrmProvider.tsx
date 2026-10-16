@@ -39,7 +39,38 @@ interface ZrmRouteValue {
   pending: boolean;
 }
 
+/** A change to one list row, shown while the save that makes it is in flight. */
+export interface RowEdit {
+  kind: RecordKind;
+  id: string;
+  /** Row columns by name; ones the row doesn't have are ignored by the lists. */
+  patch: Readonly<Record<string, unknown>>;
+}
+
+const num = (value: unknown): number => (typeof value === "number" ? value : Number(value) || 0);
+
+/** `data` with `edit` applied, and the columns derived from it in the database worked out the same way. */
+function withEdit(data: ZrmData, { kind, id, patch }: RowEdit): ZrmData {
+  const rows = data[kind] as readonly { id: string }[];
+  const next = rows.map((row) => {
+    if (row.id !== id) return row;
+    const edited: Record<string, unknown> = { ...row, ...patch };
+    if (kind === "sites") edited.total_it_mw = num(edited.initial_it_mw) + num(edited.secondary_it_mw);
+    if (kind === "opportunities" && "stage_id" in patch) {
+      const stage = data.stages.find((s) => s.id === patch.stage_id);
+      if (stage) Object.assign(edited, { stage_name: stage.name, stage_position: stage.position });
+    }
+    return edited;
+  });
+  return { ...data, [kind]: next };
+}
+
 interface ZrmNavigateValue {
+  /**
+   * Shows `edit` in the lists until the transition it's called in ends, by
+   * when the save's response has brought the lists as the server has them.
+   */
+  editRow: (edit: RowEdit) => void;
   /**
    * Navigates within the app, showing the destination's list and selection
    * before the server answers. Links into the other app (a site's company,
@@ -97,7 +128,8 @@ export function ZrmProvider({ app, data, children }: { app: RecordAppId; data: Z
     [router, prefetched],
   );
 
-  const dataValue = useMemo(() => ({ data, kinds }), [data, kinds]);
+  const [shown, editRow] = useOptimistic(data, withEdit);
+  const dataValue = useMemo(() => ({ data: shown, kinds }), [shown, kinds]);
   const routeValue = useMemo(
     () => ({
       segments: pending ? pathOf(pending).slice(prefix.length).split("/").filter(Boolean) : routed,
@@ -105,7 +137,7 @@ export function ZrmProvider({ app, data, children }: { app: RecordAppId; data: Z
     }),
     [pending, prefix, routed],
   );
-  const navigateValue = useMemo(() => ({ go, prefetch }), [go, prefetch]);
+  const navigateValue = useMemo(() => ({ go, prefetch, editRow }), [go, prefetch, editRow]);
 
   return (
     <ZrmDataContext value={dataValue}>
@@ -131,7 +163,7 @@ export function useZrmRoute(): ZrmRouteValue {
   return required(use(ZrmRouteContext), "useZrmRoute");
 }
 
-/** `go` and `prefetch`, which never change. */
+/** `go`, `prefetch` and `editRow`, which never change. */
 export function useZrmNavigate(): ZrmNavigateValue {
   return required(use(ZrmNavigateContext), "useZrmNavigate");
 }

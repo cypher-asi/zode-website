@@ -243,6 +243,10 @@ export const CREATE_FIELDS: Record<RecordKind, readonly FieldSpec[]> = {
 /** The site fields a list row's right-click menu sets directly. */
 export const SITE_MENU_FIELDS = [site.status, site.type, site.dealType] as const;
 
+/** A field of a kind's detail pane that can be edited in place, by its key. */
+export const editableField = (kind: RecordKind, key: string): FieldSpec | undefined =>
+  SECTIONS[kind].flatMap((section) => section.fields).find((field) => field.key === key && !field.readOnly);
+
 /** The fields a section's form saves, leaving out read-only ones. */
 export const fieldsFor = (kind: RecordKind, section: string): readonly FieldSpec[] | undefined =>
   (section === "create" ? CREATE_FIELDS[kind] : SECTIONS[kind].find((s) => s.id === section)?.fields)?.filter(
@@ -259,6 +263,8 @@ export interface ChildSpec {
   fields: readonly FieldSpec[];
   /** Appended in display order rather than by time. */
   ordered: boolean;
+  /** Has an `updated_at` to stamp as a field is edited. */
+  touch?: boolean;
 }
 
 export const CHILDREN: Record<ChildKind, ChildSpec> = {
@@ -302,6 +308,7 @@ export const CHILDREN: Record<ChildKind, ChildSpec> = {
     parents: { people: "person_id", companies: "company_id", opportunities: "opportunity_id", sites: "site_id" },
     fields: [{ key: "body", label: "Note", type: "textarea", required: true }],
     ordered: false,
+    touch: true,
   },
 };
 

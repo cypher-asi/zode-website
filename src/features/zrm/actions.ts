@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { isEmail, multiLine, singleLine } from "@/lib/validation";
 import { isUuid, teamAccount } from "./access";
-import { CHILDREN, SITE_MENU_FIELDS, TABLES, fieldsFor, isChildKind, type ChildKind, type FieldSpec } from "./fields";
+import { CHILDREN, SITE_MENU_FIELDS, TABLES, editableField, fieldsFor, isChildKind, type ChildKind, type FieldSpec } from "./fields";
 import { ZRM_TAGS } from "./queries";
 import { isRecordKind, listHref, recordHref, type ActionState, type RecordKind } from "./types";
 
@@ -203,52 +203,65 @@ export async function setSiteStatusAction(id: string, statusId: string): Promise
   return { saved: true };
 }
 
-/** Sets one of the fields a site's right-click menu offers, or clears it with an empty value. */
-export async function setSiteFieldAction(id: string, key: string, value: string): Promise<ActionState> {
-  if (!(await teamAccount())) return NO_ACCESS;
-  const field = SITE_MENU_FIELDS.find((f) => f.key === key);
-  if (!field || !isUuid(id)) return NO_ACCESS;
+/**
+ * Sets one column of a row from a submitted value checked against its field.
+ * An empty value clears it to null, or with `clearToDefault` to the column's
+ * default, for the child columns that can't be null. `touch` also stamps
+ * `updated_at`, which not every table has.
+ */
+async function updateColumn(
+  table: string,
+  field: FieldSpec,
+  id: string,
+  value: string,
+  { touch, clearToDefault = false }: { touch: boolean; clearToDefault?: boolean },
+): Promise<ActionState> {
   const parsed = parseField(field, value);
   if ("error" in parsed) return parsed;
+  const cleared = parsed.value === null && clearToDefault;
   try {
-    const result = await db().query(`update capacity_sites set "${field.key}" = $1, updated_at = now() where id = $2 returning id`, [
-      parsed.value,
-      id,
-    ]);
+    const result = await db().query(
+      `update ${table} set "${field.key}" = ${cleared ? "default" : "$2"}${touch ? ", updated_at = now()" : ""} where id = $1 returning id`,
+      cleared ? [id] : [id, parsed.value],
+    );
     if (result.length === 0) return MISSING;
   } catch (error) {
     if (isStaleReference(error)) return { error: `That ${field.label.toLowerCase()} no longer exists. Reload and try again.` };
     throw error;
   }
-  revalidate("sites");
   return { saved: true };
 }
 
-/** Replaces a company's types with the checked ones, adding a new type first if one was named. */
-export async function setCompanyTypesAction(companyId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
+/** Saves one field of a record, as edited in place in its detail pane, or clears it with an empty value. */
+export async function saveFieldAction(kind: RecordKind, id: string, key: string, value: string): Promise<ActionState> {
   if (!(await teamAccount())) return NO_ACCESS;
-  if (!isUuid(companyId)) return NO_ACCESS;
-  const typeIds = formData.getAll("type").filter(isUuid);
-  const newName = singleLine(String(formData.get("new_type") ?? ""));
-  if (newName.length > 60) return { error: "That type name is too long." };
+  const field = isRecordKind(kind) && typeof key === "string" ? editableField(kind, key) : undefined;
+  if (!field || !isUuid(id) || typeof value !== "string") return NO_ACCESS;
+  const result = await updateColumn(TABLES[kind], field, id, value, { touch: true });
+  if (result.saved) revalidate(kind);
+  return result;
+}
 
+/** Sets one of the fields a site's right-click menu offers, or clears it with an empty value. */
+export async function setSiteFieldAction(id: string, key: string, value: string): Promise<ActionState> {
+  if (!(await teamAccount())) return NO_ACCESS;
+  const field = SITE_MENU_FIELDS.find((f) => f.key === key);
+  if (!field || !isUuid(id) || typeof value !== "string") return NO_ACCESS;
+  const result = await updateColumn(TABLES.sites, field, id, value, { touch: true });
+  if (result.saved) revalidate("sites");
+  return result;
+}
+
+/** Adds a type to a company, or takes it off. */
+export async function toggleCompanyTypeAction(companyId: string, typeId: string, on: boolean): Promise<ActionState> {
+  if (!(await teamAccount())) return NO_ACCESS;
+  if (!isUuid(companyId) || !isUuid(typeId)) return NO_ACCESS;
   const sql = db();
-  if (newName) {
-    const [row] = await sql`
-      insert into zrm_types (name) values (${newName})
-      on conflict (name) do update set updated_at = now()
-      returning id
-    `;
-    typeIds.push(row!.id as string);
-  }
   try {
     await sql.transaction([
-      sql`delete from zrm_company_types where company_id = ${companyId}`,
-      sql`
-        insert into zrm_company_types (company_id, type_id)
-        select ${companyId}, t.id from zrm_types t where t.id = any(${typeIds}::uuid[])
-        on conflict do nothing
-      `,
+      on === true
+        ? sql`insert into zrm_company_types (company_id, type_id) values (${companyId}, ${typeId}) on conflict do nothing`
+        : sql`delete from zrm_company_types where company_id = ${companyId} and type_id = ${typeId}`,
       sql`update zrm_companies set updated_at = now() where id = ${companyId}`,
     ]);
   } catch (error) {
@@ -257,6 +270,23 @@ export async function setCompanyTypesAction(companyId: string, _prev: ActionStat
   }
   revalidate("types");
   return { saved: true };
+}
+
+/** Adds a company to a type by name, creating the type if no type has that name yet. */
+export async function addCompanyTypeAction(companyId: string, name: string): Promise<ActionState> {
+  if (!(await teamAccount())) return NO_ACCESS;
+  if (!isUuid(companyId) || typeof name !== "string") return NO_ACCESS;
+  const typeName = singleLine(name);
+  if (!typeName) return { error: "Name the type to add it." };
+  if (typeName.length > 60) return { error: "That type name is too long." };
+
+  const sql = db();
+  const [row] = await sql`
+    insert into zrm_types (name) values (${typeName})
+    on conflict (name) do update set updated_at = now()
+    returning id
+  `;
+  return toggleCompanyTypeAction(companyId, row!.id as string, true);
 }
 
 /** Adds a work history entry, school, custom field, activity or note under a record. */
@@ -303,6 +333,17 @@ export async function addChildAction(
   }
   revalidate();
   return { saved: true };
+}
+
+/** Saves one field of a work history entry, school, custom field, activity or note, as edited in place. */
+export async function saveChildFieldAction(child: ChildKind, id: string, key: string, value: string): Promise<ActionState> {
+  if (!(await teamAccount())) return NO_ACCESS;
+  const spec = isChildKind(child) ? CHILDREN[child] : undefined;
+  const field = spec?.fields.find((f) => f.key === key);
+  if (!spec || !field || !isUuid(id) || typeof value !== "string") return NO_ACCESS;
+  const result = await updateColumn(spec.table, field, id, value, { touch: spec.touch === true, clearToDefault: true });
+  if (result.saved) revalidate();
+  return result;
 }
 
 export async function deleteChildAction(child: ChildKind, id: string): Promise<ActionState> {

@@ -189,7 +189,7 @@ export function CompanyPanel({
 }
 
 function StageSelect({ id, stageId }: { id: string; stageId: string }): ReactElement {
-  const { data } = useZrm();
+  const { data, editRow } = useZrm();
   const [optimistic, setOptimistic] = useOptimistic(stageId);
   const [, startTransition] = useTransition();
   return (
@@ -203,6 +203,7 @@ function StageSelect({ id, stageId }: { id: string; stageId: string }): ReactEle
       onChange={(next) =>
         startTransition(async () => {
           setOptimistic(next);
+          editRow({ kind: "opportunities", id, patch: { stage_id: next } });
           await setStageAction(id, next);
         })
       }
@@ -273,7 +274,7 @@ export function OpportunityPanel({
 }
 
 function StatusSelect({ id, statusId }: { id: string; statusId: string }): ReactElement {
-  const { data } = useZrm();
+  const { data, editRow } = useZrm();
   const [optimistic, setOptimistic] = useOptimistic(statusId);
   const [, startTransition] = useTransition();
   return (
@@ -287,6 +288,7 @@ function StatusSelect({ id, statusId }: { id: string; statusId: string }): React
       onChange={(next) =>
         startTransition(async () => {
           setOptimistic(next);
+          editRow({ kind: "sites", id, patch: { status_id: next } });
           await setSiteStatusAction(id, next);
         })
       }

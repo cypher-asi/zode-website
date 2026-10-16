@@ -17,6 +17,39 @@
   composes: sm from "../Field/Field.module.css";
 }
 
+/* After `.sm`, whose height and padding it replaces. */
+.ghost {
+  gap: 4px;
+  height: 24px;
+  padding: 0 2px 0 5px;
+  border-color: transparent;
+  background: transparent;
+  font-size: inherit;
+}
+
+.ghost .chevron {
+  opacity: 0;
+  transition: opacity var(--duration-fast) ease;
+}
+
+.ghost:is(:hover, :focus-visible, [aria-expanded="true"]) {
+  border-color: var(--color-border-strong);
+  background: var(--color-white);
+}
+
+.ghost:is(:hover, :focus-visible, [aria-expanded="true"]) .chevron {
+  opacity: 1;
+}
+
+.ghost:focus:not(:focus-visible) {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.ghost:hover:focus:not(:focus-visible) {
+  border-color: var(--color-border-strong);
+}
+
 .value {
   flex: 1;
   min-width: 0;
