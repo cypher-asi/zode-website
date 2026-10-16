@@ -28,7 +28,7 @@ function choices(field: FieldSpec, statuses: readonly SiteStatus[]): Option[] {
 
 /**
  * A site's right-click menu in the list, at the pointer: open it, set its
- * status, stage or deal type from a submenu, pin it, or delete it once
+ * status, type or deal type from a submenu, pin it, or delete it once
  * confirmed. Closes on a click outside, Escape, scrolling or a choice.
  */
 export function SiteMenu({

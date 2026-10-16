@@ -728,7 +728,8 @@ update capacity_sites set deal_type = 'Purchase' where deal_type = 'Buy';
 
 alter table capacity_sites add constraint capacity_sites_deal_type_check check (deal_type in ('Lease', 'Purchase', 'JV'));
 
--- How built out the site is, from bare land to a running data center.
+-- The site's type, by how built out it is, from bare land to a running data
+-- center. Shown as Type; the column keeps its first name.
 alter table capacity_sites add column if not exists site_stage text;
 
 alter table capacity_sites drop constraint if exists capacity_sites_site_stage_check;
