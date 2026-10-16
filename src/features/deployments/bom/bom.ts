@@ -47,7 +47,7 @@ export async function getBom(deploymentId: string): Promise<Bom> {
     `,
     sql`
       select i.id, i.quote_id, i.section, i.part_number, i.manufacturer, i.description,
-        i.quantity::float8 as quantity, i.unit_usd::float8 as unit_usd, i.lead_time, i.notes
+        i.quantity::float8 as quantity, i.unit_usd::float8 as unit_usd, i.lead_time, i.notes, i.url
       from deployment_quote_items i
       join deployment_quotes q on q.id = i.quote_id
       where q.deployment_id = ${deploymentId}
@@ -55,7 +55,7 @@ export async function getBom(deploymentId: string): Promise<Bom> {
     `,
     sql`
       select id, phase_id, slot_id, quote_item_id, part_number, manufacturer, description,
-        quantity::float8 as quantity, unit_usd::float8 as unit_usd, notes
+        quantity::float8 as quantity, unit_usd::float8 as unit_usd, notes, url
       from deployment_bom_lines
       where deployment_id = ${deploymentId}
       order by position
@@ -104,6 +104,7 @@ export async function getBom(deploymentId: string): Promise<Bom> {
         unitUsd: num(row.unit_usd),
         leadTime: str(row.lead_time),
         notes: str(row.notes),
+        url: str(row.url),
       }),
     ),
     lines: lines.map(
@@ -118,6 +119,7 @@ export async function getBom(deploymentId: string): Promise<Bom> {
         quantity: Number(row.quantity),
         unitUsd: num(row.unit_usd),
         notes: str(row.notes),
+        url: str(row.url),
       }),
     ),
   };
@@ -201,6 +203,7 @@ export async function saveQuote(deploymentId: string, quote: QuoteInput, items: 
     unit_usd: item.unitUsd,
     lead_time: item.leadTime,
     notes: item.notes,
+    url: item.url,
   }));
   const [updated] = await sql.transaction([
     sql`
@@ -219,19 +222,20 @@ export async function saveQuote(deploymentId: string, quote: QuoteInput, items: 
     `,
     sql`
       insert into deployment_quote_items (
-        id, quote_id, position, section, part_number, manufacturer, description, quantity, unit_usd, lead_time, notes
+        id, quote_id, position, section, part_number, manufacturer, description, quantity, unit_usd, lead_time, notes,
+        url
       )
       select r.id, q.id, r.position, r.section, r.part_number, r.manufacturer, r.description, r.quantity,
-        r.unit_usd, r.lead_time, r.notes
+        r.unit_usd, r.lead_time, r.notes, r.url
       from jsonb_to_recordset(${JSON.stringify(rows)}::jsonb) as r (
         id uuid, position integer, section text, part_number text, manufacturer text,
-        description text, quantity numeric, unit_usd numeric, lead_time text, notes text
+        description text, quantity numeric, unit_usd numeric, lead_time text, notes text, url text
       )
       join deployment_quotes q on q.id = ${quote.id} and q.deployment_id = ${deploymentId}
       on conflict (id) do update set
         position = excluded.position, section = excluded.section, part_number = excluded.part_number,
         manufacturer = excluded.manufacturer, description = excluded.description, quantity = excluded.quantity,
-        unit_usd = excluded.unit_usd, lead_time = excluded.lead_time, notes = excluded.notes
+        unit_usd = excluded.unit_usd, lead_time = excluded.lead_time, notes = excluded.notes, url = excluded.url
       where deployment_quote_items.quote_id = excluded.quote_id
     `,
   ]);
@@ -292,19 +296,20 @@ export async function saveBomLines(deploymentId: string, lines: readonly BomLine
     quantity: line.quantity,
     unit_usd: line.unitUsd,
     notes: line.notes,
+    url: line.url,
   }));
   await sql.transaction([
     sql`delete from deployment_bom_lines where deployment_id = ${deploymentId}`,
     sql`
       insert into deployment_bom_lines (
         deployment_id, phase_id, slot_id, position, quote_item_id, part_number, manufacturer, description,
-        quantity, unit_usd, notes
+        quantity, unit_usd, notes, url
       )
       select p.deployment_id, p.id, r.slot_id, r.position, i.id, r.part_number, r.manufacturer, r.description,
-        r.quantity, r.unit_usd, r.notes
+        r.quantity, r.unit_usd, r.notes, r.url
       from jsonb_to_recordset(${JSON.stringify(rows)}::jsonb) as r (
         phase_id uuid, slot_id text, position integer, quote_item_id uuid, part_number text, manufacturer text,
-        description text, quantity numeric, unit_usd numeric, notes text
+        description text, quantity numeric, unit_usd numeric, notes text, url text
       )
       join deployment_phases p on p.id = r.phase_id and p.deployment_id = ${deploymentId}
       left join deployment_quote_items i on i.id = r.quote_item_id

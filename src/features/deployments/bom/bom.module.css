@@ -208,10 +208,15 @@
   min-width: 180px;
 }
 
-.slotCell .status {
-  margin-top: 4px;
-  font-size: var(--text-xs);
-  font-weight: 400;
+.table .dotCell {
+  width: 1%;
+  padding-right: 0;
+  text-align: center;
+}
+
+.dotCell .status {
+  height: 1lh;
+  cursor: help;
 }
 
 .nowrap {
@@ -230,6 +235,20 @@
   color: var(--color-text-secondary);
   font-size: var(--text-xs);
   font-weight: 400;
+}
+
+.itemLink {
+  display: inline-block;
+  margin-top: 2px;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+
+.itemLink:hover {
+  color: var(--color-text-primary);
 }
 
 .lines {

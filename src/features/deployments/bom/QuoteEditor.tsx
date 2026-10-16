@@ -17,6 +17,7 @@ interface ItemDraft {
   unitUsd: string;
   leadTime: string;
   notes: string;
+  url: string;
 }
 
 const str = (value: number | string | null): string => (value === null ? "" : String(value));
@@ -37,6 +38,7 @@ const itemOf = (quoteId: string, draft: ItemDraft): QuoteItem => ({
   unitUsd: numberOr(draft.unitUsd, null),
   leadTime: orNull(draft.leadTime),
   notes: orNull(draft.notes),
+  url: orNull(draft.url),
 });
 
 const X_ICON = (
@@ -90,6 +92,7 @@ export function QuoteEditor({
       unitUsd: str(item.unitUsd),
       leadTime: item.leadTime ?? "",
       notes: item.notes ?? "",
+      url: item.url ?? "",
     })),
   );
   const uploaded = quote.file?.source === "upload";
@@ -111,6 +114,7 @@ export function QuoteEditor({
         unitUsd: "",
         leadTime: "",
         notes: "",
+        url: "",
       },
     ]);
 
@@ -139,8 +143,8 @@ export function QuoteEditor({
     <input
       className={ui.input}
       aria-label={label}
-      inputMode={decimal ? "decimal" : undefined}
-      placeholder={key === "unitUsd" ? "Included" : undefined}
+      inputMode={decimal ? "decimal" : key === "url" ? "url" : undefined}
+      placeholder={key === "unitUsd" ? "Included" : key === "url" ? "https://" : undefined}
       value={draft[key]}
       onChange={(event) => setItem(draft.id, { [key]: event.target.value })}
     />
@@ -243,6 +247,9 @@ export function QuoteEditor({
               <th scope="col" data-text="">
                 Lead time
               </th>
+              <th scope="col" data-text="">
+                Link
+              </th>
               <th scope="col">
                 <span className={styles.srOnly}>Remove</span>
               </th>
@@ -261,6 +268,7 @@ export function QuoteEditor({
                 <td data-narrow="">{text("quantity", "Quoted quantity", draft, true)}</td>
                 <td data-narrow="">{text("unitUsd", "Unit price", draft, true)}</td>
                 <td>{text("leadTime", "Lead time", draft)}</td>
+                <td>{text("url", "Link to the item", draft)}</td>
                 <td>
                   <button
                     type="button"
@@ -275,7 +283,7 @@ export function QuoteEditor({
             ))}
             {drafts.length ? null : (
               <tr>
-                <td data-text="" colSpan={8}>
+                <td data-text="" colSpan={9}>
                   <span className={styles.sub}>No items yet. Add the ones the quote prices, to pick into the BOM.</span>
                 </td>
               </tr>

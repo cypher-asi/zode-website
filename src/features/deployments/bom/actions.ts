@@ -60,6 +60,21 @@ function amount(value: unknown, label: string, { nullable = true, max = 1e12 } =
   return value;
 }
 
+/** A web address, given `https://` when it has no scheme; anything but http(s) is an error, thrown. */
+function webUrl(value: unknown, label: string): string | null {
+  const text = line(value, label, MAX_LONG);
+  if (!text) return null;
+  const href = /^[a-z][a-z\d+.-]*:/i.test(text) ? text : `https://${text}`;
+  let url: URL;
+  try {
+    url = new URL(href);
+  } catch {
+    throw new Error(`${label} isn't a web address.`);
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") throw new Error(`${label} must start with https://.`);
+  return url.href;
+}
+
 function day(value: unknown, label: string): string | null {
   const text = line(value, label, 10);
   if (text && (!DAY_RE.test(text) || Number.isNaN(Date.parse(text)))) throw new Error(`${label} must be a date.`);
@@ -108,6 +123,7 @@ function readItem(raw: unknown, i: number, quotes: ReadonlyMap<string, string>):
     unitUsd: amount(r.unitUsd, `${label}'s unit price`),
     leadTime: line(r.leadTime, `${label}'s lead time`),
     notes: line(r.notes, `${label}'s notes`, MAX_LONG),
+    url: webUrl(r.url, `${label}'s link`),
   };
 }
 
@@ -131,6 +147,7 @@ function readLine(raw: unknown, i: number, phases: ReadonlySet<string>, items: R
     quantity: amount(r.quantity, `${label}'s quantity`, { nullable: false, max: 1e9 })!,
     unitUsd: amount(r.unitUsd, `${label}'s unit price`),
     notes: line(r.notes, `${label}'s notes`, MAX_LONG),
+    url: webUrl(r.url, `${label}'s link`),
   };
 }
 

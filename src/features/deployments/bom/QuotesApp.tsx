@@ -33,7 +33,7 @@ import {
   removeQuoteFileAction,
   renameQuoteAction,
 } from "./actions";
-import { qty } from "./BomOverview";
+import { ItemLink, qty } from "./BomOverview";
 import { phaseLabel } from "./phase";
 import { QuoteEditor } from "./QuoteEditor";
 import { formatCents, lineUsd, quoteFileUrl, quoteItemsUsd, quoteSections, type Bom, type Quote } from "./types";
@@ -751,6 +751,7 @@ function PriceList({
                         <span className={item.partNumber ? styles.sub : undefined}>{item.description}</span>
                         {item.leadTime ? <span className={styles.sub}>Lead time {item.leadTime}</span> : null}
                         {item.notes ? <span className={styles.sub}>{item.notes}</span> : null}
+                        <ItemLink url={item.url} />
                       </td>
                       <td data-text="">{item.manufacturer ?? "—"}</td>
                       <td className={styles.nowrap}>{item.quantity === null ? "—" : qty(item.quantity)}</td>

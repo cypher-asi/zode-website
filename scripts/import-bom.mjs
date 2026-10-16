@@ -12,12 +12,15 @@
  *
  * Takes the "Chicago · 801 S Canal" deployment's first B300 phase unless
  * `--deployment=<id>` and `--phase=<id>` name one. Pegatron's lines scale to
- * the phase's nodes at the quoted unit prices; Computacenter's 64-node
- * network is taken as quoted, so a larger phase shows what it still needs.
+ * the phase's nodes at the quoted unit prices. Computacenter's 64-node GPU
+ * fabric lines (switches, their cords and support, transceivers, fiber, UFM)
+ * take what the phase's fabric needs, on every run; the rest of its network
+ * is taken as quoted, so a larger phase shows what it still needs.
  * Each quote is linked to the file of the same name in the deployment's data
  * room, when it has one. Re-runnable: a quote is matched on `seed_key` and
- * skipped once imported, though its items still get any manufacturer they
- * lack. `--dry-run` writes nothing.
+ * skipped once imported, though its items, and the BOM lines picked from
+ * them, still get any manufacturer or link they lack. `--dry-run` writes
+ * nothing.
  */
 import { randomUUID } from "node:crypto";
 import { registerHooks } from "node:module";
@@ -68,8 +71,9 @@ const CLUSTER = {
 /**
  * `[partNumber, description, quantity, unitUsd, fills, extra]`. `fills` maps
  * slot ids to the slot units each item covers; `extra` sets `lead`, `notes`,
- * `mfr` (the manufacturer, when it isn't the section's) or `excluded` (why
- * the BOM leaves it out). A null `unitUsd` is priced inside another line.
+ * `mfr` (the manufacturer, when it isn't the section's), `url` (its page on
+ * the web, when it isn't the section's) or `excluded` (why the BOM leaves it
+ * out). A null `unitUsd` is priced inside another line.
  */
 const line = (partNumber, description, quantity, unitUsd, fills = {}, extra = {}) => ({
   partNumber,
@@ -85,6 +89,21 @@ const EO = "Third party (NVIDIA compatible)";
 
 const EO_DUPLICATE = (pn, lead) =>
   `Third-party duplicate of ${pn}, quoted for 4-6 week delivery against ${lead} for the NVIDIA part. Swap it in if lead time matters.`;
+
+/** Makers' product pages and datasheets, for the items more than one line links to. */
+const LINK = {
+  // Pegatron has no page for the AS402-2A1-8H2; the AS402-2T1-8H2 is the same Xeon 6 HGX B300 system.
+  pegatronAs402: "https://svr.pegatroncorp.com/products/server/ai-gpu-server/as402-2t1-8h2",
+  bluefield3: "https://networking-docs.nvidia.com/bf3dpu/",
+  r7725: "https://www.dell.com/en-us/shop/ipovw/poweredge-r7725",
+  epyc9255: "https://www.amd.com/en/products/processors/server/epyc/9005-series/amd-epyc-9255.html",
+  epyc9135: "https://www.amd.com/en/products/processors/server/epyc/9005-series/amd-epyc-9135.html",
+  prosupport: "https://www.dell.com/en-us/lp/prosupport-infrastructure-suite",
+  netq: "https://www.nvidia.com/en-us/networking/ethernet-switching/netq/",
+  nvidiaSupport: "https://www.nvidia.com/en-us/support/enterprise/networking/",
+  vast: "https://www.vastdata.com/platform/ai-os",
+  fortinetOptics: "https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/Fortinet_Transceivers.pdf",
+};
 
 const PEGATRON_FILE = "pegatron-(Zode) B300 DLC_Ark_48U InRack_bugetary quotation (1).pdf";
 const COMPUTACENTER_FILE = "computa-center-ZODE_64 Node Cluster Options v1.2.xlsx";
@@ -112,16 +131,29 @@ const PEGATRON = {
       lines: [
         line("AS402-2A1-8H2", "AS402-2A1-8H2 4U 2-Socket Intel Xeon Processors, B300 (Ark)", 1, 530_901, { gpu_node: 1 }, {
           notes: "Per-unit subtotal of $541,519.02 less the warranty line below.",
+          url: LINK.pegatronAs402,
         }),
-        line(null, "L6 barebone AS402-2A1-8H2 4U", 1, null),
-        line(null, "GPU B300 DLC: GPU HGX B300 NVL8 PC", 1, null, { gpu_baseboard: 1 }, { mfr: "NVIDIA" }),
+        line(null, "L6 barebone AS402-2A1-8H2 4U", 1, null, {}, { url: LINK.pegatronAs402 }),
+        line(null, "GPU B300 DLC: GPU HGX B300 NVL8 PC", 1, null, { gpu_baseboard: 1 }, {
+          mfr: "NVIDIA",
+          url: "https://www.nvidia.com/en-us/data-center/hgx/",
+        }),
         line(null, "Assembly and integration: AS402-2A1-8H2 4U (direct liquid cooling)", 1, null, { node_integration: 1 }),
         line("1.5meter", "Power cord (North America) C19 to C20, 1.5 meter, 16A, 14AWG", 10, null, { node_power_cord: 1 }),
-        line(null, "Intel Xeon 6776P (64-core) 2.3GHz, Max Turbo 3.9GHz, 336M cache, TDP 350W", 2, null, { node_cpu: 1 }, { mfr: "Intel" }),
+        line(null, "Intel Xeon 6776P (64-core) 2.3GHz, Max Turbo 3.9GHz, 336M cache, TDP 350W", 2, null, { node_cpu: 1 }, {
+          mfr: "Intel",
+          url: "https://www.intel.com/content/www/us/en/products/sku/243691/intel-xeon-6776p-processor-336m-cache-2-30-ghz/specifications.html",
+        }),
         line(null, "RDIMM DDR5 6400MT/s, 96GB", 32, null, { node_memory: 1 }),
         line(null, "SSD U.2: PCIe 4.0 U.2 7mm 960GB (1DWPD)", 2, null, { node_boot_drive: 1 }),
-        line(null, "U.2 NVMe: PCIe 5.0 U.2 PM9D3a 3.84TB", 6, null, { node_nvme: 1 }, { mfr: "Samsung" }),
-        line(null, "NVIDIA B3220 crypto disabled, PCIe 5.0 x16, QSFP112 2-port 200GbE", 2, null, { node_frontend_nic: 1 }, { mfr: "NVIDIA" }),
+        line(null, "U.2 NVMe: PCIe 5.0 U.2 PM9D3a 3.84TB", 6, null, { node_nvme: 1 }, {
+          mfr: "Samsung",
+          url: "https://semiconductor.samsung.com/ssd/datacenter-ssd/pm9d3a/mzwl63t8hflt-00aw7-bw7/",
+        }),
+        line(null, "NVIDIA B3220 crypto disabled, PCIe 5.0 x16, QSFP112 2-port 200GbE", 2, null, { node_frontend_nic: 1 }, {
+          mfr: "NVIDIA",
+          url: LINK.bluefield3,
+        }),
         line(null, "Trusted Platform Module (TPM) 2.0 TPM-SPI", 1, null),
         line("L6 3YR Parts", "Warranty: 3 years RTV (parts only, one way)", 1, 10_618.02, { node_warranty: 1 }),
       ],
@@ -157,7 +189,7 @@ const PEGATRON = {
   ],
 };
 
-/** Computacenter quotes a 64-node cluster's network, management, storage and services; the phase takes them as quoted. */
+/** Computacenter quotes a 64-node cluster's network, management, storage and services; the phase takes them as quoted, its GPU fabric aside. */
 const COMPUTACENTER = {
   seed_key: "computacenter-64-node-v1.2",
   vendor: "Computacenter",
@@ -167,7 +199,7 @@ const COMPUTACENTER = {
   quoted_total_usd: 11_870_660.51,
   file: COMPUTACENTER_FILE,
   notes:
-    "64 Node Full Network: InfiniBand fabric, Ethernet, management, VAST storage (1PB), firewalls, spares, professional services and freight. Integrated at Computacenter's integration center and trucked to the colo. Sized for 64 nodes and taken as quoted, so a larger phase's coverage shows what it still needs.",
+    "64 Node Full Network: InfiniBand fabric, Ethernet, management, VAST storage (1PB), firewalls, spares, professional services and freight. Integrated at Computacenter's integration center and trucked to the colo. Sized for 64 nodes; a larger phase's BOM takes the GPU fabric it needs at these unit prices and the rest as quoted.",
   sections: [
     {
       title: "Network, Management Nodes, Storage Racks & PDUs, OOB",
@@ -175,9 +207,15 @@ const COMPUTACENTER = {
       lines: [
         line("VP7N60AC", "rPDU, Switched Outlet Level Monitoring EC, 60A, 208V Delta, 17.2kW, Vertical, (48) Combination C13/C19, 10ft / 3m power cord with 3P+E (IP67), Black Powder Coat", 12, null, { rack_pdu: 1 }, {
           notes: "Networking and storage racks.",
+          url: "https://www.geistglobal.com/power-distribution-unit/VP7N60AC",
         }),
-        line("VR3357", "Vertiv VR Rack - 48U Server Rack Enclosure, 800x1200mm, 19-inch Cabinet (VR3357) - 2265x800x1200mm (HxWxD), 77% perforated doors, Side", 6, null, { cabinet: 1 }),
-        line("OM2232-L", "32 SERIAL PT64GBSSD DOCKER SPT 1GBE SFP4G LTEDUAL ACC14 PWR CRD, 3-YR Foundation Support", 1, null, { console_server: 1 }, { mfr: "Opengear" }),
+        line("VR3357", "Vertiv VR Rack - 48U Server Rack Enclosure, 800x1200mm, 19-inch Cabinet (VR3357) - 2265x800x1200mm (HxWxD), 77% perforated doors, Side", 6, null, { cabinet: 1 }, {
+          url: "https://www.vertiv.com/en-us/products-catalog/facilities-enclosures-and-racks/racks-and-containment/VR3357/",
+        }),
+        line("OM2232-L", "32 SERIAL PT64GBSSD DOCKER SPT 1GBE SFP4G LTEDUAL ACC14 PWR CRD, 3-YR Foundation Support", 1, null, { console_server: 1 }, {
+          mfr: "Opengear",
+          url: "https://opengear.com/products/om2200-operations-manager/",
+        }),
         line(null, "Section subtotal: PDUs, racks and console server above", 1, 75_000, {}, {
           mfr: null,
           notes: "The quote prices this section as a $75,000 subtotal, its unit prices TBD.",
@@ -187,11 +225,12 @@ const COMPUTACENTER = {
     {
       title: "CPU Compute",
       manufacturer: "Dell",
+      url: LINK.r7725,
       lines: [
         line("210-BNMV", "PowerEdge R7725 Server (control plane)", 6, 53_038.312533333316, { mgmt_server: 1 }, { lead: "90 Days" }),
         line("321-BLDM", "Chassis with up to 8 E3.S NVMe Direct Drives", 6, null),
-        line("338-CRRV", "AMD EPYC 9255 3.20GHz, 24C/48T, 128 Cache (200W) DDR5-6400", 6, null),
-        line("338-CRRV, 379-BDCO", "AMD EPYC 9255 3.20GHz, 24C/48T, 128 Cache (200W) DDR5-6400", 6, null),
+        line("338-CRRV", "AMD EPYC 9255 3.20GHz, 24C/48T, 128 Cache (200W) DDR5-6400", 6, null, {}, { url: LINK.epyc9255 }),
+        line("338-CRRV, 379-BDCO", "AMD EPYC 9255 3.20GHz, 24C/48T, 128 Cache (200W) DDR5-6400", 6, null, {}, { url: LINK.epyc9255 }),
         line("370-BCCX", "6400MT/s RDIMMs", 6, null),
         line("370-BCCZ", "64GB RDIMM, 6400MT/s, Dual Rank", 48, null),
         line("780-BCDO", "C30, No RAID for NVME chassis", 6, null),
@@ -204,16 +243,18 @@ const COMPUTACENTER = {
         line("329-BLHX", "PowerEdge R7725 Motherboard V2 - non PE", 6, null),
         line("540-BFPX", "Broadcom 57412 Dual Port 10GbE BASE-T Adapter, OCP 3.0 NIC +Sec", 6, null),
         line("470-BCHM", "1 OCP - 1 Rear Blank, No Cable", 6, null),
-        line("352-BBCQ", "Partner DPU, NVIDIA BlueField-3 Dual Port 200GbE/NDR200 PCIe Full Height", 6, null),
+        line("352-BBCQ", "Partner DPU, NVIDIA BlueField-3 Dual Port 200GbE/NDR200 PCIe Full Height", 6, null, {}, { url: LINK.bluefield3 }),
         line("403-BDMC", "BOSS-N1 controller card + with 2 M.2 960GB (RAID 1) (22x80) Rear", 6, null),
         line("634-CSHS, 634-CSHT, 634-CSHV", "iDRAC10, Datacenter 17G", 6, null),
         line("379-BFXS, 634-CZRP", "Dell Connectivity Client - Enabled 17G", 6, null),
         line("770-BECC", "ReadyRails Sliding Rails Without Cable Management Arm", 6, null),
-        line("865-BBMY", "ProSupport and Next Business Day Onsite Service, 36 Month(s)", 6, 3_182.9354666666654, { server_support: 1 }),
+        line("865-BBMY", "ProSupport and Next Business Day Onsite Service, 36 Month(s)", 6, 3_182.9354666666654, { server_support: 1 }, {
+          url: LINK.prosupport,
+        }),
         line("210-BNMV", "PowerEdge R7725 Server (UFM appliance)", 2, 37_953.76079777778, { fabric_manager: 1 }, { lead: "90 Days" }),
         line("321-BLDM", "Chassis with up to 8 E3.S NVMe Direct Drives", 2, null),
-        line("338-CRCJ", "AMD EPYC 9135 3.65GHz, 16C/32T, 64 Cache (200W) DDR5-6400", 2, null),
-        line("338-CRCJ, 379-BDCO", "AMD EPYC 9135 3.65GHz, 16C/32T, 64 Cache (200W) DDR5-6400", 2, null),
+        line("338-CRCJ", "AMD EPYC 9135 3.65GHz, 16C/32T, 64 Cache (200W) DDR5-6400", 2, null, {}, { url: LINK.epyc9135 }),
+        line("338-CRCJ, 379-BDCO", "AMD EPYC 9135 3.65GHz, 16C/32T, 64 Cache (200W) DDR5-6400", 2, null, {}, { url: LINK.epyc9135 }),
         line("370-BCCX", "6400MT/s RDIMMs", 2, null),
         line("370-BCCZ", "64GB RDIMM, 6400MT/s, Dual Rank", 8, null),
         line("780-BCDO", "C30, No RAID for NVME chassis", 2, null),
@@ -225,23 +266,29 @@ const COMPUTACENTER = {
         line("330-BCYK", "Riser Config 4, 2 x16 LP Slots (Gen5), 2 x16 DW Slots (Gen5), 2nd OCP", 2, null),
         line("329-BLHX", "PowerEdge R7725 Motherboard V2 - non PE", 2, null),
         line("540-BFPX", "Broadcom 57412 Dual Port 10GbE BASE-T Adapter, OCP 3.0 NIC +Sec", 2, null),
-        line("540-BFKF", "Nvidia ConnectX-7 Single Port NDR VPI/400GbE OSFP-RHS Adapter, No Crypto, PCIe Full Height +Sec", 4, null),
+        line("540-BFKF", "Nvidia ConnectX-7 Single Port NDR VPI/400GbE OSFP-RHS Adapter, No Crypto, PCIe Full Height +Sec", 4, null, {}, {
+          url: "https://networking-docs.nvidia.com/connectx7hw/specifications",
+        }),
         line("403-BDMC", "BOSS-N1 controller card + with 2 M.2 960GB (RAID 1) (22x80) Rear", 2, null),
         line("634-CSHS, 634-CSHT, 634-CSHV", "iDRAC10, Datacenter 17G", 2, null),
         line("379-BFXS, 634-CZRP", "Dell Connectivity Client - Enabled 17G", 2, null),
         line("770-BECC", "ReadyRails Sliding Rails Without Cable Management Arm", 2, null),
-        line("865-BBMY", "ProSupport and Next Business Day Onsite Service, 36 Month(s)", 2, 2_277.6805888888885, { server_support: 1 }),
+        line("865-BBMY", "ProSupport and Next Business Day Onsite Service, 36 Month(s)", 2, 2_277.6805888888885, { server_support: 1 }, {
+          url: LINK.prosupport,
+        }),
         line("797-XUFETA+P2CMI36", "NVIDIA Unified Fabric Manager (UFM) Enterprise + Business Standard - Subscription - Up to 1000 InfiniBand Adapters (HCAs) - 3 Year", 516, 137.65333333333334, { fabric_manager_license: 1 }, {
           mfr: "NVIDIA",
           notes: "512 GPUs and 4 UFM adapters.",
+          url: "https://www.nvidia.com/en-us/networking/infiniband/ufm/",
         }),
         line("797-XNMX1K+P2CMI36", "SVCS NMX SUBSCRIPTION SW W/BUS STAND (PER MANAGED GPU) 3 YR", 516, 137.48888888888888, {}, {
           mfr: "NVIDIA",
+          url: "https://networking-docs.nvidia.com/nmxm/8513000",
           excluded:
             "NMX manages NVLink switch trays, which only NVL72 racks have; HGX B300 nodes keep NVLink inside each node, so there's nothing for it to manage.",
         }),
-        line("UPGR-CUM-NETQ2-SUB-10G-3YR", "NetQ On-Prem 10G or greater switch SW subscription with Business Standard support, 3Y", 12, 1_481.4833333333333, { switch_monitoring_license: 1 }, { mfr: "NVIDIA" }),
-        line("UPGR-CUM-NETQ2-SUB-1G-3YR", "NetQ On-Prem 1G or greater switch SW subscription with Business Standard support, 3Y", 10, 1_481.4833333333333, { switch_monitoring_license: 1 }, { mfr: "NVIDIA" }),
+        line("UPGR-CUM-NETQ2-SUB-10G-3YR", "NetQ On-Prem 10G or greater switch SW subscription with Business Standard support, 3Y", 12, 1_481.4833333333333, { switch_monitoring_license: 1 }, { mfr: "NVIDIA", url: LINK.netq }),
+        line("UPGR-CUM-NETQ2-SUB-1G-3YR", "NetQ On-Prem 1G or greater switch SW subscription with Business Standard support, 3Y", 10, 1_481.4833333333333, { switch_monitoring_license: 1 }, { mfr: "NVIDIA", url: LINK.netq }),
       ],
     },
     {
@@ -251,28 +298,48 @@ const COMPUTACENTER = {
         line("Q3400-RA (920-9B36F-00RX-8S0)", "NVDA Q3400-RA, 4U, 144 port via 72 OSFP224 ports, 8 AC, Managed C2P (I/P) Airflow", 12, 96_716.36956521738, { fabric_switch: 1 }, {
           lead: "20-24 Weeks",
           notes: "4 spine and 8 leaf.",
+          url: "https://networking-docs.nvidia.com/xdrswitcheshw/specifications",
         }),
         line("930-9BPWA-00NA-000", "NVDA, XDR, Pwr Cord 15A C14 to C15 UL (2pack)", 96, 28.456521739130434, { fabric_switch_power_cord: 1 }),
-        line("790-SX4NNZ+P2CMI36", "NVIDIA ENTBSNSSTDSPTSRVCSNBD SVCS ON-SITE CE Q3400-RA AIR COOLED 3 YR", 12, 28_048.032608695648, { fabric_switch_support: 1 }),
+        line("790-SX4NNZ+P2CMI36", "NVIDIA ENTBSNSSTDSPTSRVCSNBD SVCS ON-SITE CE Q3400-RA AIR COOLED 3 YR", 12, 28_048.032608695648, { fabric_switch_support: 1 }, { url: LINK.nvidiaSupport }),
         line("SN5610 / 920-9N42F-00RI-3C1", "NVDA SN5610 2U 64xOSFP112, 4AC PSU, C2P (I/P) Airflow, w/ Cumulus", 10, 54_806.510869565216, { storage_switch: 1 }, {
           lead: "30-34 Weeks",
+          url: "https://networking-docs.nvidia.com/sn5000hw/ordering-information",
           notes: "TAN consolidated switches. The quote's summary sheet lists 40 power cords for them that its detail doesn't price.",
         }),
-        line("781-S56NNZ+P2CMI36", "ENT BUS STD SUP SVCS SN5600 SVCS CL 3 YEARS", 10, 7_672.434782608696, { storage_switch_support: 1 }),
-        line("MSN4700-WS2RC", "MSN4700-WS2RC border leaf switch", 2, 28_239.934782608696, { edge_router: 1 }, { lead: "16-20 Weeks" }),
-        line("781-C47NNZ+P2CMI36", "ENT BUS STD SUP SVCS MSN4700 SVCS CL 3 YEARS", 2, 10_449.065217391304, { edge_support: 1 }),
-        line("MSN2201-CB2RC", "NVDA SN2201 48x1GBaseT, 1U, 2AC PSU, C2P (P/I) Airflow, w/ Cumulus", 10, 2_450.4891304347825, { oob_switch: 1 }, { lead: "16-20 Weeks" }),
-        line("781-S23N0Z+C2PMI36", "3YR TECH SUP AND WARRANTY BUS SVCS STD FOR SN2201-CL SERIES SWITCH", 10, 857.925, { oob_switch_support: 1 }),
+        line("781-S56NNZ+P2CMI36", "ENT BUS STD SUP SVCS SN5600 SVCS CL 3 YEARS", 10, 7_672.434782608696, { storage_switch_support: 1 }, { url: LINK.nvidiaSupport }),
+        line("MSN4700-WS2RC", "MSN4700-WS2RC border leaf switch", 2, 28_239.934782608696, { edge_router: 1 }, {
+          lead: "16-20 Weeks",
+          url: "https://networking-docs.nvidia.com/sn4000hw/ordering-information",
+        }),
+        line("781-C47NNZ+P2CMI36", "ENT BUS STD SUP SVCS MSN4700 SVCS CL 3 YEARS", 2, 10_449.065217391304, { edge_support: 1 }, { url: LINK.nvidiaSupport }),
+        line("MSN2201-CB2RC", "NVDA SN2201 48x1GBaseT, 1U, 2AC PSU, C2P (P/I) Airflow, w/ Cumulus", 10, 2_450.4891304347825, { oob_switch: 1 }, {
+          lead: "16-20 Weeks",
+          url: "https://networking-docs.nvidia.com/sn2201hw/ordering-information",
+        }),
+        line("781-S23N0Z+C2PMI36", "3YR TECH SUP AND WARRANTY BUS SVCS STD FOR SN2201-CL SERIES SWITCH", 10, 857.925, { oob_switch_support: 1 }, { url: LINK.nvidiaSupport }),
       ],
     },
     {
       title: "InfiniBand / Ethernet Optics & Cables",
       manufacturer: "NVIDIA",
       lines: [
-        line("MMS4A00-XM", "NVDA twin port, 1.6Tbps, 2x800 XDR, OSFP, 2xMPO12, 1310 SMF, up to 500m, 2xDR4 finned, IHS", 832, 2_257, { switch_transceiver: 1 }, { lead: "30-24 weeks" }),
-        line("MMS4A20-XM800", "NVDA, single port 800Gbps XDR, OSFP, MPO12, 1310nm SMF, DR4, up to 500m, flat top", 512, 1_593.445652173913, { node_transceiver: 1 }, { lead: "30-34 Weeks" }),
-        line("MMS4X00-NM", "NVIDIA twin port transceiver, 800Gb/s 2x400Gb/s Twin-port OSFP, 2xDR4 SMF, up to 500m, finned", 4, 1_625.7391304347825, {}, { lead: "20-26 Weeks" }),
-        line("MMS4X00-NS400", "NVIDIA Single port transceiver, 400Gbps, NDR, OSFP, MPO, 1310nm SMF, up to 500m, flat top", 4, 952.8913043478261, {}, { lead: "20-26 Weeks" }),
+        line("MMS4A00-XM", "NVDA twin port, 1.6Tbps, 2x800 XDR, OSFP, 2xMPO12, 1310 SMF, up to 500m, 2xDR4 finned, IHS", 832, 2_257, { switch_transceiver: 1 }, {
+          lead: "30-24 weeks",
+          url: "https://networking-docs.nvidia.com/9iahx00xmosfptcvr1600/",
+        }),
+        line("MMS4A20-XM800", "NVDA, single port 800Gbps XDR, OSFP, MPO12, 1310nm SMF, DR4, up to 500m, flat top", 512, 1_593.445652173913, { node_transceiver: 1 }, {
+          lead: "30-34 Weeks",
+          url: "https://networking-docs.nvidia.com/9iat0mosfp800sprhs",
+        }),
+        line("MMS4X00-NM", "NVIDIA twin port transceiver, 800Gb/s 2x400Gb/s Twin-port OSFP, 2xDR4 SMF, up to 500m, finned", 4, 1_625.7391304347825, {}, {
+          lead: "20-26 Weeks",
+          url: "https://networking-docs.nvidia.com/mms4x00nm800g500m/",
+        }),
+        line("MMS4X00-NS400", "NVIDIA Single port transceiver, 400Gbps, NDR, OSFP, MPO, 1310nm SMF, up to 500m, flat top", 4, 952.8913043478261, {}, {
+          lead: "20-26 Weeks",
+          url: "https://networking-docs.nvidia.com/mms4x00ns400/",
+        }),
         line("MMS4A00-XM-EO", "1600Gbps, 2xDR4, Twin-port OSFP, 2xMPO, 1310nm Single Mode (500m) Transceiver - Nvidia Compatible", 832, 1_361.111111111111, {}, {
           lead: "4-6 weeks",
           mfr: EO,
@@ -301,23 +368,33 @@ const COMPUTACENTER = {
       title: "VAST SW & SMC Ebox Storage 1PB",
       manufacturer: "VAST Data",
       lines: [
-        line("SW-U-1", "VAST capacity: 1TB Useable 1-Month Gemini Services Term", 1206, 389.27, { storage_software: 1 }),
-        line("SW-CORE-1", "VAST cores: Single CPU Core 1-Month Gemini Services Term (768 licensable CPU cores in scope)", 768, 669.6, { storage_software: 1 }),
+        line("SW-U-1", "VAST capacity: 1TB Useable 1-Month Gemini Services Term", 1206, 389.27, { storage_software: 1 }, { url: LINK.vast }),
+        line("SW-CORE-1", "VAST cores: Single CPU Core 1-Month Gemini Services Term (768 licensable CPU cores in scope)", 768, 669.6, { storage_software: 1 }, { url: LINK.vast }),
         line("INSTALL", "VAST Data Installation Services", 1, 19_200, { storage_install: 1 }),
-        line("AS -1115HS-TNR-OTO-1", "SMC 138 Ebox Nodes / 64 Core - 9 x 15.36TB Drives", 12, 118_146.81, { storage_node: 1 }, { lead: "90 Days", mfr: "Supermicro" }),
+        line("AS -1115HS-TNR-OTO-1", "SMC 138 Ebox Nodes / 64 Core - 9 x 15.36TB Drives", 12, 118_146.81, { storage_node: 1 }, {
+          lead: "90 Days",
+          mfr: "Supermicro",
+          url: "https://www.supermicro.com/en/products/system/hyper/1u/as-1115hs-tnr",
+        }),
       ],
     },
     {
       title: "Firewalls (Fortinet 3000G HA)",
       manufacturer: "Fortinet",
       lines: [
-        line("FG-3000G", "FORTIGATE-3000G 6 X 100GE QSFP28 SLOTS 16 X 10GE SFP+/25GE", 2, 115_115, { firewall: 1 }, { lead: "60 Days" }),
-        line("FC-10-G3K0G-247-02-36", "FORTIGATE-3000G 3YR FORTICARE PREMIUM SUPPORT", 2, 72_800, { firewall_support: 1 }),
-        line("FN-TRAN-QSFP28-DR", "100GE QSFP28 TRANSCEIVERS", 4, 1_808.04, { wan_optics: 1 }),
+        line("FG-3000G", "FORTIGATE-3000G 6 X 100GE QSFP28 SLOTS 16 X 10GE SFP+/25GE", 2, 115_115, { firewall: 1 }, {
+          lead: "60 Days",
+          url: "https://docs.fortinet.com/document/fortigate/hardware/fortigate-3000g-series-qsg",
+        }),
+        line("FC-10-G3K0G-247-02-36", "FORTIGATE-3000G 3YR FORTICARE PREMIUM SUPPORT", 2, 72_800, { firewall_support: 1 }, {
+          url: "https://www.fortinet.com/content/dam/fortinet/assets/solution-guides/sb-forticare-technical-support-and-rma-services.pdf",
+        }),
+        line("FN-TRAN-QSFP28-DR", "100GE QSFP28 TRANSCEIVERS", 4, 1_808.04, { wan_optics: 1 }, { url: LINK.fortinetOptics }),
         line("FN-TRAN-QSFP+LR", "FN-CABLE-QSFP28-1", 2, 1_218.8444444444444, { wan_optics: 1 }, {
           notes: "The quote's description repeats the next line's part number.",
+          url: LINK.fortinetOptics,
         }),
-        line("FN-CABLE-QSFP28-1", "4 x 25G SFP28 Passive Direct Attach Copper Breakout Cable", 2, 112, { wan_optics: 1 }),
+        line("FN-CABLE-QSFP28-1", "4 x 25G SFP28 Passive Direct Attach Copper Breakout Cable", 2, 112, { wan_optics: 1 }, { url: LINK.fortinetOptics }),
       ],
     },
     {
@@ -385,6 +462,7 @@ function itemsOf(quote) {
       id: randomUUID(),
       section: section.title,
       manufacturer: "mfr" in l ? l.mfr : (section.manufacturer ?? null),
+      url: "url" in l ? l.url : (section.url ?? null),
       quantity: l.quantity * quoted,
       taken: l.quantity * taken,
     }));
@@ -406,6 +484,7 @@ function linesOf(items) {
       manufacturer: i.manufacturer,
       description: i.description,
       notes: i.notes ?? null,
+      url: i.url,
     };
     const fills = Object.entries(i.fills);
     if (!fills.length) return i.unitUsd === null ? [] : [{ ...base, slot_id: null, quantity: i.taken, unit_usd: i.unitUsd }];
@@ -442,30 +521,34 @@ for (const quote of [PEGATRON, COMPUTACENTER]) {
   const items = itemsOf(quote);
   const seededId = seeded.get(quote.seed_key);
   if (seededId) {
-    // Quotes imported before items had a manufacturer get theirs, matched on part number and description.
+    // Quotes imported before items had a manufacturer or link get them, matched on part number and description;
+    // BOM lines picked from those items get them in turn. Anything already set, by hand or before, is kept.
     const known = items
-      .filter((i) => i.manufacturer)
-      .map((i) => ({ part_number: i.partNumber, description: i.description, manufacturer: i.manufacturer }));
-    const updated = DRY_RUN
-      ? []
-      : await sql`
-          update deployment_quote_items q set manufacturer = k.manufacturer
-          from jsonb_to_recordset(${JSON.stringify(known)}::jsonb) as k(part_number text, description text, manufacturer text)
-          where q.quote_id = ${seededId} and q.manufacturer is null
-            and q.part_number is not distinct from k.part_number and q.description = k.description
-          returning q.id`;
-    const lines = DRY_RUN
-      ? []
-      : await sql`
-          update deployment_bom_lines l set manufacturer = i.manufacturer
-          from deployment_quote_items i
-          where i.id = l.quote_item_id and i.quote_id = ${seededId}
-            and l.manufacturer is null and i.manufacturer is not null
-          returning l.id`;
+      .filter((i) => i.manufacturer || i.url)
+      .map((i) => ({ part_number: i.partNumber, description: i.description, manufacturer: i.manufacturer, url: i.url }));
+    const [updated, lines] = DRY_RUN
+      ? [[], []]
+      : await sql.transaction([
+          sql`
+            update deployment_quote_items q
+            set manufacturer = coalesce(q.manufacturer, k.manufacturer), url = coalesce(q.url, k.url)
+            from jsonb_to_recordset(${JSON.stringify(known)}::jsonb) as k(part_number text, description text, manufacturer text, url text)
+            where q.quote_id = ${seededId}
+              and q.part_number is not distinct from k.part_number and q.description = k.description
+              and ((q.manufacturer is null and k.manufacturer is not null) or (q.url is null and k.url is not null))
+            returning q.id`,
+          sql`
+            update deployment_bom_lines l
+            set manufacturer = coalesce(l.manufacturer, i.manufacturer), url = coalesce(l.url, i.url)
+            from deployment_quote_items i
+            where i.id = l.quote_item_id and i.quote_id = ${seededId}
+              and ((l.manufacturer is null and i.manufacturer is not null) or (l.url is null and i.url is not null))
+            returning l.id`,
+        ]);
     console.log(
       `[bom:import] ${quote.vendor} ${quote.reference}: already imported, skipped` +
         (updated.length || lines.length
-          ? `; gave ${updated.length} of its items and ${lines.length} BOM lines their manufacturer.`
+          ? `; filled in the manufacturer or link of ${updated.length} of its items and ${lines.length} BOM lines.`
           : "."),
     );
     continue;
@@ -490,6 +573,7 @@ for (const quote of [PEGATRON, COMPUTACENTER]) {
     unit_usd: i.unitUsd,
     lead_time: i.lead ?? null,
     notes: [i.notes, i.excluded ? `Left out of the BOM: ${i.excluded}` : null].filter(Boolean).join(" ") || null,
+    url: i.url,
   }));
   const lineRows = linesOf(items).map((l) => ({ ...l, position: linePosition++ }));
 
@@ -501,7 +585,13 @@ for (const quote of [PEGATRON, COMPUTACENTER]) {
   );
   if (DRY_RUN) {
     planned.push(
-      ...lineRows.map((l, i) => ({ id: `planned-${planned.length + i}`, slotId: l.slot_id, quantity: l.quantity, unitUsd: l.unit_usd })),
+      ...lineRows.map((l, i) => ({
+        id: `planned-${planned.length + i}`,
+        slotId: l.slot_id,
+        quantity: l.quantity,
+        unitUsd: l.unit_usd,
+        seedKey: quote.seed_key,
+      })),
     );
     continue;
   }
@@ -515,21 +605,21 @@ for (const quote of [PEGATRON, COMPUTACENTER]) {
          ${quote.valid_until}, ${quote.quoted_total_usd}, ${file?.id ?? null}, ${quote.notes}, ${quote.seed_key})`,
     sql`
       insert into deployment_quote_items
-        (id, quote_id, position, section, part_number, manufacturer, description, quantity, unit_usd, lead_time, notes)
+        (id, quote_id, position, section, part_number, manufacturer, description, quantity, unit_usd, lead_time, notes, url)
       select r.id, ${quoteId}, r.position, r.section, r.part_number, r.manufacturer, r.description, r.quantity,
-             r.unit_usd, r.lead_time, r.notes
+             r.unit_usd, r.lead_time, r.notes, r.url
       from jsonb_to_recordset(${JSON.stringify(itemRows)}::jsonb) as r(
         id uuid, position integer, section text, part_number text, manufacturer text, description text,
-        quantity numeric, unit_usd numeric, lead_time text, notes text)`,
+        quantity numeric, unit_usd numeric, lead_time text, notes text, url text)`,
     sql`
       insert into deployment_bom_lines
         (deployment_id, phase_id, slot_id, position, quote_item_id, part_number, manufacturer, description,
-         quantity, unit_usd, notes)
+         quantity, unit_usd, notes, url)
       select ${deployment.id}, ${phase.id}, r.slot_id, r.position, r.quote_item_id, r.part_number, r.manufacturer,
-             r.description, r.quantity, r.unit_usd, r.notes
+             r.description, r.quantity, r.unit_usd, r.notes, r.url
       from jsonb_to_recordset(${JSON.stringify(lineRows)}::jsonb) as r(
         slot_id text, position integer, quote_item_id uuid, part_number text, manufacturer text, description text,
-        quantity numeric, unit_usd numeric, notes text)`,
+        quantity numeric, unit_usd numeric, notes text, url text)`,
   ]);
 }
 
@@ -539,20 +629,64 @@ if (!phase.cluster_config && !DRY_RUN) {
   console.log(`[bom:import] ${phaseName} set to the builder's ${phase.nodes}-node B300 cluster.`);
 }
 
+/**
+ * `need` split across `quantities` in their proportions, in whole units,
+ * largest remainders first, so the parts add up to `need`.
+ */
+function apportion(need, quantities) {
+  const total = quantities.reduce((sum, q) => sum + q, 0);
+  const exact = quantities.map((q) => (total ? (need * q) / total : need / quantities.length));
+  const parts = exact.map(Math.floor);
+  const order = exact.map((x, i) => [x - Math.floor(x), i]).sort((a, b) => b[0] - a[0]);
+  const left = need - parts.reduce((sum, p) => sum + p, 0);
+  for (let k = 0; k < left; k++) parts[order[k][1]] += 1;
+  return parts;
+}
+
 // How the phase's BOM, whatever's in it now, covers the slots of its cluster.
 const { buildCluster } = await import("../src/features/cluster/model/build.ts");
 const { configFromJson } = await import("../src/features/cluster/model/url.ts");
+const { requiredSlots } = await import("../src/features/cluster/model/slots.ts");
 const { phaseCoverage } = await import("../src/features/deployments/bom/coverage.ts");
 const [saved] = await sql`select cluster_config, cluster_copies from deployment_phases where id = ${phase.id}`;
 const config = configFromJson(saved.cluster_config ?? (DRY_RUN ? cluster : null));
 if (config) {
+  const model = buildCluster(config);
   const stored = (
     await sql`
-      select id, slot_id, quantity::float8 as quantity, unit_usd::float8 as unit_usd
-      from deployment_bom_lines where phase_id = ${phase.id}`
-  ).map((r) => ({ id: r.id, slotId: r.slot_id, quantity: r.quantity, unitUsd: r.unit_usd }));
+      select l.id, l.slot_id, l.quantity::float8 as quantity, l.unit_usd::float8 as unit_usd, q.seed_key
+      from deployment_bom_lines l
+      left join deployment_quote_items i on i.id = l.quote_item_id
+      left join deployment_quotes q on q.id = i.quote_id
+      where l.phase_id = ${phase.id}`
+  ).map((r) => ({ id: r.id, slotId: r.slot_id, quantity: r.quantity, unitUsd: r.unit_usd, seedKey: r.seed_key }));
   const lines = [...stored, ...planned];
-  const coverage = phaseCoverage(buildCluster(config), saved.cluster_copies, lines);
+
+  // Computacenter's GPU fabric is a 64-node one; it grows with the cluster, so its lines take what the phase's fabric needs.
+  const resized = [];
+  for (const { slot, qty } of requiredSlots(model, saved.cluster_copies)) {
+    if (slot.section !== "fabric") continue;
+    const filling = lines.filter((l) => l.slotId === slot.id && l.seedKey === COMPUTACENTER.seed_key);
+    if (!filling.length) continue;
+    const parts = apportion(qty, filling.map((l) => l.quantity));
+    filling.forEach((l, i) => {
+      if (parts[i] === l.quantity) return;
+      resized.push({ id: l.id, label: slot.label, from: l.quantity, to: parts[i] });
+      l.quantity = parts[i];
+    });
+  }
+  if (resized.length && !DRY_RUN) {
+    const rows = resized.map((r) => ({ id: r.id, quantity: r.to }));
+    await sql`
+      update deployment_bom_lines l set quantity = r.quantity
+      from jsonb_to_recordset(${JSON.stringify(rows)}::jsonb) as r(id uuid, quantity numeric)
+      where l.id = r.id`;
+  }
+  for (const r of resized) {
+    console.log(`[bom:import] ${r.label}: ${r.from} to ${r.to}${DRY_RUN ? " (dry run, not written)" : ""}`);
+  }
+
+  const coverage = phaseCoverage(model, saved.cluster_copies, lines);
   console.log(`[bom:import] ${deployment.name} ${phaseName}: ${money(coverage.totalUsd)} across ${lines.length} BOM lines.`);
   for (const row of coverage.slots) {
     if (row.status === "covered") continue;

@@ -50,6 +50,8 @@ export interface QuoteItem {
   unitUsd: number | null;
   leadTime: string | null;
   notes: string | null;
+  /** The item's page on the web, like its maker's product page; an http(s) URL. */
+  url: string | null;
 }
 
 /** One line of a phase's BOM. Its item details are copied from the quote item it was picked from, then its own. */
@@ -66,6 +68,7 @@ export interface BomLine {
   /** Null when it's priced inside another line. */
   unitUsd: number | null;
   notes: string | null;
+  url: string | null;
 }
 
 export interface Bom {
@@ -108,3 +111,12 @@ export const vendorsByItem = (bom: Pick<Bom, "quotes" | "items">): Record<string
 
 /** What a line is called: its part number, else its description. */
 export const lineName = (line: Pick<BomLine, "partNumber" | "description">): string => line.partNumber ?? line.description;
+
+/** An item's link as it reads in a table: the site it's on, e.g. "nvidia.com". */
+export const urlSite = (url: string): string => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+};

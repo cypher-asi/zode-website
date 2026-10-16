@@ -1105,6 +1105,11 @@ create table if not exists deployment_bom_lines (
 
 create index if not exists deployment_bom_lines_deployment_idx on deployment_bom_lines (deployment_id, position);
 
+-- Where the item is on the web, its maker's product page or datasheet, as an
+-- http(s) URL. A BOM line copies its quote item's with the rest.
+alter table deployment_quote_items add column if not exists url text;
+alter table deployment_bom_lines add column if not exists url text;
+
 -- The BOM was once the quotes' own lines, each filling slots through
 -- deployment_bom_fills. Each quoted line becomes a quote item, and each line
 -- in use a BOM line per slot it filled; priced lines that filled no slot

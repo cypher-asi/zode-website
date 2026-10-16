@@ -12,16 +12,34 @@ import { formatCount, formatUsd, plural } from "../format";
 import { platformLabel, type Deployment, type Phase } from "../types";
 import { STATUS_LABELS, phaseCoverage, type SlotCoverage } from "./coverage";
 import { phaseBuilderHref, phaseCluster, phaseLabel } from "./phase";
-import { formatCents, lineUsd, type Bom, type BomLine, type Quote, type QuoteItem } from "./types";
+import { formatCents, lineUsd, urlSite, type Bom, type BomLine, type Quote, type QuoteItem } from "./types";
 import styles from "./bom.module.css";
 
 export const qty = (value: number) => formatCount(Math.round(value * 100) / 100);
 
+const isOptionalGap = (row: Pick<SlotCoverage, "status" | "slot">) => Boolean(row.slot.optional) && row.status === "missing";
+const statusLabel = (row: Pick<SlotCoverage, "status" | "slot">) =>
+  isOptionalGap(row) ? "Not in BOM (optional)" : STATUS_LABELS[row.status];
+
 export function Status({ row }: { row: Pick<SlotCoverage, "status" | "slot"> }): ReactElement {
-  const optional = row.slot.optional && row.status === "missing";
   return (
-    <span className={styles.status} data-status={row.status} data-optional={optional ? "" : undefined}>
-      {optional ? "Not in BOM (optional)" : STATUS_LABELS[row.status]}
+    <span className={styles.status} data-status={row.status} data-optional={isOptionalGap(row) ? "" : undefined}>
+      {statusLabel(row)}
+    </span>
+  );
+}
+
+/** The slot's status as a bare dot, named on hover. */
+function StatusDot({ row }: { row: Pick<SlotCoverage, "status" | "slot" | "required" | "filled" | "lines"> }): ReactElement {
+  const label = `${statusLabel(row)} · ${slotFill(row)}`;
+  return (
+    <span
+      className={styles.status}
+      data-status={row.status}
+      data-optional={isOptionalGap(row) ? "" : undefined}
+      title={label}
+    >
+      <span className={styles.srOnly}>{label}</span>
     </span>
   );
 }
@@ -30,6 +48,16 @@ export function Status({ row }: { row: Pick<SlotCoverage, "status" | "slot"> }):
 export function slotFill(row: Pick<SlotCoverage, "slot" | "required" | "filled" | "lines">): string {
   if (row.slot.unit === "lot") return row.lines.length ? "Lot" : "Lot, not in BOM";
   return row.required === null ? `${qty(row.filled)} in BOM` : `${qty(row.filled)} of ${qty(row.required)}`;
+}
+
+/** The item's page on the web, opened in a new tab and named by its site. */
+export function ItemLink({ url }: { url: string | null }): ReactElement | null {
+  if (!url) return null;
+  return (
+    <a className={styles.itemLink} href={url} target="_blank" rel="noopener noreferrer" title={url}>
+      {urlSite(url)} ↗
+    </a>
+  );
 }
 
 interface Lookup {
@@ -50,13 +78,10 @@ function LineCells({ line, lookup }: { line: BomLine; lookup: Lookup }): ReactEl
         {line.partNumber ? <span className={styles.part}>{line.partNumber}</span> : null}
         <span className={line.partNumber ? styles.sub : undefined}>{line.description}</span>
         {line.notes ? <span className={styles.sub}>{line.notes}</span> : null}
+        <ItemLink url={line.url} />
       </td>
-      <td data-text="">
-        {vendor ?? <span className={styles.sub}>Not from a quote</span>}
-        {line.manufacturer && line.manufacturer !== vendor ? (
-          <span className={styles.sub}>{line.manufacturer}</span>
-        ) : null}
-      </td>
+      <td data-text="">{vendor ?? <span className={styles.sub}>Not from a quote</span>}</td>
+      <td data-text="">{line.manufacturer}</td>
       <td className={styles.nowrap}>{qty(line.quantity)}</td>
       <td className={styles.nowrap}>{line.unitUsd === null ? "Included" : formatCents(line.unitUsd)}</td>
       <td className={styles.nowrap}>{line.unitUsd === null ? "" : formatCents(lineUsd(line))}</td>
@@ -77,6 +102,9 @@ function LineTable({
       <table className={styles.table}>
         <thead>
           <tr>
+            <th scope="col" className={styles.dotCell}>
+              <span className={styles.srOnly}>Status</span>
+            </th>
             <th scope="col" data-text="">
               Slot
             </th>
@@ -85,6 +113,9 @@ function LineTable({
             </th>
             <th scope="col" data-text="">
               Vendor
+            </th>
+            <th scope="col" data-text="">
+              Manufacturer
             </th>
             <th scope="col">Qty</th>
             <th scope="col">Unit</th>
@@ -97,22 +128,27 @@ function LineTable({
           return (
             <tbody key={section.id}>
               <tr data-group="">
-                <th colSpan={5}>{section.label}</th>
+                <th colSpan={7}>{section.label}</th>
                 <th className={styles.nowrap}>{formatUsd(sectionUsd.get(section.id) ?? 0)}</th>
               </tr>
               {rows.map((row) => {
+                const span = Math.max(row.lines.length, 1);
                 const head = (
-                  <th scope="row" data-text="" rowSpan={Math.max(row.lines.length, 1)} className={styles.slotCell}>
-                    {row.slot.label}
-                    <span className={styles.sub}>{slotFill(row)}</span>
-                    {row.status !== "unchecked" ? <Status row={row} /> : null}
-                  </th>
+                  <>
+                    <td rowSpan={span} className={styles.dotCell}>
+                      <StatusDot row={row} />
+                    </td>
+                    <th scope="row" data-text="" rowSpan={span} className={styles.slotCell}>
+                      {row.slot.label}
+                      <span className={styles.sub}>{slotFill(row)}</span>
+                    </th>
+                  </>
                 );
                 if (!row.lines.length) {
                   return (
                     <tr key={row.slot.id} data-empty="">
                       {head}
-                      <td data-text="" colSpan={5}>
+                      <td data-text="" colSpan={6}>
                         <span className={styles.sub}>Nothing in this slot</span>
                       </td>
                     </tr>
@@ -135,15 +171,18 @@ function LineTable({
         {other.length ? (
           <tbody>
             <tr data-group="">
-              <th colSpan={5}>Other line items</th>
+              <th colSpan={7}>Other line items</th>
               <th className={styles.nowrap}>{formatUsd(sectionUsd.get("other") ?? 0)}</th>
             </tr>
             {other.map((line, i) => (
               <tr key={line.id} data-continued={i ? "" : undefined}>
                 {i === 0 ? (
-                  <th scope="row" data-text="" rowSpan={other.length} className={styles.slotCell}>
-                    No slot
-                  </th>
+                  <>
+                    <td rowSpan={other.length} className={styles.dotCell} />
+                    <th scope="row" data-text="" rowSpan={other.length} className={styles.slotCell}>
+                      No slot
+                    </th>
+                  </>
                 ) : null}
                 <LineCells line={line} lookup={lookup} />
               </tr>
@@ -152,7 +191,7 @@ function LineTable({
         ) : null}
         <tbody>
           <tr data-total="">
-            <th colSpan={5} data-text="">
+            <th colSpan={7} data-text="">
               Phase total
             </th>
             <td className={styles.nowrap}>{formatCents(totalUsd)}</td>

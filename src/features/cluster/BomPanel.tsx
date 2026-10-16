@@ -189,7 +189,14 @@ export function PartBom({ rows, vendors }: { rows: readonly SlotCoverage[]; vend
               {row.lines.map((line) => (
                 <li key={line.id}>
                   <strong>{(line.quoteItemId && vendors[line.quoteItemId]) || line.manufacturer || "Unquoted"}</strong>{" "}
-                  {lineName(line)} × {qty(line.quantity)}
+                  {line.url ? (
+                    <a href={line.url} target="_blank" rel="noopener noreferrer" title={line.url}>
+                      {lineName(line)}
+                    </a>
+                  ) : (
+                    lineName(line)
+                  )}{" "}
+                  × {qty(line.quantity)}
                   {line.unitUsd !== null
                     ? ` at ${formatCents(line.unitUsd)} = ${usd.format(lineUsd(line))}`
                     : " (included)"}

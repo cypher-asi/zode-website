@@ -13,7 +13,7 @@ import { saveBomLinesAction } from "./actions";
 import { phaseCoverage, stillNeeded, type SlotCoverage } from "./coverage";
 import { qty, slotFill, Status } from "./BomOverview";
 import { phaseCluster, phaseLabel } from "./phase";
-import { formatCents, lineUsd, type Bom, type BomLine, type QuoteItem } from "./types";
+import { formatCents, lineUsd, urlSite, type Bom, type BomLine, type QuoteItem } from "./types";
 import styles from "./bom.module.css";
 
 interface LineDraft {
@@ -29,6 +29,7 @@ interface LineDraft {
   quantity: string;
   unitUsd: string;
   notes: string;
+  url: string;
 }
 
 const str = (value: number | string | null): string => (value === null ? "" : String(value));
@@ -50,6 +51,7 @@ const lineOf = (draft: LineDraft): BomLine => ({
   quantity: numberOr(draft.quantity, 0)!,
   unitUsd: numberOr(draft.unitUsd, null),
   notes: orNull(draft.notes),
+  url: orNull(draft.url),
 });
 
 const ellipsis = (text: string, max: number) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
@@ -136,6 +138,26 @@ function LineRow({
           onChange={(event) => onChange({ description: event.target.value })}
         />
       </td>
+      <td>
+        <input
+          className={ui.input}
+          inputMode="url"
+          aria-label="Link to the item"
+          placeholder="https://"
+          value={line.url}
+          onChange={(event) => onChange({ url: event.target.value })}
+        />
+        {item?.url && item.url !== read.url ? (
+          <button
+            type="button"
+            className={styles.inlineAction}
+            title={`Use the quote's link: ${item.url}`}
+            onClick={() => onChange({ url: item.url ?? "" })}
+          >
+            Quote: {urlSite(item.url)}
+          </button>
+        ) : null}
+      </td>
       <td data-narrow="">
         <input
           className={ui.input}
@@ -210,6 +232,7 @@ export function BomEditor({ deployment, bom }: { deployment: Deployment; bom: Bo
       quantity: str(line.quantity),
       unitUsd: str(line.unitUsd),
       notes: line.notes ?? "",
+      url: line.url ?? "",
     })),
   );
   const nextKey = useRef(lines.length);
@@ -277,6 +300,7 @@ export function BomEditor({ deployment, bom }: { deployment: Deployment; bom: Bo
         quantity: "",
         unitUsd: "",
         notes: "",
+        url: "",
       },
     ]);
 
@@ -306,6 +330,7 @@ export function BomEditor({ deployment, bom }: { deployment: Deployment; bom: Bo
       partNumber: item.partNumber ?? "",
       manufacturer: item.manufacturer ?? "",
       description: item.description,
+      url: item.url ?? "",
       unitUsd: str(item.unitUsd),
       quantity: str(fit !== null && fit > 0 ? fit : (item.quantity ?? 1)),
     });
@@ -395,6 +420,9 @@ export function BomEditor({ deployment, bom }: { deployment: Deployment; bom: Bo
                     <th scope="col" data-text="">
                       Description
                     </th>
+                    <th scope="col" data-text="">
+                      Link
+                    </th>
                     <th scope="col">Qty</th>
                     <th scope="col">Unit $</th>
                     <th scope="col">Line total</th>
@@ -409,14 +437,14 @@ export function BomEditor({ deployment, bom }: { deployment: Deployment; bom: Bo
                   return (
                     <tbody key={section.id}>
                       <tr data-group="">
-                        <th colSpan={6}>{section.label}</th>
+                        <th colSpan={7}>{section.label}</th>
                         <th className={styles.nowrap}>{formatUsd(coverage.sectionUsd.get(section.id) ?? 0)}</th>
                         <th />
                       </tr>
                       {rows.map((row) => (
                         <Fragment key={row.slot.id}>
                           <tr data-slot="">
-                            <th colSpan={6} data-text="">
+                            <th colSpan={7} data-text="">
                               <span className={styles.slotHead}>
                                 <span>{row.slot.label}</span>
                                 <span className={styles.sub}>{slotFill(row)}</span>
@@ -444,7 +472,7 @@ export function BomEditor({ deployment, bom }: { deployment: Deployment; bom: Bo
                 })}
                 <tbody>
                   <tr data-group="">
-                    <th colSpan={6}>
+                    <th colSpan={7}>
                       <span className={styles.slotHead}>
                         <span>Other line items</span>
                         <button type="button" className={styles.inlineAction} onClick={() => addLine("")}>
@@ -459,7 +487,7 @@ export function BomEditor({ deployment, bom }: { deployment: Deployment; bom: Bo
                     lineRows(otherLines, undefined)
                   ) : (
                     <tr>
-                      <td data-text="" colSpan={8}>
+                      <td data-text="" colSpan={9}>
                         <span className={styles.sub}>Costs no slot stands for, like a section subtotal.</span>
                       </td>
                     </tr>
@@ -467,7 +495,7 @@ export function BomEditor({ deployment, bom }: { deployment: Deployment; bom: Bo
                 </tbody>
                 <tbody>
                   <tr data-total="">
-                    <th colSpan={6} data-text="">
+                    <th colSpan={7} data-text="">
                       {phaseLabel(phase, phaseIndex)} total
                     </th>
                     <td className={styles.nowrap}>{formatCents(coverage.totalUsd)}</td>
