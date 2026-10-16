@@ -16,7 +16,19 @@ import { multiLine, singleLine } from "@/lib/validation";
 import { saveFieldAction } from "./actions";
 import { Icon } from "./bits";
 import type { FieldSpec } from "./fields";
-import { fieldHref, fieldValue, INPUT_ATTRS, inputDefault, PICKED, read, useFieldChoices, type TypedField } from "./fieldUi";
+import {
+  fieldHref,
+  fieldValue,
+  INPUT_ATTRS,
+  inputDefault,
+  isSearched,
+  PICKED,
+  read,
+  RefCombobox,
+  Suggestions,
+  useFieldChoices,
+  type TypedField,
+} from "./fieldUi";
 import { personName, type ActionState, type RecordKind, type ZrmData } from "./types";
 import { useZrmData, useZrmNavigate, ZrmLink } from "./ZrmProvider";
 import styles from "./zrm.module.css";
@@ -25,9 +37,10 @@ const numberFrom = (value: string): number => Number(value.replace(/[$,\s]/g, ""
 
 /**
  * The columns a save of `field` changes, cleaned as `saveFieldAction` cleans
- * them, with a reference's name (and a status's colour) looked up alongside.
+ * them, with a reference's name (and a status's colour) looked up alongside,
+ * or for a company or person not in the lists yet, `label`.
  */
-function savedColumns(field: FieldSpec, input: string, data: ZrmData): Record<string, unknown> {
+function savedColumns(field: FieldSpec, input: string, data: ZrmData, label?: string): Record<string, unknown> {
   if (field.type === "list") return { [field.key]: [...new Set(input.split(/[,\n]/).map(singleLine).filter(Boolean))] };
   const value = field.type === "textarea" ? multiLine(input) : singleLine(input);
   const columns: Record<string, unknown> = {};
@@ -52,11 +65,11 @@ function savedColumns(field: FieldSpec, input: string, data: ZrmData): Record<st
   const named = (items: readonly { id: string; name: string }[]) => items.find((item) => item.id === value)?.name ?? null;
   switch (field.type) {
     case "company":
-      columns[field.display] = named(data.companies);
+      columns[field.display] = named(data.companies) ?? label ?? null;
       break;
     case "person": {
       const person = data.people.find((p) => p.id === value);
-      columns[field.display] = person ? personName(person) : null;
+      columns[field.display] = person ? personName(person) : (label ?? null);
       break;
     }
     case "stage":
@@ -154,7 +167,7 @@ export function InlineField({
     setEditing(true);
   };
 
-  const commit = (value: string) => {
+  const commit = (value: string, label?: string) => {
     settled.current = true;
     setEditing(false);
     if (value === current) {
@@ -162,7 +175,7 @@ export function InlineField({
       return;
     }
     startTransition(async () => {
-      const columns = savedColumns(field, value, data);
+      const columns = savedColumns(field, value, data, label);
       setShown({ ...shown, ...columns });
       onSaving?.(columns);
       const result = await save(value);
@@ -208,7 +221,34 @@ export function InlineField({
     return <span className={styles.inlineStatic}>{fieldValue(field, shown) ?? <span className={styles.inlineEmpty}>Empty</span>}</span>;
   }
 
-  if (PICKED.has(field.type)) {
+  if (isSearched(field) && editing) {
+    return (
+      <>
+        <RefCombobox
+          field={field}
+          value={current}
+          autoFocus
+          inputClassName={styles.inlineInput}
+          aria-labelledby={labelId}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+          onChange={(value, option) => {
+            refocus.current = true;
+            commit(value, option.label);
+          }}
+          onCancel={cancel}
+          onBlur={() => {
+            if (settled.current) return;
+            settled.current = true;
+            setEditing(false);
+          }}
+        />
+        {errorLine}
+      </>
+    );
+  }
+
+  if (PICKED.has(field.type) && !isSearched(field)) {
     return (
       <>
         <div className={styles.inline}>
@@ -247,7 +287,15 @@ export function InlineField({
         {field.type === "textarea" ? (
           <textarea {...shared} data-multiline="" rows={2} onChange={(event) => setDraft(event.target.value)} />
         ) : (
-          <input {...shared} {...INPUT_ATTRS[field.type as TypedField]} onChange={(event) => setDraft(event.target.value)} />
+          <>
+            <input
+              {...shared}
+              {...INPUT_ATTRS[field.type as TypedField]}
+              list={field.suggest ? `${id}-suggestions` : undefined}
+              onChange={(event) => setDraft(event.target.value)}
+            />
+            <Suggestions id={`${id}-suggestions`} field={field} />
+          </>
         )}
         {errorLine}
       </>

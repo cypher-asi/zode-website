@@ -1,0 +1,59 @@
+/*
+ * The input takes its look from Field's `.input` (and `.sm`), the panel and
+ * its rows from Select's, so only what's new is added here.
+ */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.input {
+  composes: input from "../Field/Field.module.css";
+}
+
+.sm {
+  composes: sm from "../Field/Field.module.css";
+}
+
+.panel {
+  composes: panel from "../Select/Select.module.css";
+}
+
+.option {
+  composes: option from "../Select/Select.module.css";
+}
+
+.check {
+  composes: check from "../Select/Select.module.css";
+}
+
+.label {
+  composes: label from "../Select/Select.module.css";
+}
+
+.plus {
+  composes: chevron from "../Select/Select.module.css";
+}
+
+.option[data-create] .label {
+  color: var(--color-text-secondary);
+}
+
+.option[data-create][data-active] .label {
+  color: var(--color-text-primary);
+}
+
+.note {
+  flex: none;
+  padding: 7px 12px 7px 32px;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  line-height: 18px;
+}
+
+.error {
+  composes: error from "../Field/Field.module.css";
+  margin: 0;
+}

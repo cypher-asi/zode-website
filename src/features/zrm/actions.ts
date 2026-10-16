@@ -7,7 +7,7 @@ import { isEmail, multiLine, singleLine } from "@/lib/validation";
 import { isUuid, teamAccount } from "./access";
 import { CHILDREN, SITE_MENU_FIELDS, TABLES, editableField, fieldsFor, isChildKind, type ChildKind, type FieldSpec } from "./fields";
 import { ZRM_TAGS } from "./queries";
-import { isRecordKind, listHref, recordHref, type ActionState, type RecordKind } from "./types";
+import { isRecordKind, listHref, recordHref, type ActionState, type Option, type RecordKind } from "./types";
 
 const NO_ACCESS: ActionState = { error: "You don't have access to this. Try reloading the page." };
 const MISSING: ActionState = { error: "That record no longer exists. Try reloading the page." };
@@ -287,6 +287,36 @@ export async function addCompanyTypeAction(companyId: string, name: string): Pro
     returning id
   `;
   return toggleCompanyTypeAction(companyId, row!.id as string, true);
+}
+
+/**
+ * Adds a company, or a person split into first and last name at the first
+ * space, from just a name, as a reference field's picker names a new one.
+ */
+export async function createReferenceAction(
+  type: "company" | "person",
+  name: string,
+): Promise<ActionState & { option?: Option }> {
+  if (!(await teamAccount())) return NO_ACCESS;
+  if ((type !== "company" && type !== "person") || typeof name !== "string") return NO_ACCESS;
+  const label = singleLine(name);
+  if (!label) return { error: `Name the ${type} to add it.` };
+  if (label.length > MAX_TEXT) return { error: "That name is too long." };
+
+  const sql = db();
+  let id: string;
+  if (type === "company") {
+    const [row] = await sql`insert into zrm_companies (name) values (${label}) returning id`;
+    id = row!.id as string;
+  } else {
+    const [first, ...rest] = label.split(" ");
+    const [row] = await sql`
+      insert into zrm_people (first_name, last_name) values (${first}, ${rest.join(" ") || null}) returning id
+    `;
+    id = row!.id as string;
+  }
+  revalidate(type === "company" ? "companies" : "people");
+  return { saved: true, option: { value: id, label } };
 }
 
 /** Adds a work history entry, school, custom field, activity or note under a record. */

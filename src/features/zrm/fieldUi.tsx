@@ -1,12 +1,14 @@
 "use client";
 
 import type { ReactElement, ReactNode } from "react";
+import { Combobox, type ComboboxProps } from "@/components/ui/Combobox";
 import { Select } from "@/components/ui/Select";
 import ui from "@/features/data-room/ui.module.css";
+import { createReferenceAction } from "./actions";
 import { Badge } from "./bits";
 import type { FieldSpec, FieldType } from "./fields";
 import { formatDecimal, formatMoney, recordHref, roomHref, type Option } from "./types";
-import { useRefOptions, ZrmLink } from "./ZrmProvider";
+import { useRefOptions, useZrmData, ZrmLink } from "./ZrmProvider";
 import styles from "./zrm.module.css";
 
 const dateFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "UTC" });
@@ -35,6 +37,10 @@ const dateString = (value: unknown): string =>
 
 /** Fields chosen from a list rather than typed. */
 export const PICKED: ReadonlySet<FieldType> = new Set(["company", "person", "stage", "status", "room", "choice"]);
+
+/** Picked fields whose list is searched as it's typed in, and can be added to by name. */
+export const isSearched = (field: FieldSpec): field is FieldSpec & { type: "company" | "person" } =>
+  field.type === "company" || field.type === "person";
 
 /** Where a field's value points, e.g. a link, a mail address or a linked record, or null when it's empty or points nowhere. */
 export function fieldHref(field: FieldSpec, record: object): string | null {
@@ -159,6 +165,35 @@ export function useFieldChoices(field: FieldSpec): Option[] {
   return field.required ? choices : [{ value: "", label: "None" }, ...choices];
 }
 
+/** A company or person field's picker: its records searched as it's typed in, with what's typed added as a new one. */
+export function RefCombobox({
+  field,
+  ...props
+}: { field: FieldSpec & { type: "company" | "person" } } & Omit<ComboboxProps, "options" | "onCreate" | "placeholder">): ReactElement {
+  const choices = useFieldChoices(field);
+  return (
+    <Combobox
+      {...props}
+      options={choices}
+      placeholder={`Search or add a ${field.type}`}
+      onCreate={(name) => createReferenceAction(field.type, name)}
+    />
+  );
+}
+
+/** The names a free-text field suggests as it's typed, for its input's `list`. */
+export function Suggestions({ id, field }: { id: string; field: FieldSpec }): ReactElement | null {
+  const { data } = useZrmData();
+  if (field.suggest !== "companies") return null;
+  return (
+    <datalist id={id}>
+      {[...new Set(data.companies.map((company) => company.name))].map((name) => (
+        <option key={name} value={name} />
+      ))}
+    </datalist>
+  );
+}
+
 /** One labelled input for a field, named after it so the form posts it under its column. */
 export function FieldInput({
   field,
@@ -179,6 +214,23 @@ export function FieldInput({
       {field.required ? " *" : ""}
     </label>
   );
+
+  if (isSearched(field)) {
+    return (
+      <div className={ui.field}>
+        {label}
+        <RefCombobox
+          field={field}
+          id={id}
+          aria-labelledby={`${id}-label`}
+          name={field.key}
+          size="sm"
+          className={ui.fill}
+          defaultValue={defaultValue}
+        />
+      </div>
+    );
+  }
 
   if (PICKED.has(field.type)) {
     return (
@@ -215,8 +267,10 @@ export function FieldInput({
         className={ui.input}
         defaultValue={defaultValue}
         required={field.required}
+        list={field.suggest ? `${id}-suggestions` : undefined}
         {...INPUT_ATTRS[field.type as TypedField]}
       />
+      <Suggestions id={`${id}-suggestions`} field={field} />
     </div>
   );
 }

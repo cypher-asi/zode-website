@@ -35,6 +35,8 @@ export interface FieldSpec {
   options?: readonly string[];
   /** Shown but never edited, e.g. a generated column. */
   readOnly?: boolean;
+  /** For free text, the names it suggests as it's typed. */
+  suggest?: "companies";
 }
 
 export interface SectionSpec {
@@ -273,7 +275,7 @@ export const CHILDREN: Record<ChildKind, ChildSpec> = {
     parents: { people: "person_id" },
     fields: [
       text("title", "Title"),
-      text("company", "Company", true),
+      { ...text("company", "Company", true), suggest: "companies" },
       { key: "start_date", label: "Start", type: "date" },
       { key: "end_date", label: "End", type: "date" },
     ],
