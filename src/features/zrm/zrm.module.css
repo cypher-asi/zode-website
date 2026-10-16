@@ -153,7 +153,7 @@
   padding-top: 6px;
 }
 
-/* A group's total, under its last row, its figures in their columns and the rest under the names. */
+/* A group's total, under its last row, its figures in their columns. */
 .row.totalRow {
   min-height: 40px;
   margin-top: 4px;
@@ -172,24 +172,11 @@
 }
 
 /* Inset past the avatar (32px and its 10px gap), so it lines up with the names above. */
-.totalCell {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  padding-left: 42px;
-}
-
 .totalLabel {
+  padding-left: 42px;
   font-size: var(--text-2xs);
   letter-spacing: var(--caps-tracking);
   text-transform: uppercase;
-}
-
-.totalSub {
-  color: var(--color-text-secondary);
-  font-size: var(--text-xs);
-  font-weight: 400;
-  font-variant-numeric: tabular-nums;
 }
 
 .row:focus-visible {

@@ -209,19 +209,6 @@ const moneyTotals = (rows: readonly SiteRow[]): string[] =>
     .filter(([, total]) => total > 0)
     .map(([label, total]) => `${formatMoney(total)} ${label}`);
 
-/** A section's total under its sites' names: initial and secondary IT, then its dollar figures. */
-const siteTotal = (rows: readonly SiteRow[]): ReactNode => (
-  <span className={styles.totalCell}>
-    <span className={styles.totalLabel}>Total</span>
-    <span className={styles.totalSub}>
-      {[
-        `${formatMw(sum(rows, (s) => s.initial_it_mw))} initial + ${formatMw(sum(rows, (s) => s.secondary_it_mw))} secondary`,
-        ...moneyTotals(rows),
-      ].join(" · ")}
-    </span>
-  </span>
-);
-
 export function sitesConfig(groups: readonly SiteGroup[], statuses: readonly SiteStatus[]): ListConfig<SiteRow> {
   const groupOf = new Map(groups.map((group) => [group.id, group]));
   const statusOf = new Map(statuses.map((status) => [status.id, status]));
@@ -266,7 +253,7 @@ export function sitesConfig(groups: readonly SiteGroup[], statuses: readonly Sit
         width: "minmax(0, 2fr)",
         sortValue: (s) => s.name.toLowerCase(),
         render: (s) => <Primary name={s.name} sub={s.address} shape="square" active={s.active} />,
-        total: siteTotal,
+        total: () => <span className={styles.totalLabel}>Total</span>,
       },
       {
         key: "provider",
