@@ -13,9 +13,9 @@ export const metadata: Metadata = {
 };
 
 /**
- * The one-page company profile. Lives outside the `(site)` group, like
- * /deck, so the sheet prints without the site's footer; the pinned header is
- * hidden here (see headerRoutes.ts) because the sheet carries its own wordmark.
+ * The one-page company profile, a resource linked from the footer and header
+ * menus. Lives outside the `(site)` group, like /deck, so the sheet sits on
+ * its own without the landscape footer.
  */
 export default function CompanyProfilePage() {
   return <CompanyProfile />;

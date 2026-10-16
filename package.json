@@ -19,7 +19,8 @@
     "lint:brand": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-brand-tokens.mjs",
     "check:model": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-compute-model.mjs",
     "check:factory": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-factory-sim.mjs",
-    "brand:kit": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/make-brand-kit.mjs"
+    "brand:kit": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/make-brand-kit.mjs",
+    "profile:pdf": "node scripts/make-company-profile.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",

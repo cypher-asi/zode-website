@@ -9,11 +9,3 @@ const noop = () => {};
 export function PodDrawing(): ReactElement {
   return <CabinArt pod="compute" active={null} onActive={noop} />;
 }
-
-export function PrintButton({ className }: { className: string }): ReactElement {
-  return (
-    <button type="button" className={className} onClick={() => window.print()}>
-      Download PDF
-    </button>
-  );
-}

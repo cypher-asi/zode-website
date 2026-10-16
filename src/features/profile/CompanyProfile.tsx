@@ -1,11 +1,24 @@
 import type { CSSProperties, ReactElement, ReactNode } from "react";
 import type { Logo } from "@/features/deck/slides";
-import { AS_OF } from "@/features/deck/research";
 import { PrincipleArt } from "@/features/home/principles/PrincipleArt";
 import { PRINCIPLES } from "@/features/home/principles/principles";
 import { SITE_URL } from "@/lib/site";
-import { ABOUT, CONTACT, COVER, PIPELINE, RESOURCES, SOLUTION, TEAM, TRACTION } from "./profile";
-import { PodDrawing, PrintButton } from "./ProfileClient";
+import {
+  CONTACT,
+  CUSTOMERS,
+  LEDE,
+  NETWORK_TITLE,
+  PDF,
+  PIPELINE_STATS,
+  PRINCIPLE_LINES,
+  RESOURCES,
+  SOLUTION,
+  TAGLINE,
+  TEAM,
+  TRACTION,
+  VENTURE_LINES,
+} from "./profile";
+import { PodDrawing } from "./ProfileClient";
 import styles from "./CompanyProfile.module.css";
 
 const absolute = (href: string) => new URL(href, SITE_URL).href;
@@ -42,9 +55,10 @@ function LogoMark({ logo }: { logo: Logo }): ReactElement {
   );
 }
 
-function LogoRow({ label, logos }: { label: string; logos: readonly Logo[] }): ReactElement {
+/** Logos under their label, or beside it with `inline`. */
+function LogoRow({ label, logos, inline }: { label: string; logos: readonly Logo[]; inline?: boolean }): ReactElement {
   return (
-    <div className={styles.logoRow}>
+    <div className={styles.logoRow} data-inline={inline || undefined}>
       <span className={styles.rowLabel}>{label}</span>
       <ul className={styles.logos}>
         {logos.map((logo) => (
@@ -91,7 +105,7 @@ function Stat({ value, label, large }: { value: string; label: string; large?: b
 /**
  * ZODE's company profile on one US Letter sheet: what it does and its
  * principles, the capacity pipeline, customers, leadership, resources and
- * contact. On screen the sheet sits on paper with a button to print it;
+ * contact. On screen the sheet sits on paper with a link to its PDF;
  * printed, the sheet is the page.
  */
 export function CompanyProfile(): ReactElement {
@@ -99,21 +113,25 @@ export function CompanyProfile(): ReactElement {
   return (
     <main className={styles.page}>
       <div className={styles.toolbar}>
-        <PrintButton className={styles.print} />
+        <a className={styles.export} href={PDF.href} download={PDF.filename}>
+          Export PDF
+        </a>
       </div>
       <article className={styles.sheet}>
         <header className={styles.masthead}>
           {/* eslint-disable-next-line @next/next/no-img-element -- the wordmark SVG scales to the masthead's height */}
           <img className={styles.wordmark} src="/brand/zode-wordmark-black.svg" alt="ZODE" />
-          <p className={styles.meta}>Company profile · {AS_OF}</p>
         </header>
 
+        <div className={styles.pod}>
+          <PodDrawing />
+        </div>
+
         <Section index="01" title="What ZODE does" className={styles.what}>
-          <div className={styles.hero}>
-            <div className={styles.heroCopy}>
-              <h1 className={styles.title}>{COVER.title}</h1>
-              <p className={styles.lede}>{COVER.lede}</p>
-              <p className={styles.body}>{ABOUT}</p>
+          <div className={styles.intro}>
+            <h1 className={styles.title}>{TAGLINE}</h1>
+            <div className={styles.introCopy}>
+              <p className={styles.lede}>{LEDE}</p>
               <ul className={styles.facts}>
                 {SOLUTION.facts.map((fact) => (
                   <li key={fact.label}>
@@ -122,22 +140,20 @@ export function CompanyProfile(): ReactElement {
                 ))}
               </ul>
             </div>
-            <figure className={styles.pod}>
-              <PodDrawing />
-              <figcaption className={styles.caption}>Fig. 01 — ZODE, compute pod</figcaption>
-            </figure>
           </div>
           <ul className={styles.principles}>
             {PRINCIPLES.map((principle, i) => (
               <li key={principle.id} className={styles.principle}>
-                <div className={styles.principleArt}>
-                  <PrincipleArt id={principle.id} />
+                <div className={styles.principleHead}>
+                  <h3 className={styles.principleTitle}>
+                    <span className={styles.index}>{String(i + 1).padStart(2, "0")}</span>
+                    {principle.title}
+                  </h3>
+                  <div className={styles.principleArt}>
+                    <PrincipleArt id={principle.id} />
+                  </div>
                 </div>
-                <h3 className={styles.principleTitle}>
-                  <span className={styles.index}>{String(i + 1).padStart(2, "0")}</span>
-                  {principle.title}
-                </h3>
-                <p className={styles.small}>{principle.body}</p>
+                <p className={styles.small}>{PRINCIPLE_LINES[principle.id]}</p>
               </li>
             ))}
           </ul>
@@ -145,25 +161,13 @@ export function CompanyProfile(): ReactElement {
 
         <div className={styles.pair}>
           <Section index="02" title="Capacity pipeline">
-            <div className={styles.stats}>
-              <Stat value={String(PIPELINE.sites.length)} label="Sites ready to close" />
-              <Stat value={`${PIPELINE.total} MW`} label="IT capacity across them" />
-              {PIPELINE.capacity.map((stat) => (
-                <Stat key={stat.label} value={stat.value} label={stat.label} />
+            <ul className={styles.cards}>
+              {PIPELINE_STATS.map((stat) => (
+                <li key={stat.label} className={styles.card}>
+                  <Stat value={stat.value} label={stat.label} large />
+                </li>
               ))}
-            </div>
-            <table className={styles.sites}>
-              <tbody>
-                {PIPELINE.sites.map((site) => (
-                  <tr key={`${site.map}-${site.mw}`}>
-                    <th scope="row">{site.site}</th>
-                    <td>{site.path}</td>
-                    <td>{site.status}</td>
-                    <td className={styles.mw}>{site.mw} MW</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            </ul>
           </Section>
 
           <Section index="03" title="Customers">
@@ -172,7 +176,7 @@ export function CompanyProfile(): ReactElement {
               <Stat value={TRACTION.loi.value} label={TRACTION.loi.label} large />
             </div>
             <div className={styles.logoRows}>
-              {TRACTION.customers.map((group) => (
+              {CUSTOMERS.map((group) => (
                 <LogoRow key={group.label} label={group.label} logos={group.logos} />
               ))}
             </div>
@@ -181,27 +185,27 @@ export function CompanyProfile(): ReactElement {
 
         <Section index="04" title="Leadership">
           <div className={styles.team}>
-            <div className={styles.founder}>
-              <p className={styles.role}>{founder.role}</p>
-              <h3 className={styles.person}>{founder.name}</h3>
-              <ul className={styles.ventures}>
+            <div className={styles.column}>
+              <h3 className={`${styles.person} ${styles.columnHead}`}>
+                {founder.name}
+                <span className={styles.role}>{founder.role}</span>
+              </h3>
+              <ul className={`${styles.rows} ${styles.ventures}`}>
                 {founder.main.ventures.map((venture) => (
                   <li key={venture.company}>
                     <span className={styles.ventureName}>{venture.company}</span>
+                    <span className={styles.ventureWhat}>{VENTURE_LINES[venture.company]}</span>
                     <span className={styles.years}>{venture.years}</span>
-                    <span className={styles.small}>
-                      {venture.description}
-                      {venture.outcome ? <strong className={styles.outcome}> {venture.outcome}</strong> : null}
-                    </span>
+                    <span className={styles.outcome}>{venture.outcome?.replace(" billion", "B")}</span>
                   </li>
                 ))}
               </ul>
             </div>
-            <div className={styles.network}>
-              <p className={styles.role}>{network.title}</p>
-              <div className={styles.logoRows}>
+            <div className={styles.column}>
+              <p className={`${styles.role} ${styles.columnHead}`}>{NETWORK_TITLE}</p>
+              <div className={styles.rows}>
                 {network.areas.map((area) => (
-                  <LogoRow key={area.label} label={area.label} logos={area.logos} />
+                  <LogoRow key={area.label} label={area.label} logos={area.logos} inline />
                 ))}
               </div>
             </div>
@@ -228,19 +232,13 @@ export function CompanyProfile(): ReactElement {
             <a className={styles.email} href={`mailto:${CONTACT.email}`}>
               {CONTACT.email}
             </a>
-            <a className={styles.url} href={absolute(CONTACT.site)}>
-              {display(CONTACT.site)}
-            </a>
-            <a className={styles.url} href={absolute(CONTACT.engineer)}>
-              Talk to an engineer · {display(CONTACT.engineer)}
-            </a>
+            <p className={styles.url}>
+              <a href={absolute(CONTACT.site)}>{display(CONTACT.site)}</a>
+              {" · "}
+              <a href={absolute(CONTACT.engineer)}>Talk to an engineer</a>
+            </p>
           </Section>
         </div>
-
-        <footer className={styles.fine}>
-          Figures as of {AS_OF}. Letters of intent and pipeline sites are non-binding. Third-party logos are the
-          trademarks of their owners; their appearance does not imply endorsement of, or any commitment to, ZODE.
-        </footer>
       </article>
     </main>
   );

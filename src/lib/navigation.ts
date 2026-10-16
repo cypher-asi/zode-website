@@ -43,4 +43,5 @@ export const RESOURCE_LINKS: readonly NavLink[] = [
   { label: "Whitepaper", href: "https://cypher.net/research/the-grid", external: true },
   { label: "Styleguide", href: "/styleguide" },
   { label: "Deck", href: "/deck" },
+  { label: "Company profile", href: "/company-profile" },
 ];
