@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { ReactElement } from "react";
+import { Suspense, type ReactElement } from "react";
 import { redirect } from "next/navigation";
 import { ShellBackdrop } from "@/components/layout/ShellBackdrop";
 import { getAccount, safeNext } from "@/features/account/session";
@@ -10,24 +10,24 @@ export const metadata: Metadata = {
   title: "Register | ZODE",
 };
 
-export const instant = false;
-
 /** Direct visits and refreshes; links on the site open the same panel as a modal (see app/@modal). */
-export default async function RegisterPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}): Promise<ReactElement> {
+export default function RegisterPage({ searchParams }: PageProps<"/register">): ReactElement {
+  return (
+    <main className={styles.shell}>
+      <ShellBackdrop />
+      <Suspense>
+        <SignedOutPanel searchParams={searchParams} />
+      </Suspense>
+    </main>
+  );
+}
+
+/** Behind Suspense because the session check reads the clock and the database, which a prefetch can't. */
+async function SignedOutPanel({ searchParams }: Pick<PageProps<"/register">, "searchParams">): Promise<ReactElement> {
   const { next } = await searchParams;
   const destination = safeNext(next);
   if (await getAccount()) {
     redirect(destination);
   }
-
-  return (
-    <main className={styles.shell}>
-      <ShellBackdrop />
-      <AuthPanel mode="register" next={destination} />
-    </main>
-  );
+  return <AuthPanel mode="register" next={destination} />;
 }
