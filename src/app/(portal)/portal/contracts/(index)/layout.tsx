@@ -35,7 +35,7 @@ async function ContractsHeader(): Promise<ReactElement> {
       actions={
         team ? (
           <Link href="/portal/contracts/new" className={ui.primary}>
-            Record contract
+            Record deal
           </Link>
         ) : null
       }

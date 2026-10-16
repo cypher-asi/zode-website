@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Avatar, Badge, Icon, TypeBadges } from "./bits";
+import { OPPORTUNITY_DEAL_TYPES } from "./fields";
 import { formatDate } from "./fieldUi";
 import {
   formatMoney,
@@ -162,8 +163,20 @@ export function companiesConfig(types: Types): ListConfig<CompanyRow> {
 export function opportunitiesConfig(types: Types): ListConfig<OpportunityRow> {
   return {
     noun: ["opportunity", "opportunities"],
-    searchText: (o) => lower(o.title, o.person_name, o.company_name, o.stage_name),
-    filters: [typeFilter(types)],
+    searchText: (o) => lower(o.title, o.person_name, o.company_name, o.stage_name, o.deal_type),
+    filters: [
+      typeFilter(types),
+      {
+        key: "deal_type",
+        label: "Filter by deal type",
+        all: "All deal types",
+        options: (rows) => {
+          const used = new Set(rows.map((o) => o.deal_type));
+          return OPPORTUNITY_DEAL_TYPES.filter((type) => used.has(type)).map((type) => ({ value: type, label: type }));
+        },
+        test: (o, value) => o.deal_type === value,
+      },
+    ],
     summary: (rows) => `${formatMoney(rows.reduce((sum, o) => sum + (o.value ?? 0), 0))} total`,
     columns: [
       {
@@ -172,6 +185,14 @@ export function opportunitiesConfig(types: Types): ListConfig<OpportunityRow> {
         width: "minmax(0, 2fr)",
         sortValue: (o) => o.title.toLowerCase(),
         render: (o) => <Primary name={o.title} sub={[o.person_name, o.company_name].filter(Boolean).join(" · ")} active={o.active} />,
+      },
+      {
+        key: "deal_type",
+        header: "Deal type",
+        width: "minmax(0, 1fr)",
+        wideOnly: true,
+        sortValue: (o) => OPPORTUNITY_DEAL_TYPES.indexOf(o.deal_type),
+        render: (o) => <Badge>{o.deal_type}</Badge>,
       },
       {
         key: "stage",

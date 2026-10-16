@@ -1,9 +1,43 @@
-/* The Record contract form: a grid of fields that wraps by width, notes and the PDF across it. */
+/* The Record deal form: titled groups of fields, each a grid that wraps by width, then notes. */
 .form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
   max-width: 880px;
+}
+
+.group {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.legend {
+  margin-bottom: 10px;
+  padding: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: var(--caps-tracking);
+  text-transform: uppercase;
+}
+
+/* A document's name, its PDF and its Remove button, on one line. */
+.document {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.document > :first-child {
+  flex: 0 1 260px;
+}
+
+.document > input[type="file"] {
+  flex: 1 1 240px;
+  padding-bottom: 6px;
 }
 
 .grid {

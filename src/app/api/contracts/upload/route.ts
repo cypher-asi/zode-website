@@ -6,10 +6,10 @@ import { teamAccount } from "@/features/zrm/access";
 const MAX_UPLOAD_BYTES = 50 * 1024 ** 2;
 
 /**
- * Issues short-lived client tokens so the team's browsers upload an executed
- * compute contract straight to the private Blob store, under the contracts
- * prefix and as a PDF only. The contract is recorded afterwards by
- * `recordComputeContractAction`.
+ * Issues short-lived client tokens so the team's browsers upload a compute
+ * deal's executed PDFs straight to the private Blob store, under the
+ * contracts prefix and as PDFs only. The deal is recorded afterwards by
+ * `recordComputeDealAction`.
  */
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return new Response("Forbidden", { status: 403 });

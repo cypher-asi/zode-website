@@ -71,7 +71,7 @@ const companiesQuery = (sql: Sql) => sql`
 
 const opportunitiesQuery = (sql: Sql) => sql`
   with company_types as (select company_id, array_agg(type_id)::text[] as type_ids from zrm_company_types group by company_id)
-  select o.id, o.title, o.person_id,
+  select o.id, o.title, o.deal_type, o.person_id,
     nullif(concat_ws(' ', p.first_name, p.last_name), '') as person_name,
     o.company_id, c.name as company_name,
     o.stage_id, s.name as stage_name, s.position as stage_position,
@@ -357,7 +357,7 @@ export async function getOpportunityDetail(id: string): Promise<OpportunityDetai
   const [[opportunity], types, activities, notes] = await sql.transaction(
     [
       sql`
-        select o.id, o.title, o.person_id,
+        select o.id, o.title, o.deal_type, o.person_id,
           nullif(concat_ws(' ', p.first_name, p.last_name), '') as person_name,
           o.company_id, c.name as company_name, o.stage_id, s.name as stage_name,
           o.value::float8 as value, o.owner_notes, o.active, o.created_at, o.updated_at

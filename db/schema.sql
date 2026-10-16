@@ -797,6 +797,75 @@ create table if not exists compute_contracts (
 
 create index if not exists compute_contracts_signed_at_idx on compute_contracts (signed_at desc);
 
+-- An opportunity's deal type: compute sold from ZODE's clusters (the main
+-- kind, and the default), data center capacity, hardware, financing or a
+-- partnership. Compute deals are recorded against Compute opportunities.
+alter table zrm_opportunities add column if not exists deal_type text not null default 'Compute';
+
+alter table zrm_opportunities drop constraint if exists zrm_opportunities_deal_type_check;
+
+alter table zrm_opportunities add constraint zrm_opportunities_deal_type_check
+  check (deal_type in ('Compute', 'Capacity', 'Hardware', 'Financing', 'Partnership'));
+
+-- Compute contracts are compute deals: a closed Compute opportunity's executed
+-- MSA and order forms, where a ZODE entity (the provider) runs a GPU cluster
+-- for the counterparty at a GPU-hour rate over a term. They replace the
+-- earlier purchase or rental, so `mode` and the stored monthly figure go; the
+-- monthly commitment is GPUs x rate x 730 hours. `value_usd` is the total
+-- contract value. `seed_key` lets `npm run contracts:import` re-run.
+alter table compute_contracts drop column if exists mode;
+alter table compute_contracts drop column if exists monthly_usd;
+alter table compute_contracts add column if not exists seed_key text;
+alter table compute_contracts add column if not exists provider_entity text;
+alter table compute_contracts add column if not exists effective_on date;
+alter table compute_contracts add column if not exists msa_on date;
+alter table compute_contracts add column if not exists gpu_model text;
+alter table compute_contracts add column if not exists gpu_count integer;
+alter table compute_contracts add column if not exists node_count integer;
+alter table compute_contracts add column if not exists gpu_hour_usd numeric(8, 4);
+alter table compute_contracts add column if not exists prepayment_usd numeric(16, 2);
+alter table compute_contracts add column if not exists prepayment_due_on date;
+alter table compute_contracts add column if not exists delivery_on date;
+alter table compute_contracts add column if not exists acceptance_deadline_on date;
+alter table compute_contracts add column if not exists structure text;
+alter table compute_contracts add column if not exists renewal_months integer;
+alter table compute_contracts add column if not exists uptime_pct numeric(5, 2);
+alter table compute_contracts add column if not exists location text;
+
+create unique index if not exists compute_contracts_seed_key_idx on compute_contracts (seed_key) where seed_key is not null;
+
+alter table compute_contracts drop constraint if exists compute_contracts_structure_check;
+
+alter table compute_contracts add constraint compute_contracts_structure_check
+  check (structure in ('Take-or-pay', 'Take-or-pay or revenue share'));
+
+-- A deal's executed PDFs (its MSA, order forms, amendments) in display order,
+-- each in the private Blob store under contracts/compute/. A contract once
+-- held one PDF in compute_contracts.blob_pathname, moved here as "Contract".
+create table if not exists compute_contract_documents (
+  id uuid primary key default gen_random_uuid(),
+  contract_id uuid not null references compute_contracts (id) on delete cascade,
+  position integer not null default 0,
+  label text not null,
+  blob_pathname text not null unique,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists compute_contract_documents_contract_idx on compute_contract_documents (contract_id, position);
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_name = 'compute_contracts' and column_name = 'blob_pathname'
+  ) then
+    insert into compute_contract_documents (contract_id, label, blob_pathname)
+    select id, 'Contract', blob_pathname from compute_contracts
+    on conflict (blob_pathname) do nothing;
+    alter table compute_contracts drop column blob_pathname;
+  end if;
+end $$;
+
 -- The team dashboard's figures, one row per metric per UTC day, written by the
 -- daily cron and on each dashboard view (the day's latest wins). The metric
 -- names are defined in src/features/team-dashboard/metrics.ts.

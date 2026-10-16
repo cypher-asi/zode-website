@@ -3,7 +3,7 @@
  * fields.ts can address a record, its form inputs and its column alike.
  */
 
-import type { DealType } from "./fields";
+import type { DealType, OpportunityDealType } from "./fields";
 
 export type ZrmKind = "people" | "companies" | "opportunities";
 
@@ -87,6 +87,7 @@ export interface CompanyRow {
 export interface OpportunityRow {
   id: string;
   title: string;
+  deal_type: OpportunityDealType;
   person_id: string | null;
   person_name: string | null;
   company_id: string | null;
@@ -220,6 +221,7 @@ export interface Company {
 export interface Opportunity {
   id: string;
   title: string;
+  deal_type: OpportunityDealType;
   person_id: string | null;
   person_name: string | null;
   company_id: string | null;

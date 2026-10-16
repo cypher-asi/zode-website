@@ -4,12 +4,15 @@ import { contractFileName, getContractFile } from "@/features/contracts/contract
 import { readBlob } from "@/features/data-room/blob";
 import { contentDisposition, fileHeaders, notFoundResponse } from "@/features/data-room/http";
 
-/** Downloads an executed agreement for the account that signed it, or for anyone on the ZODE team. */
-export async function GET(_request: Request, ctx: RouteContext<"/api/contracts/[contractId]/pdf">) {
+/**
+ * Downloads an executed agreement for the account that signed it, or for
+ * anyone on the ZODE team. A compute deal's `?doc=` names which of its PDFs.
+ */
+export async function GET(request: Request, ctx: RouteContext<"/api/contracts/[contractId]/pdf">) {
   const { contractId } = await ctx.params;
   const account = await getAccount();
   if (!account) return notFoundResponse();
-  const file = await getContractFile(contractId);
+  const file = await getContractFile(contractId, new URL(request.url).searchParams.get("doc"));
   if (!file || (file.userId !== account.userId && !(await isTeam(account)))) return notFoundResponse();
 
   let blob: Awaited<ReturnType<typeof readBlob>>;
@@ -24,10 +27,7 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/contracts/[
   }
   if (!blob || blob.statusCode !== 200) return notFoundResponse();
 
-  const headers = fileHeaders(
-    "application/pdf",
-    contentDisposition("attachment", contractFileName(file.kind, file.counterparty)),
-  );
+  const headers = fileHeaders("application/pdf", contentDisposition("attachment", contractFileName(file)));
   const length = blob.headers.get("content-length");
   if (length) headers.set("Content-Length", length);
   return new Response(blob.stream, { headers });

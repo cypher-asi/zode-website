@@ -414,13 +414,16 @@ export function UserList({ users, selfZosUserId }: { users: User[]; selfZosUserI
 }
 
 const mw = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
+const rate = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 4 });
+const compactUsd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 2 });
 
 function computeMeta(contract: ComputeContract): string {
   return [
+    contract.gpuCount != null ? `${contract.gpuCount.toLocaleString("en-US")} ${contract.gpuModel ?? "GPUs"}` : null,
     contract.itMw != null ? `${mw.format(contract.itMw)} MW` : null,
-    contract.valueUsd != null ? `${usd.format(contract.valueUsd)} total` : null,
-    contract.monthlyUsd != null ? `${usd.format(contract.monthlyUsd)} /mo` : null,
+    contract.gpuHourUsd != null ? `${rate.format(contract.gpuHourUsd)}/GPU-hr` : null,
     contract.termMonths != null ? plural(contract.termMonths, "month") : null,
+    contract.valueUsd != null ? `${compactUsd.format(contract.valueUsd)} total` : null,
     date.format(contract.signedAt),
     contract.siteName ? `at ${contract.siteName}` : null,
   ]
@@ -428,7 +431,50 @@ function computeMeta(contract: ComputeContract): string {
     .join(" · ");
 }
 
-/** Executed agreements; each row downloads its PDF. `showSigner` adds who signed, for the team seeing everyone's. */
+const downloadIcon = (
+  <svg className={styles.chevron} viewBox="0 0 16 16" aria-hidden="true">
+    <path d="M8 2.75v8M4.75 7.75 8 11l3.25-3.25M3.25 13.5h9.5" />
+  </svg>
+);
+
+/** A compute deal, with a download link for each of its PDFs (MSA, order forms). */
+function ComputeDealRow({ contract }: { contract: ComputeContract }): ReactElement {
+  return (
+    <div className={styles.row}>
+      <span className={styles.rowIcon}>
+        <PortalIcon name="cluster" />
+      </span>
+      <span className={styles.rowMain}>
+        <span className={styles.rowTitle}>Compute deal · {contract.counterparty}</span>
+        <span className={styles.rowMeta}>{computeMeta(contract)}</span>
+        {contract.documents.length ? (
+          <span className={styles.rowDocs}>
+            {contract.documents.map((document) => (
+              <a
+                key={document.id}
+                className={styles.rowDoc}
+                href={`/api/contracts/${contract.id}/pdf?doc=${document.id}`}
+                download
+              >
+                {downloadIcon}
+                {document.label}
+              </a>
+            ))}
+          </span>
+        ) : null}
+      </span>
+      {contract.structure ? (
+        <span className={styles.rowEnd}>
+          <span className={styles.pill} data-strong="">
+            {contract.structure}
+          </span>
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+/** Executed agreements; each row downloads its PDF, or a deal's PDFs. `showSigner` adds who signed, for the team seeing everyone's. */
 export function ContractList({
   contracts,
   showSigner = false,
@@ -440,42 +486,30 @@ export function ContractList({
     <ul className={styles.list}>
       {contracts.map((contract) => (
         <li key={contract.id}>
-          <a className={styles.row} href={`/api/contracts/${contract.id}/pdf`} download>
-            <span className={styles.rowIcon}>
-              <PortalIcon name={contract.kind === "compute" ? "cluster" : "contracts"} />
-            </span>
-            <span className={styles.rowMain}>
-              <span className={styles.rowTitle}>
-                {contract.kind === "compute" ? "Compute contract" : "Mutual NDA"} · {contract.counterparty}
+          {contract.kind === "compute" ? (
+            <ComputeDealRow contract={contract} />
+          ) : (
+            <a className={styles.row} href={`/api/contracts/${contract.id}/pdf`} download>
+              <span className={styles.rowIcon}>
+                <PortalIcon name="contracts" />
               </span>
-              <span className={styles.rowMeta}>
-                {contract.kind === "compute" ? (
-                  computeMeta(contract)
-                ) : (
-                  <>
-                    {showSigner
-                      ? `${contract.signerName} (${contract.signerEmail})`
-                      : `Signed by ${contract.signerName}`}
-                    {" · "}
-                    {date.format(contract.signedAt)}
-                    {contract.roomName ? <> · via {contract.roomName}</> : null}
-                  </>
-                )}
-              </span>
-            </span>
-            <span className={styles.rowEnd}>
-              {contract.kind === "compute" ? (
-                <span className={styles.pill} data-strong="">
-                  {contract.mode === "rent" ? "Rent" : "Buy"}
+              <span className={styles.rowMain}>
+                <span className={styles.rowTitle}>Mutual NDA · {contract.counterparty}</span>
+                <span className={styles.rowMeta}>
+                  {showSigner ? `${contract.signerName} (${contract.signerEmail})` : `Signed by ${contract.signerName}`}
+                  {" · "}
+                  {date.format(contract.signedAt)}
+                  {contract.roomName ? <> · via {contract.roomName}</> : null}
                 </span>
-              ) : showSigner && !contract.linked ? (
-                <span className={styles.pill}>No account</span>
-              ) : null}
-              <svg className={styles.chevron} viewBox="0 0 16 16" aria-label="Download PDF" role="img">
-                <path d="M8 2.75v8M4.75 7.75 8 11l3.25-3.25M3.25 13.5h9.5" />
-              </svg>
-            </span>
-          </a>
+              </span>
+              <span className={styles.rowEnd}>
+                {showSigner && !contract.linked ? <span className={styles.pill}>No account</span> : null}
+                <svg className={styles.chevron} viewBox="0 0 16 16" aria-label="Download PDF" role="img">
+                  <path d="M8 2.75v8M4.75 7.75 8 11l3.25-3.25M3.25 13.5h9.5" />
+                </svg>
+              </span>
+            </a>
+          )}
         </li>
       ))}
     </ul>

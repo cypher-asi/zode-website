@@ -63,7 +63,7 @@ export function loadAllPosts(): Promise<Post[] | null> {
   });
 }
 
-/** Every executed agreement, MNDAs and compute contracts, for the ZODE team, or `null` when they couldn't be loaded. */
+/** Every executed agreement, MNDAs and compute deals, for the ZODE team, or `null` when they couldn't be loaded. */
 export function loadAllContracts(): Promise<Contract[] | null> {
   return listAllContracts().catch((error: unknown) => {
     console.error("Failed to load all contracts", error);

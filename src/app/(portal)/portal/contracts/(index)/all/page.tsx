@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-/** Every MNDA anyone has signed, including those signed while logged out, and every compute contract. The ZODE team only. */
+/** Every MNDA anyone has signed, including those signed while logged out, and every compute deal. The ZODE team only. */
 export default function AllContractsPage(): ReactElement {
   return (
     <Suspense fallback={<PortalLoading header={false} nested />}>

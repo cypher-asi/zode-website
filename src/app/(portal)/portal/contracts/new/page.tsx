@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense, type ReactElement } from "react";
-import { ComputeContractForm } from "@/features/contracts/ComputeContractForm";
+import { ComputeDealForm } from "@/features/contracts/ComputeDealForm";
 import { listContractLinks } from "@/features/contracts/contracts";
 import { PortalLoading } from "@/features/portal/PortalLoading";
 import { Empty, PageHeader } from "@/features/portal/sections";
@@ -8,15 +8,18 @@ import styles from "@/features/portal/portal.module.css";
 import { requireTeam } from "@/features/zrm/access";
 
 export const metadata: Metadata = {
-  title: "Record contract | Contracts | ZODE",
+  title: "Record deal | Contracts | ZODE",
   robots: { index: false, follow: false },
 };
 
-/** Where the ZODE team records a compute contract signed outside the portal. */
+/** Where the ZODE team records a compute deal signed outside the portal. */
 export default function NewContractPage(): ReactElement {
   return (
     <div className={styles.page}>
-      <PageHeader title="Record a compute contract" subtitle="A purchase or rental signed with ZODE, and its executed PDF." />
+      <PageHeader
+        title="Record a compute deal"
+        subtitle="A closed Compute opportunity's executed MSA and order forms, and their terms."
+      />
       <Suspense fallback={<PortalLoading header={false} nested />}>
         <NewContract />
       </Suspense>
@@ -31,7 +34,7 @@ async function NewContract(): Promise<ReactElement> {
     return null;
   });
   return links ? (
-    <ComputeContractForm opportunities={links.opportunities} sites={links.sites} />
+    <ComputeDealForm opportunities={links.opportunities} sites={links.sites} />
   ) : (
     <Empty>The form couldn&apos;t be loaded right now. Please try again shortly.</Empty>
   );

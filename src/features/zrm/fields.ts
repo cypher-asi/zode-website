@@ -84,6 +84,11 @@ const dealTerm = (field: FieldSpec, values: readonly DealType[]): FieldSpec => (
   onlyWhen: { key: "deal_type", values },
 });
 
+/** What an opportunity sells or secures, compute first as the main kind. The database checks the same (`zrm_opportunities_deal_type_check`). */
+export const OPPORTUNITY_DEAL_TYPES = ["Compute", "Capacity", "Hardware", "Financing", "Partnership"] as const;
+
+export type OpportunityDealType = (typeof OPPORTUNITY_DEAL_TYPES)[number];
+
 /** A site's type, by how built out it is, furthest first. Stored as `site_stage`. */
 export const SITE_TYPES = ["Operational DC", "Retrofit", "Powered Shell", "Powered Land", "Land"] as const;
 
@@ -198,6 +203,7 @@ export const SECTIONS: Record<RecordKind, readonly SectionSpec[]> = {
       title: "Details",
       fields: [
         text("title", "Title", true),
+        { key: "deal_type", label: "Deal type", type: "choice", required: true, options: OPPORTUNITY_DEAL_TYPES },
         { key: "stage_id", label: "Stage", type: "stage", required: true, display: "stage_name" },
         { key: "value", label: "Value (USD)", type: "money" },
         { key: "person_id", label: "Person", type: "person", display: "person_name" },
