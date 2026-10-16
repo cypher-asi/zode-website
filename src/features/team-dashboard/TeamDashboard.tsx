@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { io } from "next/cache";
 import Link from "next/link";
 import { isZodeAdmin } from "@/features/account/admin";
@@ -40,11 +40,20 @@ function visitorChange(current: number, previous: number, days: number) {
   };
 }
 
+function DashboardSection({ title, children }: { title: string; children: ReactNode }): ReactElement {
+  return (
+    <section aria-label={title}>
+      <h2 className={dash.sectionTitle}>{title}</h2>
+      <div className={dash.grid}>{children}</div>
+    </section>
+  );
+}
+
 /**
- * The ZODE team's figures at a glance, Home's Team tab: the capacity
- * pipeline across the top with its MW by status (statuses with none left
- * out), then the opportunity pipeline, contracts and subscribers, each with
- * its history.
+ * The ZODE team's figures at a glance, Home's Team tab, in three sections:
+ * the capacity pipeline with its MW by status (statuses with none left out);
+ * the sales pipeline of opportunities and contracts; and the growth engine of
+ * subscribers and visitors, each with its history.
  * `account` must already be checked to be on the team.
  */
 export async function TeamDashboard({
@@ -89,78 +98,84 @@ export async function TeamDashboard({
       {metrics === null ? (
         <Empty>The team&apos;s figures couldn&apos;t be loaded right now. Please try again shortly.</Empty>
       ) : (
-        <div className={dash.grid}>
-          <MetricCard
-            label="Capacity pipeline"
-            href="/portal/capacity/sites"
-            value={metrics.current.capacity_pipeline_mw}
-            format={megawatts}
-            detail={`${megawatts(metrics.current.capacity_contracted_mw)} contracted or closed`}
-            points={metrics.series.capacity_pipeline_mw}
-            rangeDays={rangeDays}
-            wide
-            aside={
-              <MixChart
-                mixes={[
-                  { id: "deal", label: "Deal type", slices: metrics.capacityMix.dealType },
-                  { id: "type", label: "Type", slices: metrics.capacityMix.siteType },
-                ]}
-              />
-            }
-          >
-            <dl className={dash.breakdown}>
-              {CAPACITY_STATUSES.toReversed()
-                .filter(({ metric }) => metrics.current[metric] > 0)
-                .map(({ status, metric }) => (
-                  <div key={metric}>
-                    <dt>{status}</dt>
-                    <dd>{megawatts(metrics.current[metric])}</dd>
-                  </div>
-                ))}
-            </dl>
-          </MetricCard>
-          <MetricCard
-            label="Open opportunities"
-            href="/portal/zrm/opportunities"
-            value={metrics.current.opportunities_open}
-            format={count}
-            detail={`${dollars(metrics.current.opportunities_pipeline_usd)} in open pipeline value`}
-            points={metrics.series.opportunities_open}
-            rangeDays={rangeDays}
-          />
-          <MetricCard
-            label="Contracts"
-            href="/portal/contracts/all"
-            value={metrics.current.contracts_total}
-            format={count}
-            detail={`${count(metrics.current.contracts_compute)} compute · ${megawatts(metrics.current.contracts_compute_mw)} · ${count(
-              metrics.current.contracts_total - metrics.current.contracts_compute,
-            )} MNDA`}
-            points={metrics.series.contracts_total}
-            rangeDays={rangeDays}
-          />
-          <MetricCard
-            label="Subscribers"
-            href={admin ? "/portal/subscribers" : undefined}
-            value={metrics.current.subscribers_confirmed}
-            format={count}
-            detail={`${count(metrics.current.subscribers_news)} news · ${count(metrics.current.subscribers_changelog)} changelog`}
-            points={metrics.series.subscribers_confirmed}
-            rangeDays={rangeDays}
-          />
-          {visitors ? (
+        <div className={dash.sections}>
+          <DashboardSection title="Capacity Pipeline">
             <MetricCard
-              label="Visitors"
-              href={rangeDays === 30 ? "/portal/analytics" : rangeDays === 90 ? "/portal/analytics?range=90d" : "/portal/analytics?range=12mo"}
-              value={visitors.visitors}
-              format={count}
-              detail={`${count(visitors.pageviews)} pageviews on the site and portal`}
-              points={visitors.points}
+              label="Capacity pipeline"
+              href="/portal/capacity/sites"
+              value={metrics.current.capacity_pipeline_mw}
+              format={megawatts}
+              detail={`${megawatts(metrics.current.capacity_contracted_mw)} contracted or closed`}
+              points={metrics.series.capacity_pipeline_mw}
               rangeDays={rangeDays}
-              change={visitorChange(visitors.visitors, visitors.previous, rangeDays)}
-              weekly={rangeDays === 365}
+              wide
+              aside={
+                <MixChart
+                  mixes={[
+                    { id: "deal", label: "Deal type", slices: metrics.capacityMix.dealType },
+                    { id: "type", label: "Type", slices: metrics.capacityMix.siteType },
+                  ]}
+                />
+              }
+            >
+              <dl className={dash.breakdown}>
+                {CAPACITY_STATUSES.toReversed()
+                  .filter(({ metric }) => metrics.current[metric] > 0)
+                  .map(({ status, metric }) => (
+                    <div key={metric}>
+                      <dt>{status}</dt>
+                      <dd>{megawatts(metrics.current[metric])}</dd>
+                    </div>
+                  ))}
+              </dl>
+            </MetricCard>
+          </DashboardSection>
+          <DashboardSection title="Sales Pipeline">
+            <MetricCard
+              label="Open opportunities"
+              href="/portal/zrm/opportunities"
+              value={metrics.current.opportunities_open}
+              format={count}
+              detail={`${dollars(metrics.current.opportunities_pipeline_usd)} in open pipeline value`}
+              points={metrics.series.opportunities_open}
+              rangeDays={rangeDays}
             />
-          ) : null}
+            <MetricCard
+              label="Contracts"
+              href="/portal/contracts/all"
+              value={metrics.current.contracts_total}
+              format={count}
+              detail={`${count(metrics.current.contracts_compute)} compute · ${megawatts(metrics.current.contracts_compute_mw)} · ${count(
+                metrics.current.contracts_total - metrics.current.contracts_compute,
+              )} MNDA`}
+              points={metrics.series.contracts_total}
+              rangeDays={rangeDays}
+            />
+          </DashboardSection>
+          <DashboardSection title="Growth Engine">
+            <MetricCard
+              label="Subscribers"
+              href={admin ? "/portal/subscribers" : undefined}
+              value={metrics.current.subscribers_confirmed}
+              format={count}
+              detail={`${count(metrics.current.subscribers_news)} news · ${count(metrics.current.subscribers_changelog)} changelog`}
+              points={metrics.series.subscribers_confirmed}
+              rangeDays={rangeDays}
+            />
+            {visitors ? (
+              <MetricCard
+                label="Visitors"
+                href={rangeDays === 30 ? "/portal/analytics" : rangeDays === 90 ? "/portal/analytics?range=90d" : "/portal/analytics?range=12mo"}
+                value={visitors.visitors}
+                format={count}
+                detail={`${count(visitors.pageviews)} pageviews on the site and portal`}
+                points={visitors.points}
+                rangeDays={rangeDays}
+                change={visitorChange(visitors.visitors, visitors.previous, rangeDays)}
+                weekly={rangeDays === 365}
+              />
+            ) : null}
+          </DashboardSection>
         </div>
       )}
     </>
