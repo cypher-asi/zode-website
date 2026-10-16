@@ -1,7 +1,8 @@
 import type { ReactElement, ReactNode } from "react";
 import Link from "next/link";
 import type { MetricPoint } from "./metrics";
-import { SPARK_HEIGHT as HEIGHT, SPARK_WIDTH as WIDTH, Sparkline, type SparkDay, type SparkWeek } from "./Sparkline";
+import { SPARK_HEIGHT as HEIGHT, SPARK_WIDTH as WIDTH } from "./spark";
+import { Sparkline, type SparkDay, type SparkWeek } from "./Sparkline";
 import styles from "./dashboard.module.css";
 
 const DAY_MS = 24 * 60 * 60 * 1000;

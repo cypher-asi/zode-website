@@ -3,9 +3,7 @@
 import { useRef, useState, type KeyboardEvent, type PointerEvent, type ReactElement } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./dashboard.module.css";
-
-export const SPARK_WIDTH = 300;
-export const SPARK_HEIGHT = 72;
+import { SPARK_HEIGHT, SPARK_WIDTH } from "./spark";
 
 export interface SparkDay {
   /** e.g. "Tue, Oct 13". */
