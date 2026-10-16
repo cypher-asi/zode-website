@@ -2,7 +2,7 @@ import type { ReactElement, ReactNode } from "react";
 import Link from "next/link";
 import type { OrderSummary } from "@/features/configurator/orders";
 import { ContractBrowser, type BrowserGroup, type BrowserItem } from "@/features/contracts/ContractBrowser";
-import { ContractDetails } from "@/features/contracts/ContractDetails";
+import { ContractDetails, ContractPdfButtons } from "@/features/contracts/ContractDetails";
 import type { ComputeContract, Contract, MndaContract } from "@/features/contracts/contracts";
 import bar from "@/features/data-room/room.module.css";
 import { siteMapSrc } from "@/features/data-room/rooms";
@@ -433,7 +433,7 @@ function computeMeta(contract: ComputeContract): string {
     .join(" · ");
 }
 
-/** A compute deal's row: its size, rate, term and value at a glance; the pane holds the rest and its PDFs. */
+/** A compute deal's row: its size, rate, term and value at a glance; the pane holds the rest. */
 function ComputeDealRow({ contract }: { contract: ComputeContract }): ReactElement {
   return (
     <>
@@ -493,6 +493,7 @@ function browserItem(contract: Contract, showSigner: boolean): BrowserItem {
       ) : (
         <MndaRow contract={contract} showSigner={showSigner} />
       ),
+    actions: <ContractPdfButtons contract={contract} />,
     detail: <ContractDetails contract={contract} showSigner={showSigner} />,
   };
 }

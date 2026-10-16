@@ -27,6 +27,45 @@ const months = (value: number | null): string | null =>
 
 type Fact = [label: string, value: ReactNode];
 
+type ContractDocument = ContractPdf & { id: string; label: string };
+
+/** An agreement's executed PDFs: a deal's MSA and order forms, or the one MNDA. */
+function contractDocuments(contract: Contract): ContractDocument[] {
+  if (contract.kind === "compute") {
+    return contract.documents.map((document) => ({
+      id: document.id,
+      label: document.label,
+      url: `/api/contracts/${contract.id}/pdf?doc=${document.id}`,
+      title: `${document.label} · ${contract.counterparty}`,
+      meta: `Compute deal · Signed ${day.format(contract.signedAt)}`,
+    }));
+  }
+  return [
+    {
+      id: contract.id,
+      label: "Executed MNDA",
+      url: `/api/contracts/${contract.id}/pdf`,
+      title: `Mutual NDA · ${contract.counterparty}`,
+      meta: `Signed by ${contract.signerName} · ${day.format(contract.signedAt)}`,
+    },
+  ];
+}
+
+/** An icon for each of the agreement's PDFs, opening it in the viewer, for the right of its row. */
+export function ContractPdfButtons({ contract }: { contract: Contract }): ReactElement | null {
+  const documents = contractDocuments(contract);
+  if (!documents.length) return null;
+  return (
+    <>
+      {documents.map((document) => (
+        <OpenContract key={document.id} className={ui.iconButton} pdf={document} label={`View ${document.label}`}>
+          <FileGlyph kind="pdf" />
+        </OpenContract>
+      ))}
+    </>
+  );
+}
+
 /** A titled list of facts, leaving out the ones not recorded, or the whole list when none are. */
 function Facts({ title, facts }: { title: string; facts: Fact[] }): ReactElement | null {
   const shown = facts.filter(([, value]) => value != null && value !== "");
@@ -47,7 +86,7 @@ function Facts({ title, facts }: { title: string; facts: Fact[] }): ReactElement
 }
 
 /** The executed PDFs: each opens in the viewer, with a download beside it. */
-function Documents({ documents }: { documents: (ContractPdf & { id: string; label: string })[] }): ReactElement {
+function Documents({ documents }: { documents: ContractDocument[] }): ReactElement {
   return (
     <section className={styles.group}>
       <h3 className={styles.groupTitle}>Documents</h3>
@@ -136,15 +175,7 @@ function ComputeDetails({ contract }: { contract: ComputeContract }): ReactEleme
           ],
         ]}
       />
-      <Documents
-        documents={contract.documents.map((document) => ({
-          id: document.id,
-          label: document.label,
-          url: `/api/contracts/${contract.id}/pdf?doc=${document.id}`,
-          title: `${document.label} · ${contract.counterparty}`,
-          meta: `Compute deal · Signed ${signed}`,
-        }))}
-      />
+      <Documents documents={contractDocuments(contract)} />
     </>
   );
 }
@@ -174,17 +205,7 @@ function MndaDetails({ contract, showSigner }: { contract: MndaContract; showSig
           ],
         ]}
       />
-      <Documents
-        documents={[
-          {
-            id: contract.id,
-            label: "Executed MNDA",
-            url: `/api/contracts/${contract.id}/pdf`,
-            title: `Mutual NDA · ${contract.counterparty}`,
-            meta: `Signed by ${contract.signerName} · ${day.format(contract.signedAt)}`,
-          },
-        ]}
-      />
+      <Documents documents={contractDocuments(contract)} />
     </>
   );
 }

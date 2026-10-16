@@ -10,8 +10,10 @@ export interface BrowserItem {
   id: string;
   title: string;
   subtitle: string;
-  /** The row's content in the list. */
+  /** The row's content in the list: its icon, main text and end, in that order. */
   row: ReactNode;
+  /** Controls at the right of the row, before its end, that work without selecting it. */
+  actions?: ReactNode;
   /** The pane's content once the row is selected. */
   detail: ReactNode;
 }
@@ -48,7 +50,7 @@ export function ContractBrowser({ groups }: { groups: BrowserGroup[] }): ReactEl
             {group.head}
             <ul className={portal.list}>
               {group.items.map((item) => (
-                <li key={item.id}>
+                <li key={item.id} className={styles.item}>
                   <button
                     type="button"
                     className={`${portal.row} ${styles.row}`}
@@ -58,6 +60,7 @@ export function ContractBrowser({ groups }: { groups: BrowserGroup[] }): ReactEl
                   >
                     {item.row}
                   </button>
+                  {item.actions ? <div className={styles.actions}>{item.actions}</div> : null}
                 </li>
               ))}
             </ul>

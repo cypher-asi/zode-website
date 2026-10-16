@@ -24,16 +24,26 @@ export interface ContractPdf {
 export function OpenContract({
   pdf,
   className,
+  label,
   children,
 }: {
   pdf: ContractPdf;
   className: string;
+  /** Names the button when its children are only an icon. */
+  label?: string;
   children: ReactNode;
 }): ReactElement {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button type="button" className={className} aria-haspopup="dialog" onClick={() => setOpen(true)}>
+      <button
+        type="button"
+        className={className}
+        aria-haspopup="dialog"
+        aria-label={label}
+        title={label}
+        onClick={() => setOpen(true)}
+      >
         {children}
       </button>
       {open ? <ContractViewer pdf={pdf} onClose={() => setOpen(false)} /> : null}
