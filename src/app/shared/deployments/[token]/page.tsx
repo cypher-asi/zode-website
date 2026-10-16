@@ -5,6 +5,8 @@ import { getSharedDeployment } from "@/features/deployments/deployments";
 import { SharedPdf } from "@/features/deployments/SharedPdf";
 import styles from "@/features/deployments/shared.module.css";
 import { deploymentFileName, sharedPdfPath, sharePath } from "@/features/deployments/types";
+import { getPresentationFor } from "@/features/presentations/presentations";
+import { presentationFileName, sharedPresentationPath } from "@/features/presentations/types";
 import { ShareButton } from "@/features/profile/ProfileClient";
 
 export async function generateMetadata({ params }: PageProps<"/shared/deployments/[token]">): Promise<Metadata> {
@@ -19,8 +21,8 @@ export async function generateMetadata({ params }: PageProps<"/shared/deployment
 /**
  * A deployment's public page, for anyone the ZODE team gave its link: its
  * PDF, with its external notes but not its internal ones, credit or data
- * room, and buttons to share the link and export the PDF, like the company
- * profile. Lives outside `(site)`, like /company-profile, so the PDF fills the
+ * room, and buttons to share the link and export the PDF and any
+ * presentation, like the company profile. Lives outside `(site)`, like /company-profile, so the PDF fills the
  * window without the footer.
  */
 export default function SharedDeploymentPage({ params }: PageProps<"/shared/deployments/[token]">): ReactElement {
@@ -40,6 +42,7 @@ async function SharedDeployment({
   const deployment = await getSharedDeployment(token);
   if (!deployment) notFound();
   const pdf = sharedPdfPath(token);
+  const presentation = await getPresentationFor(deployment.id);
 
   return (
     <>
@@ -48,6 +51,15 @@ async function SharedDeployment({
         <a className={styles.action} href={sharedPdfPath(token, true)} download={deploymentFileName(deployment.name)}>
           Export PDF
         </a>
+        {presentation ? (
+          <a
+            className={styles.action}
+            href={sharedPresentationPath(token, true)}
+            download={presentationFileName(deployment.name)}
+          >
+            Export presentation
+          </a>
+        ) : null}
       </div>
       <SharedPdf url={`${pdf}?v=${encodeURIComponent(deployment.updatedAt)}`} />
     </>

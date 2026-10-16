@@ -20,7 +20,7 @@ import styles from "./teasers.module.css";
 
 const INITIAL: TeaserFormState = {};
 
-interface Column<Key extends string> {
+export interface Column<Key extends string> {
   key: Key;
   label: string;
   max: number;
@@ -32,7 +32,7 @@ interface Column<Key extends string> {
  * An editable list of rows, each submitted as parallel `<prefix>_<key>`
  * fields in order, up to `maxRows`.
  */
-function Rows<Key extends string>({
+export function Rows<Key extends string>({
   prefix,
   noun,
   columns,

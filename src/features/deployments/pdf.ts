@@ -478,9 +478,9 @@ const PDF_CONFIG = new Set<ConfigKey>([
 ]);
 
 /**
- * The deployment's summary PDF, as of `today` (`YYYY-MM-DD`). The `public`
- * audience, behind its share link, leaves out its data room, credit and
- * internal notes.
+ * The deployment's summary PDF, as of `today` (`YYYY-MM-DD`), with its
+ * external notes; internal notes never go in. The `public` audience, behind
+ * its share link, also leaves out its data room and credit.
  */
 export async function renderDeploymentPdf(
   deployment: Deployment,
@@ -570,7 +570,6 @@ export async function renderDeploymentPdf(
     );
   }
   if (d.externalNotes) w.paragraph("Notes", d.externalNotes);
-  if (internal && d.notes) w.paragraph("Internal notes", d.notes);
   w.footers();
 
   doc.setTitle(`ZODE Deployment \u2013 ${d.name}`);

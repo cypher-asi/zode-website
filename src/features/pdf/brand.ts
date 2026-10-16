@@ -67,12 +67,15 @@ export async function embedBrand(doc: PDFDocument): Promise<{ fonts: Fonts; word
   const files = await loadAssets();
   doc.registerFontkit(fontkit);
   // pdf-lib's subsetter drops glyphs from Inter, so its files are pre-cut to Latin-1 and embedded whole.
+  // Contextual alternates are off: they swap in glyphs no character maps to, like Inter's raised "+" in
+  // "N+1", which a whole embed leaves out of the widths, so viewers space them wrong.
+  const features = { calt: false };
   const [regular, medium, semibold, display, mono] = await Promise.all([
-    doc.embedFont(files.regular, { subset: false }),
-    doc.embedFont(files.medium, { subset: false }),
-    doc.embedFont(files.semibold, { subset: false }),
-    doc.embedFont(files.display, { subset: true }),
-    doc.embedFont(files.mono, { subset: true }),
+    doc.embedFont(files.regular, { subset: false, features }),
+    doc.embedFont(files.medium, { subset: false, features }),
+    doc.embedFont(files.semibold, { subset: false, features }),
+    doc.embedFont(files.display, { subset: true, features }),
+    doc.embedFont(files.mono, { subset: true, features }),
   ]);
   return { fonts: { regular, medium, semibold, display, mono }, wordmark: files.wordmark };
 }

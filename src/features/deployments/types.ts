@@ -97,7 +97,7 @@ export interface Deployment {
   locYears: number | null;
   creditGuarantee: boolean;
   leaseGuarantee: boolean;
-  /** Internal: in the portal and the team's PDF, never behind the public link. */
+  /** Internal: only in the portal, never in a PDF or behind the public link. */
   notes: string | null;
   /** Shown wherever the deployment is, its public link included. */
   externalNotes: string | null;

@@ -1218,6 +1218,22 @@ alter table teasers add constraint teasers_deployment_id_fkey
 drop index if exists teasers_deployment_idx;
 create index if not exists teasers_deployment_id_idx on teasers (deployment_id);
 
+-- A deployment's presentation: landscape slides for a prospective offtaker
+-- diligencing the site (src/features/presentations), one per deployment and
+-- deleted with it. Drafted from the deployment and edited as text after, like
+-- a teaser; `content` is its PresentationContent. Its PDF opens for anyone who
+-- can open the deployment, its public link included, so it never holds
+-- internal notes, credit or the data room.
+create table if not exists deployment_presentations (
+  id uuid primary key default gen_random_uuid(),
+  deployment_id uuid not null unique references deployments (id) on delete cascade,
+  content jsonb not null,
+  created_by bigint references users (id),
+  updated_by bigint references users (id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 -- First-party analytics for the site and portal, reported in the portal's
 -- Analytics app (src/features/analytics). One row per pageview or event.
 -- `visitor_id` and `session_id` come from the zode_vid and zode_sid cookies;

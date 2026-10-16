@@ -563,8 +563,8 @@ export function DeploymentForm({
             </div>
           </>,
           <p className={styles.summary}>
-            External notes show wherever the deployment does, its public link included. Internal notes stay in the
-            portal and the team&apos;s PDF.
+            External notes show wherever the deployment does, its PDF and public link included. Internal notes stay in
+            the portal.
           </p>,
         )}
 
