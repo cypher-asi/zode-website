@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-/** Active GPU deployments, for every signed-in account. */
+/** Every GPU deployment, whatever its status, for every signed-in account. */
 export default function DeploymentsPage(): ReactElement {
-  return <DeploymentsIndex scope="active" />;
+  return <DeploymentsIndex scope="all" />;
 }

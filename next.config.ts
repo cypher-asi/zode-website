@@ -112,6 +112,8 @@ const nextConfig: NextConfig = {
       // dev performance track ("cannot have a negative time stamp").
       { source: "/portal/zrm", destination: "/portal/zrm/people", permanent: false },
       { source: "/portal/capacity", destination: "/portal/capacity/sites", permanent: false },
+      // All deployments moved to the app's root, ahead of the status tabs.
+      { source: "/portal/deployments/all", destination: "/portal/deployments", permanent: true },
     ];
   },
   async rewrites() {

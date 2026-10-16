@@ -251,7 +251,7 @@ export async function deleteDeploymentAction(id: string): Promise<DeploymentForm
   await deleteDeployment(id);
   await deleteBlobsUnder(quoteBlobPrefix(id));
   updateTag(DEPLOYMENTS_TAG);
-  redirect("/portal/deployments/all");
+  redirect("/portal/deployments");
 }
 
 export type ShareResult = { access: DeploymentAccess; token: string | null } | { error: string };

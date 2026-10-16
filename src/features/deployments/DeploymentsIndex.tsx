@@ -15,17 +15,17 @@ import { loadDeployments, loadViewer } from "./view";
 export type DeploymentScope = DeploymentStatus | "all";
 
 const HREFS: Record<DeploymentScope, string> = {
-  active: "/portal/deployments",
+  all: "/portal/deployments",
+  active: "/portal/deployments/active",
   planned: "/portal/deployments/planned",
   completed: "/portal/deployments/completed",
-  all: "/portal/deployments/all",
 };
 
 const TABS: readonly HeaderTab[] = [
+  { href: HREFS.all, label: "All", title: "Deployments", subtitle: "Every GPU deployment, planned to completed." },
   { href: HREFS.active, label: "Active", title: "Deployments", subtitle: "GPU deployments live and rolling out." },
   { href: HREFS.planned, label: "Planned", title: "Deployments", subtitle: "GPU deployments not yet under way." },
   { href: HREFS.completed, label: "Completed", title: "Deployments", subtitle: "GPU deployments fully delivered." },
-  { href: HREFS.all, label: "All", title: "Deployments", subtitle: "Every GPU deployment, planned to completed." },
 ];
 
 const EMPTY: Record<DeploymentScope, string> = {
@@ -84,7 +84,7 @@ async function Deployments({ scope }: { scope: DeploymentScope }): Promise<React
       {scope !== "all" && deployments.length ? (
         <>
           {" "}
-          <Link href="/portal/deployments/all">See all deployments</Link>.
+          <Link href={HREFS.all}>See all deployments</Link>.
         </>
       ) : null}
     </Empty>
