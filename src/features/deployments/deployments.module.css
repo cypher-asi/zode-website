@@ -514,3 +514,12 @@
     grid-template-columns: 130px minmax(360px, 1fr);
   }
 }
+
+/* A deployment page's tab: its blocks sit in the page's own column. */
+.tabPanel {
+  display: contents;
+}
+
+.tabPanel[hidden] {
+  display: none;
+}

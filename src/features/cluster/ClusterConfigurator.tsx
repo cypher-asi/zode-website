@@ -227,7 +227,7 @@ export function ClusterConfigurator({
             {copied ? "Link copied" : "Copy link"}
           </button>
           <Link
-            href={bom ? `/portal/deployments/${bom.deploymentId}/bom` : "/"}
+            href={bom ? `/portal/deployments/${bom.deploymentId}?tab=bom` : "/"}
             className={styles.close}
             aria-label={bom ? "Close and return to the deployment's BOM" : "Close and return home"}
           >
