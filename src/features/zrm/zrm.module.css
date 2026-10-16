@@ -139,12 +139,8 @@
   background: var(--color-surface-hover);
 }
 
-/* A group's heading in a sectioned list, with its subtotal on the right. */
+/* A group's heading in a sectioned list. */
 .sectionRow {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
   padding: 14px 8px 6px;
   color: var(--color-text-secondary);
   font-size: var(--text-2xs);
@@ -157,10 +153,43 @@
   padding-top: 6px;
 }
 
-.sectionRow span:last-child:not(:first-child) {
+/* A group's total, under its last row, its figures in their columns and the rest under the names. */
+.row.totalRow {
+  min-height: 40px;
+  margin-top: 4px;
+  border-top: 1px solid var(--color-border);
+  border-radius: 0 0 8px 8px;
+  font-weight: 600;
+  content-visibility: visible;
+}
+
+.row.totalRow:hover {
+  background: none;
+}
+
+.totalRow .cell {
+  color: var(--color-text-primary);
+}
+
+/* Inset past the avatar (32px and its 10px gap), so it lines up with the names above. */
+.totalCell {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-left: 42px;
+}
+
+.totalLabel {
+  font-size: var(--text-2xs);
+  letter-spacing: var(--caps-tracking);
+  text-transform: uppercase;
+}
+
+.totalSub {
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
-  letter-spacing: normal;
-  text-transform: none;
 }
 
 .row:focus-visible {

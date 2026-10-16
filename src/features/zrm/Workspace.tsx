@@ -78,8 +78,8 @@ const Row = memo(function Row<T extends ListRow>({ kind, row, config, style, sel
 
 /**
  * The middle pane: search, the config's filters and sortable columns over the
- * records, pinned ones first, under section headings while unsorted when the
- * config has them.
+ * records, pinned ones first, under section headings and over section totals
+ * while unsorted when the config has them.
  */
 function RecordList<T extends ListRow>({
   kind,
@@ -112,6 +112,7 @@ function RecordList<T extends ListRow>({
   );
 
   const sections = sort ? undefined : config.sections;
+  const totaled = sections !== undefined && config.columns.some((column) => column.total);
 
   const shown = useMemo(() => {
     const needle = deferredQuery.trim().toLowerCase();
@@ -237,12 +238,7 @@ function RecordList<T extends ListRow>({
         ) : (
           runs.map((run) => (
             <Fragment key={run.key}>
-              {run.label !== null ? (
-                <div className={styles.sectionRow}>
-                  <span>{run.label}</span>
-                  {sections?.summary ? <span>{sections.summary(run.rows)}</span> : null}
-                </div>
-              ) : null}
+              {run.label !== null ? <div className={styles.sectionRow}>{run.label}</div> : null}
               {run.rows.map((row) => (
                 <Row
                   key={row.id}
@@ -255,6 +251,21 @@ function RecordList<T extends ListRow>({
                   prefetch={prefetch}
                 />
               ))}
+              {totaled ? (
+                <div className={`${styles.row} ${styles.totalRow}`} style={columnsStyle}>
+                  {config.columns.map((column) => (
+                    <span
+                      key={column.key}
+                      className={column.key === config.columns[0]!.key ? styles.lead : styles.cell}
+                      data-align={column.align}
+                      data-numeric={column.align === "end" ? "" : undefined}
+                      data-wide-only={column.wideOnly ? "" : undefined}
+                    >
+                      {column.total?.(run.rows)}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
             </Fragment>
           ))
         )}

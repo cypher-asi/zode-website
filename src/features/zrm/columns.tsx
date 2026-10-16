@@ -27,6 +27,8 @@ export interface Column<T> {
   /** Dropped on phones. */
   wideOnly?: boolean;
   render: (row: T) => ReactNode;
+  /** The column's cell in the total row under each section. */
+  total?: (rows: readonly T[]) => ReactNode;
 }
 
 /** A select in the toolbar narrowing the list, e.g. to one type. Lists only the options some row has. */
@@ -41,10 +43,12 @@ export interface ListFilter<T> {
   sidebar?: boolean;
 }
 
-/** Headed groups of rows, in `order`, shown while the list isn't sorted by a column. */
+/**
+ * Headed groups of rows, in `order`, shown while the list isn't sorted by a
+ * column. Each ends in a total row when some column has a `total`.
+ */
 export interface ListSections<T> {
   of: (row: T) => { key: string; label: string; order: number };
-  summary?: (rows: readonly T[]) => string;
 }
 
 export interface ListConfig<T> {
@@ -192,9 +196,31 @@ export function opportunitiesConfig(types: Types): ListConfig<OpportunityRow> {
 const sum = (rows: readonly SiteRow[], value: (row: SiteRow) => number | null): number =>
   rows.reduce((total, row) => total + (value(row) ?? 0), 0);
 
-/** Initial, secondary and total IT, as the sheet subtotals each group. */
-const capacitySummary = (rows: readonly SiteRow[]): string =>
-  `${formatMw(sum(rows, (s) => s.initial_it_mw))} + ${formatMw(sum(rows, (s) => s.secondary_it_mw))} = ${formatMw(sum(rows, (s) => s.total_it_mw))}`;
+/** The dollar figures the sheet totals, leaving out those no site has. */
+const moneyTotals = (rows: readonly SiteRow[]): string[] =>
+  (
+    [
+      ["upfront", sum(rows, (s) => s.upfront)],
+      ["conversion", sum(rows, (s) => s.conversion)],
+      ["contract", sum(rows, (s) => s.contract_value)],
+      ["a year", sum(rows, (s) => s.annual_revenue)],
+    ] as const
+  )
+    .filter(([, total]) => total > 0)
+    .map(([label, total]) => `${formatMoney(total)} ${label}`);
+
+/** A section's total under its sites' names: initial and secondary IT, then its dollar figures. */
+const siteTotal = (rows: readonly SiteRow[]): ReactNode => (
+  <span className={styles.totalCell}>
+    <span className={styles.totalLabel}>Total</span>
+    <span className={styles.totalSub}>
+      {[
+        `${formatMw(sum(rows, (s) => s.initial_it_mw))} initial + ${formatMw(sum(rows, (s) => s.secondary_it_mw))} secondary`,
+        ...moneyTotals(rows),
+      ].join(" · ")}
+    </span>
+  </span>
+);
 
 export function sitesConfig(groups: readonly SiteGroup[], statuses: readonly SiteStatus[]): ListConfig<SiteRow> {
   const groupOf = new Map(groups.map((group) => [group.id, group]));
@@ -203,17 +229,7 @@ export function sitesConfig(groups: readonly SiteGroup[], statuses: readonly Sit
     noun: ["site", "sites"],
     searchText: (s) =>
       lower(s.name, s.address, s.provider_name, s.customer_name, s.deal_type, groupOf.get(s.group_id ?? "")?.name, statusOf.get(s.status_id)?.name),
-    summary: (rows) => {
-      const money = [
-        ["upfront", sum(rows, (s) => s.upfront)],
-        ["contract", sum(rows, (s) => s.contract_value)],
-        ["a year", sum(rows, (s) => s.annual_revenue)],
-      ] as const;
-      return [
-        formatMw(sum(rows, (s) => s.total_it_mw)),
-        ...money.filter(([, total]) => total > 0).map(([label, total]) => `${formatMoney(total)} ${label}`),
-      ].join(" · ");
-    },
+    summary: (rows) => [formatMw(sum(rows, (s) => s.total_it_mw)), ...moneyTotals(rows)].join(" · "),
     filters: [
       {
         key: "status",
@@ -242,7 +258,6 @@ export function sitesConfig(groups: readonly SiteGroup[], statuses: readonly Sit
         const group = groupOf.get(s.group_id ?? "");
         return group ? { key: group.id, label: group.name, order: group.position } : { key: "", label: "No group", order: Infinity };
       },
-      summary: capacitySummary,
     },
     columns: [
       {
@@ -251,6 +266,7 @@ export function sitesConfig(groups: readonly SiteGroup[], statuses: readonly Sit
         width: "minmax(0, 2fr)",
         sortValue: (s) => s.name.toLowerCase(),
         render: (s) => <Primary name={s.name} sub={s.address} shape="square" active={s.active} />,
+        total: siteTotal,
       },
       {
         key: "provider",
@@ -277,6 +293,7 @@ export function sitesConfig(groups: readonly SiteGroup[], statuses: readonly Sit
         align: "end",
         sortValue: (s) => s.total_it_mw,
         render: (s) => formatMw(s.total_it_mw),
+        total: (rows) => formatMw(sum(rows, (s) => s.total_it_mw)),
       },
       {
         key: "rfs",
