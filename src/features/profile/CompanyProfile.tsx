@@ -18,7 +18,7 @@ import {
   TRACTION,
   VENTURE_LINES,
 } from "./profile";
-import { PodDrawing } from "./ProfileClient";
+import { PodDrawing, ShareButton } from "./ProfileClient";
 import styles from "./CompanyProfile.module.css";
 
 const absolute = (href: string) => new URL(href, SITE_URL).href;
@@ -105,7 +105,8 @@ function Stat({ value, label, large }: { value: string; label: string; large?: b
 /**
  * ZODE's company profile on one US Letter sheet: what it does and its
  * principles, the capacity pipeline, customers, leadership, resources and
- * contact. On screen the sheet sits on paper with a link to its PDF;
+ * contact. On screen the sheet sits on paper with buttons to share its link
+ * and download its PDF;
  * printed, the sheet is the page.
  */
 export function CompanyProfile(): ReactElement {
@@ -113,7 +114,8 @@ export function CompanyProfile(): ReactElement {
   return (
     <main className={styles.page}>
       <div className={styles.toolbar}>
-        <a className={styles.export} href={PDF.href} download={PDF.filename}>
+        <ShareButton className={styles.action} srOnly={styles.srOnly} />
+        <a className={styles.action} href={PDF.href} download={PDF.filename}>
           Export PDF
         </a>
       </div>

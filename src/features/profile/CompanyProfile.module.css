@@ -20,41 +20,59 @@
 
 .toolbar {
   display: flex;
+  gap: 8px;
   justify-content: flex-end;
   width: 8.5in;
   max-width: 100%;
 }
 
-/* Styled like the pinned header's split button above it. */
-.export {
+/* Styled like the pinned header's split button above them. */
+.action {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   height: 32px;
   padding: 0 14px;
   border: 1px solid var(--color-black);
   border-radius: var(--radius-control);
   background: linear-gradient(var(--color-black), var(--color-black)) no-repeat bottom / 100% 0%;
   color: var(--color-black);
+  font: inherit;
   font-size: var(--caps-size);
   font-weight: 500;
   letter-spacing: var(--caps-tracking);
   text-decoration: none;
   text-transform: uppercase;
   white-space: nowrap;
+  cursor: pointer;
   transition:
     background-size var(--duration-slow) var(--ease-in-out),
     color 200ms ease 80ms;
 }
 
-.export:hover,
-.export:focus-visible {
+/* Wide enough for "Copied", so the button holds its size when the label swaps. */
+button.action {
+  min-width: 8.5em;
+}
+
+.action:hover,
+.action:focus-visible {
   background-size: 100% 100%;
   color: var(--color-white);
 }
 
-.export:focus-visible {
+.action:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .sheet {
