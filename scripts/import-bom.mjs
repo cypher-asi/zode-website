@@ -1,18 +1,21 @@
 /**
- * Copies the Pegatron and Computacenter quotes for a 64-node B300 cluster
- * into a deployment phase's BOM in DATABASE_URL, line by line under each
- * quote's own sections, with every line's cluster-builder slots
- * (src/features/cluster/model/slots.ts). Lines the cluster doesn't need stay
- * in, excluded with the reason. Gives the phase its builder config when it
- * has none, then prints how the BOM covers its slots.
+ * Copies the Pegatron and Computacenter B300 quotes into a deployment
+ * phase's BOM in DATABASE_URL, line by line under each quote's own sections,
+ * with every line's cluster-builder slots (src/features/cluster/model/slots.ts).
+ * Lines the cluster doesn't need stay in, excluded with the reason. Gives the
+ * phase its builder config when it has none, then prints how the BOM covers
+ * its slots.
  *
  *   npm run bom:import                                                    (dev)
  *   node --env-file=.env.production.local scripts/import-bom.mjs          (production)
  *
- * Takes the "CORE - 64 MW" deployment's first 64-node phase unless
- * `--deployment=<id>` and `--phase=<id>` name one. Each quote is linked to
- * the file of the same name in the deployment's data room, when it has one.
- * Re-runnable: a quote is matched on `seed_key` and skipped once imported.
+ * Takes the "Chicago · 801 S Canal" deployment's first B300 phase unless
+ * `--deployment=<id>` and `--phase=<id>` name one. Pegatron's lines scale to
+ * the phase's nodes at the quoted unit prices; Computacenter's 64-node
+ * network is taken as quoted, so a larger phase shows what it still needs.
+ * Each quote is linked to the file of the same name in the deployment's data
+ * room, when it has one. Re-runnable: a quote is matched on `seed_key` and
+ * skipped once imported. `--dry-run` writes nothing.
  */
 import { randomUUID } from "node:crypto";
 import { registerHooks } from "node:module";
@@ -40,11 +43,18 @@ if (!url) {
 }
 
 const arg = (name) => process.argv.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3) ?? null;
+/** `--dry-run` checks the quotes and prints the coverage they'd give, writing nothing. */
+const DRY_RUN = process.argv.includes("--dry-run");
 
-/** The cluster the quotes price: 64 B300 nodes in 8 liquid-cooled racks, on a non-blocking InfiniBand fabric. */
+const { NODE_SIZES } = await import("../src/features/cluster/model/catalog.ts");
+
+/**
+ * The phase's cluster as the quotes price it: B300 nodes 8 to a
+ * liquid-cooled 48U rack on a non-blocking InfiniBand fabric, with about
+ * 4 TB of shared storage a node (Computacenter's 1 PB VAST for 256).
+ */
 const CLUSTER = {
   platform: "b300",
-  nodes: 64,
   density: 8,
   fabric: "infiniband",
   oversubscription: 1,
@@ -87,7 +97,7 @@ const PEGATRON = {
   quoted_total_usd: 71_078_418.56,
   file: PEGATRON_FILE,
   notes:
-    "Budgetary quotation for 128 AS402-2A1-8H2 B300 systems, 16 racks and 16 in-rack CDUs; this phase takes its own node count at the quoted unit prices. Quote expires 7 days from issue. Delivery to the USA.",
+    "Budgetary quotation for 128 AS402-2A1-8H2 B300 systems, 16 racks and 16 in-rack CDUs; the phase takes its own node count, and a rack and CDU for every 8 nodes, at the quoted unit prices. Quote expires 7 days from issue. Delivery to the USA.",
   sections: [
     {
       title: "AI Server (L6 or L7 Barebone)",
@@ -138,7 +148,7 @@ const PEGATRON = {
   ],
 };
 
-/** Computacenter quotes the 64-node cluster's network, management, storage and services as the phase takes them. */
+/** Computacenter quotes a 64-node cluster's network, management, storage and services; the phase takes them as quoted. */
 const COMPUTACENTER = {
   seed_key: "computacenter-64-node-v1.2",
   vendor: "Computacenter",
@@ -148,7 +158,7 @@ const COMPUTACENTER = {
   quoted_total_usd: 11_870_660.51,
   file: COMPUTACENTER_FILE,
   notes:
-    "64 Node Full Network: InfiniBand fabric, Ethernet, management, VAST storage (1PB), firewalls, spares, professional services and freight. Integrated at Computacenter's integration center and trucked to the colo.",
+    "64 Node Full Network: InfiniBand fabric, Ethernet, management, VAST storage (1PB), firewalls, spares, professional services and freight. Integrated at Computacenter's integration center and trucked to the colo. Sized for 64 nodes and taken as quoted, so a larger phase's coverage shows what it still needs.",
   sections: [
     {
       title: "Network, Management Nodes, Storage Racks & PDUs, OOB",
@@ -316,9 +326,9 @@ const sql = neon(url);
 const deploymentId = arg("deployment");
 const [deployment] = deploymentId
   ? await sql`select id, name, data_room_id from deployments where id = ${deploymentId}`
-  : await sql`select id, name, data_room_id from deployments where name = 'CORE - 64 MW' order by created_at limit 1`;
+  : await sql`select id, name, data_room_id from deployments where name = 'Chicago · 801 S Canal' order by created_at limit 1`;
 if (!deployment) {
-  console.error(`[bom:import] No deployment ${deploymentId ?? '"CORE - 64 MW"'}; pass --deployment=<id>.`);
+  console.error(`[bom:import] No deployment ${deploymentId ?? '"Chicago · 801 S Canal"'}; pass --deployment=<id>.`);
   process.exit(1);
 }
 
@@ -326,15 +336,15 @@ const phaseId = arg("phase");
 const phases = await sql`
   select id, name, platform, nodes, cluster_config from deployment_phases
   where deployment_id = ${deployment.id} order by position, rfs_on`;
-const phase = phaseId
-  ? phases.find((p) => p.id === phaseId)
-  : phases.find((p) => p.nodes === CLUSTER.nodes && p.platform === CLUSTER.platform);
+const phase = phaseId ? phases.find((p) => p.id === phaseId) : phases.find((p) => p.platform === CLUSTER.platform);
 if (!phase) {
-  console.error(`[bom:import] ${deployment.name} has no ${phaseId ? `phase ${phaseId}` : `${CLUSTER.nodes}-node B300 phase`}; pass --phase=<id>.`);
+  console.error(`[bom:import] ${deployment.name} has no ${phaseId ? `phase ${phaseId}` : "B300 phase"}; pass --phase=<id>.`);
   process.exit(1);
 }
-if (phase.nodes !== CLUSTER.nodes || phase.platform !== CLUSTER.platform) {
-  console.error(`[bom:import] The phase is ${phase.nodes} ${phase.platform} nodes; the quotes are for ${CLUSTER.nodes} B300.`);
+if (phase.platform !== CLUSTER.platform || !NODE_SIZES.includes(phase.nodes)) {
+  console.error(
+    `[bom:import] The phase is ${phase.nodes} ${phase.platform} nodes; the quotes are for B300, in a cluster of ${NODE_SIZES.join(", ")} nodes.`,
+  );
   process.exit(1);
 }
 const phaseName = phase.name ?? `Phase ${phases.indexOf(phase) + 1}`;
@@ -369,6 +379,8 @@ const files = deployment.data_room_id
 let quotePosition = firstQuotePosition;
 let itemPosition = firstItemPosition;
 let failed = false;
+/** With `--dry-run`, the lines that would be written, for the coverage below. */
+const planned = [];
 
 for (const quote of [PEGATRON, COMPUTACENTER]) {
   if (seeded.has(quote.seed_key)) {
@@ -404,6 +416,26 @@ for (const quote of [PEGATRON, COMPUTACENTER]) {
     Object.entries(r.fills).map(([slot_id, units_per_item]) => ({ item_id: r.id, slot_id, units_per_item })),
   );
 
+  const excluded = rows.filter((r) => r.status === "excluded").length;
+  console.log(
+    `[bom:import] ${quote.vendor} ${quote.reference}: ${rows.length} lines (${excluded} excluded), ${money(quotedUsd)} as quoted, ` +
+      `${money(sumUsd(items.filter((i) => !i.excluded), (i) => i.quantity))} in ${phaseName}. ` +
+      (file ? `Linked to ${file.name}.` : deployment.data_room_id ? `No "${quote.file}" in the data room.` : "No data room to link.") +
+      (DRY_RUN ? " Not written (dry run)." : ""),
+  );
+  if (DRY_RUN) {
+    planned.push(
+      ...rows.map((r) => ({
+        id: r.id,
+        quantity: r.quantity,
+        unitUsd: r.unit_usd,
+        status: r.status,
+        fills: Object.entries(r.fills).map(([slotId, unitsPerItem]) => ({ slotId, unitsPerItem })),
+      })),
+    );
+    continue;
+  }
+
   await sql.transaction([
     sql`
       insert into deployment_quotes
@@ -425,18 +457,12 @@ for (const quote of [PEGATRON, COMPUTACENTER]) {
       select f.item_id, f.slot_id, f.units_per_item
       from jsonb_to_recordset(${JSON.stringify(fills)}::jsonb) as f(item_id uuid, slot_id text, units_per_item numeric)`,
   ]);
-
-  const excluded = rows.filter((r) => r.status === "excluded").length;
-  console.log(
-    `[bom:import] ${quote.vendor} ${quote.reference}: ${rows.length} lines (${excluded} excluded), ${money(quotedUsd)} as quoted, ` +
-      `${money(sumUsd(items.filter((i) => !i.excluded), (i) => i.quantity))} in ${phaseName}. ` +
-      (file ? `Linked to ${file.name}.` : deployment.data_room_id ? `No "${quote.file}" in the data room.` : "No data room to link."),
-  );
 }
 
-if (!phase.cluster_config) {
-  await sql`update deployment_phases set cluster_config = ${JSON.stringify(CLUSTER)}::jsonb, cluster_copies = 1 where id = ${phase.id}`;
-  console.log(`[bom:import] ${phaseName} set to the builder's ${CLUSTER.nodes}-node ${CLUSTER.platform.toUpperCase()} cluster.`);
+const cluster = { ...CLUSTER, nodes: phase.nodes };
+if (!phase.cluster_config && !DRY_RUN) {
+  await sql`update deployment_phases set cluster_config = ${JSON.stringify(cluster)}::jsonb, cluster_copies = 1 where id = ${phase.id}`;
+  console.log(`[bom:import] ${phaseName} set to the builder's ${phase.nodes}-node B300 cluster.`);
 }
 
 // How the phase's BOM, whatever's in it now, covers the slots of its cluster.
@@ -444,9 +470,9 @@ const { buildCluster } = await import("../src/features/cluster/model/build.ts");
 const { configFromJson } = await import("../src/features/cluster/model/url.ts");
 const { phaseCoverage } = await import("../src/features/deployments/bom/coverage.ts");
 const [saved] = await sql`select cluster_config, cluster_copies from deployment_phases where id = ${phase.id}`;
-const config = configFromJson(saved.cluster_config);
+const config = configFromJson(saved.cluster_config ?? (DRY_RUN ? cluster : null));
 if (config) {
-  const items = (
+  const stored = (
     await sql`
       select i.id, i.quantity::float8 as quantity, i.unit_usd::float8 as unit_usd, i.status,
              coalesce(json_agg(json_build_object('slotId', f.slot_id, 'unitsPerItem', f.units_per_item::float8))
@@ -455,6 +481,7 @@ if (config) {
       where i.phase_id = ${phase.id}
       group by i.id`
   ).map((r) => ({ id: r.id, quantity: r.quantity, unitUsd: r.unit_usd, status: r.status, fills: r.fills }));
+  const items = [...stored, ...planned];
   const coverage = phaseCoverage(buildCluster(config), saved.cluster_copies, items);
   console.log(`[bom:import] ${deployment.name} ${phaseName}: ${money(coverage.totalUsd)} in use across ${items.length} lines.`);
   for (const row of coverage.slots) {
