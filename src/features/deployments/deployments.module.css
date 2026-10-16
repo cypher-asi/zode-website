@@ -84,16 +84,19 @@
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
-  gap: 1px;
-  background: var(--color-border);
+  background: var(--color-bg);
 }
 
+/* Each fact draws the lines on its right and below, which the box clips at
+   its edges, so the cells after a short last row stay blank, not filled in. */
 .fact {
   display: flex;
   flex-direction: column;
   gap: 4px;
   padding: 14px 18px;
-  background: var(--color-bg);
+  box-shadow:
+    1px 0 0 var(--color-border),
+    0 1px 0 var(--color-border);
 }
 
 .fact[data-wide] {

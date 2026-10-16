@@ -5,6 +5,7 @@ import {
   configField,
   valueLabel,
   type ConfigField,
+  type ConfigGroup,
   type ConfigKey,
   type ConfigOverrides,
   type ResolvedConfig,
@@ -38,10 +39,10 @@ export function resolveConfig(
 /** The fields that apply to configuration `c`, in catalog order. */
 export const fieldsFor = (c: ResolvedConfig): ConfigField[] => CONFIG_FIELDS.filter((f) => !f.applies || f.applies(c));
 
-/** Each override that applies to the phase's configuration `c`, as "Label: value". */
-export function overrideLabels(overrides: ConfigOverrides, c: ResolvedConfig): string[] {
+/** Each override that applies to the phase's configuration `c`, as "Label: value", only those of `groups` if given. */
+export function overrideLabels(overrides: ConfigOverrides, c: ResolvedConfig, groups?: readonly ConfigGroup[]): string[] {
   const applied = new Set(fieldsFor(c).map((f) => f.key));
   return (Object.keys(overrides) as ConfigKey[])
-    .filter((key) => applied.has(key))
+    .filter((key) => applied.has(key) && (!groups || groups.includes(configField(key).group)))
     .map((key) => `${configField(key).label}: ${valueLabel(key, overrides[key])}`);
 }

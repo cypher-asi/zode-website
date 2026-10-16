@@ -12,7 +12,7 @@ import {
   formatUsd,
 } from "./format";
 import { phaseLabel } from "./bom/phase";
-import { valueLabel } from "./config/catalog";
+import { valueLabel, type ConfigField, type ConfigGroup, type ResolvedConfig } from "./config/catalog";
 import { fieldsFor, overrideLabels, resolveConfig } from "./config/resolve";
 import { RolloutGantt } from "./RolloutGantt";
 import {
@@ -46,15 +46,62 @@ function Fact({ label, children, wide }: { label: string; children: ReactNode; w
   );
 }
 
-/** Everything about one deployment: headline figures, the build, its rollout, the commercial terms and credit. */
+/** The configuration's sections after Platform, which takes the compute group. */
+const SECTIONS: readonly { title: string; groups: readonly ConfigGroup[] }[] = [
+  { title: "Networking", groups: ["fabric", "optics", "network"] },
+  { title: "Storage", groups: ["storage"] },
+  { title: "Racks, power and cooling", groups: ["rack"] },
+  { title: "Management and software", groups: ["management"] },
+  { title: "Services and support", groups: ["services"] },
+];
+
+/** The configuration's facts of `groups`, then each phase's overrides of them. */
+function ConfigFacts({
+  deployment: d,
+  config,
+  groups,
+}: {
+  deployment: Deployment;
+  config: ResolvedConfig;
+  groups: readonly ConfigGroup[];
+}): ReactElement {
+  const fields = fieldsFor(config).filter((f) => groups.includes(f.group) && f.key !== "nvmeDriveTb");
+  return (
+    <>
+      {fields.map((f) => (
+        <Fact key={f.key} label={f.key === "nvmeDrives" ? "Local NVMe" : f.label}>
+          {configValue(d, config, f)}
+        </Fact>
+      ))}
+      {d.phases.map((phase, i) => {
+        const labels = overrideLabels(phase.configOverrides, resolveConfig(d, phase), groups);
+        return labels.length ? (
+          <Fact key={phase.id} label={`${phaseLabel(phase, i)} overrides`} wide>
+            {labels.join(" · ")}
+          </Fact>
+        ) : null;
+      })}
+    </>
+  );
+}
+
+function configValue(d: Deployment, config: ResolvedConfig, f: ConfigField): ReactNode {
+  if (f.key === "nvmeDrives") return `${config.nvmeDrives} x ${valueLabel("nvmeDriveTb", config.nvmeDriveTb)} per node`;
+  if (f.key !== "storageTbPerNode") return valueLabel(f.key, config[f.key]);
+  if (!d.storageTbPerNode) return "None";
+  return (
+    <>
+      {formatTb(d.storageTbPerNode)} per node · {formatTb(totalsOf(d).storageTb)} total
+    </>
+  );
+}
+
+/** Everything about one deployment: headline figures, the site, how it's built, its rollout, the commercial terms and credit. */
 export function DeploymentDetail({ deployment: d, today }: { deployment: Deployment; today: string }): ReactElement {
   const totals = totalsOf(d);
   const next = d.phases.find((phase) => phase.rfsOn >= today);
   const rackHref = rackDesignHref(d);
   const config = resolveConfig(d);
-  const overridden = d.phases
-    .map((phase, i) => ({ phase, i, labels: overrideLabels(phase.configOverrides, resolveConfig(d, phase)) }))
-    .filter(({ labels }) => labels.length);
 
   return (
     <div className={styles.detail}>
@@ -77,7 +124,22 @@ export function DeploymentDetail({ deployment: d, today }: { deployment: Deploym
         </div>
       </div>
 
-      <Facts title="Deployment">
+      <Facts title="Site">
+        <Fact label="Facility">{facilityLabel(d.facility)}</Fact>
+        <Fact label="City">{d.city}</Fact>
+        <Fact label="Data room">
+          {d.dataRoomId ? (
+            <Link className={styles.link} href={`/portal/data-rooms/${d.dataRoomId}`} prefetch={false}>
+              {d.dataRoomName}
+            </Link>
+          ) : null}
+        </Fact>
+        <Fact label="Data center address" wide>
+          {d.address ? <span className={styles.preline}>{d.address}</span> : null}
+        </Fact>
+      </Facts>
+
+      <Facts title="Platform">
         <Fact label="Platform">{platformSummary(totals.byPlatform)}</Fact>
         <Fact label="Nodes">{formatCount(d.nodes)}</Fact>
         <Fact label="Total GPUs">
@@ -95,42 +157,14 @@ export function DeploymentDetail({ deployment: d, today }: { deployment: Deploym
             "Not in the cluster builder yet"
           )}
         </Fact>
-        <Fact label="Facility">{facilityLabel(d.facility)}</Fact>
-        <Fact label="City">{d.city}</Fact>
-        <Fact label="Data room">
-          {d.dataRoomId ? (
-            <Link className={styles.link} href={`/portal/data-rooms/${d.dataRoomId}`} prefetch={false}>
-              {d.dataRoomName}
-            </Link>
-          ) : null}
-        </Fact>
-        <Fact label="Data center address" wide>
-          {d.address ? <span className={styles.preline}>{d.address}</span> : null}
-        </Fact>
+        <ConfigFacts deployment={d} config={config} groups={["compute"]} />
       </Facts>
 
-      <Facts title="Configuration">
-        {fieldsFor(config).map((f) => (
-          <Fact key={f.key} label={f.label}>
-            {f.key === "storageTbPerNode" ? (
-              d.storageTbPerNode ? (
-                <>
-                  {formatTb(d.storageTbPerNode)} per node · {formatTb(totals.storageTb)} total
-                </>
-              ) : (
-                "None"
-              )
-            ) : (
-              valueLabel(f.key, config[f.key])
-            )}
-          </Fact>
-        ))}
-        {overridden.map(({ phase, i, labels }) => (
-          <Fact key={phase.id} label={`${phaseLabel(phase, i)} overrides`} wide>
-            {labels.join(" · ")}
-          </Fact>
-        ))}
-      </Facts>
+      {SECTIONS.map((section) => (
+        <Facts key={section.title} title={section.title}>
+          <ConfigFacts deployment={d} config={config} groups={section.groups} />
+        </Facts>
+      ))}
 
       <section className={styles.block} aria-label="Rollout">
         <h2 className={styles.blockTitle}>Rollout</h2>
