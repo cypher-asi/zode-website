@@ -403,7 +403,7 @@ export function BomOverview({
     <section className={d.block} aria-label="Bill of materials">
       <div className={styles.head}>
         <h2 className={d.blockTitle}>Bill of materials</h2>
-        <Link className={ui.button} href={`/portal/deployments/${deployment.id}/bom`}>
+        <Link className={ui.button} href={`/portal/deployments/${deployment.id}/bom/edit`}>
           Edit BOM
         </Link>
       </div>

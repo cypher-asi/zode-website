@@ -83,8 +83,8 @@ export function BomPanel({
         <h2 className={styles.title}>
           {bom.deploymentName} · {bom.phaseLabel}
         </h2>
-        <Link className={styles.link} href={`/portal/deployments/${bom.deploymentId}`} prefetch={false}>
-          Back to the deployment
+        <Link className={styles.link} href={`/portal/deployments/${bom.deploymentId}/bom`} prefetch={false}>
+          Back to the BOM
         </Link>
       </div>
 

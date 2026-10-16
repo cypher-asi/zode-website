@@ -227,9 +227,9 @@ export function ClusterConfigurator({
             {copied ? "Link copied" : "Copy link"}
           </button>
           <Link
-            href={bom ? `/portal/deployments/${bom.deploymentId}` : "/"}
+            href={bom ? `/portal/deployments/${bom.deploymentId}/bom` : "/"}
             className={styles.close}
-            aria-label={bom ? "Close and return to the deployment" : "Close and return home"}
+            aria-label={bom ? "Close and return to the deployment's BOM" : "Close and return home"}
           >
             <svg viewBox="0 0 12 12" aria-hidden="true">
               <path d="M2 2l8 8M10 2l-8 8" />

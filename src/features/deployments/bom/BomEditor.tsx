@@ -207,7 +207,7 @@ export function BomEditor({
         setError(result.error);
         return;
       }
-      router.push(`/portal/deployments/${deployment.id}`);
+      router.push(`/portal/deployments/${deployment.id}/bom`);
       router.refresh();
     });
   };
@@ -581,7 +581,7 @@ export function BomEditor({
             {error}
           </p>
         ) : null}
-        <Link href={`/portal/deployments/${deployment.id}`} className={ui.button}>
+        <Link href={`/portal/deployments/${deployment.id}/bom`} className={ui.button}>
           Cancel
         </Link>
         <button type="button" className={ui.primary} disabled={saving} onClick={save}>

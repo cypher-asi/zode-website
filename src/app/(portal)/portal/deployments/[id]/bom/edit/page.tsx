@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 /** Where the ZODE team edits a deployment's bill of materials. */
-export default function EditBomPage({ params }: PageProps<"/portal/deployments/[id]/bom">): ReactElement {
+export default function EditBomPage({ params }: PageProps<"/portal/deployments/[id]/bom/edit">): ReactElement {
   return (
     <Suspense fallback={<PortalLoading />}>
       <EditBom params={params} />
@@ -24,9 +24,9 @@ export default function EditBomPage({ params }: PageProps<"/portal/deployments/[
   );
 }
 
-async function EditBom({ params }: Pick<PageProps<"/portal/deployments/[id]/bom">, "params">): Promise<ReactElement> {
+async function EditBom({ params }: Pick<PageProps<"/portal/deployments/[id]/bom/edit">, "params">): Promise<ReactElement> {
   const { id } = await params;
-  await requireTeam(`/portal/deployments/${id}/bom`);
+  await requireTeam(`/portal/deployments/${id}/bom/edit`);
   const deployment = await getDeployment(id);
   if (!deployment) notFound();
   const [bom, files] = await Promise.all([
