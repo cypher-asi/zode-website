@@ -4,12 +4,23 @@ import { cacheLife, cacheTag } from "next/cache";
 import { isUuid } from "@/features/zrm/access";
 import { DB_TAG, db } from "@/lib/db";
 import { configFromJson } from "@/features/cluster/model/url";
-import type { Deployment, Phase, PhaseInput, RoomChoice } from "./types";
+import {
+  canOpen,
+  type Deployment,
+  type DeploymentAccess,
+  type DeploymentViewer,
+  type Phase,
+  type PhaseInput,
+  type RoomChoice,
+} from "./types";
 
 /** Every deployment read is cached under this tag, which saving and deleting update. */
 export const DEPLOYMENTS_TAG = "deployments";
 
-export type DeploymentInput = Omit<Deployment, "id" | "updatedAt" | "dataRoomName" | "shareToken" | "phases"> & {
+export type DeploymentInput = Omit<
+  Deployment,
+  "id" | "updatedAt" | "dataRoomName" | "shareToken" | "access" | "privateTo" | "phases"
+> & {
   phases: PhaseInput[];
 };
 
@@ -45,6 +56,8 @@ const toDeployment = (row: Record<string, unknown>): Deployment => ({
   dataRoomId: row.data_room_id == null ? null : String(row.data_room_id),
   dataRoomName: row.data_room_name == null ? null : String(row.data_room_name),
   shareToken: row.share_token == null ? null : String(row.share_token),
+  access: (row.access ?? "users") as DeploymentAccess,
+  privateTo: row.private_to == null ? null : String(row.private_to),
   phases: ((row.phases as Phase[]) ?? []).map((phase) => ({ ...phase, clusterConfig: configFromJson(phase.clusterConfig) })),
   updatedAt: new Date(row.updated_at as string | Date).toISOString(),
 });
@@ -59,7 +72,7 @@ export async function listDeployments(): Promise<Deployment[]> {
       d.address, d.city, d.place_id, d.facility, d.term_months, d.price_gpu_hr::float8 as price_gpu_hr,
       d.deposit_pct::float8 as deposit_pct, d.deposit_usd::float8 as deposit_usd, d.credit_rating, d.loc_required,
       d.loc_years::float8 as loc_years, d.credit_guarantee, d.lease_guarantee, d.notes, d.external_notes, d.updated_at,
-      d.data_room_id, dr.name as data_room_name, d.share_token,
+      d.data_room_id, dr.name as data_room_name, d.share_token, d.access, d.private_to,
       coalesce(
         (select json_agg(
             json_build_object(
@@ -87,28 +100,43 @@ const SHARE_TOKEN_RE = /^[A-Za-z0-9_-]{32}$/;
 /** A new secret for a deployment's public link. */
 export const newShareToken = (): string => randomBytes(24).toString("base64url");
 
-/** The deployment shared under `token`, from the cached list. */
+/** The public deployment shared under `token`, from the cached list. */
 export async function getSharedDeployment(token: string): Promise<Deployment | null> {
   if (!SHARE_TOKEN_RE.test(token)) return null;
-  return (await listDeployments()).find((deployment) => deployment.shareToken === token) ?? null;
+  return (
+    (await listDeployments()).find((deployment) => deployment.access === "public" && deployment.shareToken === token) ??
+    null
+  );
+}
+
+/** Deployment `id`, when `viewer` can open it. */
+export async function getDeploymentFor(id: string, viewer: DeploymentViewer): Promise<Deployment | null> {
+  const deployment = await getDeployment(id);
+  return deployment && canOpen(deployment, viewer) ? deployment : null;
 }
 
 /**
- * Shares deployment `id` under `token`, keeping the token it already has, or
- * stops sharing it with null. Returns its token, or undefined when it's gone.
+ * Sets who can open deployment `id`, `private` making it `userId`'s alone.
+ * Going public gives it `token` as its link unless it has one already. A
+ * deployment private to someone else isn't changed. Returns its access and
+ * token, or undefined when it's gone or not `userId`'s to change.
  */
-export async function setShareToken(id: string, token: string | null): Promise<string | null | undefined> {
+export async function setAccess(
+  id: string,
+  access: DeploymentAccess,
+  userId: string,
+  token: string,
+): Promise<{ access: DeploymentAccess; token: string | null } | undefined> {
   if (!isUuid(id)) return undefined;
-  const sql = db();
-  const rows =
-    token === null
-      ? await sql`update deployments set share_token = null where id = ${id} returning share_token`
-      : await sql`
-          update deployments set share_token = coalesce(share_token, ${token})
-          where id = ${id}
-          returning share_token
-        `;
-  return rows.length ? ((rows[0].share_token as string | null) ?? null) : undefined;
+  const [row] = await db()`
+    update deployments set
+      access = ${access},
+      private_to = ${access === "private" ? userId : null},
+      share_token = case when ${access} = 'public' then coalesce(share_token, ${token}) else share_token end
+    where id = ${id} and (access <> 'private' or private_to = ${userId})
+    returning access, share_token
+  `;
+  return row ? { access: row.access as DeploymentAccess, token: (row.share_token as string | null) ?? null } : undefined;
 }
 
 /**

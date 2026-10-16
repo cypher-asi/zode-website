@@ -5,7 +5,7 @@ import type { ClusterConfig } from "@/features/cluster/model/types";
 import { configFromParams, writeConfigParams } from "@/features/cluster/model/url";
 import { getBom } from "@/features/deployments/bom/bom";
 import { phaseCluster, phaseLabel } from "@/features/deployments/bom/phase";
-import { getDeployment } from "@/features/deployments/deployments";
+import { getDeploymentFor } from "@/features/deployments/deployments";
 import { loadViewer } from "@/features/deployments/view";
 import styles from "./page.module.css";
 
@@ -28,8 +28,9 @@ async function loadBom(
   params: URLSearchParams,
 ): Promise<{ bom: BuilderBom; config: ClusterConfig } | null> {
   if (!deploymentId || !phaseId) return null;
-  if (!(await loadViewer())?.team) return null;
-  const deployment = await getDeployment(deploymentId);
+  const viewer = await loadViewer();
+  if (!viewer?.team) return null;
+  const deployment = await getDeploymentFor(deploymentId, viewer);
   const index = deployment?.phases.findIndex((phase) => phase.id === phaseId) ?? -1;
   if (!deployment || index < 0) return null;
   const phase = deployment.phases[index];

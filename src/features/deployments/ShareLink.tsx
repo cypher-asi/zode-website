@@ -1,25 +1,58 @@
 "use client";
 
-import { useEffect, useState, useTransition, type ReactElement } from "react";
-import { Dialog } from "@/features/data-room/Dialog";
+import { useEffect, useId, useRef, useState, useTransition, type ReactElement } from "react";
+import { Icon } from "@/features/data-room/icons";
+import share from "@/features/data-room/share.module.css";
 import ui from "@/features/data-room/ui.module.css";
 import { copyText } from "@/features/profile/ProfileClient";
-import { shareDeploymentAction } from "./actions";
-import shared from "./shared.module.css";
-import { sharePath } from "./types";
+import { setDeploymentAccessAction } from "./actions";
+import { ACCESS_OPTIONS, deploymentLink, type Deployment, type DeploymentAccess } from "./types";
 
 const COPIED_MS = 1800;
 
+/** The ZODE team's Share button for a deployment, opening its share dialog. */
+export function ShareLink({
+  deployment,
+}: {
+  deployment: Pick<Deployment, "id" | "name" | "access" | "shareToken">;
+}): ReactElement {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button type="button" className={ui.button} onClick={() => setOpen(true)}>
+        <Icon name="userPlus" />
+        Share
+      </button>
+      {open ? <ShareDialog deployment={deployment} onClose={() => setOpen(false)} /> : null}
+    </>
+  );
+}
+
 /**
- * The ZODE team's control for a deployment's public link: creating it copies
- * it, after which it can be copied again or turned off, which breaks it.
+ * Who can open the deployment, like a data room's share dialog: picking an
+ * option saves it, and the link to copy follows it, the public page while
+ * anyone can open it, otherwise its page in the portal.
  */
-export function ShareLink({ id, token: initial }: { id: string; token: string | null }): ReactElement {
-  const [token, setToken] = useState(initial);
-  const [copied, setCopied] = useState(false);
+function ShareDialog({
+  deployment,
+  onClose,
+}: {
+  deployment: Pick<Deployment, "id" | "name" | "access" | "shareToken">;
+  onClose: () => void;
+}): ReactElement {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const id = useId();
+  const [access, setAccess] = useState<DeploymentAccess>(deployment.access);
+  const [token, setToken] = useState(deployment.shareToken);
   const [error, setError] = useState<string>();
-  const [confirming, setConfirming] = useState(false);
-  const [pending, startTransition] = useTransition();
+  const [copied, setCopied] = useState(false);
+  const [saving, startSaving] = useTransition();
+  const link = `${window.location.origin}${deploymentLink({ id: deployment.id, access, shareToken: token })}`;
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.open) dialog.showModal();
+  }, []);
 
   useEffect(() => {
     if (!copied) return;
@@ -27,60 +60,97 @@ export function ShareLink({ id, token: initial }: { id: string; token: string | 
     return () => window.clearTimeout(timer);
   }, [copied]);
 
-  const copy = async (shared: string) => {
-    if (await copyText(`${window.location.origin}${sharePath(shared)}`)) setCopied(true);
+  const pick = (next: DeploymentAccess) => {
+    const previous = access;
+    setAccess(next);
+    setError(undefined);
+    setCopied(false);
+    startSaving(async () => {
+      const result = await setDeploymentAccessAction(deployment.id, next);
+      if ("error" in result) {
+        setAccess(previous);
+        setError(result.error);
+        return;
+      }
+      setAccess(result.access);
+      setToken(result.token);
+    });
   };
 
-  const create = () =>
-    startTransition(async () => {
-      setError(undefined);
-      const result = await shareDeploymentAction(id, true);
-      if ("error" in result) return setError(result.error);
-      setToken(result.token);
-      if (result.token) await copy(result.token);
-    });
-
   return (
-    <>
-      {token ? (
-        <>
-          <a href={sharePath(token)} className={ui.button} target="_blank" rel="noopener">
-            Open public link
-          </a>
-          <button type="button" className={ui.button} onClick={() => copy(token)}>
-            {copied ? "Copied" : "Copy public link"}
+    <dialog
+      ref={dialogRef}
+      className={`${ui.dialog} ${share.dialog}`}
+      aria-labelledby={`${id}-title`}
+      onClose={onClose}
+      onClick={(event) => {
+        if (event.target === dialogRef.current) dialogRef.current?.close();
+      }}
+    >
+      <div className={ui.dialogForm}>
+        <div className={share.header}>
+          <h2 id={`${id}-title`} className={ui.dialogTitle}>
+            Share {deployment.name}
+          </h2>
+          <button type="button" className={ui.iconButton} aria-label="Close" onClick={() => dialogRef.current?.close()}>
+            <Icon name="close" />
           </button>
-          <button type="button" className={ui.button} onClick={() => setConfirming(true)}>
-            Stop sharing
+        </div>
+
+        <fieldset className={share.roles} disabled={saving}>
+          <legend className={ui.label}>Who can open it</legend>
+          {ACCESS_OPTIONS.map((option) => (
+            <label key={option.value} className={share.roleOption}>
+              <input
+                type="radio"
+                name={`${id}-access`}
+                value={option.value}
+                checked={access === option.value}
+                onChange={() => pick(option.value)}
+              />
+              <span>
+                <strong>{option.label}</strong>
+                <span>{option.detail}</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+
+        <div className={ui.field}>
+          <label htmlFor={`${id}-link`} className={ui.label}>
+            Link
+          </label>
+          <input
+            id={`${id}-link`}
+            className={ui.input}
+            value={link}
+            readOnly
+            onFocus={(event) => event.currentTarget.select()}
+          />
+        </div>
+
+        <div className={share.footer}>
+          {error ? (
+            <p className={ui.error} role="alert">
+              {error}
+            </p>
+          ) : (
+            <p className={ui.ok} aria-live="polite">
+              {saving ? "Saving…" : copied ? "Link copied" : ""}
+            </p>
+          )}
+          <button
+            type="button"
+            className={ui.primary}
+            disabled={saving}
+            onClick={async () => {
+              if (await copyText(link)) setCopied(true);
+            }}
+          >
+            {copied ? "Copied" : "Copy link"}
           </button>
-        </>
-      ) : (
-        <button type="button" className={ui.button} onClick={create} disabled={pending}>
-          {pending ? "Creating…" : "Create public link"}
-        </button>
-      )}
-      <span className={shared.srOnly} aria-live="polite">
-        {copied ? "Public link copied" : ""}
-      </span>
-      {error ? (
-        <span className={ui.error} role="alert">
-          {error}
-        </span>
-      ) : null}
-      {confirming ? (
-        <Dialog
-          title="Stop sharing this deployment?"
-          description="The public link stops working for everyone who has it. Sharing again makes a new link."
-          confirmLabel="Stop sharing"
-          danger
-          onConfirm={async () => {
-            const result = await shareDeploymentAction(id, false);
-            if ("error" in result) return result.error;
-            setToken(null);
-          }}
-          onClose={() => setConfirming(false)}
-        />
-      ) : null}
-    </>
+        </div>
+      </div>
+    </dialog>
   );
 }

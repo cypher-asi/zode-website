@@ -69,8 +69,8 @@ async function NewButton(): Promise<ReactElement | null> {
 }
 
 async function Deployments({ scope }: { scope: DeploymentScope }): Promise<ReactElement> {
-  orLogIn(await loadViewer(), HREFS[scope]);
-  const deployments = await loadDeployments();
+  const viewer = orLogIn(await loadViewer(), HREFS[scope]);
+  const deployments = await loadDeployments(viewer);
   await io();
   const today = todayIso();
   if (deployments === null)

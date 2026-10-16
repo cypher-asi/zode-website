@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense, type ReactElement } from "react";
 import { notFound } from "next/navigation";
-import { getDeployment, listRoomChoices } from "@/features/deployments/deployments";
+import { getDeploymentFor, listRoomChoices } from "@/features/deployments/deployments";
 import { DeploymentForm } from "@/features/deployments/DeploymentForm";
 import { PortalLoading } from "@/features/portal/PortalLoading";
 import { PageHeader } from "@/features/portal/sections";
@@ -26,8 +26,11 @@ async function EditDeployment({
   params,
 }: Pick<PageProps<"/portal/deployments/[id]/edit">, "params">): Promise<ReactElement> {
   const { id } = await params;
-  await requireTeam(`/portal/deployments/${id}/edit`);
-  const [deployment, rooms] = await Promise.all([getDeployment(id), listRoomChoices()]);
+  const account = await requireTeam(`/portal/deployments/${id}/edit`);
+  const [deployment, rooms] = await Promise.all([
+    getDeploymentFor(id, { team: true, userId: account.userId }),
+    listRoomChoices(),
+  ]);
   if (!deployment) notFound();
 
   return (

@@ -998,9 +998,29 @@ alter table deployments add column if not exists deposit_pct numeric(5, 2)
   check (deposit_pct >= 0 and deposit_pct <= 100);
 
 -- A deployment's public link: /shared/deployments/<share_token> shows its PDF,
--- without internal notes, credit or its data room, to anyone who has it. Kept
--- in the clear so the team can copy it again; null when it isn't shared.
+-- without internal notes, credit or its data room, to anyone who has it while
+-- the deployment's `access` is public. Kept in the clear so the team can copy
+-- it again, and kept when it stops being public, so making it public again
+-- brings the same link back; null until it's first made public.
 alter table deployments add column if not exists share_token text unique;
+
+-- Who can open a deployment, from its share dialog: `public`, anyone with its
+-- public link, and every signed-in account in the portal; `users`, every
+-- signed-in account; `team`, the ZODE team; `private`, only the account whose
+-- ZOS user id is in `private_to`. Deployments shared by link before there was
+-- a choice start public, the rest open to every signed-in account as before.
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns where table_name = 'deployments' and column_name = 'access'
+  ) then
+    alter table deployments add column access text not null default 'users'
+      check (access in ('public', 'users', 'team', 'private'));
+    update deployments set access = 'public' where share_token is not null;
+  end if;
+end $$;
+
+alter table deployments add column if not exists private_to text;
 
 -- Notes for whoever the deployment is shown to, its public link included;
 -- `notes` holds the internal ones, which never leave the portal.

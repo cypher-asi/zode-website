@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense, type ReactElement } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getDeployment } from "@/features/deployments/deployments";
+import { getDeploymentFor } from "@/features/deployments/deployments";
 import { PortalLoading } from "@/features/portal/PortalLoading";
 import { PageHeader } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
@@ -31,7 +31,7 @@ export default function NewTeaserPage({
 async function NewTeaser({ params, searchParams }: PageProps<"/portal/deployments/[id]/teasers/new">): Promise<ReactElement> {
   const [{ id }, { phase }] = await Promise.all([params, searchParams]);
   const account = await requireTeam(`/portal/deployments/${id}/teasers/new`);
-  const deployment = await getDeployment(id);
+  const deployment = await getDeploymentFor(id, { team: true, userId: account.userId });
   if (!deployment) notFound();
 
   const picked = [phase ?? []]

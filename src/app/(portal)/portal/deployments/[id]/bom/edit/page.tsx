@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { listFileNames } from "@/features/data-room/rooms";
 import { getBom } from "@/features/deployments/bom/bom";
 import { BomEditor } from "@/features/deployments/bom/BomEditor";
-import { getDeployment } from "@/features/deployments/deployments";
+import { getDeploymentFor } from "@/features/deployments/deployments";
 import { PortalLoading } from "@/features/portal/PortalLoading";
 import { PageHeader } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
@@ -26,8 +26,8 @@ export default function EditBomPage({ params }: PageProps<"/portal/deployments/[
 
 async function EditBom({ params }: Pick<PageProps<"/portal/deployments/[id]/bom/edit">, "params">): Promise<ReactElement> {
   const { id } = await params;
-  await requireTeam(`/portal/deployments/${id}/bom/edit`);
-  const deployment = await getDeployment(id);
+  const account = await requireTeam(`/portal/deployments/${id}/bom/edit`);
+  const deployment = await getDeploymentFor(id, { team: true, userId: account.userId });
   if (!deployment) notFound();
   const [bom, files] = await Promise.all([
     getBom(deployment.id),

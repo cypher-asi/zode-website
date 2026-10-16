@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import ui from "@/features/data-room/ui.module.css";
 import { getBom } from "@/features/deployments/bom/bom";
 import { BomOverview } from "@/features/deployments/bom/BomOverview";
-import { getDeployment } from "@/features/deployments/deployments";
+import { getDeploymentFor } from "@/features/deployments/deployments";
 import detail from "@/features/deployments/deployments.module.css";
 import { DeploymentDetail } from "@/features/deployments/DeploymentDetail";
 import { DeploymentTabPanel, DeploymentTabs, DeploymentTabSwitch } from "@/features/deployments/DeploymentTabs";
@@ -42,7 +42,7 @@ async function Deployment({ params, searchParams }: PageProps<"/portal/deploymen
   const [{ id }, { tab }] = await Promise.all([params, searchParams]);
   const base = `/portal/deployments/${id}`;
   const viewer = orLogIn(await loadViewer(), tab === "bom" ? `${base}?tab=bom` : base);
-  const deployment = await getDeployment(id);
+  const deployment = await getDeploymentFor(id, viewer);
   if (!deployment) notFound();
   await io();
   const [teasers, bom] = viewer.team
@@ -65,7 +65,14 @@ async function Deployment({ params, searchParams }: PageProps<"/portal/deploymen
               </a>
               {viewer.team ? (
                 <>
-                  <ShareLink id={deployment.id} token={deployment.shareToken} />
+                  <ShareLink
+                    deployment={{
+                      id: deployment.id,
+                      name: deployment.name,
+                      access: deployment.access,
+                      shareToken: deployment.shareToken,
+                    }}
+                  />
                   <Link href={`${base}/edit`} className={ui.primary}>
                     Edit
                   </Link>

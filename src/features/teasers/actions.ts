@@ -2,7 +2,7 @@
 
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { getDeployment } from "@/features/deployments/deployments";
+import { getDeploymentFor } from "@/features/deployments/deployments";
 import { userIdFor } from "@/features/users/users";
 import { isUuid, teamAccount } from "@/features/zrm/access";
 import { isEmail, multiLine, singleLine } from "@/lib/validation";
@@ -124,7 +124,7 @@ export async function saveTeaserAction(_prev: TeaserFormState, formData: FormDat
 
   const input = readTeaser(formData);
   if (typeof input === "string") return { error: input };
-  if (!isUuid(input.deploymentId) || !(await getDeployment(input.deploymentId))) {
+  if (!(await getDeploymentFor(input.deploymentId, { team: true, userId: account.userId }))) {
     return { error: "This teaser's deployment was deleted, and its teasers with it." };
   }
 

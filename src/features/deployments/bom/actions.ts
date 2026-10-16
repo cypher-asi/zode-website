@@ -6,7 +6,7 @@ import { configFromJson } from "@/features/cluster/model/url";
 import { listFileNames } from "@/features/data-room/rooms";
 import { isUuid, teamAccount } from "@/features/zrm/access";
 import { multiLine, singleLine } from "@/lib/validation";
-import { DEPLOYMENTS_TAG, getDeployment } from "../deployments";
+import { DEPLOYMENTS_TAG, getDeploymentFor } from "../deployments";
 import { BOM_TAG, foreignQuoteIds, saveBom, savePhaseCluster, type BomInput, type QuoteInput } from "./bom";
 import type { BomFill, BomItem } from "./types";
 
@@ -110,9 +110,10 @@ function readItem(raw: unknown, i: number, phases: ReadonlySet<string>, quotes: 
 
 /** Saves deployment `deploymentId`'s whole BOM. The ZODE team only. */
 export async function saveBomAction(deploymentId: string, payload: unknown): Promise<BomResult> {
-  if (!(await teamAccount())) return NO_ACCESS;
+  const account = await teamAccount();
+  if (!account) return NO_ACCESS;
   if (!isUuid(deploymentId)) return GONE;
-  const deployment = await getDeployment(deploymentId);
+  const deployment = await getDeploymentFor(deploymentId, { team: true, userId: account.userId });
   if (!deployment) return GONE;
 
   const body = (payload ?? {}) as Record<string, unknown>;
@@ -150,8 +151,10 @@ export async function savePhaseClusterAction(
   config: unknown,
   copies: unknown,
 ): Promise<BomResult> {
-  if (!(await teamAccount())) return NO_ACCESS;
+  const account = await teamAccount();
+  if (!account) return NO_ACCESS;
   if (!isUuid(deploymentId) || !isUuid(phaseId)) return GONE;
+  if (!(await getDeploymentFor(deploymentId, { team: true, userId: account.userId }))) return GONE;
   const parsed = config === null ? null : configFromJson(config);
   if (config !== null && !parsed) return { error: "That isn't a configuration the cluster builder offers." };
   if (typeof copies !== "number" || !Number.isInteger(copies) || copies < 1 || copies > MAX_COPIES) {

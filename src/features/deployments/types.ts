@@ -21,6 +21,8 @@ export type Cooling = "liquid_dtc" | "air";
 export type Networking = FabricId;
 export type Facility = "colo" | "conversion" | "greenfield";
 export type CreditRating = "ig" | "high" | "not_required";
+/** Who can open a deployment: anyone with its public link, every signed-in account, the ZODE team, or one account. */
+export type DeploymentAccess = "public" | "users" | "team" | "private";
 
 /** One rollout phase of one platform, ready for service (RFS) on `rfsOn`. Dates are `YYYY-MM-DD`. */
 export interface Phase {
@@ -94,8 +96,11 @@ export interface Deployment {
   externalNotes: string | null;
   dataRoomId: string | null;
   dataRoomName: string | null;
-  /** The secret in its public link (`sharePath`), or null when it isn't shared. */
+  /** The secret in its public link (`sharePath`), which only opens while `access` is public. */
   shareToken: string | null;
+  access: DeploymentAccess;
+  /** The ZOS user id of the one account a private deployment opens for. */
+  privateTo: string | null;
   /** In RFS order. */
   phases: Phase[];
   /** ISO timestamp. */
@@ -288,6 +293,35 @@ export const deploymentFileName = (name: string): string =>
 
 /** A deployment's public page, which anyone with `token` can open. */
 export const sharePath = (token: string): string => `/shared/deployments/${token}`;
+
+/** The share dialog's choices, from widest to narrowest. */
+export const ACCESS_OPTIONS: readonly (Option<DeploymentAccess> & { detail: string })[] = [
+  {
+    value: "public",
+    label: "Anyone with the link",
+    detail: "No sign-in needed. They see its PDF, without internal notes, credit or the data room.",
+  },
+  { value: "users", label: "ZODE users", detail: "Anyone signed in to ZODE can open it and its PDF." },
+  { value: "team", label: "ZODE team", detail: "Only the ZODE team can open it." },
+  { value: "private", label: "Only me", detail: "Hidden from everyone else, the rest of the team included." },
+];
+
+/** Who's looking: a signed-in account, and whether it's on the ZODE team. */
+export interface DeploymentViewer {
+  team: boolean;
+  userId: string;
+}
+
+/** Whether `viewer` can open deployment `d` in the portal. */
+export function canOpen(d: Pick<Deployment, "access" | "privateTo">, viewer: DeploymentViewer): boolean {
+  if (d.access === "team") return viewer.team;
+  if (d.access === "private") return d.privateTo === viewer.userId;
+  return true;
+}
+
+/** The link the share dialog copies: the public page while it's public, otherwise its page in the portal. */
+export const deploymentLink = (d: Pick<Deployment, "id" | "access" | "shareToken">): string =>
+  d.access === "public" && d.shareToken ? sharePath(d.shareToken) : `/portal/deployments/${d.id}`;
 
 /** The public PDF behind `sharePath(token)`, inline, or as a download with `download`. */
 export const sharedPdfPath = (token: string, download = false): string =>

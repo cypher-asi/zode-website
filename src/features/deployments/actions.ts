@@ -8,13 +8,15 @@ import { multiLine, singleLine } from "@/lib/validation";
 import {
   DEPLOYMENTS_TAG,
   deleteDeployment,
+  getDeploymentFor,
   newShareToken,
   roomExists,
   saveDeployment,
-  setShareToken,
+  setAccess,
   type DeploymentInput,
 } from "./deployments";
 import {
+  ACCESS_OPTIONS,
   COOLING,
   CREDIT_RATINGS,
   FACILITIES,
@@ -26,6 +28,7 @@ import {
   isOption,
   isPlaceId,
   totalsOf,
+  type DeploymentAccess,
   type PhaseInput,
   type Platform,
 } from "./types";
@@ -219,7 +222,9 @@ export async function saveDeploymentAction(
   if (!account) return { error: "You don't have access to this. Try reloading the page." };
 
   const rawId = text(formData.get("id"));
-  if (rawId && !isUuid(rawId)) return { error: "This deployment no longer exists." };
+  if (rawId && !(await getDeploymentFor(rawId, { team: true, userId: account.userId }))) {
+    return { error: "This deployment no longer exists." };
+  }
 
   const input = readDeployment(formData);
   if (typeof input === "string") return { error: input };
@@ -238,22 +243,26 @@ export async function saveDeploymentAction(
 export async function deleteDeploymentAction(id: string): Promise<DeploymentFormState> {
   const account = await teamAccount();
   if (!account) return { error: "You don't have access to this. Try reloading the page." };
-  if (!isUuid(id)) return { error: "This deployment no longer exists." };
+  if (!(await getDeploymentFor(id, { team: true, userId: account.userId }))) {
+    return { error: "This deployment no longer exists." };
+  }
   await deleteDeployment(id);
   updateTag(DEPLOYMENTS_TAG);
   redirect("/portal/deployments/all");
 }
 
-export type ShareResult = { token: string | null } | { error: string };
+export type ShareResult = { access: DeploymentAccess; token: string | null } | { error: string };
 
 /**
- * Turns a deployment's public link on, keeping the link it already has, or
- * off with `shared` false, which breaks the old link. The ZODE team only.
+ * Sets who can open deployment `id` (see `ACCESS_OPTIONS`); "Only me" makes
+ * it the signed-in account's alone. The ZODE team only.
  */
-export async function shareDeploymentAction(id: string, shared: boolean): Promise<ShareResult> {
-  if (!(await teamAccount())) return { error: "You don't have access to this. Try reloading the page." };
-  const token = await setShareToken(id, shared ? newShareToken() : null);
-  if (token === undefined) return { error: "This deployment was deleted. Reload to see the current list." };
+export async function setDeploymentAccessAction(id: string, access: DeploymentAccess): Promise<ShareResult> {
+  const account = await teamAccount();
+  if (!account) return { error: "You don't have access to this. Try reloading the page." };
+  if (!ACCESS_OPTIONS.some((option) => option.value === access)) return { error: "Pick who can open it." };
+  const saved = await setAccess(id, access, account.userId, newShareToken());
+  if (!saved) return { error: "This deployment was deleted. Reload to see the current list." };
   updateTag(DEPLOYMENTS_TAG);
-  return { token };
+  return saved;
 }
