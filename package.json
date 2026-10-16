@@ -13,6 +13,7 @@
     "bom:import": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import-bom.mjs",
     "policy:import": "node --env-file-if-exists=.env.local scripts/import-policy.mjs",
     "deck:maps": "node scripts/fetch-site-maps.mjs",
+    "deck:chicago": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/make-chicago-deck.mjs",
     "prebuild": "npm run fonts && npm run db:migrate",
     "build": "next build",
     "start": "next start",

@@ -1,0 +1,474 @@
+<!doctype html>
+<!--
+  The Chicago 801 S Canal site deck for prospective offtakers. Printed by
+  scripts/make-chicago-deck.mjs, which fills in the double-braced
+  placeholders. Figures come from the 801 S Canal, Chicago data room and the
+  Chicago · 801 S Canal deployment.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>ZODE · Chicago · 801 S Canal · Site overview</title>
+    <link rel="stylesheet" href="{{ASSETS}}/deck.css" />
+  </head>
+  <body>
+    <!-- 1. Cover -->
+    <section class="slide dark cover">
+      <img class="cover-photo" src="{{ASSETS}}/building.jpg" alt="" />
+      <div class="cover-shade"></div>
+      <div class="cover-body">
+        <div class="wordmark">{{WORDMARK}}</div>
+        <div>
+          <p class="eyebrow">Compute offering · Site overview</p>
+          <h1 class="cover-title">Chicago · 801&nbsp;S&nbsp;Canal</h1>
+          <p class="cover-lede">
+            8,448 NVIDIA GPUs on 23.8 MW of critical IT in Chicago's South Loop, delivered in three phases from February 2027.
+          </p>
+        </div>
+        <p class="cover-meta">Confidential · October 2026 · zode.org</p>
+      </div>
+    </section>
+
+    <!-- 2. At a glance -->
+    <section class="slide">
+      <p class="eyebrow">At a glance</p>
+      <h2>Dedicated AI capacity in downtown Chicago</h2>
+      <div class="stats" style="margin-top: 28px">
+        <div class="stat"><div class="value">8,448</div><div class="what">NVIDIA GPUs across three phases</div></div>
+        <div class="stat"><div class="value">23.8 MW</div><div class="what">Critical IT power</div></div>
+        <div class="stat"><div class="value">Tier III</div><div class="what">Concurrently maintainable power and cooling, N+1</div></div>
+        <div class="stat"><div class="value accent">1.18</div><div class="what">Concept annual PUE, on a geothermal-assisted plant</div></div>
+      </div>
+      <table style="margin-top: 28px">
+        <thead>
+          <tr>
+            <th>Phase</th>
+            <th>Platform</th>
+            <th class="num">Nodes</th>
+            <th class="num">GPUs</th>
+            <th class="num">Critical IT</th>
+            <th class="num">Ready for service</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Phase 1</td><td>NVIDIA HGX B300</td><td class="num">256</td><td class="num">2,048</td><td class="num">3.8 MW</td><td class="num">Feb 15, 2027</td></tr>
+          <tr><td>Phase 2</td><td>NVIDIA Vera Rubin</td><td class="num">460</td><td class="num">3,680</td><td class="num">11.5 MW</td><td class="num">Aug 31, 2027</td></tr>
+          <tr><td>Phase 3</td><td>NVIDIA Vera Rubin</td><td class="num">340</td><td class="num">2,720</td><td class="num">8.5 MW</td><td class="num">Dec 31, 2027</td></tr>
+          <tr class="total"><td>Total</td><td></td><td class="num">1,056</td><td class="num">8,448</td><td class="num">23.8 MW</td><td></td></tr>
+        </tbody>
+      </table>
+      <p class="note" style="margin-top: 12px">Vera Rubin capacity is counted in 8-GPU node equivalents; the rack configuration is set with the final design.</p>
+      <div class="stats" style="grid-template-columns: repeat(3, 1fr); margin-top: auto">
+        <div class="point"><span class="n">01</span><h3>An existing building</h3><p>Reuses a structurally sound frame and live utility service, so Phase 1 runs on power already at the site.</p></div>
+        <div class="point"><span class="n">02</span><h3>Liquid cooled and efficient</h3><p>Direct-to-chip cooling on a geothermal well field and free cooling for about two-thirds of the year.</p></div>
+        <div class="point"><span class="n">03</span><h3>Connected downtown</h3><p>Four long-haul and eight metro carriers at the building, in the South Loop.</p></div>
+      </div>
+      <footer class="footer"><span>ZODE · Chicago · 801 S Canal</span><span>Confidential · Concept-level figures, subject to confirmation</span></footer>
+    </section>
+
+    <!-- 3. The site -->
+    <section class="slide">
+      <p class="eyebrow">The site</p>
+      <h2>Canal Station: a downtown building, not a greenfield</h2>
+      <div class="body">
+        <figure class="figure col" style="margin: 0; flex: 1.05">
+          <img src="{{ASSETS}}/street.jpg" alt="" style="height: 380px" />
+          <figcaption>801 S Canal Street, renovated as Canal Station. Image: 601W marketing package.</figcaption>
+        </figure>
+        <dl class="facts col" style="flex: 1">
+          <dt>Address</dt>
+          <dd>801 S Canal St, Chicago, IL 60607, in the South Loop</dd>
+          <dt>Building</dt>
+          <dd>About 600,000 sf on six stories, Type I-A construction</dd>
+          <dt>History</dt>
+          <dd>Built in 1990 for Northern Trust, which ran a data center in it, then renovated as offices</dd>
+          <dt>For ZODE</dt>
+          <dd>About 200,000 sf: 50,000 sf of white space and 150,000 sf of supporting gray space</dd>
+          <dt>Clear height</dt>
+          <dd>About 14 ft on floors 2 to 5 and 16 ft on floor 6</dd>
+          <dt>Parcel</dt>
+          <dd>A yard for transformers, generators, fuel and the geothermal well field, beside a rail corridor</dd>
+        </dl>
+      </div>
+      <footer class="footer"><span>ZODE · Chicago · 801 S Canal</span><span>Confidential · Concept-level figures, subject to confirmation</span></footer>
+    </section>
+
+    <!-- 4. Site layout -->
+    <section class="slide paper">
+      <p class="eyebrow">Site layout</p>
+      <h2>Power, fuel and heat rejection all fit on the parcel</h2>
+      <div class="body">
+        <figure class="figure col" style="margin: 0">
+          <img src="{{ASSETS}}/massing.jpg" alt="" style="height: 390px; object-fit: contain; background: var(--white)" />
+          <figcaption>Concept massing: the rooftop heat-rejection yard behind a 25 ft acoustic wall, with the generator and transformer yard at grade.</figcaption>
+        </figure>
+        <figure class="figure col" style="margin: 0">
+          <img src="{{ASSETS}}/siteplan.png" alt="" style="height: 390px; object-fit: contain; background: var(--white)" />
+          <figcaption>Conceptual site plan: utility transformers, generators and fuel storage in the yard off S Canal Street.</figcaption>
+        </figure>
+      </div>
+      <footer class="footer"><span>ZODE · Chicago · 801 S Canal</span><span>Confidential · Concept-level figures, subject to confirmation</span></footer>
+    </section>
+
+    <!-- 5. Location and connectivity -->
+    <section class="slide">
+      <p class="eyebrow">Location and connectivity</p>
+      <h2>In the middle of Chicago's network</h2>
+      <div class="body" style="gap: 56px">
+        <div class="map">
+          <svg viewBox="0 0 200 200" aria-hidden="true">
+            {{CHICAGO_MAP}}
+            <text class="map-label quiet" x="104" y="98">The Loop</text>
+            <circle class="site-ring" cx="68.5" cy="146.4" r="9" />
+            <circle class="site-dot" cx="68.5" cy="146.4" r="3.2" />
+            <text class="map-label" x="76" y="140">801 S Canal</text>
+          </svg>
+        </div>
+        <div class="col" style="justify-content: center">
+          <div class="points">
+            <div class="point">
+              <span class="n">01</span>
+              <h3>Downtown, not the edge of town</h3>
+              <p>On Canal Street in the South Loop, about 1.5 km from the centre of the Loop.</p>
+            </div>
+            <div class="point">
+              <span class="n">02</span>
+              <h3>Carrier-dense</h3>
+              <p>Four long-haul and eight metro carriers already at the building, with diverse-path fiber entries.</p>
+            </div>
+            <div class="point">
+              <span class="n">03</span>
+              <h3>Close to the interconnection hub</h3>
+              <p>About 3 km from 350 E Cermak, one of North America's largest carrier hotels.</p>
+            </div>
+            <div class="point">
+              <span class="n">04</span>
+              <h3>Rail and utility adjacency</h3>
+              <p>An adjacent rail corridor and utility feeds along the parcel.</p>
+            </div>
+          </div>
+          <p class="note">Map data © OpenStreetMap contributors.</p>
+        </div>
+      </div>
+      <footer class="footer"><span>ZODE · Chicago · 801 S Canal</span><span>Confidential · Concept-level figures, subject to confirmation</span></footer>
+    </section>
+
+    <!-- 6. Capacity and rollout -->
+    <section class="slide">
+      <p class="eyebrow">Capacity and rollout</p>
+      <h2>Three phases, 8,448 GPUs by the end of 2027</h2>
+      <div class="gantt">
+        <div></div>
+        <div class="months">
+          <span>Oct</span><span>Nov</span><span>Dec</span><span>Jan 27</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span
+          ><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+        </div>
+        <div class="row-label"><strong>Phase 1</strong><span>2,048 B300 GPUs · 3.8 MW</span></div>
+        <div class="track"><div class="bar" style="left: 3.3%; width: 26.7%">RFS Feb 15</div></div>
+        <div class="row-label"><strong>Phase 2</strong><span>3,680 Vera Rubin GPUs · 11.5 MW</span></div>
+        <div class="track"><div class="bar" style="left: 14.7%; width: 58.4%">RFS Aug 31</div></div>
+        <div class="row-label"><strong>Phase 3</strong><span>2,720 Vera Rubin GPUs · 8.5 MW</span></div>
+        <div class="track"><div class="bar" style="left: 28.4%; width: 71.4%">RFS Dec 31</div></div>
+      </div>
+      <p class="note" style="margin-top: 14px">Bars run from each phase's construction start to ready for service (RFS).</p>
+      <div class="cumulative">
+        <div class="stat"><div class="value">2,048</div><div class="what">GPUs on 3.8 MW from February 2027</div></div>
+        <div class="stat"><div class="value">5,728</div><div class="what">GPUs on 15.3 MW from August 2027</div></div>
+        <div class="stat"><div class="value accent">8,448</div><div class="what">GPUs on 23.8 MW from December 2027</div></div>
+      </div>
+      <footer class="footer"><span>ZODE · Chicago · 801 S Canal</span><span>Confidential · Concept-level figures, subject to confirmation</span></footer>
+    </section>
+
+    <!-- 7. Power -->
+    <section class="slide paper">
+      <p class="eyebrow">Power</p>
+      <h2>A 31 MW service with no single point of failure</h2>
+      <div class="body" style="gap: 48px">
+        <div class="col" style="flex: 0 0 380px; gap: 0">
+          <div class="pue">
+            <div><b>31 MW</b><span><strong>Utility service</strong>ComEd at 12.4 kV</span></div>
+            <div><b>24 MW</b><span><strong>Critical IT</strong>At the 1.30 design PUE</span></div>
+            <div><b>7 MVA</b><span><strong>In service today</strong>Three existing ComEd vaults carry Phase 1</span></div>
+            <div><b>15 MW</b><span><strong>On-site bridge power</strong>Dual-fuel turbines while the new vault is built</span></div>
+          </div>
+        </div>
+        <div class="col flow">
+          <div class="sources">
+            <div class="node"><strong>ComEd utility</strong><p>12.4 kV service; a new vault is planned for the full build</p></div>
+            <div class="node"><strong>Bridge turbines</strong><p>Four 5 MW+ dual-fuel units on a looped N+1 ring bus</p></div>
+            <div class="node"><strong>Standby generators</strong><p>N+1, with 12 hours of full-load fuel on site</p></div>
+          </div>
+          <div class="arrow"></div>
+          <div class="node"><strong>Double-ended switchgear</strong><p>M-T-T-M, fully duplicated and PLC-actuated; either half can be shut down for maintenance while output holds</p></div>
+          <div class="arrow"></div>
+          <div class="node"><strong>UPS</strong><p>1 MW double-conversion blocks of 250 kW modules, N+1, with 8-minute lithium batteries</p></div>
+          <div class="arrow"></div>
+          <div class="node ink"><strong>GPU racks</strong><p>Liquid-cooled cabinets of about 130 kW</p></div>
+          <p class="note" style="margin-top: 14px">The existing service was assessed by e3i Engineers (Bowman) for an initial 5 MW of GPU compute.</p>
+        </div>
+      </div>
+      <footer class="footer"><span>ZODE · Chicago · 801 S Canal</span><span>Confidential · Concept-level figures, subject to confirmation</span></footer>
+    </section>
+
+    <!-- 8. Cooling -->
+    <section class="slide">
+      <p class="eyebrow">Cooling</p>
+      <h2>Geothermal first, then free cooling, then trim</h2>
+      <div class="body">
+        <div class="col" style="flex: 1.1">
+          <figure class="figure" style="margin: 0">
+            <img src="{{ASSETS}}/wells.png" alt="" style="height: 270px; object-fit: cover; object-position: left center" />
+            <figcaption>Geothermal concept layout: eight wells on the parcel along S Canal Street.</figcaption>
+          </figure>
+          <div class="stats" style="grid-template-columns: repeat(3, 1fr)">
+            <div class="stat"><div class="value small">6,780 TR</div><div class="what">IT cooling load at design</div></div>
+            <div class="stat"><div class="value small">80%</div><div class="what">Of IT heat to liquid</div></div>
+            <div class="stat"><div class="value small">70/85°F</div><div class="what">Facility-glycol loop</div></div>
+          </div>
+        </div>
+        <div class="col" style="justify-content: center">
+          <div class="points">
+            <div class="point">
+              <span class="n">01</span>
+              <h3>Geothermal base load</h3>
+              <p>Eight wells carry about 3,325 tons year-round on an N+1 basis.</p>
+            </div>
+            <div class="point">
+              <span class="n">02</span>
+              <h3>Adiabatic fluid coolers</h3>
+              <p>Economizer cooling whenever the wet bulb is at or below 63°F: about 5,840 hours a year.</p>
+            </div>
+            <div class="point">
+              <span class="n">03</span>
+              <h3>Air-cooled trim chillers</h3>
+              <p>Cover the peak and humid hours, reusing and extending the building's chillers and towers.</p>
+            </div>
+            <div class="point">
+              <span class="n">04</span>
+              <h3>Liquid to the chip</h3>
+              <p>CDUs and rear-door heat exchangers on the facility-glycol loop; the rest on a chilled-water loop.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <footer class="footer"><span>ZODE · Chicago · 801 S Canal</span><span>Confidential · Concept-level figures, subject to confirmation</span></footer>
+    </section>
+
+    <!-- 9. Efficiency -->
+    <section class="slide">
+      <p class="eyebrow">Efficiency</p>
+      <h2>About 1.18 PUE: free cooling most of the year</h2>
+      <div class="body" style="gap: 64px">
+        <div class="col chart" style="flex: 1.25">
+          <p class="label">Hours a month by cooling mode, Chicago</p>
+          <div class="bars">
+            <div class="month"><span class="free" style="height: 100%"></span></div>
+            <div class="month"><span class="free" style="height: 90.3%"></span></div>
+            <div class="month"><span class="free" style="height: 100%"></span></div>
+            <div class="month"><span class="free" style="height: 96.8%"></span></div>
+            <div class="month"><span class="free" style="height: 60.5%"></span><span class="trim" style="height: 39.5%"></span></div>
+            <div class="month"><span class="free" style="height: 16.1%"></span><span class="trim" style="height: 80.6%"></span></div>
+            <div class="month"><span class="trim" style="height: 100%"></span></div>
+            <div class="month"><span class="trim" style="height: 100%"></span></div>
+            <div class="month"><span class="free" style="height: 40.3%"></span><span class="trim" style="height: 56.5%"></span></div>
+            <div class="month"><span class="free" style="height: 84.1%"></span><span class="trim" style="height: 15.9%"></span></div>
+            <div class="month"><span class="free" style="height: 96.8%"></span></div>
+            <div class="month"><span class="free" style="height: 100%"></span></div>
+          </div>
+          <div class="months-axis">
+            <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+          </div>
+          <div class="legend"><span>Fluid coolers, about 5,840 h</span><span class="trim">Trim chillers, about 2,920 h</span></div>
+        </div>
+        <div class="col pue" style="justify-content: center">
+          <div><b>1.171</b><span><strong>Economizer mode</strong>Wet bulb at or below 63°F</span></div>
+          <div><b>1.210</b><span><strong>Trim-chiller mode</strong>Peak and humid hours</span></div>
+          <div><b class="accent">1.184</b><span><strong>Annual weighted PUE</strong>Concept-level screening</span></div>
+          <div><b>1.30</b><span><strong>Design basis</strong>What the plant is sized for</span></div>
+        </div>
+      </div>
+      <p class="note" style="margin-top: 16px">Callan Consulting Engineers, Preliminary PUE and Energy Analysis, July 29, 2026.</p>
+      <footer class="footer"><span>ZODE · Chicago · 801 S Canal</span><span>Confidential · Concept-level figures, subject to confirmation</span></footer>
+    </section>
+
+    <!-- 10. Reliability -->
+    <section class="slide">
+      <p class="eyebrow">Reliability</p>
+      <h2>Tier III: any component can be serviced under load</h2>
+      <table class="compact" style="margin-top: 24px">
+        <thead>
+          <tr><th style="width: 24%">System</th><th style="width: 38%">Design basis</th><th>Redundancy</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Geothermal base rejection</td><td>8 wells, 7 active, 3,325 TR</td><td>One well can be out of service</td></tr>
+          <tr><td>Adiabatic fluid coolers</td><td>N+1 unit count</td><td>One unit can be out of service</td></tr>
+          <tr><td>Air-cooled trim chillers</td><td>8 chillers, 7 carry the load</td><td>One chiller can be out of service</td></tr>
+          <tr><td>Cooling towers</td><td>New 2-cell tower with the existing plant</td><td>One tower or cell can be out of service</td></tr>
+          <tr><td>Water storage</td><td>2 × 170,000-gallon tanks</td><td>One serviced while the other covers 12 hours of makeup</td></tr>
+          <tr><td>Standby generators</td><td>Prime-rated, with 4 alternate units</td><td>N+1, on separate double-ended boards</td></tr>
+          <tr><td>Generator fuel</td><td>2 tank and pump systems</td><td>Duplicated, 12 hours at full load</td></tr>
+          <tr><td>Switchgear</td><td>Double-ended M-T-T-M, PLC-actuated</td><td>Either half shut down with output held</td></tr>
+          <tr><td>UPS</td><td>1 MW blocks of 250 kW modules, lithium</td><td>N+1 within each block and module</td></tr>
+          <tr><td>Bridge power</td><td>4 × 5 MW+ dual-fuel turbines</td><td>Looped N+1 ring bus</td></tr>
+        </tbody>
+      </table>
+      <p class="note" style="margin-top: 12px">Callan Consulting Engineers, Tier III single-point-of-failure review, August 7, 2026.</p>
+      <footer class="footer"><span>ZODE · Chicago · 801 S Canal</span><span>Confidential · Concept-level figures, subject to confirmation</span></footer>
+    </section>
+
+    <!-- 11. Facility -->
+    <section class="slide paper">
+      <p class="eyebrow">The facility</p>
+      <h2>Built for density, and for the neighbours</h2>
+      <div class="body">
+        <figure class="figure col" style="margin: 0; flex: 1.1">
+          <img src="{{ASSETS}}/roof.png" alt="" style="height: 400px; object-fit: contain; background: var(--white)" />
+          <figcaption>Rooftop heat-rejection yard: cooling towers, adiabatic fluid coolers and trim chillers behind a 25 ft acoustic barrier wall.</figcaption>
+        </figure>
+        <div class="col" style="justify-content: center; gap: 14px">
+          <div class="card">
+            <p class="label">Structure · WJE</p>
+            <p>The steel frame has spare capacity at its original design loads. New roof dunnage carries the heat-rejection plant down to the columns, and targeted reinforcement brings the data-hall floors to high-density loading.</p>
+          </div>
+          <div class="card">
+            <p class="label">Acoustics · WorkingBuildings</p>
+            <p>An environmental noise model covers normal operation, generator testing and emergencies against Chicago and Illinois limits, with mitigation designed in.</p>
+          </div>
+          <div class="card">
+            <p class="label">Reuse</p>
+            <p>Keeping the frame and extending the existing chillers and towers protects the schedule and keeps embodied carbon well below a new build.</p>
+          </div>
+        </div>
+      </div>
+      <footer class="footer"><span>ZODE · Chicago · 801 S Canal</span><span>Confidential · Concept-level figures, subject to confirmation</span></footer>
+    </section>
+
+    <!-- 12. White space and the cluster -->
+    <section class="slide">
+      <p class="eyebrow">White space and the cluster</p>
+      <h2>Halls laid out for liquid-cooled AI racks</h2>
+      <div class="body" style="flex: none; align-items: flex-start">
+        <div class="card col" style="background: var(--paper)">
+          <p class="label">The hall</p>
+          <ul class="bullets">
+            <li>Operable cabinets of about 130 kW, cooled liquid-to-chip with air for the remainder</li>
+            <li>Contained rows of twelve cabinets</li>
+            <li>About 80% of heat to the facility-glycol loop through CDUs and rear-door heat exchangers</li>
+            <li>Racks arrive fully built and roll in from the freight elevator</li>
+            <li>Structural layout checked by WJE for loaded racks of up to 4,500 lb</li>
+          </ul>
+        </div>
+        <div class="card col">
+          <p class="label">The ZODE cluster</p>
+          <ul class="bullets">
+            <li>Phase 1: 256 NVIDIA HGX B300 nodes, 2,048 GPUs, eight nodes to a 48U rack</li>
+            <li>Phases 2 and 3: NVIDIA Vera Rubin, 6,400 GPUs in 8-GPU node equivalents</li>
+            <li>Non-blocking InfiniBand compute fabric</li>
+            <li>Direct-to-chip liquid cooling throughout</li>
+            <li>Built, operated and supported by ZODE end to end</li>
+          </ul>
+        </div>
+      </div>
+      <div class="stats" style="margin-top: auto">
+        <div class="stat"><div class="value">130 kW</div><div class="what">Per cabinet, liquid-to-chip and air</div></div>
+        <div class="stat"><div class="value">12</div><div class="what">Cabinets to a contained row</div></div>
+        <div class="stat"><div class="value">8</div><div class="what">B300 nodes to a 48U rack</div></div>
+        <div class="stat"><div class="value">1:1</div><div class="what">InfiniBand oversubscription</div></div>
+      </div>
+      <footer class="footer"><span>ZODE · Chicago · 801 S Canal</span><span>Confidential · Concept-level figures, subject to confirmation</span></footer>
+    </section>
+
+    <!-- 13. Delivery -->
+    <section class="slide">
+      <p class="eyebrow">Delivery</p>
+      <h2>From concept design to ready for service in 2027</h2>
+      <div class="milestones">
+        <div class="milestone">
+          <p class="when">Aug 2026</p>
+          <h3>Concept design issued</h3>
+          <p>All disciplines, for the 31 MW powered shell</p>
+        </div>
+        <div class="milestone">
+          <p class="when">Sep 2026 – Jan 2027</p>
+          <h3>Permits</h3>
+          <p>Six packages through City of Chicago review</p>
+        </div>
+        <div class="milestone">
+          <p class="when">From Sep 2026</p>
+          <h3>Long-lead procurement</h3>
+          <p>Phase 1 gear first, Phases 2 and 3 from December</p>
+        </div>
+        <div class="milestone">
+          <p class="when">From Oct 2026</p>
+          <h3>Phase 1 construction</h3>
+          <p>Gray space and white space</p>
+        </div>
+        <div class="milestone rfs">
+          <p class="when">Feb 15, 2027</p>
+          <h3>Phase 1 ready</h3>
+          <p>2,048 B300 GPUs on 3.8 MW</p>
+        </div>
+        <div class="milestone rfs">
+          <p class="when">Aug 31, 2027</p>
+          <h3>Phase 2 ready</h3>
+          <p>3,680 Vera Rubin GPUs on 11.5 MW</p>
+        </div>
+        <div class="milestone rfs">
+          <p class="when">Dec 31, 2027</p>
+          <h3>Phase 3 ready</h3>
+          <p>2,720 Vera Rubin GPUs on 8.5 MW</p>
+        </div>
+      </div>
+      <div class="stats" style="grid-template-columns: repeat(3, 1fr); margin-top: auto">
+        <div class="stat"><div class="value">6</div><div class="what">Permit packages: demolition, facility loop, white space, temporary power and site</div></div>
+        <div class="stat"><div class="value">3</div><div class="what">Phases built in overlap, so each one follows the last within months</div></div>
+        <div class="stat"><div class="value">31 MW</div><div class="what">Powered shell designed and coordinated across every discipline</div></div>
+      </div>
+      <footer class="footer"><span>ZODE · Chicago · 801 S Canal</span><span>Confidential · Concept-level figures, subject to confirmation</span></footer>
+    </section>
+
+    <!-- 14. Diligence -->
+    <section class="slide">
+      <p class="eyebrow">Diligence</p>
+      <h2>The engineering is already in the data room</h2>
+      <table class="compact" style="margin-top: 24px">
+        <thead>
+          <tr><th style="width: 40%">Document</th><th style="width: 26%">Prepared by</th><th style="width: 12%">Date</th><th>Data room folder</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Existing Systems Review and Data Center Readiness</td><td>e3i Engineers, a Bowman company</td><td>Mar 15, 2026</td><td>05 Power and Electrical</td></tr>
+          <tr><td>Preliminary White Space Structural Findings</td><td>Wiss, Janney, Elstner Associates</td><td>Jul 10, 2026</td><td>08 Drawings · Structural</td></tr>
+          <tr><td>Geothermal Well Siting, 8 wells</td><td>Design team</td><td>Jul 21, 2026</td><td>08 Drawings · Mechanical</td></tr>
+          <tr><td>Preliminary PUE and Energy Analysis</td><td>Callan Consulting Engineers</td><td>Jul 29, 2026</td><td>08 Drawings · Design Reports</td></tr>
+          <tr><td>Structural Concept, S-101 to S-110</td><td>Wiss, Janney, Elstner Associates</td><td>Aug 5, 2026</td><td>08 Drawings · Structural</td></tr>
+          <tr><td>Environmental Noise Study</td><td>WorkingBuildings</td><td>Aug 6, 2026</td><td>04 Environmental · Noise</td></tr>
+          <tr><td>Concept Design Package 1, all disciplines</td><td>Callan, with Shive-Hattery</td><td>Aug 7, 2026</td><td>08 Drawings</td></tr>
+          <tr><td>Tier III Single-Point-of-Failure Review</td><td>Callan Consulting Engineers</td><td>Aug 7, 2026</td><td>08 Drawings · Design Reports</td></tr>
+          <tr><td>Concept Design and Powered-Shell Executive Summary</td><td>Callan Consulting Engineers</td><td>Aug 7, 2026</td><td>08 Drawings · Design Reports</td></tr>
+          <tr><td>Project Delivery Schedule</td><td>Project team</td><td>Sep 17, 2026</td><td>01 Transaction · Delivery Schedule</td></tr>
+        </tbody>
+      </table>
+      <footer class="footer"><span>ZODE · Chicago · 801 S Canal</span><span>Confidential · Concept-level figures, subject to confirmation</span></footer>
+    </section>
+
+    <!-- 15. Next steps -->
+    <section class="slide dark">
+      <p class="eyebrow">Next steps</p>
+      <h2>Diligence the site with us</h2>
+      <div class="steps">
+        <div class="step"><p class="n">01</p><h3>Sign the MNDA</h3><p>ZODE's mutual NDA opens the data room.</p></div>
+        <div class="step"><p class="n">02</p><h3>Review the data room</h3><p>Engineering reports, concept drawings and the delivery schedule.</p></div>
+        <div class="step"><p class="n">03</p><h3>Visit and go deep</h3><p>Walk the building and review power, cooling and the white space with the design team.</p></div>
+        <div class="step"><p class="n">04</p><h3>Reserve capacity</h3><p>Agree phases, term and pricing in a capacity reservation.</p></div>
+      </div>
+      <div class="contact">
+        <div>
+          <p class="label">Contact</p>
+          <p class="email">m@zode.org</p>
+        </div>
+        <div class="wordmark">{{WORDMARK}}</div>
+      </div>
+      <footer class="footer"><span>ZODE Inc. · zode.org</span><span>Confidential · Indicative and non-binding</span></footer>
+    </section>
+  </body>
+</html>
