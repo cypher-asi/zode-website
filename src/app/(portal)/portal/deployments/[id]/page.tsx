@@ -11,13 +11,8 @@ import { QuotesApp } from "@/features/deployments/bom/QuotesApp";
 import { getDeploymentFor } from "@/features/deployments/deployments";
 import detail from "@/features/deployments/deployments.module.css";
 import { DeploymentDetail } from "@/features/deployments/DeploymentDetail";
-import {
-  DeploymentTabPanel,
-  DeploymentTabs,
-  DeploymentTabSwitch,
-  isDeploymentTab,
-  tabHref,
-} from "@/features/deployments/DeploymentTabs";
+import { DeploymentTabPanel, DeploymentTabs, DeploymentTabSwitch } from "@/features/deployments/DeploymentTabs";
+import { isDeploymentTab, tabHref } from "@/features/deployments/tabs";
 import { todayIso } from "@/features/deployments/format";
 import { ShareLink } from "@/features/deployments/ShareLink";
 import { statusLabel } from "@/features/deployments/types";

@@ -3,24 +3,13 @@
 import { createContext, use, useState, type ReactElement, type ReactNode } from "react";
 import { PortalTabs } from "@/features/portal/PortalTabs";
 import styles from "./deployments.module.css";
-
-export type DeploymentTab = "summary" | "bom" | "quotes";
-
-const TABS: readonly { id: DeploymentTab; label: string }[] = [
-  { id: "summary", label: "Summary" },
-  { id: "bom", label: "BOM" },
-  { id: "quotes", label: "Quotes" },
-];
-
-export const isDeploymentTab = (value: unknown): value is DeploymentTab => TABS.some((tab) => tab.id === value);
+import { TABS, tabHref, type DeploymentTab } from "./tabs";
 
 const TabContext = createContext<{
   tab: DeploymentTab;
   base: string;
   select: (tab: DeploymentTab) => void;
 } | null>(null);
-
-export const tabHref = (base: string, tab: DeploymentTab): string => (tab === "summary" ? base : `${base}?tab=${tab}`);
 
 /**
  * A deployment's page, its Summary, BOM and Quotes tabs switching in the
