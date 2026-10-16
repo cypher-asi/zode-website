@@ -242,8 +242,8 @@ export function sitesConfig(groups: readonly SiteGroup[], statuses: readonly Sit
     ],
     sections: {
       of: (s) => {
-        const group = groupOf.get(s.group_id ?? "");
-        return group ? { key: group.id, label: group.name, order: group.position } : { key: "", label: "No group", order: Infinity };
+        const status = statusOf.get(s.status_id);
+        return status ? { key: status.id, label: status.name, order: status.position } : { key: "", label: "No status", order: Infinity };
       },
     },
     columns: [
@@ -264,13 +264,13 @@ export function sitesConfig(groups: readonly SiteGroup[], statuses: readonly Sit
         render: (s) => s.provider_name,
       },
       {
-        key: "status",
-        header: "Status",
+        key: "group",
+        header: "Group",
         width: "minmax(0, 1fr)",
-        sortValue: (s) => statusOf.get(s.status_id)?.position ?? null,
+        sortValue: (s) => groupOf.get(s.group_id ?? "")?.position ?? null,
         render: (s) => {
-          const status = statusOf.get(s.status_id);
-          return status ? <Badge color={status.color}>{status.name}</Badge> : null;
+          const group = groupOf.get(s.group_id ?? "");
+          return group ? <Badge>{group.name}</Badge> : null;
         },
       },
       {
