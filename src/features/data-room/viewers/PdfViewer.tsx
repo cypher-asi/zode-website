@@ -98,17 +98,20 @@ export default function PdfViewer({ url, zoom, onFitScale }: Omit<ViewerProps, "
 
   useEffect(() => onFitScale(fit), [fit, onFitScale]);
 
-  // Keep the same spot in the document under the viewport as the scale changes.
-  const lastScale = useRef(scale);
+  // Keep the same spot in the document under the viewport as the scale changes,
+  // counting from the first measured scale, so the document opens at its top.
+  const measured = panelWidth > 0 && widest > 0;
+  const lastScale = useRef<number | null>(null);
   useLayoutEffect(() => {
     const container = containerRef.current;
+    if (!container || !measured) return;
     const previous = lastScale.current;
     lastScale.current = scale;
-    if (!container || previous === scale) return;
+    if (previous === null || previous === scale) return;
     const ratio = scale / previous;
     container.scrollTop = (container.scrollTop + container.clientHeight / 2) * ratio - container.clientHeight / 2;
     container.scrollLeft = (container.scrollLeft + container.clientWidth / 2) * ratio - container.clientWidth / 2;
-  }, [scale]);
+  }, [scale, measured]);
 
   const onScroll = () => {
     const container = containerRef.current;
