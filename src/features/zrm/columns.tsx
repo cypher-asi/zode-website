@@ -160,6 +160,8 @@ export function companiesConfig(types: Types): ListConfig<CompanyRow> {
   };
 }
 
+const totalValue = (rows: readonly OpportunityRow[]): number => rows.reduce((sum, o) => sum + (o.value ?? 0), 0);
+
 export function opportunitiesConfig(types: Types): ListConfig<OpportunityRow> {
   return {
     noun: ["opportunity", "opportunities"],
@@ -177,7 +179,10 @@ export function opportunitiesConfig(types: Types): ListConfig<OpportunityRow> {
         test: (o, value) => o.deal_type === value,
       },
     ],
-    summary: (rows) => `${formatMoney(rows.reduce((sum, o) => sum + (o.value ?? 0), 0))} total`,
+    summary: (rows) => `${formatMoney(totalValue(rows))} total`,
+    sections: {
+      of: (o) => ({ key: o.stage_id, label: o.stage_name, order: o.stage_position }),
+    },
     columns: [
       {
         key: "title",
@@ -185,6 +190,7 @@ export function opportunitiesConfig(types: Types): ListConfig<OpportunityRow> {
         width: "minmax(0, 2fr)",
         sortValue: (o) => o.title.toLowerCase(),
         render: (o) => <Primary name={o.title} sub={[o.person_name, o.company_name].filter(Boolean).join(" · ")} active={o.active} />,
+        total: () => <span className={styles.totalLabel}>Total</span>,
       },
       {
         key: "deal_type",
@@ -208,6 +214,7 @@ export function opportunitiesConfig(types: Types): ListConfig<OpportunityRow> {
         align: "end",
         sortValue: (o) => o.value,
         render: (o) => formatMoney(o.value),
+        total: (rows) => formatMoney(totalValue(rows)),
       },
     ],
   };
