@@ -992,10 +992,19 @@ where p.deployment_id = d.id and p.platform is null;
 
 alter table deployment_phases alter column platform set not null;
 
+-- The deposit is entered as a percent of the contract value; `deposit_usd`
+-- keeps the amount it came to on the last save.
+alter table deployments add column if not exists deposit_pct numeric(5, 2)
+  check (deposit_pct >= 0 and deposit_pct <= 100);
+
 -- A deployment's public link: /shared/deployments/<share_token> shows its PDF,
--- without notes, credit or its data room, to anyone who has it. Kept in the
--- clear so the team can copy it again; null when it isn't shared.
+-- without internal notes, credit or its data room, to anyone who has it. Kept
+-- in the clear so the team can copy it again; null when it isn't shared.
 alter table deployments add column if not exists share_token text unique;
+
+-- Notes for whoever the deployment is shown to, its public link included;
+-- `notes` holds the internal ones, which never leave the portal.
+alter table deployments add column if not exists external_notes text;
 
 -- A phase's cluster in the cluster builder (src/features/cluster/model), as
 -- the builder's config, `cluster_copies` times over; null derives one from

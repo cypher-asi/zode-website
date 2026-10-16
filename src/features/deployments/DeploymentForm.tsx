@@ -17,7 +17,7 @@ import { Dialog } from "@/features/data-room/Dialog";
 import ui from "@/features/data-room/ui.module.css";
 import { deleteDeploymentAction, saveDeploymentAction, type DeploymentFormState } from "./actions";
 import { AddressField } from "./AddressField";
-import { formatCount, formatTb, formatUsd } from "./format";
+import { formatCount, formatMw, formatTb, formatUsd } from "./format";
 import {
   COOLING,
   CREDIT_RATINGS,
@@ -26,8 +26,10 @@ import {
   PLATFORM_OPTIONS,
   STATUSES,
   STORAGE_OPTIONS,
+  depositFor,
   gpusFor,
   isOption,
+  mwFor,
   platformBreakdown,
   totalsOf,
   type Deployment,
@@ -76,6 +78,13 @@ const draftOf = (key: number, platform: Platform, phase?: Phase): PhaseDraft => 
   mw: str(phase?.mw ?? null),
 });
 
+/** The deposit's percent, worked out from the amount for deployments saved before it was entered as one. */
+const depositPctOf = (d: Deployment): number | null => {
+  if (d.depositPct !== null || d.depositUsd === null) return d.depositPct;
+  const { contractUsd } = totalsOf(d);
+  return contractUsd ? Math.round((d.depositUsd / contractUsd) * 10_000) / 100 : null;
+};
+
 /**
  * Adds a deployment, or edits `deployment`, for the ZODE team, linked to one
  * of `rooms` if they choose. Totals follow the figures as they're typed.
@@ -95,6 +104,7 @@ export function DeploymentForm({
   const [storage, setStorage] = useState(String(d?.storageTbPerNode ?? 4));
   const [price, setPrice] = useState(str(d?.priceGpuHr ?? null));
   const [term, setTerm] = useState(str(d?.termMonths ?? null));
+  const [deposit, setDeposit] = useState(() => str(d ? depositPctOf(d) : null));
   const [loc, setLoc] = useState(d?.locRequired ? "yes" : "no");
   const [phases, setPhases] = useState<PhaseDraft[]>(() =>
     d?.phases.length
@@ -117,13 +127,26 @@ export function DeploymentForm({
       mw: numberOr(phase.mw, null),
     })),
   });
+  const allMw = totals.byPlatform.reduce((sum, share) => sum + mwFor(share.platform, share.nodes), 0);
+  const depositPct = numberOr(deposit.replace(/%$/, ""), null);
+  const depositUsd = depositFor(totals.contractUsd, depositPct);
   const roomChoices = [
     { value: "", label: "Not linked" },
     ...rooms.map((room) => ({ value: room.id, label: room.name })),
   ];
 
   const updatePhase = (key: number, patch: Partial<PhaseDraft>) =>
-    setPhases((rows) => rows.map((row) => (row.key === key ? { ...row, ...patch } : row)));
+    setPhases((rows) =>
+      rows.map((row) => {
+        if (row.key !== key) return row;
+        const next = { ...row, ...patch };
+        if ("nodes" in patch || "platform" in patch) {
+          const phaseNodes = numberOr(next.nodes, null);
+          next.mw = phaseNodes === null ? "" : str(mwFor(next.platform, phaseNodes));
+        }
+        return next;
+      }),
+    );
 
   // Submitted by hand so a rejected save keeps everything typed.
   const submit = (event: FormEvent<HTMLFormElement>) => {
@@ -237,6 +260,7 @@ export function DeploymentForm({
               ? `${formatCount(totals.gpus)} GPUs (${platformBreakdown(totals.byPlatform)})`
               : `${formatCount(totals.gpus)} GPUs`}{" "}
             · {totals.storageTb ? `${formatTb(totals.storageTb)} storage` : "No storage"}
+            {allMw ? ` · Est. ${formatMw(allMw)} IT` : ""}
           </p>,
         )}
 
@@ -357,10 +381,11 @@ export function DeploymentForm({
               value: price,
               onChange: (event) => setPrice(event.target.value),
             })}
-            {input("deposit_usd", "Deposit (USD)", {
+            {input("deposit_pct", "Deposit (% of contract)", {
               inputMode: "decimal",
               placeholder: "0",
-              defaultValue: str(d?.depositUsd ?? null),
+              value: deposit,
+              onChange: (event) => setDeposit(event.target.value),
             })}
           </>,
           <p className={styles.summary}>
@@ -368,6 +393,11 @@ export function DeploymentForm({
               ? `Est. ${formatUsd(totals.monthlyUsd)} /mo`
               : "Add a price to estimate revenue"}
             {totals.contractUsd !== null ? ` · ${formatUsd(totals.contractUsd)} over the term` : ""}
+            {depositUsd !== null
+              ? ` · ${formatUsd(depositUsd)} deposit`
+              : depositPct
+                ? " · Add a price and term to calculate the deposit"
+                : ""}
           </p>,
         )}
 
@@ -401,17 +431,34 @@ export function DeploymentForm({
 
         {section(
           "Notes",
-          <div className={ui.field} data-wide="">
-            <textarea
-              id={`${id}-notes`}
-              name="notes"
-              className={ui.textarea}
-              aria-label="Notes"
-              rows={3}
-              maxLength={5000}
-              defaultValue={d?.notes ?? ""}
-            />
-          </div>,
+          <>
+            <div className={ui.field} data-wide="">
+              {label("external_notes", "External notes")}
+              <textarea
+                id={`${id}-external_notes`}
+                name="external_notes"
+                className={ui.textarea}
+                rows={3}
+                maxLength={5000}
+                defaultValue={d?.externalNotes ?? ""}
+              />
+            </div>
+            <div className={ui.field} data-wide="">
+              {label("notes", "Internal notes")}
+              <textarea
+                id={`${id}-notes`}
+                name="notes"
+                className={ui.textarea}
+                rows={3}
+                maxLength={5000}
+                defaultValue={d?.notes ?? ""}
+              />
+            </div>
+          </>,
+          <p className={styles.summary}>
+            External notes show wherever the deployment does, its public link included. Internal notes stay in the
+            portal and the team&apos;s PDF.
+          </p>,
         )}
 
         {state.error ? (

@@ -25,6 +25,7 @@ import { SITE_URL } from "@/lib/site";
 import {
   formatCount,
   formatDay,
+  formatDeposit,
   formatMw,
   formatRate,
   formatTb,
@@ -461,7 +462,8 @@ const orDash = (value: string | null): string => value ?? "—";
 
 /**
  * The deployment's summary PDF, as of `today` (`YYYY-MM-DD`). The `public`
- * audience, behind its share link, leaves out its data room, credit and notes.
+ * audience, behind its share link, leaves out its data room, credit and
+ * internal notes.
  */
 export async function renderDeploymentPdf(
   deployment: Deployment,
@@ -522,7 +524,7 @@ export async function renderDeploymentPdf(
   w.facts("Commercial", [
     { label: "Term", value: d.termMonths !== null ? formatTerm(d.termMonths) : "—" },
     { label: "Price", value: d.priceGpuHr !== null ? formatRate(d.priceGpuHr) : "—" },
-    { label: "Deposit", value: d.depositUsd !== null ? formatUsd(d.depositUsd) : "—" },
+    { label: "Deposit", value: formatDeposit(d.depositUsd, d.depositPct) ?? "—" },
     { label: "Est. monthly", value: totals.monthlyUsd !== null ? formatUsd(totals.monthlyUsd) : "—" },
     { label: "Est. contract value", value: totals.contractUsd !== null ? formatUsd(totals.contractUsd) : "—" },
   ]);
@@ -541,8 +543,9 @@ export async function renderDeploymentPdf(
       ],
       4,
     );
-    if (d.notes) w.paragraph("Notes", d.notes);
   }
+  if (d.externalNotes) w.paragraph("Notes", d.externalNotes);
+  if (internal && d.notes) w.paragraph("Internal notes", d.notes);
   w.footers();
 
   doc.setTitle(`ZODE Deployment \u2013 ${d.name}`);

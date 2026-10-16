@@ -184,6 +184,7 @@
   justify-content: center;
   gap: 2px;
   min-width: 0;
+  padding-block: 12px;
 }
 
 .ganttName {

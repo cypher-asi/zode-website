@@ -19,6 +19,13 @@ export const formatCount = (value: number): string => count.format(value);
 export const formatMw = (value: number): string => `${decimal.format(value)} MW`;
 export const formatTb = (value: number): string => `${count.format(value)} TB`;
 
+/** e.g. "$1,200,000 (10% of contract)", or just the percent while there's no contract value. */
+export const formatDeposit = (usd: number | null, pct: number | null): string | null => {
+  const share = pct === null ? null : `${decimal.format(pct)}% of contract`;
+  if (usd === null) return share;
+  return share ? `${formatUsd(usd)} (${share})` : formatUsd(usd);
+};
+
 export const plural = (value: number, word: string): string =>
   `${count.format(value)} ${word}${value === 1 ? "" : "s"}`;
 

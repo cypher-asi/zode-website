@@ -33,6 +33,7 @@ const toDeployment = (row: Record<string, unknown>): Deployment => ({
   facility: (row.facility ?? null) as Deployment["facility"],
   termMonths: row.term_months == null ? null : Number(row.term_months),
   priceGpuHr: row.price_gpu_hr == null ? null : Number(row.price_gpu_hr),
+  depositPct: row.deposit_pct == null ? null : Number(row.deposit_pct),
   depositUsd: row.deposit_usd == null ? null : Number(row.deposit_usd),
   creditRating: (row.credit_rating ?? null) as Deployment["creditRating"],
   locRequired: Boolean(row.loc_required),
@@ -40,6 +41,7 @@ const toDeployment = (row: Record<string, unknown>): Deployment => ({
   creditGuarantee: Boolean(row.credit_guarantee),
   leaseGuarantee: Boolean(row.lease_guarantee),
   notes: row.notes == null ? null : String(row.notes),
+  externalNotes: row.external_notes == null ? null : String(row.external_notes),
   dataRoomId: row.data_room_id == null ? null : String(row.data_room_id),
   dataRoomName: row.data_room_name == null ? null : String(row.data_room_name),
   shareToken: row.share_token == null ? null : String(row.share_token),
@@ -55,8 +57,8 @@ export async function listDeployments(): Promise<Deployment[]> {
   const rows = await db()`
     select d.id, d.name, d.status, d.nodes, d.platform, d.cooling, d.networking, d.storage_tb_per_node,
       d.address, d.city, d.place_id, d.facility, d.term_months, d.price_gpu_hr::float8 as price_gpu_hr,
-      d.deposit_usd::float8 as deposit_usd, d.credit_rating, d.loc_required,
-      d.loc_years::float8 as loc_years, d.credit_guarantee, d.lease_guarantee, d.notes, d.updated_at,
+      d.deposit_pct::float8 as deposit_pct, d.deposit_usd::float8 as deposit_usd, d.credit_rating, d.loc_required,
+      d.loc_years::float8 as loc_years, d.credit_guarantee, d.lease_guarantee, d.notes, d.external_notes, d.updated_at,
       d.data_room_id, dr.name as data_room_name, d.share_token,
       coalesce(
         (select json_agg(
@@ -128,23 +130,24 @@ export async function saveDeployment(
           name = ${d.name}, status = ${d.status}, nodes = ${d.nodes}, platform = ${d.platform},
           cooling = ${d.cooling}, networking = ${d.networking}, storage_tb_per_node = ${d.storageTbPerNode},
           address = ${d.address}, city = ${d.city}, place_id = ${d.placeId}, facility = ${d.facility},
-          term_months = ${d.termMonths}, price_gpu_hr = ${d.priceGpuHr}, deposit_usd = ${d.depositUsd},
+          term_months = ${d.termMonths}, price_gpu_hr = ${d.priceGpuHr}, deposit_pct = ${d.depositPct},
+          deposit_usd = ${d.depositUsd},
           credit_rating = ${d.creditRating}, loc_required = ${d.locRequired}, loc_years = ${d.locYears},
           credit_guarantee = ${d.creditGuarantee}, lease_guarantee = ${d.leaseGuarantee}, notes = ${d.notes},
-          data_room_id = ${d.dataRoomId}, updated_by = ${userId}, updated_at = now()
+          external_notes = ${d.externalNotes}, data_room_id = ${d.dataRoomId}, updated_by = ${userId}, updated_at = now()
         where id = ${deploymentId}
         returning id
       `
     : sql`
         insert into deployments (
           id, name, status, nodes, platform, cooling, networking, storage_tb_per_node, address, city, place_id,
-          facility, term_months, price_gpu_hr, deposit_usd, credit_rating, loc_required, loc_years,
-          credit_guarantee, lease_guarantee, notes, data_room_id, created_by, updated_by
+          facility, term_months, price_gpu_hr, deposit_pct, deposit_usd, credit_rating, loc_required, loc_years,
+          credit_guarantee, lease_guarantee, notes, external_notes, data_room_id, created_by, updated_by
         ) values (
           ${deploymentId}, ${d.name}, ${d.status}, ${d.nodes}, ${d.platform}, ${d.cooling}, ${d.networking},
           ${d.storageTbPerNode}, ${d.address}, ${d.city}, ${d.placeId}, ${d.facility}, ${d.termMonths},
-          ${d.priceGpuHr}, ${d.depositUsd}, ${d.creditRating}, ${d.locRequired}, ${d.locYears},
-          ${d.creditGuarantee}, ${d.leaseGuarantee}, ${d.notes}, ${d.dataRoomId}, ${userId}, ${userId}
+          ${d.priceGpuHr}, ${d.depositPct}, ${d.depositUsd}, ${d.creditRating}, ${d.locRequired}, ${d.locYears},
+          ${d.creditGuarantee}, ${d.leaseGuarantee}, ${d.notes}, ${d.externalNotes}, ${d.dataRoomId}, ${userId}, ${userId}
         )
         returning id
       `;

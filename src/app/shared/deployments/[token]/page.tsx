@@ -18,9 +18,10 @@ export async function generateMetadata({ params }: PageProps<"/shared/deployment
 
 /**
  * A deployment's public page, for anyone the ZODE team gave its link: its
- * PDF, without notes, credit or its data room, with buttons to share the link
- * and export the PDF, like the company profile. Lives outside `(site)`, like
- * /company-profile, so the PDF fills the window without the footer.
+ * PDF, with its external notes but not its internal ones, credit or data
+ * room, and buttons to share the link and export the PDF, like the company
+ * profile. Lives outside `(site)`, like /company-profile, so the PDF fills the
+ * window without the footer.
  */
 export default function SharedDeploymentPage({ params }: PageProps<"/shared/deployments/[token]">): ReactElement {
   return (

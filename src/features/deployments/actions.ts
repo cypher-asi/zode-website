@@ -22,8 +22,10 @@ import {
   PLATFORM_OPTIONS,
   STATUSES,
   STORAGE_OPTIONS,
+  depositFor,
   isOption,
   isPlaceId,
+  totalsOf,
   type PhaseInput,
   type Platform,
 } from "./types";
@@ -139,18 +141,28 @@ function readDeployment(formData: FormData): DeploymentInput | string {
   if (placeId && !isPlaceId(placeId)) return "Pick the address from the list again.";
   const city = placeId ? field("city") : "";
   if (city.length > MAX_TEXT) return "The city is too long.";
-  const notes = typeof formData.get("notes") === "string" ? multiLine(formData.get("notes") as string) : "";
-  if (notes.length > MAX_NOTES) return "Notes are too long.";
+  const notesOf = (key: string): string => {
+    const raw = formData.get(key);
+    return typeof raw === "string" ? multiLine(raw) : "";
+  };
+  const notes = notesOf("notes");
+  if (notes.length > MAX_NOTES) return "The internal notes are too long.";
+  const externalNotes = notesOf("external_notes");
+  if (externalNotes.length > MAX_NOTES) return "The external notes are too long.";
 
   const termMonths = figure(field("term_months"), "Term", 1200, true);
   const priceGpuHr = figure(field("price_gpu_hr"), "Price", 1e4);
-  const depositUsd = figure(field("deposit_usd"), "Deposit", 1e14);
+  const depositPct = figure(field("deposit_pct").replace(/%$/, ""), "Deposit", 1e3);
   const locRequired = field("loc_required") === "yes";
   const locYears = locRequired ? figure(field("loc_years"), "The LOC's years of lease", 100) : null;
-  for (const value of [termMonths, priceGpuHr, depositUsd, locYears]) {
+  for (const value of [termMonths, priceGpuHr, depositPct, locYears]) {
     if (typeof value === "string") return value;
   }
   if (termMonths === 0) return "Term must be at least a month.";
+  if (typeof depositPct === "number" && depositPct > 100) return "The deposit can be at most 100% of the contract.";
+  if (typeof depositPct === "number" && Math.abs(Math.round(depositPct * 100) - depositPct * 100) > 1e-6) {
+    return "Give the deposit's percent to at most two decimals.";
+  }
   if (locYears === 0) return "The LOC must cover some of the lease.";
   if (typeof locYears === "number" && Math.abs(Math.round(locYears * 100) - locYears * 100) > 1e-6) {
     return "Give the LOC's years of lease to at most two decimals.";
@@ -160,6 +172,15 @@ function readDeployment(formData: FormData): DeploymentInput | string {
   if (typeof phases === "string") return phases;
   const scheduled = phases.reduce((sum, phase) => sum + phase.nodes, 0);
   if (scheduled > nodes) return `The phases add up to ${scheduled} nodes, more than the deployment's ${nodes}.`;
+
+  const { contractUsd } = totalsOf({
+    nodes,
+    platform,
+    storageTbPerNode,
+    priceGpuHr: priceGpuHr as number | null,
+    termMonths: termMonths as number | null,
+    phases,
+  });
 
   return {
     name,
@@ -175,13 +196,15 @@ function readDeployment(formData: FormData): DeploymentInput | string {
     facility: facility ? (facility as DeploymentInput["facility"]) : null,
     termMonths: termMonths as number | null,
     priceGpuHr: priceGpuHr as number | null,
-    depositUsd: depositUsd as number | null,
+    depositPct: depositPct as number | null,
+    depositUsd: depositFor(contractUsd, depositPct as number | null),
     creditRating: creditRating ? (creditRating as DeploymentInput["creditRating"]) : null,
     locRequired,
     locYears: locYears as number | null,
     creditGuarantee: field("credit_guarantee") === "yes",
     leaseGuarantee: field("lease_guarantee") === "yes",
     notes: notes || null,
+    externalNotes: externalNotes || null,
     dataRoomId: field("data_room_id") || null,
     phases,
   };

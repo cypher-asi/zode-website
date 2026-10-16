@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   formatCount,
   formatDay,
+  formatDeposit,
   formatMw,
   formatRate,
   formatTb,
@@ -127,7 +128,7 @@ export function DeploymentDetail({ deployment: d, today }: { deployment: Deploym
       <Facts title="Commercial">
         <Fact label="Term">{d.termMonths !== null ? formatTerm(d.termMonths) : null}</Fact>
         <Fact label="Price">{d.priceGpuHr !== null ? formatRate(d.priceGpuHr) : null}</Fact>
-        <Fact label="Deposit">{d.depositUsd !== null ? formatUsd(d.depositUsd) : null}</Fact>
+        <Fact label="Deposit">{formatDeposit(d.depositUsd, d.depositPct)}</Fact>
         <Fact label="Est. monthly">{totals.monthlyUsd !== null ? formatUsd(totals.monthlyUsd) : null}</Fact>
         <Fact label="Est. contract value">{totals.contractUsd !== null ? formatUsd(totals.contractUsd) : null}</Fact>
       </Facts>
@@ -141,9 +142,16 @@ export function DeploymentDetail({ deployment: d, today }: { deployment: Deploym
         <Fact label="Lease guarantee">{yesNo(d.leaseGuarantee)}</Fact>
       </Facts>
 
+      {d.externalNotes ? (
+        <section className={styles.block} aria-label="External notes">
+          <h2 className={styles.blockTitle}>External notes</h2>
+          <p className={styles.notes}>{d.externalNotes}</p>
+        </section>
+      ) : null}
+
       {d.notes ? (
-        <section className={styles.block} aria-label="Notes">
-          <h2 className={styles.blockTitle}>Notes</h2>
+        <section className={styles.block} aria-label="Internal notes">
+          <h2 className={styles.blockTitle}>Internal notes</h2>
           <p className={styles.notes}>{d.notes}</p>
         </section>
       ) : null}

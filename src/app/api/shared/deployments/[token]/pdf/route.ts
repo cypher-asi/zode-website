@@ -5,7 +5,7 @@ import { renderDeploymentPdf } from "@/features/deployments/pdf";
 import { deploymentFileName } from "@/features/deployments/types";
 
 /**
- * A shared deployment's public PDF (no notes, credit or data room), as of
+ * A shared deployment's public PDF (no internal notes, credit or data room), as of
  * today, for anyone with its link: inline for the viewer, or as a download
  * with `?download=1`.
  */

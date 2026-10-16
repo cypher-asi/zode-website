@@ -80,13 +80,18 @@ export interface Deployment {
   facility: Facility | null;
   termMonths: number | null;
   priceGpuHr: number | null;
+  /** Percent of the contract value; `depositUsd` is calculated from it on save. */
+  depositPct: number | null;
   depositUsd: number | null;
   creditRating: CreditRating | null;
   locRequired: boolean;
   locYears: number | null;
   creditGuarantee: boolean;
   leaseGuarantee: boolean;
+  /** Internal: in the portal and the team's PDF, never behind the public link. */
   notes: string | null;
+  /** Shown wherever the deployment is, its public link included. */
+  externalNotes: string | null;
   dataRoomId: string | null;
   dataRoomName: string | null;
   /** The secret in its public link (`sharePath`), or null when it isn't shared. */
@@ -157,6 +162,21 @@ export const isOption = <Id extends string>(options: readonly Option<Id>[], valu
 export const HOURS_PER_MONTH = 730;
 
 export const gpusFor = (nodes: number): number => nodes * GPUS_PER_NODE;
+
+/** IT kW per node: the cluster builder's figures, and a PLACEHOLDER for Vera Rubin until it has a rack. */
+const NODE_KW: Record<Platform, number> = {
+  b300: PLATFORMS.b300.nodeKw,
+  b200: PLATFORMS.b200.nodeKw,
+  vera_rubin: 21,
+};
+
+/** The IT MW `nodes` nodes of `platform` draw, to the hundredth a phase keeps. */
+export const mwFor = (platform: Platform, nodes: number): number =>
+  Math.round((nodes * NODE_KW[platform]) / 10) / 100;
+
+/** `pct` percent of the contract value, to the cent, when there's both. */
+export const depositFor = (contractUsd: number | null, pct: number | null): number | null =>
+  contractUsd === null || pct === null ? null : Math.round(contractUsd * pct) / 100;
 
 /** One platform's share of a deployment. */
 export interface PlatformShare {
