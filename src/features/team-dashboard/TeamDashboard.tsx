@@ -100,12 +100,14 @@ export async function TeamDashboard({
             wide
           >
             <dl className={dash.breakdown}>
-              {CAPACITY_STATUSES.filter(({ metric }) => metrics.current[metric] > 0).map(({ status, metric }) => (
-                <div key={metric}>
-                  <dt>{status}</dt>
-                  <dd>{megawatts(metrics.current[metric])}</dd>
-                </div>
-              ))}
+              {CAPACITY_STATUSES.toReversed()
+                .filter(({ metric }) => metrics.current[metric] > 0)
+                .map(({ status, metric }) => (
+                  <div key={metric}>
+                    <dt>{status}</dt>
+                    <dd>{megawatts(metrics.current[metric])}</dd>
+                  </div>
+                ))}
             </dl>
           </MetricCard>
           <MetricCard
