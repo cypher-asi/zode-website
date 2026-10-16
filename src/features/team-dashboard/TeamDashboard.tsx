@@ -40,9 +40,10 @@ function visitorChange(current: number, previous: number, days: number) {
 }
 
 /**
- * The ZODE team's figures at a glance, Home's Team tab: capacity by status
- * (statuses with none left out), the opportunity pipeline, contracts and
- * subscribers, each with its history.
+ * The ZODE team's figures at a glance, Home's Team tab: the capacity
+ * pipeline across the top with its MW by status (statuses with none left
+ * out), then the opportunity pipeline, contracts and subscribers, each with
+ * its history.
  * `account` must already be checked to be on the team.
  */
 export async function TeamDashboard({
@@ -88,20 +89,25 @@ export async function TeamDashboard({
         <Empty>The team&apos;s figures couldn&apos;t be loaded right now. Please try again shortly.</Empty>
       ) : (
         <div className={dash.grid}>
-          {CAPACITY_STATUSES.filter(({ metric }) => metrics.current[metric] > 0).map(({ status, metric }) => (
-            <MetricCard
-              key={metric}
-              label={`Capacity · ${status}`}
-              href="/portal/capacity/sites"
-              value={metrics.current[metric]}
-              format={megawatts}
-              detail={`${Math.round((metrics.current[metric] / metrics.current.capacity_pipeline_mw) * 100)}% of ${megawatts(
-                metrics.current.capacity_pipeline_mw,
-              )}`}
-              points={metrics.series[metric]}
-              rangeDays={rangeDays}
-            />
-          ))}
+          <MetricCard
+            label="Capacity pipeline"
+            href="/portal/capacity/sites"
+            value={metrics.current.capacity_pipeline_mw}
+            format={megawatts}
+            detail={`${megawatts(metrics.current.capacity_contracted_mw)} contracted or closed`}
+            points={metrics.series.capacity_pipeline_mw}
+            rangeDays={rangeDays}
+            wide
+          >
+            <dl className={dash.breakdown}>
+              {CAPACITY_STATUSES.filter(({ metric }) => metrics.current[metric] > 0).map(({ status, metric }) => (
+                <div key={metric}>
+                  <dt>{status}</dt>
+                  <dd>{megawatts(metrics.current[metric])}</dd>
+                </div>
+              ))}
+            </dl>
+          </MetricCard>
           <MetricCard
             label="Open opportunities"
             href="/portal/zrm/opportunities"

@@ -128,6 +128,8 @@ export function MetricCard({
   format,
   change,
   weekly = false,
+  wide = false,
+  children,
 }: {
   label: string;
   href?: string;
@@ -141,6 +143,10 @@ export function MetricCard({
   change?: { text: ReactNode; trend: "up" | "down" | "flat" };
   /** Lets the line pick out a week at a time and total it, for figures counted per day. */
   weekly?: boolean;
+  /** Spans the grid's full width, its line stretched across it. */
+  wide?: boolean;
+  /** Shown under the line, e.g. the figure's breakdown. */
+  children?: ReactNode;
 }): ReactElement {
   const first = points[0];
   const last = points.at(-1);
@@ -159,7 +165,7 @@ export function MetricCard({
   );
 
   return (
-    <div className={styles.card}>
+    <div className={styles.card} data-wide={wide || undefined}>
       {href ? (
         <Link className={`${styles.cardHead} ${styles.cardLink}`} href={href}>
           {head}
@@ -193,6 +199,7 @@ export function MetricCard({
           "No history yet"
         )}
       </p>
+      {children}
     </div>
   );
 }
