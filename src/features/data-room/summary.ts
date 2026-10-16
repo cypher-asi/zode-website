@@ -352,8 +352,8 @@ export interface SummaryEconomics {
 
 /**
  * What each class of equity puts in and takes out, and when. Preferred funds
- * all the equity for its fixed return and minimum multiple; common puts in
- * nothing and takes what's left once preferred is paid. Dates are UTC
+ * all the equity for its fixed return and minimum multiple, paid out after its
+ * hold; common puts in nothing and takes what's left once preferred is paid. Dates are UTC
  * milliseconds, null when the month never comes.
  */
 export interface EquityReturns {
@@ -421,6 +421,9 @@ const startOn = (date: string): StartDate => {
   return { year, month: month - 1, day };
 };
 
+/** Preferred investors are held 4 years from the first call, then paid out. */
+const PREF_HOLD_MONTHS = 48;
+
 /** Level monthly payment on `loan` at an annual `rate` over `years`. */
 const levelPayment = (loan: number, rate: number, years: number) => {
   const r = rate / 12;
@@ -476,6 +479,7 @@ export function summaryEconomics(summary: DiligenceSummary, at?: StartDate): Sum
     inputs = {
       ...DEFAULT_INPUTS,
       nodes,
+      prefHoldMonths: PREF_HOLD_MONTHS,
       siteMode: 0,
       baseLease: rent.baseLease,
       leaseEscalation: rent.leaseEscalation,
@@ -491,6 +495,7 @@ export function summaryEconomics(summary: DiligenceSummary, at?: StartDate): Sum
     inputs = {
       ...DEFAULT_INPUTS,
       nodes,
+      prefHoldMonths: PREF_HOLD_MONTHS,
       siteMode: 1,
       sitePurchase: Math.round(toUsd(e.purchasePrice, e.fx) ?? 0),
       siteConversionPerMw: perMw(conversionUsd(e, it.value)),

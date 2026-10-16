@@ -579,6 +579,7 @@ export function runModel(inputs: ModelInputs, start: StartDate, phasing?: Phasin
   let paidIn = 0;
   let paidOut = 0;
   let allOut = 0;
+  let firstCall = -1;
   for (let m = 0; m < months; m++) {
     const required = (m < last ? i.minCash : 0) + committed[m];
 
@@ -599,14 +600,17 @@ export function runModel(inputs: ModelInputs, start: StartDate, phasing?: Phasin
     const contribution = Math.max(0, required - before);
     const available = Math.max(0, before + contribution - required);
 
+    if (firstCall < 0 && contribution > 0) firstCall = m;
+    const holding = i.prefHoldMonths > 0 && (firstCall < 0 || m < firstCall + i.prefHoldMonths);
+
     const accrued = ((prefCapital + contribution) * i.prefReturn) / 12;
     const returnPaid = Math.min(available, unpaidReturn + accrued);
-    const capitalReturned = Math.min(Math.max(0, available - returnPaid), prefCapital + contribution);
+    const capitalReturned = holding ? 0 : Math.min(Math.max(0, available - returnPaid), prefCapital + contribution);
     prefCapital += contribution - capitalReturned;
     unpaidReturn += accrued - returnPaid;
 
     paidIn += contribution;
-    const residual = Math.max(0, available - returnPaid - capitalReturned);
+    const residual = holding ? 0 : Math.max(0, available - returnPaid - capitalReturned);
     const topUp = Math.min(residual, Math.max(0, paidIn * i.minMoic - paidOut - returnPaid - capitalReturned));
     const toPref = returnPaid + capitalReturned + topUp;
     const toCommon = residual - topUp;

@@ -146,6 +146,8 @@ export interface ModelInputs {
   // Preferred equity
   prefReturn: number;
   minMoic: number;
+  /** Months from the first call that preferred takes only its return; 0 pays capital and the minimum as cash allows. */
+  prefHoldMonths: number;
 
   // Taxes
   purchaseTax: number;
@@ -264,6 +266,7 @@ export const DEFAULT_INPUTS: ModelInputs = withScenario(
 
     prefReturn: 0.18,
     minMoic: 1.5,
+    prefHoldMonths: 0,
 
     purchaseTax: 0.0725,
     taxExempt: 0,
@@ -916,6 +919,16 @@ export const SECTIONS: readonly SectionDef[] = [
         min: 1,
         max: 3,
         step: 0.05,
+      },
+      {
+        key: "prefHoldMonths",
+        label: "Preferred hold",
+        note: "Preferred takes only its return until then, the rest held, then its capital and minimum are paid out. 0 pays them as cash allows.",
+        kind: "range",
+        format: "months",
+        min: 0,
+        max: 72,
+        step: 6,
       },
       {
         key: "incomeTax",

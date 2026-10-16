@@ -260,7 +260,29 @@ const share = (amount: number, total: number) => (total > 0 ? `${pct(amount / to
 const span = (from: number | null, to: number | null) =>
   from === null ? "" : to === null || monthYear(from) === monthYear(to) ? monthYear(from) : `${monthYear(from)} to ${monthYear(to)}`;
 
-const prefTerms = (i: SummaryEconomics["inputs"]) => `${pct(i.prefReturn, 0)} preferred return, ${multiple(i.minMoic, 1)} minimum`;
+/** "Nov 2030 (4 years)": the month, then the years since `origin`. */
+const dated = (ms: number, origin: number | null) => {
+  if (origin === null) return monthYear(ms);
+  const years = Number((Math.round((ms - origin) / (DAY * 30.4375)) / 12).toFixed(1));
+  return `${monthYear(ms)} (${plural(years, "year", "years")})`;
+};
+
+/** `span` with the years since the first capital call beside each month. */
+const yearSpan = (from: number | null, to: number | null, origin: number | null) =>
+  from === null
+    ? ""
+    : to === null || monthYear(from) === monthYear(to)
+      ? dated(from, origin)
+      : `${dated(from, origin)} to ${dated(to, origin)}`;
+
+const prefTerms = (i: SummaryEconomics["inputs"]) =>
+  [
+    `${pct(i.prefReturn, 0)} preferred return`,
+    `${multiple(i.minMoic, 1)} minimum`,
+    i.prefHoldMonths ? `paid out after ${contractTerm(i.prefHoldMonths)}` : "",
+  ]
+    .filter(Boolean)
+    .join(", ");
 
 /** What preferred and common take out of a deal, and over which months. */
 function payouts(x: SummaryEconomics): Payout[] {
@@ -273,7 +295,7 @@ function payouts(x: SummaryEconomics): Payout[] {
       note: [
         q.prefMultiple === null ? "" : multiple(q.prefMultiple),
         `${irr(q.prefIrr)} IRR`,
-        span(q.prefFirstOut, q.prefPaid),
+        yearSpan(q.prefFirstOut, q.prefPaid, q.prefInFrom),
       ]
         .filter(Boolean)
         .join(" · "),
@@ -282,7 +304,7 @@ function payouts(x: SummaryEconomics): Payout[] {
       key: "common",
       label: "Common",
       amount: q.commonOut,
-      note: ["No capital in", span(q.commonFrom, q.commonTo)].filter(Boolean).join(" · "),
+      note: yearSpan(q.commonFrom, q.commonTo, q.prefInFrom),
     },
   ];
 }
@@ -374,7 +396,7 @@ function capitalTerms(x: SummaryEconomics, capital: CapitalSource[], from: { at:
     {
       label: "Common distributions",
       value: usdShort(q.commonOut),
-      note: ["No capital in", span(q.commonFrom, q.commonTo)].filter(Boolean).join(", "),
+      note: yearSpan(q.commonFrom, q.commonTo, q.prefInFrom),
     },
     { label: "Project IRR", value: irr(r.projectIrr), note: "Before GPU debt" },
   ];
