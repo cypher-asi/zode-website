@@ -708,6 +708,12 @@ create index if not exists capacity_sites_customer_idx on capacity_sites (custom
 create index if not exists capacity_sites_firm_idx on capacity_sites (firm_company_id);
 create index if not exists capacity_sites_broker_idx on capacity_sites (broker_person_id);
 
+-- The site's data room, when it has one. The link only opens the room for its
+-- members, as every room is shared by invite.
+alter table capacity_sites add column if not exists data_room_id uuid references data_rooms (id) on delete set null;
+
+create index if not exists capacity_sites_data_room_idx on capacity_sites (data_room_id) where data_room_id is not null;
+
 -- Sites take notes too, so a note hangs off exactly one person, company,
 -- opportunity or site. The check is dropped and re-added under one name so
 -- this re-runs, replacing the unnamed one zrm_notes was created with.

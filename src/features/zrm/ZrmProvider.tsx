@@ -15,7 +15,17 @@ import {
 } from "react";
 import Link from "next/link";
 import { useRouter, useSelectedLayoutSegments } from "next/navigation";
-import { RECORD_APPS, type Option, type RecordAppId, type RecordKind, type SiteGroup, type SiteStatus, type Stage, type ZrmData } from "./types";
+import {
+  RECORD_APPS,
+  type Option,
+  type RecordAppId,
+  type RecordKind,
+  type SiteGroup,
+  type SiteRoom,
+  type SiteStatus,
+  type Stage,
+  type ZrmData,
+} from "./types";
 
 interface ZrmDataValue {
   data: ZrmData;
@@ -153,6 +163,7 @@ export interface RefOptions {
   stages: Stage[];
   groups: SiteGroup[];
   statuses: SiteStatus[];
+  rooms: SiteRoom[];
 }
 
 export function useRefOptions(): RefOptions {
@@ -167,6 +178,7 @@ export function useRefOptions(): RefOptions {
       stages: data.stages,
       groups: data.groups,
       statuses: data.statuses,
+      rooms: data.rooms,
     }),
     [data],
   );

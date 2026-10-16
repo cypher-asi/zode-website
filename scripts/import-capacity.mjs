@@ -11,6 +11,9 @@
  * survive a re-run. Companies match on name, case-insensitively; brokers on
  * first name and firm. The sheet's Total rows aren't imported, since
  * Capacity sums the sites itself, and its "Link" cells carried no addresses.
+ *
+ * A site with a data room (`room`, the room's name) is linked to it when the
+ * database has that room and the site has none yet, existing sites included.
  */
 import { neon } from "@neondatabase/serverless";
 
@@ -30,15 +33,15 @@ const SOURCE = "Capacity sheet";
 const GROUPS = {
   "Critical Path": [
     ["Chicago", "801 S Canal", "Alonsar", 15, "Lease", 3.8, 20.2, 170, 0.1, 9_000_000, null, "2027-02-05",
-      { customer: "SourceM3D", broker: "Chad", contract: 377_782_272, annual: 75_556_454 }],
+      { customer: "SourceM3D", broker: "Chad", contract: 377_782_272, annual: 75_556_454, room: "801 S Canal, Chicago" }],
     ["Missasaga", "5640 Kennedy Road", "CORE Data Centers Inc.", 5, "Lease", 1.2, 0, 133, 0.08, 1_250_000, null, "2026-01-15",
       { customer: "SF Compute", contract: 33_730_560, annual: 11_243_520 }],
     ["Milton", "8250 Lawson Road", "137 Edge Compute Inc.", 5, "JV", 1.39, 5.22, 185, 0.13, 10_000_000, 26_440_000, "2026-03-31",
       { customer: "SF Compute", broker: "Carlos", firm: "XIRR" }],
     ["Olds", "6102 48th Avenue Road", "SNDL INC.", null, "Buy", 22, 0, 0, 0.12, 18_000_000, 88_000_000, "2026-03-31",
-      { broker: "Casey", firm: "JLL" }],
+      { broker: "Casey", firm: "JLL", room: "6102-6402 48 Avenue" }],
     ["Calgary", "5430 30 Street SE", "Balil", null, "Buy", 8, 5, 0, 0.12, 10_000_000, 32_000_000, "2026-03-31",
-      { broker: "Mitch", firm: "Baxtell" }],
+      { broker: "Mitch", firm: "Baxtell", room: "5430 30 Street SE" }],
   ],
   LOI: [
     ["Alaska", "Alaska", null, 10, "Buy", 5, 15, null, null, null, null, "2027-03-31"],
@@ -131,7 +134,7 @@ const byName = async (table) =>
 const groupIds = await byName("capacity_groups");
 const statusIds = await byName("capacity_statuses");
 
-const counts = { companies: 0, people: 0, sites: 0 };
+const counts = { companies: 0, people: 0, sites: 0, rooms: 0 };
 
 const companyIds = new Map();
 async function companyId(name) {
@@ -203,9 +206,18 @@ for (const [group, sites] of Object.entries(GROUPS)) {
       Object.values(site),
     );
     counts.sites += inserted.length;
+    if (extras.room) {
+      const linked = await sql`
+        update capacity_sites s set data_room_id = r.id, updated_at = now()
+        from (select id from data_rooms where lower(name) = ${extras.room.toLowerCase()} order by created_at limit 1) r
+        where s.seed_key = ${site.seed_key} and s.data_room_id is null
+        returning s.id
+      `;
+      counts.rooms += linked.length;
+    }
   }
 }
 
 console.log(
-  `[capacity:import] added ${counts.sites} sites, ${counts.companies} companies and ${counts.people} people to ${new URL(url).hostname}`,
+  `[capacity:import] added ${counts.sites} sites, ${counts.companies} companies and ${counts.people} people, and linked ${counts.rooms} data rooms, to ${new URL(url).hostname}`,
 );

@@ -5,7 +5,7 @@ import { Select } from "@/components/ui/Select";
 import ui from "@/features/data-room/ui.module.css";
 import { Badge } from "./bits";
 import type { FieldSpec } from "./fields";
-import { formatDecimal, formatMoney, recordHref, type Option } from "./types";
+import { formatDecimal, formatMoney, recordHref, roomHref, type Option } from "./types";
 import { useRefOptions, ZrmLink } from "./ZrmProvider";
 import styles from "./zrm.module.css";
 
@@ -70,6 +70,8 @@ export function fieldValue(field: FieldSpec, record: object): ReactNode {
         </ZrmLink>
       );
     }
+    case "room":
+      return <ZrmLink href={roomHref(String(value))}>{String((field.display ? read(record, field.display) : null) ?? "Open")}</ZrmLink>;
     case "stage":
     case "group":
       return <Badge>{String(field.display ? read(record, field.display) : value)}</Badge>;
@@ -119,6 +121,7 @@ export function FieldInput({
     field.type === "stage" ||
     field.type === "group" ||
     field.type === "status" ||
+    field.type === "room" ||
     field.type === "choice"
   ) {
     const named = (items: readonly { id: string; name: string }[]): Option[] =>
@@ -129,6 +132,7 @@ export function FieldInput({
       stage: () => named(options.stages),
       group: () => named(options.groups),
       status: () => named(options.statuses),
+      room: () => named(options.rooms),
       choice: () => (field.options ?? []).map((value) => ({ value, label: value })),
     }[field.type]();
     const withNone = field.required ? choices : [{ value: "", label: "None" }, ...choices];

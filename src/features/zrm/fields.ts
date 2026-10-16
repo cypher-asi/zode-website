@@ -2,8 +2,8 @@ import type { RecordKind } from "./types";
 
 /**
  * How a field is edited and shown. References (`company`, `person`, `stage`,
- * `group`, `status`) hold an id, with its name alongside in the record under
- * `display`. `decimal`, unlike `money`, takes fractions and negatives.
+ * `group`, `status`, `room`) hold an id, with its name alongside in the record
+ * under `display`. `decimal`, unlike `money`, takes fractions and negatives.
  */
 export type FieldType =
   | "text"
@@ -21,7 +21,8 @@ export type FieldType =
   | "person"
   | "stage"
   | "group"
-  | "status";
+  | "status"
+  | "room";
 
 export interface FieldSpec {
   /** The column, and the record property and form input of the same name. */
@@ -219,7 +220,12 @@ export const SECTIONS: Record<RecordKind, readonly SectionSpec[]> = {
     {
       id: "links",
       title: "Links and notes",
-      fields: [url("vdr_url", "VDR"), url("link_url", "Link"), { key: "notes", label: "Site notes", type: "textarea" }],
+      fields: [
+        { key: "data_room_id", label: "Data room", type: "room", display: "data_room_name" },
+        url("vdr_url", "VDR"),
+        url("link_url", "Link"),
+        { key: "notes", label: "Site notes", type: "textarea" },
+      ],
     },
   ],
 };

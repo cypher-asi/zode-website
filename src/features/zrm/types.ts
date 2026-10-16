@@ -38,6 +38,8 @@ export const listHref = (kind: RecordKind): string => `${RECORD_APPS[appOf(kind)
 
 export const recordHref = (kind: RecordKind, id: string): string => `${listHref(kind)}/${id}`;
 
+export const roomHref = (id: string): string => `/portal/data-rooms/${id}`;
+
 export interface ZrmType {
   id: string;
   name: string;
@@ -129,6 +131,12 @@ export interface SiteRow {
   active: boolean;
 }
 
+/** A data room a site can link to. */
+export interface SiteRoom {
+  id: string;
+  name: string;
+}
+
 export interface ZrmData {
   people: PersonRow[];
   companies: CompanyRow[];
@@ -138,6 +146,7 @@ export interface ZrmData {
   sites: SiteRow[];
   groups: SiteGroup[];
   statuses: SiteStatus[];
+  rooms: SiteRoom[];
 }
 
 // Full records, for the detail pane.
@@ -254,6 +263,8 @@ export interface Site {
   cooling: string | null;
   vdr_url: string | null;
   link_url: string | null;
+  data_room_id: string | null;
+  data_room_name: string | null;
   customer_company_id: string | null;
   customer_name: string | null;
   broker_person_id: string | null;

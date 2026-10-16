@@ -102,6 +102,9 @@ function savedRecord(record: object, fields: readonly FieldSpec[], formData: For
       case "group":
         next[field.display] = named(data.groups, value);
         break;
+      case "room":
+        next[field.display] = named(data.rooms, value);
+        break;
       case "status": {
         const status = data.statuses.find((s) => s.id === value);
         next[field.display] = status?.name ?? null;

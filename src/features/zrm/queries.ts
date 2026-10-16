@@ -17,6 +17,7 @@ import type {
   Related,
   Site,
   SiteGroup,
+  SiteRoom,
   SiteRow,
   SiteStatus,
   Stage,
@@ -106,6 +107,8 @@ const groupsQuery = (sql: Sql) => sql`select id, name, position from capacity_gr
 
 const statusesQuery = (sql: Sql) => sql`select id, name, position, color from capacity_statuses order by position, name`;
 
+const roomsQuery = (sql: Sql) => sql`select id, name from data_rooms order by lower(name)`;
+
 /*
  * The lists are shared by the whole team, so each is cached on the server
  * under its tag; `minutes` revalidates in the background after a minute,
@@ -140,6 +143,14 @@ async function listSites(): Promise<SiteRow[]> {
   return (await sitesQuery(db())) as SiteRow[];
 }
 
+/** Every data room, for a site's Data room picker; rooms changing doesn't update a ZRM tag, so new ones show within a minute. */
+async function listRooms(): Promise<SiteRoom[]> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(ZRM_TAGS.lookups, DB_TAG);
+  return (await roomsQuery(db())) as SiteRoom[];
+}
+
 async function listLookups(): Promise<Pick<ZrmData, "types" | "stages" | "groups" | "statuses">> {
   "use cache";
   cacheLife("minutes");
@@ -160,18 +171,20 @@ async function listLookups(): Promise<Pick<ZrmData, "types" | "stages" | "groups
 /**
  * Everything an app's tabs list, loaded once by its layout so switching tabs
  * doesn't touch the database. Capacity also gets ZRM's people and companies
- * for its pickers and links; neither app gets the other's own list.
+ * for its pickers and links, and the data rooms its sites link to; neither
+ * app gets the other's own list.
  */
 export async function loadZrmData(app: RecordAppId): Promise<ZrmData> {
   const capacity = app === "capacity";
-  const [people, companies, opportunities, sites, lookups] = await Promise.all([
+  const [people, companies, opportunities, sites, rooms, lookups] = await Promise.all([
     listPeople(),
     listCompanies(),
     capacity ? [] : listOpportunities(),
     capacity ? listSites() : [],
+    capacity ? listRooms() : [],
     listLookups(),
   ]);
-  return { people, companies, opportunities, sites, ...lookups };
+  return { people, companies, opportunities, sites, rooms, ...lookups };
 }
 
 const typesOfCompany = (sql: Sql, companyId: string) => sql`
@@ -394,7 +407,7 @@ export async function getSiteDetail(id: string): Promise<SiteDetail | null> {
           s.initial_it_mw::float8 as initial_it_mw, s.secondary_it_mw::float8 as secondary_it_mw,
           s.total_it_mw::float8 as total_it_mw, s.kw_rate::float8 as kw_rate, s.power_rate::float8 as power_rate,
           s.upfront::float8 as upfront, s.conversion::float8 as conversion, s.rfs_date::text as rfs_date,
-          s.cooling, s.vdr_url, s.link_url,
+          s.cooling, s.vdr_url, s.link_url, s.data_room_id, dr.name as data_room_name,
           s.customer_company_id, cc.name as customer_name,
           s.broker_person_id, nullif(concat_ws(' ', bp.first_name, bp.last_name), '') as broker_name,
           s.firm_company_id, fc.name as firm_name,
@@ -407,6 +420,7 @@ export async function getSiteDetail(id: string): Promise<SiteDetail | null> {
         left join zrm_companies cc on cc.id = s.customer_company_id
         left join zrm_companies fc on fc.id = s.firm_company_id
         left join zrm_people bp on bp.id = s.broker_person_id
+        left join data_rooms dr on dr.id = s.data_room_id
         where s.id = ${id}
       `,
       notesOf(sql, "site_id", id),

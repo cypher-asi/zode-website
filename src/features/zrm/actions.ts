@@ -66,6 +66,7 @@ function parseField(field: FieldSpec, raw: FormDataEntryValue | null): { value: 
     case "stage":
     case "group":
     case "status":
+    case "room":
       return isUuid(value) ? { value } : fail("isn't one of the choices");
     default:
       return { value };
