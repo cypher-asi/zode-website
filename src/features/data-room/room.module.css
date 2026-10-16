@@ -122,6 +122,14 @@
   display: none;
 }
 
+/* The sidebar, where it shows (SIDEBAR_MEDIA in nav.ts), lists these tabs' pages already. */
+@media (min-width: 1101px) {
+  .tabs[data-in-sidebar],
+  .headerActions:not(:has(> :not(.tabs[data-in-sidebar]))) {
+    display: none;
+  }
+}
+
 /* Radius is the track's less its padding, so the chip sits concentrically. Positioned to paint over PortalTabs' chip. */
 .tab {
   position: relative;

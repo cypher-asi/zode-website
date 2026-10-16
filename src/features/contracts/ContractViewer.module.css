@@ -1,0 +1,17 @@
+/* Flex only once open, so the <dialog> stays hidden until showModal. */
+.dialog {
+  --dialog-width: 1040px;
+  height: calc(100dvh - 64px);
+  overflow: hidden;
+}
+
+.dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 700px) {
+  .dialog {
+    height: calc(100dvh - 48px - env(safe-area-inset-top, 0px));
+  }
+}

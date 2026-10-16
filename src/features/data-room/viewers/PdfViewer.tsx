@@ -32,7 +32,7 @@ interface PageSize {
   height: number;
 }
 
-export default function PdfViewer({ url, zoom, onFitScale }: ViewerProps): ReactElement {
+export default function PdfViewer({ url, zoom, onFitScale }: Omit<ViewerProps, "file">): ReactElement {
   const containerRef = useRef<HTMLDivElement>(null);
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
   const [sizes, setSizes] = useState<PageSize[]>([]);

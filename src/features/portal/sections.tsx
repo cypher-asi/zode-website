@@ -1,7 +1,9 @@
 import type { ReactElement, ReactNode } from "react";
 import Link from "next/link";
 import type { OrderSummary } from "@/features/configurator/orders";
-import type { ComputeContract, Contract } from "@/features/contracts/contracts";
+import { ContractBrowser, type BrowserGroup, type BrowserItem } from "@/features/contracts/ContractBrowser";
+import { ContractDetails } from "@/features/contracts/ContractDetails";
+import type { ComputeContract, Contract, MndaContract } from "@/features/contracts/contracts";
 import bar from "@/features/data-room/room.module.css";
 import { siteMapSrc } from "@/features/data-room/rooms";
 import { roomKindLabel, type PendingInvite, type RoomSummary } from "@/features/data-room/types";
@@ -431,50 +433,71 @@ function computeMeta(contract: ComputeContract): string {
     .join(" · ");
 }
 
-const downloadIcon = (
-  <svg className={styles.chevron} viewBox="0 0 16 16" aria-hidden="true">
-    <path d="M8 2.75v8M4.75 7.75 8 11l3.25-3.25M3.25 13.5h9.5" />
-  </svg>
-);
-
-/** A compute deal, with a download link for each of its PDFs (MSA, order forms). */
+/** A compute deal's row: its size, rate, term and value at a glance; the pane holds the rest and its PDFs. */
 function ComputeDealRow({ contract }: { contract: ComputeContract }): ReactElement {
   return (
-    <div className={styles.row}>
+    <>
       <span className={styles.rowIcon}>
         <PortalIcon name="cluster" />
       </span>
       <span className={styles.rowMain}>
         <span className={styles.rowTitle}>Compute deal · {contract.counterparty}</span>
         <span className={styles.rowMeta}>{computeMeta(contract)}</span>
-        {contract.documents.length ? (
-          <span className={styles.rowDocs}>
-            {contract.documents.map((document) => (
-              <a
-                key={document.id}
-                className={styles.rowDoc}
-                href={`/api/contracts/${contract.id}/pdf?doc=${document.id}`}
-                download
-              >
-                {downloadIcon}
-                {document.label}
-              </a>
-            ))}
-          </span>
-        ) : null}
       </span>
-      {contract.structure ? (
-        <span className={styles.rowEnd}>
+      <span className={styles.rowEnd}>
+        {contract.structure ? (
           <span className={styles.pill} data-strong="">
             {contract.structure}
           </span>
-        </span>
-      ) : null}
-    </div>
+        ) : null}
+        <Chevron />
+      </span>
+    </>
   );
 }
 
-/** Executed agreements; each row downloads its PDF, or a deal's PDFs. `showSigner` adds who signed, for the team seeing everyone's. */
+function MndaRow({ contract, showSigner }: { contract: MndaContract; showSigner: boolean }): ReactElement {
+  return (
+    <>
+      <span className={styles.rowIcon}>
+        <PortalIcon name="contracts" />
+      </span>
+      <span className={styles.rowMain}>
+        <span className={styles.rowTitle}>Mutual NDA · {contract.counterparty}</span>
+        <span className={styles.rowMeta}>
+          {showSigner ? `${contract.signerName} (${contract.signerEmail})` : `Signed by ${contract.signerName}`}
+          {" · "}
+          {date.format(contract.signedAt)}
+          {contract.roomName ? <> · via {contract.roomName}</> : null}
+        </span>
+      </span>
+      <span className={styles.rowEnd}>
+        {showSigner && !contract.linked ? <span className={styles.pill}>No account</span> : null}
+        <Chevron />
+      </span>
+    </>
+  );
+}
+
+function browserItem(contract: Contract, showSigner: boolean): BrowserItem {
+  return {
+    id: contract.id,
+    title: contract.counterparty,
+    subtitle:
+      contract.kind === "compute"
+        ? `Compute deal · Signed ${date.format(contract.signedAt)}`
+        : `Mutual NDA · Signed ${date.format(contract.signedAt)}`,
+    row:
+      contract.kind === "compute" ? (
+        <ComputeDealRow contract={contract} />
+      ) : (
+        <MndaRow contract={contract} showSigner={showSigner} />
+      ),
+    detail: <ContractDetails contract={contract} showSigner={showSigner} />,
+  };
+}
+
+/** Executed agreements; selecting one shows its details and PDFs beside the list. `showSigner` adds who signed, for the team seeing everyone's. */
 export function ContractList({
   contracts,
   showSigner = false,
@@ -482,38 +505,7 @@ export function ContractList({
   contracts: Contract[];
   showSigner?: boolean;
 }): ReactElement {
-  return (
-    <ul className={styles.list}>
-      {contracts.map((contract) => (
-        <li key={contract.id}>
-          {contract.kind === "compute" ? (
-            <ComputeDealRow contract={contract} />
-          ) : (
-            <a className={styles.row} href={`/api/contracts/${contract.id}/pdf`} download>
-              <span className={styles.rowIcon}>
-                <PortalIcon name="contracts" />
-              </span>
-              <span className={styles.rowMain}>
-                <span className={styles.rowTitle}>Mutual NDA · {contract.counterparty}</span>
-                <span className={styles.rowMeta}>
-                  {showSigner ? `${contract.signerName} (${contract.signerEmail})` : `Signed by ${contract.signerName}`}
-                  {" · "}
-                  {date.format(contract.signedAt)}
-                  {contract.roomName ? <> · via {contract.roomName}</> : null}
-                </span>
-              </span>
-              <span className={styles.rowEnd}>
-                {showSigner && !contract.linked ? <span className={styles.pill}>No account</span> : null}
-                <svg className={styles.chevron} viewBox="0 0 16 16" aria-label="Download PDF" role="img">
-                  <path d="M8 2.75v8M4.75 7.75 8 11l3.25-3.25M3.25 13.5h9.5" />
-                </svg>
-              </span>
-            </a>
-          )}
-        </li>
-      ))}
-    </ul>
-  );
+  return <ContractBrowser groups={[{ key: "all", items: contracts.map((contract) => browserItem(contract, showSigner)) }]} />;
 }
 
 /** ContractList under a heading for each type, in CONTRACT_TYPES order, leaving out types with none. */
@@ -524,22 +516,21 @@ export function ContractGroups({
   contracts: Contract[];
   showSigner?: boolean;
 }): ReactElement {
-  return (
-    <>
-      {CONTRACT_TYPES.map((type) => {
-        const ofType = contracts.filter((contract) => contract.kind === type.id);
-        return ofType.length ? (
-          <section key={type.id} className={styles.section} aria-label={type.label}>
-            <div className={styles.sectionHead}>
-              <h2 className={styles.sectionTitle}>{type.label}</h2>
-              <Link className={styles.more} href={`/portal/contracts/${type.id}`}>
-                {ofType.length.toLocaleString("en-US")}
-              </Link>
-            </div>
-            <ContractList contracts={ofType} showSigner={showSigner} />
-          </section>
-        ) : null;
-      })}
-    </>
-  );
+  const groups: BrowserGroup[] = CONTRACT_TYPES.map((type) => {
+    const ofType = contracts.filter((contract) => contract.kind === type.id);
+    return {
+      key: type.id,
+      label: type.label,
+      head: (
+        <div className={styles.sectionHead}>
+          <h2 className={styles.sectionTitle}>{type.label}</h2>
+          <Link className={styles.more} href={`/portal/contracts/${type.id}`}>
+            {ofType.length.toLocaleString("en-US")}
+          </Link>
+        </div>
+      ),
+      items: ofType.map((contract) => browserItem(contract, showSigner)),
+    };
+  }).filter((group) => group.items.length);
+  return <ContractBrowser groups={groups} />;
 }

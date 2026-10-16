@@ -24,7 +24,7 @@ const loading = () => <div className={styles.status}>Loading preview…</div>;
 
 /** Each previewer, and its library, loads only when a file of that kind is opened. */
 const VIEWERS: Partial<Record<FileKind, ComponentType<ViewerProps>>> = {
-  pdf: dynamic(() => import("./viewers/PdfViewer"), { ssr: false, loading }),
+  pdf: dynamic<ViewerProps>(() => import("./viewers/PdfViewer"), { ssr: false, loading }),
   image: dynamic(() => import("./viewers/ImageViewer"), { ssr: false, loading }),
   video: dynamic(() => import("./viewers/MediaViewer"), { ssr: false, loading }),
   audio: dynamic(() => import("./viewers/MediaViewer"), { ssr: false, loading }),
@@ -100,9 +100,71 @@ export function Viewer({ roomId, file, onBack }: { roomId: string; file: RoomFil
 function FileViewer({ roomId, file, onBack }: { roomId: string; file: RoomFile; onBack: () => void }): ReactElement {
   const kind = fileKind(file.name);
   const Preview = VIEWERS[kind];
-  const zoomable = Boolean(Preview) && ZOOMABLE.has(kind);
   const url = `/api/data-rooms/${roomId}/files/${file.id}`;
 
+  return (
+    <PreviewFrame
+      name={file.name}
+      meta={`${typeLabel(file.name)} · ${formatBytes(file.sizeBytes)} · Added ${uploaded.format(new Date(file.createdAt))}`}
+      kind={kind}
+      downloadUrl={`${url}?download=1`}
+      downloadName={file.name}
+      zoomable={Boolean(Preview) && ZOOMABLE.has(kind)}
+      leading={
+        <button type="button" className={`${ui.iconButton} ${styles.back}`} onClick={onBack} aria-label="Back to files">
+          <Icon name="back" />
+        </button>
+      }
+    >
+      {(zoom, onFitScale) =>
+        Preview ? (
+          <Preview url={url} file={file} zoom={zoom} onFitScale={onFitScale} />
+        ) : (
+          <div className={styles.unsupported}>
+            <FileGlyph kind={kind} className={styles.bigGlyph} />
+            <p className={styles.unsupportedName}>{file.name}</p>
+            <p>Preview isn&apos;t available for {typeLabel(file.name)} files. Download it to open it on your device.</p>
+            <a className={ui.primary} href={`${url}?download=1`} download={file.name}>
+              <Icon name="download" />
+              Download {formatBytes(file.sizeBytes)}
+            </a>
+          </div>
+        )
+      }
+    </PreviewFrame>
+  );
+}
+
+/**
+ * A previewed file under its title bar: its name and details, zoom controls
+ * when the preview scales, and Download. The preview is rendered by `children`
+ * at the current zoom, and reports back what "fit" works out to.
+ */
+export function PreviewFrame({
+  name,
+  meta,
+  kind,
+  downloadUrl,
+  downloadName,
+  zoomable,
+  leading,
+  trailing,
+  children,
+}: {
+  name: string;
+  meta: ReactNode;
+  kind: FileKind;
+  /** Serves the file as an attachment. */
+  downloadUrl: string;
+  /** Unset, the browser saves it under the name the server gives. */
+  downloadName?: string;
+  zoomable: boolean;
+  /** Before the file's glyph, e.g. a way back. */
+  leading?: ReactNode;
+  /** After Download, e.g. a close button. */
+  trailing?: ReactNode;
+  children: (zoom: Zoom, onFitScale: (scale: number) => void) => ReactNode;
+}): ReactElement {
   const [zoom, setZoom] = useState<Zoom>("fit");
   const [fitScale, setFitScale] = useState(1);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -145,17 +207,13 @@ function FileViewer({ roomId, file, onBack }: { roomId: string; file: RoomFile; 
       }}
     >
       <header className={styles.header}>
-        <button type="button" className={`${ui.iconButton} ${styles.back}`} onClick={onBack} aria-label="Back to files">
-          <Icon name="back" />
-        </button>
+        {leading}
         <FileGlyph kind={kind} className={styles.glyph} />
         <div className={styles.titles}>
-          <h2 className={styles.name} title={file.name}>
-            {file.name}
+          <h2 className={styles.name} title={name}>
+            {name}
           </h2>
-          <p className={styles.meta}>
-            {typeLabel(file.name)} · {formatBytes(file.sizeBytes)} · Added {uploaded.format(new Date(file.createdAt))}
-          </p>
+          <p className={styles.meta}>{meta}</p>
         </div>
         {zoomable ? (
           <div className={styles.zoom} role="group" aria-label="Zoom">
@@ -186,25 +244,14 @@ function FileViewer({ roomId, file, onBack }: { roomId: string; file: RoomFile; 
             </button>
           </div>
         ) : null}
-        <a className={ui.button} href={`${url}?download=1`} download={file.name}>
+        <a className={ui.button} href={downloadUrl} download={downloadName ?? true}>
           <Icon name="download" />
           <span className={styles.downloadLabel}>Download</span>
         </a>
+        {trailing}
       </header>
       <div ref={bodyRef} className={styles.body} tabIndex={-1}>
-        {Preview ? (
-          <Preview url={url} file={file} zoom={zoom} onFitScale={setFitScale} />
-        ) : (
-          <div className={styles.unsupported}>
-            <FileGlyph kind={kind} className={styles.bigGlyph} />
-            <p className={styles.unsupportedName}>{file.name}</p>
-            <p>Preview isn&apos;t available for {typeLabel(file.name)} files. Download it to open it on your device.</p>
-            <a className={ui.primary} href={`${url}?download=1`} download={file.name}>
-              <Icon name="download" />
-              Download {formatBytes(file.sizeBytes)}
-            </a>
-          </div>
-        )}
+        {children(zoom, setFitScale)}
       </div>
     </div>
   );

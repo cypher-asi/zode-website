@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 import { isTeam } from "@/features/account/admin";
 import { getAccount } from "@/features/account/session";
 import { contractFileName, getContractFile } from "@/features/contracts/contracts";
@@ -5,14 +6,15 @@ import { readBlob } from "@/features/data-room/blob";
 import { contentDisposition, fileHeaders, notFoundResponse } from "@/features/data-room/http";
 
 /**
- * Downloads an executed agreement for the account that signed it, or for
- * anyone on the ZODE team. A compute deal's `?doc=` names which of its PDFs.
+ * Streams an executed agreement to the account that signed it, or to anyone
+ * on the ZODE team: inline for the viewer, or as an attachment with
+ * `?download=1`. A compute deal's `?doc=` names which of its PDFs.
  */
-export async function GET(request: Request, ctx: RouteContext<"/api/contracts/[contractId]/pdf">) {
+export async function GET(request: NextRequest, ctx: RouteContext<"/api/contracts/[contractId]/pdf">) {
   const { contractId } = await ctx.params;
   const account = await getAccount();
   if (!account) return notFoundResponse();
-  const file = await getContractFile(contractId, new URL(request.url).searchParams.get("doc"));
+  const file = await getContractFile(contractId, request.nextUrl.searchParams.get("doc"));
   if (!file || (file.userId !== account.userId && !(await isTeam(account)))) return notFoundResponse();
 
   let blob: Awaited<ReturnType<typeof readBlob>>;
@@ -27,7 +29,11 @@ export async function GET(request: Request, ctx: RouteContext<"/api/contracts/[c
   }
   if (!blob || blob.statusCode !== 200) return notFoundResponse();
 
-  const headers = fileHeaders("application/pdf", contentDisposition("attachment", contractFileName(file)));
+  const attachment = request.nextUrl.searchParams.get("download") === "1";
+  const headers = fileHeaders(
+    "application/pdf",
+    contentDisposition(attachment ? "attachment" : "inline", contractFileName(file)),
+  );
   const length = blob.headers.get("content-length");
   if (length) headers.set("Content-Length", length);
   return new Response(blob.stream, { headers });

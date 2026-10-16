@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import styles from "@/features/data-room/room.module.css";
 import { PortalIcon, type PortalIconName } from "./icons";
+import { activeApp, portalApps } from "./nav";
 
 export interface PortalTab {
   href: string;
@@ -29,10 +30,21 @@ export function useTabNavigation(current: string | undefined, { scroll = true }:
 }
 
 /**
+ * Whether the sidebar lists exactly these tabs' pages, as the links of the
+ * app the page is in. Every app's fullest links serve, since the apps only
+ * show their tabs to the accounts that get them all.
+ */
+function listedInSidebar(tabs: readonly PortalTab[], pathname: string): boolean {
+  const links = new Set(activeApp(pathname, portalApps({ admin: true, team: true })).links.map(({ href }) => href));
+  return tabs.length === links.size && tabs.every(({ href }) => links.has(href));
+}
+
+/**
  * The segmented control at the top right of a portal app. The white chip is
  * one element that slides to the open tab, so it moves the moment a tab is
  * clicked rather than when the page arrives. Before hydration the open tab
- * draws its own chip, in the same place.
+ * draws its own chip, in the same place. Where the sidebar shows and lists the
+ * same pages, the tabs step aside rather than repeat it.
  */
 export function PortalTabs({
   tabs,
@@ -46,6 +58,7 @@ export function PortalTabs({
   /** Takes over plain clicks; without it the tabs navigate as links. */
   onSelect?: (href: string) => void;
 }): ReactElement {
+  const pathname = usePathname();
   const navRef = useRef<HTMLElement>(null);
   const chipRef = useRef<HTMLSpanElement>(null);
 
@@ -80,7 +93,12 @@ export function PortalTabs({
   }, [active]);
 
   return (
-    <nav ref={navRef} className={styles.tabs} aria-label={label}>
+    <nav
+      ref={navRef}
+      className={styles.tabs}
+      aria-label={label}
+      data-in-sidebar={listedInSidebar(tabs, pathname) || undefined}
+    >
       <span ref={chipRef} className={styles.chip} aria-hidden="true" />
       {tabs.map((tab) => (
         <Link

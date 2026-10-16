@@ -181,22 +181,31 @@
   text-decoration: none;
 }
 
-a.row {
+button.row {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+:is(a, button).row {
   transition: background-color var(--duration-base) ease;
 }
 
 @media (hover: hover) {
-  a.row:hover {
+  :is(a, button).row:hover {
     background: var(--color-surface-tint);
   }
 }
 
-a.row:active {
+:is(a, button).row:active {
   background: var(--color-surface-active);
 }
 
 .stat:focus-visible,
-a.row:focus-visible {
+:is(a, button).row:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: -2px;
 }
@@ -265,43 +274,6 @@ a.row:focus-visible {
   margin-top: 3px;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
-}
-
-/* A compute deal's PDFs under its meta, each its own download. */
-.rowDocs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.rowDoc {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
-  color: var(--color-text-primary);
-  font-size: var(--text-xs);
-  font-weight: 500;
-  text-decoration: none;
-  transition: background-color var(--duration-base) ease;
-}
-
-@media (hover: hover) {
-  .rowDoc:hover {
-    background: var(--color-surface-tint);
-  }
-}
-
-.rowDoc:active {
-  background: var(--color-surface-active);
-}
-
-.rowDoc:focus-visible {
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: 2px;
 }
 
 .rowEnd {
