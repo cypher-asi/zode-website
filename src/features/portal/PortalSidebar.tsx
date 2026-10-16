@@ -17,7 +17,16 @@ const PLACEHOLDER_ROWS = 6;
 
 const ROOM_PLACEHOLDER_ROWS = 3;
 
-function Links({ links, current }: { links: readonly NavLink[]; current: string | null }): ReactElement {
+/** `newTab` opens every link in a new tab, marked by an arrow up and out on hover. */
+function Links({
+  links,
+  current,
+  newTab = false,
+}: {
+  links: readonly NavLink[];
+  current: string | null;
+  newTab?: boolean;
+}): ReactElement {
   return (
     <ul className={styles.links}>
       {links.map((link) => {
@@ -25,11 +34,16 @@ function Links({ links, current }: { links: readonly NavLink[]; current: string 
           <>
             <PortalIcon name={link.icon} className={styles.linkIcon} />
             <span className={styles.linkLabel}>{link.label}</span>
+            {newTab ? (
+              <svg className={styles.linkOut} viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M5.5 3.5h7v7M12.5 3.5l-9 9" />
+              </svg>
+            ) : null}
           </>
         );
         return (
           <li key={link.href}>
-            {link.external ? (
+            {link.external || newTab ? (
               <a href={link.href} target="_blank" rel="noreferrer noopener" className={styles.link}>
                 {content}
               </a>
@@ -173,11 +187,11 @@ export function PortalSidebar({
               </section>
               <section className={styles.section} aria-label="Tools">
                 <h3 className={styles.heading}>Tools</h3>
-                <Links links={app.links} current={current} />
+                <Links links={app.links} current={current} newTab />
               </section>
               <section className={styles.section} aria-label="Resources">
                 <h3 className={styles.heading}>Resources</h3>
-                <Links links={RESOURCE_LINKS} current={null} />
+                <Links links={RESOURCE_LINKS} current={null} newTab />
               </section>
             </>
           ) : app.id === "rooms" ? (

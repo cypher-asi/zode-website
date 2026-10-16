@@ -203,6 +203,25 @@ button.link {
   white-space: nowrap;
 }
 
+/* Marks a link that opens a new tab, shown on hover and focus. */
+.linkOut {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: var(--color-text-tertiary);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+  transition: opacity var(--duration-base) ease;
+}
+
+.link:hover .linkOut,
+.link:focus-visible .linkOut {
+  opacity: 1;
+}
+
 /* Raised out of the glass: a white pill with a soft halo. */
 .link[aria-current="page"],
 .link[aria-pressed="true"] {
@@ -354,7 +373,8 @@ button.link {
 @media (prefers-reduced-motion: reduce) {
   .sidebar,
   .crumb,
-  .link {
+  .link,
+  .linkOut {
     transition: none;
   }
 
