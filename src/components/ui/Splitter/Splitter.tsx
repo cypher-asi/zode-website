@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, type ReactElement, type RefObject } from "react";
+import { useCallback, useLayoutEffect, useRef, type ReactElement, type RefObject } from "react";
 import styles from "./Splitter.module.css";
 
 const MIN_WIDTH = 220;
@@ -25,6 +25,11 @@ export interface SplitterProps {
  * container directly, so dragging doesn't re-render, and remembers the width
  * per browser as a share of the container, so it holds its proportion as the
  * window resizes. Hidden on phones, where the panes stack.
+ *
+ * A container that transitions its columns animates the keyboard's steps and
+ * a double-click's reset; drags and window resizes skip the transition so the
+ * panes keep up. Mounting with a pane that's sliding open, the saved width
+ * joins the slide; on a page's first paint it lands at once.
  */
 export function Splitter({ containerRef, storageKey, label, cssVar, defaultFraction }: SplitterProps): ReactElement {
   const ref = useRef<HTMLDivElement>(null);
@@ -32,13 +37,21 @@ export function Splitter({ containerRef, storageKey, label, cssVar, defaultFract
   const fraction = useRef(defaultFraction);
 
   const apply = useCallback(
-    (next: number) => {
+    (next: number, instant = false) => {
       const container = containerRef.current;
       if (!container) return;
       const max = Math.max(MIN_WIDTH, container.clientWidth - MIN_REMAINDER);
       width.current = Math.round(Math.min(max, Math.max(MIN_WIDTH, next)));
       fraction.current = container.clientWidth ? width.current / container.clientWidth : defaultFraction;
-      container.style.setProperty(cssVar, `${width.current}px`);
+      if (instant) {
+        const transition = container.style.transition;
+        container.style.transition = "none";
+        container.style.setProperty(cssVar, `${width.current}px`);
+        container.getBoundingClientRect();
+        container.style.transition = transition;
+      } else {
+        container.style.setProperty(cssVar, `${width.current}px`);
+      }
       ref.current?.setAttribute("aria-valuenow", String(width.current));
       ref.current?.setAttribute("aria-valuemax", String(max));
     },
@@ -47,7 +60,7 @@ export function Splitter({ containerRef, storageKey, label, cssVar, defaultFract
 
   /** Width for a share of the container, e.g. the default or a saved one. */
   const applyFraction = useCallback(
-    (share: number) => apply(share * (containerRef.current?.clientWidth ?? 0)),
+    (share: number, instant = false) => apply(share * (containerRef.current?.clientWidth ?? 0), instant),
     [apply, containerRef],
   );
 
@@ -59,18 +72,19 @@ export function Splitter({ containerRef, storageKey, label, cssVar, defaultFract
     }
   }, [storageKey]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let saved = 0;
     try {
       saved = Number(localStorage.getItem(storageKey)) || 0;
     } catch {
       saved = 0;
     }
-    applyFraction(saved > 0 && saved < 1 ? saved : defaultFraction);
-    const onResize = () => applyFraction(fraction.current);
+    const sliding = containerRef.current?.getAnimations().some((animation) => animation instanceof CSSTransition) ?? false;
+    applyFraction(saved > 0 && saved < 1 ? saved : defaultFraction, !sliding);
+    const onResize = () => applyFraction(fraction.current, true);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [applyFraction, defaultFraction, storageKey]);
+  }, [applyFraction, containerRef, defaultFraction, storageKey]);
 
   return (
     <div
@@ -87,7 +101,7 @@ export function Splitter({ containerRef, storageKey, label, cssVar, defaultFract
         const target = event.currentTarget;
         target.setPointerCapture(event.pointerId);
         const left = containerRef.current?.getBoundingClientRect().left ?? 0;
-        const move = (e: PointerEvent) => apply(e.clientX - left);
+        const move = (e: PointerEvent) => apply(e.clientX - left, true);
         const root = document.documentElement;
         const end = () => {
           target.removeEventListener("pointermove", move);

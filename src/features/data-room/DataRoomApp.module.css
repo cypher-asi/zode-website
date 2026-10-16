@@ -11,6 +11,13 @@
   background: var(--color-bg);
 }
 
+/* The Splitter writes drags and window resizes past this. */
+@media (prefers-reduced-motion: no-preference) {
+  .app {
+    transition: grid-template-columns 360ms var(--ease-out);
+  }
+}
+
 .side {
   display: flex;
   flex-direction: column;
