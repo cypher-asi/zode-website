@@ -3,7 +3,7 @@ import { io } from "next/cache";
 import Link from "next/link";
 import { isZodeAdmin } from "@/features/account/admin";
 import type { Account } from "@/features/account/zos";
-import { loadVisitorSummary } from "@/features/analytics/queries";
+import { loadVisitorSummary, type VisitorFigure } from "@/features/analytics/queries";
 import { Empty } from "@/features/portal/sections";
 import dash from "./dashboard.module.css";
 import { MetricCard } from "./MetricCard";
@@ -28,11 +28,13 @@ const count = (value: number) => Math.round(value).toLocaleString("en-US");
 const megawatts = (value: number) => `${value.toLocaleString("en-US", { maximumFractionDigits: 1 })} MW`;
 const dollars = (value: number) =>
   value.toLocaleString("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1 });
+const ratio = (part: number, whole: number) =>
+  (whole ? part / whole : 0).toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
-/** Visitors against the period before, since a day's visitors aren't a running total to compare end to end. */
-function visitorChange(current: number, previous: number, days: number) {
+/** Visitors or visits against the period before, since a day's aren't a running total to compare end to end. */
+function visitorChange({ current, previous }: VisitorFigure, days: number, none: string) {
   const label = RANGES.find((range) => range.days === days)?.label ?? `${days}d`;
-  if (!previous) return { text: current ? `New since the previous ${label}` : "No visitors yet", trend: "flat" as const };
+  if (!previous) return { text: current ? `New since the previous ${label}` : none, trend: "flat" as const };
   const pct = Math.round(((current - previous) / previous) * 100);
   return {
     text: `${pct > 0 ? "+" : pct < 0 ? "−" : ""}${Math.abs(pct)}% on the previous ${label}`,
@@ -40,11 +42,21 @@ function visitorChange(current: number, previous: number, days: number) {
   };
 }
 
-function DashboardSection({ title, children }: { title: string; children: ReactNode }): ReactElement {
+function DashboardSection({
+  title,
+  columns = 2,
+  children,
+}: {
+  title: string;
+  columns?: 2 | 3;
+  children: ReactNode;
+}): ReactElement {
   return (
     <section aria-label={title}>
       <h2 className={dash.sectionTitle}>{title}</h2>
-      <div className={dash.grid}>{children}</div>
+      <div className={dash.grid} data-columns={columns}>
+        {children}
+      </div>
     </section>
   );
 }
@@ -53,7 +65,7 @@ function DashboardSection({ title, children }: { title: string; children: ReactN
  * The ZODE team's figures at a glance, Home's Team tab, in three sections:
  * the capacity pipeline with its MW by status (statuses with none left out);
  * the sales pipeline of opportunities and contracts; and the growth engine of
- * subscribers and visitors, each with its history.
+ * subscribers, unique visitors and visits, each with its history.
  * `account` must already be checked to be on the team.
  */
 export async function TeamDashboard({
@@ -76,6 +88,8 @@ export async function TeamDashboard({
       return null;
     }),
   ]);
+  const analyticsHref =
+    rangeDays === 30 ? "/portal/analytics" : rangeDays === 90 ? "/portal/analytics?range=90d" : "/portal/analytics?range=12mo";
 
   return (
     <>
@@ -152,7 +166,7 @@ export async function TeamDashboard({
               rangeDays={rangeDays}
             />
           </DashboardSection>
-          <DashboardSection title="Growth Engine">
+          <DashboardSection title="Growth Engine" columns={visitors ? 3 : 2}>
             <MetricCard
               label="Subscribers"
               href={admin ? "/portal/subscribers" : undefined}
@@ -163,17 +177,29 @@ export async function TeamDashboard({
               rangeDays={rangeDays}
             />
             {visitors ? (
-              <MetricCard
-                label="Visitors"
-                href={rangeDays === 30 ? "/portal/analytics" : rangeDays === 90 ? "/portal/analytics?range=90d" : "/portal/analytics?range=12mo"}
-                value={visitors.visitors}
-                format={count}
-                detail={`${count(visitors.pageviews)} pageviews on the site and portal`}
-                points={visitors.points}
-                rangeDays={rangeDays}
-                change={visitorChange(visitors.visitors, visitors.previous, rangeDays)}
-                weekly={rangeDays === 365}
-              />
+              <>
+                <MetricCard
+                  label="Unique visitors"
+                  href={analyticsHref}
+                  value={visitors.visitors.current}
+                  format={count}
+                  detail={`${ratio(visitors.visits.current, visitors.visitors.current)} visits each on average`}
+                  points={visitors.visitors.points}
+                  rangeDays={rangeDays}
+                  change={visitorChange(visitors.visitors, rangeDays, "No visitors yet")}
+                />
+                <MetricCard
+                  label="Visits"
+                  href={analyticsHref}
+                  value={visitors.visits.current}
+                  format={count}
+                  detail={`${count(visitors.pageviews)} pageviews · ${ratio(visitors.pageviews, visitors.visits.current)} per visit`}
+                  points={visitors.visits.points}
+                  rangeDays={rangeDays}
+                  change={visitorChange(visitors.visits, rangeDays, "No visits yet")}
+                  weekly={rangeDays === 365}
+                />
+              </>
             ) : null}
           </DashboardSection>
         </div>

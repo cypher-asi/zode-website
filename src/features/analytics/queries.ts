@@ -647,19 +647,34 @@ export async function loadRealtime(team: boolean): Promise<Realtime> {
   };
 }
 
-/** Visitors over the last `days`, day by day, everyone but the team, for the team dashboard's card. */
-export async function loadVisitorSummary(days: number): Promise<{
-  visitors: number;
+export interface VisitorFigure {
+  /** Over the whole range. */
+  current: number;
+  /** Over the range before it, as long. */
   previous: number;
-  pageviews: number;
+  /** Day by day, oldest first. */
   points: { day: string; value: number }[];
+}
+
+/**
+ * Unique visitors and visits over the last `days`, everyone but the team, for
+ * the team dashboard's cards. Unique visitors counts each person once over
+ * the whole range, so it isn't the sum of its days; visits counts every
+ * session, so it is.
+ */
+export async function loadVisitorSummary(days: number): Promise<{
+  visitors: VisitorFigure;
+  visits: VisitorFigure;
+  pageviews: number;
 }> {
   const filters = lastDays(days);
   const [kpis, series] = await Promise.all([loadKpis(filters), loadTimeseries(filters, "day")]);
+  const past = series.current.filter((point) => !point.future);
+  const pointsOf = (metric: "visitors" | "sessions") =>
+    past.map((point) => ({ day: point.bucket.slice(0, 10), value: point[metric] }));
   return {
-    visitors: kpis.current.visitors,
-    previous: kpis.previous.visitors,
+    visitors: { current: kpis.current.visitors, previous: kpis.previous.visitors, points: pointsOf("visitors") },
+    visits: { current: kpis.current.sessions, previous: kpis.previous.sessions, points: pointsOf("sessions") },
     pageviews: kpis.current.pageviews,
-    points: series.current.filter((point) => !point.future).map((point) => ({ day: point.bucket.slice(0, 10), value: point.visitors })),
   };
 }

@@ -69,6 +69,10 @@
   gap: 12px;
 }
 
+.grid[data-columns="3"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .card {
   position: relative;
   display: flex;
@@ -500,7 +504,8 @@
 }
 
 @media (max-width: 800px) {
-  .grid {
+  .grid,
+  .grid[data-columns="3"] {
     grid-template-columns: minmax(0, 1fr);
   }
 
