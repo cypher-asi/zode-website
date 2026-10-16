@@ -9,7 +9,6 @@ import {
   LEDE,
   NETWORK_TITLE,
   PDF,
-  PIPELINE_STATS,
   PRINCIPLE_LINES,
   RESOURCES,
   SOLUTION,
@@ -18,6 +17,7 @@ import {
   TRACTION,
   VENTURE_LINES,
 } from "./profile";
+import { getCapacityPipeline } from "./pipeline";
 import { PodDrawing, ShareButton } from "./ProfileClient";
 import styles from "./CompanyProfile.module.css";
 
@@ -102,6 +102,31 @@ function Stat({ value, label, large }: { value: string; label: string; large?: b
   );
 }
 
+const megawatts = (mw: number) => `${mw.toLocaleString("en-US", { maximumFractionDigits: mw < 100 ? 1 : 0 })} MW`;
+const siteCount = (sites: number) => `${sites.toLocaleString("en-US")} ${sites === 1 ? "site" : "sites"}`;
+
+/** The live capacity pipeline, a card per figure: its IT beside its site count, over its name. */
+async function PipelineCards(): Promise<ReactElement> {
+  const figures = await getCapacityPipeline().catch((error: unknown) => {
+    console.error("[profile] capacity pipeline unavailable", error);
+    return null;
+  });
+  if (!figures) return <p className={styles.small}>The pipeline&apos;s figures are unavailable right now.</p>;
+  return (
+    <ul className={styles.cards}>
+      {figures.map((figure) => (
+        <li key={figure.label} className={styles.card}>
+          <div className={styles.cardHead}>
+            <span className={styles.statValue}>{megawatts(figure.mw)}</span>
+            <span className={styles.cardSites}>{siteCount(figure.sites)}</span>
+          </div>
+          <span className={styles.statLabel}>{figure.label}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /**
  * ZODE's company profile on one US Letter sheet: what it does and its
  * principles, the capacity pipeline, customers, leadership, resources and
@@ -163,13 +188,7 @@ export function CompanyProfile(): ReactElement {
 
         <div className={styles.pair}>
           <Section index="02" title="Capacity pipeline">
-            <ul className={styles.cards}>
-              {PIPELINE_STATS.map((stat) => (
-                <li key={stat.label} className={styles.card}>
-                  <Stat value={stat.value} label={stat.label} large />
-                </li>
-              ))}
-            </ul>
+            <PipelineCards />
           </Section>
 
           <Section index="03" title="Customers">

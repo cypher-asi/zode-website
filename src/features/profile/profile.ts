@@ -2,9 +2,10 @@ import { SLIDES, type Slide } from "@/features/deck/slides";
 import type { PrincipleId } from "@/features/home/principles/principles";
 
 /**
- * The one-page company profile's content. Figures, sites and logos are read
- * from the investor deck's slides so the two can't drift apart; only the
- * profile's own copy and links live here.
+ * The one-page company profile's content. Figures and logos are read from the
+ * investor deck's slides so the two can't drift apart, except the capacity
+ * pipeline, which is live (pipeline.ts); only the profile's own copy and
+ * links live here.
  */
 
 type Of<K extends Slide["kind"]> = Extract<Slide, { kind: K }>;
@@ -16,7 +17,6 @@ function slide<K extends Slide["kind"]>(kind: K): Of<K> {
 }
 
 export const SOLUTION = slide("solution");
-export const PIPELINE = slide("pipeline");
 export const TRACTION = slide("traction");
 export const TEAM = slide("team");
 
@@ -25,14 +25,6 @@ export const CUSTOMERS = TRACTION.customers.filter((group) => group.label !== "P
 
 export const TAGLINE = "Sovereign Intelligence.";
 export const LEDE = "ZODE manufactures rapidly deployable supercomputers.";
-
-/** The deck's pipeline figures, one card each. */
-export const PIPELINE_STATS = [
-  { value: String(PIPELINE.sites.length), label: "Sites ready to close" },
-  { value: `${PIPELINE.total} MW`, label: "IT capacity ready to close" },
-  { value: PIPELINE.capacity[0].value, label: "Power under LOI" },
-  { value: PIPELINE.capacity[1].value, label: "In active negotiations" },
-] as const;
 
 /** Shorter than the home page's descriptions, to keep each card to two lines. */
 export const PRINCIPLE_LINES: Record<PrincipleId, string> = {

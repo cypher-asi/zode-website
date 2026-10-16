@@ -313,9 +313,30 @@ button.action {
 }
 
 .card {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
   padding: 0.09in 0.12in 0.1in;
   border-radius: var(--radius-inset);
   background: var(--color-bg-subtle);
+}
+
+.cardHead {
+  display: flex;
+  gap: 0.08in;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.card .statValue {
+  font-size: 15pt;
+}
+
+.cardSites {
+  font-size: 7pt;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 /* 03 and 04: logos by stage or discipline, under their label or, inline, beside it. */
