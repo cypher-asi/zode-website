@@ -243,7 +243,9 @@ export function portalApps({ admin, team }: NavAccess): PortalApp[] {
     icon: "deployments",
     href: "/portal/deployments",
     links: [
-      { href: "/portal/deployments", label: "Active", icon: "deployments" },
+      { href: "/portal/deployments", label: "Active", icon: "pulse" },
+      { href: "/portal/deployments/planned", label: "Planned", icon: "target" },
+      { href: "/portal/deployments/completed", label: "Completed", icon: "deployments" },
       { href: "/portal/deployments/all", label: "All deployments", icon: "cluster" },
     ],
   };

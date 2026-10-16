@@ -8,18 +8,34 @@ import { Empty } from "@/features/portal/sections";
 import { TabbedPageHeader, type HeaderTab } from "@/features/portal/TabbedPageHeader";
 import { DeploymentList } from "./DeploymentList";
 import { todayIso } from "./format";
+import type { DeploymentStatus } from "./types";
 import { loadDeployments, loadViewer } from "./view";
 
-export type DeploymentScope = "active" | "all";
+/** A status's deployments, or all of them. */
+export type DeploymentScope = DeploymentStatus | "all";
 
-const HREFS: Record<DeploymentScope, string> = { active: "/portal/deployments", all: "/portal/deployments/all" };
+const HREFS: Record<DeploymentScope, string> = {
+  active: "/portal/deployments",
+  planned: "/portal/deployments/planned",
+  completed: "/portal/deployments/completed",
+  all: "/portal/deployments/all",
+};
 
 const TABS: readonly HeaderTab[] = [
   { href: HREFS.active, label: "Active", title: "Deployments", subtitle: "GPU deployments live and rolling out." },
+  { href: HREFS.planned, label: "Planned", title: "Deployments", subtitle: "GPU deployments not yet under way." },
+  { href: HREFS.completed, label: "Completed", title: "Deployments", subtitle: "GPU deployments fully delivered." },
   { href: HREFS.all, label: "All", title: "Deployments", subtitle: "Every GPU deployment, planned to completed." },
 ];
 
-/** The Deployments header, its Active and All tabs, and for the ZODE team a way to add one. */
+const EMPTY: Record<DeploymentScope, string> = {
+  active: "No active deployments right now.",
+  planned: "No planned deployments right now.",
+  completed: "No completed deployments yet.",
+  all: "No deployments yet.",
+};
+
+/** The Deployments header, a tab per status and All, and for the ZODE team a way to add one. */
 export function DeploymentsHeader(): ReactElement {
   return (
     <TabbedPageHeader
@@ -34,7 +50,7 @@ export function DeploymentsHeader(): ReactElement {
   );
 }
 
-/** The Deployments list, active ones or all of them, for every signed-in account. */
+/** The Deployments list, one status's or all of them, for every signed-in account. */
 export function DeploymentsIndex({ scope }: { scope: DeploymentScope }): ReactElement {
   return (
     <Suspense fallback={<PortalLoading header={false} nested />}>
@@ -59,13 +75,13 @@ async function Deployments({ scope }: { scope: DeploymentScope }): Promise<React
   const today = todayIso();
   if (deployments === null)
     return <Empty>Deployments couldn&apos;t be loaded right now. Please try again shortly.</Empty>;
-  const shown = scope === "active" ? deployments.filter((d) => d.status === "active") : deployments;
+  const shown = scope === "all" ? deployments : deployments.filter((d) => d.status === scope);
   return shown.length ? (
     <DeploymentList deployments={shown} today={today} />
   ) : (
     <Empty>
-      {scope === "active" ? "No active deployments right now." : "No deployments yet."}
-      {scope === "active" && deployments.length ? (
+      {EMPTY[scope]}
+      {scope !== "all" && deployments.length ? (
         <>
           {" "}
           <Link href="/portal/deployments/all">See all deployments</Link>.
