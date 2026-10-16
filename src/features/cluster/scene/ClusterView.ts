@@ -4,7 +4,7 @@ import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js";
 import { LAYER_OF, RACK, RAILS, rackHeight } from "../model/catalog";
-import type { ClusterModel, Layer, Rack } from "../model/types";
+import type { ClusterModel, Layer, PartKind, Rack } from "../model/types";
 import { Buffers, drawRack, partAt, partBox, toObjects, type Palette } from "./geometry";
 import { RAIL_COLORS } from "./palette";
 
@@ -21,6 +21,9 @@ export interface Pick {
 
 export type ViewPreset = "iso" | "front" | "top";
 
+/** A kind of part a loaded BOM hasn't got enough of. */
+export type PartFlag = "missing" | "short";
+
 export interface ViewState {
   model: ClusterModel;
   hidden: ReadonlySet<Layer>;
@@ -29,6 +32,8 @@ export interface ViewState {
   /** A layer to outline, previewing what a hovered control changes. */
   focus: Layer | null;
   selected: Pick | null;
+  /** Parts outlined as a BOM's gaps, by kind; null with no BOM loaded. */
+  flags: ReadonlyMap<PartKind, PartFlag> | null;
 }
 
 export interface ViewCallbacks {
@@ -96,6 +101,8 @@ function readPalette(el: HTMLElement) {
     gridStrong: token("--color-border-strong", "silver"),
     accent: token("--color-accent-strong", "orange"),
     accentSoft: token("--color-accent-soft", "peachpuff"),
+    danger: token("--color-danger", "crimson"),
+    warning: token("--color-warning", "goldenrod"),
     muted: token("--color-text-tertiary", "gray"),
     scene: {
       fill: token("--color-white", "white"),
@@ -413,9 +420,9 @@ export class ClusterView {
     });
   }
 
-  /** Accent outlines: the selected and hovered parts, and every part on the previewed layer. */
+  /** Accent outlines: the selected and hovered parts, every part on the previewed layer, and a loaded BOM's gaps. */
   private buildHighlight() {
-    const { model, focus, selected, hidden } = this.state!;
+    const { model, focus, selected, hidden, flags } = this.state!;
     this.highlightBatch?.dispose();
     const batch = new Batch();
     const strong: number[] = [];
@@ -461,21 +468,35 @@ export class ClusterView {
         }
       }
     }
+    const missing: number[] = [];
+    const short: number[] = [];
+    if (flags?.size) {
+      for (const rack of model.racks) {
+        for (const part of rack.parts) {
+          const flag = flags.get(part.kind);
+          if (flag && !hidden.has(LAYER_OF[part.kind])) {
+            outline(flag === "missing" ? missing : short, rack, grow(partBox(part), 0.005), false);
+          }
+        }
+      }
+    }
     if (this.hovered) target(this.hovered, soft, false);
     if (selected) target(selected, strong, true);
 
-    const add = (segs: number[], width: number, opacity: number) => {
+    const add = (segs: number[], width: number, opacity: number, color = this.palette.accent) => {
       if (!segs.length) return;
       const g = new LineSegmentsGeometry();
       g.setPositions(segs);
       batch.track(g);
       const mat = batch.material(
-        new LineMaterial({ color: this.palette.accent, linewidth: width, transparent: true, opacity, depthTest: false }),
+        new LineMaterial({ color, linewidth: width, transparent: true, opacity, depthTest: false }),
       );
       const lines = new LineSegments2(g, mat);
       lines.renderOrder = 10;
       batch.group.add(lines);
     };
+    add(missing, 1.6, 0.9, this.palette.danger);
+    add(short, 1.6, 0.9, this.palette.warning);
     add(soft, 1.2, 0.6);
     add(strong, 2.2, 1);
     if (tints.length) {

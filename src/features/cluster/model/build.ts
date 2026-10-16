@@ -4,6 +4,7 @@ import {
   KIND_LABELS,
   LAYER_OF,
   NETWORK_RACK,
+  PDUS_PER_RACK,
   PLATFORMS,
   RACK,
   RAILS,
@@ -341,6 +342,9 @@ function railLinks(nodes: { rack: Rack; part: RackPart }[], leaves: { rack: Rack
 const partsOf = (racks: Rack[], kind: PartKind) =>
   racks.flatMap((rack) => rack.parts.filter((p) => p.kind === kind).map((part) => ({ rack, part })));
 
+/** Twin-port switch optics: two links each, a rail landing on a leaf and an uplink at both its ends. */
+export const switchOptics = (hostLinks: number, uplinks: number): number => Math.ceil((hostLinks + 2 * uplinks) / 2);
+
 /** Cable run between two cabinets: up to the tray, along it and back down, plus slack. */
 function runLength(a: Rack, b: Rack, trayY: number): number {
   return Math.abs(a.x - b.x) + Math.abs(a.z - b.z) + 2 * (trayY - 1) + 3;
@@ -426,7 +430,13 @@ export function buildCluster(config: ClusterConfig): ClusterModel {
       qty: racks.length,
       detail: `${computeCount} compute, ${network.length} network`,
     },
-    { layer: "rack", label: "Rack PDU", model: "Switched, A + B feeds", qty: racks.length * 2 },
+    {
+      layer: "rack",
+      label: "Rack PDU",
+      model: "Switched, A + B feeds",
+      qty: computeCount * PDUS_PER_RACK.compute + network.length * PDUS_PER_RACK.network,
+      detail: `${PDUS_PER_RACK.compute} per compute rack, ${PDUS_PER_RACK.network} per network rack`,
+    },
     row("manifold", "1U rack manifold", "Supply and return"),
     row("panel", "1U MPO-16 panel"),
     {
@@ -439,9 +449,17 @@ export function buildCluster(config: ClusterConfig): ClusterModel {
     { layer: "rack", label: "Uplink cable", model: `${speed} fiber`, qty: uplinkCount, detail: "Leaf to spine" },
     {
       layer: "rack",
-      label: "Optical transceiver",
-      model: `${speed} OSFP`,
-      qty: 2 * (hostLinkCount + uplinkCount),
+      label: "Node transceiver",
+      model: `${speed} OSFP, single port`,
+      qty: hostLinkCount,
+      detail: "One per rail",
+    },
+    {
+      layer: "rack",
+      label: "Switch transceiver",
+      model: `2 x ${speed} OSFP, twin port`,
+      qty: switchOptics(hostLinkCount, uplinkCount),
+      detail: "Leaf down and up, spine down",
     },
   ];
   const parts = allParts.filter((p) => p.qty > 0);
@@ -471,7 +489,7 @@ export function buildCluster(config: ClusterConfig): ClusterModel {
       switches,
       hostLinks: hostLinkCount,
       uplinks: uplinkCount,
-      optics: 2 * (hostLinkCount + uplinkCount),
+      optics: hostLinkCount + switchOptics(hostLinkCount, uplinkCount),
       fiberKm: fiberM / 1000,
       footprintM2: footprint,
     },

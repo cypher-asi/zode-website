@@ -24,7 +24,7 @@ import {
   STORAGE_OPTIONS,
   isOption,
   isPlaceId,
-  type Phase,
+  type PhaseInput,
   type Platform,
 } from "./types";
 
@@ -58,14 +58,16 @@ const isDay = (value: string): boolean => DAY_RE.test(value) && !Number.isNaN(Da
  * The rollout, one phase per row of `phase_*` fields in order; blank rows are
  * skipped, and a row without a platform takes the deployment's.
  */
-function readPhases(formData: FormData, platform: Platform): Phase[] | string {
+function readPhases(formData: FormData, platform: Platform): PhaseInput[] | string {
+  const ids = formData.getAll("phase_id");
   const names = formData.getAll("phase_name");
   const platforms = formData.getAll("phase_platform");
   const starts = formData.getAll("phase_start_on");
   const rfs = formData.getAll("phase_rfs_on");
   const nodes = formData.getAll("phase_nodes");
   const mws = formData.getAll("phase_mw");
-  const phases: Phase[] = [];
+  const phases: PhaseInput[] = [];
+  const seen = new Set<string>();
   for (let i = 0; i < rfs.length; i++) {
     const row = {
       name: text(names[i]),
@@ -87,7 +89,11 @@ function readPhases(formData: FormData, platform: Platform): Phase[] | string {
     if (phaseNodes === null) return `${label} needs a node count.`;
     const mw = figure(row.mw, `${label}'s MW`, 1e6);
     if (typeof mw === "string") return mw;
+    const id = text(ids[i]);
+    if (id && (!isUuid(id) || seen.has(id))) return `${label} no longer exists. Reload and try again.`;
+    if (id) seen.add(id);
     phases.push({
+      id: id || null,
       name: row.name || null,
       platform: phasePlatform,
       startOn: row.startOn || null,

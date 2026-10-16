@@ -959,7 +959,8 @@ alter table deployments add constraint deployments_platform_check check (platfor
 
 -- A deployment's rollout: each phase comes ready for service (RFS) on its
 -- date with its nodes and MW. `start_on` is optional and only draws the
--- phase's bar on the schedule. Saving replaces every phase.
+-- phase's bar on the schedule. Saving keeps each phase's id, so its BOM and
+-- cluster stay with it.
 create table if not exists deployment_phases (
   id uuid primary key default gen_random_uuid(),
   deployment_id uuid not null references deployments (id) on delete cascade,
@@ -995,6 +996,69 @@ alter table deployment_phases alter column platform set not null;
 -- without notes, credit or its data room, to anyone who has it. Kept in the
 -- clear so the team can copy it again; null when it isn't shared.
 alter table deployments add column if not exists share_token text unique;
+
+-- A phase's cluster in the cluster builder (src/features/cluster/model), as
+-- the builder's config, `cluster_copies` times over; null derives one from
+-- the phase and its deployment. Its BOM is checked against the builder's
+-- slots for that cluster.
+alter table deployment_phases add column if not exists cluster_config jsonb;
+alter table deployment_phases add column if not exists cluster_copies integer not null default 1
+  check (cluster_copies > 0);
+
+-- A deployment's bill of materials, the ZODE team's only. Each vendor quote
+-- links to its file in the deployment's data room, and its lines are copied
+-- in full under the quote's own section headings. A line belongs to one
+-- phase, and fills cluster-builder slots (src/features/cluster/model/slots.ts)
+-- through deployment_bom_fills; lines the BOM doesn't use stay, `excluded`
+-- with the reason. `quoted_quantity` keeps the vendor's quantity when the
+-- phase takes a different one at the quoted unit price, so the quote's own
+-- total can still be checked. `unit_usd` is null for a line priced inside
+-- another (a server's CPUs). Totals are worked out in code, never stored.
+create table if not exists deployment_quotes (
+  id uuid primary key default gen_random_uuid(),
+  deployment_id uuid not null references deployments (id) on delete cascade,
+  position integer not null default 0,
+  vendor text not null,
+  reference text,
+  quoted_on date,
+  valid_until date,
+  quoted_total_usd numeric(16, 2) check (quoted_total_usd >= 0),
+  data_room_file_id uuid references data_room_files (id) on delete set null,
+  notes text,
+  -- Set by scripts/import-bom.mjs, so a quote is imported once.
+  seed_key text unique,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists deployment_quotes_deployment_idx on deployment_quotes (deployment_id, position);
+
+create table if not exists deployment_bom_items (
+  id uuid primary key default gen_random_uuid(),
+  deployment_id uuid not null references deployments (id) on delete cascade,
+  phase_id uuid references deployment_phases (id) on delete cascade,
+  quote_id uuid references deployment_quotes (id) on delete cascade,
+  quote_section text not null default '',
+  position integer not null default 0,
+  part_number text,
+  description text not null,
+  quantity numeric(14, 2) not null check (quantity >= 0),
+  quoted_quantity numeric(14, 2) check (quoted_quantity >= 0),
+  unit_usd numeric(18, 6) check (unit_usd >= 0),
+  status text not null default 'use' check (status in ('use', 'excluded')),
+  excluded_reason text,
+  lead_time text,
+  notes text
+);
+
+create index if not exists deployment_bom_items_deployment_idx on deployment_bom_items (deployment_id, position);
+
+create table if not exists deployment_bom_fills (
+  item_id uuid not null references deployment_bom_items (id) on delete cascade,
+  slot_id text not null,
+  -- Slot units each of the line's quantity covers: 8 for a server SKU that brings 8 drives.
+  units_per_item numeric(12, 4) not null default 1 check (units_per_item > 0),
+  primary key (item_id, slot_id)
+);
 
 -- One-page compute offering teasers, written by the ZODE team from a
 -- deployment and exported as a PDF (src/features/teasers). Every figure is

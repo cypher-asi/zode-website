@@ -46,6 +46,25 @@ export function configFromParams(params: URLSearchParams): ClusterConfig {
   };
 }
 
+/** A configuration stored as JSON, or null unless every setting is one the builder offers. */
+export function configFromJson(raw: unknown): ClusterConfig | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  const one = (value: unknown, allowed: readonly number[]) =>
+    typeof value === "number" && allowed.includes(value) ? value : null;
+  const config = {
+    platform: typeof r.platform === "string" && Object.hasOwn(PLATFORMS, r.platform) ? (r.platform as PlatformId) : null,
+    nodes: one(r.nodes, NODE_SIZES),
+    density: one(r.density, DENSITIES),
+    fabric: typeof r.fabric === "string" && Object.hasOwn(FABRICS, r.fabric) ? (r.fabric as FabricId) : null,
+    oversubscription: one(r.oversubscription, OVERSUBSCRIPTION),
+    rackU: one(r.rackU, RACK_HEIGHTS),
+    rowLength: one(r.rowLength, ROW_LENGTHS),
+    storagePerNode: one(r.storagePerNode, STORAGE_PER_NODE),
+  };
+  return Object.values(config).every((value) => value !== null) ? (config as ClusterConfig) : null;
+}
+
 /** Writes only what differs from the defaults onto `params`. */
 export function writeConfigParams(config: ClusterConfig, params: URLSearchParams): void {
   for (const key of Object.keys(KEYS) as (keyof ClusterConfig)[]) {

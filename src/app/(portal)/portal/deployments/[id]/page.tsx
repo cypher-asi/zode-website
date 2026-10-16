@@ -4,7 +4,10 @@ import Link from "next/link";
 import { io } from "next/cache";
 import { notFound } from "next/navigation";
 import ui from "@/features/data-room/ui.module.css";
+import { getBom } from "@/features/deployments/bom/bom";
+import { BomOverview } from "@/features/deployments/bom/BomOverview";
 import { getDeployment } from "@/features/deployments/deployments";
+import detail from "@/features/deployments/deployments.module.css";
 import { DeploymentDetail } from "@/features/deployments/DeploymentDetail";
 import { todayIso } from "@/features/deployments/format";
 import { ShareLink } from "@/features/deployments/ShareLink";
@@ -35,6 +38,7 @@ async function Deployment({ params }: Pick<PageProps<"/portal/deployments/[id]">
   const deployment = await getDeployment(id);
   if (!deployment) notFound();
   await io();
+  const bom = viewer.team ? await getBom(deployment.id) : null;
 
   return (
     <div className={styles.page}>
@@ -63,6 +67,11 @@ async function Deployment({ params }: Pick<PageProps<"/portal/deployments/[id]">
         }
       />
       <DeploymentDetail deployment={deployment} today={todayIso()} />
+      {bom ? (
+        <div className={detail.detail}>
+          <BomOverview deployment={deployment} bom={bom} today={todayIso()} />
+        </div>
+      ) : null}
     </div>
   );
 }

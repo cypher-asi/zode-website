@@ -48,6 +48,8 @@ const STORAGE_CHOICES = STORAGE_OPTIONS.map((tb) => ({ value: String(tb), label:
 
 interface PhaseDraft {
   key: number;
+  /** Empty for a phase added here. */
+  id: string;
   name: string;
   platform: Platform;
   startOn: string;
@@ -65,6 +67,7 @@ const str = (value: number | null): string => (value === null ? "" : String(valu
 
 const draftOf = (key: number, platform: Platform, phase?: Phase): PhaseDraft => ({
   key,
+  id: phase?.id ?? "",
   name: phase?.name ?? "",
   platform: phase?.platform ?? platform,
   startOn: phase?.startOn ?? "",
@@ -257,6 +260,7 @@ export function DeploymentForm({
             </div>
             {phases.map((phase, i) => (
               <div key={phase.key} className={styles.phaseRow}>
+                <input type="hidden" name="phase_id" value={phase.id} />
                 <input
                   name="phase_name"
                   className={ui.input}

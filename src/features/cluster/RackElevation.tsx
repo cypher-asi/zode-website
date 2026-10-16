@@ -1,9 +1,9 @@
 "use client";
 
-import type { CSSProperties, ReactElement } from "react";
+import type { CSSProperties, ReactElement, ReactNode } from "react";
 import { power } from "./format";
-import { KIND_LABELS, LAYER_OF } from "./model/catalog";
-import type { Rack } from "./model/types";
+import { KIND_LABELS, LAYER_OF, PDUS_PER_RACK } from "./model/catalog";
+import type { Rack, RackPart } from "./model/types";
 import styles from "./RackElevation.module.css";
 
 /**
@@ -16,11 +16,14 @@ export function RackElevation({
   partId,
   onSelectPart,
   onClose,
+  partExtra,
 }: {
   rack: Rack;
   partId: string | null;
   onSelectPart: (partId: string | null) => void;
   onClose: () => void;
+  /** More about the selected part below its specs, like the BOM lines that fill it. */
+  partExtra?: (part: RackPart) => ReactNode;
 }): ReactElement {
   const part = rack.parts.find((p) => p.id === partId) ?? null;
   const used = rack.parts.reduce((n, p) => n + p.uSize, 0);
@@ -52,7 +55,7 @@ export function RackElevation({
         </div>
         <div>
           <dt>PDUs</dt>
-          <dd>2, A + B</dd>
+          <dd>{rack.kind === "compute" ? PDUS_PER_RACK.compute : PDUS_PER_RACK.network}, A + B</dd>
         </div>
       </dl>
 
@@ -97,6 +100,7 @@ export function RackElevation({
               </div>
             ) : null}
           </dl>
+          {partExtra?.(part)}
         </section>
       ) : (
         <p className={styles.hint}>Select a unit to see what it is.</p>

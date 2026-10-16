@@ -5,7 +5,7 @@ import {
   PLATFORMS,
   STORAGE_PER_NODE,
 } from "@/features/cluster/model/catalog";
-import type { FabricId, PlatformId } from "@/features/cluster/model/types";
+import type { ClusterConfig, FabricId, PlatformId } from "@/features/cluster/model/types";
 import { writeConfigParams } from "@/features/cluster/model/url";
 import { formatCount } from "./format";
 
@@ -24,13 +24,22 @@ export type CreditRating = "ig" | "high" | "not_required";
 
 /** One rollout phase of one platform, ready for service (RFS) on `rfsOn`. Dates are `YYYY-MM-DD`. */
 export interface Phase {
+  /** Kept across saves, so the phase's bill of materials stays with it. */
+  id: string;
   name: string | null;
   platform: Platform;
   startOn: string | null;
   rfsOn: string;
   nodes: number;
   mw: number | null;
+  /** The phase's cluster in the cluster builder, or null to derive one (see `phaseCluster`). */
+  clusterConfig: ClusterConfig | null;
+  /** Identical builder clusters the phase is made of. */
+  clusterCopies: number;
 }
+
+/** A phase as the deployment form saves it: a new one has no id yet, and its cluster is set on the BOM. */
+export type PhaseInput = Omit<Phase, "id" | "clusterConfig" | "clusterCopies"> & { id: string | null };
 
 /** A Google place suggested for the address field. */
 export interface PlaceSuggestion {

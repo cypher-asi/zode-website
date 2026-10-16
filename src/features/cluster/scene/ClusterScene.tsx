@@ -45,10 +45,10 @@ export function ClusterScene({ ref, onHover, onSelect, ...state }: ClusterSceneP
     };
   }, []);
 
-  const { model, hidden, cables, rail, focus, selected } = state;
+  const { model, hidden, cables, rail, focus, selected, flags } = state;
   useEffect(() => {
-    viewRef.current?.setState({ model, hidden, cables, rail, focus, selected });
-  }, [model, hidden, cables, rail, focus, selected]);
+    viewRef.current?.setState({ model, hidden, cables, rail, focus, selected, flags });
+  }, [model, hidden, cables, rail, focus, selected, flags]);
 
   return <div ref={containerRef} className={styles.root} />;
 }

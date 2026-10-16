@@ -3,12 +3,15 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { cacheLife, cacheTag } from "next/cache";
 import { isUuid } from "@/features/zrm/access";
 import { DB_TAG, db } from "@/lib/db";
-import type { Deployment, Phase, RoomChoice } from "./types";
+import { configFromJson } from "@/features/cluster/model/url";
+import type { Deployment, Phase, PhaseInput, RoomChoice } from "./types";
 
 /** Every deployment read is cached under this tag, which saving and deleting update. */
 export const DEPLOYMENTS_TAG = "deployments";
 
-export type DeploymentInput = Omit<Deployment, "id" | "updatedAt" | "dataRoomName" | "shareToken">;
+export type DeploymentInput = Omit<Deployment, "id" | "updatedAt" | "dataRoomName" | "shareToken" | "phases"> & {
+  phases: PhaseInput[];
+};
 
 /*
  * Neon hands back `numeric` as strings and `date` as local-midnight Dates, so
@@ -40,7 +43,7 @@ const toDeployment = (row: Record<string, unknown>): Deployment => ({
   dataRoomId: row.data_room_id == null ? null : String(row.data_room_id),
   dataRoomName: row.data_room_name == null ? null : String(row.data_room_name),
   shareToken: row.share_token == null ? null : String(row.share_token),
-  phases: (row.phases as Phase[]) ?? [],
+  phases: ((row.phases as Phase[]) ?? []).map((phase) => ({ ...phase, clusterConfig: configFromJson(phase.clusterConfig) })),
   updatedAt: new Date(row.updated_at as string | Date).toISOString(),
 });
 
@@ -58,8 +61,8 @@ export async function listDeployments(): Promise<Deployment[]> {
       coalesce(
         (select json_agg(
             json_build_object(
-              'name', p.name, 'platform', p.platform, 'startOn', p.start_on::text, 'rfsOn', p.rfs_on::text,
-              'nodes', p.nodes, 'mw', p.mw::float8
+              'id', p.id, 'name', p.name, 'platform', p.platform, 'startOn', p.start_on::text, 'rfsOn', p.rfs_on::text,
+              'nodes', p.nodes, 'mw', p.mw::float8, 'clusterConfig', p.cluster_config, 'clusterCopies', p.cluster_copies
             ) order by p.rfs_on, p.position)
           from deployment_phases p where p.deployment_id = d.id),
         '[]'::json
@@ -107,8 +110,9 @@ export async function setShareToken(id: string, token: string | null): Promise<s
 }
 
 /**
- * Creates a deployment (`id` null) or updates one, replacing its phases, in
- * one transaction. Returns its id, or null when the one being edited is gone.
+ * Creates a deployment (`id` null) or updates one with its phases, in one
+ * transaction. Phases keep their ids, and with them their BOMs; one left out
+ * is deleted. Returns its id, or null when the one being edited is gone.
  */
 export async function saveDeployment(
   id: string | null,
@@ -144,15 +148,25 @@ export async function saveDeployment(
         )
         returning id
       `;
-  // The phase writes only touch rows of a deployment that exists, so an update of a deleted one writes nothing.
+  const phases = d.phases.map((phase) => ({ ...phase, id: phase.id ?? randomUUID() }));
+  // The phase writes only touch rows of a deployment that exists, so an update of a deleted one writes
+  // nothing, and an id from another deployment's phase updates nothing.
   const [written] = await sql.transaction([
     write,
-    sql`delete from deployment_phases where deployment_id = ${deploymentId}`,
-    ...d.phases.map(
+    sql`
+      delete from deployment_phases
+      where deployment_id = ${deploymentId} and not (id = any(${phases.map((phase) => phase.id)}::uuid[]))
+    `,
+    ...phases.map(
       (phase, position) => sql`
-        insert into deployment_phases (deployment_id, position, name, platform, start_on, rfs_on, nodes, mw)
-        select id, ${position}, ${phase.name}, ${phase.platform}, ${phase.startOn}, ${phase.rfsOn}, ${phase.nodes}, ${phase.mw}
+        insert into deployment_phases (id, deployment_id, position, name, platform, start_on, rfs_on, nodes, mw)
+        select ${phase.id}, id, ${position}, ${phase.name}, ${phase.platform}, ${phase.startOn}, ${phase.rfsOn},
+          ${phase.nodes}, ${phase.mw}
         from deployments where id = ${deploymentId}
+        on conflict (id) do update set
+          position = excluded.position, name = excluded.name, platform = excluded.platform,
+          start_on = excluded.start_on, rfs_on = excluded.rfs_on, nodes = excluded.nodes, mw = excluded.mw
+        where deployment_phases.deployment_id = excluded.deployment_id
       `,
     ),
   ]);

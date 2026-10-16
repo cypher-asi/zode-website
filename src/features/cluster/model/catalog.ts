@@ -47,6 +47,18 @@ export const rackHeight = (u: number) => u * RACK.unit + RACK.frame;
 /** Height of the bottom of rack unit `u` above the floor. */
 export const unitY = (u: number) => RACK.frame / 2 + (u - 1) * RACK.unit;
 
+/** What goes into one GPU node besides its GPUs, counted for the BOM's slots. */
+export interface NodeBill {
+  cpus: number;
+  dimms: number;
+  bootDrives: number;
+  /** Local NVMe, apart from the shared storage. */
+  dataDrives: number;
+  /** North-south DPUs or NICs for the front-end and storage network. */
+  frontEndNics: number;
+  powerCords: number;
+}
+
 export interface Platform {
   label: string;
   short: string;
@@ -60,6 +72,7 @@ export interface Platform {
   nodeU: number;
   nic: string;
   cpu: string;
+  bill: NodeBill;
 }
 
 export const PLATFORMS: Record<PlatformId, Platform> = {
@@ -74,6 +87,7 @@ export const PLATFORMS: Record<PlatformId, Platform> = {
     nodeU: 4,
     nic: "8 x ConnectX-8 800G",
     cpu: "2 x Intel Xeon 6",
+    bill: { cpus: 2, dimms: 32, bootDrives: 2, dataDrives: 6, frontEndNics: 2, powerCords: 10 },
   },
   b200: {
     label: "NVIDIA HGX B200",
@@ -86,6 +100,7 @@ export const PLATFORMS: Record<PlatformId, Platform> = {
     nodeU: 4,
     nic: "8 x ConnectX-7 400G",
     cpu: "2 x Intel Xeon 6",
+    bill: { cpus: 2, dimms: 32, bootDrives: 2, dataDrives: 8, frontEndNics: 2, powerCords: 6 },
   },
 };
 
@@ -95,6 +110,8 @@ export interface SwitchModel {
   kw: number;
   /** Ports at 800G; a 400G rail breaks each one out into two. */
   ports: number;
+  /** Power supplies, each needing its own cord. */
+  psus: number;
 }
 
 export interface Fabric {
@@ -109,20 +126,20 @@ export const FABRICS: Record<FabricId, Fabric> = {
   infiniband: {
     label: "InfiniBand",
     detail: "NVIDIA Quantum-X800 XDR",
-    compute: { model: "Quantum-X800 Q3400-RA", uSize: 4, kw: 3.2, ports: 144 },
+    compute: { model: "Quantum-X800 Q3400-RA", uSize: 4, kw: 3.2, ports: 144, psus: 8 },
     fabricManager: true,
   },
   roce: {
     label: "RoCE v2",
     detail: "NVIDIA Spectrum-X Ethernet",
-    compute: { model: "Spectrum-X SN5600", uSize: 2, kw: 1.8, ports: 64 },
+    compute: { model: "Spectrum-X SN5600", uSize: 2, kw: 1.8, ports: 64, psus: 4 },
     fabricManager: false,
   },
 };
 
 /** The storage / front-end network and everything else in the network racks, the same for either fabric. */
 export const SUPPORT = {
-  storageSwitch: { model: "Spectrum-4 SN5600", uSize: 2, kw: 1.8, ports: 128 },
+  storageSwitch: { model: "Spectrum-4 SN5600", uSize: 2, kw: 1.8, ports: 128, psus: 4 },
   oob: { model: "Spectrum SN2201", uSize: 1, kw: 0.2, ports: 48 },
   edge: { model: "WAN edge router", uSize: 2, kw: 1.2 },
   firewall: { model: "Next-gen firewall", uSize: 1, kw: 0.6 },
@@ -133,6 +150,12 @@ export const SUPPORT = {
 
 /** Power and space a network rack may take before the packer opens another. */
 export const NETWORK_RACK = { maxKw: 30, reservedTopU: 2 } as const;
+
+/** Switched rack PDUs per cabinet, split across the A and B feeds. */
+export const PDUS_PER_RACK = { compute: 4, network: 2 } as const;
+
+/** Host adapters in each fabric manager appliance, each licensed like a GPU's. */
+export const UFM_HCAS = 2;
 
 export const LAYER_OF: Record<PartKind, Layer> = {
   gpu: "compute",

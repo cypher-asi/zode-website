@@ -4,15 +4,17 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { OverlayScrollbar } from "@/components/ui/OverlayScrollbar";
+import { STATUS_LABELS, partStatuses, phaseCoverage, slotsForKind } from "@/features/deployments/bom/coverage";
+import { BomPanel, PartBom, type BuilderBom } from "./BomPanel";
 import { ControlPanel } from "./ControlPanel";
 import { count, power } from "./format";
 import { buildCluster } from "./model/build";
 import { KIND_LABELS, PLATFORMS } from "./model/catalog";
-import type { ClusterConfig, Layer } from "./model/types";
+import type { ClusterConfig, Layer, PartKind } from "./model/types";
 import { writeConfigParams } from "./model/url";
 import { RackElevation } from "./RackElevation";
 import type { ClusterSceneHandle } from "./scene/ClusterScene";
-import type { Pick } from "./scene/ClusterView";
+import type { PartFlag, Pick } from "./scene/ClusterView";
 import { StatsBar } from "./StatsBar";
 import { LayersPanel, ViewPresets } from "./ViewToolbar";
 import styles from "./ClusterConfigurator.module.css";
@@ -39,8 +41,16 @@ interface Hover {
  * the left, rebuilt on every change. Racks and parts can be inspected in the
  * viewport, and the configuration rides along in the URL so it can be shared.
  */
-export function ClusterConfigurator({ initialConfig }: { initialConfig: ClusterConfig }): ReactElement {
+export function ClusterConfigurator({
+  initialConfig,
+  bom,
+}: {
+  initialConfig: ClusterConfig;
+  /** A deployment phase's BOM, for the ZODE team: its coverage shows in the panel and its gaps in the viewport. */
+  bom?: BuilderBom;
+}): ReactElement {
   const [config, setConfig] = useState(initialConfig);
+  const [copies, setCopies] = useState(bom?.copies ?? 1);
   const [layersOpen, setLayersOpen] = useState(false);
   const [hidden, setHidden] = useState<ReadonlySet<Layer>>(() => new Set());
   const [cables, setCables] = useState(true);
@@ -54,6 +64,15 @@ export function ClusterConfigurator({ initialConfig }: { initialConfig: ClusterC
 
   const model = useMemo(() => buildCluster(config), [config]);
   const update = (patch: Partial<ClusterConfig>) => setConfig((c) => ({ ...c, ...patch }));
+  const coverage = useMemo(() => (bom ? phaseCoverage(model, copies, bom.items) : null), [bom, model, copies]);
+  const flags = useMemo(() => {
+    if (!coverage) return null;
+    const out = new Map<PartKind, PartFlag>();
+    for (const [kind, status] of partStatuses(coverage)) {
+      if (status === "missing" || status === "short") out.set(kind, status);
+    }
+    return out;
+  }, [coverage]);
 
   // A resize or re-pack can take the selected rack or part away; drop what no longer exists.
   const selectedRack = selection ? (model.racks.find((r) => r.id === selection.rackId) ?? null) : null;
@@ -108,6 +127,7 @@ export function ClusterConfigurator({ initialConfig }: { initialConfig: ClusterC
           rail={rail}
           focus={focus}
           selected={selected}
+          flags={flags}
           onHover={(pick, x, y) => {
             const box = viewportRef.current?.getBoundingClientRect();
             if (!pick || !box) return setHover(null);
@@ -165,6 +185,11 @@ export function ClusterConfigurator({ initialConfig }: { initialConfig: ClusterC
               partId={selectedPart}
               onSelectPart={(partId) => setSelection({ rackId: selectedRack.id, partId })}
               onClose={() => setSelection(null)}
+              partExtra={
+                coverage && bom
+                  ? (part) => <PartBom rows={slotsForKind(coverage, part.kind)} vendors={bom.vendors} />
+                  : undefined
+              }
             />
           </div>
         ) : null}
@@ -178,6 +203,13 @@ export function ClusterConfigurator({ initialConfig }: { initialConfig: ClusterC
                 ? `${hoveredPart.model} · U${hoveredPart.uStart}${hoveredPart.kw ? ` · ${power(hoveredPart.kw)}` : ""}`
                 : `${hovered.uHeight}U · ${power(hovered.kw)}`}
             </span>
+            {coverage && hoveredPart
+              ? slotsForKind(coverage, hoveredPart.kind).map((row) => (
+                  <span key={row.slot.id} className={styles.hoverDetail}>
+                    {row.slot.label}: {STATUS_LABELS[row.status]}
+                  </span>
+                ))
+              : null}
           </div>
         ) : null}
 
@@ -190,11 +222,15 @@ export function ClusterConfigurator({ initialConfig }: { initialConfig: ClusterC
 
       <div className={styles.panelFrame}>
         <div className={styles.top}>
-          <p className={styles.kicker}>Resources</p>
+          <p className={styles.kicker}>{bom ? "Deployment BOM" : "Resources"}</p>
           <button type="button" className={styles.share} onClick={copyLink}>
             {copied ? "Link copied" : "Copy link"}
           </button>
-          <Link href="/" className={styles.close} aria-label="Close and return home">
+          <Link
+            href={bom ? `/portal/deployments/${bom.deploymentId}` : "/"}
+            className={styles.close}
+            aria-label={bom ? "Close and return to the deployment" : "Close and return home"}
+          >
             <svg viewBox="0 0 12 12" aria-hidden="true">
               <path d="M2 2l8 8M10 2l-8 8" />
             </svg>
@@ -209,6 +245,9 @@ export function ClusterConfigurator({ initialConfig }: { initialConfig: ClusterC
                 fabric beside you.
               </p>
             </header>
+            {bom && coverage ? (
+              <BomPanel bom={bom} config={config} copies={copies} onCopies={setCopies} coverage={coverage} />
+            ) : null}
             <ControlPanel config={config} model={model} update={update} onPreview={setFocus} />
             <p className={styles.disclaimer}>
               Figures come from placeholder specs for planning, not a quote. Facility power and cooling aren&apos;t
