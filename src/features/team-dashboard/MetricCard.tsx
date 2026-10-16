@@ -27,8 +27,9 @@ const todayUtc = (): string => new Date().toISOString().slice(0, 10);
  * The metric's line over the range, placed by date so gaps in the history
  * show as straight runs, with the area under it shaded. Before the first
  * snapshot in the range a dashed lead-in holds its value, so a metric tracked
- * only since today doesn't read as a year of history. A flat series sits mid
- * height, or on the floor when it's zero.
+ * only since today doesn't read as a year of history. A history that starts
+ * at zero was zero before it too, so its line runs solid from the start of the
+ * range instead. A flat series sits mid height, or on the floor when it's zero.
  *
  * Also each day of the range for the hover: its figure, carried over from the
  * last snapshot across a gap, and where the line crosses it. With `weekly`,
@@ -36,13 +37,17 @@ const todayUtc = (): string => new Date().toISOString().slice(0, 10);
  * day.
  */
 function sparkline(
-  points: MetricPoint[],
+  history: MetricPoint[],
   rangeDays: number,
   format: (value: number) => string,
   weekly: boolean,
 ): { line: string; area: string; leadIn: string | null; days: SparkDay[]; weeks?: SparkWeek[] } {
   const end = dayMs(todayUtc());
   const start = end - (rangeDays - 1) * DAY_MS;
+  const points =
+    history[0]?.value === 0 && dayMs(history[0].day) > start
+      ? [{ day: new Date(start).toISOString().slice(0, 10), value: 0 }, ...history]
+      : history;
   const values = points.map((point) => point.value);
   const min = Math.min(...values);
   const max = Math.max(...values);
@@ -89,7 +94,7 @@ function sparkline(
   }
 
   if (!weekly) return { line, area, leadIn, days };
-  const byDay = new Map(points.map((point) => [point.day, point.value]));
+  const byDay = new Map(history.map((point) => [point.day, point.value]));
   const dateAt = (i: number) => new Date(start + i * DAY_MS);
   const ranges: { start: number; end: number; total: number }[] = [];
   for (let i = 0; i < rangeDays; i++) {
