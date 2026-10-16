@@ -912,9 +912,9 @@ on conflict (day, metric) do nothing;
 -- GPU deployments, written by the ZODE team and shown to every signed-in
 -- account in the portal's Deployments app. Totals (GPUs, storage, revenue) are
 -- derived from the node count and rates in src/features/deployments/types.ts,
--- never stored. Node counts and TB per node are the cluster builder's
--- standard sizes, checked by the save action rather than here, so the
--- builder's catalog can change without a migration.
+-- never stored. TB per node is one of the cluster builder's standard sizes,
+-- checked by the save action rather than here, so the builder's catalog can
+-- change without a migration.
 create table if not exists deployments (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -972,6 +972,24 @@ create table if not exists deployment_phases (
 );
 
 create index if not exists deployment_phases_deployment_idx on deployment_phases (deployment_id, position);
+
+-- The site's data room, when it has one. The link only opens the room for its
+-- members, as every room is shared by invite.
+alter table deployments add column if not exists data_room_id uuid references data_rooms (id) on delete set null;
+
+create index if not exists deployments_data_room_idx on deployments (data_room_id) where data_room_id is not null;
+
+-- Each phase brings one platform, so a deployment can mix them (B300 first,
+-- Vera Rubin later). The deployment's own platform covers nodes no phase
+-- schedules yet. `nodes` is then the total across platforms, any whole number.
+alter table deployment_phases add column if not exists platform text
+  check (platform in ('b300', 'b200', 'vera_rubin'));
+
+update deployment_phases p set platform = d.platform
+from deployments d
+where p.deployment_id = d.id and p.platform is null;
+
+alter table deployment_phases alter column platform set not null;
 
 -- First-party analytics for the site and portal, reported in the portal's
 -- Analytics app (src/features/analytics). One row per pageview or event.

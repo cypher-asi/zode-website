@@ -7,7 +7,7 @@ import {
   coolingLabel,
   networkingLabel,
   nextPhase,
-  platformLabel,
+  platformSummary,
   statusLabel,
   totalsOf,
   type Deployment,
@@ -25,6 +25,7 @@ export function DeploymentList({
     <ul className={portal.list}>
       {deployments.map((d) => {
         const next = nextPhase(d.phases, today);
+        const totals = totalsOf(d);
         return (
           <li key={d.id}>
             <Link className={portal.row} href={`/portal/deployments/${d.id}`} data-order="">
@@ -33,7 +34,7 @@ export function DeploymentList({
               </span>
               <span className={portal.rowMain}>
                 <span className={portal.rowTitle}>
-                  {d.name} · {formatCount(totalsOf(d).gpus)} {platformLabel(d.platform)} GPUs
+                  {d.name} · {formatCount(totals.gpus)} {platformSummary(totals.byPlatform)} GPUs
                 </span>
                 <span className={portal.rowMeta}>
                   {[

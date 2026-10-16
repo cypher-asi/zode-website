@@ -23,14 +23,17 @@ import {
   CREDIT_RATINGS,
   FACILITIES,
   NETWORKING,
-  NODE_OPTIONS,
   PLATFORM_OPTIONS,
   STATUSES,
   STORAGE_OPTIONS,
   gpusFor,
+  isOption,
+  platformBreakdown,
   totalsOf,
   type Deployment,
   type Phase,
+  type Platform,
+  type RoomChoice,
 } from "./types";
 import styles from "./deployments.module.css";
 
@@ -41,15 +44,12 @@ const YES_NO = [
   { value: "no", label: "No" },
   { value: "yes", label: "Yes" },
 ];
-const NODE_CHOICES = NODE_OPTIONS.map((n) => ({
-  value: String(n),
-  label: `${n} nodes · ${formatCount(gpusFor(n))} GPUs`,
-}));
 const STORAGE_CHOICES = STORAGE_OPTIONS.map((tb) => ({ value: String(tb), label: tb ? `${tb} TB per node` : "None" }));
 
 interface PhaseDraft {
   key: number;
   name: string;
+  platform: Platform;
   startOn: string;
   rfsOn: string;
   nodes: string;
@@ -63,38 +63,61 @@ const numberOr = (raw: string, fallback: number | null): number | null => {
 
 const str = (value: number | null): string => (value === null ? "" : String(value));
 
-const draftOf = (key: number, phase?: Phase): PhaseDraft => ({
+const draftOf = (key: number, platform: Platform, phase?: Phase): PhaseDraft => ({
   key,
   name: phase?.name ?? "",
+  platform: phase?.platform ?? platform,
   startOn: phase?.startOn ?? "",
   rfsOn: phase?.rfsOn ?? "",
   nodes: phase ? String(phase.nodes) : "",
   mw: str(phase?.mw ?? null),
 });
 
-/** Adds a deployment, or edits `deployment`, for the ZODE team. Totals follow the figures as they're typed. */
-export function DeploymentForm({ deployment }: { deployment?: Deployment }): ReactElement {
+/**
+ * Adds a deployment, or edits `deployment`, for the ZODE team, linked to one
+ * of `rooms` if they choose. Totals follow the figures as they're typed.
+ */
+export function DeploymentForm({
+  deployment,
+  rooms,
+}: {
+  deployment?: Deployment;
+  rooms: readonly RoomChoice[];
+}): ReactElement {
   const id = useId();
   const d = deployment;
   const [state, action, saving] = useActionState(saveDeploymentAction, INITIAL);
   const [nodes, setNodes] = useState(String(d?.nodes ?? 64));
+  const [platform, setPlatform] = useState<Platform>(d?.platform ?? "b300");
   const [storage, setStorage] = useState(String(d?.storageTbPerNode ?? 4));
   const [price, setPrice] = useState(str(d?.priceGpuHr ?? null));
   const [term, setTerm] = useState(str(d?.termMonths ?? null));
   const [loc, setLoc] = useState(d?.locRequired ? "yes" : "no");
   const [phases, setPhases] = useState<PhaseDraft[]>(() =>
-    d?.phases.length ? d.phases.map((phase, key) => draftOf(key, phase)) : [draftOf(0)],
+    d?.phases.length
+      ? d.phases.map((phase, key) => draftOf(key, d.platform, phase))
+      : [draftOf(0, d?.platform ?? "b300")],
   );
   const nextKey = useRef(phases.length);
   const [deleting, setDeleting] = useState(false);
 
+  const nodeCount = numberOr(nodes, 0)!;
   const totals = totalsOf({
-    nodes: Number(nodes),
+    nodes: nodeCount,
+    platform,
     storageTbPerNode: Number(storage),
     priceGpuHr: numberOr(price, null),
     termMonths: numberOr(term, null),
-    phases: phases.map((phase) => ({ nodes: numberOr(phase.nodes, 0)!, mw: numberOr(phase.mw, null) })),
+    phases: phases.map((phase) => ({
+      platform: phase.platform,
+      nodes: numberOr(phase.nodes, 0)!,
+      mw: numberOr(phase.mw, null),
+    })),
   });
+  const roomChoices = [
+    { value: "", label: "Not linked" },
+    ...rooms.map((room) => ({ value: room.id, label: room.name })),
+  ];
 
   const updatePhase = (key: number, patch: Partial<PhaseDraft>) =>
     setPhases((rows) => rows.map((row) => (row.key === key ? { ...row, ...patch } : row)));
@@ -167,19 +190,27 @@ export function DeploymentForm({ deployment }: { deployment?: Deployment }): Rea
               />
             </div>
             {select("status", "Status", STATUSES, d?.status ?? "active")}
-            {select("platform", "Platform", PLATFORM_OPTIONS, d?.platform ?? "b300")}
             <div className={ui.field}>
-              {label("nodes", "Nodes")}
+              {label("platform", "Platform")}
               <Select
-                id={`${id}-nodes`}
-                aria-labelledby={`${id}-nodes-label`}
-                name="nodes"
+                id={`${id}-platform`}
+                aria-labelledby={`${id}-platform-label`}
+                name="platform"
                 className={ui.fill}
-                options={NODE_CHOICES}
-                value={nodes}
-                onChange={setNodes}
+                options={PLATFORM_OPTIONS}
+                value={platform}
+                onChange={(value) => {
+                  if (isOption(PLATFORM_OPTIONS, value)) setPlatform(value);
+                }}
               />
             </div>
+            {input("nodes", "Nodes (all platforms)", {
+              inputMode: "numeric",
+              placeholder: "64",
+              required: true,
+              value: nodes,
+              onChange: (event) => setNodes(event.target.value),
+            })}
             {select("cooling", "Cooling", COOLING, d?.cooling ?? "liquid_dtc")}
             {select("networking", "Networking", NETWORKING, d?.networking ?? "infiniband")}
             <div className={ui.field}>
@@ -195,24 +226,28 @@ export function DeploymentForm({ deployment }: { deployment?: Deployment }): Rea
               />
             </div>
             {select("facility", "Facility", [NONE, ...FACILITIES], d?.facility ?? "")}
+            {select("data_room_id", "Data room", roomChoices, d?.dataRoomId ?? "")}
             <AddressField address={d?.address ?? null} city={d?.city ?? null} placeId={d?.placeId ?? null} />
           </>,
           <p className={styles.summary}>
-            {formatCount(totals.gpus)} GPUs ·{" "}
-            {totals.storageTb ? `${formatTb(totals.storageTb)} storage` : "No storage"}
+            {totals.byPlatform.length > 1
+              ? `${formatCount(totals.gpus)} GPUs (${platformBreakdown(totals.byPlatform)})`
+              : `${formatCount(totals.gpus)} GPUs`}{" "}
+            · {totals.storageTb ? `${formatTb(totals.storageTb)} storage` : "No storage"}
           </p>,
         )}
 
         <fieldset className={styles.fieldset}>
           <legend className={styles.legend}>Rollout</legend>
-          <p className={styles.summary} data-warn={totals.scheduledNodes > Number(nodes) ? "" : undefined}>
-            {formatCount(totals.scheduledNodes)} of {formatCount(Number(nodes))} nodes scheduled ·{" "}
+          <p className={styles.summary} data-warn={totals.scheduledNodes > nodeCount ? "" : undefined}>
+            {formatCount(totals.scheduledNodes)} of {formatCount(nodeCount)} nodes scheduled ·{" "}
             {formatCount(gpusFor(totals.scheduledNodes))} GPUs
             {totals.mw ? ` · ${totals.mw.toLocaleString("en-US", { maximumFractionDigits: 2 })} MW` : ""}
           </p>
           <div className={styles.phases}>
             <div className={styles.phaseHead} aria-hidden="true">
               <span>Phase</span>
+              <span>Platform</span>
               <span>Start</span>
               <span>RFS *</span>
               <span>Nodes *</span>
@@ -230,6 +265,16 @@ export function DeploymentForm({ deployment }: { deployment?: Deployment }): Rea
                   maxLength={200}
                   value={phase.name}
                   onChange={(event) => updatePhase(phase.key, { name: event.target.value })}
+                />
+                <Select
+                  name="phase_platform"
+                  className={ui.fill}
+                  aria-label={`Phase ${i + 1} platform`}
+                  options={PLATFORM_OPTIONS}
+                  value={phase.platform}
+                  onChange={(value) => {
+                    if (isOption(PLATFORM_OPTIONS, value)) updatePhase(phase.key, { platform: value });
+                  }}
                 />
                 <input
                   name="phase_start_on"
@@ -285,7 +330,7 @@ export function DeploymentForm({ deployment }: { deployment?: Deployment }): Rea
               className={ui.button}
               onClick={() => {
                 const key = nextKey.current++;
-                setPhases((rows) => [...rows, draftOf(key)]);
+                setPhases((rows) => [...rows, draftOf(key, platform)]);
               }}
             >
               Add phase

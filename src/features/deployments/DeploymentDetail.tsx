@@ -16,7 +16,8 @@ import {
   creditLabel,
   facilityLabel,
   networkingLabel,
-  platformLabel,
+  platformBreakdown,
+  platformSummary,
   rackDesignHref,
   totalsOf,
   type Deployment,
@@ -54,7 +55,7 @@ export function DeploymentDetail({ deployment: d, today }: { deployment: Deploym
       <div className={styles.stats}>
         <div className={styles.stat}>
           <span className={styles.statValue}>{formatCount(totals.gpus)}</span>
-          <span className={styles.statLabel}>{platformLabel(d.platform)} GPUs</span>
+          <span className={styles.statLabel}>{platformSummary(totals.byPlatform)} GPUs</span>
         </div>
         <div className={styles.stat}>
           <span className={styles.statValue}>{formatCount(d.nodes)}</span>
@@ -71,9 +72,14 @@ export function DeploymentDetail({ deployment: d, today }: { deployment: Deploym
       </div>
 
       <Facts title="Deployment">
-        <Fact label="Platform">{platformLabel(d.platform)}</Fact>
+        <Fact label="Platform">{platformSummary(totals.byPlatform)}</Fact>
         <Fact label="Nodes">{formatCount(d.nodes)}</Fact>
-        <Fact label="Total GPUs">{formatCount(totals.gpus)}</Fact>
+        <Fact label="Total GPUs">
+          {formatCount(totals.gpus)}
+          {totals.byPlatform.length > 1 ? (
+            <span className={styles.muted}> · {platformBreakdown(totals.byPlatform)}</span>
+          ) : null}
+        </Fact>
         <Fact label="Cooling">{coolingLabel(d.cooling)}</Fact>
         <Fact label="Networking">{networkingLabel(d.networking)}</Fact>
         <Fact label="Storage">
@@ -96,6 +102,13 @@ export function DeploymentDetail({ deployment: d, today }: { deployment: Deploym
         </Fact>
         <Fact label="Facility">{facilityLabel(d.facility)}</Fact>
         <Fact label="City">{d.city}</Fact>
+        <Fact label="Data room">
+          {d.dataRoomId ? (
+            <Link className={styles.link} href={`/portal/data-rooms/${d.dataRoomId}`} prefetch={false}>
+              {d.dataRoomName}
+            </Link>
+          ) : null}
+        </Fact>
         <Fact label="Data center address" wide>
           {d.address ? <span className={styles.preline}>{d.address}</span> : null}
         </Fact>

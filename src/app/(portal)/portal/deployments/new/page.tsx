@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense, type ReactElement } from "react";
+import { listRoomChoices } from "@/features/deployments/deployments";
 import { DeploymentForm } from "@/features/deployments/DeploymentForm";
 import { PortalLoading } from "@/features/portal/PortalLoading";
 import { PageHeader } from "@/features/portal/sections";
@@ -25,5 +26,5 @@ export default function NewDeploymentPage(): ReactElement {
 
 async function NewDeployment(): Promise<ReactElement> {
   await requireTeam("/portal/deployments/new");
-  return <DeploymentForm />;
+  return <DeploymentForm rooms={await listRoomChoices()} />;
 }

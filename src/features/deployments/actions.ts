@@ -5,19 +5,19 @@ import { redirect } from "next/navigation";
 import { userIdFor } from "@/features/users/users";
 import { isUuid, teamAccount } from "@/features/zrm/access";
 import { multiLine, singleLine } from "@/lib/validation";
-import { DEPLOYMENTS_TAG, deleteDeployment, saveDeployment, type DeploymentInput } from "./deployments";
+import { DEPLOYMENTS_TAG, deleteDeployment, roomExists, saveDeployment, type DeploymentInput } from "./deployments";
 import {
   COOLING,
   CREDIT_RATINGS,
   FACILITIES,
   NETWORKING,
-  NODE_OPTIONS,
   PLATFORM_OPTIONS,
   STATUSES,
   STORAGE_OPTIONS,
   isOption,
   isPlaceId,
   type Phase,
+  type Platform,
 } from "./types";
 
 export interface DeploymentFormState {
@@ -46,9 +46,13 @@ function figure(raw: string, label: string, max: number, whole = false): number 
 
 const isDay = (value: string): boolean => DAY_RE.test(value) && !Number.isNaN(Date.parse(value));
 
-/** The rollout, one phase per row of `phase_*` fields in order; blank rows are skipped. */
-function readPhases(formData: FormData): Phase[] | string {
+/**
+ * The rollout, one phase per row of `phase_*` fields in order; blank rows are
+ * skipped, and a row without a platform takes the deployment's.
+ */
+function readPhases(formData: FormData, platform: Platform): Phase[] | string {
   const names = formData.getAll("phase_name");
+  const platforms = formData.getAll("phase_platform");
   const starts = formData.getAll("phase_start_on");
   const rfs = formData.getAll("phase_rfs_on");
   const nodes = formData.getAll("phase_nodes");
@@ -65,6 +69,8 @@ function readPhases(formData: FormData): Phase[] | string {
     if (!row.name && !row.startOn && !row.rfsOn && !row.nodes && !row.mw) continue;
     const label = row.name || `Phase ${phases.length + 1}`;
     if (row.name.length > MAX_TEXT) return `${label}'s name is too long.`;
+    const phasePlatform = text(platforms[i]) || platform;
+    if (!isOption(PLATFORM_OPTIONS, phasePlatform)) return `Choose ${label}'s platform.`;
     if (!isDay(row.rfsOn)) return `${label} needs an RFS date.`;
     if (row.startOn && !isDay(row.startOn)) return `${label}'s start must be a date.`;
     if (row.startOn && row.startOn > row.rfsOn) return `${label} must start on or before its RFS date.`;
@@ -73,7 +79,14 @@ function readPhases(formData: FormData): Phase[] | string {
     if (phaseNodes === null) return `${label} needs a node count.`;
     const mw = figure(row.mw, `${label}'s MW`, 1e6);
     if (typeof mw === "string") return mw;
-    phases.push({ name: row.name || null, startOn: row.startOn || null, rfsOn: row.rfsOn, nodes: phaseNodes, mw });
+    phases.push({
+      name: row.name || null,
+      platform: phasePlatform,
+      startOn: row.startOn || null,
+      rfsOn: row.rfsOn,
+      nodes: phaseNodes,
+      mw,
+    });
   }
   if (phases.length > MAX_PHASES) return `A deployment can have at most ${MAX_PHASES} phases.`;
   return phases.sort((a, b) => a.rfsOn.localeCompare(b.rfsOn));
@@ -95,8 +108,9 @@ function readDeployment(formData: FormData): DeploymentInput | string {
   if (!isOption(COOLING, cooling)) return "Choose the cooling.";
   if (!isOption(NETWORKING, networking)) return "Choose the networking.";
 
-  const nodes = Number(field("nodes"));
-  if (!NODE_OPTIONS.includes(nodes)) return "Choose one of the standard node counts.";
+  const nodes = figure(field("nodes"), "Nodes", 1e6, true);
+  if (typeof nodes === "string") return nodes;
+  if (!nodes) return "Give the deployment's nodes.";
   const storageTbPerNode = Number(field("storage_tb_per_node"));
   if (!STORAGE_OPTIONS.includes(storageTbPerNode)) return "Choose the storage per node.";
 
@@ -128,7 +142,7 @@ function readDeployment(formData: FormData): DeploymentInput | string {
     return "Give the LOC's years of lease to at most two decimals.";
   }
 
-  const phases = readPhases(formData);
+  const phases = readPhases(formData, platform);
   if (typeof phases === "string") return phases;
   const scheduled = phases.reduce((sum, phase) => sum + phase.nodes, 0);
   if (scheduled > nodes) return `The phases add up to ${scheduled} nodes, more than the deployment's ${nodes}.`;
@@ -154,6 +168,7 @@ function readDeployment(formData: FormData): DeploymentInput | string {
     creditGuarantee: field("credit_guarantee") === "yes",
     leaseGuarantee: field("lease_guarantee") === "yes",
     notes: notes || null,
+    dataRoomId: field("data_room_id") || null,
     phases,
   };
 }
@@ -171,6 +186,9 @@ export async function saveDeploymentAction(
 
   const input = readDeployment(formData);
   if (typeof input === "string") return { error: input };
+  if (input.dataRoomId && !(await roomExists(input.dataRoomId))) {
+    return { error: "That data room no longer exists. Pick another." };
+  }
 
   const id = await saveDeployment(rawId || null, input, await userIdFor(account.userId));
   if (!id) return { error: "This deployment was deleted. Reload to see the current list." };

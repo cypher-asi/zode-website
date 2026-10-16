@@ -7,6 +7,7 @@ import {
 } from "@/features/cluster/model/catalog";
 import type { FabricId, PlatformId } from "@/features/cluster/model/types";
 import { writeConfigParams } from "@/features/cluster/model/url";
+import { formatCount } from "./format";
 
 /*
  * A GPU deployment as the portal shows it, and the figures derived from it.
@@ -21,9 +22,10 @@ export type Networking = FabricId;
 export type Facility = "colo" | "conversion" | "greenfield";
 export type CreditRating = "ig" | "high" | "not_required";
 
-/** One rollout phase, ready for service (RFS) on `rfsOn`. Dates are `YYYY-MM-DD`. */
+/** One rollout phase of one platform, ready for service (RFS) on `rfsOn`. Dates are `YYYY-MM-DD`. */
 export interface Phase {
   name: string | null;
+  platform: Platform;
   startOn: string | null;
   rfsOn: string;
   nodes: number;
@@ -46,11 +48,19 @@ export interface PlaceAddress {
   city: string | null;
 }
 
+/** A data room a deployment can link to. */
+export interface RoomChoice {
+  id: string;
+  name: string;
+}
+
 export interface Deployment {
   id: string;
   name: string;
   status: DeploymentStatus;
+  /** Across every platform. */
   nodes: number;
+  /** The platform of nodes no phase schedules yet, and the one new phases start on. */
   platform: Platform;
   cooling: Cooling;
   networking: Networking;
@@ -68,6 +78,8 @@ export interface Deployment {
   creditGuarantee: boolean;
   leaseGuarantee: boolean;
   notes: string | null;
+  dataRoomId: string | null;
+  dataRoomName: string | null;
   /** In RFS order. */
   phases: Phase[];
   /** ISO timestamp. */
@@ -115,8 +127,6 @@ export const CREDIT_RATINGS: readonly Option<CreditRating>[] = [
   { value: "not_required", label: "Not required" },
 ];
 
-/** The cluster builder's standard sizes; deployments always use one. */
-export const NODE_OPTIONS: readonly number[] = NODE_SIZES;
 export const STORAGE_OPTIONS: readonly number[] = STORAGE_PER_NODE;
 
 const labelOf = <Id extends string>(options: readonly Option<Id>[], value: Id | null): string | null =>
@@ -137,12 +147,25 @@ export const HOURS_PER_MONTH = 730;
 
 export const gpusFor = (nodes: number): number => nodes * GPUS_PER_NODE;
 
+/** One platform's share of a deployment. */
+export interface PlatformShare {
+  platform: Platform;
+  nodes: number;
+  gpus: number;
+  mw: number;
+}
+
 export interface DeploymentTotals {
   gpus: number;
   storageTb: number;
   /** Nodes across every phase, against the deployment's `nodes`. */
   scheduledNodes: number;
   mw: number;
+  /**
+   * Each platform's phases, in the order they first come, with the nodes no
+   * phase schedules counted on the deployment's platform.
+   */
+  byPlatform: PlatformShare[];
   /** GPUs x $/GPU-hr x hours in a month, when there's a price. */
   monthlyUsd: number | null;
   /** The monthly figure over the whole term, when there's a term too. */
@@ -150,41 +173,68 @@ export interface DeploymentTotals {
 }
 
 export function totalsOf(
-  d: Pick<Deployment, "nodes" | "storageTbPerNode" | "priceGpuHr" | "termMonths"> & {
-    phases: readonly Pick<Phase, "nodes" | "mw">[];
+  d: Pick<Deployment, "nodes" | "platform" | "storageTbPerNode" | "priceGpuHr" | "termMonths"> & {
+    phases: readonly Pick<Phase, "platform" | "nodes" | "mw">[];
   },
 ): DeploymentTotals {
   const gpus = gpusFor(d.nodes);
+  const scheduledNodes = d.phases.reduce((sum, phase) => sum + phase.nodes, 0);
+  const shares = new Map<Platform, PlatformShare>();
+  const add = (platform: Platform, nodes: number, mw: number) => {
+    const share = shares.get(platform) ?? { platform, nodes: 0, gpus: 0, mw: 0 };
+    share.nodes += nodes;
+    share.gpus = gpusFor(share.nodes);
+    share.mw += mw;
+    shares.set(platform, share);
+  };
+  for (const phase of d.phases) add(phase.platform, phase.nodes, phase.mw ?? 0);
+  if (d.nodes > scheduledNodes || !shares.size) add(d.platform, Math.max(d.nodes - scheduledNodes, 0), 0);
   const monthlyUsd = d.priceGpuHr === null ? null : gpus * d.priceGpuHr * HOURS_PER_MONTH;
   return {
     gpus,
     storageTb: d.nodes * d.storageTbPerNode,
-    scheduledNodes: d.phases.reduce((sum, phase) => sum + phase.nodes, 0),
+    scheduledNodes,
     mw: d.phases.reduce((sum, phase) => sum + (phase.mw ?? 0), 0),
+    byPlatform: [...shares.values()],
     monthlyUsd,
     contractUsd: monthlyUsd === null || d.termMonths === null ? null : monthlyUsd * d.termMonths,
   };
 }
+
+/** The deployment's platforms by name, e.g. "B300" or "B300 + Vera Rubin". */
+export const platformSummary = (shares: readonly Pick<PlatformShare, "platform">[]): string =>
+  shares.map((share) => platformLabel(share.platform)).join(" + ");
+
+/** GPUs per platform, e.g. "2,048 B300 · 6,400 Vera Rubin". */
+export const platformBreakdown = (shares: readonly Pick<PlatformShare, "platform" | "gpus">[]): string =>
+  shares.map((share) => `${formatCount(share.gpus)} ${platformLabel(share.platform)}`).join(" · ");
 
 /** The first phase not yet ready for service on `today` (`YYYY-MM-DD`), if any. */
 export const nextPhase = (phases: readonly Phase[], today: string): Phase | null =>
   phases.find((phase) => phase.rfsOn >= today) ?? null;
 
 /**
- * The deployment in the cluster builder: its platform, nodes, fabric and
- * storage, with liquid DTC cabinets holding 8 nodes and air-cooled ones 4;
- * null for a platform it has no rack for.
+ * The deployment in the cluster builder: its first platform the builder has a
+ * rack for, with that platform's nodes, the fabric and storage, liquid DTC
+ * cabinets holding 8 nodes and air-cooled ones 4. Null when no platform has a
+ * rack, or its nodes aren't one of the builder's sizes.
  */
 export function rackDesignHref(
-  d: Pick<Deployment, "platform" | "nodes" | "networking" | "cooling" | "storageTbPerNode">,
+  d: Pick<Deployment, "platform" | "nodes" | "networking" | "cooling" | "storageTbPerNode"> & {
+    phases: readonly Pick<Phase, "platform" | "nodes" | "mw">[];
+  },
 ): string | null {
-  if (!inClusterBuilder(d.platform)) return null;
+  const share = totalsOf({ ...d, priceGpuHr: null, termMonths: null }).byPlatform.find((s) =>
+    inClusterBuilder(s.platform),
+  );
+  if (!share || !inClusterBuilder(share.platform)) return null;
+  if (!(NODE_SIZES as readonly number[]).includes(share.nodes)) return null;
   const params = new URLSearchParams();
   writeConfigParams(
     {
       ...DEFAULT_CLUSTER,
-      platform: d.platform,
-      nodes: d.nodes,
+      platform: share.platform,
+      nodes: share.nodes,
       fabric: d.networking,
       storagePerNode: d.storageTbPerNode,
       density: d.cooling === "air" ? 4 : 8,

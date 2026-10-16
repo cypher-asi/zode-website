@@ -33,7 +33,9 @@ import {
   creditLabel,
   facilityLabel,
   networkingLabel,
+  platformBreakdown,
   platformLabel,
+  platformSummary,
   rackDesignHref,
   statusLabel,
   totalsOf,
@@ -425,7 +427,7 @@ class Writer {
 
       const name = wrap(row.label, fonts.semibold, 8.5, labelWidth)[0] ?? row.label;
       this.text(name, MARGIN, mid + 2, fonts.semibold, 8.5, INK);
-      const meta = `${plural(row.phase.nodes, "node")} · ${formatCount(row.gpus)} GPUs${row.phase.mw !== null ? ` · ${formatMw(row.phase.mw)}` : ""}`;
+      const meta = `${platformLabel(row.phase.platform)} · ${plural(row.phase.nodes, "node")} · ${formatCount(row.gpus)} GPUs${row.phase.mw !== null ? ` · ${formatMw(row.phase.mw)}` : ""}`;
       this.text(meta, MARGIN, mid - 9, fonts.regular, 7, SECONDARY);
 
       const barWidth = Math.max((row.rfs - row.start) * trackWidth, 0);
@@ -476,14 +478,15 @@ class Writer {
     }
     this.y -= 28;
 
-    const headers = ["Phase", "RFS", "Nodes", "GPUs", "MW", "Cumulative GPUs", "Cumulative MW"];
-    const widths = [110, 84, 48, 52, 56, 86, 80];
+    const headers = ["Phase", "Platform", "RFS", "Nodes", "GPUs", "MW", "Cumulative GPUs", "Cumulative MW"];
+    const widths = [96, 66, 76, 44, 48, 50, 80, 72];
     const scale = CONTENT / widths.reduce((a, b) => a + b, 0);
     const cols = widths.map((w) => w * scale);
     const cell = (values: string[], font: PDFFont, size: number, fill: Color, tracking = 0) => {
       let x = MARGIN;
       values.forEach((value, i) => {
         if (i === 0) this.text(value, x, this.y, font === fonts.mono ? font : fonts.semibold, size, fill, tracking);
+        else if (i === 1) this.text(value, x + 8, this.y, font, size, fill, tracking);
         else this.textRight(value, x + cols[i], this.y, font, size, fill, tracking);
         x += cols[i];
       });
@@ -509,6 +512,7 @@ class Writer {
       cell(
         [
           row.label,
+          platformLabel(row.phase.platform),
           formatDay(row.phase.rfsOn),
           formatCount(row.phase.nodes),
           formatCount(row.gpus),
@@ -602,7 +606,7 @@ export async function renderDeploymentPdf(deployment: Deployment, today: string)
     d.address ? d.address.split("\n").join(", ") : null,
   );
   w.stats([
-    { value: formatCount(totals.gpus), label: `${platformLabel(d.platform)} GPUs` },
+    { value: formatCount(totals.gpus), label: `${platformSummary(totals.byPlatform)} GPUs` },
     { value: formatCount(d.nodes), label: "Nodes" },
     { value: totals.mw ? formatMw(totals.mw) : "—", label: "Across the rollout" },
     { value: next ? formatDay(next.rfsOn) : "—", label: next ? "Next RFS" : "No RFS to come" },
@@ -610,9 +614,15 @@ export async function renderDeploymentPdf(deployment: Deployment, today: string)
 
   const rackPath = rackDesignHref(d);
   w.facts("Deployment", [
-    { label: "Platform", value: platformLabel(d.platform) },
+    { label: "Platform", value: platformSummary(totals.byPlatform) },
     { label: "Nodes", value: formatCount(d.nodes) },
-    { label: "Total GPUs", value: formatCount(totals.gpus) },
+    {
+      label: "Total GPUs",
+      value:
+        totals.byPlatform.length > 1
+          ? `${formatCount(totals.gpus)} · ${platformBreakdown(totals.byPlatform)}`
+          : formatCount(totals.gpus),
+    },
     { label: "Cooling", value: coolingLabel(d.cooling) },
     { label: "Networking", value: networkingLabel(d.networking) },
     {
@@ -623,6 +633,7 @@ export async function renderDeploymentPdf(deployment: Deployment, today: string)
     },
     { label: "Facility", value: orDash(facilityLabel(d.facility)) },
     { label: "City", value: orDash(d.city) },
+    { label: "Data room", value: orDash(d.dataRoomName) },
     rackPath
       ? { label: "Rack design", value: "Open in the cluster builder", href: `${SITE_URL}${rackPath}` }
       : { label: "Rack design", value: "Not in the cluster builder yet" },
@@ -657,7 +668,9 @@ export async function renderDeploymentPdf(deployment: Deployment, today: string)
   w.footers();
 
   doc.setTitle(`ZODE Deployment \u2013 ${d.name}`);
-  doc.setSubject(`${plural(totals.gpus, "GPU")} ${platformLabel(d.platform)} deployment, as of ${formatDay(today)}`);
+  doc.setSubject(
+    `${plural(totals.gpus, "GPU")} ${platformSummary(totals.byPlatform)} deployment, as of ${formatDay(today)}`,
+  );
   doc.setAuthor(BRAND.company);
   doc.setCreator(BRAND.domain);
   doc.setProducer(BRAND.domain);

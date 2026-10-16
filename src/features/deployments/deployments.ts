@@ -3,12 +3,12 @@ import { randomUUID } from "node:crypto";
 import { cacheLife, cacheTag } from "next/cache";
 import { isUuid } from "@/features/zrm/access";
 import { DB_TAG, db } from "@/lib/db";
-import type { Deployment, Phase } from "./types";
+import type { Deployment, Phase, RoomChoice } from "./types";
 
 /** Every deployment read is cached under this tag, which saving and deleting update. */
 export const DEPLOYMENTS_TAG = "deployments";
 
-export type DeploymentInput = Omit<Deployment, "id" | "updatedAt">;
+export type DeploymentInput = Omit<Deployment, "id" | "updatedAt" | "dataRoomName">;
 
 /*
  * Neon hands back `numeric` as strings and `date` as local-midnight Dates, so
@@ -37,6 +37,8 @@ const toDeployment = (row: Record<string, unknown>): Deployment => ({
   creditGuarantee: Boolean(row.credit_guarantee),
   leaseGuarantee: Boolean(row.lease_guarantee),
   notes: row.notes == null ? null : String(row.notes),
+  dataRoomId: row.data_room_id == null ? null : String(row.data_room_id),
+  dataRoomName: row.data_room_name == null ? null : String(row.data_room_name),
   phases: (row.phases as Phase[]) ?? [],
   updatedAt: new Date(row.updated_at as string | Date).toISOString(),
 });
@@ -51,16 +53,18 @@ export async function listDeployments(): Promise<Deployment[]> {
       d.address, d.city, d.place_id, d.facility, d.term_months, d.price_gpu_hr::float8 as price_gpu_hr,
       d.deposit_usd::float8 as deposit_usd, d.credit_rating, d.loc_required,
       d.loc_years::float8 as loc_years, d.credit_guarantee, d.lease_guarantee, d.notes, d.updated_at,
+      d.data_room_id, dr.name as data_room_name,
       coalesce(
         (select json_agg(
             json_build_object(
-              'name', p.name, 'startOn', p.start_on::text, 'rfsOn', p.rfs_on::text,
+              'name', p.name, 'platform', p.platform, 'startOn', p.start_on::text, 'rfsOn', p.rfs_on::text,
               'nodes', p.nodes, 'mw', p.mw::float8
             ) order by p.rfs_on, p.position)
           from deployment_phases p where p.deployment_id = d.id),
         '[]'::json
       ) as phases
     from deployments d
+    left join data_rooms dr on dr.id = d.data_room_id
     order by case d.status when 'active' then 0 when 'planned' then 1 else 2 end, lower(d.name)
   `;
   return rows.map(toDeployment);
@@ -93,7 +97,7 @@ export async function saveDeployment(
           term_months = ${d.termMonths}, price_gpu_hr = ${d.priceGpuHr}, deposit_usd = ${d.depositUsd},
           credit_rating = ${d.creditRating}, loc_required = ${d.locRequired}, loc_years = ${d.locYears},
           credit_guarantee = ${d.creditGuarantee}, lease_guarantee = ${d.leaseGuarantee}, notes = ${d.notes},
-          updated_by = ${userId}, updated_at = now()
+          data_room_id = ${d.dataRoomId}, updated_by = ${userId}, updated_at = now()
         where id = ${deploymentId}
         returning id
       `
@@ -101,12 +105,12 @@ export async function saveDeployment(
         insert into deployments (
           id, name, status, nodes, platform, cooling, networking, storage_tb_per_node, address, city, place_id,
           facility, term_months, price_gpu_hr, deposit_usd, credit_rating, loc_required, loc_years,
-          credit_guarantee, lease_guarantee, notes, created_by, updated_by
+          credit_guarantee, lease_guarantee, notes, data_room_id, created_by, updated_by
         ) values (
           ${deploymentId}, ${d.name}, ${d.status}, ${d.nodes}, ${d.platform}, ${d.cooling}, ${d.networking},
           ${d.storageTbPerNode}, ${d.address}, ${d.city}, ${d.placeId}, ${d.facility}, ${d.termMonths},
           ${d.priceGpuHr}, ${d.depositUsd}, ${d.creditRating}, ${d.locRequired}, ${d.locYears},
-          ${d.creditGuarantee}, ${d.leaseGuarantee}, ${d.notes}, ${userId}, ${userId}
+          ${d.creditGuarantee}, ${d.leaseGuarantee}, ${d.notes}, ${d.dataRoomId}, ${userId}, ${userId}
         )
         returning id
       `;
@@ -116,13 +120,26 @@ export async function saveDeployment(
     sql`delete from deployment_phases where deployment_id = ${deploymentId}`,
     ...d.phases.map(
       (phase, position) => sql`
-        insert into deployment_phases (deployment_id, position, name, start_on, rfs_on, nodes, mw)
-        select id, ${position}, ${phase.name}, ${phase.startOn}, ${phase.rfsOn}, ${phase.nodes}, ${phase.mw}
+        insert into deployment_phases (deployment_id, position, name, platform, start_on, rfs_on, nodes, mw)
+        select id, ${position}, ${phase.name}, ${phase.platform}, ${phase.startOn}, ${phase.rfsOn}, ${phase.nodes}, ${phase.mw}
         from deployments where id = ${deploymentId}
       `,
     ),
   ]);
   return written.length ? deploymentId : null;
+}
+
+/** Every data room, for the ZODE team to link a deployment to. */
+export async function listRoomChoices(): Promise<RoomChoice[]> {
+  const rows = await db()`select id, name from data_rooms order by lower(name)`;
+  return rows.map((row) => ({ id: String(row.id), name: String(row.name) }));
+}
+
+/** Whether data room `id` exists. */
+export async function roomExists(id: string): Promise<boolean> {
+  if (!isUuid(id)) return false;
+  const rows = await db()`select 1 from data_rooms where id = ${id}`;
+  return rows.length > 0;
 }
 
 export async function deleteDeployment(id: string): Promise<void> {

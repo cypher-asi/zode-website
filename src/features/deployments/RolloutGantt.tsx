@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactElement } from "react";
 import { formatCount, formatDay, formatMw, plural } from "./format";
 import { scheduleOf } from "./schedule";
-import type { Phase } from "./types";
+import { platformLabel, type Phase } from "./types";
 import styles from "./deployments.module.css";
 
 const pct = (at: number): string => `${(at * 100).toFixed(3)}%`;
@@ -38,7 +38,7 @@ export function RolloutGantt({ phases, today }: { phases: readonly Phase[]; toda
             <div className={styles.ganttLabel}>
               <span className={styles.ganttName}>{row.label}</span>
               <span className={styles.ganttMeta}>
-                {plural(row.phase.nodes, "node")} · {formatCount(row.gpus)} GPUs
+                {platformLabel(row.phase.platform)} · {plural(row.phase.nodes, "node")} · {formatCount(row.gpus)} GPUs
                 {row.phase.mw !== null ? ` · ${formatMw(row.phase.mw)}` : ""}
               </span>
             </div>
@@ -86,6 +86,9 @@ export function RolloutGantt({ phases, today }: { phases: readonly Phase[]; toda
           <thead>
             <tr>
               <th scope="col">Phase</th>
+              <th scope="col" data-text="">
+                Platform
+              </th>
               <th scope="col">RFS</th>
               <th scope="col">Nodes</th>
               <th scope="col">GPUs</th>
@@ -98,6 +101,7 @@ export function RolloutGantt({ phases, today }: { phases: readonly Phase[]; toda
             {schedule.rows.map((row, i) => (
               <tr key={i} data-next={row.next ? "" : undefined}>
                 <th scope="row">{row.label}</th>
+                <td data-text="">{platformLabel(row.phase.platform)}</td>
                 <td>{formatDay(row.phase.rfsOn)}</td>
                 <td>{formatCount(row.phase.nodes)}</td>
                 <td>{formatCount(row.gpus)}</td>
