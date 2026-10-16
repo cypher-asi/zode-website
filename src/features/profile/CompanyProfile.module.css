@@ -522,6 +522,258 @@ button.action {
   text-transform: none;
   letter-spacing: 0.02em;
 }
+
+/*
+ * Narrower than the sheet, it reflows into one column at screen sizes, in
+ * pixels rather than points. Scoped to screen: a printed Letter page is
+ * narrower than the breakpoint too.
+ */
+@media screen and (max-width: 900px) {
+  .page {
+    gap: 12px;
+    padding-inline: 12px;
+    padding-bottom: 32px;
+  }
+
+  .sheet {
+    --logo-u: 10px;
+
+    gap: 28px;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    padding: 20px 20px 24px;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+
+  .masthead {
+    padding-bottom: 12px;
+  }
+
+  .wordmark {
+    height: 22px;
+  }
+
+  .label,
+  .rowLabel,
+  .role,
+  .url,
+  .principleTitle .index {
+    font-size: 11px;
+  }
+
+  .section {
+    gap: 14px;
+  }
+
+  .what {
+    gap: 20px;
+  }
+
+  .intro {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .introCopy {
+    gap: 18px;
+  }
+
+  .title {
+    font-size: 36px;
+  }
+
+  .lede {
+    font-size: 18px;
+  }
+
+  .small,
+  .ventureWhat,
+  .years {
+    font-size: 14px;
+  }
+
+  .facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .statValue,
+  .card .statValue {
+    font-size: 21px;
+  }
+
+  .stat[data-large] .statValue {
+    font-size: 24px;
+  }
+
+  .statLabel,
+  .cardSites {
+    font-size: 13px;
+  }
+
+  .principles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 20px;
+  }
+
+  .principle {
+    gap: 8px;
+  }
+
+  .principleArt {
+    height: 32px;
+  }
+
+  .principleTitle {
+    font-size: 19px;
+  }
+
+  .pair,
+  .pair[data-split="foot"] {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+
+  .cards {
+    gap: 8px;
+  }
+
+  .card {
+    padding: 12px 14px;
+  }
+
+  .cardHead {
+    flex-wrap: wrap;
+  }
+
+  .stats {
+    gap: 16px;
+  }
+
+  .logoRows {
+    gap: 16px;
+  }
+
+  .logoRow {
+    gap: 8px;
+  }
+
+  .logos {
+    gap: 10px 20px;
+  }
+
+  /* 04: the two columns stack, each its own list rather than rows shared with its neighbour. */
+  .team {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    row-gap: 28px;
+  }
+
+  .column,
+  .rows {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .column {
+    grid-row: auto;
+  }
+
+  .columnHead {
+    align-self: auto;
+    padding-bottom: 0;
+  }
+
+  .person {
+    flex-wrap: wrap;
+    row-gap: 2px;
+    font-size: 22px;
+  }
+
+  /* Each company over its line, its outcome and years to the right. */
+  .ventures li {
+    grid-template-areas:
+      "name outcome"
+      "what years";
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0 12px;
+    align-items: baseline;
+  }
+
+  .ventureName {
+    grid-area: name;
+  }
+
+  .ventureWhat {
+    grid-area: what;
+  }
+
+  .years {
+    grid-area: years;
+    text-align: right;
+  }
+
+  .outcome {
+    grid-area: outcome;
+  }
+
+  .logoRow[data-inline] .rowLabel {
+    width: 96px;
+  }
+
+  .resources {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .resource {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .resource .url,
+  .contact .url {
+    font-size: 12px;
+  }
+
+  .contact {
+    gap: 6px;
+    padding: 14px 16px 16px;
+  }
+
+  .contact .url a {
+    display: inline-block;
+    padding-block: 6px;
+  }
+
+  .email {
+    font-size: 24px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .principles {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .logoRow[data-inline] {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .logoRow[data-inline] .rowLabel {
+    width: auto;
+  }
+
+  .rows .logos {
+    width: 100%;
+  }
+}
+
 @media print {
   .page {
     display: block;
