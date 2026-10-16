@@ -1,4 +1,15 @@
-/* The teaser editor beside its preview, and the editor's row lists. */
+/* A deployment's teasers on its page, the editor beside its preview, and the editor's row lists. */
+
+.teasers {
+  max-width: 1100px;
+}
+
+.teasersHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
 
 .layout {
   display: grid;

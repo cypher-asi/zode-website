@@ -17,6 +17,8 @@ import { orLogIn } from "@/features/portal/mine";
 import { PortalLoading } from "@/features/portal/PortalLoading";
 import { PageHeader } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
+import { DeploymentTeasers } from "@/features/teasers/TeaserList";
+import { listTeasersFor } from "@/features/teasers/teasers";
 
 export const metadata: Metadata = {
   title: "Deployment | ZODE",
@@ -38,6 +40,7 @@ async function Deployment({ params }: Pick<PageProps<"/portal/deployments/[id]">
   const deployment = await getDeployment(id);
   if (!deployment) notFound();
   await io();
+  const teasers = viewer.team ? await listTeasersFor(deployment.id) : null;
   const bom = viewer.team ? await getBom(deployment.id) : null;
 
   return (
@@ -55,9 +58,6 @@ async function Deployment({ params }: Pick<PageProps<"/portal/deployments/[id]">
             {viewer.team ? (
               <>
                 <ShareLink id={deployment.id} token={deployment.shareToken} />
-                <Link href={`/portal/deployments/teasers/new?deployment=${deployment.id}`} className={ui.button}>
-                  Create teaser
-                </Link>
                 <Link href={`/portal/deployments/${deployment.id}/edit`} className={ui.primary}>
                   Edit
                 </Link>
@@ -67,6 +67,7 @@ async function Deployment({ params }: Pick<PageProps<"/portal/deployments/[id]">
         }
       />
       <DeploymentDetail deployment={deployment} today={todayIso()} />
+      {teasers ? <DeploymentTeasers deploymentId={deployment.id} teasers={teasers} /> : null}
       {bom ? (
         <div className={detail.detail}>
           <BomOverview deployment={deployment} bom={bom} today={todayIso()} />

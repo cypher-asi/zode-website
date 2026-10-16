@@ -18,8 +18,7 @@ export function OfferPicker({
   phases: readonly number[] | null;
 }): ReactElement {
   return (
-    <form className={form.fieldset} action="/portal/deployments/teasers/new" method="get">
-      <input type="hidden" name="deployment" value={deployment.id} />
+    <form className={form.fieldset} action={`/portal/deployments/${deployment.id}/teasers/new`} method="get">
       <span className={form.legend}>Capacity to offer</span>
       <p className={form.summary}>Leave out phases that are already contracted. Redrafting replaces the teaser below.</p>
       <div className={styles.offer}>

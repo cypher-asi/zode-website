@@ -164,7 +164,7 @@ export function TeaserForm({ teaser, id: teaserId }: { teaser: TeaserInput; id?:
     <>
       <form className={form.form} onSubmit={submit}>
         {teaserId ? <input type="hidden" name="id" value={teaserId} /> : null}
-        {t.deploymentId ? <input type="hidden" name="deployment_id" value={t.deploymentId} /> : null}
+        <input type="hidden" name="deployment_id" value={t.deploymentId} />
 
         {section(
           "Heading",
@@ -293,7 +293,7 @@ export function TeaserForm({ teaser, id: teaserId }: { teaser: TeaserInput; id?:
               Delete
             </button>
           ) : null}
-          <Link href="/portal/deployments/teasers" className={ui.button}>
+          <Link href={`/portal/deployments/${t.deploymentId}`} className={ui.button}>
             Cancel
           </Link>
           <button type="submit" className={ui.primary} disabled={saving}>

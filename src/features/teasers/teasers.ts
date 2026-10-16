@@ -11,8 +11,8 @@ export const TEASERS_TAG = "teasers";
 const toTeaser = (row: Record<string, unknown>): Teaser => ({
   id: String(row.id),
   name: String(row.name),
-  deploymentId: row.deployment_id == null ? null : String(row.deployment_id),
-  deploymentName: row.deployment_name == null ? null : String(row.deployment_name),
+  deploymentId: String(row.deployment_id),
+  deploymentName: String(row.deployment_name),
   eyebrow: String(row.eyebrow),
   headline: String(row.headline),
   subheadline: String(row.subheadline),
@@ -35,16 +35,22 @@ export async function listTeasers(): Promise<Teaser[]> {
   const rows = await db()`
     select t.*, d.name as deployment_name
     from teasers t
-    left join deployments d on d.id = t.deployment_id
+    join deployments d on d.id = t.deployment_id
     order by t.updated_at desc
   `;
   return rows.map(toTeaser);
 }
 
-/** One teaser, from the cached list. */
-export async function getTeaser(id: string): Promise<Teaser | null> {
+/** A deployment's teasers, most recently edited first. */
+export async function listTeasersFor(deploymentId: string): Promise<Teaser[]> {
+  return (await listTeasers()).filter((teaser) => teaser.deploymentId === deploymentId);
+}
+
+/** One teaser, from the cached list; with `deploymentId`, only when it's that deployment's. */
+export async function getTeaser(id: string, deploymentId?: string): Promise<Teaser | null> {
   if (!isUuid(id)) return null;
-  return (await listTeasers()).find((teaser) => teaser.id === id) ?? null;
+  const teaser = (await listTeasers()).find((candidate) => candidate.id === id) ?? null;
+  return teaser && (deploymentId === undefined || teaser.deploymentId === deploymentId) ? teaser : null;
 }
 
 /** Creates a teaser (`id` null) or updates one. Returns its id, or null when the one being edited is gone. */
@@ -54,12 +60,12 @@ export async function saveTeaser(id: string | null, t: TeaserInput, userId: numb
   const rows = id
     ? await sql`
         update teasers set
-          name = ${t.name}, deployment_id = ${t.deploymentId}, eyebrow = ${t.eyebrow}, headline = ${t.headline},
+          name = ${t.name}, eyebrow = ${t.eyebrow}, headline = ${t.headline},
           subheadline = ${t.subheadline}, stats = ${json(t.stats)}::jsonb, summary = ${t.summary},
           highlights = ${t.highlights}, availability = ${json(t.availability)}::jsonb, specs = ${json(t.specs)}::jsonb,
           terms = ${json(t.terms)}::jsonb, contact_name = ${t.contactName}, contact_email = ${t.contactEmail},
           updated_by = ${userId}, updated_at = now()
-        where id = ${id}
+        where id = ${id} and deployment_id = ${t.deploymentId}
         returning id
       `
     : await sql`

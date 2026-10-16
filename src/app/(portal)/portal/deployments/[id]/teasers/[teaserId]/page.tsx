@@ -17,8 +17,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-/** One teaser: its editor beside a preview of the saved PDF, and the PDF to download. The ZODE team only. */
-export default function TeaserPage({ params }: PageProps<"/portal/deployments/teasers/[teaserId]">): ReactElement {
+/** One of a deployment's teasers: its editor beside a preview of the saved PDF, and the PDF to download. The ZODE team only. */
+export default function TeaserPage({ params }: PageProps<"/portal/deployments/[id]/teasers/[teaserId]">): ReactElement {
   return (
     <Suspense fallback={<PortalLoading />}>
       <Teaser params={params} />
@@ -28,10 +28,10 @@ export default function TeaserPage({ params }: PageProps<"/portal/deployments/te
 
 async function Teaser({
   params,
-}: Pick<PageProps<"/portal/deployments/teasers/[teaserId]">, "params">): Promise<ReactElement> {
-  const { teaserId } = await params;
-  await requireTeam(`/portal/deployments/teasers/${teaserId}`);
-  const teaser = await getTeaser(teaserId);
+}: Pick<PageProps<"/portal/deployments/[id]/teasers/[teaserId]">, "params">): Promise<ReactElement> {
+  const { id, teaserId } = await params;
+  await requireTeam(`/portal/deployments/${id}/teasers/${teaserId}`);
+  const teaser = await getTeaser(teaserId, id);
   if (!teaser) notFound();
   const pdf = `/api/teasers/${teaser.id}/pdf`;
 
@@ -40,13 +40,9 @@ async function Teaser({
       <PageHeader
         title={teaser.name}
         subtitle={
-          teaser.deploymentId ? (
-            <>
-              From <Link href={`/portal/deployments/${teaser.deploymentId}`}>{teaser.deploymentName}</Link>
-            </>
-          ) : (
-            "Its deployment was deleted; the teaser keeps what it said."
-          )
+          <>
+            Teaser for <Link href={`/portal/deployments/${teaser.deploymentId}`}>{teaser.deploymentName}</Link>
+          </>
         }
         actions={
           <a href={`${pdf}?download=1`} className={ui.primary} download>

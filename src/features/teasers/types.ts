@@ -39,8 +39,9 @@ export interface Teaser extends TeaserContent {
   id: string;
   /** What the team calls it in the list; not printed. */
   name: string;
-  deploymentId: string | null;
-  deploymentName: string | null;
+  /** The deployment it offers, which it's listed and deleted with. */
+  deploymentId: string;
+  deploymentName: string;
   /** ISO timestamp. */
   updatedAt: string;
 }

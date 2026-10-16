@@ -1060,15 +1060,16 @@ create table if not exists deployment_bom_fills (
   primary key (item_id, slot_id)
 );
 
--- One-page compute offering teasers, written by the ZODE team from a
--- deployment and exported as a PDF (src/features/teasers). Every figure is
+-- One-page compute offering teasers, written by the ZODE team for a
+-- deployment, listed on its page and deleted with it, and exported as a PDF
+-- (src/features/teasers). Every figure is
 -- copied from the deployment when the teaser is started and edited as text
 -- after, so a teaser that's been sent doesn't change under its readers.
 -- `stats` holds {value, label}, `availability` {label, capacity, date} and
 -- `specs` and `terms` {label, value}, each in the order they print.
 create table if not exists teasers (
   id uuid primary key default gen_random_uuid(),
-  deployment_id uuid references deployments (id) on delete set null,
+  deployment_id uuid not null references deployments (id) on delete cascade,
   name text not null,
   eyebrow text not null default '',
   headline text not null,
@@ -1088,7 +1089,15 @@ create table if not exists teasers (
   updated_at timestamptz not null default now()
 );
 
-create index if not exists teasers_deployment_idx on teasers (deployment_id) where deployment_id is not null;
+-- Teasers once outlived their deployment; those left without one go.
+delete from teasers where deployment_id is null;
+alter table teasers alter column deployment_id set not null;
+alter table teasers drop constraint if exists teasers_deployment_id_fkey;
+alter table teasers add constraint teasers_deployment_id_fkey
+  foreign key (deployment_id) references deployments (id) on delete cascade;
+
+drop index if exists teasers_deployment_idx;
+create index if not exists teasers_deployment_id_idx on teasers (deployment_id);
 
 -- First-party analytics for the site and portal, reported in the portal's
 -- Analytics app (src/features/analytics). One row per pageview or event.

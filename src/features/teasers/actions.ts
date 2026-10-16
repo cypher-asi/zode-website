@@ -6,7 +6,7 @@ import { getDeployment } from "@/features/deployments/deployments";
 import { userIdFor } from "@/features/users/users";
 import { isUuid, teamAccount } from "@/features/zrm/access";
 import { isEmail, multiLine, singleLine } from "@/lib/validation";
-import { TEASERS_TAG, deleteTeaser, saveTeaser } from "./teasers";
+import { TEASERS_TAG, deleteTeaser, getTeaser, saveTeaser } from "./teasers";
 import { LIMITS, type TeaserInput } from "./types";
 
 export interface TeaserFormState {
@@ -97,10 +97,9 @@ function readTeaser(formData: FormData): TeaserInput | string {
   const terms = readRows(formData, "term", { label: LIMITS.termLabel, value: LIMITS.termValue }, LIMITS.terms, "term");
   if (typeof terms === "string") return terms;
 
-  const deploymentId = field("deployment_id");
   return {
     name,
-    deploymentId: isUuid(deploymentId) ? deploymentId : null,
+    deploymentId: field("deployment_id"),
     eyebrow,
     headline,
     subheadline,
@@ -125,21 +124,24 @@ export async function saveTeaserAction(_prev: TeaserFormState, formData: FormDat
 
   const input = readTeaser(formData);
   if (typeof input === "string") return { error: input };
-  if (input.deploymentId && !(await getDeployment(input.deploymentId))) input.deploymentId = null;
+  if (!isUuid(input.deploymentId) || !(await getDeployment(input.deploymentId))) {
+    return { error: "This teaser's deployment was deleted, and its teasers with it." };
+  }
 
   const id = await saveTeaser(rawId || null, input, await userIdFor(account.userId));
-  if (!id) return { error: "This teaser was deleted. Reload to see the current list." };
+  if (!id) return { error: "This teaser was deleted. Reload to see the deployment's current teasers." };
 
   updateTag(TEASERS_TAG);
-  redirect(`/portal/deployments/teasers/${id}`);
+  redirect(`/portal/deployments/${input.deploymentId}/teasers/${id}`);
 }
 
-/** Deletes a teaser, then opens the list. The ZODE team only. */
+/** Deletes a teaser, then opens its deployment. The ZODE team only. */
 export async function deleteTeaserAction(id: string): Promise<TeaserFormState> {
   const account = await teamAccount();
   if (!account) return { error: "You don't have access to this. Try reloading the page." };
-  if (!isUuid(id)) return { error: "This teaser no longer exists." };
+  const teaser = await getTeaser(id);
+  if (!teaser) return { error: "This teaser no longer exists." };
   await deleteTeaser(id);
   updateTag(TEASERS_TAG);
-  redirect("/portal/deployments/teasers");
+  redirect(`/portal/deployments/${teaser.deploymentId}`);
 }
