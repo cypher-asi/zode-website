@@ -955,7 +955,8 @@ alter table deployments add column if not exists city text;
 alter table deployments add column if not exists place_id text;
 
 alter table deployments drop constraint if exists deployments_platform_check;
-alter table deployments add constraint deployments_platform_check check (platform in ('b300', 'b200', 'vera_rubin'));
+alter table deployments add constraint deployments_platform_check
+  check (platform in ('b300', 'b200', 'gb200_nvl72', 'gb300_nvl72', 'vera_rubin'));
 
 -- A deployment's rollout: each phase comes ready for service (RFS) on its
 -- date with its nodes and MW. `start_on` is optional and only draws the
@@ -1033,6 +1034,42 @@ alter table deployments add column if not exists external_notes text;
 alter table deployment_phases add column if not exists cluster_config jsonb;
 alter table deployment_phases add column if not exists cluster_copies integer not null default 1
   check (cluster_copies > 0);
+
+-- How a deployment is built beyond its platform, nodes, cooling, networking
+-- and storage (src/features/deployments/config): fabric, optics, storage
+-- platform, management, power, support and the rest, as JSON so options can
+-- change without a migration; a setting it lacks takes its default. A phase
+-- builds to it with `config_overrides` on top, and its BOM is sized to that.
+-- The phase's `cluster_config` then only splits it into builder clusters.
+alter table deployments add column if not exists configuration jsonb not null default '{}';
+alter table deployment_phases add column if not exists config_overrides jsonb not null default '{}';
+
+-- Deployments from before configurations take their rack density, height and
+-- topology from their first saved builder cluster, and air-cooled ones 4
+-- nodes to a rack as the builder used.
+update deployments d set configuration = coalesce(
+  (
+    select jsonb_strip_nulls(jsonb_build_object(
+      'density', p.cluster_config -> 'density',
+      'rackU', p.cluster_config -> 'rackU',
+      'oversubscription', p.cluster_config -> 'oversubscription'
+    ))
+    from deployment_phases p
+    where p.deployment_id = d.id and p.cluster_config is not null
+    order by p.rfs_on, p.position
+    limit 1
+  ),
+  case when d.cooling = 'air' then '{"density": 4}'::jsonb else '{}'::jsonb end
+)
+where d.configuration = '{}'::jsonb;
+
+-- Rack-scale GB200 and GB300 NVL72, and Broadcom Ethernet as a third fabric.
+alter table deployment_phases drop constraint if exists deployment_phases_platform_check;
+alter table deployment_phases add constraint deployment_phases_platform_check
+  check (platform in ('b300', 'b200', 'gb200_nvl72', 'gb300_nvl72', 'vera_rubin'));
+alter table deployments drop constraint if exists deployments_networking_check;
+alter table deployments add constraint deployments_networking_check
+  check (networking in ('infiniband', 'roce', 'ethernet'));
 
 -- A deployment's bill of materials, the ZODE team's only. Vendor quotes are
 -- price lists: each links to its file in the deployment's data room, and its

@@ -6,6 +6,7 @@ import { configFromParams, writeConfigParams } from "@/features/cluster/model/ur
 import { getBom } from "@/features/deployments/bom/bom";
 import { phaseCluster, phaseLabel } from "@/features/deployments/bom/phase";
 import { vendorsByItem } from "@/features/deployments/bom/types";
+import { resolveConfig } from "@/features/deployments/config/resolve";
 import { getDeploymentFor } from "@/features/deployments/deployments";
 import { loadViewer } from "@/features/deployments/view";
 import styles from "./page.module.css";
@@ -21,7 +22,8 @@ export const instant = false;
 /**
  * A deployment phase's cluster with its BOM loaded, when `deployment` and
  * `phase` name one and the viewer is on the ZODE team; anyone else gets the
- * plain builder. Config params in the link override the phase's own.
+ * plain builder. The deployment's configuration sets the cluster; the link
+ * can only change its size and rows, which are all the builder sets for it.
  */
 async function loadBom(
   deploymentId: string | null,
@@ -41,14 +43,16 @@ async function loadBom(
   const merged = new URLSearchParams();
   writeConfigParams(cluster.config, merged);
   for (const [key, value] of params) merged.set(key, value);
+  const linked = configFromParams(merged);
   return {
-    config: configFromParams(merged),
+    config: { ...cluster.config, nodes: linked.nodes, rowLength: linked.rowLength },
     bom: {
       deploymentId: deployment.id,
       deploymentName: deployment.name,
       phaseId: phase.id,
       phaseLabel: phaseLabel(phase, index),
       phaseNodes: phase.nodes,
+      config: resolveConfig(deployment, phase),
       savedConfig: cluster.derived ? null : cluster.config,
       copies: cluster.copies,
       lines: bom.lines.filter((line) => line.phaseId === phase.id),

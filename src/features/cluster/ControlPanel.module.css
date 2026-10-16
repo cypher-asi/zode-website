@@ -21,6 +21,19 @@
   letter-spacing: -0.02em;
 }
 
+/* Set by a deployment's configuration, in phase mode. */
+.configured {
+  margin: 0 0 20px;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.configured a {
+  color: var(--color-text-primary);
+  text-underline-offset: 3px;
+}
+
 .index {
   font-family: var(--font-mono);
   font-size: var(--text-2xs);

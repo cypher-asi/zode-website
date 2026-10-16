@@ -28,7 +28,7 @@ export function OfferPicker({
             <span>
               <strong>{phase.name || `Phase ${i + 1}`}</strong>
               {[
-                `${formatCount(gpusFor(phase.nodes))} ${platformLabel(phase.platform)} GPUs`,
+                `${formatCount(gpusFor(phase.platform, phase.nodes))} ${platformLabel(phase.platform)} GPUs`,
                 phase.mw !== null ? formatMw(phase.mw) : null,
                 `RFS ${formatDay(phase.rfsOn)}`,
               ]

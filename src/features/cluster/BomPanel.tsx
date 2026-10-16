@@ -5,9 +5,10 @@ import Link from "next/link";
 import { savePhaseClusterAction } from "@/features/deployments/bom/actions";
 import { STATUS_LABELS, type PhaseCoverage, type SlotCoverage } from "@/features/deployments/bom/coverage";
 import { formatCents, lineName, lineUsd, type BomLine } from "@/features/deployments/bom/types";
+import type { ResolvedConfig } from "@/features/deployments/config/catalog";
 import { count } from "./format";
 import { GPUS_PER_NODE } from "./model/catalog";
-import { SLOT_SECTIONS } from "./model/slots";
+import { SLOT_SECTIONS } from "@/features/deployments/bom/slots";
 import type { ClusterConfig } from "./model/types";
 import styles from "./BomPanel.module.css";
 
@@ -18,6 +19,8 @@ export interface BuilderBom {
   phaseId: string;
   phaseLabel: string;
   phaseNodes: number;
+  /** The phase's configuration, which sets everything about its cluster but its size and rows. */
+  config: ResolvedConfig;
   /** The phase's saved config; null while it's worked out from the phase. */
   savedConfig: ClusterConfig | null;
   copies: number;
@@ -147,13 +150,13 @@ export function BomPanel({
                   title={row.slot.optional && row.status === "missing" ? "Optional" : STATUS_LABELS[row.status]}
                 >
                   <Dot row={row} />
-                  <span>{row.slot.label}</span>
+                  <span title={row.spec ?? undefined}>{row.label}</span>
                   <span className={styles.count}>
                     {row.slot.unit === "lot"
                       ? row.lines.length
                         ? "In BOM"
                         : "Not in BOM"
-                      : `${qty(row.filled)} / ${qty(row.required ?? 0)}`}
+                      : `${qty(row.filled)} / ${qty(row.required)}`}
                   </span>
                 </li>
               ))}
@@ -180,9 +183,9 @@ export function PartBom({ rows, vendors }: { rows: readonly SlotCoverage[]; vend
           <div key={row.slot.id}>
             <p className={styles.slot}>
               <Dot row={row} />
-              <span>{row.slot.label}</span>
+              <span>{row.label}</span>
               <span className={styles.count}>
-                {qty(row.filled)} / {qty(row.required ?? 0)}
+                {qty(row.filled)} / {qty(row.required)}
               </span>
             </p>
             <ul className={styles.lines}>

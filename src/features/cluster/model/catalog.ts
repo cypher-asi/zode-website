@@ -16,7 +16,7 @@ export const NODE_SIZES = [8, 16, 32, 64, 128, 256] as const;
 export const DENSITIES = [4, 8] as const;
 export const RACK_HEIGHTS = [42, 48] as const;
 export const ROW_LENGTHS = [8, 12, 16] as const;
-export const STORAGE_PER_NODE = [0, 2, 4, 8] as const;
+export const STORAGE_PER_NODE = [0, 2, 4, 8, 16, 32] as const;
 export const OVERSUBSCRIPTION = [1, 2] as const;
 
 export const DEFAULT_CLUSTER: ClusterConfig = {
@@ -130,9 +130,15 @@ export const FABRICS: Record<FabricId, Fabric> = {
     fabricManager: true,
   },
   roce: {
-    label: "RoCE v2",
-    detail: "NVIDIA Spectrum-X Ethernet",
+    label: "Spectrum-X",
+    detail: "NVIDIA Spectrum-X Ethernet, RoCE v2",
     compute: { model: "Spectrum-X SN5600", uSize: 2, kw: 1.8, ports: 64, psus: 4 },
+    fabricManager: false,
+  },
+  ethernet: {
+    label: "Ethernet",
+    detail: "Broadcom Tomahawk 5 Ethernet, RoCE v2",
+    compute: { model: "Arista 7060X6-64PE", uSize: 2, kw: 1.6, ports: 64, psus: 2 },
     fabricManager: false,
   },
 };

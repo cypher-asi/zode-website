@@ -2,10 +2,11 @@
  * Copies the Pegatron and Computacenter B300 quotes into a deployment in
  * DATABASE_URL as price lists, item by item under each quote's own sections,
  * and builds a phase's BOM from them: a line for every item that fills a
- * cluster-builder slot (src/features/cluster/model/slots.ts), plus any
- * priced item no slot stands for. Items the cluster doesn't need stay on the
- * quote, with the reason in their notes. Gives the phase its builder config
- * when it has none, then prints how the BOM covers its slots.
+ * BOM slot (src/features/deployments/bom/slots.ts), plus any priced item no
+ * slot stands for. Items the cluster doesn't need stay on the quote, with the
+ * reason in their notes. Gives the deployment the configuration the quotes
+ * price and the phase its builder config, when they have none, then prints
+ * how the BOM covers the slots its configuration needs.
  *
  *   npm run bom:import                                                    (dev)
  *   node --env-file=.env.production.local scripts/import-bom.mjs          (production)
@@ -424,8 +425,8 @@ const sql = neon(url);
 
 const deploymentId = arg("deployment");
 const [deployment] = deploymentId
-  ? await sql`select id, name, data_room_id from deployments where id = ${deploymentId}`
-  : await sql`select id, name, data_room_id from deployments where name = 'Chicago · 801 S Canal' order by created_at limit 1`;
+  ? await sql`select * from deployments where id = ${deploymentId}`
+  : await sql`select * from deployments where name = 'Chicago · 801 S Canal' order by created_at limit 1`;
 if (!deployment) {
   console.error(`[bom:import] No deployment ${deploymentId ?? '"Chicago · 801 S Canal"'}; pass --deployment=<id>.`);
   process.exit(1);
@@ -629,6 +630,20 @@ if (!phase.cluster_config && !DRY_RUN) {
   console.log(`[bom:import] ${phaseName} set to the builder's ${phase.nodes}-node B300 cluster.`);
 }
 
+/** The configuration the quotes price, beyond what the deployment's columns hold: CLUSTER's racks and fabric, on VAST. */
+const QUOTED_CONFIG = {
+  density: CLUSTER.density,
+  rackU: CLUSTER.rackU,
+  oversubscription: CLUSTER.oversubscription,
+  storagePlatform: "vast",
+};
+const unconfigured = !deployment.configuration || !Object.keys(deployment.configuration).length;
+const configuration = unconfigured ? QUOTED_CONFIG : deployment.configuration;
+if (unconfigured && !DRY_RUN) {
+  await sql`update deployments set configuration = ${JSON.stringify(QUOTED_CONFIG)}::jsonb where id = ${deployment.id}`;
+  console.log(`[bom:import] ${deployment.name} configured as the quotes price it.`);
+}
+
 /**
  * `need` split across `quantities` in their proportions, in whole units,
  * largest remainders first, so the parts add up to `need`.
@@ -643,15 +658,30 @@ function apportion(need, quantities) {
   return parts;
 }
 
-// How the phase's BOM, whatever's in it now, covers the slots of its cluster.
-const { buildCluster } = await import("../src/features/cluster/model/build.ts");
+// How the phase's BOM, whatever's in it now, covers the slots its configuration needs.
 const { configFromJson } = await import("../src/features/cluster/model/url.ts");
-const { requiredSlots } = await import("../src/features/cluster/model/slots.ts");
+const { phasePlan } = await import("../src/features/deployments/bom/phase.ts");
+const { requiredSlots } = await import("../src/features/deployments/bom/slots.ts");
 const { phaseCoverage } = await import("../src/features/deployments/bom/coverage.ts");
-const [saved] = await sql`select cluster_config, cluster_copies from deployment_phases where id = ${phase.id}`;
-const config = configFromJson(saved.cluster_config ?? (DRY_RUN ? cluster : null));
-if (config) {
-  const model = buildCluster(config);
+const { readConfiguration, readOverrides } = await import("../src/features/deployments/config/catalog.ts");
+const [saved] = await sql`select * from deployment_phases where id = ${phase.id}`;
+{
+  const plan = phasePlan(
+    {
+      platform: deployment.platform,
+      cooling: deployment.cooling,
+      networking: deployment.networking,
+      storageTbPerNode: Number(deployment.storage_tb_per_node),
+      configuration: readConfiguration(configuration),
+    },
+    {
+      platform: saved.platform,
+      nodes: saved.nodes,
+      clusterConfig: configFromJson(saved.cluster_config ?? (DRY_RUN ? cluster : null)),
+      clusterCopies: saved.cluster_copies,
+      configOverrides: readOverrides(saved.config_overrides),
+    },
+  );
   const stored = (
     await sql`
       select l.id, l.slot_id, l.quantity::float8 as quantity, l.unit_usd::float8 as unit_usd, q.seed_key
@@ -664,14 +694,14 @@ if (config) {
 
   // Computacenter's GPU fabric is a 64-node one; it grows with the cluster, so its lines take what the phase's fabric needs.
   const resized = [];
-  for (const { slot, qty } of requiredSlots(model, saved.cluster_copies)) {
+  for (const { slot, label, qty } of requiredSlots(plan.sizing, plan.config)) {
     if (slot.section !== "fabric") continue;
     const filling = lines.filter((l) => l.slotId === slot.id && l.seedKey === COMPUTACENTER.seed_key);
     if (!filling.length) continue;
     const parts = apportion(qty, filling.map((l) => l.quantity));
     filling.forEach((l, i) => {
       if (parts[i] === l.quantity) return;
-      resized.push({ id: l.id, label: slot.label, from: l.quantity, to: parts[i] });
+      resized.push({ id: l.id, label, from: l.quantity, to: parts[i] });
       l.quantity = parts[i];
     });
   }
@@ -686,12 +716,12 @@ if (config) {
     console.log(`[bom:import] ${r.label}: ${r.from} to ${r.to}${DRY_RUN ? " (dry run, not written)" : ""}`);
   }
 
-  const coverage = phaseCoverage(model, saved.cluster_copies, lines);
+  const coverage = phaseCoverage(plan.sizing, plan.config, lines);
   console.log(`[bom:import] ${deployment.name} ${phaseName}: ${money(coverage.totalUsd)} across ${lines.length} BOM lines.`);
   for (const row of coverage.slots) {
     if (row.status === "covered") continue;
     const note = row.slot.optional ? " (optional)" : "";
-    console.log(`  ${row.status.padEnd(8)} ${row.slot.label}${note}: ${row.filled} of ${row.required}`);
+    console.log(`  ${row.status.padEnd(8)} ${row.label}${note}: ${row.filled} of ${row.required}`);
   }
 }
 

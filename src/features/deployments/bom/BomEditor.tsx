@@ -3,16 +3,15 @@
 import { Fragment, useMemo, useRef, useState, useTransition, type ReactElement } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { buildCluster } from "@/features/cluster/model/build";
-import { SLOT_SECTIONS, SLOTS, slotById, type Slot } from "@/features/cluster/model/slots";
 import ui from "@/features/data-room/ui.module.css";
 import d from "../deployments.module.css";
 import { formatCount, formatUsd, plural } from "../format";
 import { platformLabel, type Deployment } from "../types";
 import { saveBomLinesAction } from "./actions";
 import { phaseCoverage, stillNeeded, type SlotCoverage } from "./coverage";
-import { qty, slotFill, Status } from "./BomOverview";
-import { phaseCluster, phaseLabel } from "./phase";
+import { planSummary, qty, slotFill, SlotName, Status } from "./BomOverview";
+import { phaseLabel, phasePlan } from "./phase";
+import { SLOT_SECTIONS, SLOTS, slotById, type Slot } from "./slots";
 import { formatCents, lineUsd, urlSite, type Bom, type BomLine, type QuoteItem } from "./types";
 import styles from "./bom.module.css";
 
@@ -240,14 +239,8 @@ export function BomEditor({ deployment, bom }: { deployment: Deployment; bom: Bo
     () => (deployment.phases.find((p) => bom.lines.some((line) => line.phaseId === p.id)) ?? deployment.phases[0])?.id ?? "",
   );
 
-  const clusters = useMemo(
-    () =>
-      new Map(
-        deployment.phases.map((phase) => {
-          const cluster = phaseCluster(deployment, phase);
-          return [phase.id, { cluster, model: cluster ? buildCluster(cluster.config) : null }];
-        }),
-      ),
+  const plans = useMemo(
+    () => new Map(deployment.phases.map((phase) => [phase.id, phasePlan(deployment, phase)])),
     [deployment],
   );
   const read = useMemo(() => lines.map(lineOf), [lines]);
@@ -255,11 +248,11 @@ export function BomEditor({ deployment, bom }: { deployment: Deployment; bom: Bo
     () =>
       new Map(
         deployment.phases.map((phase) => {
-          const { cluster, model } = clusters.get(phase.id)!;
-          return [phase.id, phaseCoverage(model, cluster?.copies ?? 1, read.filter((line) => line.phaseId === phase.id))];
+          const plan = plans.get(phase.id)!;
+          return [phase.id, phaseCoverage(plan.sizing, plan.config, read.filter((line) => line.phaseId === phase.id))];
         }),
       ),
-    [deployment.phases, clusters, read],
+    [deployment.phases, plans, read],
   );
 
   const quoteItems = useMemo(() => new Map(bom.items.map((item) => [item.id, item])), [bom.items]);
@@ -307,7 +300,7 @@ export function BomEditor({ deployment, bom }: { deployment: Deployment; bom: Bo
   const coverage = coverages.get(phaseId);
   const phaseIndex = deployment.phases.findIndex((p) => p.id === phaseId);
   const phase = deployment.phases[phaseIndex];
-  const { cluster } = clusters.get(phaseId) ?? { cluster: null };
+  const plan = plans.get(phaseId);
 
   /** What the line's slot still needs once its other lines in this phase are counted. */
   const fitFor = (line: LineDraft, row: SlotCoverage | undefined): number | null =>
@@ -395,14 +388,13 @@ export function BomEditor({ deployment, bom }: { deployment: Deployment; bom: Bo
           <p className={d.muted}>Add a phase to the deployment first: each phase has its own BOM.</p>
         )}
 
-        {phase && coverage ? (
+        {phase && coverage && plan ? (
           <>
             <p className={d.muted}>
-              {formatCount(phase.nodes)} {platformLabel(phase.platform)} nodes.{" "}
-              {cluster
-                ? `Slots are what ${cluster.copies > 1 ? `${cluster.copies} × ` : ""}a ${formatCount(cluster.config.nodes)}-node cluster needs${coverage.gaps ? `; ${coverage.gaps} still to fill` : ""}.`
-                : `The cluster builder has no ${platformLabel(phase.platform)} rack yet, so add the slots this phase's lines fill.`}{" "}
-              Total {formatCents(coverage.totalUsd)} over {plural(phaseLines.length, "line")}.
+              {formatCount(phase.nodes)} {platformLabel(phase.platform)} nodes. Slots are what{" "}
+              {planSummary(phase, plan)} needs, built to the deployment&apos;s configuration
+              {coverage.gaps ? `; ${coverage.gaps} still to fill` : ""}. Total {formatCents(coverage.totalUsd)} over{" "}
+              {plural(phaseLines.length, "line")}.
             </p>
             <div className={styles.tableWrap}>
               <table className={`${styles.table} ${styles.editTable}`}>
@@ -446,9 +438,11 @@ export function BomEditor({ deployment, bom }: { deployment: Deployment; bom: Bo
                           <tr data-slot="">
                             <th colSpan={7} data-text="">
                               <span className={styles.slotHead}>
-                                <span>{row.slot.label}</span>
+                                <span>
+                                  <SlotName row={row} />
+                                </span>
                                 <span className={styles.sub}>{slotFill(row)}</span>
-                                {row.status !== "unchecked" ? <Status row={row} /> : null}
+                                <Status row={row} />
                                 <button
                                   type="button"
                                   className={styles.inlineAction}

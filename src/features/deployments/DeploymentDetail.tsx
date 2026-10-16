@@ -11,12 +11,13 @@ import {
   formatTerm,
   formatUsd,
 } from "./format";
+import { phaseLabel } from "./bom/phase";
+import { valueLabel } from "./config/catalog";
+import { fieldsFor, overrideLabels, resolveConfig } from "./config/resolve";
 import { RolloutGantt } from "./RolloutGantt";
 import {
-  coolingLabel,
   creditLabel,
   facilityLabel,
-  networkingLabel,
   platformBreakdown,
   platformSummary,
   rackDesignHref,
@@ -50,6 +51,10 @@ export function DeploymentDetail({ deployment: d, today }: { deployment: Deploym
   const totals = totalsOf(d);
   const next = d.phases.find((phase) => phase.rfsOn >= today);
   const rackHref = rackDesignHref(d);
+  const config = resolveConfig(d);
+  const overridden = d.phases
+    .map((phase, i) => ({ phase, i, labels: overrideLabels(phase.configOverrides, resolveConfig(d, phase)) }))
+    .filter(({ labels }) => labels.length);
 
   return (
     <div className={styles.detail}>
@@ -81,17 +86,6 @@ export function DeploymentDetail({ deployment: d, today }: { deployment: Deploym
             <span className={styles.muted}> · {platformBreakdown(totals.byPlatform)}</span>
           ) : null}
         </Fact>
-        <Fact label="Cooling">{coolingLabel(d.cooling)}</Fact>
-        <Fact label="Networking">{networkingLabel(d.networking)}</Fact>
-        <Fact label="Storage">
-          {d.storageTbPerNode ? (
-            <>
-              {formatTb(d.storageTbPerNode)} per node · {formatTb(totals.storageTb)} total
-            </>
-          ) : (
-            "None"
-          )}
-        </Fact>
         <Fact label="Rack design">
           {rackHref ? (
             <Link className={styles.link} href={rackHref} prefetch={false}>
@@ -113,6 +107,29 @@ export function DeploymentDetail({ deployment: d, today }: { deployment: Deploym
         <Fact label="Data center address" wide>
           {d.address ? <span className={styles.preline}>{d.address}</span> : null}
         </Fact>
+      </Facts>
+
+      <Facts title="Configuration">
+        {fieldsFor(config).map((f) => (
+          <Fact key={f.key} label={f.label}>
+            {f.key === "storageTbPerNode" ? (
+              d.storageTbPerNode ? (
+                <>
+                  {formatTb(d.storageTbPerNode)} per node · {formatTb(totals.storageTb)} total
+                </>
+              ) : (
+                "None"
+              )
+            ) : (
+              valueLabel(f.key, config[f.key])
+            )}
+          </Fact>
+        ))}
+        {overridden.map(({ phase, i, labels }) => (
+          <Fact key={phase.id} label={`${phaseLabel(phase, i)} overrides`} wide>
+            {labels.join(" · ")}
+          </Fact>
+        ))}
       </Facts>
 
       <section className={styles.block} aria-label="Rollout">

@@ -4,6 +4,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { isUuid } from "@/features/zrm/access";
 import { DB_TAG, db } from "@/lib/db";
 import { configFromJson } from "@/features/cluster/model/url";
+import { readConfiguration, readOverrides } from "./config/catalog";
 import {
   canOpen,
   type Deployment,
@@ -38,6 +39,7 @@ const toDeployment = (row: Record<string, unknown>): Deployment => ({
   cooling: row.cooling as Deployment["cooling"],
   networking: row.networking as Deployment["networking"],
   storageTbPerNode: Number(row.storage_tb_per_node),
+  configuration: readConfiguration(row.configuration),
   address: row.address == null ? null : String(row.address),
   city: row.city == null ? null : String(row.city),
   placeId: row.place_id == null ? null : String(row.place_id),
@@ -58,7 +60,11 @@ const toDeployment = (row: Record<string, unknown>): Deployment => ({
   shareToken: row.share_token == null ? null : String(row.share_token),
   access: (row.access ?? "users") as DeploymentAccess,
   privateTo: row.private_to == null ? null : String(row.private_to),
-  phases: ((row.phases as Phase[]) ?? []).map((phase) => ({ ...phase, clusterConfig: configFromJson(phase.clusterConfig) })),
+  phases: ((row.phases as Phase[]) ?? []).map((phase) => ({
+    ...phase,
+    clusterConfig: configFromJson(phase.clusterConfig),
+    configOverrides: readOverrides(phase.configOverrides),
+  })),
   updatedAt: new Date(row.updated_at as string | Date).toISOString(),
 });
 
@@ -68,7 +74,7 @@ export async function listDeployments(): Promise<Deployment[]> {
   cacheLife("minutes");
   cacheTag(DEPLOYMENTS_TAG, DB_TAG);
   const rows = await db()`
-    select d.id, d.name, d.status, d.nodes, d.platform, d.cooling, d.networking, d.storage_tb_per_node,
+    select d.id, d.name, d.status, d.nodes, d.platform, d.cooling, d.networking, d.storage_tb_per_node, d.configuration,
       d.address, d.city, d.place_id, d.facility, d.term_months, d.price_gpu_hr::float8 as price_gpu_hr,
       d.deposit_pct::float8 as deposit_pct, d.deposit_usd::float8 as deposit_usd, d.credit_rating, d.loc_required,
       d.loc_years::float8 as loc_years, d.credit_guarantee, d.lease_guarantee, d.notes, d.external_notes, d.updated_at,
@@ -77,7 +83,8 @@ export async function listDeployments(): Promise<Deployment[]> {
         (select json_agg(
             json_build_object(
               'id', p.id, 'name', p.name, 'platform', p.platform, 'startOn', p.start_on::text, 'rfsOn', p.rfs_on::text,
-              'nodes', p.nodes, 'mw', p.mw::float8, 'clusterConfig', p.cluster_config, 'clusterCopies', p.cluster_copies
+              'nodes', p.nodes, 'mw', p.mw::float8, 'clusterConfig', p.cluster_config, 'clusterCopies', p.cluster_copies,
+              'configOverrides', p.config_overrides
             ) order by p.rfs_on, p.position)
           from deployment_phases p where p.deployment_id = d.id),
         '[]'::json
@@ -157,6 +164,7 @@ export async function saveDeployment(
         update deployments set
           name = ${d.name}, status = ${d.status}, nodes = ${d.nodes}, platform = ${d.platform},
           cooling = ${d.cooling}, networking = ${d.networking}, storage_tb_per_node = ${d.storageTbPerNode},
+          configuration = ${JSON.stringify(d.configuration)}::jsonb,
           address = ${d.address}, city = ${d.city}, place_id = ${d.placeId}, facility = ${d.facility},
           term_months = ${d.termMonths}, price_gpu_hr = ${d.priceGpuHr}, deposit_pct = ${d.depositPct},
           deposit_usd = ${d.depositUsd},
@@ -168,12 +176,12 @@ export async function saveDeployment(
       `
     : sql`
         insert into deployments (
-          id, name, status, nodes, platform, cooling, networking, storage_tb_per_node, address, city, place_id,
-          facility, term_months, price_gpu_hr, deposit_pct, deposit_usd, credit_rating, loc_required, loc_years,
-          credit_guarantee, lease_guarantee, notes, external_notes, data_room_id, created_by, updated_by
+          id, name, status, nodes, platform, cooling, networking, storage_tb_per_node, configuration, address, city,
+          place_id, facility, term_months, price_gpu_hr, deposit_pct, deposit_usd, credit_rating, loc_required,
+          loc_years, credit_guarantee, lease_guarantee, notes, external_notes, data_room_id, created_by, updated_by
         ) values (
           ${deploymentId}, ${d.name}, ${d.status}, ${d.nodes}, ${d.platform}, ${d.cooling}, ${d.networking},
-          ${d.storageTbPerNode}, ${d.address}, ${d.city}, ${d.placeId}, ${d.facility}, ${d.termMonths},
+          ${d.storageTbPerNode}, ${JSON.stringify(d.configuration)}::jsonb, ${d.address}, ${d.city}, ${d.placeId}, ${d.facility}, ${d.termMonths},
           ${d.priceGpuHr}, ${d.depositPct}, ${d.depositUsd}, ${d.creditRating}, ${d.locRequired}, ${d.locYears},
           ${d.creditGuarantee}, ${d.leaseGuarantee}, ${d.notes}, ${d.externalNotes}, ${d.dataRoomId}, ${userId}, ${userId}
         )
@@ -190,13 +198,16 @@ export async function saveDeployment(
     `,
     ...phases.map(
       (phase, position) => sql`
-        insert into deployment_phases (id, deployment_id, position, name, platform, start_on, rfs_on, nodes, mw)
+        insert into deployment_phases (
+          id, deployment_id, position, name, platform, start_on, rfs_on, nodes, mw, config_overrides
+        )
         select ${phase.id}, id, ${position}, ${phase.name}, ${phase.platform}, ${phase.startOn}, ${phase.rfsOn},
-          ${phase.nodes}, ${phase.mw}
+          ${phase.nodes}, ${phase.mw}, ${JSON.stringify(phase.configOverrides)}::jsonb
         from deployments where id = ${deploymentId}
         on conflict (id) do update set
           position = excluded.position, name = excluded.name, platform = excluded.platform,
-          start_on = excluded.start_on, rfs_on = excluded.rfs_on, nodes = excluded.nodes, mw = excluded.mw
+          start_on = excluded.start_on, rfs_on = excluded.rfs_on, nodes = excluded.nodes, mw = excluded.mw,
+          config_overrides = excluded.config_overrides
         where deployment_phases.deployment_id = excluded.deployment_id
       `,
     ),

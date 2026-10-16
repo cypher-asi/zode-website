@@ -2,16 +2,15 @@
 
 import { Fragment, useMemo, type ReactElement } from "react";
 import Link from "next/link";
-import { buildCluster } from "@/features/cluster/model/build";
-import { GPUS_PER_NODE } from "@/features/cluster/model/catalog";
-import { SLOT_SECTIONS } from "@/features/cluster/model/slots";
 import ui from "@/features/data-room/ui.module.css";
+import { overrideLabels } from "../config/resolve";
 import d from "../deployments.module.css";
 import { TabLink } from "../DeploymentTabs";
 import { formatCount, formatUsd, plural } from "../format";
 import { platformLabel, type Deployment, type Phase } from "../types";
 import { STATUS_LABELS, phaseCoverage, type SlotCoverage } from "./coverage";
-import { phaseBuilderHref, phaseCluster, phaseLabel } from "./phase";
+import { phaseBuilderHref, phaseLabel, phasePlan, type PhasePlan } from "./phase";
+import { SLOT_SECTIONS } from "./slots";
 import { formatCents, lineUsd, urlSite, type Bom, type BomLine, type Quote, type QuoteItem } from "./types";
 import styles from "./bom.module.css";
 
@@ -20,6 +19,23 @@ export const qty = (value: number) => formatCount(Math.round(value * 100) / 100)
 const isOptionalGap = (row: Pick<SlotCoverage, "status" | "slot">) => Boolean(row.slot.optional) && row.status === "missing";
 const statusLabel = (row: Pick<SlotCoverage, "status" | "slot">) =>
   isOptionalGap(row) ? "Not in BOM (optional)" : STATUS_LABELS[row.status];
+
+/** What the BOM is checked against, e.g. "2 × a 128-node cluster, 48U racks of 8" or "8 GB300 NVL72 racks". */
+export function planSummary(phase: Pick<Phase, "platform">, { cluster, sizing }: PhasePlan): string {
+  return cluster
+    ? `${cluster.copies > 1 ? `${cluster.copies} × ` : ""}a ${formatCount(cluster.config.nodes)}-node cluster, ${cluster.config.rackU}U racks of ${cluster.config.density}`
+    : `${plural(sizing.systemRacks, `${platformLabel(phase.platform)} rack`)} of ${formatCount(sizing.nodes)} compute trays`;
+}
+
+/** The slot's name, with what the configuration says to quote for it. */
+export function SlotName({ row }: { row: Pick<SlotCoverage, "label" | "spec"> }): ReactElement {
+  return (
+    <>
+      {row.label}
+      {row.spec ? <span className={styles.spec}>{row.spec}</span> : null}
+    </>
+  );
+}
 
 export function Status({ row }: { row: Pick<SlotCoverage, "status" | "slot"> }): ReactElement {
   return (
@@ -46,8 +62,11 @@ function StatusDot({ row }: { row: Pick<SlotCoverage, "status" | "slot" | "requi
 
 /** What a slot needs against what its lines bring, e.g. "128 of 128". */
 export function slotFill(row: Pick<SlotCoverage, "slot" | "required" | "filled" | "lines">): string {
-  if (row.slot.unit === "lot") return row.lines.length ? "Lot" : "Lot, not in BOM";
-  return row.required === null ? `${qty(row.filled)} in BOM` : `${qty(row.filled)} of ${qty(row.required)}`;
+  if (row.slot.unit === "lot") {
+    if (!row.required) return "Lot, not needed";
+    return row.lines.length ? "Lot" : "Lot, not in BOM";
+  }
+  return row.required ? `${qty(row.filled)} of ${qty(row.required)}` : `${qty(row.filled)} in BOM, none needed`;
 }
 
 /** The item's page on the web, opened in a new tab and named by its site. */
@@ -139,7 +158,7 @@ function LineTable({
                       <StatusDot row={row} />
                     </td>
                     <th scope="row" data-text="" rowSpan={span} className={styles.slotCell}>
-                      {row.slot.label}
+                      <SlotName row={row} />
                       <span className={styles.sub}>{slotFill(row)}</span>
                     </th>
                   </>
@@ -215,12 +234,13 @@ function PhaseBom({
   lines: readonly BomLine[];
   lookup: Lookup;
 }): ReactElement {
-  const cluster = useMemo(() => phaseCluster(deployment, phase), [deployment, phase]);
-  const model = useMemo(() => (cluster ? buildCluster(cluster.config) : null), [cluster]);
-  const coverage = useMemo(() => phaseCoverage(model, cluster?.copies ?? 1, lines), [model, cluster, lines]);
+  const plan = useMemo(() => phasePlan(deployment, phase), [deployment, phase]);
+  const { cluster, sizing } = plan;
+  const coverage = useMemo(() => phaseCoverage(sizing, plan.config, lines), [sizing, plan.config, lines]);
+  const overrides = overrideLabels(phase.configOverrides, plan.config);
   const title = `${phaseLabel(phase, index)} · ${formatCount(phase.nodes)} ${platformLabel(phase.platform)} nodes`;
-  const nodes = cluster ? cluster.config.nodes * cluster.copies : phase.nodes;
-  const needed = coverage.slots.filter((row) => !row.slot.optional && row.required !== null && row.required > 0);
+  const nodes = sizing.nodes;
+  const needed = coverage.slots.filter((row) => !row.slot.optional && row.required > 0);
   const covered = needed.filter((row) => row.status === "covered" || row.status === "over").length;
 
   return (
@@ -229,9 +249,9 @@ function PhaseBom({
         <div>
           <h3 className={styles.phaseTitle}>{title}</h3>
           <p className={d.muted}>
-            {cluster
-              ? `Checked against ${cluster.copies > 1 ? `${cluster.copies} × ` : ""}a ${formatCount(cluster.config.nodes)}-node cluster, ${cluster.config.rackU}U racks of ${cluster.config.density}${cluster.derived ? ", worked out from the phase" : ""}.`
-              : `The cluster builder has no ${platformLabel(phase.platform)} rack yet, so nothing checks what this phase needs.`}
+            Checked against {planSummary(phase, plan)}
+            {cluster?.derived ? ", worked out from the phase" : ""}, built to the deployment&apos;s configuration
+            {overrides.length ? ` with ${overrides.join("; ")}` : ""}.
           </p>
         </div>
         {cluster ? (
@@ -246,46 +266,34 @@ function PhaseBom({
           phase&apos;s cluster in the cluster builder.
         </p>
       ) : null}
-      {lines.length || cluster ? (
-        <>
-          <div className={styles.figures}>
-            <div className={styles.figure}>
-              <span className={styles.figureValue}>{formatUsd(coverage.totalUsd)}</span>
-              <span className={styles.figureLabel}>BOM total · {plural(lines.length, "line")}</span>
-            </div>
-            <div className={styles.figure}>
-              <span className={styles.figureValue}>{nodes ? formatUsd(coverage.totalUsd / nodes) : "—"}</span>
-              <span className={styles.figureLabel}>Per node</span>
-            </div>
-            {cluster ? (
-              <div className={styles.figure}>
-                <span className={styles.figureValue}>{formatUsd(coverage.totalUsd / (nodes * GPUS_PER_NODE))}</span>
-                <span className={styles.figureLabel}>Per GPU</span>
-              </div>
-            ) : null}
-            {cluster ? (
-              <div className={styles.figure}>
-                <span className={styles.figureValue}>
-                  {covered} of {needed.length}
-                </span>
-                <span className={styles.figureLabel}>
-                  Slots covered{coverage.gaps ? ` · ${coverage.gaps} to fill` : ""}
-                </span>
-              </div>
-            ) : null}
-          </div>
-          <LineTable {...coverage} lookup={lookup} />
-        </>
-      ) : (
-        <p className={d.muted}>No BOM lines yet.</p>
-      )}
+      <div className={styles.figures}>
+        <div className={styles.figure}>
+          <span className={styles.figureValue}>{formatUsd(coverage.totalUsd)}</span>
+          <span className={styles.figureLabel}>BOM total · {plural(lines.length, "line")}</span>
+        </div>
+        <div className={styles.figure}>
+          <span className={styles.figureValue}>{nodes ? formatUsd(coverage.totalUsd / nodes) : "—"}</span>
+          <span className={styles.figureLabel}>Per node</span>
+        </div>
+        <div className={styles.figure}>
+          <span className={styles.figureValue}>{sizing.gpus ? formatUsd(coverage.totalUsd / sizing.gpus) : "—"}</span>
+          <span className={styles.figureLabel}>Per GPU</span>
+        </div>
+        <div className={styles.figure}>
+          <span className={styles.figureValue}>
+            {covered} of {needed.length}
+          </span>
+          <span className={styles.figureLabel}>Slots covered{coverage.gaps ? ` · ${coverage.gaps} to fill` : ""}</span>
+        </div>
+      </div>
+      <LineTable {...coverage} lookup={lookup} />
     </section>
   );
 }
 
 /**
  * The deployment's bill of materials for the ZODE team: each phase line by
- * line under the cluster-builder slots, with what every line costs. The
+ * line under the slots its configuration needs, with what every line costs. The
  * quotes they're picked from have their own tab.
  */
 export function BomOverview({ deployment, bom }: { deployment: Deployment; bom: Bom }): ReactElement {

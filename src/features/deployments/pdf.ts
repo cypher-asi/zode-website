@@ -34,6 +34,8 @@ import {
   formatUsd,
   plural,
 } from "./format";
+import { valueLabel, type ConfigKey } from "./config/catalog";
+import { fieldsFor, resolveConfig } from "./config/resolve";
 import { scheduleOf } from "./schedule";
 import {
   coolingLabel,
@@ -460,6 +462,21 @@ class Writer {
 const yesNo = (value: boolean): string => (value ? "Yes" : "No");
 const orDash = (value: string | null): string => value ?? "—";
 
+/** The configuration a reader of the PDF weighs; the rest is for the BOM. */
+const PDF_CONFIG = new Set<ConfigKey>([
+  "oversubscription",
+  "optics",
+  "frontEndNic",
+  "storagePlatform",
+  "capacityTierPb",
+  "wan",
+  "orchestration",
+  "rackU",
+  "power",
+  "supportYears",
+  "supportLevel",
+]);
+
 /**
  * The deployment's summary PDF, as of `today` (`YYYY-MM-DD`). The `public`
  * audience, behind its share link, leaves out its data room, credit and
@@ -518,6 +535,14 @@ export async function renderDeploymentPdf(
       : { label: "Rack design", value: "Not in the cluster builder yet" },
     { label: "Data center address", value: orDash(d.address), wide: true },
   ]);
+
+  const config = resolveConfig(d);
+  w.facts(
+    "Configuration",
+    fieldsFor(config)
+      .filter((f) => PDF_CONFIG.has(f.key))
+      .map((f) => ({ label: f.label, value: valueLabel(f.key, config[f.key]) })),
+  );
 
   w.rollout(d, today);
 

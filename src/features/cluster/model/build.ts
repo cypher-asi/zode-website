@@ -38,7 +38,7 @@ function roundLeaves(n: number): number {
   return Math.ceil(n / RAILS) * RAILS;
 }
 
-interface FabricShape {
+export interface FabricShape {
   leaves: number;
   spines: number;
   hostLinks: number;
@@ -47,15 +47,17 @@ interface FabricShape {
   ports: number;
 }
 
-function fabricShape(config: ClusterConfig): FabricShape {
-  const platform = PLATFORMS[config.platform];
-  const sw = FABRICS[config.fabric].compute;
-  const ports = sw.ports * (800 / platform.railGbps);
-  const hostLinks = config.nodes * RAILS;
-  const down = Math.floor((ports * config.oversubscription) / (config.oversubscription + 1));
+/**
+ * The two-tier rail-optimized fabric for `hostLinks` rails of `railGbps`
+ * on switches of `switchPorts` 800G ports, `oversubscription` host links
+ * per uplink on every leaf.
+ */
+export function fabricShape(hostLinks: number, railGbps: number, switchPorts: number, oversubscription: number): FabricShape {
+  const ports = switchPorts * (800 / railGbps);
+  const down = Math.floor((ports * oversubscription) / (oversubscription + 1));
   const leaves = roundLeaves(Math.ceil(hostLinks / down));
   if (leaves === 1) return { leaves, spines: 0, hostLinks, uplinks: 0, ports };
-  const perLeaf = Math.ceil(hostLinks / leaves / config.oversubscription);
+  const perLeaf = Math.ceil(hostLinks / leaves / oversubscription);
   const uplinks = perLeaf * leaves;
   const needed = Math.max(2, Math.ceil(uplinks / ports));
   // Prefer a spine count each leaf's uplinks split evenly across.
@@ -78,6 +80,27 @@ interface Item {
 }
 
 const repeat = (n: number, item: Item): Item[] => Array.from({ length: n }, () => item);
+
+/** Front-end and storage switches, in MLAG pairs, for `ports` server ports. */
+export const storageSwitchesFor = (ports: number): number => 2 * Math.ceil(ports / (SUPPORT.storageSwitch.ports - 16));
+
+/** 1G out-of-band switches for `devices` management ports. */
+export const oobSwitchesFor = (devices: number): number => Math.max(1, Math.ceil(devices / (SUPPORT.oob.ports - 4)));
+
+/** Counts a deployment's configuration sets instead of the builder's own sizing. */
+export interface BuildOptions {
+  mgmtServers?: number;
+  storageNodes?: number;
+  fabricManagers?: number;
+  firewalls?: number;
+}
+
+interface Counts {
+  nas: number;
+  mgmt: number;
+  ufm: number;
+  firewalls: number;
+}
 
 function computeRack(config: ClusterConfig, index: number, first: number, count: number): Rack {
   const platform = PLATFORMS[config.platform];
@@ -142,12 +165,11 @@ function computeRack(config: ClusterConfig, index: number, first: number, count:
 }
 
 /** Network-rack contents in packing order, spines first so they spread across the racks. */
-function networkItems(config: ClusterConfig, shape: FabricShape, oob: number, nas: number, mgmt: number): Item[] {
+function networkItems(config: ClusterConfig, shape: FabricShape, oob: number, { nas, mgmt, ufm, firewalls }: Counts): Item[] {
   const fabric = FABRICS[config.fabric];
   const sw = fabric.compute;
   const platform = PLATFORMS[config.platform];
-  const storagePorts = config.nodes + nas * 4 + mgmt;
-  const storageSwitches = 2 * Math.ceil(storagePorts / (SUPPORT.storageSwitch.ports - 16));
+  const storageSwitches = storageSwitchesFor(config.nodes + nas * 4 + mgmt);
   const speed = `${platform.railGbps}G`;
   const ratio = config.oversubscription === 1 ? "non-blocking" : `${config.oversubscription}:1`;
   return [
@@ -195,14 +217,14 @@ function networkItems(config: ClusterConfig, shape: FabricShape, oob: number, na
       kw: SUPPORT.edge.kw,
       specs: [["Role", "WAN uplinks, HA pair"]],
     }),
-    ...repeat(2, {
+    ...repeat(firewalls, {
       kind: "firewall",
       model: SUPPORT.firewall.model,
       uSize: SUPPORT.firewall.uSize,
       kw: SUPPORT.firewall.kw,
       specs: [["Role", "Perimeter security, HA pair"]],
     }),
-    ...repeat(fabric.fabricManager ? 2 : 0, {
+    ...repeat(ufm, {
       kind: "ufm",
       model: SUPPORT.ufm.model,
       uSize: SUPPORT.ufm.uSize,
@@ -285,13 +307,12 @@ function pack(config: ClusterConfig, items: Item[], count: number): Rack[] | nul
 }
 
 /** Packs the network racks, growing the out-of-band network with the rack count until both settle. */
-function networkRacks(config: ClusterConfig, shape: FabricShape, computeRacks: number, nas: number, mgmt: number) {
+function networkRacks(config: ClusterConfig, shape: FabricShape, computeRacks: number, counts: Counts) {
   const switches = shape.leaves + shape.spines;
   for (let count = 1; count < 64; count++) {
     const pdus = (computeRacks + count) * 2;
-    const devices = config.nodes + switches + nas + mgmt + pdus + 8;
-    const oob = Math.max(1, Math.ceil(devices / (SUPPORT.oob.ports - 4)));
-    const racks = pack(config, networkItems(config, shape, oob, nas, mgmt), count);
+    const devices = config.nodes + switches + counts.nas + counts.mgmt + pdus + 8;
+    const racks = pack(config, networkItems(config, shape, oobSwitchesFor(devices), counts), count);
     if (racks) return racks;
   }
   throw new Error("network racks did not converge");
@@ -350,19 +371,24 @@ function runLength(a: Rack, b: Rack, trayY: number): number {
   return Math.abs(a.x - b.x) + Math.abs(a.z - b.z) + 2 * (trayY - 1) + 3;
 }
 
-export function buildCluster(config: ClusterConfig): ClusterModel {
+export function buildCluster(config: ClusterConfig, options: BuildOptions = {}): ClusterModel {
   const platform = PLATFORMS[config.platform];
   const fabric = FABRICS[config.fabric];
-  const shape = fabricShape(config);
+  const shape = fabricShape(config.nodes * RAILS, platform.railGbps, fabric.compute.ports, config.oversubscription);
   const storageTb = config.nodes * config.storagePerNode;
-  const nas = storageTb ? Math.max(2, Math.ceil(storageTb / SUPPORT.nas.usableTb)) : 0;
-  const mgmt = mgmtServersFor(config.nodes);
+  const nas = options.storageNodes ?? (storageTb ? Math.max(2, Math.ceil(storageTb / SUPPORT.nas.usableTb)) : 0);
+  const counts: Counts = {
+    nas,
+    mgmt: options.mgmtServers ?? mgmtServersFor(config.nodes),
+    ufm: options.fabricManagers ?? (fabric.fabricManager ? 2 : 0),
+    firewalls: options.firewalls ?? 2,
+  };
 
   const computeCount = Math.ceil(config.nodes / config.density);
   const compute = Array.from({ length: computeCount }, (_, i) =>
     computeRack(config, i, i * config.density, Math.min(config.density, config.nodes - i * config.density)),
   );
-  const network = networkRacks(config, shape, computeCount, nas, mgmt);
+  const network = networkRacks(config, shape, computeCount, counts);
   const { racks, rows } = layout(config, compute, network);
   const byId = new Map(racks.map((r) => [r.id, r]));
   const trayY = rackHeight(config.rackU) + 0.45;

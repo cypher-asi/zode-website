@@ -82,22 +82,24 @@ export function scheduleOf(phases: readonly Phase[], today: string): Schedule | 
 
   const nextIndex = phases.findIndex((phase) => phase.rfsOn >= today);
   let nodes = 0;
+  let gpus = 0;
   let mw = 0;
   const rows = phases.map((phase, i): ScheduleRow => {
     nodes += phase.nodes;
+    gpus += gpusFor(phase.platform, phase.nodes);
     mw += phase.mw ?? 0;
     const start = at(spans[i].start);
     const rfs = at(spans[i].rfs);
     return {
       phase,
       label: phase.name || `Phase ${i + 1}`,
-      gpus: gpusFor(phase.nodes),
+      gpus: gpusFor(phase.platform, phase.nodes),
       start,
       rfs,
       dateAt: rfs <= DATE_AFTER_UNTIL ? "after" : start >= DATE_ROOM ? "beforeBar" : "overBar",
       next: i === nextIndex,
       cumulativeNodes: nodes,
-      cumulativeGpus: gpusFor(nodes),
+      cumulativeGpus: gpus,
       cumulativeMw: mw,
     };
   });

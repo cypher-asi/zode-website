@@ -23,7 +23,7 @@ import { UploadList } from "@/features/data-room/UploadList";
 import { useBlobUploads } from "@/features/data-room/useUploads";
 import { FilePreview } from "@/features/data-room/Viewer";
 import viewer from "@/features/data-room/Viewer.module.css";
-import { slotById } from "@/features/cluster/model/slots";
+import { slotById } from "./slots";
 import { formatCount, formatDay, formatUsd, plural } from "../format";
 import type { Deployment } from "../types";
 import {

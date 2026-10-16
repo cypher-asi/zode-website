@@ -1,4 +1,4 @@
-import { GPUS_PER_NODE } from "@/features/cluster/model/catalog";
+import { SYSTEMS } from "@/features/deployments/config/catalog";
 import {
   dayOf,
   formatCount,
@@ -115,7 +115,7 @@ export function draftFromDeployment(
   const availability = d.phases.slice(0, LIMITS.availability).map((phase, i) => ({
     label: cut(phase.name || `Phase ${i + 1}`, LIMITS.availabilityLabel),
     capacity: cut(
-      `${formatCount(gpusFor(phase.nodes))} ${platformLabel(phase.platform)} GPUs${phase.mw !== null ? ` · ${formatMw(phase.mw)}` : ""}`,
+      `${formatCount(gpusFor(phase.platform, phase.nodes))} ${platformLabel(phase.platform)} GPUs${phase.mw !== null ? ` · ${formatMw(phase.mw)}` : ""}`,
       LIMITS.availabilityCapacity,
     ),
     date: formatDay(phase.rfsOn),
@@ -124,7 +124,12 @@ export function draftFromDeployment(
   const specs = [
     { label: "Platform", value: platformSummary(shares) },
     { label: "GPUs", value: formatCount(totals.gpus) },
-    { label: "Nodes", value: `${formatCount(d.nodes)} × ${GPUS_PER_NODE} GPUs` },
+    {
+      label: "Nodes",
+      value: new Set(shares.map((share) => SYSTEMS[share.platform].gpusPerNode)).size === 1
+        ? `${formatCount(d.nodes)} × ${SYSTEMS[shares[0].platform].gpusPerNode} GPUs`
+        : formatCount(d.nodes),
+    },
     ...(totals.mw ? [{ label: "Power", value: `${formatMw(totals.mw)} critical IT` }] : []),
     { label: "Networking", value: networkingLabel(d.networking) },
     { label: "Cooling", value: coolingLabel(d.cooling) },

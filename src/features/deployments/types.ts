@@ -1,12 +1,14 @@
-import {
-  DEFAULT_CLUSTER,
-  GPUS_PER_NODE,
-  NODE_SIZES,
-  PLATFORMS,
-  STORAGE_PER_NODE,
-} from "@/features/cluster/model/catalog";
+import { DEFAULT_CLUSTER, NODE_SIZES, PLATFORMS, STORAGE_PER_NODE } from "@/features/cluster/model/catalog";
 import type { ClusterConfig, FabricId, PlatformId } from "@/features/cluster/model/types";
 import { writeConfigParams } from "@/features/cluster/model/url";
+import {
+  COOLING as CONFIG_COOLING,
+  NETWORKING as CONFIG_NETWORKING,
+  SYSTEMS,
+  type ConfigOverrides,
+  type DeploymentConfig,
+} from "./config/catalog";
+import { resolveConfig } from "./config/resolve";
 import { formatCount } from "./format";
 
 /*
@@ -16,7 +18,8 @@ import { formatCount } from "./format";
  */
 
 export type DeploymentStatus = "planned" | "active" | "completed";
-export type Platform = PlatformId | "vera_rubin";
+/** The cluster builder's HGX platforms, then rack-scale systems it can't lay out yet. */
+export type Platform = PlatformId | "gb200_nvl72" | "gb300_nvl72" | "vera_rubin";
 export type Cooling = "liquid_dtc" | "air";
 export type Networking = FabricId;
 export type Facility = "colo" | "conversion" | "greenfield";
@@ -38,6 +41,8 @@ export interface Phase {
   clusterConfig: ClusterConfig | null;
   /** Identical builder clusters the phase is made of. */
   clusterCopies: number;
+  /** Where the phase's configuration differs from the deployment's (see `resolveConfig`). */
+  configOverrides: ConfigOverrides;
 }
 
 /** A phase as the deployment form saves it: a new one has no id yet, and its cluster is set on the BOM. */
@@ -76,6 +81,8 @@ export interface Deployment {
   cooling: Cooling;
   networking: Networking;
   storageTbPerNode: number;
+  /** The rest of how it's built, which each phase takes unless it overrides it, and its BOM is sized to. */
+  configuration: DeploymentConfig;
   address: string | null;
   city: string | null;
   placeId: string | null;
@@ -121,20 +128,15 @@ export const STATUSES: readonly Option<DeploymentStatus>[] = [
 /** The cluster builder's platforms, then ones it can't lay out a rack for yet. */
 export const PLATFORM_OPTIONS: readonly Option<Platform>[] = [
   ...(Object.keys(PLATFORMS) as PlatformId[]).map((id) => ({ value: id, label: PLATFORMS[id].short })),
+  { value: "gb200_nvl72", label: "GB200 NVL72" },
+  { value: "gb300_nvl72", label: "GB300 NVL72" },
   { value: "vera_rubin", label: "Vera Rubin" },
 ];
 
 const inClusterBuilder = (platform: Platform): platform is PlatformId => Object.hasOwn(PLATFORMS, platform);
 
-export const COOLING: readonly Option<Cooling>[] = [
-  { value: "liquid_dtc", label: "Liquid DTC" },
-  { value: "air", label: "Air" },
-];
-
-export const NETWORKING: readonly Option<Networking>[] = [
-  { value: "infiniband", label: "InfiniBand" },
-  { value: "roce", label: "RoCEv2" },
-];
+export const COOLING: readonly Option<Cooling>[] = CONFIG_COOLING;
+export const NETWORKING: readonly Option<Networking>[] = CONFIG_NETWORKING;
 
 export const FACILITIES: readonly Option<Facility>[] = [
   { value: "colo", label: "Colo facility" },
@@ -166,18 +168,12 @@ export const isOption = <Id extends string>(options: readonly Option<Id>[], valu
 /** Billed hours in an average month (8,760 / 12). */
 export const HOURS_PER_MONTH = 730;
 
-export const gpusFor = (nodes: number): number => nodes * GPUS_PER_NODE;
-
-/** IT kW per node: the cluster builder's figures, and a PLACEHOLDER for Vera Rubin until it has a rack. */
-const NODE_KW: Record<Platform, number> = {
-  b300: PLATFORMS.b300.nodeKw,
-  b200: PLATFORMS.b200.nodeKw,
-  vera_rubin: 21,
-};
+/** GPUs in `nodes` nodes of `platform`: 8 to an HGX node, and a rack-scale compute tray's own. */
+export const gpusFor = (platform: Platform, nodes: number): number => nodes * SYSTEMS[platform].gpusPerNode;
 
 /** The IT MW `nodes` nodes of `platform` draw, to the hundredth a phase keeps. */
 export const mwFor = (platform: Platform, nodes: number): number =>
-  Math.round((nodes * NODE_KW[platform]) / 10) / 100;
+  Math.round((nodes * SYSTEMS[platform].nodeKw) / 10) / 100;
 
 /** `pct` percent of the contract value, to the cent, when there's both. */
 export const depositFor = (contractUsd: number | null, pct: number | null): number | null =>
@@ -213,18 +209,18 @@ export function totalsOf(
     phases: readonly Pick<Phase, "platform" | "nodes" | "mw">[];
   },
 ): DeploymentTotals {
-  const gpus = gpusFor(d.nodes);
   const scheduledNodes = d.phases.reduce((sum, phase) => sum + phase.nodes, 0);
   const shares = new Map<Platform, PlatformShare>();
   const add = (platform: Platform, nodes: number, mw: number) => {
     const share = shares.get(platform) ?? { platform, nodes: 0, gpus: 0, mw: 0 };
     share.nodes += nodes;
-    share.gpus = gpusFor(share.nodes);
+    share.gpus = gpusFor(platform, share.nodes);
     share.mw += mw;
     shares.set(platform, share);
   };
   for (const phase of d.phases) add(phase.platform, phase.nodes, phase.mw ?? 0);
   if (d.nodes > scheduledNodes || !shares.size) add(d.platform, Math.max(d.nodes - scheduledNodes, 0), 0);
+  const gpus = [...shares.values()].reduce((sum, share) => sum + share.gpus, 0);
   const monthlyUsd = d.priceGpuHr === null ? null : gpus * d.priceGpuHr * HOURS_PER_MONTH;
   return {
     gpus,
@@ -251,12 +247,12 @@ export const nextPhase = (phases: readonly Phase[], today: string): Phase | null
 
 /**
  * The deployment in the cluster builder: its first platform the builder has a
- * rack for, with that platform's nodes, the fabric and storage, liquid DTC
- * cabinets holding 8 nodes and air-cooled ones 4. Null when no platform has a
- * rack, or its nodes aren't one of the builder's sizes.
+ * rack for, with that platform's nodes and the deployment's configuration.
+ * Null when no platform has a rack, or its nodes aren't one of the builder's
+ * sizes.
  */
 export function rackDesignHref(
-  d: Pick<Deployment, "platform" | "nodes" | "networking" | "cooling" | "storageTbPerNode"> & {
+  d: Pick<Deployment, "platform" | "nodes" | "networking" | "cooling" | "storageTbPerNode" | "configuration"> & {
     phases: readonly Pick<Phase, "platform" | "nodes" | "mw">[];
   },
 ): string | null {
@@ -265,15 +261,18 @@ export function rackDesignHref(
   );
   if (!share || !inClusterBuilder(share.platform)) return null;
   if (!(NODE_SIZES as readonly number[]).includes(share.nodes)) return null;
+  const c = resolveConfig(d);
   const params = new URLSearchParams();
   writeConfigParams(
     {
       ...DEFAULT_CLUSTER,
       platform: share.platform,
       nodes: share.nodes,
-      fabric: d.networking,
-      storagePerNode: d.storageTbPerNode,
-      density: d.cooling === "air" ? 4 : 8,
+      fabric: c.networking,
+      storagePerNode: (STORAGE_PER_NODE as readonly number[]).includes(c.storageTbPerNode) ? c.storageTbPerNode : 0,
+      density: c.density,
+      oversubscription: c.oversubscription,
+      rackU: c.rackU,
     },
     params,
   );

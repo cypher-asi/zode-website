@@ -1,7 +1,7 @@
 "use server";
 
 import { refresh, updateTag } from "next/cache";
-import { isSlotId, slotById } from "@/features/cluster/model/slots";
+import { isSlotId, slotById } from "./slots";
 import { configFromJson } from "@/features/cluster/model/url";
 import { blobInfo, deleteBlobs } from "@/features/data-room/blob";
 import { listFileNames } from "@/features/data-room/rooms";
@@ -316,7 +316,7 @@ export async function deleteQuoteAction(deploymentId: string, quoteId: string): 
   return done();
 }
 
-/** Saves the cluster-builder config phase `phaseId` is checked against, or derives it again with null. */
+/** Saves how phase `phaseId` splits into cluster-builder clusters, or derives it again with null. */
 export async function savePhaseClusterAction(
   deploymentId: string,
   phaseId: string,

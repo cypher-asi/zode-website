@@ -18,14 +18,20 @@ import {
 } from "./deployments";
 import { quoteBlobPrefix } from "./bom/bom";
 import {
+  CONFIG_FIELDS,
+  DEFAULT_CONFIG,
+  SYSTEMS,
+  optionOf,
+  type ColumnConfig,
+  type ConfigOverrides,
+  type DeploymentConfig,
+} from "./config/catalog";
+import {
   ACCESS_OPTIONS,
-  COOLING,
   CREDIT_RATINGS,
   FACILITIES,
-  NETWORKING,
   PLATFORM_OPTIONS,
   STATUSES,
-  STORAGE_OPTIONS,
   depositFor,
   isOption,
   isPlaceId,
@@ -61,6 +67,55 @@ function figure(raw: string, label: string, max: number, whole = false): number 
 
 const isDay = (value: string): boolean => DAY_RE.test(value) && !Number.isNaN(Date.parse(value));
 
+const MAX_CONFIG_JSON = 5_000;
+
+/** Settings posted as a JSON object, each checked against its field's options; a string is the error. */
+function readSettings(raw: FormDataEntryValue | null | undefined, whose: string): Record<string, unknown> | string {
+  if (typeof raw !== "string" || !raw) return {};
+  if (raw.length > MAX_CONFIG_JSON) return `${whose} configuration is too long.`;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return `${whose} configuration couldn't be read. Reload and try again.`;
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return `${whose} configuration couldn't be read. Reload and try again.`;
+  }
+  const settings: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(parsed)) {
+    const f = CONFIG_FIELDS.find((candidate) => candidate.key === key);
+    if (!f) return `${whose} configuration has a setting that no longer exists. Reload and try again.`;
+    const option = optionOf(f, value);
+    if (option === undefined) return `${whose} ${f.label.toLowerCase()} isn't an option. Choose another.`;
+    settings[key] = option;
+  }
+  return settings;
+}
+
+/**
+ * The deployment's configuration from its `configuration` field, split into
+ * its JSON and the settings kept in their own columns. Every setting must be
+ * given; rack-scale systems are always liquid-cooled.
+ */
+function readConfig(formData: FormData, platform: Platform): (ColumnConfig & { configuration: DeploymentConfig }) | string {
+  const settings = readSettings(formData.get("configuration"), "The deployment's");
+  if (typeof settings === "string") return settings;
+  const missing = CONFIG_FIELDS.find((f) => !(f.key in settings));
+  if (missing) return `Choose the ${missing.label.toLowerCase()}.`;
+  const { cooling, networking, storageTbPerNode, ...rest } = settings as unknown as ColumnConfig & DeploymentConfig;
+  const configuration = { ...DEFAULT_CONFIG };
+  for (const key of Object.keys(DEFAULT_CONFIG) as (keyof DeploymentConfig)[]) {
+    (configuration as Record<string, unknown>)[key] = rest[key];
+  }
+  return {
+    cooling: SYSTEMS[platform].rackScale ? "liquid_dtc" : cooling,
+    networking,
+    storageTbPerNode,
+    configuration,
+  };
+}
+
 /**
  * The rollout, one phase per row of `phase_*` fields in order; blank rows are
  * skipped, and a row without a platform takes the deployment's.
@@ -73,6 +128,7 @@ function readPhases(formData: FormData, platform: Platform): PhaseInput[] | stri
   const rfs = formData.getAll("phase_rfs_on");
   const nodes = formData.getAll("phase_nodes");
   const mws = formData.getAll("phase_mw");
+  const overrides = formData.getAll("phase_config");
   const phases: PhaseInput[] = [];
   const seen = new Set<string>();
   for (let i = 0; i < rfs.length; i++) {
@@ -96,6 +152,8 @@ function readPhases(formData: FormData, platform: Platform): PhaseInput[] | stri
     if (phaseNodes === null) return `${label} needs a node count.`;
     const mw = figure(row.mw, `${label}'s MW`, 1e6);
     if (typeof mw === "string") return mw;
+    const configOverrides = readSettings(overrides[i], `${label}'s`);
+    if (typeof configOverrides === "string") return configOverrides;
     const id = text(ids[i]);
     if (id && (!isUuid(id) || seen.has(id))) return `${label} no longer exists. Reload and try again.`;
     if (id) seen.add(id);
@@ -107,6 +165,7 @@ function readPhases(formData: FormData, platform: Platform): PhaseInput[] | stri
       rfsOn: row.rfsOn,
       nodes: phaseNodes,
       mw,
+      configOverrides: configOverrides as ConfigOverrides,
     });
   }
   if (phases.length > MAX_PHASES) return `A deployment can have at most ${MAX_PHASES} phases.`;
@@ -122,18 +181,15 @@ function readDeployment(formData: FormData): DeploymentInput | string {
 
   const status = field("status");
   const platform = field("platform");
-  const cooling = field("cooling");
-  const networking = field("networking");
   if (!isOption(STATUSES, status)) return "Choose a status.";
   if (!isOption(PLATFORM_OPTIONS, platform)) return "Choose a platform.";
-  if (!isOption(COOLING, cooling)) return "Choose the cooling.";
-  if (!isOption(NETWORKING, networking)) return "Choose the networking.";
 
   const nodes = figure(field("nodes"), "Nodes", 1e6, true);
   if (typeof nodes === "string") return nodes;
   if (!nodes) return "Give the deployment's nodes.";
-  const storageTbPerNode = Number(field("storage_tb_per_node"));
-  if (!STORAGE_OPTIONS.includes(storageTbPerNode)) return "Choose the storage per node.";
+  const config = readConfig(formData, platform);
+  if (typeof config === "string") return config;
+  const { cooling, networking, storageTbPerNode, configuration } = config;
 
   const facility = field("facility");
   if (facility && !isOption(FACILITIES, facility)) return "Choose the facility type.";
@@ -195,6 +251,7 @@ function readDeployment(formData: FormData): DeploymentInput | string {
     cooling,
     networking,
     storageTbPerNode,
+    configuration,
     address: address || null,
     city: city || null,
     placeId: placeId || null,

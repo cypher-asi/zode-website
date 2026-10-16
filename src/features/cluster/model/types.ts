@@ -4,7 +4,7 @@
  */
 
 export type PlatformId = "b300" | "b200";
-export type FabricId = "infiniband" | "roce";
+export type FabricId = "infiniband" | "roce" | "ethernet";
 
 export interface ClusterConfig {
   platform: PlatformId;

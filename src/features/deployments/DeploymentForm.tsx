@@ -17,15 +17,24 @@ import { Dialog } from "@/features/data-room/Dialog";
 import ui from "@/features/data-room/ui.module.css";
 import { deleteDeploymentAction, saveDeploymentAction, type DeploymentFormState } from "./actions";
 import { AddressField } from "./AddressField";
+import {
+  CONFIG_GROUPS,
+  DEFAULT_CONFIG,
+  optionOf,
+  valueLabel,
+  type ColumnConfig,
+  type ConfigField,
+  type ConfigOverrides,
+  type DeploymentConfig,
+  type ResolvedConfig,
+} from "./config/catalog";
+import { fieldsFor, resolveConfig } from "./config/resolve";
 import { formatCount, formatMw, formatTb, formatUsd } from "./format";
 import {
-  COOLING,
   CREDIT_RATINGS,
   FACILITIES,
-  NETWORKING,
   PLATFORM_OPTIONS,
   STATUSES,
-  STORAGE_OPTIONS,
   depositFor,
   gpusFor,
   isOption,
@@ -46,7 +55,24 @@ const YES_NO = [
   { value: "no", label: "No" },
   { value: "yes", label: "Yes" },
 ];
-const STORAGE_CHOICES = STORAGE_OPTIONS.map((tb) => ({ value: String(tb), label: tb ? `${tb} TB per node` : "None" }));
+
+type Settings = DeploymentConfig & ColumnConfig;
+
+const settingsOf = (d?: Deployment): Settings =>
+  d
+    ? { ...d.configuration, cooling: d.cooling, networking: d.networking, storageTbPerNode: d.storageTbPerNode }
+    : { ...DEFAULT_CONFIG, cooling: "liquid_dtc", networking: "infiniband", storageTbPerNode: 4 };
+
+/** What settings `s` on `platform` build, as a phase with `overrides` would. */
+const resolvedOf = (s: Settings, platform: Platform, overrides?: ConfigOverrides): ResolvedConfig => {
+  const { cooling, networking, storageTbPerNode, ...configuration } = s;
+  return resolveConfig(
+    { platform, cooling, networking, storageTbPerNode, configuration },
+    overrides ? { platform, configOverrides: overrides } : null,
+  );
+};
+
+const choicesOf = (f: ConfigField) => f.options.map((option) => ({ value: String(option.value), label: option.label }));
 
 interface PhaseDraft {
   key: number;
@@ -58,6 +84,7 @@ interface PhaseDraft {
   rfsOn: string;
   nodes: string;
   mw: string;
+  overrides: ConfigOverrides;
 }
 
 const numberOr = (raw: string, fallback: number | null): number | null => {
@@ -76,6 +103,7 @@ const draftOf = (key: number, platform: Platform, phase?: Phase): PhaseDraft => 
   rfsOn: phase?.rfsOn ?? "",
   nodes: phase ? String(phase.nodes) : "",
   mw: str(phase?.mw ?? null),
+  overrides: phase?.configOverrides ?? {},
 });
 
 /** The deposit's percent, worked out from the amount for deployments saved before it was entered as one. */
@@ -87,7 +115,8 @@ const depositPctOf = (d: Deployment): number | null => {
 
 /**
  * Adds a deployment, or edits `deployment`, for the ZODE team, linked to one
- * of `rooms` if they choose. Totals follow the figures as they're typed.
+ * of `rooms` if they choose. Totals follow the figures as they're typed. Its
+ * configuration, which each phase can override, sets what its BOM needs.
  */
 export function DeploymentForm({
   deployment,
@@ -101,7 +130,7 @@ export function DeploymentForm({
   const [state, action, saving] = useActionState(saveDeploymentAction, INITIAL);
   const [nodes, setNodes] = useState(String(d?.nodes ?? 64));
   const [platform, setPlatform] = useState<Platform>(d?.platform ?? "b300");
-  const [storage, setStorage] = useState(String(d?.storageTbPerNode ?? 4));
+  const [settings, setSettings] = useState<Settings>(() => settingsOf(d));
   const [price, setPrice] = useState(str(d?.priceGpuHr ?? null));
   const [term, setTerm] = useState(str(d?.termMonths ?? null));
   const [deposit, setDeposit] = useState(() => str(d ? depositPctOf(d) : null));
@@ -118,7 +147,7 @@ export function DeploymentForm({
   const totals = totalsOf({
     nodes: nodeCount,
     platform,
-    storageTbPerNode: Number(storage),
+    storageTbPerNode: settings.storageTbPerNode,
     priceGpuHr: numberOr(price, null),
     termMonths: numberOr(term, null),
     phases: phases.map((phase) => ({
@@ -128,6 +157,9 @@ export function DeploymentForm({
     })),
   });
   const allMw = totals.byPlatform.reduce((sum, share) => sum + mwFor(share.platform, share.nodes), 0);
+  const scheduledGpus = phases.reduce((sum, phase) => sum + gpusFor(phase.platform, numberOr(phase.nodes, 0)!), 0);
+  const resolved = resolvedOf(settings, platform);
+  const fields = fieldsFor(resolved);
   const depositPct = numberOr(deposit.replace(/%$/, ""), null);
   const depositUsd = depositFor(totals.contractUsd, depositPct);
   const roomChoices = [
@@ -145,6 +177,28 @@ export function DeploymentForm({
           next.mw = phaseNodes === null ? "" : str(mwFor(next.platform, phaseNodes));
         }
         return next;
+      }),
+    );
+
+  const setSetting = (f: ConfigField, raw: string) => {
+    const value = optionOf(f, raw);
+    if (value === undefined) return;
+    setSettings((s) => ({
+      ...s,
+      [f.key]: value,
+      ...(f.key === "cooling" ? { density: value === "air" ? 4 : 8 } : {}),
+    }));
+  };
+
+  const setOverride = (key: number, f: ConfigField, raw: string) =>
+    setPhases((rows) =>
+      rows.map((row) => {
+        if (row.key !== key) return row;
+        const overrides: ConfigOverrides = { ...row.overrides };
+        const value = raw === "" ? undefined : optionOf(f, raw);
+        if (value === undefined) delete overrides[f.key];
+        else (overrides as Record<string, unknown>)[f.key] = value;
+        return { ...row, overrides };
       }),
     );
 
@@ -216,59 +270,78 @@ export function DeploymentForm({
               />
             </div>
             {select("status", "Status", STATUSES, d?.status ?? "active")}
-            <div className={ui.field}>
-              {label("platform", "Platform")}
-              <Select
-                id={`${id}-platform`}
-                aria-labelledby={`${id}-platform-label`}
-                name="platform"
-                className={ui.fill}
-                options={PLATFORM_OPTIONS}
-                value={platform}
-                onChange={(value) => {
-                  if (isOption(PLATFORM_OPTIONS, value)) setPlatform(value);
-                }}
-              />
-            </div>
-            {input("nodes", "Nodes (all platforms)", {
-              inputMode: "numeric",
-              placeholder: "64",
-              required: true,
-              value: nodes,
-              onChange: (event) => setNodes(event.target.value),
-            })}
-            {select("cooling", "Cooling", COOLING, d?.cooling ?? "liquid_dtc")}
-            {select("networking", "Networking", NETWORKING, d?.networking ?? "infiniband")}
-            <div className={ui.field}>
-              {label("storage_tb_per_node", "Storage")}
-              <Select
-                id={`${id}-storage_tb_per_node`}
-                aria-labelledby={`${id}-storage_tb_per_node-label`}
-                name="storage_tb_per_node"
-                className={ui.fill}
-                options={STORAGE_CHOICES}
-                value={storage}
-                onChange={setStorage}
-              />
-            </div>
             {select("facility", "Facility", [NONE, ...FACILITIES], d?.facility ?? "")}
             {select("data_room_id", "Data room", roomChoices, d?.dataRoomId ?? "")}
             <AddressField address={d?.address ?? null} city={d?.city ?? null} placeId={d?.placeId ?? null} />
           </>,
+        )}
+
+        <fieldset className={styles.fieldset}>
+          <legend className={styles.legend}>Configuration</legend>
+          <input type="hidden" name="configuration" value={JSON.stringify(settings)} />
           <p className={styles.summary}>
             {totals.byPlatform.length > 1
               ? `${formatCount(totals.gpus)} GPUs (${platformBreakdown(totals.byPlatform)})`
               : `${formatCount(totals.gpus)} GPUs`}{" "}
             · {totals.storageTb ? `${formatTb(totals.storageTb)} storage` : "No storage"}
-            {allMw ? ` · Est. ${formatMw(allMw)} IT` : ""}
-          </p>,
-        )}
+            {allMw ? ` · Est. ${formatMw(allMw)} IT` : ""}. Each phase builds to this unless it overrides it, and its
+            BOM needs what it sets.
+          </p>
+          {CONFIG_GROUPS.map((group) => {
+            const groupFields = fields.filter((f) => f.group === group.id);
+            return (
+              <div key={group.id} className={styles.configGroup}>
+                <h3 className={styles.configHead}>{group.label}</h3>
+                <div className={styles.grid}>
+                  {group.id === "compute" ? (
+                    <>
+                      <div className={ui.field}>
+                        {label("platform", "Platform")}
+                        <Select
+                          id={`${id}-platform`}
+                          aria-labelledby={`${id}-platform-label`}
+                          name="platform"
+                          className={ui.fill}
+                          options={PLATFORM_OPTIONS}
+                          value={platform}
+                          onChange={(value) => {
+                            if (isOption(PLATFORM_OPTIONS, value)) setPlatform(value);
+                          }}
+                        />
+                      </div>
+                      {input("nodes", "Nodes (all platforms)", {
+                        inputMode: "numeric",
+                        placeholder: "64",
+                        required: true,
+                        value: nodes,
+                        onChange: (event) => setNodes(event.target.value),
+                      })}
+                    </>
+                  ) : null}
+                  {groupFields.map((f) => (
+                    <div key={f.key} className={ui.field}>
+                      {label(`config-${f.key}`, f.label)}
+                      <Select
+                        id={`${id}-config-${f.key}`}
+                        aria-labelledby={`${id}-config-${f.key}-label`}
+                        className={ui.fill}
+                        options={choicesOf(f)}
+                        value={String(settings[f.key])}
+                        onChange={(value) => setSetting(f, value)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </fieldset>
 
         <fieldset className={styles.fieldset}>
           <legend className={styles.legend}>Rollout</legend>
           <p className={styles.summary} data-warn={totals.scheduledNodes > nodeCount ? "" : undefined}>
             {formatCount(totals.scheduledNodes)} of {formatCount(nodeCount)} nodes scheduled ·{" "}
-            {formatCount(gpusFor(totals.scheduledNodes))} GPUs
+            {formatCount(scheduledGpus)} GPUs
             {totals.mw ? ` · ${totals.mw.toLocaleString("en-US", { maximumFractionDigits: 2 })} MW` : ""}
           </p>
           <div className={styles.phases}>
@@ -282,9 +355,15 @@ export function DeploymentForm({
               <span>GPUs</span>
               <span />
             </div>
-            {phases.map((phase, i) => (
-              <div key={phase.key} className={styles.phaseRow}>
+            {phases.map((phase, i) => {
+              const phaseConfig = resolvedOf(settings, phase.platform, phase.overrides);
+              const phaseFields = fieldsFor(phaseConfig);
+              const overridden = phaseFields.filter((f) => f.key in phase.overrides).length;
+              return (
+              <div key={phase.key} className={styles.phase}>
+              <div className={styles.phaseRow}>
                 <input type="hidden" name="phase_id" value={phase.id} />
+                <input type="hidden" name="phase_config" value={JSON.stringify(phase.overrides)} />
                 <input
                   name="phase_name"
                   className={ui.input}
@@ -338,7 +417,9 @@ export function DeploymentForm({
                   value={phase.mw}
                   onChange={(event) => updatePhase(phase.key, { mw: event.target.value })}
                 />
-                <span className={styles.phaseGpus}>{formatCount(gpusFor(numberOr(phase.nodes, 0)!))}</span>
+                <span className={styles.phaseGpus}>
+                  {formatCount(gpusFor(phase.platform, numberOr(phase.nodes, 0)!))}
+                </span>
                 <button
                   type="button"
                   className={ui.iconButton}
@@ -350,7 +431,33 @@ export function DeploymentForm({
                   </svg>
                 </button>
               </div>
-            ))}
+              <details className={styles.overrides}>
+                <summary>
+                  {overridden
+                    ? `${overridden} setting${overridden === 1 ? "" : "s"} differ from the deployment's`
+                    : "Same configuration as the deployment"}
+                </summary>
+                <div className={styles.grid}>
+                  {phaseFields.map((f) => (
+                    <div key={f.key} className={ui.field}>
+                      <span className={ui.label}>{f.label}</span>
+                      <Select
+                        className={ui.fill}
+                        aria-label={`Phase ${i + 1} ${f.label.toLowerCase()}`}
+                        options={[
+                          { value: "", label: `Same (${valueLabel(f.key, settings[f.key])})` },
+                          ...choicesOf(f),
+                        ]}
+                        value={f.key in phase.overrides ? String(phase.overrides[f.key]) : ""}
+                        onChange={(value) => setOverride(phase.key, f, value)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </details>
+              </div>
+              );
+            })}
           </div>
           <div>
             <button

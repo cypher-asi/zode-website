@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { OverlayScrollbar } from "@/components/ui/OverlayScrollbar";
 import { STATUS_LABELS, partStatuses, phaseCoverage, slotsForKind } from "@/features/deployments/bom/coverage";
+import { buildOptions, hgxSizing } from "@/features/deployments/bom/sizing";
 import { BomPanel, PartBom, type BuilderBom } from "./BomPanel";
 import { ControlPanel } from "./ControlPanel";
 import { count, power } from "./format";
@@ -62,9 +63,12 @@ export function ClusterConfigurator({
   const viewportRef = useRef<HTMLElement>(null);
   const sceneRef = useRef<ClusterSceneHandle>(null);
 
-  const model = useMemo(() => buildCluster(config), [config]);
+  const model = useMemo(() => buildCluster(config, bom ? buildOptions(config, bom.config) : undefined), [config, bom]);
   const update = (patch: Partial<ClusterConfig>) => setConfig((c) => ({ ...c, ...patch }));
-  const coverage = useMemo(() => (bom ? phaseCoverage(model, copies, bom.lines) : null), [bom, model, copies]);
+  const coverage = useMemo(
+    () => (bom ? phaseCoverage(hgxSizing(model, bom.config, copies), bom.config, bom.lines) : null),
+    [bom, model, copies],
+  );
   const flags = useMemo(() => {
     if (!coverage) return null;
     const out = new Map<PartKind, PartFlag>();
@@ -248,7 +252,13 @@ export function ClusterConfigurator({
             {bom && coverage ? (
               <BomPanel bom={bom} config={config} copies={copies} onCopies={setCopies} coverage={coverage} />
             ) : null}
-            <ControlPanel config={config} model={model} update={update} onPreview={setFocus} />
+            <ControlPanel
+              config={config}
+              model={model}
+              update={update}
+              onPreview={setFocus}
+              configuredAt={bom ? `/portal/deployments/${bom.deploymentId}/edit` : undefined}
+            />
             <p className={styles.disclaimer}>
               Figures come from placeholder specs for planning, not a quote. Facility power and cooling aren&apos;t
               included.{" "}

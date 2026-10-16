@@ -472,6 +472,48 @@
   text-align: right;
 }
 
+.phase {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 900px;
+}
+
+.overrides {
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.overrides > summary {
+  width: fit-content;
+  cursor: pointer;
+}
+
+.overrides[open] > summary {
+  margin-bottom: 12px;
+}
+
+.overrides[open] {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* One group of the deployment's configuration, e.g. its GPU fabric. */
+.configGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border);
+}
+
+.configHead {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
 .actions {
   display: flex;
   justify-content: flex-end;
