@@ -5,7 +5,17 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { isEmail, multiLine, singleLine } from "@/lib/validation";
 import { isUuid, teamAccount } from "./access";
-import { CHILDREN, SITE_MENU_FIELDS, TABLES, editableField, fieldsFor, isChildKind, type ChildKind, type FieldSpec } from "./fields";
+import {
+  CHILDREN,
+  SITE_MENU_FIELDS,
+  TABLES,
+  clearedBy,
+  editableField,
+  fieldsFor,
+  isChildKind,
+  type ChildKind,
+  type FieldSpec,
+} from "./fields";
 import { ZRM_TAGS } from "./queries";
 import { isRecordKind, listHref, recordHref, type ActionState, type Option, type RecordKind } from "./types";
 
@@ -207,24 +217,37 @@ export async function setSiteStatusAction(id: string, statusId: string): Promise
  * Sets one column of a row from a submitted value checked against its field.
  * An empty value clears it to null, or with `clearToDefault` to the column's
  * default, for the child columns that can't be null. `touch` also stamps
- * `updated_at`, which not every table has.
+ * `updated_at`, which not every table has. A field with a condition only
+ * saves while the row meets it, and with the record's `kind`, the fields the
+ * new value stops applying to are cleared with it.
  */
 async function updateColumn(
   table: string,
   field: FieldSpec,
   id: string,
   value: string,
-  { touch, clearToDefault = false }: { touch: boolean; clearToDefault?: boolean },
+  { touch, clearToDefault = false, kind }: { touch: boolean; clearToDefault?: boolean; kind?: RecordKind },
 ): Promise<ActionState> {
   const parsed = parseField(field, value);
   if ("error" in parsed) return parsed;
   const cleared = parsed.value === null && clearToDefault;
+  const params: Value[] = cleared ? [id] : [id, parsed.value];
+  const sets = [`"${field.key}" = ${cleared ? "default" : "$2"}`];
+  for (const dependent of kind ? clearedBy(kind, field.key, parsed.value) : []) sets.push(`"${dependent.key}" = null`);
+  if (touch) sets.push("updated_at = now()");
+  let where = "id = $1";
+  if (field.onlyWhen) {
+    params.push([...field.onlyWhen.values]);
+    where += ` and "${field.onlyWhen.key}" = any($${params.length}::text[])`;
+  }
+  const sql = db();
   try {
-    const result = await db().query(
-      `update ${table} set "${field.key}" = ${cleared ? "default" : "$2"}${touch ? ", updated_at = now()" : ""} where id = $1 returning id`,
-      cleared ? [id] : [id, parsed.value],
-    );
-    if (result.length === 0) return MISSING;
+    const result = await sql.query(`update ${table} set ${sets.join(", ")} where ${where} returning id`, params);
+    if (result.length === 0) {
+      if (!field.onlyWhen) return MISSING;
+      const exists = await sql.query(`select 1 from ${table} where id = $1`, [id]);
+      return exists.length === 0 ? MISSING : { error: `${field.label} no longer applies here. Reload and try again.` };
+    }
   } catch (error) {
     if (isStaleReference(error)) return { error: `That ${field.label.toLowerCase()} no longer exists. Reload and try again.` };
     throw error;
@@ -237,7 +260,7 @@ export async function saveFieldAction(kind: RecordKind, id: string, key: string,
   if (!(await teamAccount())) return NO_ACCESS;
   const field = isRecordKind(kind) && typeof key === "string" ? editableField(kind, key) : undefined;
   if (!field || !isUuid(id) || typeof value !== "string") return NO_ACCESS;
-  const result = await updateColumn(TABLES[kind], field, id, value, { touch: true });
+  const result = await updateColumn(TABLES[kind], field, id, value, { touch: true, kind });
   if (result.saved) revalidate(kind);
   return result;
 }
@@ -247,7 +270,7 @@ export async function setSiteFieldAction(id: string, key: string, value: string)
   if (!(await teamAccount())) return NO_ACCESS;
   const field = SITE_MENU_FIELDS.find((f) => f.key === key);
   if (!field || !isUuid(id) || typeof value !== "string") return NO_ACCESS;
-  const result = await updateColumn(TABLES.sites, field, id, value, { touch: true });
+  const result = await updateColumn(TABLES.sites, field, id, value, { touch: true, kind: "sites" });
   if (result.saved) revalidate("sites");
   return result;
 }

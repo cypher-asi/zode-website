@@ -3,6 +3,8 @@
  * fields.ts can address a record, its form inputs and its column alike.
  */
 
+import type { DealType } from "./fields";
+
 export type ZrmKind = "people" | "companies" | "opportunities";
 
 export const KINDS: readonly ZrmKind[] = ["people", "companies", "opportunities"];
@@ -111,7 +113,7 @@ export interface SiteRow {
   status_id: string;
   provider_name: string | null;
   customer_name: string | null;
-  deal_type: string | null;
+  deal_type: DealType | null;
   site_stage: string | null;
   initial_it_mw: number | null;
   secondary_it_mw: number | null;
@@ -241,7 +243,7 @@ export interface Site {
   provider_company_id: string | null;
   provider_name: string | null;
   term_years: number | null;
-  deal_type: string | null;
+  deal_type: DealType | null;
   site_stage: string | null;
   initial_it_mw: number | null;
   secondary_it_mw: number | null;

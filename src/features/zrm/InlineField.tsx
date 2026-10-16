@@ -15,7 +15,7 @@ import ui from "@/features/data-room/ui.module.css";
 import { multiLine, singleLine } from "@/lib/validation";
 import { saveFieldAction } from "./actions";
 import { Icon } from "./bits";
-import type { FieldSpec } from "./fields";
+import { clearedColumns, type FieldSpec } from "./fields";
 import {
   fieldHref,
   fieldValue,
@@ -325,7 +325,7 @@ export function InlineField({
   );
 }
 
-/** A record's field edited in place, shown in the lists as it saves. */
+/** A record's field edited in place, shown in the lists as it saves along with the fields it clears. */
 export function RecordField({
   kind,
   id,
@@ -346,7 +346,7 @@ export function RecordField({
       record={record}
       labelId={labelId}
       save={(value) => saveFieldAction(kind, id, field.key, value)}
-      onSaving={(columns) => editRow({ kind, id, patch: columns })}
+      onSaving={(columns) => editRow({ kind, id, patch: { ...clearedColumns(kind, field.key, columns[field.key]), ...columns } })}
     />
   );
 }

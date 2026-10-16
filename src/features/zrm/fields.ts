@@ -37,7 +37,21 @@ export interface FieldSpec {
   readOnly?: boolean;
   /** For free text, the names it suggests as it's typed. */
   suggest?: "companies";
+  /** Only shown and saved while another of the record's fields holds one of these values, and cleared as it stops holding one. */
+  onlyWhen?: Condition;
 }
+
+export interface Condition {
+  key: string;
+  values: readonly string[];
+}
+
+export const holds = (condition: Condition, value: unknown): boolean =>
+  typeof value === "string" && condition.values.includes(value);
+
+/** Whether `field` applies to `record`, i.e. has no condition or meets it. */
+export const applies = (field: FieldSpec, record: object): boolean =>
+  !field.onlyWhen || holds(field.onlyWhen, (record as Record<string, unknown>)[field.onlyWhen.key]);
 
 export interface SectionSpec {
   id: string;
@@ -56,6 +70,19 @@ const money = of("money");
 const company: FieldSpec = { key: "company_id", label: "Company", type: "company", display: "company_name" };
 
 export const DEAL_TYPES = ["Lease", "Purchase", "JV"] as const;
+
+export type DealType = (typeof DEAL_TYPES)[number];
+
+/**
+ * The deal types a site's terms apply to: a lease pays rent over a term, a
+ * purchase converts the building it buys, a JV does both, and any deal can
+ * pay upfront. A site with no deal type has no terms. The database checks the
+ * same (`capacity_sites_deal_terms_check`).
+ */
+const dealTerm = (field: FieldSpec, values: readonly DealType[]): FieldSpec => ({
+  ...field,
+  onlyWhen: { key: "deal_type", values },
+});
 
 /** A site's type, by how built out it is, furthest first. Stored as `site_stage`. */
 export const SITE_TYPES = ["Operational DC", "Retrofit", "Powered Shell", "Powered Land", "Land"] as const;
@@ -190,7 +217,6 @@ export const SECTIONS: Record<RecordKind, readonly SectionSpec[]> = {
         site.type,
         site.provider,
         site.dealType,
-        { key: "term_years", label: "Term (years)", type: "int" },
         { key: "rfs_date", label: "RFS", type: "date" },
         text("cooling", "Cooling"),
       ],
@@ -204,10 +230,11 @@ export const SECTIONS: Record<RecordKind, readonly SectionSpec[]> = {
       id: "economics",
       title: "Economics",
       fields: [
-        money("kw_rate", "kW rate ($)"),
+        dealTerm({ key: "term_years", label: "Term (years)", type: "int" }, ["Lease", "JV"]),
+        dealTerm(money("kw_rate", "kW rate ($)"), ["Lease", "JV"]),
         decimal("power_rate", "Power ($/kWh)"),
-        money("upfront", "Upfront ($)"),
-        money("conversion", "Conversion ($)"),
+        dealTerm(money("upfront", "Upfront ($)"), DEAL_TYPES),
+        dealTerm(money("conversion", "Conversion ($)"), ["Purchase", "JV"]),
       ],
     },
     {
@@ -248,6 +275,16 @@ export const SITE_MENU_FIELDS = [site.status, site.type, site.dealType] as const
 /** A field of a kind's detail pane that can be edited in place, by its key. */
 export const editableField = (kind: RecordKind, key: string): FieldSpec | undefined =>
   SECTIONS[kind].flatMap((section) => section.fields).find((field) => field.key === key && !field.readOnly);
+
+/** The fields of a kind that stop applying once `key` is set to `value`, which that save clears. */
+export const clearedBy = (kind: RecordKind, key: string, value: unknown): readonly FieldSpec[] =>
+  SECTIONS[kind]
+    .flatMap((section) => section.fields)
+    .filter((field) => field.onlyWhen?.key === key && !holds(field.onlyWhen, value));
+
+/** `clearedBy` as a row's columns, for showing a save in the lists while it's in flight. */
+export const clearedColumns = (kind: RecordKind, key: string, value: unknown): Record<string, null> =>
+  Object.fromEntries(clearedBy(kind, key, value).map((field) => [field.key, null]));
 
 /** The fields a section's form saves, leaving out read-only ones. */
 export const fieldsFor = (kind: RecordKind, section: string): readonly FieldSpec[] | undefined =>

@@ -29,7 +29,9 @@ const SOURCE = "Capacity sheet";
 /*
  * [name, address, provider, term, type, initial MW, secondary MW, kW rate,
  * power rate, upfront, conversion, RFS, extras]. RFS is `YYYY-MM-DD`; the
- * sheet's "2027" for Missouri is the first of that year.
+ * sheet's "2027" for Missouri is the first of that year. Only leases and JVs
+ * have a term and kW rate, and only purchases and JVs a conversion, as
+ * `capacity_sites_deal_terms_check` requires.
  */
 const SECTIONS = {
   "Critical Path": [
@@ -39,13 +41,13 @@ const SECTIONS = {
       { customer: "SF Compute", contract: 33_730_560, annual: 11_243_520 }],
     ["Milton", "8250 Lawson Road", "137 Edge Compute Inc.", 5, "JV", 1.39, 5.22, 185, 0.13, 10_000_000, 26_440_000, "2026-03-31",
       { customer: "SF Compute", broker: "Carlos", firm: "XIRR" }],
-    ["Olds", "6102 48th Avenue Road", "SNDL INC.", null, "Purchase", 22, 0, 0, 0.12, 18_000_000, 88_000_000, "2026-03-31",
+    ["Olds", "6102 48th Avenue Road", "SNDL INC.", null, "Purchase", 22, 0, null, 0.12, 18_000_000, 88_000_000, "2026-03-31",
       { broker: "Casey", firm: "JLL", room: "6102-6402 48 Avenue" }],
-    ["Calgary", "5430 30 Street SE", "Balil", null, "Purchase", 8, 5, 0, 0.12, 10_000_000, 32_000_000, "2026-03-31",
+    ["Calgary", "5430 30 Street SE", "Balil", null, "Purchase", 8, 5, null, 0.12, 10_000_000, 32_000_000, "2026-03-31",
       { broker: "Mitch", firm: "Baxtell", room: "5430 30 Street SE" }],
   ],
   LOI: [
-    ["Alaska", "Alaska", null, 10, "Purchase", 5, 15, null, null, null, null, "2027-03-31"],
+    ["Alaska", "Alaska", null, null, "Purchase", 5, 15, null, null, null, null, "2027-03-31"],
     ["West Texas position I", "Permian Basin, Texas", "Syaala", 10, "Lease", 5.6, 0, null, null, null, null, "2027-03-31"],
     ["West Texas position II", "Texas", "Syaala", 10, "Lease", 6, 0, null, null, null, null, "2027-03-31"],
     ["Philadelphia position", "Pennsylvania", "Syaala", 10, "Lease", 3.25, 0, null, null, null, null, "2027-03-31"],

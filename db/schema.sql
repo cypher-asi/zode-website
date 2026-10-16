@@ -737,6 +737,27 @@ alter table capacity_sites drop constraint if exists capacity_sites_site_stage_c
 alter table capacity_sites add constraint capacity_sites_site_stage_check
   check (site_stage in ('Operational DC', 'Retrofit', 'Powered Shell', 'Powered Land', 'Land'));
 
+-- A site's deal type decides which terms it has: a lease's term and kW rate,
+-- a purchase's conversion, both for a JV, and upfront for any deal; a site
+-- with no deal type has none. Capacity shows and clears them the same way.
+-- Terms recorded against another deal type, such as the sheet's 0 kW rates
+-- on purchases, are cleared first.
+update capacity_sites set term_years = null, kw_rate = null
+where coalesce(deal_type, '') not in ('Lease', 'JV') and (term_years is not null or kw_rate is not null);
+
+update capacity_sites set conversion = null
+where coalesce(deal_type, '') not in ('Purchase', 'JV') and conversion is not null;
+
+update capacity_sites set upfront = null where deal_type is null and upfront is not null;
+
+alter table capacity_sites drop constraint if exists capacity_sites_deal_terms_check;
+
+alter table capacity_sites add constraint capacity_sites_deal_terms_check check (
+  (coalesce(deal_type, '') in ('Lease', 'JV') or (term_years is null and kw_rate is null))
+  and (coalesce(deal_type, '') in ('Purchase', 'JV') or conversion is null)
+  and (deal_type is not null or upfront is null)
+);
+
 -- Sites take notes too, so a note hangs off exactly one person, company,
 -- opportunity or site. The check is dropped and re-added under one name so
 -- this re-runs, replacing the unnamed one zrm_notes was created with.

@@ -15,11 +15,11 @@ import {
 import ui from "@/features/data-room/ui.module.css";
 import { addChildAction, addCompanyTypeAction, deleteChildAction, saveChildFieldAction, toggleCompanyTypeAction } from "./actions";
 import { Badge, Icon } from "./bits";
-import { CHILDREN, type ChildKind, type FieldSpec, type SectionSpec } from "./fields";
+import { applies, CHILDREN, type ChildKind, type FieldSpec, type SectionSpec } from "./fields";
 import { FieldInput } from "./fieldUi";
 import { InlineField, RecordField } from "./InlineField";
 import { recordHref, type ActionState, type RecordKind, type Related, type ZrmType } from "./types";
-import { useZrmNavigate, ZrmLink } from "./ZrmProvider";
+import { useZrmData, useZrmNavigate, ZrmLink } from "./ZrmProvider";
 import styles from "./zrm.module.css";
 
 const INITIAL: ActionState = {};
@@ -84,7 +84,12 @@ function InlineFields({
   );
 }
 
-/** A group of a record's fields, every one listed, filled or not, and each edited in place. */
+/**
+ * A group of a record's fields, every one that applies listed, filled or not,
+ * and each edited in place. Conditions are read off the record's list row
+ * where it has the column, which shows a save as it's made, so a site's terms
+ * switch the moment its deal type is picked.
+ */
 export function FieldSection({
   kind,
   id,
@@ -95,11 +100,17 @@ export function FieldSection({
   id: string;
   section: SectionSpec;
   record: object;
-}): ReactElement {
+}): ReactElement | null {
+  const { data } = useZrmData();
+  const row = (data[kind] as readonly { id: string }[]).find((r) => r.id === id);
+  const fields = section.fields.filter((field) =>
+    applies(field, row && field.onlyWhen && field.onlyWhen.key in row ? row : record),
+  );
+  if (fields.length === 0) return null;
   return (
     <Section title={section.title}>
       <InlineFields
-        fields={section.fields}
+        fields={fields}
         render={(field, labelId) => <RecordField kind={kind} id={id} field={field} record={record} labelId={labelId} />}
       />
     </Section>

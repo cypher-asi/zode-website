@@ -23,6 +23,7 @@ import { PortalLoading } from "@/features/portal/PortalLoading";
 import { deleteRecordAction, setActiveAction, setSiteFieldAction } from "./actions";
 import { Icon } from "./bits";
 import { companiesConfig, opportunitiesConfig, peopleConfig, sitesConfig, type ListConfig } from "./columns";
+import { clearedColumns } from "./fields";
 import { SiteMenu } from "./SiteMenu";
 import { StatusNav } from "./StatusNav";
 import { KIND_LABELS, recordHref, type RecordKind, type SiteRow } from "./types";
@@ -474,8 +475,10 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
             go(recordHref("sites", menuSite.id));
           }}
           onChange={(key, value) =>
-            saveSite(menuSite.id, { [key]: key === "status_id" ? value : value || null }, () =>
-              setSiteFieldAction(menuSite.id, key, value),
+            saveSite(
+              menuSite.id,
+              { ...clearedColumns("sites", key, value || null), [key]: key === "status_id" ? value : value || null },
+              () => setSiteFieldAction(menuSite.id, key, value),
             )
           }
           onPin={() => saveSite(menuSite.id, { active: !menuSite.active }, () => setActiveAction("sites", menuSite.id, !menuSite.active))}
