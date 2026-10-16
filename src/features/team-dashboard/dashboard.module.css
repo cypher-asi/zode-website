@@ -212,19 +212,27 @@
   white-space: nowrap;
 }
 
+/*
+ * Swatch, name, MW, dot, share: the rows share the columns, so the figures
+ * line up right-aligned. MixChart slides its height between splits; the rows
+ * stay at the top and clip meanwhile.
+ */
 .mixLegend {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  align-content: start;
+  gap: 6px 8px;
+  overflow: hidden;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .mixLegend li {
-  display: flex;
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   align-items: center;
-  gap: 8px;
   font-size: var(--text-sm);
   transition: opacity var(--duration-base) ease;
 }
@@ -254,7 +262,13 @@
 .mixValue {
   color: var(--color-text-secondary);
   font-variant-numeric: tabular-nums;
+  text-align: right;
   white-space: nowrap;
+}
+
+.mixDot {
+  margin: 0 -3px;
+  color: var(--color-text-secondary);
 }
 
 /* A figure's parts under its line, e.g. capacity by status, each its name over its value. */

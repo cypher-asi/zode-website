@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties, type ReactElement } from "react";
+import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactElement } from "react";
 import type { MixSlice } from "./metrics";
 import styles from "./dashboard.module.css";
 
@@ -18,12 +18,38 @@ const percent = (part: number, whole: number) => `${Math.round((part / whole) * 
 /**
  * A donut of the capacity pipeline's MW, split one way at a time (deal type,
  * site type), with a legend giving each part's MW and share. Hovering a slice
- * or its legend row names it in the middle.
+ * or its legend row names it in the middle. Switching splits, the legend
+ * slides to its new number of rows, so the card grows or shrinks smoothly.
  */
 export function MixChart({ mixes }: { mixes: readonly { id: string; label: string; slices: readonly MixSlice[] }[] }): ReactElement {
   const [mixId, setMixId] = useState(mixes[0]?.id);
   const [hover, setHover] = useState<number | null>(null);
   const mix = mixes.find((m) => m.id === mixId) ?? mixes[0];
+
+  const legendRef = useRef<HTMLUListElement>(null);
+  /** The legend's height as last laid out, mid-slide included; the observer reports it after the commit that changes it. */
+  const shownHeight = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    const legend = legendRef.current;
+    if (!legend) return;
+    const observer = new ResizeObserver(([entry]) => {
+      shownHeight.current = entry!.borderBoxSize[0]!.blockSize;
+    });
+    observer.observe(legend);
+    return () => observer.disconnect();
+  }, []);
+
+  const shownMix = useRef(mix?.id);
+  useLayoutEffect(() => {
+    const legend = legendRef.current;
+    const from = shownHeight.current;
+    if (!legend || shownMix.current === mix?.id) return;
+    shownMix.current = mix?.id;
+    for (const animation of legend.getAnimations()) animation.cancel();
+    const to = legend.getBoundingClientRect().height;
+    if (from === null || from === to || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    legend.animate([{ height: `${from}px` }, { height: `${to}px` }], { duration: 280, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" });
+  }, [mix?.id]);
   const slices = mix?.slices ?? [];
   const total = slices.reduce((sum, slice) => sum + slice.mw, 0);
   const focused = hover !== null ? slices[hover] : undefined;
@@ -82,7 +108,7 @@ export function MixChart({ mixes }: { mixes: readonly { id: string; label: strin
             <span className={styles.pieLabel}>{focused ? focused.label : "Pipeline"}</span>
           </div>
         </div>
-        <ul className={styles.mixLegend}>
+        <ul ref={legendRef} className={styles.mixLegend}>
           {slices.map((slice, i) => (
             <li
               key={slice.label}
@@ -92,9 +118,11 @@ export function MixChart({ mixes }: { mixes: readonly { id: string; label: strin
             >
               <span className={styles.mixSwatch} style={{ "--shade": arcs[i]!.shade } as CSSProperties} aria-hidden="true" />
               <span className={styles.mixName}>{slice.label}</span>
-              <span className={styles.mixValue}>
-                {megawatts(slice.mw)} · {percent(slice.mw, total)}
+              <span className={styles.mixValue}>{megawatts(slice.mw)}</span>
+              <span className={styles.mixDot} aria-hidden="true">
+                ·
               </span>
+              <span className={styles.mixValue}>{percent(slice.mw, total)}</span>
             </li>
           ))}
         </ul>
