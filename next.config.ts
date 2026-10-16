@@ -86,6 +86,7 @@ const nextConfig: NextConfig = {
     // Likewise the deployment and teaser PDFs' fonts and wordmark.
     "/api/deployments/**": ["src/features/deployments/assets/**/*", "src/assets/fonts/display/*.ttf", "public/wordmark.svg"],
     "/api/teasers/**": ["src/features/deployments/assets/**/*", "src/assets/fonts/display/*.ttf", "public/wordmark.svg"],
+    "/api/shared/deployments/**": ["src/features/deployments/assets/**/*", "src/assets/fonts/display/*.ttf", "public/wordmark.svg"],
   },
   // AVIF first (roughly 20% smaller than WebP at the same quality), WebP for
   // browsers without it. AVIF's first encode is slower; the result is cached.

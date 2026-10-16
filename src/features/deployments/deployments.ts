@@ -1,5 +1,5 @@
 import "server-only";
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { cacheLife, cacheTag } from "next/cache";
 import { isUuid } from "@/features/zrm/access";
 import { DB_TAG, db } from "@/lib/db";
@@ -8,7 +8,7 @@ import type { Deployment, Phase, RoomChoice } from "./types";
 /** Every deployment read is cached under this tag, which saving and deleting update. */
 export const DEPLOYMENTS_TAG = "deployments";
 
-export type DeploymentInput = Omit<Deployment, "id" | "updatedAt" | "dataRoomName">;
+export type DeploymentInput = Omit<Deployment, "id" | "updatedAt" | "dataRoomName" | "shareToken">;
 
 /*
  * Neon hands back `numeric` as strings and `date` as local-midnight Dates, so
@@ -39,6 +39,7 @@ const toDeployment = (row: Record<string, unknown>): Deployment => ({
   notes: row.notes == null ? null : String(row.notes),
   dataRoomId: row.data_room_id == null ? null : String(row.data_room_id),
   dataRoomName: row.data_room_name == null ? null : String(row.data_room_name),
+  shareToken: row.share_token == null ? null : String(row.share_token),
   phases: (row.phases as Phase[]) ?? [],
   updatedAt: new Date(row.updated_at as string | Date).toISOString(),
 });
@@ -53,7 +54,7 @@ export async function listDeployments(): Promise<Deployment[]> {
       d.address, d.city, d.place_id, d.facility, d.term_months, d.price_gpu_hr::float8 as price_gpu_hr,
       d.deposit_usd::float8 as deposit_usd, d.credit_rating, d.loc_required,
       d.loc_years::float8 as loc_years, d.credit_guarantee, d.lease_guarantee, d.notes, d.updated_at,
-      d.data_room_id, dr.name as data_room_name,
+      d.data_room_id, dr.name as data_room_name, d.share_token,
       coalesce(
         (select json_agg(
             json_build_object(
@@ -74,6 +75,35 @@ export async function listDeployments(): Promise<Deployment[]> {
 export async function getDeployment(id: string): Promise<Deployment | null> {
   if (!isUuid(id)) return null;
   return (await listDeployments()).find((deployment) => deployment.id === id) ?? null;
+}
+
+const SHARE_TOKEN_RE = /^[A-Za-z0-9_-]{32}$/;
+
+/** A new secret for a deployment's public link. */
+export const newShareToken = (): string => randomBytes(24).toString("base64url");
+
+/** The deployment shared under `token`, from the cached list. */
+export async function getSharedDeployment(token: string): Promise<Deployment | null> {
+  if (!SHARE_TOKEN_RE.test(token)) return null;
+  return (await listDeployments()).find((deployment) => deployment.shareToken === token) ?? null;
+}
+
+/**
+ * Shares deployment `id` under `token`, keeping the token it already has, or
+ * stops sharing it with null. Returns its token, or undefined when it's gone.
+ */
+export async function setShareToken(id: string, token: string | null): Promise<string | null | undefined> {
+  if (!isUuid(id)) return undefined;
+  const sql = db();
+  const rows =
+    token === null
+      ? await sql`update deployments set share_token = null where id = ${id} returning share_token`
+      : await sql`
+          update deployments set share_token = coalesce(share_token, ${token})
+          where id = ${id}
+          returning share_token
+        `;
+  return rows.length ? ((rows[0].share_token as string | null) ?? null) : undefined;
 }
 
 /**

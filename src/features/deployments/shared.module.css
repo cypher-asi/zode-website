@@ -1,0 +1,81 @@
+/* A deployment's public page: the company profile's toolbar over its PDF, which fills the window below it. */
+.page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  height: 100svh;
+  min-height: 480px;
+  padding: var(--header-band) 16px 16px;
+  background: var(--color-paper);
+}
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  width: calc(8.5in + 48px);
+  max-width: 100%;
+}
+
+/* As on the company profile, styled like the pinned header's split button. */
+.action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--color-black);
+  border-radius: var(--radius-control);
+  background: linear-gradient(var(--color-black), var(--color-black)) no-repeat bottom / 100% 0%;
+  color: var(--color-black);
+  font: inherit;
+  font-size: var(--caps-size);
+  font-weight: 500;
+  letter-spacing: var(--caps-tracking);
+  text-decoration: none;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-size var(--duration-slow) var(--ease-in-out),
+    color 200ms ease 80ms;
+}
+
+/* Wide enough for "Copied", so the button holds its size when the label swaps. */
+button.action {
+  min-width: 8.5em;
+}
+
+.action:hover,
+.action:focus-visible {
+  background-size: 100% 100%;
+  color: var(--color-white);
+}
+
+.action:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.frame {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  width: calc(8.5in + 48px);
+  max-width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface-tint);
+}

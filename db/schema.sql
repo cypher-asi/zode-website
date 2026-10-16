@@ -991,6 +991,11 @@ where p.deployment_id = d.id and p.platform is null;
 
 alter table deployment_phases alter column platform set not null;
 
+-- A deployment's public link: /shared/deployments/<share_token> shows its PDF,
+-- without notes, credit or its data room, to anyone who has it. Kept in the
+-- clear so the team can copy it again; null when it isn't shared.
+alter table deployments add column if not exists share_token text unique;
+
 -- One-page compute offering teasers, written by the ZODE team from a
 -- deployment and exported as a PDF (src/features/teasers). Every figure is
 -- copied from the deployment when the teaser is started and edited as text

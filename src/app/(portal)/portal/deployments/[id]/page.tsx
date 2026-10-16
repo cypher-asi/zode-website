@@ -7,6 +7,7 @@ import ui from "@/features/data-room/ui.module.css";
 import { getDeployment } from "@/features/deployments/deployments";
 import { DeploymentDetail } from "@/features/deployments/DeploymentDetail";
 import { todayIso } from "@/features/deployments/format";
+import { ShareLink } from "@/features/deployments/ShareLink";
 import { statusLabel } from "@/features/deployments/types";
 import { loadViewer } from "@/features/deployments/view";
 import { orLogIn } from "@/features/portal/mine";
@@ -49,6 +50,7 @@ async function Deployment({ params }: Pick<PageProps<"/portal/deployments/[id]">
             </a>
             {viewer.team ? (
               <>
+                <ShareLink id={deployment.id} token={deployment.shareToken} />
                 <Link href={`/portal/deployments/teasers/new?deployment=${deployment.id}`} className={ui.button}>
                   Create teaser
                 </Link>

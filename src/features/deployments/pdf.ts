@@ -459,8 +459,16 @@ class Writer {
 const yesNo = (value: boolean): string => (value ? "Yes" : "No");
 const orDash = (value: string | null): string => value ?? "—";
 
-/** The deployment's summary PDF, as of `today` (`YYYY-MM-DD`). */
-export async function renderDeploymentPdf(deployment: Deployment, today: string): Promise<Uint8Array> {
+/**
+ * The deployment's summary PDF, as of `today` (`YYYY-MM-DD`). The `public`
+ * audience, behind its share link, leaves out its data room, credit and notes.
+ */
+export async function renderDeploymentPdf(
+  deployment: Deployment,
+  today: string,
+  { audience = "team" }: { audience?: "team" | "public" } = {},
+): Promise<Uint8Array> {
+  const internal = audience === "team";
   const doc = await PDFDocument.create();
   const { fonts, wordmark } = await embedBrand(doc);
   const d = deployment;
@@ -502,7 +510,7 @@ export async function renderDeploymentPdf(deployment: Deployment, today: string)
     },
     { label: "Facility", value: orDash(facilityLabel(d.facility)) },
     { label: "City", value: orDash(d.city) },
-    { label: "Data room", value: orDash(d.dataRoomName) },
+    ...(internal ? [{ label: "Data room", value: orDash(d.dataRoomName) }] : []),
     rackPath
       ? { label: "Rack design", value: "Open in the cluster builder", href: `${SITE_URL}${rackPath}` }
       : { label: "Rack design", value: "Not in the cluster builder yet" },
@@ -519,21 +527,22 @@ export async function renderDeploymentPdf(deployment: Deployment, today: string)
     { label: "Est. contract value", value: totals.contractUsd !== null ? formatUsd(totals.contractUsd) : "—" },
   ]);
 
-  w.facts(
-    "Credit",
-    [
-      { label: "Credit", value: orDash(creditLabel(d.creditRating)) },
-      {
-        label: "LOC required",
-        value: d.locRequired ? `Yes${d.locYears !== null ? ` · ${formatLeaseYears(d.locYears)}` : ""}` : "No",
-      },
-      { label: "Credit guarantee", value: yesNo(d.creditGuarantee) },
-      { label: "Lease guarantee", value: yesNo(d.leaseGuarantee) },
-    ],
-    4,
-  );
-
-  if (d.notes) w.paragraph("Notes", d.notes);
+  if (internal) {
+    w.facts(
+      "Credit",
+      [
+        { label: "Credit", value: orDash(creditLabel(d.creditRating)) },
+        {
+          label: "LOC required",
+          value: d.locRequired ? `Yes${d.locYears !== null ? ` · ${formatLeaseYears(d.locYears)}` : ""}` : "No",
+        },
+        { label: "Credit guarantee", value: yesNo(d.creditGuarantee) },
+        { label: "Lease guarantee", value: yesNo(d.leaseGuarantee) },
+      ],
+      4,
+    );
+    if (d.notes) w.paragraph("Notes", d.notes);
+  }
   w.footers();
 
   doc.setTitle(`ZODE Deployment \u2013 ${d.name}`);

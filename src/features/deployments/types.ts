@@ -80,6 +80,8 @@ export interface Deployment {
   notes: string | null;
   dataRoomId: string | null;
   dataRoomName: string | null;
+  /** The secret in its public link (`sharePath`), or null when it isn't shared. */
+  shareToken: string | null;
   /** In RFS order. */
   phases: Phase[];
   /** ISO timestamp. */
@@ -254,3 +256,10 @@ export const deploymentFileName = (name: string): string =>
       .trim()
       .slice(0, 80) || "Deployment"
   }.pdf`;
+
+/** A deployment's public page, which anyone with `token` can open. */
+export const sharePath = (token: string): string => `/shared/deployments/${token}`;
+
+/** The public PDF behind `sharePath(token)`, inline, or as a download with `download`. */
+export const sharedPdfPath = (token: string, download = false): string =>
+  `/api/shared/deployments/${token}/pdf${download ? "?download=1" : ""}`;

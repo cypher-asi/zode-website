@@ -28,7 +28,7 @@ const MAX_PATH_LENGTH = 300;
 
 /** Links that carry a secret: the path is stored as its route, so no token lands in the database. */
 const SECRET_ROUTES: readonly (readonly [RegExp, string])[] = [
-  [/^\/(team\/invite|invite|data-rooms\/invite|mailing-list\/confirm)\/[^/]+$/, "/$1/[token]"],
+  [/^\/(team\/invite|invite|data-rooms\/invite|mailing-list\/confirm|shared\/deployments)\/[^/]+$/, "/$1/[token]"],
 ];
 
 /** The app's dynamic routes, so every post or record is counted under one page. */

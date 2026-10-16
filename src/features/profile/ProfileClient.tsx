@@ -11,8 +11,36 @@ export function PodDrawing(): ReactElement {
   return <CabinArt pod="compute" active={null} onActive={noop} />;
 }
 
-/** Copies the profile's link, reading "Copied" for a moment after. */
-export function ShareButton({ className, srOnly }: { className: string; srOnly: string }): ReactElement {
+/** Puts `text` on the clipboard; whether it did. */
+export async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    // The async clipboard is refused off HTTPS and in unfocused frames; copy from a selection instead.
+    const field = document.createElement("textarea");
+    field.value = text;
+    field.setAttribute("readonly", "");
+    field.style.position = "fixed";
+    field.style.opacity = "0";
+    document.body.append(field);
+    field.select();
+    const ok = document.execCommand("copy");
+    field.remove();
+    return ok;
+  }
+}
+
+/** Copies the link to `path` (the profile's by default), reading "Copied" for a moment after. */
+export function ShareButton({
+  className,
+  srOnly,
+  path = "/company-profile",
+}: {
+  className: string;
+  srOnly: string;
+  path?: string;
+}): ReactElement {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -22,23 +50,7 @@ export function ShareButton({ className, srOnly }: { className: string; srOnly: 
   }, [copied]);
 
   const copy = async () => {
-    const url = `${window.location.origin}/company-profile`;
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-    } catch {
-      // The async clipboard is refused off HTTPS and in unfocused frames; copy from a selection instead.
-      const field = document.createElement("textarea");
-      field.value = url;
-      field.setAttribute("readonly", "");
-      field.style.position = "fixed";
-      field.style.opacity = "0";
-      document.body.append(field);
-      field.select();
-      const ok = document.execCommand("copy");
-      field.remove();
-      if (ok) setCopied(true);
-    }
+    if (await copyText(`${window.location.origin}${path}`)) setCopied(true);
   };
 
   return (

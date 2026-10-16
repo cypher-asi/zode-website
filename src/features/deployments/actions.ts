@@ -5,7 +5,15 @@ import { redirect } from "next/navigation";
 import { userIdFor } from "@/features/users/users";
 import { isUuid, teamAccount } from "@/features/zrm/access";
 import { multiLine, singleLine } from "@/lib/validation";
-import { DEPLOYMENTS_TAG, deleteDeployment, roomExists, saveDeployment, type DeploymentInput } from "./deployments";
+import {
+  DEPLOYMENTS_TAG,
+  deleteDeployment,
+  newShareToken,
+  roomExists,
+  saveDeployment,
+  setShareToken,
+  type DeploymentInput,
+} from "./deployments";
 import {
   COOLING,
   CREDIT_RATINGS,
@@ -205,4 +213,18 @@ export async function deleteDeploymentAction(id: string): Promise<DeploymentForm
   await deleteDeployment(id);
   updateTag(DEPLOYMENTS_TAG);
   redirect("/portal/deployments/all");
+}
+
+export type ShareResult = { token: string | null } | { error: string };
+
+/**
+ * Turns a deployment's public link on, keeping the link it already has, or
+ * off with `shared` false, which breaks the old link. The ZODE team only.
+ */
+export async function shareDeploymentAction(id: string, shared: boolean): Promise<ShareResult> {
+  if (!(await teamAccount())) return { error: "You don't have access to this. Try reloading the page." };
+  const token = await setShareToken(id, shared ? newShareToken() : null);
+  if (token === undefined) return { error: "This deployment was deleted. Reload to see the current list." };
+  updateTag(DEPLOYMENTS_TAG);
+  return { token };
 }
