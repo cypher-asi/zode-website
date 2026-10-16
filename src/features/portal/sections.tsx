@@ -13,7 +13,7 @@ import { RoleButton } from "@/features/users/RoleButton";
 import { ROLE_LABELS, type User } from "@/features/users/types";
 import { PortalIcon } from "./icons";
 import { RoomThumb } from "./RoomThumb";
-import { RESOURCE_LINKS, TOOL_LINKS, type NavLink } from "./nav";
+import { CONTRACT_TYPES, RESOURCE_LINKS, TOOL_LINKS, type NavLink } from "./nav";
 import styles from "./portal.module.css";
 
 const usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -513,5 +513,33 @@ export function ContractList({
         </li>
       ))}
     </ul>
+  );
+}
+
+/** ContractList under a heading for each type, in CONTRACT_TYPES order, leaving out types with none. */
+export function ContractGroups({
+  contracts,
+  showSigner = false,
+}: {
+  contracts: Contract[];
+  showSigner?: boolean;
+}): ReactElement {
+  return (
+    <>
+      {CONTRACT_TYPES.map((type) => {
+        const ofType = contracts.filter((contract) => contract.kind === type.id);
+        return ofType.length ? (
+          <section key={type.id} className={styles.section} aria-label={type.label}>
+            <div className={styles.sectionHead}>
+              <h2 className={styles.sectionTitle}>{type.label}</h2>
+              <Link className={styles.more} href={`/portal/contracts/${type.id}`}>
+                {ofType.length.toLocaleString("en-US")}
+              </Link>
+            </div>
+            <ContractList contracts={ofType} showSigner={showSigner} />
+          </section>
+        ) : null;
+      })}
+    </>
   );
 }

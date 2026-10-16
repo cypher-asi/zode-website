@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense, type ReactElement } from "react";
 import { loadAllContracts } from "@/features/portal/data";
 import { PortalLoading } from "@/features/portal/PortalLoading";
-import { ContractList, Empty } from "@/features/portal/sections";
+import { ContractGroups, Empty } from "@/features/portal/sections";
 import { requireTeam } from "@/features/zrm/access";
 
 export const metadata: Metadata = {
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-/** Every MNDA anyone has signed, including those signed while logged out, and every compute deal. The ZODE team only. */
+/** Every MNDA anyone has signed, including those signed while logged out, and every compute deal, grouped by type. The ZODE team only. */
 export default function AllContractsPage(): ReactElement {
   return (
     <Suspense fallback={<PortalLoading header={false} nested />}>
@@ -25,7 +25,7 @@ async function AllContracts(): Promise<ReactElement> {
   return contracts === null ? (
     <Empty>Agreements couldn&apos;t be loaded right now. Please try again shortly.</Empty>
   ) : contracts.length ? (
-    <ContractList contracts={contracts} showSigner />
+    <ContractGroups contracts={contracts} showSigner />
   ) : (
     <Empty>No agreements have been signed yet.</Empty>
   );

@@ -1,3 +1,4 @@
+import type { ContractKind } from "@/features/contracts/contracts";
 import { FACTORY_FLOWS } from "@/features/factory/model/flows";
 import { LEAD_TYPES } from "@/features/leads/types";
 import { MAILING_LISTS } from "@/features/mailing-list/types";
@@ -108,6 +109,14 @@ const ORDERS: PortalApp = {
     ...ORDER_MODES.map((mode): NavLink => ({ href: `/portal/orders/${mode.id}`, label: mode.label, icon: mode.icon })),
   ],
 };
+
+/** Each contract type's page in the Contracts app, `/portal/contracts/<id>`, for the ZODE team. */
+export const CONTRACT_TYPES: readonly { id: ContractKind; label: string; icon: PortalIconName }[] = [
+  { id: "compute", label: "Compute deals", icon: "cluster" },
+  { id: "mnda", label: "Mutual NDAs", icon: "contracts" },
+];
+
+export const isContractKind = (value: unknown): value is ContractKind => CONTRACT_TYPES.some(({ id }) => id === value);
 
 const MY_CONTRACTS: NavLink = { href: "/portal/contracts", label: "Your contracts", icon: "contracts" };
 
@@ -244,7 +253,13 @@ export function portalApps({ admin, team }: NavAccess): PortalApp[] {
     icon: "contracts",
     href: "/portal/contracts",
     links: team
-      ? [MY_CONTRACTS, { href: "/portal/contracts/all", label: "All contracts", icon: "contracts" }]
+      ? [
+          MY_CONTRACTS,
+          { href: "/portal/contracts/all", label: "All contracts", icon: "contracts" },
+          ...CONTRACT_TYPES.map(
+            (type): NavLink => ({ href: `/portal/contracts/${type.id}`, label: type.label, icon: type.icon }),
+          ),
+        ]
       : [MY_CONTRACTS],
   };
   const settings: PortalApp = {
