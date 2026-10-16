@@ -8,6 +8,7 @@ import { Empty } from "@/features/portal/sections";
 import dash from "./dashboard.module.css";
 import { MetricCard } from "./MetricCard";
 import { CAPACITY_STATUSES, loadTeamMetrics, type TeamMetrics } from "./metrics";
+import { MixChart } from "./MixChart";
 
 const RANGES = [
   { days: 30, label: "30d" },
@@ -98,6 +99,14 @@ export async function TeamDashboard({
             points={metrics.series.capacity_pipeline_mw}
             rangeDays={rangeDays}
             wide
+            aside={
+              <MixChart
+                mixes={[
+                  { id: "deal", label: "Deal type", slices: metrics.capacityMix.dealType },
+                  { id: "type", label: "Type", slices: metrics.capacityMix.siteType },
+                ]}
+              />
+            }
           >
             <dl className={dash.breakdown}>
               {CAPACITY_STATUSES.toReversed()

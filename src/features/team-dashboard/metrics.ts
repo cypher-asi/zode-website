@@ -1,4 +1,5 @@
 import "server-only";
+import { DEAL_TYPES, SITE_TYPES } from "@/features/zrm/fields";
 import { db } from "@/lib/db";
 
 /** Capacity's statuses, furthest along first, each with the metric holding its sites' total IT. */
@@ -38,11 +39,27 @@ export interface MetricPoint {
   value: number;
 }
 
+/** A share of the capacity pipeline, e.g. its leases. */
+export interface MixSlice {
+  label: string;
+  mw: number;
+}
+
 export interface TeamMetrics {
   current: MetricValues;
   /** Each metric's daily values over the range, oldest first. Days without a snapshot are absent. */
   series: Record<MetricKey, MetricPoint[]>;
   rangeDays: number;
+  /** The pipeline's MW now by deal type and by site type, in their fields' order, unset last. */
+  capacityMix: { dealType: MixSlice[]; siteType: MixSlice[] };
+}
+
+/** Rows of `label, mw` as slices in `order`, with sites missing the field last as "Not set". */
+function mixOf(rows: Record<string, unknown>[], order: readonly string[]): MixSlice[] {
+  const mw = new Map(rows.map((row) => [String(row.label), Number(row.mw)]));
+  return [...order, ""]
+    .map((label) => ({ label: label || "Not set", mw: mw.get(label) ?? 0 }))
+    .filter((slice) => slice.mw > 0);
 }
 
 /** The total IT of the sites on `statuses`, as a scalar subquery. */
@@ -103,7 +120,7 @@ export async function recordTeamSnapshot(): Promise<MetricValues> {
  */
 export async function loadTeamMetrics(rangeDays: number): Promise<TeamMetrics> {
   const sql = db();
-  const [live, rows] = await sql.transaction(
+  const [live, rows, byDealType, bySiteType] = await sql.transaction(
     [
       sql.query(`with ${CURRENT} select current_date::text as day, metric, value from m`),
       sql`
@@ -112,6 +129,8 @@ export async function loadTeamMetrics(rangeDays: number): Promise<TeamMetrics> {
         where day > current_date - ${rangeDays}::int
         order by day
       `,
+      sql`select coalesce(deal_type, '') as label, sum(total_it_mw)::float8 as mw from capacity_sites group by 1`,
+      sql`select coalesce(site_stage, '') as label, sum(total_it_mw)::float8 as mw from capacity_sites group by 1`,
     ],
     { readOnly: true },
   );
@@ -122,5 +141,10 @@ export async function loadTeamMetrics(rangeDays: number): Promise<TeamMetrics> {
     if (String(row.day) !== today) series[row.metric as MetricKey]?.push({ day: String(row.day), value: Number(row.value) });
   }
   for (const key of METRICS) series[key].push({ day: today, value: current[key] });
-  return { current, series, rangeDays };
+  return {
+    current,
+    series,
+    rangeDays,
+    capacityMix: { dealType: mixOf(byDealType, DEAL_TYPES), siteType: mixOf(bySiteType, SITE_TYPES) },
+  };
 }

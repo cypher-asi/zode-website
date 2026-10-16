@@ -130,6 +130,7 @@ export function MetricCard({
   weekly = false,
   wide = false,
   children,
+  aside,
 }: {
   label: string;
   href?: string;
@@ -147,6 +148,8 @@ export function MetricCard({
   wide?: boolean;
   /** Shown under the line, e.g. the figure's breakdown. */
   children?: ReactNode;
+  /** Shown to the right of the rest, e.g. a chart of the figure's parts; under it on narrow screens. */
+  aside?: ReactNode;
 }): ReactElement {
   const first = points[0];
   const last = points.at(-1);
@@ -164,8 +167,8 @@ export function MetricCard({
     </>
   );
 
-  return (
-    <div className={styles.card} data-wide={wide || undefined}>
+  const body = (
+    <>
       {href ? (
         <Link className={`${styles.cardHead} ${styles.cardLink}`} href={href}>
           {head}
@@ -200,6 +203,19 @@ export function MetricCard({
         )}
       </p>
       {children}
+    </>
+  );
+
+  return (
+    <div className={styles.card} data-wide={wide || undefined} data-aside={aside ? "" : undefined}>
+      {aside ? (
+        <>
+          <div className={styles.cardMain}>{body}</div>
+          <div className={styles.cardAside}>{aside}</div>
+        </>
+      ) : (
+        body
+      )}
     </div>
   );
 }

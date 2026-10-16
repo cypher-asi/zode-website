@@ -89,6 +89,174 @@
   height: 96px;
 }
 
+/* A card with a chart beside it: the figure and its line on the left, the chart on the right, or under it when narrow. */
+.card[data-aside] {
+  flex-direction: row;
+  gap: 32px;
+}
+
+.cardMain {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Above the card's stretched link, so the chart can be hovered and switched. */
+.cardAside {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: none;
+  width: 300px;
+  padding-left: 32px;
+  border-left: 1px solid var(--color-border);
+}
+
+.mix {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.mixTabs {
+  display: flex;
+  align-self: flex-start;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--color-surface-tint);
+}
+
+.mixTab {
+  padding: 3px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.mixTab:hover {
+  color: var(--color-text-primary);
+}
+
+.mixTab[aria-pressed="true"] {
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+.mixTab:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
+.mixBody {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pieWrap {
+  position: relative;
+  align-self: center;
+  width: 160px;
+  height: 160px;
+}
+
+.pie {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.pieSlice {
+  fill: none;
+  stroke: var(--color-text-primary);
+  stroke-opacity: var(--shade);
+  transition: stroke-opacity var(--duration-base) ease;
+}
+
+.pieSlice[data-dim] {
+  stroke-opacity: calc(var(--shade) * 0.35);
+}
+
+.pieCenter {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.pieValue {
+  color: var(--color-text-primary);
+  font-size: var(--text-md);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.pieLabel {
+  max-width: 90px;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mixLegend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mixLegend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-sm);
+  transition: opacity var(--duration-base) ease;
+}
+
+.mixLegend li[data-dim] {
+  opacity: 0.45;
+}
+
+.mixSwatch {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--color-text-primary);
+  opacity: var(--shade);
+}
+
+.mixName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mixValue {
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* A figure's parts under its line, e.g. capacity by status, each its name over its value. */
 .breakdown {
   display: grid;
@@ -307,5 +475,25 @@
 @media (max-width: 800px) {
   .grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .card[data-aside] {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .cardAside {
+    width: auto;
+    padding-top: 20px;
+    padding-left: 0;
+    border-top: 1px solid var(--color-border);
+    border-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pieSlice,
+  .mixLegend li {
+    transition: none;
   }
 }
