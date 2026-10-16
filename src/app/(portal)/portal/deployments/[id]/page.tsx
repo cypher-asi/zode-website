@@ -48,9 +48,14 @@ async function Deployment({ params }: Pick<PageProps<"/portal/deployments/[id]">
               Download PDF
             </a>
             {viewer.team ? (
-              <Link href={`/portal/deployments/${deployment.id}/edit`} className={ui.primary}>
-                Edit
-              </Link>
+              <>
+                <Link href={`/portal/deployments/teasers/new?deployment=${deployment.id}`} className={ui.button}>
+                  Create teaser
+                </Link>
+                <Link href={`/portal/deployments/${deployment.id}/edit`} className={ui.primary}>
+                  Edit
+                </Link>
+              </>
             ) : null}
           </>
         }

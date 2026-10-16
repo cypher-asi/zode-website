@@ -991,6 +991,36 @@ where p.deployment_id = d.id and p.platform is null;
 
 alter table deployment_phases alter column platform set not null;
 
+-- One-page compute offering teasers, written by the ZODE team from a
+-- deployment and exported as a PDF (src/features/teasers). Every figure is
+-- copied from the deployment when the teaser is started and edited as text
+-- after, so a teaser that's been sent doesn't change under its readers.
+-- `stats` holds {value, label}, `availability` {label, capacity, date} and
+-- `specs` and `terms` {label, value}, each in the order they print.
+create table if not exists teasers (
+  id uuid primary key default gen_random_uuid(),
+  deployment_id uuid references deployments (id) on delete set null,
+  name text not null,
+  eyebrow text not null default '',
+  headline text not null,
+  subheadline text not null default '',
+  stats jsonb not null default '[]',
+  summary text not null default '',
+  -- One per line.
+  highlights text not null default '',
+  availability jsonb not null default '[]',
+  specs jsonb not null default '[]',
+  terms jsonb not null default '[]',
+  contact_name text not null default '',
+  contact_email text not null default '',
+  created_by bigint references users (id),
+  updated_by bigint references users (id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists teasers_deployment_idx on teasers (deployment_id) where deployment_id is not null;
+
 -- First-party analytics for the site and portal, reported in the portal's
 -- Analytics app (src/features/analytics). One row per pageview or event.
 -- `visitor_id` and `session_id` come from the zode_vid and zode_sid cookies;

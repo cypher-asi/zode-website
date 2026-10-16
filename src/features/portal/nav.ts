@@ -245,6 +245,7 @@ export function portalApps({ admin, team }: NavAccess): PortalApp[] {
     links: [
       { href: "/portal/deployments", label: "Active", icon: "deployments" },
       { href: "/portal/deployments/all", label: "All deployments", icon: "cluster" },
+      ...(team ? [{ href: "/portal/deployments/teasers", label: "Teasers", icon: "paper" } as const] : []),
     ],
   };
   const contracts: PortalApp = {

@@ -1,20 +1,26 @@
 import "server-only";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
-import fontkit from "@pdf-lib/fontkit";
+import { PDFDocument, PDFName, PDFString, type Color, type PDFFont, type PDFPage } from "pdf-lib";
 import {
-  PDFDocument,
-  PDFName,
-  PDFOperator,
-  PDFOperatorNames,
-  PDFString,
-  drawSvgPath,
-  rgb,
-  type Color,
-  type PDFFont,
-  type PDFPage,
-} from "pdf-lib";
-import { BRAND, COLOR_GROUPS } from "@/features/styleguide/brand";
+  ACCENT,
+  ACCENT_SOFT,
+  BORDER,
+  BORDER_STRONG,
+  DIAMOND,
+  INK,
+  PAGE,
+  PAPER,
+  SECONDARY,
+  TERTIARY,
+  WHITE,
+  drawText,
+  drawTextRight,
+  drawWordmark,
+  embedBrand,
+  roundedRect,
+  wrap,
+  type Fonts,
+} from "@/features/pdf/brand";
+import { BRAND } from "@/features/styleguide/brand";
 import { SITE_URL } from "@/lib/site";
 import {
   formatCount,
@@ -43,113 +49,15 @@ import {
 } from "./types";
 
 /*
- * A deployment as a ZODE-branded PDF: the styleguide's type (the display face
- * in Light for headlines, Inter text, Geist Mono labels and figures) and
- * palette (ink, paper and hairlines, the accent marking only the next RFS),
- * with the wordmark on an ink band. Fonts are read with fs from this feature's
- * assets and the shared display face, the wordmark from public/;
- * next.config's outputFileTracingIncludes ships them with the PDF route.
+ * A deployment as a ZODE-branded PDF in the styleguide's type and palette
+ * (ink, paper and hairlines, the accent marking only the next RFS), with the
+ * wordmark on an ink band.
  */
 
-const ASSETS = path.join(process.cwd(), "src/features/deployments/assets");
-const DISPLAY_FACE = path.join(process.cwd(), "src/assets/fonts/display/light.ttf");
-const WORDMARK = path.join(process.cwd(), "public/wordmark.svg");
-const WORDMARK_VIEWBOX = { width: 2400, height: 416 };
-
-interface Assets {
-  regular: Buffer;
-  medium: Buffer;
-  semibold: Buffer;
-  display: Buffer;
-  mono: Buffer;
-  wordmark: string;
-}
-
-let assets: Promise<Assets> | undefined;
-
-function loadAssets(): Promise<Assets> {
-  assets ??= Promise.all([
-    ...[
-      path.join(ASSETS, "Inter-Regular.ttf"),
-      path.join(ASSETS, "Inter-Medium.ttf"),
-      path.join(ASSETS, "Inter-SemiBold.ttf"),
-      DISPLAY_FACE,
-      path.join(ASSETS, "GeistMono-Regular.ttf"),
-    ].map((file) => readFile(file)),
-    readFile(WORDMARK, "utf8"),
-  ]).then(([regular, medium, semibold, display, mono, svg]) => {
-    const wordmark = /\sd="([^"]+)"/.exec(svg as string)?.[1];
-    if (!wordmark) throw new Error("public/wordmark.svg has no path");
-    return {
-      regular: regular as Buffer,
-      medium: medium as Buffer,
-      semibold: semibold as Buffer,
-      display: display as Buffer,
-      mono: mono as Buffer,
-      wordmark,
-    };
-  });
-  return assets;
-}
-
-const TOKENS = new Map(COLOR_GROUPS.flatMap((group) => group.tokens).map((t) => [t.token, t.value]));
-
-function color(token: string): Color {
-  const hex = TOKENS.get(token);
-  if (!hex?.startsWith("#") || hex.length !== 7) throw new Error(`${token} isn't a hex colour token`);
-  const n = Number.parseInt(hex.slice(1), 16);
-  return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
-}
-
-const INK = color("--color-ink");
-const PAPER = color("--color-paper");
-const WHITE = color("--color-white");
-const SECONDARY = color("--color-text-secondary");
-const TERTIARY = color("--color-text-tertiary");
-const BORDER = color("--color-border");
-const BORDER_STRONG = color("--color-border-strong");
-const ACCENT = color("--color-accent-strong");
-const ACCENT_SOFT = color("--color-accent-soft");
-
-const PAGE = { width: 612, height: 792 } as const;
 const MARGIN = 48;
 const CONTENT = PAGE.width - MARGIN * 2;
 const BAND = 92;
 const FOOTER = 44;
-
-interface Fonts {
-  regular: PDFFont;
-  medium: PDFFont;
-  semibold: PDFFont;
-  display: PDFFont;
-  mono: PDFFont;
-}
-
-/** Greedy word wrap at one size; a word wider than the line gets a line of its own. */
-function wrap(text: string, font: PDFFont, size: number, width: number): string[] {
-  const lines: string[] = [];
-  for (const paragraph of text.split("\n")) {
-    let line = "";
-    for (const word of paragraph.split(/\s+/).filter(Boolean)) {
-      const next = line ? `${line} ${word}` : word;
-      if (line && font.widthOfTextAtSize(next, size) > width) {
-        lines.push(line);
-        line = word;
-      } else {
-        line = next;
-      }
-    }
-    lines.push(line);
-  }
-  return lines;
-}
-
-/** A rounded rectangle as an SVG path from its top left, for `drawSvgPath`. */
-const roundedRect = (width: number, height: number, r: number): string =>
-  `M ${r} 0 H ${width - r} A ${r} ${r} 0 0 1 ${width} ${r} V ${height - r} A ${r} ${r} 0 0 1 ${width - r} ${height} ` +
-  `H ${r} A ${r} ${r} 0 0 1 0 ${height - r} V ${r} A ${r} ${r} 0 0 1 ${r} 0 Z`;
-
-const DIAMOND = "M 0 -4.5 L 4.5 0 L 0 4.5 L -4.5 0 Z";
 
 interface Fact {
   label: string;
@@ -214,45 +122,16 @@ class Writer {
     if (this.y - height < FOOTER + 16) this.nextPage();
   }
 
-  /** The wordmark's counters are subpaths that only read as holes under the even-odd rule, as in its SVG. */
   private drawWordmark(x: number, top: number, height: number, fill: Color): void {
-    const ops = drawSvgPath(this.wordmark, {
-      x,
-      y: top,
-      scale: height / WORDMARK_VIEWBOX.height,
-      color: fill,
-      borderColor: undefined,
-      borderWidth: 0,
-    });
-    this.page.pushOperators(
-      ...ops.map((op) =>
-        op.toString() === PDFOperatorNames.FillNonZero ? PDFOperator.of(PDFOperatorNames.FillEvenOdd) : op,
-      ),
-    );
+    drawWordmark(this.page, this.wordmark, x, top, height, fill);
   }
 
-  /** Text with letter spacing in ems, as the styleguide's caps and eyebrows want. */
   text(value: string, x: number, y: number, font: PDFFont, size: number, fill: Color, tracking = 0): number {
-    if (!tracking) {
-      this.page.drawText(value, { x, y, size, font, color: fill });
-      return font.widthOfTextAtSize(value, size);
-    }
-    let cursor = x;
-    for (const char of value) {
-      this.page.drawText(char, { x: cursor, y, size, font, color: fill });
-      cursor += font.widthOfTextAtSize(char, size) + size * tracking * 0.1;
-    }
-    return cursor - x;
-  }
-
-  private trackedWidth(value: string, font: PDFFont, size: number, tracking: number): number {
-    return tracking
-      ? [...value].reduce((sum, char) => sum + font.widthOfTextAtSize(char, size) + size * tracking * 0.1, 0)
-      : font.widthOfTextAtSize(value, size);
+    return drawText(this.page, value, x, y, font, size, fill, tracking);
   }
 
   textRight(value: string, right: number, y: number, font: PDFFont, size: number, fill: Color, tracking = 0): void {
-    this.text(value, right - this.trackedWidth(value, font, size, tracking), y, font, size, fill, tracking);
+    drawTextRight(this.page, value, right, y, font, size, fill, tracking);
   }
 
   link(x: number, y: number, width: number, height: number, url: string): void {
@@ -582,23 +461,13 @@ const orDash = (value: string | null): string => value ?? "—";
 
 /** The deployment's summary PDF, as of `today` (`YYYY-MM-DD`). */
 export async function renderDeploymentPdf(deployment: Deployment, today: string): Promise<Uint8Array> {
-  const files = await loadAssets();
   const doc = await PDFDocument.create();
-  doc.registerFontkit(fontkit);
-  // pdf-lib's subsetter drops glyphs from Inter, so its files are pre-cut to Latin-1 and embedded whole.
-  const [regular, medium, semibold, display, mono] = await Promise.all([
-    doc.embedFont(files.regular, { subset: false }),
-    doc.embedFont(files.medium, { subset: false }),
-    doc.embedFont(files.semibold, { subset: false }),
-    doc.embedFont(files.display, { subset: true }),
-    doc.embedFont(files.mono, { subset: true }),
-  ]);
-  const fonts: Fonts = { regular, medium, semibold, display, mono };
+  const { fonts, wordmark } = await embedBrand(doc);
   const d = deployment;
   const totals = totalsOf(d);
   const next = d.phases.find((phase) => phase.rfsOn >= today);
 
-  const w = new Writer(doc, fonts, files.wordmark, d.name);
+  const w = new Writer(doc, fonts, wordmark, d.name);
   w.firstPage(formatDay(today));
   w.heading(
     `GPU DEPLOYMENT · ${statusLabel(d.status).toUpperCase()}`,
