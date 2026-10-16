@@ -10,8 +10,8 @@ import {
   totalsOf,
   type Deployment,
 } from "@/features/deployments/types";
-import { draftFromDeployment } from "@/features/teasers/draft";
-import { LIMITS, type LabeledValue, type PresentationInput } from "./types";
+import { teaserOf } from "@/features/teasers/content";
+import { LIMITS, type LabeledValue, type PresentationContent } from "./types";
 
 const COOLING_PROSE: Record<Deployment["cooling"], string> = {
   liquid_dtc: "direct-to-chip liquid cooling",
@@ -31,15 +31,14 @@ const NEXT_STEPS = [
 ];
 
 /**
- * A presentation of `deployment`, every figure written out from it as text
- * for the team to edit, with `contact` as who to reach. The site's own slides
- * (power, cooling, redundancy) are left for the team to add. Nothing internal
- * (notes, credit, the data room) is copied: the PDF opens for anyone who can
- * open the deployment.
+ * `deployment`'s presentation, every figure written out from it as of now,
+ * with its external notes as a slide of their own and the teaser's contact.
+ * Nothing internal (internal notes, credit, the data room) goes in: it opens
+ * for anyone who can open the deployment.
  */
-export function draftPresentation(deployment: Deployment, contact: { name: string; email: string }): PresentationInput {
+export function presentationOf(deployment: Deployment): PresentationContent {
   const d = deployment;
-  const teaser = draftFromDeployment(d, contact);
+  const teaser = teaserOf(d);
   const totals = totalsOf(d);
   const shares = totals.byPlatform.filter((share) => share.gpus > 0);
   const place = d.city ?? d.address?.split("\n")[0] ?? null;
@@ -64,7 +63,6 @@ export function draftPresentation(deployment: Deployment, contact: { name: strin
   ].join("");
 
   return {
-    deploymentId: d.id,
     eyebrow: cut(["Site overview", place].filter(Boolean).join(" · "), LIMITS.eyebrow),
     title: cut(d.name, LIMITS.title),
     subtitle: cut([teaser.headline, teaser.subheadline].filter(Boolean).join(". "), LIMITS.subtitle),
@@ -94,10 +92,12 @@ export function draftPresentation(deployment: Deployment, contact: { name: strin
     })),
     clusterSummary: cut(clusterSummary, LIMITS.clusterSummary),
     specs: facts(teaser.specs, LIMITS.specs),
-    sections: [],
+    sections: d.externalNotes
+      ? [{ title: "Notes", body: cut(d.externalNotes, LIMITS.sectionBody), bullets: "", facts: [] }]
+      : [],
     terms: teaser.terms.map((term) => ({ label: cut(term.label, LIMITS.termLabel), value: cut(term.value, LIMITS.termValue) })),
     nextSteps: NEXT_STEPS.slice(0, LIMITS.nextSteps).join("\n"),
-    contactName: cut(contact.name, LIMITS.contactName),
-    contactEmail: cut(contact.email, LIMITS.contactEmail),
+    contactName: teaser.contactName,
+    contactEmail: teaser.contactEmail,
   };
 }

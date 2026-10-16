@@ -1,7 +1,6 @@
 /*
- * A one-page compute offering teaser, as the editor and the PDF see it. Every
- * field is text the ZODE team can rewrite; the limits keep the longest teaser
- * on one page, and the save action enforces them.
+ * A one-page compute offering teaser, as the PDF sees it: text written out
+ * from a deployment's figures. The limits keep the longest teaser on one page.
  */
 
 export interface Stat {
@@ -35,22 +34,8 @@ export interface TeaserContent {
   contactEmail: string;
 }
 
-export interface Teaser extends TeaserContent {
-  id: string;
-  /** What the team calls it in the list; not printed. */
-  name: string;
-  /** The deployment it offers, which it's listed and deleted with. */
-  deploymentId: string;
-  deploymentName: string;
-  /** ISO timestamp. */
-  updatedAt: string;
-}
-
-export type TeaserInput = Omit<Teaser, "id" | "deploymentName" | "updatedAt">;
-
 /** Character limits per field, and row limits per list. */
 export const LIMITS = {
-  name: 120,
   eyebrow: 60,
   headline: 80,
   subheadline: 180,
@@ -74,12 +59,20 @@ export const LIMITS = {
   contactEmail: 80,
 } as const;
 
-/** The download name of a teaser's PDF, e.g. "ZODE - Teaser - Chicago.pdf". */
-export const teaserFileName = (name: string): string =>
+/** The download name of a deployment's teaser, e.g. "ZODE - Teaser - Chicago.pdf". */
+export const teaserFileName = (deploymentName: string): string =>
   `ZODE - Teaser - ${
-    name
+    deploymentName
       .replace(/[^\p{L}\p{N} .,&-]+/gu, " ")
       .replace(/ {2,}/g, " ")
       .trim()
       .slice(0, 80) || "Compute offering"
   }.pdf`;
+
+/** The teaser's PDF for anyone who can open deployment `id`: inline, or as a download with `download`. */
+export const teaserPdfPath = (deploymentId: string, download = false): string =>
+  `/api/deployments/${deploymentId}/teaser${download ? "?download=1" : ""}`;
+
+/** The teaser's PDF behind a deployment's public link. */
+export const sharedTeaserPath = (token: string, download = false): string =>
+  `/api/shared/deployments/${token}/teaser${download ? "?download=1" : ""}`;

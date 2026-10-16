@@ -1,8 +1,7 @@
 /*
- * A deployment's presentation, as the editor and the PDF see it: landscape
- * slides for a prospective offtaker diligencing the site. Every field is text
- * the ZODE team can rewrite; the limits keep each slide on its page, and the
- * save action enforces them.
+ * A deployment's presentation, as the PDF sees it: landscape slides for a
+ * prospective offtaker diligencing the site, written out from the
+ * deployment's figures. The limits keep each slide's text on its page.
  */
 
 export interface Stat {
@@ -22,7 +21,7 @@ export interface RolloutRow {
   date: string;
 }
 
-/** A slide the team adds, like the site's power, cooling or redundancy. */
+/** A slide of its own, like the deployment's external notes. */
 export interface Section {
   title: string;
   body: string;
@@ -57,27 +56,12 @@ export interface PresentationContent {
   contactEmail: string;
 }
 
-export interface Presentation extends PresentationContent {
-  id: string;
-  deploymentId: string;
-  deploymentName: string;
-  /** ISO timestamp. */
-  updatedAt: string;
-}
-
-export type PresentationInput = PresentationContent & { deploymentId: string };
-
 /** Character limits per field, and row limits per list. */
 export const LIMITS = {
   eyebrow: 60,
   title: 90,
   subtitle: 220,
-  stats: 4,
-  statValue: 14,
-  statLabel: 36,
   summary: 700,
-  highlights: 5,
-  highlight: 110,
   siteSummary: 700,
   siteFacts: 8,
   factLabel: 22,
@@ -85,44 +69,13 @@ export const LIMITS = {
   rollout: 6,
   rolloutLabel: 24,
   rolloutCapacity: 52,
-  rolloutPower: 16,
-  rolloutDate: 20,
   clusterSummary: 700,
   specs: 8,
-  sections: 6,
-  sectionTitle: 60,
   sectionBody: 800,
-  bullets: 6,
-  bullet: 110,
-  sectionFacts: 6,
-  terms: 4,
   termLabel: 18,
   termValue: 32,
   nextSteps: 5,
-  nextStep: 110,
-  contactName: 60,
-  contactEmail: 80,
 } as const;
-
-/** A presentation with nothing in it, which a saved one's content is read over. */
-export const EMPTY_CONTENT: PresentationContent = {
-  eyebrow: "",
-  title: "",
-  subtitle: "",
-  stats: [],
-  summary: "",
-  highlights: "",
-  siteSummary: "",
-  siteFacts: [],
-  rollout: [],
-  clusterSummary: "",
-  specs: [],
-  sections: [],
-  terms: [],
-  nextSteps: "",
-  contactName: "",
-  contactEmail: "",
-};
 
 /** The download name of a deployment's presentation, e.g. "ZODE - Presentation - Chicago.pdf". */
 export const presentationFileName = (deploymentName: string): string =>

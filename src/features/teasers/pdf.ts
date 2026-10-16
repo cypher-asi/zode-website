@@ -29,7 +29,7 @@ import type { TeaserContent } from "./types";
  * headline and key figures, an overview beside the highlights, the
  * availability table, the specs, and the terms and contact in a panel above
  * the footer. Every block clamps its lines, and the limits in ./types keep
- * the longest teaser the save action allows on the page.
+ * the longest teaser on the page.
  */
 
 const MARGIN = 48;

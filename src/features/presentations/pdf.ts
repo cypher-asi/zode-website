@@ -26,7 +26,7 @@ import { linesOf, type LabeledValue, type PresentationContent, type Section } fr
 /*
  * A presentation as 16:9 ZODE-branded slides: an ink cover, then a slide for
  * each part that has something in it (at a glance, the site, capacity and
- * rollout, the cluster, the team's own slides, terms, next steps), each under
+ * rollout, the cluster, the notes, terms, next steps), each under
  * the wordmark with a numbered kicker and a footer. Every block clamps its
  * lines, and the limits in ./types keep the longest text on its slide.
  */

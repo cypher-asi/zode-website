@@ -20,7 +20,11 @@ import {
   totalsOf,
   type Deployment,
 } from "@/features/deployments/types";
-import { LIMITS, type TeaserInput } from "./types";
+import { BRAND } from "@/features/styleguide/brand";
+import { LIMITS, type TeaserContent } from "./types";
+
+/** Who a deployment's teaser and presentation say to reach. */
+export const OFFER_CONTACT = { name: BRAND.company, email: BRAND.email } as const;
 
 const monthOf = (iso: string): string => formatMonthYear(dayOf(iso));
 
@@ -36,33 +40,13 @@ const listOf = (items: readonly string[]): string =>
 const cut = (text: string, max: number): string => (text.length <= max ? text : `${text.slice(0, max - 3).trimEnd()}...`);
 
 /**
- * The part of `deployment` a teaser offers: the phases at `phases` (indexes
- * into its RFS-ordered phases) and only their nodes, or all of it when that's
- * every phase, none, or null.
+ * `deployment`'s teaser, every figure written out from it as of now. Nothing
+ * internal (notes, credit, the data room) goes in: it opens for anyone who can
+ * open the deployment.
  */
-export function offeringOf(deployment: Deployment, phases: readonly number[] | null): Deployment {
-  const chosen = deployment.phases.filter((_, i) => phases?.includes(i));
-  if (!chosen.length || chosen.length === deployment.phases.length) return deployment;
-  return {
-    ...deployment,
-    phases: chosen,
-    nodes: chosen.reduce((sum, phase) => sum + phase.nodes, 0),
-    platform: chosen[0].platform,
-  };
-}
-
-/**
- * A teaser for the `phases` of `deployment` (see `offeringOf`), every figure
- * written out from them as text for the team to edit, with `contact` as who to
- * reach. Nothing internal (notes, credit, the data room) is copied.
- */
-export function draftFromDeployment(
-  deployment: Deployment,
-  contact: { name: string; email: string },
-  phases: readonly number[] | null = null,
-): TeaserInput {
-  const d = offeringOf(deployment, phases);
-  const partial = d !== deployment;
+export function teaserOf(deployment: Deployment): TeaserContent {
+  const d = deployment;
+  const contact = OFFER_CONTACT;
   const totals = totalsOf(d);
   const shares = totals.byPlatform.filter((share) => share.gpus > 0);
   const place = d.city ?? d.address?.split("\n")[0] ?? null;
@@ -146,8 +130,6 @@ export function draftFromDeployment(
   ].slice(0, LIMITS.terms);
 
   return {
-    name: cut(partial ? `${d.name} · ${platformSummary(shares)}` : d.name, LIMITS.name),
-    deploymentId: d.id,
     eyebrow: cut([place, first ? `Available ${monthOf(first.rfsOn)}` : null].filter(Boolean).join(" · "), LIMITS.eyebrow),
     headline: cut(headline, LIMITS.headline),
     subheadline: cut(subheadline, LIMITS.subheadline),

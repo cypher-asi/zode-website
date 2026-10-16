@@ -21,11 +21,8 @@ import { orLogIn } from "@/features/portal/mine";
 import { PortalLoading } from "@/features/portal/PortalLoading";
 import { PageHeader } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
-import { DeploymentPresentation } from "@/features/presentations/DeploymentPresentation";
-import { getPresentationFor } from "@/features/presentations/presentations";
 import { presentationPdfPath } from "@/features/presentations/types";
-import { DeploymentTeasers } from "@/features/teasers/TeaserList";
-import { listTeasersFor } from "@/features/teasers/teasers";
+import { teaserPdfPath } from "@/features/teasers/types";
 
 export const metadata: Metadata = {
   title: "Deployment | ZODE",
@@ -33,9 +30,9 @@ export const metadata: Metadata = {
 };
 
 /**
- * One deployment, for every signed-in account, with its PDF and any
- * presentation; the ZODE team can edit it, start or edit the presentation,
- * and switch to its BOM tab (`?tab=bom`) and its Quotes tab
+ * One deployment, for every signed-in account, with its PDF, teaser and
+ * presentation, each written out from it; the ZODE team can edit it and
+ * switch to its BOM tab (`?tab=bom`) and its Quotes tab
  * (`?tab=quotes`, with `&quote=<id>` open).
  */
 export default function DeploymentPage({ params, searchParams }: PageProps<"/portal/deployments/[id]">): ReactElement {
@@ -58,16 +55,12 @@ async function Deployment({ params, searchParams }: PageProps<"/portal/deploymen
   const deployment = await getDeploymentFor(id, viewer);
   if (!deployment) notFound();
   await io();
-  const [presentation, [teasers, bom, roomFiles]] = await Promise.all([
-    getPresentationFor(deployment.id),
-    viewer.team
-      ? Promise.all([
-          listTeasersFor(deployment.id),
-          getBom(deployment.id),
-          deployment.dataRoomId ? listFileNames(deployment.dataRoomId) : Promise.resolve([]),
-        ])
-      : Promise.resolve([null, null, []] as const),
-  ]);
+  const [bom, roomFiles] = viewer.team
+    ? await Promise.all([
+        getBom(deployment.id),
+        deployment.dataRoomId ? listFileNames(deployment.dataRoomId) : Promise.resolve([]),
+      ])
+    : [null, []];
 
   return (
     <DeploymentTabs base={base} initial={bom ? tab : "summary"}>
@@ -83,11 +76,12 @@ async function Deployment({ params, searchParams }: PageProps<"/portal/deploymen
               <a href={`/api/deployments/${deployment.id}/pdf`} className={ui.button} download>
                 Download PDF
               </a>
-              {presentation ? (
-                <a href={presentationPdfPath(deployment.id, true)} className={ui.button} download>
-                  Download presentation
-                </a>
-              ) : null}
+              <a href={teaserPdfPath(deployment.id, true)} className={ui.button} download>
+                Download teaser
+              </a>
+              <a href={presentationPdfPath(deployment.id, true)} className={ui.button} download>
+                Download presentation
+              </a>
               {viewer.team ? (
                 <>
                   <ShareLink
@@ -107,9 +101,9 @@ async function Deployment({ params, searchParams }: PageProps<"/portal/deploymen
           }
         />
         <DeploymentTabPanel tab="summary">
-          <DeploymentDetail deployment={deployment} today={todayIso()} />
-          {viewer.team ? <DeploymentPresentation deploymentId={deployment.id} presentation={presentation} /> : null}
-          {teasers ? <DeploymentTeasers deploymentId={deployment.id} teasers={teasers} /> : null}
+          <div className={detail.detail}>
+            <DeploymentDetail deployment={deployment} today={todayIso()} />
+          </div>
         </DeploymentTabPanel>
         {bom ? (
           <>

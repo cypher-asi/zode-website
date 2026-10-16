@@ -1179,60 +1179,11 @@ begin
   end if;
 end $$;
 
--- One-page compute offering teasers, written by the ZODE team for a
--- deployment, listed on its page and deleted with it, and exported as a PDF
--- (src/features/teasers). Every figure is
--- copied from the deployment when the teaser is started and edited as text
--- after, so a teaser that's been sent doesn't change under its readers.
--- `stats` holds {value, label}, `availability` {label, capacity, date} and
--- `specs` and `terms` {label, value}, each in the order they print.
-create table if not exists teasers (
-  id uuid primary key default gen_random_uuid(),
-  deployment_id uuid not null references deployments (id) on delete cascade,
-  name text not null,
-  eyebrow text not null default '',
-  headline text not null,
-  subheadline text not null default '',
-  stats jsonb not null default '[]',
-  summary text not null default '',
-  -- One per line.
-  highlights text not null default '',
-  availability jsonb not null default '[]',
-  specs jsonb not null default '[]',
-  terms jsonb not null default '[]',
-  contact_name text not null default '',
-  contact_email text not null default '',
-  created_by bigint references users (id),
-  updated_by bigint references users (id),
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
--- Teasers once outlived their deployment; those left without one go.
-delete from teasers where deployment_id is null;
-alter table teasers alter column deployment_id set not null;
-alter table teasers drop constraint if exists teasers_deployment_id_fkey;
-alter table teasers add constraint teasers_deployment_id_fkey
-  foreign key (deployment_id) references deployments (id) on delete cascade;
-
-drop index if exists teasers_deployment_idx;
-create index if not exists teasers_deployment_id_idx on teasers (deployment_id);
-
--- A deployment's presentation: landscape slides for a prospective offtaker
--- diligencing the site (src/features/presentations), one per deployment and
--- deleted with it. Drafted from the deployment and edited as text after, like
--- a teaser; `content` is its PresentationContent. Its PDF opens for anyone who
--- can open the deployment, its public link included, so it never holds
--- internal notes, credit or the data room.
-create table if not exists deployment_presentations (
-  id uuid primary key default gen_random_uuid(),
-  deployment_id uuid not null unique references deployments (id) on delete cascade,
-  content jsonb not null,
-  created_by bigint references users (id),
-  updated_by bigint references users (id),
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
+-- Teasers and presentations were once written by hand and stored; both are
+-- now written out from the deployment on each download (src/features/teasers,
+-- src/features/presentations).
+drop table if exists teasers;
+drop table if exists deployment_presentations;
 
 -- First-party analytics for the site and portal, reported in the portal's
 -- Analytics app (src/features/analytics). One row per pageview or event.
