@@ -379,6 +379,11 @@
     transition: none;
   }
 
+  /* Set by PortalFrame for the moment the rail collapses. */
+  .frame[data-rail-collapsing] .tooltip {
+    transition: none;
+  }
+
   .frame[data-rail="expanded"] .divider {
     align-self: stretch;
     width: auto;

@@ -114,6 +114,22 @@ export function PortalFrame({ children }: { children: ReactNode }): ReactElement
     };
   }, [theme]);
 
+  /*
+   * Collapsing, each name turns back into a hidden tooltip, which would fade
+   * out beside the rail; the frame holds `data-rail-collapsing` through the
+   * style change so the tooltips skip their transition.
+   */
+  const shownRail = useRef(rail);
+  useLayoutEffect(() => {
+    const frame = frameRef.current;
+    const collapsing = shownRail.current === "expanded" && rail === "collapsed";
+    shownRail.current = rail;
+    if (!frame || !collapsing) return;
+    frame.dataset.railCollapsing = "";
+    frame.getBoundingClientRect();
+    delete frame.dataset.railCollapsing;
+  }, [rail]);
+
   const themeValue = useMemo(() => ({ theme, toggle: togglePortalTheme }), [theme]);
   const railValue = useMemo(() => ({ expanded: rail === "expanded", toggle: togglePortalRail }), [rail]);
   const sidebarValue = useMemo(
