@@ -3,6 +3,7 @@ import { Suspense, type ReactNode } from "react";
 import { SiteShell } from "@/components/layout/SiteShell";
 import { PortalChrome } from "@/features/portal/PortalChrome";
 import { PortalFrame } from "@/features/portal/PortalFrame";
+import { PanelScrollbar } from "@/features/portal/PanelScrollbar";
 import { PortalNav } from "@/features/portal/PortalNav";
 import { PortalSidebar } from "@/features/portal/PortalSidebar";
 import { PortalTopBar } from "@/features/portal/PortalTopBar";
@@ -10,6 +11,7 @@ import styles from "@/features/portal/shell.module.css";
 import { brandColor } from "@/features/styleguide/brand";
 
 const NO_ACCESS = { admin: false, team: false };
+const PANEL_ID = "portal-panel";
 
 /** The light theme's page colour, for the browser and status bar; PortalFrame swaps it for dark. */
 export const viewport: Viewport = {
@@ -48,7 +50,10 @@ export default function PortalLayout({
           </Suspense>
         }
       >
-        <div className={styles.panel}>{children}</div>
+        <div id={PANEL_ID} className={styles.panel}>
+          {children}
+          <PanelScrollbar panelId={PANEL_ID} />
+        </div>
       </SiteShell>
     </PortalFrame>
   );

@@ -5,7 +5,9 @@ import styles from "./OverlayScrollbar.module.css";
 
 interface OverlayScrollbarProps {
   /** Id of the scrollable element this bar should track. */
-  readonly targetId: string;
+  readonly targetId?: string;
+  /** The scrollable element itself, for one that has no id or is swapped out; wins over `targetId`. */
+  readonly target?: HTMLElement | null;
   /** Minimum thumb height in px. */
   readonly minThumb?: number;
   /** Idle delay before the bar fades, in ms. */
@@ -23,6 +25,7 @@ interface OverlayScrollbarProps {
  */
 export function OverlayScrollbar({
   targetId,
+  target,
   minThumb = 28,
   hideDelay = 1200,
   showOnHover = false,
@@ -33,7 +36,7 @@ export function OverlayScrollbar({
   const [scrollable, setScrollable] = useState(false);
 
   useEffect(() => {
-    const el = document.getElementById(targetId);
+    const el = target ?? (targetId ? document.getElementById(targetId) : null);
     const track = trackRef.current;
     const thumb = thumbRef.current;
     if (!el || !track || !thumb) return;
@@ -161,7 +164,7 @@ export function OverlayScrollbar({
       window.removeEventListener("pointerup", onPointerUp);
       window.removeEventListener("resize", schedule);
     };
-  }, [targetId, minThumb, hideDelay, showOnHover]);
+  }, [targetId, target, minThumb, hideDelay, showOnHover]);
 
   return (
     <div
