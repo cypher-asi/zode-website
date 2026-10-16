@@ -2,7 +2,7 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { DB_TAG, db } from "@/lib/db";
 import { BOUNCE_ENGAGED_MS, REALTIME_MINUTES, TIME_ZONE } from "./definitions";
-import { bucketFor, DIMENSIONS, lastDays, NONE, type Dimension, type Filters, type Period } from "./filters";
+import { bucketFor, DIMENSIONS, lastDays, NONE, type Bucket, type Dimension, type Filters, type Period } from "./filters";
 import { GOALS_TAG, listGoals, type Goal } from "./goals";
 
 /**
@@ -166,9 +166,9 @@ export interface SeriesPoint {
 
 export type SeriesMetric = "visitors" | "sessions" | "pageviews" | "bounceRate" | "sessionDuration";
 
-async function seriesFor(filters: Filters, period: Period): Promise<SeriesPoint[]> {
+async function seriesFor(filters: Filters, period: Period, bucket: Bucket): Promise<SeriesPoint[]> {
   const q = new Query();
-  const unit = q.p(bucketFor(period));
+  const unit = q.p(bucket);
   const zone = tz(q);
   const start = q.p(period.start);
   const end = q.p(period.end);
@@ -216,14 +216,17 @@ async function seriesFor(filters: Filters, period: Period): Promise<SeriesPoint[
   }));
 }
 
-/** The period's figures over time, and the previous period's for the comparison line. */
-export async function loadTimeseries(filters: Filters): Promise<{ current: SeriesPoint[]; previous: SeriesPoint[] }> {
+/** The period's figures over time, and the previous period's for the comparison line, by `bucket`. */
+export async function loadTimeseries(
+  filters: Filters,
+  bucket: Bucket = bucketFor(filters.period),
+): Promise<{ current: SeriesPoint[]; previous: SeriesPoint[] }> {
   "use cache";
   cacheLife("minutes");
   cacheTag(DB_TAG);
   const [current, previous] = await Promise.all([
-    seriesFor(filters, filters.period),
-    seriesFor(filters, filters.previous),
+    seriesFor(filters, filters.period, bucket),
+    seriesFor(filters, filters.previous, bucket),
   ]);
   return { current, previous };
 }
@@ -644,7 +647,7 @@ export async function loadRealtime(team: boolean): Promise<Realtime> {
   };
 }
 
-/** Visitors over the last `days`, everyone but the team, for the team dashboard's card. */
+/** Visitors over the last `days`, day by day, everyone but the team, for the team dashboard's card. */
 export async function loadVisitorSummary(days: number): Promise<{
   visitors: number;
   previous: number;
@@ -652,7 +655,7 @@ export async function loadVisitorSummary(days: number): Promise<{
   points: { day: string; value: number }[];
 }> {
   const filters = lastDays(days);
-  const [kpis, series] = await Promise.all([loadKpis(filters), loadTimeseries(filters)]);
+  const [kpis, series] = await Promise.all([loadKpis(filters), loadTimeseries(filters, "day")]);
   return {
     visitors: kpis.current.visitors,
     previous: kpis.previous.visitors,

@@ -1,15 +1,22 @@
 import type { ReactElement, ReactNode } from "react";
 import Link from "next/link";
 import type { MetricPoint } from "./metrics";
+import { SPARK_HEIGHT as HEIGHT, SPARK_WIDTH as WIDTH, Sparkline, type SparkDay, type SparkWeek } from "./Sparkline";
 import styles from "./dashboard.module.css";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const WIDTH = 300;
-const HEIGHT = 72;
 /** Room above and below the line, so its stroke isn't clipped at the extremes. */
 const INSET = 4;
 
 const shortDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+const dayTitle = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
+const dayTitleWithYear = new Intl.DateTimeFormat("en-US", {
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
 
 const dayMs = (day: string): number => Date.parse(`${day}T00:00:00Z`);
 
@@ -22,8 +29,18 @@ const todayUtc = (): string => new Date().toISOString().slice(0, 10);
  * snapshot in the range a dashed lead-in holds its value, so a metric tracked
  * only since today doesn't read as a year of history. A flat series sits mid
  * height, or on the floor when it's zero.
+ *
+ * Also each day of the range for the hover: its figure, carried over from the
+ * last snapshot across a gap, and where the line crosses it. With `weekly`,
+ * Monday-to-Sunday weeks and the sum of their days, for figures counted per
+ * day.
  */
-function Sparkline({ points, rangeDays, label }: { points: MetricPoint[]; rangeDays: number; label: string }): ReactElement {
+function sparkline(
+  points: MetricPoint[],
+  rangeDays: number,
+  format: (value: number) => string,
+  weekly: boolean,
+): { line: string; area: string; leadIn: string | null; days: SparkDay[]; weeks?: SparkWeek[] } {
   const end = dayMs(todayUtc());
   const start = end - (rangeDays - 1) * DAY_MS;
   const values = points.map((point) => point.value);
@@ -47,19 +64,53 @@ function Sparkline({ points, rangeDays, label }: { points: MetricPoint[]; rangeD
   const [firstX, firstY] = coords[0] ?? [0, 0];
   const leadIn = firstX > 1 ? `M0,${firstY.toFixed(1)} L${firstX.toFixed(1)},${firstY.toFixed(1)}` : null;
 
-  return (
-    <svg className={styles.spark} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="none" role="img" aria-label={label}>
-      {coords.length ? <path className={styles.sparkArea} d={area} /> : null}
-      {leadIn ? <path className={styles.sparkLeadIn} d={leadIn} /> : null}
-      {coords.length ? <path className={styles.sparkLine} d={line} /> : null}
-    </svg>
-  );
+  const thisYear = new Date(end).getUTCFullYear();
+  const lastX = coords.at(-1)?.[0] ?? -1;
+  const days: SparkDay[] = [];
+  let next = 0;
+  for (let i = 0; i < rangeDays; i++) {
+    const ms = start + i * DAY_MS;
+    const date = new Date(ms);
+    const title = (date.getUTCFullYear() === thisYear ? dayTitle : dayTitleWithYear).format(date);
+    const at = ((ms - start) / Math.max(end - start, DAY_MS)) * WIDTH;
+    while (next < points.length && dayMs(points[next].day) <= ms) next++;
+    const before = points[next - 1];
+    if (!before) {
+      days.push({ title, value: "No history yet", y: null });
+    } else if (at > lastX + 0.01) {
+      days.push({ title, value: "No data yet", y: null });
+    } else {
+      const after = points[next];
+      const [bx, by] = [x(before.day), y(before.value)];
+      const ay = after ? y(after.value) : by;
+      const ax = after ? x(after.day) : bx;
+      days.push({ title, value: format(before.value), y: ax > bx ? by + ((at - bx) / (ax - bx)) * (ay - by) : by });
+    }
+  }
+
+  if (!weekly) return { line, area, leadIn, days };
+  const byDay = new Map(points.map((point) => [point.day, point.value]));
+  const dateAt = (i: number) => new Date(start + i * DAY_MS);
+  const ranges: { start: number; end: number; total: number }[] = [];
+  for (let i = 0; i < rangeDays; i++) {
+    if (i === 0 || dateAt(i).getUTCDay() === 1) ranges.push({ start: i, end: i, total: 0 });
+    const week = ranges.at(-1)!;
+    week.end = i;
+    week.total += byDay.get(dateAt(i).toISOString().slice(0, 10)) ?? 0;
+  }
+  const weeks = ranges.map((week) => ({
+    start: week.start,
+    end: week.end,
+    title: shortDate.formatRange(dateAt(week.start), dateAt(week.end)),
+    total: format(week.total),
+  }));
+  return { line, area, leadIn, days, weeks };
 }
 
 /**
  * One tracked figure: its value now, a secondary figure, how it moved over
- * the range and the line of its history. Links through to its app when the
- * viewer can open it.
+ * the range and the line of its history, which shows each day's figure on
+ * hover. Links through to its app when the viewer can open it.
  */
 export function MetricCard({
   label,
@@ -70,6 +121,7 @@ export function MetricCard({
   rangeDays,
   format,
   change,
+  weekly = false,
 }: {
   label: string;
   href?: string;
@@ -81,28 +133,40 @@ export function MetricCard({
   format: (value: number) => string;
   /** Replaces the change since the first point, for figures that aren't a running total, e.g. visitors per day. */
   change?: { text: ReactNode; trend: "up" | "down" | "flat" };
+  /** Lets the line pick out a week at a time and total it, for figures counted per day. */
+  weekly?: boolean;
 }): ReactElement {
   const first = points[0];
   const last = points.at(-1);
   const delta = first && last ? last.value - first.value : 0;
   const since = first ? shortDate.format(new Date(dayMs(first.day))) : null;
   const trend = delta > 0 ? "up" : delta < 0 ? "down" : "flat";
-
-  const body = (
+  const head = (
     <>
-      <div className={styles.cardHead}>
-        <h2 className={styles.cardLabel}>{label}</h2>
-        {href ? (
-          <svg className={styles.cardArrow} viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M6 3.5 10.5 8 6 12.5" />
-          </svg>
-        ) : null}
-      </div>
+      <h2 className={styles.cardLabel}>{label}</h2>
+      {href ? (
+        <svg className={styles.cardArrow} viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M6 3.5 10.5 8 6 12.5" />
+        </svg>
+      ) : null}
+    </>
+  );
+
+  return (
+    <div className={styles.card}>
+      {href ? (
+        <Link className={`${styles.cardHead} ${styles.cardLink}`} href={href}>
+          {head}
+        </Link>
+      ) : (
+        <div className={styles.cardHead}>{head}</div>
+      )}
       <p className={styles.value}>{format(value)}</p>
       <p className={styles.detail}>{detail}</p>
       <Sparkline
-        points={points}
-        rangeDays={rangeDays}
+        {...sparkline(points, rangeDays, format, weekly)}
+        metric={label}
+        href={href}
         label={
           first && last
             ? `${label} since ${since}: from ${format(first.value)} to ${format(last.value)}`
@@ -123,14 +187,6 @@ export function MetricCard({
           "No history yet"
         )}
       </p>
-    </>
-  );
-
-  return href ? (
-    <Link className={styles.card} href={href}>
-      {body}
-    </Link>
-  ) : (
-    <div className={styles.card}>{body}</div>
+    </div>
   );
 }

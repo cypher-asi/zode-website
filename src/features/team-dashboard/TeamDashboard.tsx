@@ -135,6 +135,7 @@ export async function TeamDashboard({
               points={visitors.points}
               rangeDays={rangeDays}
               change={visitorChange(visitors.visitors, visitors.previous, rangeDays)}
+              weekly={rangeDays === 365}
             />
           ) : null}
         </div>
