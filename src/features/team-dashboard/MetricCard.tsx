@@ -32,6 +32,9 @@ const todayUtc = (): string => new Date().toISOString().slice(0, 10);
  * at zero was zero before it too, so its line runs solid from the start of the
  * range instead. A flat series sits mid height, or on the floor when it's zero.
  *
+ * With `daily`, for figures counted per day, the stretch into today is dashed
+ * instead, since today's count is still running.
+ *
  * Also each day of the range for the hover: its figure, carried over from the
  * last snapshot across a gap, and where the line crosses it. With `weekly`,
  * Monday-to-Sunday weeks and the sum of their days, for figures counted per
@@ -42,8 +45,17 @@ function sparkline(
   rangeDays: number,
   format: (value: number) => string,
   weekly: boolean,
-): { line: string; area: string; leadIn: string | null; days: SparkDay[]; weeks?: SparkWeek[] } {
-  const end = dayMs(todayUtc());
+  daily: boolean,
+): {
+  line: string;
+  partial: string | null;
+  area: string;
+  leadIn: string | null;
+  days: SparkDay[];
+  weeks?: SparkWeek[];
+} {
+  const today = todayUtc();
+  const end = dayMs(today);
   const start = end - (rangeDays - 1) * DAY_MS;
   const points =
     history[0]?.value === 0 && dayMs(history[0].day) > start
@@ -63,9 +75,13 @@ function sparkline(
       : INSET + (1 - (value - min) / span) * (HEIGHT - INSET * 2);
   const coords = points.map((point) => [x(point.day), y(point.value)] as const);
   if (coords.length === 1) coords.push([WIDTH, coords[0][1]]);
-  const line = coords.map(([px, py], i) => `${i ? "L" : "M"}${px.toFixed(1)},${py.toFixed(1)}`).join(" ");
+  const path = (from: (typeof coords)[number][]) =>
+    from.map(([px, py], i) => `${i ? "L" : "M"}${px.toFixed(1)},${py.toFixed(1)}`).join(" ");
+  const ongoing = daily && points.length > 1 && points.at(-1)!.day === today;
+  const line = path(ongoing ? coords.slice(0, -1) : coords);
+  const partial = ongoing ? path(coords.slice(-2)) : null;
   const area = coords.length
-    ? `${line} L${coords.at(-1)![0].toFixed(1)},${HEIGHT} L${coords[0][0].toFixed(1)},${HEIGHT} Z`
+    ? `${path(coords)} L${coords.at(-1)![0].toFixed(1)},${HEIGHT} L${coords[0][0].toFixed(1)},${HEIGHT} Z`
     : "";
   const [firstX, firstY] = coords[0] ?? [0, 0];
   const leadIn = firstX > 1 ? `M0,${firstY.toFixed(1)} L${firstX.toFixed(1)},${firstY.toFixed(1)}` : null;
@@ -90,11 +106,15 @@ function sparkline(
       const [bx, by] = [x(before.day), y(before.value)];
       const ay = after ? y(after.value) : by;
       const ax = after ? x(after.day) : bx;
-      days.push({ title, value: format(before.value), y: ax > bx ? by + ((at - bx) / (ax - bx)) * (ay - by) : by });
+      days.push({
+        title,
+        value: ongoing && before.day === today ? `${format(before.value)} so far` : format(before.value),
+        y: ax > bx ? by + ((at - bx) / (ax - bx)) * (ay - by) : by,
+      });
     }
   }
 
-  if (!weekly) return { line, area, leadIn, days };
+  if (!weekly) return { line, partial, area, leadIn, days };
   const byDay = new Map(history.map((point) => [point.day, point.value]));
   const dateAt = (i: number) => new Date(start + i * DAY_MS);
   const ranges: { start: number; end: number; total: number }[] = [];
@@ -110,7 +130,7 @@ function sparkline(
     title: shortDate.formatRange(dateAt(week.start), dateAt(week.end)),
     total: format(week.total),
   }));
-  return { line, area, leadIn, days, weeks };
+  return { line, partial, area, leadIn, days, weeks };
 }
 
 /**
@@ -128,6 +148,7 @@ export function MetricCard({
   format,
   change,
   weekly = false,
+  daily = false,
   wide = false,
   children,
   aside,
@@ -144,6 +165,8 @@ export function MetricCard({
   change?: { text: ReactNode; trend: "up" | "down" | "flat" };
   /** Lets the line pick out a week at a time and total it, for figures counted per day. */
   weekly?: boolean;
+  /** Dashes the line into today, for figures counted per day, whose today isn't over yet. */
+  daily?: boolean;
   /** Spans the grid's full width, its line stretched across it. */
   wide?: boolean;
   /** Shown under the line, e.g. the figure's breakdown. */
@@ -179,7 +202,7 @@ export function MetricCard({
       <p className={styles.value}>{format(value)}</p>
       <p className={styles.detail}>{detail}</p>
       <Sparkline
-        {...sparkline(points, rangeDays, format, weekly)}
+        {...sparkline(points, rangeDays, format, weekly, daily)}
         metric={label}
         href={href}
         label={

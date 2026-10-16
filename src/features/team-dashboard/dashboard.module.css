@@ -73,6 +73,16 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.grid[data-columns="4"] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 1200px) {
+  .grid[data-columns="4"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .card {
   position: relative;
   display: flex;
@@ -469,6 +479,15 @@
   vector-effect: non-scaling-stroke;
 }
 
+.sparkPartial {
+  fill: none;
+  stroke: var(--color-text-primary);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
 .sparkLeadIn {
   fill: none;
   stroke: var(--color-text-tertiary);
@@ -505,7 +524,8 @@
 
 @media (max-width: 800px) {
   .grid,
-  .grid[data-columns="3"] {
+  .grid[data-columns="3"],
+  .grid[data-columns="4"] {
     grid-template-columns: minmax(0, 1fr);
   }
 

@@ -34,6 +34,7 @@ export function Sparkline({
   metric,
   href,
   line,
+  partial,
   area,
   leadIn,
   days,
@@ -44,6 +45,8 @@ export function Sparkline({
   metric: string;
   href?: string;
   line: string;
+  /** The stretch into a day that isn't over yet, drawn dashed. */
+  partial: string | null;
   area: string;
   leadIn: string | null;
   days: SparkDay[];
@@ -138,6 +141,7 @@ export function Sparkline({
         {area ? <path className={styles.sparkArea} d={area} /> : null}
         {leadIn ? <path className={styles.sparkLeadIn} d={leadIn} /> : null}
         {line ? <path className={styles.sparkLine} d={line} /> : null}
+        {partial ? <path className={styles.sparkPartial} d={partial} /> : null}
         {hover !== null ? (
           <line className={styles.sparkCursor} x1={x(hover)} x2={x(hover)} y1={0} y2={SPARK_HEIGHT} />
         ) : null}

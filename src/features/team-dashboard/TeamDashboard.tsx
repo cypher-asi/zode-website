@@ -30,6 +30,7 @@ const dollars = (value: number) =>
   value.toLocaleString("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1 });
 const ratio = (part: number, whole: number) =>
   (whole ? part / whole : 0).toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const percent = (value: number) => value.toLocaleString("en-US", { style: "percent", maximumFractionDigits: 1 });
 
 /** Visitors or visits against the period before, since a day's aren't a running total to compare end to end. */
 function visitorChange({ current, previous }: VisitorFigure, days: number, none: string) {
@@ -48,7 +49,7 @@ function DashboardSection({
   children,
 }: {
   title: string;
-  columns?: 2 | 3;
+  columns?: 2 | 3 | 4;
   children: ReactNode;
 }): ReactElement {
   return (
@@ -65,7 +66,7 @@ function DashboardSection({
  * The ZODE team's figures at a glance, Home's Team tab, in three sections:
  * the capacity pipeline with its MW by status (statuses with none left out);
  * the sales pipeline of opportunities and contracts; and the growth engine of
- * subscribers, unique visitors and visits, each with its history.
+ * visits, unique visitors, conversions and subscribers, each with its history.
  * `account` must already be checked to be on the team.
  */
 export async function TeamDashboard({
@@ -88,8 +89,8 @@ export async function TeamDashboard({
       return null;
     }),
   ]);
-  const analyticsHref =
-    rangeDays === 30 ? "/portal/analytics" : rangeDays === 90 ? "/portal/analytics?range=90d" : "/portal/analytics?range=12mo";
+  const analyticsHref = (path = "/portal/analytics") =>
+    rangeDays === 30 ? path : rangeDays === 90 ? `${path}?range=90d` : `${path}?range=12mo`;
 
   return (
     <>
@@ -166,7 +167,50 @@ export async function TeamDashboard({
               rangeDays={rangeDays}
             />
           </DashboardSection>
-          <DashboardSection title="Growth Engine" columns={visitors ? 3 : 2}>
+          <DashboardSection title="Growth Engine" columns={visitors ? 4 : 2}>
+            {visitors ? (
+              <>
+                <MetricCard
+                  label="Visits"
+                  href={analyticsHref()}
+                  value={visitors.visits.current}
+                  format={count}
+                  detail={`${count(visitors.pageviews)} pageviews · ${ratio(visitors.pageviews, visitors.visits.current)} per visit`}
+                  points={visitors.visits.points}
+                  rangeDays={rangeDays}
+                  change={visitorChange(visitors.visits, rangeDays, "No visits yet")}
+                  weekly={rangeDays === 365}
+                  daily
+                />
+                <MetricCard
+                  label="Unique visitors"
+                  href={analyticsHref()}
+                  value={visitors.visitors.current}
+                  format={count}
+                  detail={`${ratio(visitors.visits.current, visitors.visitors.current)} visits each on average`}
+                  points={visitors.visitors.points}
+                  rangeDays={rangeDays}
+                  change={visitorChange(visitors.visitors, rangeDays, "No visitors yet")}
+                  daily
+                />
+                <MetricCard
+                  label="Conversions"
+                  href={analyticsHref("/portal/analytics/events")}
+                  value={visitors.conversions.current}
+                  format={count}
+                  detail={
+                    visitors.goals
+                      ? `${percent(visitors.conversionRate)} of visits · ${count(visitors.goals)} ${visitors.goals === 1 ? "goal" : "goals"}`
+                      : "No goals set yet"
+                  }
+                  points={visitors.conversions.points}
+                  rangeDays={rangeDays}
+                  change={visitorChange(visitors.conversions, rangeDays, "No conversions yet")}
+                  weekly={rangeDays === 365}
+                  daily
+                />
+              </>
+            ) : null}
             <MetricCard
               label="Subscribers"
               href={admin ? "/portal/subscribers" : undefined}
@@ -176,31 +220,6 @@ export async function TeamDashboard({
               points={metrics.series.subscribers_confirmed}
               rangeDays={rangeDays}
             />
-            {visitors ? (
-              <>
-                <MetricCard
-                  label="Unique visitors"
-                  href={analyticsHref}
-                  value={visitors.visitors.current}
-                  format={count}
-                  detail={`${ratio(visitors.visits.current, visitors.visitors.current)} visits each on average`}
-                  points={visitors.visitors.points}
-                  rangeDays={rangeDays}
-                  change={visitorChange(visitors.visitors, rangeDays, "No visitors yet")}
-                />
-                <MetricCard
-                  label="Visits"
-                  href={analyticsHref}
-                  value={visitors.visits.current}
-                  format={count}
-                  detail={`${count(visitors.pageviews)} pageviews · ${ratio(visitors.pageviews, visitors.visits.current)} per visit`}
-                  points={visitors.visits.points}
-                  rangeDays={rangeDays}
-                  change={visitorChange(visitors.visits, rangeDays, "No visits yet")}
-                  weekly={rangeDays === 365}
-                />
-              </>
-            ) : null}
           </DashboardSection>
         </div>
       )}

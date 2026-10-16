@@ -162,11 +162,13 @@ export interface SeriesPoint {
   pageviews: number;
   bounceRate: number | null;
   sessionDuration: number | null;
+  /** Sessions starting in the bucket that completed any goal. */
+  conversions: number;
 }
 
 export type SeriesMetric = "visitors" | "sessions" | "pageviews" | "bounceRate" | "sessionDuration";
 
-async function seriesFor(filters: Filters, period: Period, bucket: Bucket): Promise<SeriesPoint[]> {
+async function seriesFor(filters: Filters, period: Period, bucket: Bucket, goals: Goal[]): Promise<SeriesPoint[]> {
   const q = new Query();
   const unit = q.p(bucket);
   const zone = tz(q);
@@ -180,7 +182,7 @@ async function seriesFor(filters: Filters, period: Period, bucket: Bucket): Prom
         ('1 ' || ${unit})::interval
       ) as bucket
     ),
-    ${sessionsCte(q, filters, period, [])},
+    ${sessionsCte(q, filters, period, goals)},
     pv as (
       select date_trunc(${unit}, e.created_at at time zone ${zone}) as bucket,
         count(distinct e.visitor_id) filter (where e.kind = 'pageview') as visitors,
@@ -191,7 +193,8 @@ async function seriesFor(filters: Filters, period: Period, bucket: Bucket): Prom
       select date_trunc(${unit}, s.started_at at time zone ${zone}) as bucket,
         count(*) as sessions,
         avg(${BOUNCE}::int)::float as bounce_rate,
-        avg(s.engaged_ms)::float as session_duration
+        avg(s.engaged_ms)::float as session_duration,
+        count(*) filter (where s.converted) as conversions
       from s group by 1
     )
     select to_char(b.bucket, 'YYYY-MM-DD"T"HH24:MI') as bucket,
@@ -199,7 +202,8 @@ async function seriesFor(filters: Filters, period: Period, bucket: Bucket): Prom
       coalesce(pv.visitors, 0)::int as visitors,
       coalesce(pv.pageviews, 0)::int as pageviews,
       coalesce(ss.sessions, 0)::int as sessions,
-      ss.bounce_rate, ss.session_duration
+      ss.bounce_rate, ss.session_duration,
+      coalesce(ss.conversions, 0)::int as conversions
     from buckets b
     left join pv on pv.bucket = b.bucket
     left join ss on ss.bucket = b.bucket
@@ -213,6 +217,7 @@ async function seriesFor(filters: Filters, period: Period, bucket: Bucket): Prom
     pageviews: Number(row.pageviews),
     bounceRate: row.bounce_rate === null ? null : Number(row.bounce_rate),
     sessionDuration: row.session_duration === null ? null : Number(row.session_duration),
+    conversions: Number(row.conversions),
   }));
 }
 
@@ -223,10 +228,11 @@ export async function loadTimeseries(
 ): Promise<{ current: SeriesPoint[]; previous: SeriesPoint[] }> {
   "use cache";
   cacheLife("minutes");
-  cacheTag(DB_TAG);
+  cacheTag(GOALS_TAG, DB_TAG);
+  const goals = await listGoals();
   const [current, previous] = await Promise.all([
-    seriesFor(filters, filters.period, bucket),
-    seriesFor(filters, filters.previous, bucket),
+    seriesFor(filters, filters.period, bucket, goals),
+    seriesFor(filters, filters.previous, bucket, goals),
   ]);
   return { current, previous };
 }
@@ -657,24 +663,35 @@ export interface VisitorFigure {
 }
 
 /**
- * Unique visitors and visits over the last `days`, everyone but the team, for
- * the team dashboard's cards. Unique visitors counts each person once over
- * the whole range, so it isn't the sum of its days; visits counts every
- * session, so it is.
+ * Unique visitors, visits and conversions over the last `days`, everyone but
+ * the team, for the team dashboard's cards. Unique visitors counts each
+ * person once over the whole range, so it isn't the sum of its days; visits
+ * counts every session, and conversions every session that completed any
+ * goal, so they are.
  */
 export async function loadVisitorSummary(days: number): Promise<{
   visitors: VisitorFigure;
   visits: VisitorFigure;
+  conversions: VisitorFigure;
+  conversionRate: number;
+  goals: number;
   pageviews: number;
 }> {
   const filters = lastDays(days);
-  const [kpis, series] = await Promise.all([loadKpis(filters), loadTimeseries(filters, "day")]);
+  const [kpis, series, goals] = await Promise.all([loadKpis(filters), loadTimeseries(filters, "day"), listGoals()]);
   const past = series.current.filter((point) => !point.future);
-  const pointsOf = (metric: "visitors" | "sessions") =>
+  const pointsOf = (metric: "visitors" | "sessions" | "conversions") =>
     past.map((point) => ({ day: point.bucket.slice(0, 10), value: point[metric] }));
   return {
     visitors: { current: kpis.current.visitors, previous: kpis.previous.visitors, points: pointsOf("visitors") },
     visits: { current: kpis.current.sessions, previous: kpis.previous.sessions, points: pointsOf("sessions") },
+    conversions: {
+      current: kpis.current.conversions,
+      previous: kpis.previous.conversions,
+      points: pointsOf("conversions"),
+    },
+    conversionRate: kpis.current.conversionRate,
+    goals: goals.length,
     pageviews: kpis.current.pageviews,
   };
 }
