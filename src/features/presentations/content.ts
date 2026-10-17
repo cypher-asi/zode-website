@@ -128,6 +128,10 @@ export function presentationOf(deployment: Deployment): PresentationContent {
         ) + (nodeSizes.size === 1 ? `, all of ${[...nodeSizes][0]}-GPU nodes` : "")
       : `Each phase is built as ${platformSummary(shares)} clusters of ${GPUS_PER_NODE}-GPU nodes`;
 
+  // The address up to its city, e.g. "801 S Canal St, Chicago", whole rather than the teaser's cut of it.
+  const parts = address?.split(", ") ?? [];
+  const location = city && parts.includes(city) ? parts.slice(0, parts.indexOf(city) + 1).join(", ") : null;
+
   const clusterSummary = [
     `${built},`,
     ` networked over ${networkingLabel(d.networking)}, with ${COOLING_PROSE[d.cooling]}`,
@@ -252,7 +256,9 @@ export function presentationOf(deployment: Deployment): PresentationContent {
       teaser.specs.map((spec) =>
         spec.label === "Platform" && builds.length > 1
           ? { ...spec, value: builds.map(({ platform, phases }) => `${platformLabel(platform)} in ${phasesNamed(phases)}`).join(", ") }
-          : spec,
+          : spec.label === "Location" && location
+            ? { ...spec, value: location }
+            : spec,
       ),
       LIMITS.specs,
     ),
