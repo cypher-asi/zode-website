@@ -116,7 +116,7 @@ export const CHICAGO_801_CANAL: SiteContent = {
   team: {
     slides: [
       {
-        title: "The team",
+        title: "Project team",
         lede: "Alosanar's founders bring Microsoft-scale data center delivery and institutional commercial real estate to the site.",
         members: [
           {
