@@ -1,4 +1,3 @@
-import { GPUS_PER_NODE } from "@/features/cluster/model/catalog";
 import { SYSTEMS } from "@/features/deployments/config/catalog";
 import {
   dayOf,
@@ -19,13 +18,11 @@ import {
   facilityLabel,
   gpusFor,
   networkingLabel,
-  platformBreakdown,
   platformLabel,
   platformSummary,
   pricingOf,
   totalsOf,
   type Deployment,
-  type Platform,
 } from "@/features/deployments/types";
 import { teaserOf } from "@/features/teasers/content";
 import { siteOf } from "./sites";
@@ -100,50 +97,26 @@ export function presentationOf(deployment: Deployment): PresentationContent {
     `, cooled by ${COOLING_PROSE[d.cooling]}.`,
   ].join("");
 
-  // At a glance: what's on offer and where, then how it's built.
-  const summary = [
-    [
-      `Dedicated ${platformSummary(shares)} capacity`,
-      address ? ` at ${address}` : city ? ` in ${city}` : "",
-      ", delivered by ZODE",
-      d.phases.length > 1 && first ? ` in ${d.phases.length} phases from ${formatDay(first.rfsOn)}` : first ? ` from ${formatDay(first.rfsOn)}` : "",
-      ".",
-    ].join(""),
-    `Each cluster runs on ${networkingLabel(d.networking)} with ${COOLING_PROSE[d.cooling]}, and is built, operated and supported by ZODE end to end.`,
-  ].join("\n");
-
   // Each platform with the phases built as it, in the order they come online.
   const builds = [...new Set(d.phases.map((phase) => phase.platform))].map((platform) => ({
     platform,
     phases: d.phases.flatMap((phase, i) => (phase.platform === platform ? [phase.name || `Phase ${i + 1}`] : [])),
   }));
-  const nodeSizes = new Set(builds.map(({ platform }) => SYSTEMS[platform].gpusPerNode));
-  const nodesOf = (platform: Platform) => (nodeSizes.size > 1 ? ` of ${SYSTEMS[platform].gpusPerNode}-GPU nodes` : "");
-  const built =
-    builds.length > 1
-      ? listOf(
-          builds.map(({ platform, phases }, i) =>
-            [phasesNamed(phases), i ? "" : phases.length > 1 ? " are built" : " is built", ` as ${platformLabel(platform)} clusters`, nodesOf(platform)].join(""),
-          ),
-        ) + (nodeSizes.size === 1 ? `, all of ${[...nodeSizes][0]}-GPU nodes` : "")
-      : `Each phase is built as ${platformSummary(shares)} clusters of ${GPUS_PER_NODE}-GPU nodes`;
+  const nodeSizes = [...new Set(builds.map(({ platform }) => SYSTEMS[platform].gpusPerNode))];
 
-  // The address up to its city, e.g. "801 S Canal St, Chicago", whole rather than the teaser's cut of it.
-  const parts = address?.split(", ") ?? [];
-  const location = city && parts.includes(city) ? parts.slice(0, parts.indexOf(city) + 1).join(", ") : null;
-
-  const clusterSummary = [
-    `${built},`,
-    ` networked over ${networkingLabel(d.networking)}, with ${COOLING_PROSE[d.cooling]}`,
+  // At a glance, under the phases: what the table doesn't say about how they're built.
+  const summary = [
+    nodeSizes.length === 1 ? `${nodeSizes[0]}-GPU nodes` : "Nodes",
+    ` on ${networkingLabel(d.networking)} with ${COOLING_PROSE[d.cooling]}`,
     d.storageTbPerNode ? ` and ${formatTb(d.storageTbPerNode)} of storage per node` : "",
-    ". ZODE builds, operates and supports the clusters end to end.",
+    ", built, operated and supported by ZODE end to end.",
   ].join("");
 
-  // The cover's headline carries the site's city, so its overview leaves it out.
+  // The cover's headline carries the site's city and its compute cell the total, so its overview gives neither.
   const overview = [
     shares.length > 1
-      ? `${formatCount(totals.gpus)} NVIDIA GPUs: ${platformBreakdown(shares)}`
-      : `${formatCount(totals.gpus)} NVIDIA ${platformSummary(shares)} GPUs`,
+      ? `${listOf(shares.map((share, i) => `${formatCount(share.gpus)} ${i ? "" : "NVIDIA "}${platformLabel(share.platform)}`))} GPUs`
+      : `NVIDIA ${platformSummary(shares)} GPUs`,
     d.facility ? COVER_FACILITY[d.facility] : null,
   ]
     .filter(Boolean)
@@ -211,14 +184,17 @@ export function presentationOf(deployment: Deployment): PresentationContent {
   const contract = sum(priced.map((phase) => phase.pricing.contractUsd));
   const deposit = sum(priced.map((phase) => phase.pricing.depositUsd));
   const depositPct = formatAcross(priced.map((phase) => phase.pricing.depositPct), formatPct);
-  const terms = priced.length
+  // Over the table only when they add up more than one priced phase; one phase's would repeat its row.
+  const terms = priced.length > 1
     ? [
         { label: `Per GPU-hour${scope}`, value: formatAcross(priced.map((phase) => phase.pricing.priceGpuHr), formatPrice)! },
         { label: "Term", value: formatAcross(priced.map((phase) => phase.pricing.termMonths), formatTerm) ?? "Flexible" },
         ...(contract !== null ? [{ label: `Contract value${scope}`, value: formatUsdShort(contract) }] : []),
         ...(deposit !== null ? [{ label: depositPct ? `Deposit · ${depositPct}` : "Deposit", value: formatUsdShort(deposit) }] : []),
       ]
-    : teaser.terms;
+    : priced.length
+      ? []
+      : teaser.terms;
 
   return {
     headline: cut(headline, LIMITS.headline),
@@ -227,9 +203,7 @@ export function presentationOf(deployment: Deployment): PresentationContent {
     subtitle: cut([teaser.headline, teaser.subheadline].filter(Boolean).join(". "), LIMITS.subtitle),
     cover: cover.slice(0, LIMITS.cover),
     cooling: d.cooling,
-    stats: teaser.stats,
     summary: cut(summary, LIMITS.summary),
-    highlights: teaser.highlights,
     siteSummary: cut(siteSummary, LIMITS.siteSummary),
     siteFacts: facts(
       [
@@ -251,15 +225,25 @@ export function presentationOf(deployment: Deployment): PresentationContent {
       power: phase.mw !== null ? formatMw(phase.mw) : "",
       date: formatDay(phase.rfsOn),
     })),
-    clusterSummary: cut(clusterSummary, LIMITS.clusterSummary),
+    rolloutTotal:
+      d.phases.length > 1
+        ? {
+            capacity: cut(
+              `${formatCount(totals.gpus)} GPUs · ${formatCount(totals.byPlatform.reduce((sum, share) => sum + share.nodes, 0))} nodes`,
+              LIMITS.rolloutCapacity,
+            ),
+            power: totals.mw ? formatMw(totals.mw) : "",
+          }
+        : null,
+    // Every slide's footer carries the address, so the specs leave out the location.
     specs: facts(
-      teaser.specs.map((spec) =>
-        spec.label === "Platform" && builds.length > 1
-          ? { ...spec, value: builds.map(({ platform, phases }) => `${platformLabel(platform)} in ${phasesNamed(phases)}`).join(", ") }
-          : spec.label === "Location" && location
-            ? { ...spec, value: location }
+      teaser.specs
+        .filter((spec) => spec.label !== "Location")
+        .map((spec) =>
+          spec.label === "Platform" && builds.length > 1
+            ? { ...spec, value: builds.map(({ platform, phases }) => `${platformLabel(platform)} in ${phasesNamed(phases)}`).join(", ") }
             : spec,
-      ),
+        ),
       LIMITS.specs,
     ),
     sections: d.externalNotes

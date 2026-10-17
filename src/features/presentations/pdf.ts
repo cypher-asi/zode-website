@@ -429,14 +429,49 @@ function cover(deck: Deck, p: PresentationContent, today: string): void {
   });
 }
 
+/** The phases in a table from `top`, `width` wide, with their total under them when there is one; returns the y under it. */
+function phaseTable(s: Slide, p: PresentationContent, x: number, top: number, width: number): number {
+  const { fonts, page } = s;
+  const cols = [0, width * 0.18, width * 0.66];
+  const power = width * 0.14;
+  s.label("Phase", x, top, cols[1] - 12);
+  s.label("Capacity", x + cols[1], top, cols[2] - cols[1] - 12);
+  s.label("Power", x + cols[2], top, power);
+  drawTextRight(page, "READY FOR SERVICE", x + width, top, fonts.mono, 7, SECONDARY, 1.2);
+  let y = top - 10;
+  for (const [i, row] of p.rollout.entries()) {
+    s.hairline(x, y, width, i === 0 ? INK : BORDER);
+    y -= 21;
+    page.drawSvgPath(DIAMOND, { x: x + 4, y: y + 4.5, scale: 0.75, color: i === 0 ? ACCENT : INK });
+    s.line(row.label, x + 16, y, cols[1] - 28, fonts.semibold, 11.5, INK);
+    s.line(row.capacity, x + cols[1], y, cols[2] - cols[1] - 12, fonts.regular, 11.5, INK);
+    s.line(row.power, x + cols[2], y, power, fonts.regular, 11.5, INK);
+    const room = width - cols[2] - power - 8;
+    drawTextRight(page, clampLine(row.date, fonts.medium, 11.5, room), x + width, y, fonts.medium, 11.5, INK);
+    y -= 11;
+  }
+  if (p.rolloutTotal) {
+    s.hairline(x, y, width, INK);
+    y -= 21;
+    s.line("Total", x + 16, y, cols[1] - 28, fonts.semibold, 11.5, INK);
+    s.line(p.rolloutTotal.capacity, x + cols[1], y, cols[2] - cols[1] - 12, fonts.medium, 11.5, INK);
+    s.line(p.rolloutTotal.power, x + cols[2], y, power, fonts.medium, 11.5, INK);
+    y -= 11;
+  }
+  s.hairline(x, y, width);
+  return y;
+}
+
+/** The cluster and its phases on the left, and with a site profile, why the site on the right. */
 function atAGlance(deck: Deck, p: PresentationContent): void {
-  const stats = p.stats.filter((stat) => stat.value || stat.label);
-  const highlights = linesOf(p.highlights);
-  if (!stats.length && !p.summary && !highlights.length) return;
+  const why = p.site?.why ?? [];
+  if (!p.rollout.length && !p.summary && !why.length) return;
   const s = deck.slide("At a glance");
-  let y = BODY_TOP;
-  if (stats.length) y = s.figures(stats, MARGIN, y + 10, CONTENT, 30) - 34;
-  twoColumns(s, y, p.summary ? { title: "Overview", text: p.summary } : null, highlights.length ? { title: "Why this site", items: highlights } : null);
+  const width = why.length ? LEFT : CONTENT;
+  let y = s.title("Cluster and phases", MARGIN, BODY_TOP, width);
+  if (p.rollout.length) y = phaseTable(s, p, MARGIN, y, width) - 26;
+  if (p.summary) s.paragraph(p.summary, MARGIN, y, width, 12.5, 18.5);
+  if (why.length) s.points(why, RIGHT_X, s.title("Why this site", RIGHT_X, BODY_TOP, RIGHT), RIGHT);
 }
 
 /** Text on the left and bullets or facts on the right, either taking the full width alone. */
@@ -473,48 +508,9 @@ function site(deck: Deck, p: PresentationContent): void {
   );
 }
 
-function rollout(deck: Deck, p: PresentationContent): void {
-  if (!p.rollout.length) return;
-  const s = deck.slide("Capacity and rollout");
-  const { fonts, page } = s;
-  const cols = [0, CONTENT * 0.24, CONTENT * 0.66];
-  let y = BODY_TOP;
-  s.label("Phase", MARGIN, y, cols[1] - 12);
-  s.label("Capacity", MARGIN + cols[1], y, cols[2] - cols[1] - 12);
-  s.label("Power", MARGIN + cols[2], y, CONTENT * 0.14);
-  drawTextRight(page, "READY FOR SERVICE", MARGIN + CONTENT, y, fonts.mono, 7, SECONDARY, 1.2);
-  y -= 10;
-  for (const [i, row] of p.rollout.entries()) {
-    s.hairline(MARGIN, y, CONTENT, i === 0 ? INK : BORDER);
-    y -= 22;
-    page.drawSvgPath(DIAMOND, { x: MARGIN + 4, y: y + 4.5, scale: 0.75, color: i === 0 ? ACCENT : INK });
-    s.line(row.label, MARGIN + 16, y, cols[1] - 28, fonts.semibold, 12.5, INK);
-    s.line(row.capacity, MARGIN + cols[1], y, cols[2] - cols[1] - 12, fonts.regular, 12.5, INK);
-    s.line(row.power, MARGIN + cols[2], y, CONTENT * 0.14, fonts.regular, 12.5, INK);
-    drawTextRight(page, clampLine(row.date, fonts.medium, 12.5, CONTENT * 0.18), MARGIN + CONTENT, y, fonts.medium, 12.5, INK);
-    y -= 12;
-  }
-  s.hairline(MARGIN, y, CONTENT);
-
-  // A timeline of the phases in order, when there's room under the table.
-  const line = Math.min(y - 70, 128);
-  if (line < FLOOR + 40) return;
-  const n = p.rollout.length;
-  s.hairline(MARGIN, line, CONTENT, SECONDARY);
-  p.rollout.forEach((row, i) => {
-    const x = MARGIN + (CONTENT * (i + 0.5)) / n;
-    const width = CONTENT / n - 16;
-    page.drawSvgPath(DIAMOND, { x, y: line, scale: 1.2, color: i === 0 ? ACCENT : INK });
-    const label = clampLine(row.label, fonts.semibold, 12, width);
-    s.text(label, x - fonts.semibold.widthOfTextAtSize(label, 12) / 2, line + 18, fonts.semibold, 12, INK);
-    const date = clampLine(row.date, fonts.regular, 11, width);
-    s.text(date, x - fonts.regular.widthOfTextAtSize(date, 11) / 2, line - 26, fonts.regular, 11, SECONDARY);
-  });
-}
-
-/** The exploded drawing on the left, the overview and specifications beside it. */
+/** The exploded drawing on the left, the specifications beside it. */
 function cluster(deck: Deck, p: PresentationContent): void {
-  if (!p.clusterSummary && !p.specs.length) return;
+  if (!p.specs.length) return;
   const s = deck.slide("The cluster");
   const art = 340;
   clusterArt(p.cooling).draw(s.page, { x: MARGIN, y: FLOOR, width: art, height: BODY_TOP + 10 - FLOOR }, {
@@ -525,12 +521,7 @@ function cluster(deck: Deck, p: PresentationContent): void {
   });
   const x = MARGIN + art + COLUMN_GAP;
   const width = CONTENT - art - COLUMN_GAP;
-  let y = BODY_TOP;
-  if (p.clusterSummary) {
-    y = s.title("Overview", x, y, width);
-    y = s.paragraph(p.clusterSummary, x, y, width, 12, 17.5) - 14;
-  }
-  if (p.specs.length) s.facts(p.specs, x, s.title("Specifications", x, y, width), width, 2);
+  s.facts(p.specs, x, s.title("Specifications", x, BODY_TOP, width), width, 2);
 }
 
 function section(deck: Deck, section: Section): void {
@@ -587,10 +578,10 @@ function pricingTable(s: Slide, p: PresentationContent, top: number): number {
 }
 
 function terms(deck: Deck, p: PresentationContent): void {
-  if (!p.terms.length) return;
+  if (!p.terms.length && !p.pricing.length) return;
   const s = deck.slide("Commercial terms");
-  let bottom = s.figures(p.terms, MARGIN, BODY_TOP + 10, CONTENT, 28);
-  if (p.pricing.length) bottom = pricingTable(s, p, bottom - 30);
+  let bottom = p.terms.length ? s.figures(p.terms, MARGIN, BODY_TOP + 10, CONTENT, 28) - 30 : BODY_TOP;
+  if (p.pricing.length) bottom = pricingTable(s, p, bottom);
   const note = p.pricing.length
     ? "Contract value is GPUs × price per GPU-hour × 730 hours a month over the term. Indicative and non-binding, subject to a definitive agreement."
     : "Indicative and non-binding, subject to a definitive agreement.";
@@ -600,7 +591,7 @@ function terms(deck: Deck, p: PresentationContent): void {
 /** A site profile's images, each embedded once, by file. */
 async function embedSiteImages(doc: PDFDocument, site: SiteContent): Promise<Map<string, PDFImage>> {
   const files = new Set(
-    [site.photo, site.property.image, site.why.image, site.plant.image, site.plant.inset, site.location.image].map((image) => image.file),
+    [site.photo, site.property.image, site.plant.image, site.plant.inset, site.location.image].map((image) => image.file),
   );
   return new Map(
     await Promise.all([...files].map(async (file) => [file, await doc.embedJpg(await readFile(path.join(SITES, site.folder, file)))] as const)),
@@ -665,15 +656,6 @@ class SiteSection {
     this.figure(s, property.image, MARGIN, FLOOR + 14, art, BODY_TOP + 10 - FLOOR - 14, true);
     const x = MARGIN + art + COLUMN_GAP;
     s.rows(property.facts, x, BODY_TOP, CONTENT - art - COLUMN_GAP);
-  }
-
-  why(): void {
-    const { why } = this.site;
-    const s = this.deck.slide(`Why ${this.site.name}`);
-    const list = 400;
-    s.points(why.points, MARGIN, BODY_TOP, list);
-    const x = MARGIN + list + COLUMN_GAP;
-    this.figure(s, why.image, x, FLOOR + 14, CONTENT - list - COLUMN_GAP, BODY_TOP + 10 - FLOOR - 14);
   }
 
   capacity(): void {
@@ -832,7 +814,6 @@ async function siteSection(deck: Deck, site: SiteContent): Promise<void> {
   const section = new SiteSection(deck, site, await embedSiteImages(deck.doc, site));
   section.divider();
   section.property();
-  section.why();
   section.capacity();
   section.reliability();
   section.efficiency();
@@ -884,7 +865,6 @@ export async function renderPresentationPdf(presentation: PresentationContent, t
   atAGlance(deck, p);
   // A site's own section covers what the deployment's site slide would.
   if (!p.site) site(deck, p);
-  rollout(deck, p);
   cluster(deck, p);
   for (const added of p.sections) section(deck, added);
   terms(deck, p);

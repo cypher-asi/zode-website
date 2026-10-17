@@ -101,7 +101,8 @@ export interface SiteContent {
   folder: string;
   photo: SiteImage;
   property: { image: SiteImage; facts: LabeledValue[] };
-  why: { image: SiteImage; points: SitePoint[] };
+  /** At a glance, beside the phases: what the site offers, each point detailed on a slide of its own. */
+  why: SitePoint[];
   capacity: { figures: LabeledValue[]; columns: { title: string; items: string[] }[] };
   reliability: { lede: string; cells: SitePoint[]; source: string };
   efficiency: { rows: PueRow[]; figure: LabeledValue; points: string[]; source: string };
@@ -127,19 +128,14 @@ export interface PresentationContent {
   cover: SpecCell[];
   /** Which cooling the cluster drawings show. */
   cooling: Cooling;
-  /** At a glance. */
-  stats: Stat[];
-  /** A paragraph per line. */
+  /** At a glance: the phases, their total when there's more than one, and a line on how they're built under them. */
+  rollout: RolloutRow[];
+  rolloutTotal: Pick<RolloutRow, "capacity" | "power"> | null;
   summary: string;
-  /** One per line. */
-  highlights: string;
-  /** The site. */
+  /** The site, for deployments without a site profile. */
   siteSummary: string;
   siteFacts: LabeledValue[];
-  /** Capacity and rollout. */
-  rollout: RolloutRow[];
-  /** The cluster. */
-  clusterSummary: string;
+  /** The cluster's specifications, beside its drawing. */
   specs: LabeledValue[];
   sections: Section[];
   /** Commercial terms: the figures across the priced phases, then each phase's. */
@@ -171,7 +167,6 @@ export const LIMITS = {
   rollout: 6,
   rolloutLabel: 24,
   rolloutCapacity: 52,
-  clusterSummary: 700,
   specs: 8,
   sectionBody: 800,
   termLabel: 48,

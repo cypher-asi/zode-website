@@ -25,15 +25,12 @@ export const CHICAGO_801_CANAL: SiteContent = {
       { label: "Parcel", value: "A yard for transformers, generators, fuel and the geothermal wells, beside a rail corridor" },
     ],
   },
-  why: {
-    image: { file: "massing.jpg", caption: "Massing: the rooftop heat-rejection yard, acoustic wall and generator yard." },
-    points: [
-      { title: "Purpose-built reliability", text: "A Tier III, N+1 design across power and cooling, so it stays up while equipment is serviced." },
-      { title: "Efficient by design", text: "A PUE near 1.18 means a lower power cost per IT kW and a cleaner sustainability story." },
-      { title: "Carrier-rich and connected", text: "Four long-haul and eight metro carriers already at the building, with diverse-path fiber." },
-      { title: "Room to grow", text: "Take capacity now, with a clear path to expand inside the building." },
-    ],
-  },
+  why: [
+    { title: "Purpose-built reliability", text: "A Tier III, N+1 design across power and cooling, so it stays up while equipment is serviced." },
+    { title: "Efficient by design", text: "A PUE near 1.18 means a lower power cost per IT kW and a cleaner sustainability story." },
+    { title: "Carrier-rich and connected", text: "Four long-haul and eight metro carriers already at the building, with diverse-path fiber." },
+    { title: "Room to grow", text: "Take capacity now, with a clear path to expand inside the building." },
+  ],
   capacity: {
     figures: [
       { value: "5 MW", label: "Available today" },
