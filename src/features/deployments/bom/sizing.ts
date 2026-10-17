@@ -1,5 +1,11 @@
-import { fabricShape, oobSwitchesFor, storageSwitchesFor, type BuildOptions } from "@/features/cluster/model/build";
-import { FABRICS, NETWORK_RACK, PDUS_PER_RACK, SUPPORT, mgmtServersFor } from "@/features/cluster/model/catalog";
+import {
+  fabricShape,
+  oobSwitchesFor,
+  pdusPerFeed,
+  storageSwitchesFor,
+  type BuildOptions,
+} from "@/features/cluster/model/build";
+import { FABRICS, NETWORK_RACK, SUPPORT, mgmtServersFor } from "@/features/cluster/model/catalog";
 import type { ClusterConfig, ClusterModel, PartKind } from "@/features/cluster/model/types";
 import { STORAGE_PLATFORMS, SYSTEMS, type ResolvedConfig } from "../config/catalog";
 
@@ -38,6 +44,8 @@ export interface Sizing {
   manifolds: number;
   computeKw: number;
   itKw: number;
+  /** Rack PDUs on one feed across every cabinet; a 2N phase has as many again on the other (see `pdusPerFeed`). */
+  feedPdus: number;
 }
 
 /** Shared storage nodes for `nodes` GPU nodes of configuration `c`. */
@@ -61,6 +69,8 @@ export const buildOptions = (config: ClusterConfig, c: ResolvedConfig): BuildOpt
   mgmtServers: mgmtFor(c, config.nodes * SYSTEMS[c.platform].gpusPerNode),
   fabricManagers: fabricManagersFor(c),
   firewalls: firewallsFor(c),
+  pdu: c.pdu,
+  dualFeed: c.power === "2n",
 });
 
 /** `copies` of the builder's cluster `model`, built with `buildOptions`, under configuration `c`. */
@@ -95,6 +105,7 @@ export function hgxSizing(model: ClusterModel, c: ResolvedConfig, copies: number
     manifolds: liquid ? n("manifold") : 0,
     computeKw: x(computeKw),
     itKw: x(model.stats.itKw),
+    feedPdus: x(model.racks.reduce((sum, r) => sum + r.pdusPerFeed, 0)),
   };
 }
 
@@ -140,7 +151,7 @@ export function rackScaleSizing(nodes: number, c: ResolvedConfig): Sizing {
       storageFabricSwitches +
       storageNodes +
       mgmt +
-      networkRacks * PDUS_PER_RACK.network +
+      networkRacks * 2 +
       8;
     oob = oobSwitchesFor(devices);
     const u = items.reduce((sum, [count, size]) => sum + count * size, 0) + oob * SUPPORT.oob.uSize;
@@ -151,6 +162,14 @@ export function rackScaleSizing(nodes: number, c: ResolvedConfig): Sizing {
   }
   const networkKw = items.reduce((sum, [count, , each]) => sum + count * each, 0) + oob * SUPPORT.oob.kw;
   const computeKw = nodes * system.nodeKw;
+  // The systems' racks feed their power shelves straight from the floor; only the network racks take PDUs.
+  const networkCords =
+    switches * sw.psus +
+    (storageSwitches + storageFabricSwitches) * SUPPORT.storageSwitch.psus +
+    (edge + firewalls + fabricManagers + storageNodes + mgmt + oob) * 2;
+  const feedPdus =
+    networkRacks *
+    pdusPerFeed(networkKw / networkRacks, Math.ceil(networkCords / networkRacks), c.pdu, c.power === "2n");
 
   return {
     rackScale: true,
@@ -176,5 +195,6 @@ export function rackScaleSizing(nodes: number, c: ResolvedConfig): Sizing {
     manifolds: 0,
     computeKw,
     itKw: computeKw + networkKw,
+    feedPdus,
   };
 }

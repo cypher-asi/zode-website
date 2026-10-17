@@ -70,6 +70,10 @@ export interface Rack {
   parts: RackPart[];
   kw: number;
   usedU: number;
+  /** Switched PDUs on each of its feeds (see `pdusPerFeed`). */
+  pdusPerFeed: number;
+  /** A and B under 2N, or the one. */
+  feeds: 1 | 2;
 }
 
 /** One GPU rail from a node to its leaf. */

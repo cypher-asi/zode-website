@@ -1,9 +1,9 @@
 import { buildCluster } from "@/features/cluster/model/build";
 import { DEFAULT_CLUSTER, NODE_SIZES, PLATFORMS, STORAGE_PER_NODE } from "@/features/cluster/model/catalog";
 import type { ClusterConfig, ClusterModel, PlatformId } from "@/features/cluster/model/types";
-import type { ResolvedConfig } from "../config/catalog";
+import { SYSTEMS, type ResolvedConfig } from "../config/catalog";
 import { resolveConfig, type ConfigSource } from "../config/resolve";
-import type { Phase } from "../types";
+import { nodesForMw, type Phase } from "../types";
 import { buildOptions, hgxSizing, rackScaleSizing, type Sizing } from "./sizing";
 
 export interface PhaseCluster {
@@ -66,6 +66,48 @@ export function phasePlan(d: ConfigSource, phase: PhaseSource): PhasePlan {
   if (!cluster) return { config, cluster, model: null, sizing: rackScaleSizing(phase.nodes, config) };
   const model = buildCluster(cluster.config, buildOptions(cluster.config, config));
   return { config, cluster, model, sizing: hgxSizing(model, config, cluster.copies) };
+}
+
+type DraftPhase = Pick<Phase, "platform" | "nodes" | "configOverrides">;
+
+/**
+ * The IT MW, to the hundredth, the phase's nodes draw with the network,
+ * storage and management built for them. An HGX phase draws what the
+ * builder's largest cluster it fills does per node, so the figure climbs
+ * steadily with the nodes rather than with however they'd split.
+ */
+export function phaseMw(d: ConfigSource, phase: DraftPhase): number {
+  if (phase.nodes <= 0) return 0;
+  const c = resolveConfig(d, phase);
+  let kw: number;
+  if (!Object.hasOwn(PLATFORMS, c.platform)) kw = rackScaleSizing(phase.nodes, c).itKw;
+  else {
+    const size = [...NODE_SIZES].reverse().find((s) => s <= phase.nodes) ?? NODE_SIZES[0];
+    const config = clusterConfigOf(c, size, DEFAULT_CLUSTER.rowLength);
+    kw = (phase.nodes * buildCluster(config, buildOptions(config, c)).stats.itKw) / size;
+  }
+  return Math.round(kw / 10) / 100;
+}
+
+/**
+ * The most nodes `mw` of IT powers in the phase, network, storage and
+ * management included, rack-scale systems in whole racks: the inverse of
+ * `phaseMw`, so a figure it rounded still fits.
+ */
+export function phaseNodesForMw(d: ConfigSource, phase: Omit<DraftPhase, "nodes">, mw: number): number {
+  const step = SYSTEMS[phase.platform].nodesPerRack ?? 1;
+  let nodes = nodesForMw(phase.platform, mw);
+  for (let tries = 0; tries < 32 && nodes > 0; tries++) {
+    const drawn = phaseMw(d, { ...phase, nodes });
+    if (drawn <= mw) break;
+    nodes = Math.max(0, Math.min(nodes - step, Math.floor((nodes * mw) / drawn / step) * step));
+  }
+  // A cluster size up draws less per node, so a few more can fit past one that doesn't.
+  let most = nodes;
+  for (let more = nodes + step; more <= nodes + 8 * step; more += step) {
+    if (phaseMw(d, { ...phase, nodes: more }) <= mw) most = more;
+  }
+  return most;
 }
 
 /** The phase in the cluster builder, with its BOM loaded for the ZODE team. */

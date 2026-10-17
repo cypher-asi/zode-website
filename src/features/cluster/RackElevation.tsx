@@ -2,7 +2,7 @@
 
 import type { CSSProperties, ReactElement, ReactNode } from "react";
 import { power } from "./format";
-import { KIND_LABELS, LAYER_OF, PDUS_PER_RACK } from "./model/catalog";
+import { KIND_LABELS, LAYER_OF } from "./model/catalog";
 import type { Rack, RackPart } from "./model/types";
 import styles from "./RackElevation.module.css";
 
@@ -55,7 +55,7 @@ export function RackElevation({
         </div>
         <div>
           <dt>PDUs</dt>
-          <dd>{rack.kind === "compute" ? PDUS_PER_RACK.compute : PDUS_PER_RACK.network}, A + B</dd>
+          <dd>{rack.feeds === 2 ? `${rack.pdusPerFeed} A + ${rack.pdusPerFeed} B` : rack.pdusPerFeed}</dd>
         </div>
       </dl>
 

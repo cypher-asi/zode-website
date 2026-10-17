@@ -171,9 +171,20 @@ export const HOURS_PER_MONTH = 730;
 /** GPUs in `nodes` nodes of `platform`: 8 to an HGX node, and a rack-scale compute tray's own. */
 export const gpusFor = (platform: Platform, nodes: number): number => nodes * SYSTEMS[platform].gpusPerNode;
 
-/** The IT MW `nodes` nodes of `platform` draw, to the hundredth a phase keeps. */
+/** The IT MW `nodes` nodes of `platform` draw themselves, to the hundredth a phase keeps; `phaseMw` adds what's built around them. */
 export const mwFor = (platform: Platform, nodes: number): number =>
   Math.round((nodes * SYSTEMS[platform].nodeKw) / 10) / 100;
+
+/**
+ * The most nodes of `platform` that `mw` of IT powers on their own, rack-scale
+ * systems in whole racks: the inverse of `mwFor`, so a figure it rounded still
+ * fits, and the most `phaseNodesForMw` can find.
+ */
+export const nodesForMw = (platform: Platform, mw: number): number => {
+  const { nodeKw, nodesPerRack } = SYSTEMS[platform];
+  const step = nodesPerRack ?? 1;
+  return Math.max(0, Math.floor(((mw + 0.005) * 1000) / nodeKw / step) * step);
+};
 
 /** `pct` percent of the contract value, to the cent, when there's both. */
 export const depositFor = (contractUsd: number | null, pct: number | null): number | null =>

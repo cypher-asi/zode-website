@@ -157,8 +157,20 @@ export const SUPPORT = {
 /** Power and space a network rack may take before the packer opens another. */
 export const NETWORK_RACK = { maxKw: 30, reservedTopU: 2 } as const;
 
-/** Switched rack PDUs per cabinet, split across the A and B feeds. */
-export const PDUS_PER_RACK = { compute: 4, network: 2 } as const;
+export type PduId = "208v_60a" | "415v_32a" | "415v_60a";
+
+/**
+ * A switched rack PDU of each rating: the kW one carries continuously (80% of
+ * its breaker on a North American circuit, the full 32A on an IEC one) and its
+ * C13/C19 outlets. Outlet counts are PLACEHOLDERS for a vertical 0U unit.
+ */
+export const PDU_RATINGS: Record<PduId, { label: string; kw: number; outlets: number }> = {
+  "208v_60a": { label: "208V 3-phase 60A", kw: 17.3, outlets: 48 },
+  "415v_32a": { label: "415V 3-phase 32A", kw: 23, outlets: 48 },
+  "415v_60a": { label: "415V 3-phase 60A", kw: 34.5, outlets: 48 },
+};
+
+export const DEFAULT_PDU: PduId = "415v_60a";
 
 /** Host adapters in each fabric manager appliance, each licensed like a GPU's. */
 export const UFM_HCAS = 2;

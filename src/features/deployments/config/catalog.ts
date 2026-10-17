@@ -1,4 +1,11 @@
-import { PLATFORMS, STORAGE_PER_NODE, SUPPORT } from "@/features/cluster/model/catalog";
+import {
+  DEFAULT_PDU,
+  PDU_RATINGS,
+  PLATFORMS,
+  STORAGE_PER_NODE,
+  SUPPORT,
+  type PduId,
+} from "@/features/cluster/model/catalog";
 import type { Cooling, Networking, Platform } from "../types";
 
 /*
@@ -94,6 +101,8 @@ export const SYSTEMS: Record<Platform, System> = {
   },
 };
 
+export { PDU_RATINGS };
+
 export type StoragePlatform = "vast" | "weka" | "ddn" | "pure" | "generic";
 
 /** Shared storage as each platform builds it: its nodes, what one holds, the fewest a cluster runs on, and its software. */
@@ -141,7 +150,8 @@ export interface DeploymentConfig {
   density: number;
   cdu: "in_rack" | "in_row" | "facility";
   power: "2n" | "n";
-  pdu: "208v_60a" | "415v_32a" | "415v_60a";
+  pdu: PduId;
+  pduBrand: "any" | "vertiv" | "raritan" | "servertech" | "apc" | "eaton";
   integration: "offsite" | "onsite";
   burnIn: boolean;
   supportYears: number;
@@ -190,7 +200,8 @@ export const DEFAULT_CONFIG: DeploymentConfig = {
   density: 8,
   cdu: "in_rack",
   power: "2n",
-  pdu: "208v_60a",
+  pdu: DEFAULT_PDU,
+  pduBrand: "any",
   integration: "offsite",
   burnIn: false,
   supportYears: 3,
@@ -218,6 +229,8 @@ export interface ConfigField {
   group: ConfigGroup;
   label: string;
   options: readonly { value: Value; label: string }[];
+  /** For a number typed in rather than chosen: any in `min` to `max`, to the hundredth, shown with `unit`. */
+  range?: { min: number; max: number; unit: string };
   /** Whether it applies to configuration `c`; one that doesn't is hidden and leaves the BOM alone. */
   applies?: (c: ResolvedConfig) => boolean;
 }
@@ -227,6 +240,7 @@ const field = <K extends ConfigKey>(f: {
   group: ConfigGroup;
   label: string;
   options: readonly { value: ResolvedConfig[K]; label: string }[];
+  range?: { min: number; max: number; unit: string };
   applies?: (c: ResolvedConfig) => boolean;
 }): ConfigField => f;
 
@@ -447,10 +461,22 @@ export const CONFIG_FIELDS: readonly ConfigField[] = [
     key: "pdu",
     group: "rack",
     label: "Rack PDUs",
+    options: (Object.keys(PDU_RATINGS) as DeploymentConfig["pdu"][]).map((value) => ({
+      value,
+      label: `${PDU_RATINGS[value].label}, ${PDU_RATINGS[value].kw} kW`,
+    })),
+  }),
+  field({
+    key: "pduBrand",
+    group: "rack",
+    label: "PDU brand",
     options: [
-      { value: "208v_60a", label: "208V 3-phase 60A" },
-      { value: "415v_32a", label: "415V 3-phase 32A" },
-      { value: "415v_60a", label: "415V 3-phase 60A" },
+      { value: "any", label: "Any brand" },
+      { value: "vertiv", label: "Vertiv Geist" },
+      { value: "raritan", label: "Raritan" },
+      { value: "servertech", label: "Server Technology" },
+      { value: "apc", label: "APC by Schneider Electric" },
+      { value: "eaton", label: "Eaton" },
     ],
   }),
 
@@ -483,7 +509,7 @@ export const CONFIG_FIELDS: readonly ConfigField[] = [
       { value: "4hr", label: "4-hour on-site" },
     ],
   }),
-  field({ key: "sparesPct", group: "services", label: "Spares", options: counted([0, 2, 3, 5], (n) => (n ? `${n}%` : "None")) }),
+  field({ key: "sparesPct", group: "services", label: "Spares", options: [], range: { min: 0, max: 100, unit: "%" } }),
 ];
 
 const FIELDS = new Map(CONFIG_FIELDS.map((f) => [f.key, f]));
@@ -492,13 +518,18 @@ export const configField = (key: ConfigKey): ConfigField => FIELDS.get(key)!;
 
 /** The option of `field` that `raw` stands for, as stored or as a form posts it; undefined when it's none. */
 export function optionOf(f: ConfigField, raw: unknown): Value | undefined {
+  if (f.range) {
+    const n = typeof raw === "number" ? raw : typeof raw === "string" && raw.trim() ? Number(raw) : NaN;
+    return Number.isFinite(n) && n >= f.range.min && n <= f.range.max ? Math.round(n * 100) / 100 : undefined;
+  }
   const match = f.options.find((option) => option.value === raw || String(option.value) === String(raw));
   return match?.value;
 }
 
-/** How `value` of `key` reads, e.g. "2 x 400G". */
+/** How `value` of `key` reads, e.g. "2 x 400G", or "None" for a typed-in 0. */
 export const valueLabel = (key: ConfigKey, value: unknown): string => {
   const f = configField(key);
+  if (f.range) return value ? `${value}${f.range.unit}` : "None";
   return f.options.find((option) => option.value === value)?.label ?? String(value);
 };
 

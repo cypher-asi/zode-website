@@ -1147,6 +1147,44 @@ create index if not exists deployment_bom_lines_deployment_idx on deployment_bom
 alter table deployment_quote_items add column if not exists url text;
 alter table deployment_bom_lines add column if not exists url text;
 
+-- Rack PDUs were one slot for both feeds; they're now an A-feed slot and a
+-- B-feed one. A 2N phase's lines split between them, the odd one on A; a
+-- single-feed phase's all go on A. Nothing is left on the old slot after.
+insert into deployment_bom_lines (
+  deployment_id, phase_id, slot_id, position, quote_item_id, part_number, manufacturer, description, quantity,
+  unit_usd, notes, url
+)
+select l.deployment_id, l.phase_id, 'rack_pdu_b', l.position, l.quote_item_id, l.part_number, l.manufacturer,
+  l.description, floor(l.quantity / 2), l.unit_usd, l.notes, l.url
+from deployment_bom_lines l
+join deployment_phases p on p.id = l.phase_id
+join deployments d on d.id = l.deployment_id
+where l.slot_id = 'rack_pdu'
+  and coalesce(p.config_overrides ->> 'power', d.configuration ->> 'power', '2n') = '2n'
+  and floor(l.quantity / 2) > 0;
+
+update deployment_bom_lines l
+set slot_id = 'rack_pdu_a',
+  quantity = l.quantity - case
+    when coalesce(p.config_overrides ->> 'power', d.configuration ->> 'power', '2n') = '2n' then floor(l.quantity / 2)
+    else 0
+  end
+from deployment_phases p, deployments d
+where p.id = l.phase_id and d.id = l.deployment_id and l.slot_id = 'rack_pdu';
+
+-- Rack PDUs default to 415V 60A, where they were 208V 60A. A deployment that
+-- never chose one and has 208V PDUs on its BOM keeps the 208V it was quoted.
+update deployments d
+set configuration = d.configuration || '{"pdu": "208v_60a"}'::jsonb
+where d.configuration ->> 'pdu' is null
+  and exists (
+    select 1
+    from deployment_bom_lines l
+    where l.deployment_id = d.id
+      and l.slot_id in ('rack_pdu_a', 'rack_pdu_b')
+      and l.description ilike '%208V%'
+  );
+
 -- The BOM was once the quotes' own lines, each filling slots through
 -- deployment_bom_fills. Each quoted line becomes a quote item, and each line
 -- in use a BOM line per slot it filled; priced lines that filled no slot

@@ -28,7 +28,8 @@ import {
   type DeploymentConfig,
   type ResolvedConfig,
 } from "./config/catalog";
-import { fieldsFor, resolveConfig } from "./config/resolve";
+import { fieldsFor, resolveConfig, type ConfigSource } from "./config/resolve";
+import { phaseMw, phaseNodesForMw } from "./bom/phase";
 import { formatCount, formatMw, formatTb, formatUsd } from "./format";
 import {
   CREDIT_RATINGS,
@@ -63,16 +64,48 @@ const settingsOf = (d?: Deployment): Settings =>
     ? { ...d.configuration, cooling: d.cooling, networking: d.networking, storageTbPerNode: d.storageTbPerNode }
     : { ...DEFAULT_CONFIG, cooling: "liquid_dtc", networking: "infiniband", storageTbPerNode: 4 };
 
-/** What settings `s` on `platform` build, as a phase with `overrides` would. */
-const resolvedOf = (s: Settings, platform: Platform, overrides?: ConfigOverrides): ResolvedConfig => {
+const sourceOf = (s: Settings, platform: Platform): ConfigSource => {
   const { cooling, networking, storageTbPerNode, ...configuration } = s;
-  return resolveConfig(
-    { platform, cooling, networking, storageTbPerNode, configuration },
-    overrides ? { platform, configOverrides: overrides } : null,
-  );
+  return { platform, cooling, networking, storageTbPerNode, configuration };
 };
 
+/** What settings `s` on `platform` build, as a phase with `overrides` would. */
+const resolvedOf = (s: Settings, platform: Platform, overrides?: ConfigOverrides): ResolvedConfig =>
+  resolveConfig(sourceOf(s, platform), overrides ? { platform, configOverrides: overrides } : null);
+
 const choicesOf = (f: ConfigField) => f.options.map((option) => ({ value: String(option.value), label: option.label }));
+
+/** A setting typed in as a number (`ConfigField.range`), kept as typed until it's left, e.g. "2." on the way to "2.5". */
+function RangeSetting({
+  f,
+  value,
+  onChange,
+  ...props
+}: {
+  f: ConfigField;
+  value: unknown;
+  onChange: (raw: string) => void;
+} & Pick<InputHTMLAttributes<HTMLInputElement>, "id" | "aria-labelledby" | "aria-label" | "placeholder">): ReactElement {
+  const [draft, setDraft] = useState<string | null>(null);
+  const range = f.range!;
+  return (
+    <input
+      {...props}
+      className={ui.input}
+      type="number"
+      inputMode="decimal"
+      min={range.min}
+      max={range.max}
+      step="any"
+      value={draft ?? (value === undefined ? "" : String(value))}
+      onChange={(event) => {
+        setDraft(event.target.value);
+        onChange(event.target.value);
+      }}
+      onBlur={() => setDraft(null)}
+    />
+  );
+}
 
 interface PhaseDraft {
   key: number;
@@ -84,6 +117,8 @@ interface PhaseDraft {
   rfsOn: string;
   nodes: string;
   mw: string;
+  /** Whether its MW was entered, so its nodes follow it; otherwise its MW follows its nodes. */
+  mwSet: boolean;
   overrides: ConfigOverrides;
 }
 
@@ -94,17 +129,44 @@ const numberOr = (raw: string, fallback: number | null): number | null => {
 
 const str = (value: number | null): string => (value === null ? "" : String(value));
 
-const draftOf = (key: number, platform: Platform, phase?: Phase): PhaseDraft => ({
-  key,
-  id: phase?.id ?? "",
-  name: phase?.name ?? "",
-  platform: phase?.platform ?? platform,
-  startOn: phase?.startOn ?? "",
-  rfsOn: phase?.rfsOn ?? "",
-  nodes: phase ? String(phase.nodes) : "",
-  mw: str(phase?.mw ?? null),
-  overrides: phase?.configOverrides ?? {},
-});
+/** The row with its nodes following its MW when that was entered, otherwise its MW following its nodes, under settings `s`. */
+const sized = (row: PhaseDraft, s: Settings): PhaseDraft => {
+  const source = sourceOf(s, row.platform);
+  const phase = { platform: row.platform, configOverrides: row.overrides };
+  const mw = numberOr(row.mw, null);
+  if (row.mwSet) return mw === null ? row : { ...row, nodes: str(phaseNodesForMw(source, phase, mw)) };
+  const nodes = numberOr(row.nodes, null);
+  return { ...row, mw: nodes === null ? "" : str(phaseMw(source, { ...phase, nodes })) };
+};
+
+/** `after` under settings `s1`, sized as `before` was under `s0`: nodes cut below what its MW powers stay cut. */
+const resized = (before: PhaseDraft, s0: Settings, after: PhaseDraft, s1: Settings): PhaseDraft =>
+  before.mwSet && before.nodes !== sized(before, s0).nodes ? after : sized(after, s1);
+
+/**
+ * A saved phase, or a new one. Its MW counts as entered unless it's what its
+ * nodes draw, alone or with what's built around them under settings `s`.
+ */
+const draftOf = (key: number, platform: Platform, s: Settings, phase?: Phase): PhaseDraft => {
+  const row: PhaseDraft = {
+    key,
+    id: phase?.id ?? "",
+    name: phase?.name ?? "",
+    platform: phase?.platform ?? platform,
+    startOn: phase?.startOn ?? "",
+    rfsOn: phase?.rfsOn ?? "",
+    nodes: phase ? String(phase.nodes) : "",
+    mw: str(phase?.mw ?? null),
+    mwSet: false,
+    overrides: phase?.configOverrides ?? {},
+  };
+  if (!phase || phase.mw === null) return row;
+  const derived = sized(row, s);
+  return phase.mw === mwFor(phase.platform, phase.nodes) || derived.mw === row.mw ? derived : { ...row, mwSet: true };
+};
+
+const scheduledOf = (rows: readonly PhaseDraft[]): number =>
+  rows.reduce((sum, row) => sum + numberOr(row.nodes, 0)!, 0);
 
 /** The deposit's percent, worked out from the amount for deployments saved before it was entered as one. */
 const depositPctOf = (d: Deployment): number | null => {
@@ -137,8 +199,8 @@ export function DeploymentForm({
   const [loc, setLoc] = useState(d?.locRequired ? "yes" : "no");
   const [phases, setPhases] = useState<PhaseDraft[]>(() =>
     d?.phases.length
-      ? d.phases.map((phase, key) => draftOf(key, d.platform, phase))
-      : [draftOf(0, d?.platform ?? "b300")],
+      ? d.phases.map((phase, key) => draftOf(key, d.platform, settings, phase))
+      : [draftOf(0, d?.platform ?? "b300", settings)],
   );
   const nextKey = useRef(phases.length);
   const [deleting, setDeleting] = useState(false);
@@ -156,7 +218,11 @@ export function DeploymentForm({
       mw: numberOr(phase.mw, null),
     })),
   });
-  const allMw = totals.byPlatform.reduce((sum, share) => sum + mwFor(share.platform, share.nodes), 0);
+  const allMw = totals.byPlatform.reduce(
+    (sum, share) =>
+      sum + phaseMw(sourceOf(settings, share.platform), { platform: share.platform, nodes: share.nodes, configOverrides: {} }),
+    0,
+  );
   const scheduledGpus = phases.reduce((sum, phase) => sum + gpusFor(phase.platform, numberOr(phase.nodes, 0)!), 0);
   const resolved = resolvedOf(settings, platform);
   const fields = fieldsFor(resolved);
@@ -167,38 +233,47 @@ export function DeploymentForm({
     ...rooms.map((room) => ({ value: room.id, label: room.name })),
   ];
 
+  /** Sets the phases, and the deployment's nodes to what they schedule while it kept up with them or falls short. */
+  const setRows = (rows: PhaseDraft[]) => {
+    const before = scheduledOf(phases);
+    const after = scheduledOf(rows);
+    setPhases(rows);
+    if (nodeCount === before || after > nodeCount) setNodes(String(after));
+  };
+
   const updatePhase = (key: number, patch: Partial<PhaseDraft>) =>
-    setPhases((rows) =>
-      rows.map((row) => {
+    setRows(
+      phases.map((row) => {
         if (row.key !== key) return row;
         const next = { ...row, ...patch };
-        if ("nodes" in patch || "platform" in patch) {
-          const phaseNodes = numberOr(next.nodes, null);
-          next.mw = phaseNodes === null ? "" : str(mwFor(next.platform, phaseNodes));
-        }
-        return next;
+        if ("mw" in patch) next.mwSet = next.mw.trim() !== "";
+        const follows = "platform" in patch || (next.mwSet ? "mw" in patch : "nodes" in patch);
+        return follows ? sized(next, settings) : next;
       }),
     );
 
   const setSetting = (f: ConfigField, raw: string) => {
     const value = optionOf(f, raw);
     if (value === undefined) return;
-    setSettings((s) => ({
-      ...s,
+    const next: Settings = {
+      ...settings,
       [f.key]: value,
       ...(f.key === "cooling" ? { density: value === "air" ? 4 : 8 } : {}),
-    }));
+    };
+    setSettings(next);
+    setRows(phases.map((row) => resized(row, settings, row, next)));
   };
 
   const setOverride = (key: number, f: ConfigField, raw: string) =>
-    setPhases((rows) =>
-      rows.map((row) => {
+    setRows(
+      phases.map((row) => {
         if (row.key !== key) return row;
         const overrides: ConfigOverrides = { ...row.overrides };
         const value = raw === "" ? undefined : optionOf(f, raw);
+        if (raw !== "" && value === undefined) return row;
         if (value === undefined) delete overrides[f.key];
         else (overrides as Record<string, unknown>)[f.key] = value;
-        return { ...row, overrides };
+        return resized(row, settings, { ...row, overrides }, settings);
       }),
     );
 
@@ -320,15 +395,26 @@ export function DeploymentForm({
                   ) : null}
                   {groupFields.map((f) => (
                     <div key={f.key} className={ui.field}>
-                      {label(`config-${f.key}`, f.label)}
-                      <Select
-                        id={`${id}-config-${f.key}`}
-                        aria-labelledby={`${id}-config-${f.key}-label`}
-                        className={ui.fill}
-                        options={choicesOf(f)}
-                        value={String(settings[f.key])}
-                        onChange={(value) => setSetting(f, value)}
-                      />
+                      {label(`config-${f.key}`, f.range ? `${f.label} (${f.range.unit})` : f.label)}
+                      {f.range ? (
+                        <RangeSetting
+                          f={f}
+                          id={`${id}-config-${f.key}`}
+                          aria-labelledby={`${id}-config-${f.key}-label`}
+                          placeholder="0"
+                          value={settings[f.key]}
+                          onChange={(value) => setSetting(f, value || "0")}
+                        />
+                      ) : (
+                        <Select
+                          id={`${id}-config-${f.key}`}
+                          aria-labelledby={`${id}-config-${f.key}-label`}
+                          className={ui.fill}
+                          options={choicesOf(f)}
+                          value={String(settings[f.key])}
+                          onChange={(value) => setSetting(f, value)}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -342,7 +428,9 @@ export function DeploymentForm({
           <p className={styles.summary} data-warn={totals.scheduledNodes > nodeCount ? "" : undefined}>
             {formatCount(totals.scheduledNodes)} of {formatCount(nodeCount)} nodes scheduled ·{" "}
             {formatCount(scheduledGpus)} GPUs
-            {totals.mw ? ` · ${totals.mw.toLocaleString("en-US", { maximumFractionDigits: 2 })} MW` : ""}
+            {totals.mw ? ` · ${totals.mw.toLocaleString("en-US", { maximumFractionDigits: 2 })} MW` : ""}. A
+            phase&apos;s IT MW sets its nodes, as many as it powers with their network, storage and management;
+            change the nodes to build fewer.
           </p>
           <div className={styles.phases}>
             <div className={styles.phaseHead} aria-hidden="true">
@@ -350,8 +438,8 @@ export function DeploymentForm({
               <span>Platform</span>
               <span>Start</span>
               <span>RFS *</span>
+              <span>IT MW</span>
               <span>Nodes *</span>
-              <span>MW</span>
               <span>GPUs</span>
               <span />
             </div>
@@ -400,6 +488,15 @@ export function DeploymentForm({
                   onChange={(event) => updatePhase(phase.key, { rfsOn: event.target.value })}
                 />
                 <input
+                  name="phase_mw"
+                  className={ui.input}
+                  inputMode="decimal"
+                  aria-label={`Phase ${i + 1} IT MW`}
+                  placeholder="0"
+                  value={phase.mw}
+                  onChange={(event) => updatePhase(phase.key, { mw: event.target.value })}
+                />
+                <input
                   name="phase_nodes"
                   className={ui.input}
                   inputMode="numeric"
@@ -408,15 +505,6 @@ export function DeploymentForm({
                   value={phase.nodes}
                   onChange={(event) => updatePhase(phase.key, { nodes: event.target.value })}
                 />
-                <input
-                  name="phase_mw"
-                  className={ui.input}
-                  inputMode="decimal"
-                  aria-label={`Phase ${i + 1} MW`}
-                  placeholder="0"
-                  value={phase.mw}
-                  onChange={(event) => updatePhase(phase.key, { mw: event.target.value })}
-                />
                 <span className={styles.phaseGpus}>
                   {formatCount(gpusFor(phase.platform, numberOr(phase.nodes, 0)!))}
                 </span>
@@ -424,7 +512,7 @@ export function DeploymentForm({
                   type="button"
                   className={ui.iconButton}
                   aria-label={`Remove phase ${i + 1}`}
-                  onClick={() => setPhases((rows) => rows.filter((row) => row.key !== phase.key))}
+                  onClick={() => setRows(phases.filter((row) => row.key !== phase.key))}
                 >
                   <svg viewBox="0 0 16 16" aria-hidden="true">
                     <path d="M4 4l8 8M12 4l-8 8" />
@@ -440,17 +528,27 @@ export function DeploymentForm({
                 <div className={styles.grid}>
                   {phaseFields.map((f) => (
                     <div key={f.key} className={ui.field}>
-                      <span className={ui.label}>{f.label}</span>
-                      <Select
-                        className={ui.fill}
-                        aria-label={`Phase ${i + 1} ${f.label.toLowerCase()}`}
-                        options={[
-                          { value: "", label: `Same (${valueLabel(f.key, settings[f.key])})` },
-                          ...choicesOf(f),
-                        ]}
-                        value={f.key in phase.overrides ? String(phase.overrides[f.key]) : ""}
-                        onChange={(value) => setOverride(phase.key, f, value)}
-                      />
+                      <span className={ui.label}>{f.range ? `${f.label} (${f.range.unit})` : f.label}</span>
+                      {f.range ? (
+                        <RangeSetting
+                          f={f}
+                          aria-label={`Phase ${i + 1} ${f.label.toLowerCase()}`}
+                          placeholder={`Same (${valueLabel(f.key, settings[f.key])})`}
+                          value={phase.overrides[f.key]}
+                          onChange={(value) => setOverride(phase.key, f, value)}
+                        />
+                      ) : (
+                        <Select
+                          className={ui.fill}
+                          aria-label={`Phase ${i + 1} ${f.label.toLowerCase()}`}
+                          options={[
+                            { value: "", label: `Same (${valueLabel(f.key, settings[f.key])})` },
+                            ...choicesOf(f),
+                          ]}
+                          value={f.key in phase.overrides ? String(phase.overrides[f.key]) : ""}
+                          onChange={(value) => setOverride(phase.key, f, value)}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -465,7 +563,7 @@ export function DeploymentForm({
               className={ui.button}
               onClick={() => {
                 const key = nextKey.current++;
-                setPhases((rows) => [...rows, draftOf(key, platform)]);
+                setPhases((rows) => [...rows, draftOf(key, platform, settings)]);
               }}
             >
               Add phase

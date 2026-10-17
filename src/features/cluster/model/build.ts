@@ -3,8 +3,9 @@ import {
   GPUS_PER_NODE,
   KIND_LABELS,
   LAYER_OF,
+  DEFAULT_PDU,
   NETWORK_RACK,
-  PDUS_PER_RACK,
+  PDU_RATINGS,
   PLATFORMS,
   RACK,
   RAILS,
@@ -12,13 +13,16 @@ import {
   mgmtServersFor,
   rackHeight,
   unitY,
+  type PduId,
 } from "./catalog";
 import type {
   ClusterConfig,
   ClusterModel,
+  FabricId,
   HostLink,
   PartKind,
   PartsRow,
+  PlatformId,
   Rack,
   RackPart,
   Uplink,
@@ -93,6 +97,30 @@ export interface BuildOptions {
   storageNodes?: number;
   fabricManagers?: number;
   firewalls?: number;
+  pdu?: PduId;
+  /** Whether every rack has A and B feeds (2N), as by default, or the one. */
+  dualFeed?: boolean;
+}
+
+/** Power cords a part of `kind` plugs into its rack's PDUs, across both feeds. */
+export function cordsOf(kind: PartKind, platform: PlatformId, fabric: FabricId): number {
+  if (kind === "gpu") return PLATFORMS[platform].bill.powerCords;
+  if (kind === "leaf" || kind === "spine") return FABRICS[fabric].compute.psus;
+  if (kind === "storageSwitch") return SUPPORT.storageSwitch.psus;
+  if (kind === "manifold" || kind === "panel") return 0;
+  return 2;
+}
+
+/**
+ * The rack PDUs one feed needs in a cabinet drawing `kw` through `cords`
+ * power cords: enough to carry the whole cabinet alone, since under 2N either
+ * feed takes it all when the other fails, and outlets for its share of the
+ * cords (half with two feeds, all of them on one).
+ */
+export function pdusPerFeed(kw: number, cords: number, pdu: PduId, dualFeed: boolean): number {
+  const rating = PDU_RATINGS[pdu];
+  const feedCords = dualFeed ? Math.ceil(cords / 2) : cords;
+  return Math.max(1, Math.ceil(kw / rating.kw - 1e-9), Math.ceil(feedCords / rating.outlets));
 }
 
 interface Counts {
@@ -161,6 +189,8 @@ function computeRack(config: ClusterConfig, index: number, first: number, count:
     parts,
     kw: parts.reduce((sum, p) => sum + p.kw, 0),
     usedU: u,
+    pdusPerFeed: 0,
+    feeds: 2,
   };
 }
 
@@ -280,6 +310,8 @@ function pack(config: ClusterConfig, items: Item[], count: number): Rack[] | nul
       ],
       kw: 0,
       usedU: 3,
+      pdusPerFeed: 0,
+      feeds: 2,
     };
   });
   const counters = new Map<PartKind, number>();
@@ -390,6 +422,14 @@ export function buildCluster(config: ClusterConfig, options: BuildOptions = {}):
   );
   const network = networkRacks(config, shape, computeCount, counts);
   const { racks, rows } = layout(config, compute, network);
+  const pdu = options.pdu ?? DEFAULT_PDU;
+  const dualFeed = options.dualFeed ?? true;
+  for (const rack of racks) {
+    const cords = rack.parts.reduce((sum, p) => sum + cordsOf(p.kind, config.platform, config.fabric), 0);
+    rack.pdusPerFeed = pdusPerFeed(rack.kw, cords, pdu, dualFeed);
+    rack.feeds = dualFeed ? 2 : 1;
+  }
+  const feedPdus = racks.reduce((sum, r) => sum + r.pdusPerFeed, 0);
   const byId = new Map(racks.map((r) => [r.id, r]));
   const trayY = rackHeight(config.rackU) + 0.45;
 
@@ -459,9 +499,9 @@ export function buildCluster(config: ClusterConfig, options: BuildOptions = {}):
     {
       layer: "rack",
       label: "Rack PDU",
-      model: "Switched, A + B feeds",
-      qty: computeCount * PDUS_PER_RACK.compute + network.length * PDUS_PER_RACK.network,
-      detail: `${PDUS_PER_RACK.compute} per compute rack, ${PDUS_PER_RACK.network} per network rack`,
+      model: `Switched, ${PDU_RATINGS[pdu].label}`,
+      qty: feedPdus * (dualFeed ? 2 : 1),
+      detail: dualFeed ? `${feedPdus.toLocaleString("en-US")} each on the A and B feeds` : "Single feed",
     },
     row("manifold", "1U rack manifold", "Supply and return"),
     row("panel", "1U MPO-16 panel"),

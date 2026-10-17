@@ -1,7 +1,7 @@
 import { switchOptics } from "@/features/cluster/model/build";
-import { FABRICS, PDUS_PER_RACK, PLATFORMS, SUPPORT, UFM_HCAS } from "@/features/cluster/model/catalog";
+import { FABRICS, PLATFORMS, SUPPORT, UFM_HCAS } from "@/features/cluster/model/catalog";
 import type { PartKind, PlatformId } from "@/features/cluster/model/types";
-import { STORAGE_PLATFORMS, SYSTEMS, valueLabel, type ResolvedConfig } from "../config/catalog";
+import { PDU_RATINGS, STORAGE_PLATFORMS, SYSTEMS, valueLabel, type ResolvedConfig } from "../config/catalog";
 import type { Sizing } from "./sizing";
 
 /*
@@ -113,13 +113,11 @@ const ORCHESTRATION: Record<ResolvedConfig["orchestration"], string> = {
   bcm: "NVIDIA Base Command Manager licenses",
 };
 
-const PDU: Record<ResolvedConfig["pdu"], string> = {
-  "208v_60a": "Switched, outlet-metered, 208V 3-phase 60A",
-  "415v_32a": "Switched, outlet-metered, 415V 3-phase 32A",
-  "415v_60a": "Switched, outlet-metered, 415V 3-phase 60A",
+const pduSpec = (c: ResolvedConfig, feed: string) => {
+  const pdu = PDU_RATINGS[c.pdu];
+  const brand = c.pduBrand === "any" ? "" : `${valueLabel("pduBrand", c.pduBrand)}, `;
+  return `${brand}switched, outlet-metered, ${pdu.label}, ${pdu.kw} kW, ${pdu.outlets} C13/C19 outlets; ${feed}`;
 };
-const pdusPerRack = (c: ResolvedConfig, kind: "compute" | "network") =>
-  c.power === "2n" ? PDUS_PER_RACK[kind] : PDUS_PER_RACK[kind] / 2;
 
 const spares = (c: ResolvedConfig, n: number) => (c.sparesPct ? Math.ceil((n * c.sparesPct) / 100) : 0);
 
@@ -537,12 +535,22 @@ export const SLOTS: readonly Slot[] = [
     spec: (c) => `${c.rackU}U, 800 x 1200 mm${hgx(c) ? "" : ", network racks; the rack-scale systems bring their own"}`,
   },
   {
-    id: "rack_pdu",
+    id: "rack_pdu_a",
     section: "rack",
-    label: "Rack PDUs",
+    label: "Rack PDUs, A feed",
+    labelFor: (c) => (c.power === "2n" ? "Rack PDUs, A feed" : "Rack PDUs"),
     unit: "each",
-    qty: (s, c) => (hgx(c) ? s.computeRacks * pdusPerRack(c, "compute") : 0) + s.networkRacks * pdusPerRack(c, "network"),
-    spec: (c) => `${PDU[c.pdu]}, ${c.power === "2n" ? "A and B feeds" : "one feed"}`,
+    qty: (s) => s.feedPdus,
+    spec: (c) =>
+      pduSpec(c, c.power === "2n" ? "enough per cabinet to carry it alone" : "one feed, enough per cabinet to carry it"),
+  },
+  {
+    id: "rack_pdu_b",
+    section: "rack",
+    label: "Rack PDUs, B feed",
+    unit: "each",
+    qty: (s, c) => when(c.power === "2n", s.feedPdus),
+    spec: (c) => pduSpec(c, "matching the A feed, so either carries each cabinet alone"),
   },
   {
     id: "manifold",

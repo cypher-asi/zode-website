@@ -73,8 +73,10 @@ const CLUSTER = {
  * `[partNumber, description, quantity, unitUsd, fills, extra]`. `fills` maps
  * slot ids to the slot units each item covers; `extra` sets `lead`, `notes`,
  * `mfr` (the manufacturer, when it isn't the section's), `url` (its page on
- * the web, when it isn't the section's) or `excluded` (why the BOM leaves it
- * out). A null `unitUsd` is priced inside another line.
+ * the web, when it isn't the section's), `split` (the items divide between
+ * the slots they fill in those proportions, like PDUs between a cabinet's A
+ * and B feeds, rather than each covering them all) or `excluded` (why the BOM
+ * leaves it out). A null `unitUsd` is priced inside another line.
  */
 const line = (partNumber, description, quantity, unitUsd, fills = {}, extra = {}) => ({
   partNumber,
@@ -167,7 +169,9 @@ const PEGATRON = {
         line(null, '48U 19" rack', 1, 33_874.92, { cabinet: 1 }, {
           notes: "Per-rack subtotal of $35,467.00 less the warranty line below.",
         }),
-        line(null, "PDU 24 socket (with IEC industrial plug adapter cable, 4m cord)", 4, null, { rack_pdu: 1 }),
+        line(null, "PDU 24 socket (with IEC industrial plug adapter cable, 4m cord)", 4, null, { rack_pdu_a: 1, rack_pdu_b: 1 }, {
+          split: true,
+        }),
         line(null, "Rack manifold, left (5 gal)", 1, null, { manifold: 1 }),
         line(null, "Rack manifold, right (5 gal)", 1, null, { manifold: 1 }),
         line(null, "Leak detector (PDU)", 1, null, { leak_detection: 1 }),
@@ -206,8 +210,9 @@ const COMPUTACENTER = {
       title: "Network, Management Nodes, Storage Racks & PDUs, OOB",
       manufacturer: "Vertiv",
       lines: [
-        line("VP7N60AC", "rPDU, Switched Outlet Level Monitoring EC, 60A, 208V Delta, 17.2kW, Vertical, (48) Combination C13/C19, 10ft / 3m power cord with 3P+E (IP67), Black Powder Coat", 12, null, { rack_pdu: 1 }, {
+        line("VP7N60AC", "rPDU, Switched Outlet Level Monitoring EC, 60A, 208V Delta, 17.2kW, Vertical, (48) Combination C13/C19, 10ft / 3m power cord with 3P+E (IP67), Black Powder Coat", 12, null, { rack_pdu_a: 1, rack_pdu_b: 1 }, {
           notes: "Networking and storage racks.",
+          split: true,
           url: "https://www.geistglobal.com/power-distribution-unit/VP7N60AC",
         }),
         line("VR3357", "Vertiv VR Rack - 48U Server Rack Enclosure, 800x1200mm, 19-inch Cabinet (VR3357) - 2265x800x1200mm (HxWxD), 77% perforated doors, Side", 6, null, { cabinet: 1 }, {
@@ -489,6 +494,12 @@ function linesOf(items) {
     };
     const fills = Object.entries(i.fills);
     if (!fills.length) return i.unitUsd === null ? [] : [{ ...base, slot_id: null, quantity: i.taken, unit_usd: i.unitUsd }];
+    if (i.split) {
+      const parts = apportion(i.taken, fills.map(([, units]) => units));
+      return fills
+        .map(([slot_id], k) => ({ ...base, slot_id, quantity: parts[k], unit_usd: i.unitUsd }))
+        .filter((l) => l.quantity > 0);
+    }
     return fills.map(([slot_id, units]) => ({
       ...base,
       slot_id,
