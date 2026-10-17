@@ -80,7 +80,7 @@ export async function revokeTeamInvite(inviteId: string): Promise<string | null>
   return row ? String(row.email) : null;
 }
 
-/** Invites not yet accepted, newest first; only those for `role` when it's given. */
+/** Invites not yet accepted, oldest first; only those for `role` when it's given. */
 export async function listPendingTeamInvites(role?: InviteRole): Promise<PendingTeamInvite[]> {
   const rows = await db()`
     select i.id, i.email, i.role, i.invited_at, i.invite_expires_at, coalesce(p.display_name, d.display_name, d.email) as invited_by
@@ -89,7 +89,7 @@ export async function listPendingTeamInvites(role?: InviteRole): Promise<Pending
     left join account_directory d on d.user_id = u.zos_user_id
     left join account_profiles p on p.user_id = u.zos_user_id
     where i.accepted_at is null and (${role ?? null}::text is null or i.role = ${role ?? null})
-    order by i.invited_at desc
+    order by i.invited_at asc
   `;
   const now = Date.now();
   return rows.map((row) => ({

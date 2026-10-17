@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, useTransition, type ReactElement } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Icon } from "@/features/data-room/icons";
 import share from "@/features/data-room/share.module.css";
 import ui from "@/features/data-room/ui.module.css";
 import { inviteTeamAction } from "@/features/team/actions";
 import { INVITE_ROLES, ROLE_LABELS, type InviteRole } from "./types";
+
+const INVITES_PATH = "/portal/users/invites";
 
 const ROLE_DETAILS: Record<InviteRole, string> = {
   member: "Sees their own records and the data rooms shared with them.",
@@ -35,6 +38,8 @@ function InviteUserDialog({ defaultRole, onClose }: { defaultRole: InviteRole; o
   const [role, setRole] = useState<InviteRole>(defaultRole);
   const [error, setError] = useState<string>();
   const [sending, startSending] = useTransition();
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const dialog = ref.current;
@@ -61,8 +66,12 @@ function InviteUserDialog({ defaultRole, onClose }: { defaultRole: InviteRole; o
           setError(undefined);
           startSending(async () => {
             const outcome = await inviteTeamAction({}, form);
-            if (outcome.error) setError(outcome.error);
-            else ref.current?.close();
+            if (outcome.error) {
+              setError(outcome.error);
+              return;
+            }
+            ref.current?.close();
+            if (pathname !== INVITES_PATH) router.push(INVITES_PATH);
           });
         }}
       >
