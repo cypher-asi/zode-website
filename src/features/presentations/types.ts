@@ -103,7 +103,7 @@ export interface SiteContent {
 }
 
 export interface PresentationContent {
-  /** The cover: its headline over the deployment's name, e.g. "24 MW IT of 2027 Vera Rubin Capacity in Chicago". */
+  /** The cover: its headline over the deployment's name, e.g. "24 MW IT of 2027 Contiguous Compute Capacity in Chicago". */
   headline: string;
   title: string;
   /** Where the site is, its address or else its city, in every content slide's footer. */

@@ -142,14 +142,12 @@ export function presentationOf(deployment: Deployment): PresentationContent {
   ]
     .filter(Boolean)
     .join(". ");
-  // The platform with the most GPUs, ready in full by the last phase's year.
-  const lead = shares.reduce<(typeof shares)[number] | null>((best, share) => (!best || share.gpus > best.gpus ? share : best), null);
+  // Ready in full by the last phase's year.
   const last = d.phases.at(-1);
   const headline = [
     totals.mw ? `${formatMw(totals.mw >= 1 ? Math.round(totals.mw) : totals.mw)} IT of` : null,
     last?.rfsOn.slice(0, 4),
-    lead ? platformLabel(lead.platform) : null,
-    "Capacity",
+    "Contiguous Compute Capacity",
     city ? `in ${city}` : null,
   ]
     .filter(Boolean)
