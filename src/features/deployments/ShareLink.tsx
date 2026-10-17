@@ -19,9 +19,14 @@ export function ShareLink({
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button type="button" className={ui.button} onClick={() => setOpen(true)}>
+      <button
+        type="button"
+        className={ui.squareButton}
+        aria-label="Share"
+        title="Share"
+        onClick={() => setOpen(true)}
+      >
         <Icon name="userPlus" />
-        Share
       </button>
       {open ? <ShareDialog deployment={deployment} onClose={() => setOpen(false)} /> : null}
     </>

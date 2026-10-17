@@ -3,6 +3,7 @@ import { Suspense, type ReactElement } from "react";
 import Link from "next/link";
 import { io } from "next/cache";
 import { notFound } from "next/navigation";
+import { Icon } from "@/features/data-room/icons";
 import { listFileNames } from "@/features/data-room/rooms";
 import ui from "@/features/data-room/ui.module.css";
 import { getBom } from "@/features/deployments/bom/bom";
@@ -73,14 +74,32 @@ async function Deployment({ params, searchParams }: PageProps<"/portal/deploymen
           tabs={bom ? <DeploymentTabSwitch /> : undefined}
           actions={
             <>
-              <a href={`/api/deployments/${deployment.id}/pdf`} className={ui.button} download>
-                Download PDF
+              <a
+                href={`/api/deployments/${deployment.id}/pdf`}
+                className={ui.squareButton}
+                aria-label="Download PDF"
+                title="Download PDF"
+                download
+              >
+                <Icon name="fileDown" />
               </a>
-              <a href={teaserPdfPath(deployment.id, true)} className={ui.button} download>
-                Download teaser
+              <a
+                href={teaserPdfPath(deployment.id, true)}
+                className={ui.squareButton}
+                aria-label="Download teaser"
+                title="Download teaser"
+                download
+              >
+                <Icon name="page" />
               </a>
-              <a href={presentationPdfPath(deployment.id, true)} className={ui.button} download>
-                Download presentation
+              <a
+                href={presentationPdfPath(deployment.id, true)}
+                className={ui.squareButton}
+                aria-label="Download presentation"
+                title="Download presentation"
+                download
+              >
+                <Icon name="slides" />
               </a>
               {viewer.team ? (
                 <>
@@ -93,6 +112,7 @@ async function Deployment({ params, searchParams }: PageProps<"/portal/deploymen
                     }}
                   />
                   <Link href={`${base}/edit`} className={ui.primary}>
+                    <Icon name="pencil" />
                     Edit
                   </Link>
                 </>

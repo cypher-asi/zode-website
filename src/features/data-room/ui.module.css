@@ -19,9 +19,18 @@
   flex: none;
 }
 
+/* An icon-only `.button`, square and bordered, for a row of actions beside labelled ones. */
+.squareButton {
+  composes: secondary sm from "../../components/ui/Button/Button.module.css";
+  flex: none;
+  width: 32px;
+  padding: 0;
+}
+
 .button svg,
 .primary svg,
-.iconButton svg {
+.iconButton svg,
+.squareButton svg {
   width: 16px;
   height: 16px;
   fill: none;
