@@ -62,8 +62,42 @@
   border-left: 1px solid var(--color-border);
 }
 
-.zoom [aria-pressed="true"] {
+/* Expand and full screen, after the zoom controls. */
+.screen {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  padding-right: 6px;
+  border-right: 1px solid var(--color-border);
+}
+
+.screen [aria-pressed="true"] {
   background: var(--color-surface-tint);
+}
+
+/* Expanded: a popover in the top layer, over the whole window. */
+.viewer[data-expanded] {
+  position: fixed;
+  inset: 0;
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+.viewer[data-expanded]::backdrop {
+  background: var(--color-backdrop);
+}
+
+.viewer:fullscreen {
+  background: var(--color-bg);
 }
 
 .zoomValue {
@@ -456,7 +490,9 @@
     display: none;
   }
 
-  .zoom {
+  /* The viewer already fills a phone's screen. */
+  .zoom,
+  .screen {
     display: none;
   }
 }

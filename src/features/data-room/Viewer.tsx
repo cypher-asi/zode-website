@@ -4,8 +4,10 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type ComponentType,
   type MouseEvent,
   type ReactElement,
@@ -40,6 +42,14 @@ const ZOOMABLE = new Set<FileKind>(["pdf", "image", "text", "csv", "docx", "xlsx
 const STEPS = [0.25, 0.33, 0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5];
 
 const uploaded = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
+
+const noSubscription = () => () => {};
+const fullscreenEnabled = () => document.fullscreenEnabled;
+const notEnabled = () => false;
+const onFullscreenChange = (callback: () => void) => {
+  document.addEventListener("fullscreenchange", callback);
+  return () => document.removeEventListener("fullscreenchange", callback);
+};
 
 export interface RoomSummary {
   /** The rendered summary; its source links carry `data-file-id`. */
@@ -162,7 +172,8 @@ export function FilePreview({
 
 /**
  * A previewed file under its title bar: its name and details, zoom controls
- * when the preview scales, and Download. The preview is rendered by `children`
+ * when the preview scales, buttons to expand it over the window or go full
+ * screen (either refits it), and Download. The preview is rendered by `children`
  * at the current zoom, and reports back what "fit" works out to.
  */
 export function PreviewFrame({
@@ -192,8 +203,47 @@ export function PreviewFrame({
 }): ReactElement {
   const [zoom, setZoom] = useState<Zoom>("fit");
   const [fitScale, setFitScale] = useState(1);
+  const [expanded, setExpanded] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const canFullscreen = useSyncExternalStore(noSubscription, fullscreenEnabled, notEnabled);
+  const fullscreen = useSyncExternalStore(
+    onFullscreenChange,
+    () => document.fullscreenElement !== null && document.fullscreenElement === rootRef.current,
+    notEnabled,
+  );
   const bodyRef = useRef<HTMLDivElement>(null);
   const scale = zoom === "fit" ? fitScale : zoom;
+
+  const toggleExpanded = () => {
+    setExpanded((value) => !value);
+    setZoom("fit");
+  };
+
+  const toggleFullscreen = () => {
+    setZoom("fit");
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else void rootRef.current?.requestFullscreen();
+  };
+
+  // Expanded, the frame goes in the top layer as a popover, over the portal's
+  // header and any dialog it's in, without remounting the preview.
+  useLayoutEffect(() => {
+    if (expanded) rootRef.current?.showPopover();
+  }, [expanded]);
+
+  useEffect(() => {
+    if (!expanded) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || document.fullscreenElement) return;
+      // Captured and cancelled, so a dialog around the frame stays open.
+      event.preventDefault();
+      event.stopPropagation();
+      setExpanded(false);
+      setZoom("fit");
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [expanded]);
 
   const step = useCallback(
     (direction: 1 | -1) =>
@@ -221,7 +271,10 @@ export function PreviewFrame({
 
   return (
     <div
+      ref={rootRef}
       className={styles.viewer}
+      popover={expanded ? "manual" : undefined}
+      data-expanded={expanded ? "" : undefined}
       onKeyDown={(event) => {
         if (!zoomable || (event.target as HTMLElement).closest("input, textarea, select")) return;
         if (event.key === "+" || event.key === "=") step(1);
@@ -257,18 +310,32 @@ export function PreviewFrame({
             <button type="button" className={ui.iconButton} onClick={() => step(1)} aria-label="Zoom in" title="Zoom in (+)">
               <Icon name="zoomIn" />
             </button>
+          </div>
+        ) : null}
+        <div className={styles.screen} role="group" aria-label="View">
+          <button
+            type="button"
+            className={ui.iconButton}
+            onClick={toggleExpanded}
+            aria-label={expanded ? "Restore" : "Expand to fill the window"}
+            aria-pressed={expanded}
+            title={expanded ? "Restore (Esc)" : "Expand"}
+          >
+            <Icon name={expanded ? "collapse" : "expand"} />
+          </button>
+          {canFullscreen ? (
             <button
               type="button"
               className={ui.iconButton}
-              onClick={() => setZoom("fit")}
-              aria-label="Fit to panel"
-              aria-pressed={zoom === "fit"}
-              title="Fit (0)"
+              onClick={toggleFullscreen}
+              aria-label={fullscreen ? "Exit full screen" : "Full screen"}
+              aria-pressed={fullscreen}
+              title={fullscreen ? "Exit full screen (Esc)" : "Full screen"}
             >
-              <Icon name="fit" />
+              <Icon name={fullscreen ? "exitFullscreen" : "fullscreen"} />
             </button>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
         <a className={ui.button} href={downloadUrl} download={downloadName ?? true}>
           <Icon name="download" />
           <span className={styles.downloadLabel}>Download</span>
