@@ -1,5 +1,20 @@
 import "server-only";
-import { PDFDocument, PDFName, PDFString, type Color, type PDFFont, type PDFPage } from "pdf-lib";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import {
+  PDFDocument,
+  PDFName,
+  PDFString,
+  clip,
+  endPath,
+  popGraphicsState,
+  pushGraphicsState,
+  rectangle,
+  type Color,
+  type PDFFont,
+  type PDFImage,
+  type PDFPage,
+} from "pdf-lib";
 import { dayOf, formatMonthYear } from "@/features/deployments/format";
 import {
   ACCENT,
@@ -22,17 +37,32 @@ import {
 import { BRAND } from "@/features/styleguide/brand";
 import { SITE_URL } from "@/lib/site";
 import { clusterArt } from "./clusterArt";
-import { linesOf, type LabeledValue, type PresentationContent, type PricingRow, type Section, type SpecCell } from "./types";
+import {
+  linesOf,
+  type LabeledValue,
+  type PresentationContent,
+  type PricingRow,
+  type Section,
+  type SiteContent,
+  type SiteImage,
+  type SitePoint,
+  type SpecCell,
+} from "./types";
 
 /*
  * A presentation as 16:9 ZODE-branded slides, set like a spec sheet: an ink
  * cover with the site's name and number large over an exploded drawing of the
  * cluster and a grid of its specs, then a slide for each part that has
  * something in it (at a glance, the site, capacity and rollout, the cluster,
- * the notes, terms, next steps), each numbered large beside its heading, over
- * a footer with the wordmark. Every block clamps its lines, and the limits in
- * ./types keep the longest text on its slide.
+ * the notes, terms), each numbered large beside its heading, over a footer
+ * with the wordmark. A site with a profile then gets a section of its own,
+ * from a divider over its photo through its property, power, reliability,
+ * efficiency, plant and location, before next steps. Every block clamps its
+ * lines, and the limits in ./types keep the longest text on its slide.
  */
+
+/** Site profiles' images, read with fs; next.config's outputFileTracingIncludes ships them with each PDF route. */
+const SITES = path.join(process.cwd(), "src/features/presentations/sites");
 
 const W = 960;
 const H = 540;
@@ -185,6 +215,64 @@ class Slide {
     });
     return bottom;
   }
+
+  /**
+   * `image` in the box from (`x`, `y`) up: cropped to fill it with `cover`,
+   * or whole and set at its top left otherwise. Returns the box it took.
+   */
+  image(image: PDFImage, x: number, y: number, width: number, height: number, cover = false): { y: number; width: number } {
+    const scale = (cover ? Math.max : Math.min)(width / image.width, height / image.height);
+    const w = image.width * scale;
+    const h = image.height * scale;
+    if (!cover) {
+      this.page.drawImage(image, { x, y: y + height - h, width: w, height: h });
+      return { y: y + height - h, width: w };
+    }
+    this.page.pushOperators(pushGraphicsState(), rectangle(x, y, width, height), clip(), endPath());
+    this.page.drawImage(image, { x: x + (width - w) / 2, y: y + (height - h) / 2, width: w, height: h });
+    this.page.pushOperators(popGraphicsState());
+    return { y, width };
+  }
+
+  /** A small line in grey, as set under an image or a table. */
+  note(value: string, x: number, y: number, width: number): void {
+    this.line(value, x, y, width, this.fonts.regular, 8.5, SECONDARY);
+  }
+
+  /** Numbered points from `y` down, each a heading over its text and a hairline; returns the y under them. */
+  points(items: readonly SitePoint[], x: number, y: number, width: number): number {
+    const { fonts } = this;
+    for (const [i, item] of items.entries()) {
+      if (y - 30 < FLOOR) break;
+      this.text(String(i + 1).padStart(2, "0"), x, y, fonts.mono, 9, ACCENT, 1);
+      this.line(item.title, x + 30, y, width - 30, fonts.semibold, 12.5, INK);
+      let ty = y - 17;
+      for (const line of wrapClamped(item.text, fonts.regular, 11, width - 30, 3)) {
+        this.text(line, x + 30, ty, fonts.regular, 11, INK);
+        ty -= 15;
+      }
+      this.hairline(x, ty + 3, width);
+      y = ty - 17;
+    }
+    return y;
+  }
+
+  /** Labeled values a row each between hairlines, each value up to two lines; returns the y under them. */
+  rows(items: readonly LabeledValue[], x: number, y: number, width: number): number {
+    const { regular } = this.fonts;
+    for (const item of items) {
+      if (y - 26 < FLOOR) break;
+      this.label(item.label, x, y, width);
+      let vy = y - 16;
+      for (const line of wrapClamped(item.value, regular, 11.5, width, 2)) {
+        this.text(line, x, vy, regular, 11.5, INK);
+        vy -= 15;
+      }
+      this.hairline(x, vy + 5, width);
+      y = vy - 12;
+    }
+    return y;
+  }
 }
 
 /** The PDF's slides, each content slide numbered large beside its heading. */
@@ -196,6 +284,9 @@ class Deck {
     /** In every content slide's footer; the cover has it beside its title. */
     readonly address: string,
   ) {}
+
+  /** The pages set on ink, by index, whose footers are white. */
+  readonly dark = new Set<number>([0]);
 
   /** A content slide under its heading and number; returns it to fill from BODY_TOP. */
   slide(heading: string): Slide {
@@ -218,14 +309,15 @@ class Deck {
     const month = formatMonthYear(dayOf(today)).toUpperCase();
     pages.forEach((page, i) => {
       const cover = i === 0;
-      const fill = cover ? TERTIARY : SECONDARY;
+      const dark = this.dark.has(i);
+      const fill = dark ? TERTIARY : SECONDARY;
       page.drawLine({
         start: { x: MARGIN, y: 42 },
         end: { x: W - MARGIN, y: 42 },
         thickness: 0.6,
-        color: cover ? SECONDARY : BORDER,
+        color: dark ? SECONDARY : BORDER,
       });
-      drawWordmark(page, this.wordmark, MARGIN, 32.5, 7, cover ? WHITE : INK);
+      drawWordmark(page, this.wordmark, MARGIN, 32.5, 7, dark ? WHITE : INK);
       const right = `CONFIDENTIAL · ${month} · ${i + 1} / ${pages.length}`;
       const room = CONTENT - 54 - trackedWidth(right, mono, 6.5, 1) - 32;
       const left = [BRAND.domain, cover ? "" : this.address].filter(Boolean).join(" · ").toUpperCase();
@@ -449,6 +541,178 @@ function terms(deck: Deck, p: PresentationContent): void {
   s.line(note, MARGIN, bottom - 24, CONTENT, s.fonts.regular, 10.5, SECONDARY);
 }
 
+/** A site profile's images, each embedded once, by file. */
+async function embedSiteImages(doc: PDFDocument, site: SiteContent): Promise<Map<string, PDFImage>> {
+  const files = new Set(
+    [site.photo, site.property.image, site.why.image, site.plant.image, site.plant.inset, site.location.image].map((image) => image.file),
+  );
+  return new Map(
+    await Promise.all([...files].map(async (file) => [file, await doc.embedJpg(await readFile(path.join(SITES, site.folder, file)))] as const)),
+  );
+}
+
+/** The site section's slides, each with its disclaimer above the footer. */
+class SiteSection {
+  constructor(
+    readonly deck: Deck,
+    readonly site: SiteContent,
+    private readonly images: Map<string, PDFImage>,
+  ) {}
+
+  slide(heading: string): Slide {
+    const s = this.deck.slide(heading);
+    s.line(this.site.disclaimer, MARGIN, 50, CONTENT, s.fonts.regular, 7.5, TERTIARY);
+    return s;
+  }
+
+  /** `image` in the box from (`x`, `y`) up, its caption under it; drawings sit whole in a hairline frame. */
+  figure(s: Slide, image: SiteImage, x: number, y: number, width: number, height: number, cover = false): void {
+    const embedded = this.images.get(image.file)!;
+    const box = s.image(embedded, x, y + 14, width, height - 14, cover);
+    if (!cover) s.page.drawRectangle({ x, y: box.y, width: box.width, height: y + height - box.y, borderColor: BORDER, borderWidth: 0.6 });
+    s.note(image.caption, x, box.y - 13, box.width);
+  }
+
+  divider(): void {
+    const { deck, site } = this;
+    const { fonts } = deck;
+    const page = deck.doc.addPage([W, H]);
+    deck.dark.add(deck.doc.getPageCount() - 1);
+    const s = new Slide(deck.doc, page, fonts);
+    page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: INK });
+    s.image(this.images.get(site.photo.file)!, 0, 0, W, H, true);
+    page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: INK, opacity: 0.62 });
+
+    const top = H - 112;
+    const number = String(deck.doc.getPageCount()).padStart(2, "0");
+    const numberWidth = fonts.display.widthOfTextAtSize(number, 76);
+    s.text(number, W - MARGIN - numberWidth, top, fonts.display, 76, WHITE);
+    const caption = site.caption.split(" · ");
+    const captionWidth = Math.max(...caption.map((line) => trackedWidth(line.toUpperCase(), fonts.medium, 9.5, 0.6)), 0);
+    const room = CONTENT - numberWidth - Math.min(captionWidth, LABEL) - 48;
+    const size = fitSize(site.name, fonts.display, 76, room);
+    const width = s.line(site.name, MARGIN, top, room, fonts.display, size, WHITE);
+    s.caption(caption, MARGIN + width + 16, top + size * CAP, LABEL, WHITE, PAPER);
+
+    const lede = wrapClamped(site.lede, fonts.regular, 16, 560, 4);
+    lede.forEach((line, i) => s.text(line, MARGIN, 96 + (lede.length - 1 - i) * 22, fonts.regular, 16, WHITE));
+    s.line(site.photo.caption, MARGIN, 58, CONTENT, fonts.regular, 7.5, PAPER);
+  }
+
+  property(): void {
+    const { property } = this.site;
+    const s = this.slide("The property");
+    const art = 400;
+    this.figure(s, property.image, MARGIN, FLOOR + 14, art, BODY_TOP + 10 - FLOOR - 14, true);
+    const x = MARGIN + art + COLUMN_GAP;
+    s.rows(property.facts, x, BODY_TOP, CONTENT - art - COLUMN_GAP);
+  }
+
+  why(): void {
+    const { why } = this.site;
+    const s = this.slide(`Why ${this.site.name}`);
+    const list = 400;
+    s.points(why.points, MARGIN, BODY_TOP, list);
+    const x = MARGIN + list + COLUMN_GAP;
+    this.figure(s, why.image, x, FLOOR + 14, CONTENT - list - COLUMN_GAP, BODY_TOP + 10 - FLOOR - 14);
+  }
+
+  capacity(): void {
+    const { capacity } = this.site;
+    const s = this.slide("Power and capacity");
+    const y = s.figures(capacity.figures, MARGIN, BODY_TOP + 10, CONTENT, 30) - 34;
+    const gap = 32;
+    const width = (CONTENT - gap * (capacity.columns.length - 1)) / capacity.columns.length;
+    capacity.columns.forEach((column, i) => {
+      const x = MARGIN + i * (width + gap);
+      s.bullets(column.items, x, s.title(column.title, x, y, width), width, 11.5);
+    });
+  }
+
+  reliability(): void {
+    const { reliability } = this.site;
+    const s = this.slide("Reliability");
+    const { fonts } = s;
+    const top = s.paragraph(reliability.lede, MARGIN, BODY_TOP, CONTENT, 13, 19.5) - 6;
+    const columns = 3;
+    const cell = CONTENT / columns;
+    const height = 112;
+    reliability.cells.forEach((item, i) => {
+      const column = i % columns;
+      const rowTop = top - Math.floor(i / columns) * height;
+      const x = MARGIN + column * cell + (column ? 16 : 0);
+      const width = cell - (column ? 32 : 16);
+      if (column === 0) s.hairline(MARGIN, rowTop, CONTENT, i ? BORDER : INK);
+      else s.rule(MARGIN + column * cell, rowTop, height);
+      s.page.drawSvgPath(DIAMOND, { x: x + 3, y: rowTop - 22 + 4.5, scale: 0.62, color: ACCENT });
+      s.line(item.title, x + 14, rowTop - 22, width - 14, fonts.semibold, 12, INK);
+      wrapClamped(item.text, fonts.regular, 11, width, 4).forEach((line, j) => s.text(line, x, rowTop - 42 - j * 15, fonts.regular, 11, INK));
+    });
+    const bottom = top - Math.ceil(reliability.cells.length / columns) * height;
+    s.hairline(MARGIN, bottom, CONTENT);
+    s.note(reliability.source, MARGIN, bottom - 18, CONTENT);
+  }
+
+  efficiency(): void {
+    const { efficiency } = this.site;
+    const s = this.slide("Efficiency");
+    const { fonts, page } = s;
+    let y = s.title("Concept-level PUE · lower is better", MARGIN, BODY_TOP, LEFT) - 4;
+    const labels = 170;
+    const x0 = MARGIN + labels;
+    const span = LEFT - labels - 44;
+    const [min, max] = [1, 1.3];
+    const at = (value: number) => x0 + (span * (value - min)) / (max - min);
+    for (const row of efficiency.rows) {
+      s.line(row.label, MARGIN, y, labels - 12, fonts.semibold, 11.5, INK);
+      s.line(row.detail, MARGIN, y - 13, labels - 12, fonts.regular, 8.5, SECONDARY);
+      const fill = row.outcome ? ACCENT : row.value >= max ? BORDER : INK;
+      page.drawRectangle({ x: x0, y: y - 12, width: at(row.value) - x0, height: 18, color: fill });
+      s.text(row.value.toFixed(row.value === max ? 2 : 3), at(row.value) + 8, y - 6, fonts.medium, 11.5, row.outcome ? ACCENT : INK);
+      y -= 50;
+    }
+    s.hairline(x0, y + 26, span);
+    for (const tick of [1, 1.1, 1.2, 1.3]) {
+      s.rule(at(tick), y + 26, 4, SECONDARY);
+      const label = tick.toFixed(1);
+      s.text(label, at(tick) - fonts.mono.widthOfTextAtSize(label, 7) / 2, y + 12, fonts.mono, 7, SECONDARY);
+    }
+    s.note(efficiency.source, MARGIN, FLOOR + 6, LEFT);
+
+    const bottom = s.figures([efficiency.figure], RIGHT_X, BODY_TOP + 10, RIGHT, 34);
+    s.bullets(efficiency.points, RIGHT_X, s.title("Lower cost, better ESG", RIGHT_X, bottom - 30, RIGHT), RIGHT, 11.5);
+  }
+
+  plant(): void {
+    const { plant } = this.site;
+    const s = this.slide("The plant");
+    this.figure(s, plant.image, MARGIN, FLOOR + 14, LEFT, BODY_TOP + 10 - FLOOR - 14);
+    const y = s.bullets(plant.points, RIGHT_X, s.title("Rooftop heat-rejection yard", RIGHT_X, BODY_TOP, RIGHT), RIGHT, 11);
+    const inset = Math.min(y - 18 - FLOOR - 14, 120);
+    if (inset > 60) this.figure(s, plant.inset, RIGHT_X, FLOOR + 14, RIGHT, inset, true);
+  }
+
+  location(): void {
+    const { location } = this.site;
+    const s = this.slide("Location and connectivity");
+    this.figure(s, location.image, MARGIN, FLOOR + 14, LEFT, BODY_TOP + 10 - FLOOR - 14);
+    s.points(location.points, RIGHT_X, BODY_TOP, RIGHT);
+  }
+}
+
+/** The site's section: a divider over its photo, then a slide for each part of its profile. */
+async function siteSection(deck: Deck, site: SiteContent): Promise<void> {
+  const section = new SiteSection(deck, site, await embedSiteImages(deck.doc, site));
+  section.divider();
+  section.property();
+  section.why();
+  section.capacity();
+  section.reliability();
+  section.efficiency();
+  section.plant();
+  section.location();
+}
+
 function nextSteps(deck: Deck, p: PresentationContent): void {
   const steps = linesOf(p.nextSteps);
   const s = deck.slide("Next steps");
@@ -489,11 +753,13 @@ export async function renderPresentationPdf(presentation: PresentationContent, t
 
   cover(deck, p);
   atAGlance(deck, p);
-  site(deck, p);
+  // A site's own section covers what the deployment's site slide would.
+  if (!p.site) site(deck, p);
   rollout(deck, p);
   cluster(deck, p);
   for (const added of p.sections) section(deck, added);
   terms(deck, p);
+  if (p.site) await siteSection(deck, p.site);
   nextSteps(deck, p);
   deck.footers(today);
 

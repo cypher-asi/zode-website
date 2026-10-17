@@ -26,6 +26,7 @@ import {
   type Deployment,
 } from "@/features/deployments/types";
 import { teaserOf } from "@/features/teasers/content";
+import { siteOf } from "./sites";
 import { LIMITS, type LabeledValue, type PresentationContent, type PricingRow, type SpecCell, type Stat } from "./types";
 
 const COOLING_PROSE: Record<Deployment["cooling"], string> = {
@@ -47,7 +48,8 @@ const NEXT_STEPS = [
 
 /**
  * `deployment`'s presentation, every figure written out from it as of now,
- * with its external notes as a slide of their own and the teaser's contact.
+ * with its external notes as a slide of their own, its site's profile when
+ * one's written for its address, and the teaser's contact.
  * Nothing internal (internal notes, credit, the data room) goes in: it opens
  * for anyone who can open the deployment.
  */
@@ -185,6 +187,7 @@ export function presentationOf(deployment: Deployment): PresentationContent {
       : [],
     terms: terms.map((term) => ({ label: cut(term.label, LIMITS.termLabel), value: cut(term.value, LIMITS.termValue) })),
     pricing: priced.length ? pricing : [],
+    site: siteOf(d),
     nextSteps: NEXT_STEPS.slice(0, LIMITS.nextSteps).join("\n"),
     contactName: teaser.contactName,
     contactEmail: teaser.contactEmail,

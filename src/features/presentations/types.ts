@@ -50,6 +50,50 @@ export interface Section {
   facts: LabeledValue[];
 }
 
+/** One of a site profile's images, a file in its folder under ./sites, with the line set under it. */
+export interface SiteImage {
+  file: string;
+  caption: string;
+}
+
+/** A numbered point: a heading over a sentence or two. */
+export interface SitePoint {
+  title: string;
+  text: string;
+}
+
+/** A bar of the efficiency chart, the design outcome in the accent. */
+export interface PueRow {
+  label: string;
+  detail: string;
+  value: number;
+  outcome?: boolean;
+}
+
+/**
+ * The presentation's second section, on the building and land rather than
+ * the deployment: written by hand from the landlord's materials for the
+ * sites that have them, so it can say what the deployment's fields can't.
+ */
+export interface SiteContent {
+  /** The divider: the site's name large over its photo. */
+  name: string;
+  caption: string;
+  lede: string;
+  /** The folder of its images under ./sites. */
+  folder: string;
+  photo: SiteImage;
+  property: { image: SiteImage; facts: LabeledValue[] };
+  why: { image: SiteImage; points: SitePoint[] };
+  capacity: { figures: LabeledValue[]; columns: { title: string; items: string[] }[] };
+  reliability: { lede: string; cells: SitePoint[]; source: string };
+  efficiency: { rows: PueRow[]; figure: LabeledValue; points: string[]; source: string };
+  plant: { image: SiteImage; points: string[]; inset: SiteImage };
+  location: { image: SiteImage; points: SitePoint[] };
+  /** Under every slide of the section. */
+  disclaimer: string;
+}
+
 export interface PresentationContent {
   /** The cover. */
   eyebrow: string;
@@ -78,6 +122,8 @@ export interface PresentationContent {
   /** Commercial terms: the figures across the priced phases, then each phase's. */
   terms: LabeledValue[];
   pricing: PricingRow[];
+  /** The site's own section, before next steps, for the sites with a profile. */
+  site: SiteContent | null;
   /** One per line. */
   nextSteps: string;
   contactName: string;
