@@ -4,7 +4,8 @@
  * deployment's figures. The limits keep each slide's text on its page.
  */
 
-import type { Cooling, Deployment } from "@/features/deployments/types";
+import { formatMw } from "@/features/deployments/format";
+import { totalsOf, type Cooling, type Deployment } from "@/features/deployments/types";
 
 export interface Stat {
   value: string;
@@ -181,13 +182,21 @@ export const cityOf = (address: string | null): string | null => {
   return state >= 2 ? parts[state - 1] : null;
 };
 
-/** What a deployment's presentation is called: its city, e.g. "Chicago", or its name without one. */
-export const presentationName = (deployment: Pick<Deployment, "name" | "city" | "address">): string =>
-  deployment.city ?? cityOf(deployment.address) ?? deployment.name;
+/**
+ * What a deployment's presentation is called, e.g. "24 MW IT Deployment - Chicago":
+ * its critical IT, whole above 1 MW, and its city, or its name without one.
+ */
+export const presentationName = (deployment: Deployment): string => {
+  const { mw } = totalsOf(deployment);
+  return [
+    mw ? `${formatMw(mw >= 1 ? Math.round(mw) : mw)} IT Deployment` : "Deployment",
+    deployment.city ?? cityOf(deployment.address) ?? deployment.name,
+  ].join(" - ");
+};
 
-/** The download name of a presentation called `name`, e.g. "ZODE - Presentation - Chicago.pdf". */
+/** The download name of a presentation called `name`, e.g. "ZODE - 24 MW IT Deployment - Chicago.pdf". */
 export const presentationFileName = (name: string): string =>
-  `ZODE - Presentation - ${
+  `ZODE - ${
     name
       .replace(/[^\p{L}\p{N} .,&-]+/gu, " ")
       .replace(/ {2,}/g, " ")

@@ -872,7 +872,7 @@ export async function renderPresentationPdf(presentation: PresentationContent, t
   nextSteps(deck, p);
   deck.footers(today);
 
-  doc.setTitle(`ZODE \u2013 ${p.title}`);
+  doc.setTitle(`ZODE - ${p.title}`);
   doc.setSubject(p.subtitle || "Site overview");
   doc.setAuthor(BRAND.company);
   doc.setCreator(BRAND.domain);
