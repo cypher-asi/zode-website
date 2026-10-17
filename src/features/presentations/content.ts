@@ -29,7 +29,16 @@ import {
 } from "@/features/deployments/types";
 import { teaserOf } from "@/features/teasers/content";
 import { siteOf } from "./sites";
-import { LIMITS, type LabeledValue, type PresentationContent, type PricingRow, type SpecCell, type Stat } from "./types";
+import {
+  LIMITS,
+  cityOf,
+  presentationName,
+  type LabeledValue,
+  type PresentationContent,
+  type PricingRow,
+  type SpecCell,
+  type Stat,
+} from "./types";
 
 const COOLING_PROSE: Record<Deployment["cooling"], string> = {
   liquid_dtc: "direct-to-chip liquid cooling",
@@ -41,13 +50,6 @@ const COVER_FACILITY: Record<NonNullable<Deployment["facility"]>, string> = {
   colo: "Colo facility",
   conversion: "Existing data center conversion",
   greenfield: "Greenfield site",
-};
-
-/** A US address's city, e.g. "Chicago" from "801 S Canal St, Chicago, IL 60607": the part before its state and ZIP. */
-const cityOf = (address: string | null): string | null => {
-  const parts = (address ?? "").split(/[,\n]/).map((part) => part.trim()).filter(Boolean);
-  const state = parts.findIndex((part) => /^[A-Z]{2}(\s+\d{5}(-\d{4})?)?$/.test(part));
-  return state >= 2 ? parts[state - 1] : null;
 };
 
 const listOf = (items: readonly string[]): string =>
@@ -216,7 +218,7 @@ export function presentationOf(deployment: Deployment): PresentationContent {
 
   return {
     headline: cut(headline, LIMITS.headline),
-    title: cut(d.name, LIMITS.title),
+    title: cut(presentationName(d), LIMITS.title),
     address: cut(address ?? city ?? "", LIMITS.address),
     subtitle: cut([teaser.headline, teaser.subheadline].filter(Boolean).join(". "), LIMITS.subtitle),
     cover: cover.slice(0, LIMITS.cover),

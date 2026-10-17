@@ -4,7 +4,7 @@
  * deployment's figures. The limits keep each slide's text on its page.
  */
 
-import type { Cooling } from "@/features/deployments/types";
+import type { Cooling, Deployment } from "@/features/deployments/types";
 
 export interface Stat {
   value: string;
@@ -165,10 +165,21 @@ export const LIMITS = {
   nextSteps: 5,
 } as const;
 
-/** The download name of a deployment's presentation, e.g. "ZODE - Presentation - Chicago.pdf". */
-export const presentationFileName = (deploymentName: string): string =>
+/** A US address's city, e.g. "Chicago" from "801 S Canal St, Chicago, IL 60607": the part before its state and ZIP. */
+export const cityOf = (address: string | null): string | null => {
+  const parts = (address ?? "").split(/[,\n]/).map((part) => part.trim()).filter(Boolean);
+  const state = parts.findIndex((part) => /^[A-Z]{2}(\s+\d{5}(-\d{4})?)?$/.test(part));
+  return state >= 2 ? parts[state - 1] : null;
+};
+
+/** What a deployment's presentation is called: its city, e.g. "Chicago", or its name without one. */
+export const presentationName = (deployment: Pick<Deployment, "name" | "city" | "address">): string =>
+  deployment.city ?? cityOf(deployment.address) ?? deployment.name;
+
+/** The download name of a presentation called `name`, e.g. "ZODE - Presentation - Chicago.pdf". */
+export const presentationFileName = (name: string): string =>
   `ZODE - Presentation - ${
-    deploymentName
+    name
       .replace(/[^\p{L}\p{N} .,&-]+/gu, " ")
       .replace(/ {2,}/g, " ")
       .trim()

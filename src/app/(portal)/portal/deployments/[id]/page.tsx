@@ -23,6 +23,7 @@ import { orLogIn } from "@/features/portal/mine";
 import { PortalLoading } from "@/features/portal/PortalLoading";
 import { PageHeader } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
+import { presentationName } from "@/features/presentations/types";
 import { teaserPdfPath } from "@/features/teasers/types";
 
 export const metadata: Metadata = {
@@ -121,7 +122,7 @@ async function Deployment({ params, searchParams }: PageProps<"/portal/deploymen
           </div>
         </DeploymentTabPanel>
         <DeploymentTabPanel tab="presentation">
-          <PresentationViewer deployment={{ id: deployment.id, name: deployment.name }} today={todayIso()} />
+          <PresentationViewer deployment={{ id: deployment.id, name: presentationName(deployment) }} today={todayIso()} />
         </DeploymentTabPanel>
         {bom ? (
           <>

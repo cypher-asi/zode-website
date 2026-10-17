@@ -5,7 +5,7 @@ import { getSharedDeployment } from "@/features/deployments/deployments";
 import { SharedPdf } from "@/features/deployments/SharedPdf";
 import styles from "@/features/deployments/shared.module.css";
 import { deploymentFileName, sharedPdfPath, sharePath } from "@/features/deployments/types";
-import { presentationFileName, sharedPresentationPath } from "@/features/presentations/types";
+import { presentationFileName, presentationName, sharedPresentationPath } from "@/features/presentations/types";
 import { ShareButton } from "@/features/profile/ProfileClient";
 import { sharedTeaserPath, teaserFileName } from "@/features/teasers/types";
 
@@ -55,7 +55,7 @@ async function SharedDeployment({
         <a
           className={styles.action}
           href={sharedPresentationPath(token, true)}
-          download={presentationFileName(deployment.name)}
+          download={presentationFileName(presentationName(deployment))}
         >
           Export presentation
         </a>

@@ -5,7 +5,7 @@ import { getDeploymentFor } from "@/features/deployments/deployments";
 import { todayIso } from "@/features/deployments/format";
 import { presentationOf } from "@/features/presentations/content";
 import { renderPresentationPdf } from "@/features/presentations/pdf";
-import { presentationFileName } from "@/features/presentations/types";
+import { presentationFileName, presentationName } from "@/features/presentations/types";
 
 /**
  * A deployment's presentation, written out from it and rendered as of today,
@@ -23,7 +23,7 @@ export async function GET(request: Request, ctx: RouteContext<"/api/deployments/
   const download = new URL(request.url).searchParams.has("download");
   const headers = fileHeaders(
     "application/pdf",
-    contentDisposition(download ? "attachment" : "inline", presentationFileName(deployment.name)),
+    contentDisposition(download ? "attachment" : "inline", presentationFileName(presentationName(deployment))),
   );
   headers.set("Content-Length", String(bytes.byteLength));
   return new Response(bytes as Uint8Array<ArrayBuffer>, { headers });
