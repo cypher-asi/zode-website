@@ -157,13 +157,15 @@ const CAPACITY: PortalApp = {
   links: [{ href: "/portal/capacity/sites", label: "Sites", icon: "capacity" }],
 };
 
-/** The compute pod factory, simulated, for the ZODE team: its main flows, in the order material moves. */
+/**
+ * The compute pod factory, simulated, for the ZODE team: its main flows, in the order material moves.
+ * Listed with everyone's apps on the rail, last, though only the team sees it.
+ */
 const FACTORY: PortalApp = {
   id: "factory",
   label: "Factory",
   icon: "factory",
   href: "/portal/factory",
-  team: true,
   links: FACTORY_FLOWS.map((flow): NavLink => ({ href: flow.href, label: flow.label, icon: flow.icon })),
 };
 
@@ -233,7 +235,7 @@ const ADMIN_APPS: readonly PortalApp[] = [
 
 /**
  * The apps the viewer can open, in rail order, with Settings last for the
- * rail's foot: ZRM, Leads, Capacity, Factory, Posts, Analytics, Team and everyone's contracts for the
+ * rail's foot: Factory, ZRM, Leads, Capacity, Posts, Analytics, Team and everyone's contracts for the
  * ZODE team, the admin apps for super admins.
  */
 export function portalApps({ admin, team }: NavAccess): PortalApp[] {
@@ -280,7 +282,7 @@ export function portalApps({ admin, team }: NavAccess): PortalApp[] {
     ORDERS,
     contracts,
     deployments,
-    ...(team ? [ZRM, LEADS, CAPACITY, FACTORY, POSTS, ANALYTICS] : []),
+    ...(team ? [FACTORY, ZRM, LEADS, CAPACITY, POSTS, ANALYTICS] : []),
     ...(admin ? ADMIN_APPS : []),
     settings,
   ];
