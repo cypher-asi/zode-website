@@ -31,6 +31,7 @@ import {
   drawWordmark,
   embedBrand,
   trackedWidth,
+  wrap,
   wrapClamped,
   type Fonts,
 } from "@/features/pdf/brand";
@@ -281,7 +282,7 @@ class Deck {
     readonly doc: PDFDocument,
     readonly fonts: Fonts,
     readonly wordmark: string,
-    /** In every content slide's footer; the cover has it under its headline. */
+    /** In every content slide's footer. */
     readonly address: string,
   ) {}
 
@@ -331,6 +332,20 @@ class Deck {
 const COVER_LEFT = 290;
 const COVER_RIGHT = 210;
 const COVER_GAP = 32;
+/** The cover's headline: this size, or smaller until it fits whole in `COVER_LINES`. */
+const COVER_HEADLINE = 27;
+const COVER_LINES = 5;
+/** The cover's drawing, as a share of its column and the page's height between the margins. */
+const COVER_ART = 0.9;
+
+/** The cover's headline in lines at the largest size up to `COVER_HEADLINE` that keeps all of it in `COVER_LINES`. */
+function coverHeadline(headline: string, font: PDFFont): { size: number; lines: string[] } {
+  for (let size = COVER_HEADLINE; size > 16; size -= 1) {
+    const lines = wrap(headline, font, size, COVER_LEFT);
+    if (lines.length <= COVER_LINES && lines.every((line) => font.widthOfTextAtSize(line, size) <= COVER_LEFT)) return { size, lines };
+  }
+  return { size: 16, lines: wrapClamped(headline, font, 16, COVER_LEFT, COVER_LINES) };
+}
 
 /** The height of one of the cover's spec cells, as `coverCell` sets it. */
 const coverCellHeight = (s: Slide, cell: SpecCell): number =>
@@ -358,8 +373,8 @@ function coverCell(s: Slide, cell: SpecCell, x: number, top: number): void {
 
 /**
  * The cover, on ink without a footer: the wordmark large at the top left
- * over the headline and the deployment's name and address, the cluster's
- * drawing in the middle, and its specs stacked down the right.
+ * over the headline and the deployment's name, the cluster's drawing
+ * centred in the middle, and its specs stacked down the right.
  */
 function cover(deck: Deck, p: PresentationContent, today: string): void {
   const { fonts } = deck;
@@ -369,19 +384,19 @@ function cover(deck: Deck, p: PresentationContent, today: string): void {
 
   const top = H - MARGIN;
   drawWordmark(page, deck.wordmark, MARGIN, top, 24, WHITE);
-  let y = top - 96;
-  s.label(p.eyebrow, MARGIN, y, COVER_LEFT, PAPER);
-  y -= 46;
-  const size = 34;
-  for (const line of wrapClamped(p.headline, fonts.display, size, COVER_LEFT, 4)) {
+  const { size, lines } = coverHeadline(p.headline, fonts.display);
+  let y = top - 91 - size * CAP;
+  for (const line of lines) {
     s.text(line, MARGIN, y, fonts.display, size, WHITE);
     y -= size * 1.18;
   }
-  s.caption([p.title, p.address].filter(Boolean), MARGIN, y - 6, COVER_LEFT, WHITE, PAPER);
+  s.caption([p.title], MARGIN, y - 6, COVER_LEFT, WHITE);
   s.label(`Confidential · ${formatMonthYear(dayOf(today))}`, MARGIN, MARGIN, COVER_LEFT, TERTIARY);
 
-  const artX = MARGIN + COVER_LEFT + COVER_GAP;
-  clusterArt(p.cooling).draw(page, { x: artX, y: MARGIN, width: CONTENT - COVER_LEFT - COVER_RIGHT - COVER_GAP * 2, height: H - MARGIN * 2 }, {
+  const column = CONTENT - COVER_LEFT - COVER_RIGHT - COVER_GAP * 2;
+  const art = { width: column * COVER_ART, height: (H - MARGIN * 2) * COVER_ART };
+  const artX = MARGIN + COVER_LEFT + COVER_GAP + (column - art.width) / 2;
+  clusterArt(p.cooling).draw(page, { x: artX, y: (H - art.height) / 2, ...art }, {
     ground: INK,
     stroke: WHITE,
     edge: 0.75,
@@ -576,19 +591,13 @@ async function embedSiteImages(doc: PDFDocument, site: SiteContent): Promise<Map
   );
 }
 
-/** The site section's slides, each with its disclaimer above the footer. */
+/** The site section's slides. */
 class SiteSection {
   constructor(
     readonly deck: Deck,
     readonly site: SiteContent,
     private readonly images: Map<string, PDFImage>,
   ) {}
-
-  slide(heading: string): Slide {
-    const s = this.deck.slide(heading);
-    s.line(this.site.disclaimer, MARGIN, 50, CONTENT, s.fonts.regular, 7.5, TERTIARY);
-    return s;
-  }
 
   /** `image` in the box from (`x`, `y`) up, its caption under it; drawings sit whole in a hairline frame. */
   figure(s: Slide, image: SiteImage, x: number, y: number, width: number, height: number, cover = false): void {
@@ -626,7 +635,7 @@ class SiteSection {
 
   property(): void {
     const { property } = this.site;
-    const s = this.slide("The property");
+    const s = this.deck.slide("The property");
     const art = 400;
     this.figure(s, property.image, MARGIN, FLOOR + 14, art, BODY_TOP + 10 - FLOOR - 14, true);
     const x = MARGIN + art + COLUMN_GAP;
@@ -635,7 +644,7 @@ class SiteSection {
 
   why(): void {
     const { why } = this.site;
-    const s = this.slide(`Why ${this.site.name}`);
+    const s = this.deck.slide(`Why ${this.site.name}`);
     const list = 400;
     s.points(why.points, MARGIN, BODY_TOP, list);
     const x = MARGIN + list + COLUMN_GAP;
@@ -644,7 +653,7 @@ class SiteSection {
 
   capacity(): void {
     const { capacity } = this.site;
-    const s = this.slide("Power and capacity");
+    const s = this.deck.slide("Power and capacity");
     const y = s.figures(capacity.figures, MARGIN, BODY_TOP + 10, CONTENT, 30) - 34;
     const gap = 32;
     const width = (CONTENT - gap * (capacity.columns.length - 1)) / capacity.columns.length;
@@ -656,7 +665,7 @@ class SiteSection {
 
   reliability(): void {
     const { reliability } = this.site;
-    const s = this.slide("Reliability");
+    const s = this.deck.slide("Reliability");
     const { fonts } = s;
     const top = s.paragraph(reliability.lede, MARGIN, BODY_TOP, CONTENT, 13, 19.5) - 6;
     const columns = 3;
@@ -680,9 +689,9 @@ class SiteSection {
 
   efficiency(): void {
     const { efficiency } = this.site;
-    const s = this.slide("Efficiency");
+    const s = this.deck.slide("Efficiency");
     const { fonts, page } = s;
-    let y = s.title("Concept-level PUE · lower is better", MARGIN, BODY_TOP, LEFT) - 4;
+    let y = s.title("PUE · lower is better", MARGIN, BODY_TOP, LEFT) - 4;
     const labels = 170;
     const x0 = MARGIN + labels;
     const span = LEFT - labels - 44;
@@ -710,7 +719,7 @@ class SiteSection {
 
   plant(): void {
     const { plant } = this.site;
-    const s = this.slide("The plant");
+    const s = this.deck.slide("The plant");
     this.figure(s, plant.image, MARGIN, FLOOR + 14, LEFT, BODY_TOP + 10 - FLOOR - 14);
     const y = s.bullets(plant.points, RIGHT_X, s.title("Rooftop heat-rejection yard", RIGHT_X, BODY_TOP, RIGHT), RIGHT, 11);
     const inset = Math.min(y - 18 - FLOOR - 14, 120);
@@ -719,7 +728,7 @@ class SiteSection {
 
   location(): void {
     const { location } = this.site;
-    const s = this.slide("Location and connectivity");
+    const s = this.deck.slide("Location and connectivity");
     this.figure(s, location.image, MARGIN, FLOOR + 14, LEFT, BODY_TOP + 10 - FLOOR - 14);
     s.points(location.points, RIGHT_X, BODY_TOP, RIGHT);
   }

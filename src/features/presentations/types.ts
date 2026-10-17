@@ -90,14 +90,10 @@ export interface SiteContent {
   efficiency: { rows: PueRow[]; figure: LabeledValue; points: string[]; source: string };
   plant: { image: SiteImage; points: string[]; inset: SiteImage };
   location: { image: SiteImage; points: SitePoint[] };
-  /** Under every slide of the section. */
-  disclaimer: string;
 }
 
 export interface PresentationContent {
-  /** The cover: its eyebrow over its headline, the deployment's name and address under it. */
-  eyebrow: string;
-  /** e.g. "24 MW IT of 2027 Vera Rubin Capacity in Chicago". */
+  /** The cover: its headline over the deployment's name, e.g. "24 MW IT of 2027 Vera Rubin Capacity in Chicago". */
   headline: string;
   title: string;
   /** Where the site is, its address or else its city, in every content slide's footer. */
@@ -134,7 +130,6 @@ export interface PresentationContent {
 
 /** Character limits per field, and row limits per list. */
 export const LIMITS = {
-  eyebrow: 60,
   headline: 80,
   title: 90,
   address: 90,

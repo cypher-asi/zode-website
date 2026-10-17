@@ -34,6 +34,20 @@ const COOLING_PROSE: Record<Deployment["cooling"], string> = {
   air: "air cooling",
 };
 
+/** How the cover's overview names each kind of facility. */
+const COVER_FACILITY: Record<NonNullable<Deployment["facility"]>, string> = {
+  colo: "Colo facility",
+  conversion: "Existing data center conversion",
+  greenfield: "Greenfield site",
+};
+
+/** A US address's city, e.g. "Chicago" from "801 S Canal St, Chicago, IL 60607": the part before its state and ZIP. */
+const cityOf = (address: string | null): string | null => {
+  const parts = (address ?? "").split(/[,\n]/).map((part) => part.trim()).filter(Boolean);
+  const state = parts.findIndex((part) => /^[A-Z]{2}(\s+\d{5}(-\d{4})?)?$/.test(part));
+  return state >= 2 ? parts[state - 1] : null;
+};
+
 const cut = (text: string, max: number): string => (text.length <= max ? text : `${text.slice(0, max - 3).trimEnd()}...`);
 
 const facts = (rows: readonly LabeledValue[], max: number): LabeledValue[] =>
@@ -58,13 +72,13 @@ export function presentationOf(deployment: Deployment): PresentationContent {
   const teaser = teaserOf(d);
   const totals = totalsOf(d);
   const shares = totals.byPlatform.filter((share) => share.gpus > 0);
-  const place = d.city ?? d.address?.split("\n")[0] ?? null;
+  const city = d.city ?? cityOf(d.address);
   const address = d.address?.split("\n").join(", ") ?? null;
   const facility = facilityLabel(d.facility);
   const first = d.phases[0];
 
   const siteSummary = [
-    `${d.name}${address ? ` is at ${address}` : place ? ` is in ${place}` : ""}`,
+    `${d.name}${address ? ` is at ${address}` : city ? ` is in ${city}` : ""}`,
     facility ? `, a ${facility.toLowerCase()} site` : "",
     ". ",
     totals.mw ? `It brings ${formatMw(totals.mw)} of critical IT power online` : "It comes online",
@@ -79,12 +93,12 @@ export function presentationOf(deployment: Deployment): PresentationContent {
     ". ZODE builds, operates and supports the clusters end to end.",
   ].join("");
 
-  // The cover's caption carries the site's place, so its overview leaves it out.
+  // The cover's headline carries the site's city, so its overview leaves it out.
   const overview = [
     shares.length > 1
       ? `${formatCount(totals.gpus)} NVIDIA GPUs: ${platformBreakdown(shares)}`
       : `${formatCount(totals.gpus)} NVIDIA ${platformSummary(shares)} GPUs`,
-    facility ? `${facility} site` : null,
+    d.facility ? COVER_FACILITY[d.facility] : null,
   ]
     .filter(Boolean)
     .join(". ");
@@ -96,7 +110,7 @@ export function presentationOf(deployment: Deployment): PresentationContent {
     last?.rfsOn.slice(0, 4),
     lead ? platformLabel(lead.platform) : null,
     "Capacity",
-    place ? `in ${place}` : null,
+    city ? `in ${city}` : null,
   ]
     .filter(Boolean)
     .join(" ");
@@ -163,10 +177,9 @@ export function presentationOf(deployment: Deployment): PresentationContent {
     : teaser.terms;
 
   return {
-    eyebrow: "Site overview",
     headline: cut(headline, LIMITS.headline),
     title: cut(d.name, LIMITS.title),
-    address: cut(address ?? place ?? "", LIMITS.address),
+    address: cut(address ?? city ?? "", LIMITS.address),
     subtitle: cut([teaser.headline, teaser.subheadline].filter(Boolean).join(". "), LIMITS.subtitle),
     cover: cover.slice(0, LIMITS.cover),
     cooling: d.cooling,

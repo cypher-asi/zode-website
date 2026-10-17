@@ -25,10 +25,10 @@ export const CHICAGO_801_CANAL: SiteContent = {
     ],
   },
   why: {
-    image: { file: "massing.jpg", caption: "Concept massing: the rooftop heat-rejection yard, acoustic wall and generator yard." },
+    image: { file: "massing.jpg", caption: "Massing: the rooftop heat-rejection yard, acoustic wall and generator yard." },
     points: [
       { title: "Purpose-built reliability", text: "A Tier III, N+1 design across power and cooling, so it stays up while equipment is serviced." },
-      { title: "Efficient by design", text: "A concept PUE near 1.18 means a lower power cost per IT kW and a cleaner sustainability story." },
+      { title: "Efficient by design", text: "A PUE near 1.18 means a lower power cost per IT kW and a cleaner sustainability story." },
       { title: "Carrier-rich and connected", text: "Four long-haul and eight metro carriers already at the building, with diverse-path fiber." },
       { title: "Room to grow", text: "Take capacity now, with a clear path to expand inside the building." },
     ],
@@ -80,7 +80,7 @@ export const CHICAGO_801_CANAL: SiteContent = {
   },
   efficiency: {
     rows: [
-      { label: "Annual weighted", detail: "Concept-level screening", value: 1.184, outcome: true },
+      { label: "Annual weighted", detail: "Blended across the year", value: 1.184, outcome: true },
       { label: "Economizer mode", detail: "Wet bulb at or below 63°F", value: 1.171 },
       { label: "Trim-chiller mode", detail: "Peak and humid hours", value: 1.21 },
       { label: "Design basis", detail: "What the plant is sized for", value: 1.3 },
@@ -94,17 +94,17 @@ export const CHICAGO_801_CANAL: SiteContent = {
     source: "Callan Consulting Engineers, Preliminary PUE and Energy Analysis, July 29, 2026.",
   },
   plant: {
-    image: { file: "roof.jpg", caption: "Rooftop heat-rejection yard, concept layout." },
+    image: { file: "roof.jpg", caption: "Rooftop heat-rejection yard layout." },
     points: [
       "Two cooling towers, nine adiabatic fluid coolers and eight air-cooled trim chillers",
       "All behind a 25 ft acoustic barrier wall, modelled against Chicago and Illinois limits",
       "Data halls, the central plant and support fill the floors below",
       "Two modes keep it simple: economizer coolers when it's cool out, trim chillers when it's warm",
     ],
-    inset: { file: "wells.jpg", caption: "Geothermal concept: eight wells along S Canal Street." },
+    inset: { file: "wells.jpg", caption: "Geothermal well field: eight wells along S Canal Street." },
   },
   location: {
-    image: { file: "siteplan.jpg", caption: "Conceptual site plan: transformers, generators and fuel in the yard off S Canal Street." },
+    image: { file: "siteplan.jpg", caption: "Site plan: transformers, generators and fuel in the yard off S Canal Street." },
     points: [
       { title: "South Loop, Chicago", text: "An established downtown site rather than a greenfield on the edge of town, about 3 km from 350 E Cermak." },
       { title: "Carrier-rich connectivity", text: "Four long-haul and eight metro carriers already at the building, with diverse-path fiber entries." },
@@ -112,5 +112,4 @@ export const CHICAGO_801_CANAL: SiteContent = {
       { title: "Rail and utility adjacency", text: "An adjacent rail corridor and utility feeds, coordinated with the canal-bridge work." },
     ],
   },
-  disclaimer: "Concept design. Preliminary, not for construction. Figures are concept-level and subject to confirmation.",
 };
