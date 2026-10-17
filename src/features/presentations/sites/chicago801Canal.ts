@@ -36,8 +36,9 @@ export const CHICAGO_801_CANAL: SiteContent = {
   },
   capacity: {
     figures: [
-      { value: "31 MW", label: "Utility service, ComEd 12.4 kV" },
-      { value: "~100 MW", label: "Room to expand in the building" },
+      { value: "5 MW", label: "Available today" },
+      { value: "31 MW", label: "ComEd service, 12.4 kV" },
+      { value: "~100 MW", label: "Room to expand" },
       { value: "23.8 MW", label: "Critical IT at design" },
       { value: "6,780 TR", label: "IT cooling load" },
     ],
