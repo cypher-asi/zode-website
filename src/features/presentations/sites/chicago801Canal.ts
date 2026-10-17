@@ -115,6 +115,41 @@ export const CHICAGO_801_CANAL: SiteContent = {
     ],
   },
   team: {
+    experience: {
+      groups: [
+        {
+          title: "Data center · Six Microsoft campuses, more than 2 GW",
+          rows: [
+            { company: "Microsoft", project: "Boydton", location: "Virginia", scale: "700 MW–1 GW+", role: "Engineering digitization · Cx modernization · turnover · operations" },
+            { company: "Microsoft", project: "Quincy", location: "Washington", scale: "350+ MW", role: "Campus expansion · commissioning · operational onboarding" },
+            { company: "Microsoft", project: "East Wenatchee", location: "Washington", scale: "350+ MW", role: "New facility delivery · integration · commissioning readiness" },
+            { company: "Microsoft", project: "San Antonio", location: "Texas", scale: "400+ MW", role: "Construction delivery · integrated systems testing · readiness" },
+            { company: "Microsoft", project: "Goodyear", location: "Arizona", scale: "300+ MW", role: "Infrastructure delivery · commissioning · asset lifecycle" },
+            { company: "Microsoft", project: "Cheyenne", location: "Wyoming", scale: "250+ MW", role: "Expansion planning · commissioning · operational integration" },
+          ],
+        },
+        {
+          title: "Commercial real estate",
+          rows: [
+            { company: "Microsoft", project: "Microsoft GWS", location: "Global", scale: "38M sf", role: "Digital transformation · standards · operations · decarbonization" },
+            { company: "Microsoft", project: "Microsoft East Campus", location: "Redmond, WA", scale: "HQ campus", role: "Design and construction lead · systems integration · readiness" },
+            { company: "Wells Fargo", project: "National OT Cybersecurity", location: "USA", scale: "800 sites", role: "Strategy development · site PMO execution" },
+            { company: "Duke Energy", project: "Duke Energy Center", location: "Charlotte, NC", scale: "1.5M sf", role: "Converged building systems · OT cybersecurity · controls" },
+            { company: "Warner Bros. Discovery", project: "30 Hudson Yards", location: "New York, NY", scale: "1.1M sf", role: "Smart-building design · commissioning · OT cybersecurity" },
+            { company: "JPMorgan Chase", project: "JPMorgan Chase HQ", location: "New York, NY", scale: "2.5M sf", role: "CRE technology · building systems convergence · concept to completion" },
+          ],
+        },
+        {
+          title: "Government and mission-critical",
+          rows: [
+            { company: "GSA", project: "GSA Headquarters", location: "Washington, DC", scale: "724K sf", role: "Smart buildings · integrated systems · commissioning · OT cybersecurity" },
+            { company: "GSA", project: "GSAlink", location: "National", scale: "370M sf", role: "Secure BAS standards · analytics and FDD · portfolio data normalization" },
+            { company: "U.S. Army", project: "Fort Benning Base of the Future", location: "Fort Benning, GA", scale: "Base", role: "Digital platform strategy · stakeholder alignment · site readiness · resilience" },
+          ],
+        },
+      ],
+      note: "Also: Hines, Alexandria, Wells Fargo, Oxford, PGIM, BMO, Kaiser Permanente, Dell, Bank of America, Related, GWL Realty Advisors and Ivanhoé Cambridge.",
+    },
     slides: [
       {
         title: "Project team",

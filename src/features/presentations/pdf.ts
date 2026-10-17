@@ -40,6 +40,7 @@ import { SITE_URL } from "@/lib/site";
 import { clusterArt } from "./clusterArt";
 import {
   linesOf,
+  type ExperienceRow,
   type LabeledValue,
   type PresentationContent,
   type PricingRow,
@@ -58,7 +59,7 @@ import {
  * the notes, terms), each numbered large beside its heading, over a footer
  * with the wordmark. A site with a profile then gets a section of its own,
  * from a divider over its photo through its property, power, reliability,
- * efficiency, plant, location and team, before next steps. Every block clamps its
+ * efficiency, plant, location, team experience and team, before next steps. Every block clamps its
  * lines, and the limits in ./types keep the longest text on its slide.
  */
 
@@ -606,6 +607,15 @@ async function embedSiteImages(doc: PDFDocument, site: SiteContent): Promise<Map
   );
 }
 
+/** Columns of the team's experience table, a share of the width each. */
+const EXPERIENCE_COLUMNS: readonly { label: string; key: keyof ExperienceRow; share: number }[] = [
+  { label: "Company", key: "company", share: 0.15 },
+  { label: "Campus or project", key: "project", share: 0.19 },
+  { label: "Location", key: "location", share: 0.12 },
+  { label: "Scale", key: "scale", share: 0.11 },
+  { label: "Role", key: "role", share: 0.43 },
+];
+
 /** The site section's slides. */
 class SiteSection {
   constructor(
@@ -748,6 +758,42 @@ class SiteSection {
     s.points(location.points, RIGHT_X, BODY_TOP, RIGHT);
   }
 
+  /** The team's projects in a table, a group each under its caps label, then a line naming others. */
+  experience(): void {
+    const { experience } = this.site.team;
+    const s = this.deck.slide("Team experience");
+    const { fonts, page } = s;
+    const cells = (y: number, value: (key: keyof ExperienceRow) => string, font: (key: keyof ExperienceRow) => PDFFont, size: number, fill: Color, tracking = 0) => {
+      let x = MARGIN;
+      for (const column of EXPERIENCE_COLUMNS) {
+        const width = CONTENT * column.share - 12;
+        s.text(clampLine(value(column.key), font(column.key), size, width, tracking), x, y, font(column.key), size, fill, tracking);
+        x += CONTENT * column.share;
+      }
+    };
+    let y = BODY_TOP + 6;
+    const labels = Object.fromEntries(EXPERIENCE_COLUMNS.map((column) => [column.key, column.label.toUpperCase()]));
+    cells(y, (key) => labels[key], () => fonts.mono, 7, SECONDARY, 1.2);
+    y -= 10;
+    for (const group of experience.groups) {
+      s.hairline(MARGIN, y, CONTENT, INK);
+      y -= 13;
+      s.line(group.title.toUpperCase(), MARGIN, y, CONTENT, fonts.semibold, 8, ACCENT, 1.2);
+      y -= 5;
+      for (const row of group.rows) {
+        s.hairline(MARGIN, y, CONTENT);
+        y -= 12;
+        cells(y, (key) => row[key], (key) => (key === "company" || key === "scale" ? fonts.medium : fonts.regular), 9.5, INK);
+        y -= 5;
+      }
+    }
+    s.hairline(MARGIN, y, CONTENT);
+    const source = "Source: Alosanar.";
+    const sourceWidth = fonts.regular.widthOfTextAtSize(source, 8.5);
+    drawTextRight(page, source, MARGIN + CONTENT, y - 15, fonts.regular, 8.5, SECONDARY);
+    s.note(experience.note, MARGIN, y - 15, CONTENT - sourceWidth - 24);
+  }
+
   /** A slide per group: its people in a grid, each name with their company beside it, over their role and bio. */
   team(): void {
     const { team } = this.site;
@@ -792,6 +838,7 @@ async function siteSection(deck: Deck, site: SiteContent): Promise<void> {
   section.efficiency();
   section.plant();
   section.location();
+  section.experience();
   section.team();
 }
 

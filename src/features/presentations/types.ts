@@ -70,6 +70,15 @@ export interface PueRow {
   outcome?: boolean;
 }
 
+/** A row of the team's experience table. */
+export interface ExperienceRow {
+  company: string;
+  project: string;
+  location: string;
+  scale: string;
+  role: string;
+}
+
 /** A person on a team slide, their company set beside their name. */
 export interface TeamMember {
   name: string;
@@ -99,7 +108,12 @@ export interface SiteContent {
   plant: { image: SiteImage; points: string[]; inset: SiteImage };
   location: { image: SiteImage; points: SitePoint[] };
   /** A slide per group, after location: who's developing and delivering the site. */
-  team: { slides: { title: string; lede: string; members: TeamMember[] }[]; source: string };
+  team: {
+    /** A slide before the bios: projects in groups, with a line naming others. */
+    experience: { groups: { title: string; rows: ExperienceRow[] }[]; note: string };
+    slides: { title: string; lede: string; members: TeamMember[] }[];
+    source: string;
+  };
 }
 
 export interface PresentationContent {
