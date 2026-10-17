@@ -20,6 +20,9 @@ import {
   facilityLabel,
   platformBreakdown,
   platformSummary,
+  pricedByPhase,
+  pricingLabel,
+  pricingOf,
   rackDesignHref,
   totalsOf,
   type Deployment,
@@ -220,6 +223,13 @@ export function DeploymentDetail({ deployment: d, today }: { deployment: Deploym
         <Fact label="Deposit">{formatDeposit(d.depositUsd, d.depositPct)}</Fact>
         <Fact label="Est. monthly">{totals.monthlyUsd !== null ? formatUsd(totals.monthlyUsd) : null}</Fact>
         <Fact label="Est. contract value">{totals.contractUsd !== null ? formatUsd(totals.contractUsd) : null}</Fact>
+        {pricedByPhase(d.phases)
+          ? d.phases.map((phase, i) => (
+              <Fact key={phase.id} label={phaseLabel(phase, i)} wide>
+                {pricingLabel(pricingOf(d, phase))}
+              </Fact>
+            ))
+          : null}
       </Facts>
 
       <Facts title="Credit">

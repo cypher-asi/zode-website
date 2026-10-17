@@ -9,7 +9,7 @@ import {
   type DeploymentConfig,
 } from "./config/catalog";
 import { resolveConfig } from "./config/resolve";
-import { formatCount } from "./format";
+import { formatCount, formatDeposit, formatRate, formatTerm, formatUsd } from "./format";
 
 /*
  * A GPU deployment as the portal shows it, and the figures derived from it.
@@ -43,6 +43,10 @@ export interface Phase {
   clusterCopies: number;
   /** Where the phase's configuration differs from the deployment's (see `resolveConfig`). */
   configOverrides: ConfigOverrides;
+  /** The phase's own price, term and deposit percent; each left null takes the deployment's (see `pricingOf`). */
+  priceGpuHr: number | null;
+  termMonths: number | null;
+  depositPct: number | null;
 }
 
 /** A phase as the deployment form saves it: a new one has no id yet, and its cluster is set on the BOM. */
@@ -190,6 +194,57 @@ export const nodesForMw = (platform: Platform, mw: number): number => {
 export const depositFor = (contractUsd: number | null, pct: number | null): number | null =>
   contractUsd === null || pct === null ? null : Math.round(contractUsd * pct) / 100;
 
+/** The terms phases fall back on. */
+type DeploymentTerms = Pick<Deployment, "priceGpuHr" | "termMonths"> & { depositPct?: number | null };
+
+/** A phase's GPUs and any terms of its own. */
+type PricedPhase = Pick<Phase, "platform" | "nodes"> & Partial<Pick<Phase, "priceGpuHr" | "termMonths" | "depositPct">>;
+
+/** What a phase is priced at, and what that comes to. */
+export interface Pricing {
+  gpus: number;
+  priceGpuHr: number | null;
+  termMonths: number | null;
+  depositPct: number | null;
+  /** GPUs x $/GPU-hr x hours in a month, when there's a price. */
+  monthlyUsd: number | null;
+  /** The monthly figure over the term, when there's a term too. */
+  contractUsd: number | null;
+  depositUsd: number | null;
+}
+
+/** `phase` on its own terms, each it leaves unset taken from deployment `d`'s. */
+export function pricingOf(d: DeploymentTerms, phase: PricedPhase): Pricing {
+  const gpus = gpusFor(phase.platform, phase.nodes);
+  const priceGpuHr = phase.priceGpuHr ?? d.priceGpuHr;
+  const termMonths = phase.termMonths ?? d.termMonths;
+  const depositPct = phase.depositPct ?? d.depositPct ?? null;
+  const monthlyUsd = priceGpuHr === null ? null : gpus * priceGpuHr * HOURS_PER_MONTH;
+  const contractUsd = monthlyUsd === null || termMonths === null ? null : monthlyUsd * termMonths;
+  return { gpus, priceGpuHr, termMonths, depositPct, monthlyUsd, contractUsd, depositUsd: depositFor(contractUsd, depositPct) };
+}
+
+/** A phase's terms on one line, e.g. "$4.50 /GPU-hr · 5 years · $403,660,800 · $111,006,720 (27.5% of contract) deposit". */
+export const pricingLabel = (p: Pricing): string =>
+  p.priceGpuHr === null
+    ? "To follow"
+    : [
+        formatRate(p.priceGpuHr),
+        p.termMonths !== null ? formatTerm(p.termMonths) : null,
+        p.contractUsd !== null ? formatUsd(p.contractUsd) : null,
+        p.depositPct !== null ? `${formatDeposit(p.depositUsd, p.depositPct)} deposit` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+
+/** Whether any phase has a price, term or deposit of its own. */
+export const pricedByPhase = (phases: readonly PricedPhase[]): boolean =>
+  phases.some((phase) => phase.priceGpuHr != null || phase.termMonths != null || phase.depositPct != null);
+
+/** The figures that are there added up, or null when none is. */
+const sumOf = (values: readonly (number | null)[]): number | null =>
+  values.some((value) => value !== null) ? values.reduce<number>((sum, value) => sum + (value ?? 0), 0) : null;
+
 /** One platform's share of a deployment. */
 export interface PlatformShare {
   platform: Platform;
@@ -209,15 +264,18 @@ export interface DeploymentTotals {
    * phase schedules counted on the deployment's platform.
    */
   byPlatform: PlatformShare[];
-  /** GPUs x $/GPU-hr x hours in a month, when there's a price. */
+  /** Each phase's monthly figure, and the unscheduled nodes' at the deployment's price, for those with a price. */
   monthlyUsd: number | null;
-  /** The monthly figure over the whole term, when there's a term too. */
+  /** Each phase's monthly figure over its term, for those with a price and a term. */
   contractUsd: number | null;
+  /** Each phase's deposit, for those with a contract and a deposit percent. */
+  depositUsd: number | null;
 }
 
 export function totalsOf(
   d: Pick<Deployment, "nodes" | "platform" | "storageTbPerNode" | "priceGpuHr" | "termMonths"> & {
-    phases: readonly Pick<Phase, "platform" | "nodes" | "mw">[];
+    depositPct?: number | null;
+    phases: readonly (Pick<Phase, "mw"> & PricedPhase)[];
   },
 ): DeploymentTotals {
   const scheduledNodes = d.phases.reduce((sum, phase) => sum + phase.nodes, 0);
@@ -232,15 +290,20 @@ export function totalsOf(
   for (const phase of d.phases) add(phase.platform, phase.nodes, phase.mw ?? 0);
   if (d.nodes > scheduledNodes || !shares.size) add(d.platform, Math.max(d.nodes - scheduledNodes, 0), 0);
   const gpus = [...shares.values()].reduce((sum, share) => sum + share.gpus, 0);
-  const monthlyUsd = d.priceGpuHr === null ? null : gpus * d.priceGpuHr * HOURS_PER_MONTH;
+  const unscheduled = Math.max(d.nodes - scheduledNodes, 0);
+  const parts = [
+    ...d.phases.map((phase) => pricingOf(d, phase)),
+    ...(unscheduled || !d.phases.length ? [pricingOf(d, { platform: d.platform, nodes: unscheduled })] : []),
+  ];
   return {
     gpus,
     storageTb: d.nodes * d.storageTbPerNode,
     scheduledNodes,
     mw: d.phases.reduce((sum, phase) => sum + (phase.mw ?? 0), 0),
     byPlatform: [...shares.values()],
-    monthlyUsd,
-    contractUsd: monthlyUsd === null || d.termMonths === null ? null : monthlyUsd * d.termMonths,
+    monthlyUsd: sumOf(parts.map((part) => part.monthlyUsd)),
+    contractUsd: sumOf(parts.map((part) => part.contractUsd)),
+    depositUsd: sumOf(parts.map((part) => part.depositUsd)),
   };
 }
 

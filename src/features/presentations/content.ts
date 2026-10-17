@@ -1,5 +1,18 @@
 import { GPUS_PER_NODE } from "@/features/cluster/model/catalog";
-import { dayOf, formatCount, formatDay, formatMonthYear, formatMw, formatTb } from "@/features/deployments/format";
+import {
+  dayOf,
+  formatAcross,
+  formatCount,
+  formatDay,
+  formatMonthYear,
+  formatMw,
+  formatPct,
+  formatPrice,
+  formatTb,
+  formatTerm,
+  formatUsd,
+  formatUsdShort,
+} from "@/features/deployments/format";
 import {
   coolingLabel,
   facilityLabel,
@@ -8,11 +21,12 @@ import {
   platformBreakdown,
   platformLabel,
   platformSummary,
+  pricingOf,
   totalsOf,
   type Deployment,
 } from "@/features/deployments/types";
 import { teaserOf } from "@/features/teasers/content";
-import { LIMITS, type LabeledValue, type PresentationContent, type SpecCell, type Stat } from "./types";
+import { LIMITS, type LabeledValue, type PresentationContent, type PricingRow, type SpecCell, type Stat } from "./types";
 
 const COOLING_PROSE: Record<Deployment["cooling"], string> = {
   liquid_dtc: "direct-to-chip liquid cooling",
@@ -101,6 +115,38 @@ export function presentationOf(deployment: Deployment): PresentationContent {
     },
   ];
 
+  const phases = d.phases.slice(0, LIMITS.rollout).map((phase, i) => ({
+    label: phase.name || `Phase ${i + 1}`,
+    platform: phase.platform,
+    pricing: pricingOf(d, phase),
+  }));
+  const priced = phases.filter((phase) => phase.pricing.priceGpuHr !== null);
+  const pricing: PricingRow[] = phases.map(({ label, platform, pricing: p }) => ({
+    label: cut(label, LIMITS.rolloutLabel),
+    platform: platformLabel(platform),
+    gpus: formatCount(p.gpus),
+    price: p.priceGpuHr !== null ? formatPrice(p.priceGpuHr) : "To follow",
+    term: p.priceGpuHr !== null && p.termMonths !== null ? formatTerm(p.termMonths) : "",
+    contract: p.contractUsd !== null ? formatUsd(p.contractUsd) : "",
+    deposit: p.depositUsd !== null && p.depositPct !== null ? `${formatUsd(p.depositUsd)} · ${formatPct(p.depositPct)}` : "",
+  }));
+
+  // Named when only some phases are priced, so the figures say which.
+  const scope = priced.length && priced.length < phases.length ? ` · ${priced.map((phase) => phase.label).join(", ")}` : "";
+  const sum = (values: readonly (number | null)[]) =>
+    values.some((value) => value !== null) ? values.reduce<number>((total, value) => total + (value ?? 0), 0) : null;
+  const contract = sum(priced.map((phase) => phase.pricing.contractUsd));
+  const deposit = sum(priced.map((phase) => phase.pricing.depositUsd));
+  const depositPct = formatAcross(priced.map((phase) => phase.pricing.depositPct), formatPct);
+  const terms = priced.length
+    ? [
+        { label: `Per GPU-hour${scope}`, value: formatAcross(priced.map((phase) => phase.pricing.priceGpuHr), formatPrice)! },
+        { label: "Term", value: formatAcross(priced.map((phase) => phase.pricing.termMonths), formatTerm) ?? "Flexible" },
+        ...(contract !== null ? [{ label: `Contract value${scope}`, value: formatUsdShort(contract) }] : []),
+        ...(deposit !== null ? [{ label: depositPct ? `Deposit · ${depositPct}` : "Deposit", value: formatUsdShort(deposit) }] : []),
+      ]
+    : teaser.terms;
+
   return {
     eyebrow: cut(["Site overview", place].filter(Boolean).join(" · "), LIMITS.eyebrow),
     title: cut(d.name, LIMITS.title),
@@ -137,7 +183,8 @@ export function presentationOf(deployment: Deployment): PresentationContent {
     sections: d.externalNotes
       ? [{ title: "Notes", body: cut(d.externalNotes, LIMITS.sectionBody), bullets: "", facts: [] }]
       : [],
-    terms: teaser.terms.map((term) => ({ label: cut(term.label, LIMITS.termLabel), value: cut(term.value, LIMITS.termValue) })),
+    terms: terms.map((term) => ({ label: cut(term.label, LIMITS.termLabel), value: cut(term.value, LIMITS.termValue) })),
+    pricing: priced.length ? pricing : [],
     nextSteps: NEXT_STEPS.slice(0, LIMITS.nextSteps).join("\n"),
     contactName: teaser.contactName,
     contactEmail: teaser.contactEmail,

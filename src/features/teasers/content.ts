@@ -1,6 +1,7 @@
 import { SYSTEMS } from "@/features/deployments/config/catalog";
 import {
   dayOf,
+  formatAcross,
   formatCount,
   formatDay,
   formatMonthYear,
@@ -17,6 +18,7 @@ import {
   platformBreakdown,
   platformLabel,
   platformSummary,
+  pricingOf,
   totalsOf,
   type Deployment,
 } from "@/features/deployments/types";
@@ -123,10 +125,23 @@ export function teaserOf(deployment: Deployment): TeaserContent {
     .slice(0, LIMITS.specs)
     .map((spec) => ({ label: spec.label, value: cut(spec.value, LIMITS.specValue) }));
 
+  // The phases priced on their own terms or the deployment's, else the deployment's alone.
+  const priced = d.phases.map((phase) => pricingOf(d, phase)).filter((pricing) => pricing.priceGpuHr !== null);
+  const deposit = totals.depositUsd ?? d.depositUsd;
   const terms = [
-    { label: "Pricing", value: d.priceGpuHr !== null ? formatRate(d.priceGpuHr) : "On request" },
-    { label: "Term", value: d.termMonths !== null ? formatTerm(d.termMonths) : "Flexible" },
-    ...(d.depositUsd !== null ? [{ label: "Deposit", value: formatUsd(d.depositUsd) }] : []),
+    {
+      label: "Pricing",
+      value:
+        formatAcross(priced.map((pricing) => pricing.priceGpuHr), formatRate) ??
+        (d.priceGpuHr !== null ? formatRate(d.priceGpuHr) : "On request"),
+    },
+    {
+      label: "Term",
+      value:
+        formatAcross(priced.map((pricing) => pricing.termMonths), formatTerm) ??
+        (d.termMonths !== null ? formatTerm(d.termMonths) : "Flexible"),
+    },
+    ...(deposit !== null ? [{ label: "Deposit", value: formatUsd(deposit) }] : []),
   ].slice(0, LIMITS.terms);
 
   return {

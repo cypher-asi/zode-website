@@ -32,7 +32,6 @@ import {
   FACILITIES,
   PLATFORM_OPTIONS,
   STATUSES,
-  depositFor,
   isOption,
   isPlaceId,
   totalsOf,
@@ -66,6 +65,29 @@ function figure(raw: string, label: string, max: number, whole = false): number 
 }
 
 const isDay = (value: string): boolean => DAY_RE.test(value) && !Number.isNaN(Date.parse(value));
+
+type Terms = Pick<PhaseInput, "priceGpuHr" | "termMonths" | "depositPct">;
+
+/**
+ * A price per GPU-hour, a term in months and a deposit percent, each
+ * optional; `whose` leads the errors, e.g. "Phase 1's ", or "" for the
+ * deployment's own.
+ */
+function readTerms(price: string, term: string, deposit: string, whose: string): Terms | string {
+  const named = (what: string) => (whose ? `${whose}${what.toLowerCase()}` : what);
+  const termMonths = figure(term, named("Term"), 1200, true);
+  const priceGpuHr = figure(price, named("Price"), 1e4);
+  const depositPct = figure(deposit.replace(/%$/, ""), named("Deposit"), 1e3);
+  if (typeof termMonths === "string") return termMonths;
+  if (typeof priceGpuHr === "string") return priceGpuHr;
+  if (typeof depositPct === "string") return depositPct;
+  if (termMonths === 0) return `${named("Term")} must be at least a month.`;
+  if (depositPct !== null && depositPct > 100) return `${named("Deposit")} can be at most 100% of the contract.`;
+  if (depositPct !== null && Math.abs(Math.round(depositPct * 100) - depositPct * 100) > 1e-6) {
+    return `${named("Deposit")} can have at most two decimals.`;
+  }
+  return { priceGpuHr, termMonths, depositPct };
+}
 
 const MAX_CONFIG_JSON = 5_000;
 
@@ -129,6 +151,9 @@ function readPhases(formData: FormData, platform: Platform): PhaseInput[] | stri
   const nodes = formData.getAll("phase_nodes");
   const mws = formData.getAll("phase_mw");
   const overrides = formData.getAll("phase_config");
+  const prices = formData.getAll("phase_price_gpu_hr");
+  const phaseTerms = formData.getAll("phase_term_months");
+  const deposits = formData.getAll("phase_deposit_pct");
   const phases: PhaseInput[] = [];
   const seen = new Set<string>();
   for (let i = 0; i < rfs.length; i++) {
@@ -154,6 +179,8 @@ function readPhases(formData: FormData, platform: Platform): PhaseInput[] | stri
     if (typeof mw === "string") return mw;
     const configOverrides = readSettings(overrides[i], `${label}'s`);
     if (typeof configOverrides === "string") return configOverrides;
+    const pricing = readTerms(text(prices[i]), text(phaseTerms[i]), text(deposits[i]), `${label}'s `);
+    if (typeof pricing === "string") return pricing;
     const id = text(ids[i]);
     if (id && (!isUuid(id) || seen.has(id))) return `${label} no longer exists. Reload and try again.`;
     if (id) seen.add(id);
@@ -166,6 +193,7 @@ function readPhases(formData: FormData, platform: Platform): PhaseInput[] | stri
       nodes: phaseNodes,
       mw,
       configOverrides: configOverrides as ConfigOverrides,
+      ...pricing,
     });
   }
   if (phases.length > MAX_PHASES) return `A deployment can have at most ${MAX_PHASES} phases.`;
@@ -211,19 +239,12 @@ function readDeployment(formData: FormData): DeploymentInput | string {
   const externalNotes = notesOf("external_notes");
   if (externalNotes.length > MAX_NOTES) return "The external notes are too long.";
 
-  const termMonths = figure(field("term_months"), "Term", 1200, true);
-  const priceGpuHr = figure(field("price_gpu_hr"), "Price", 1e4);
-  const depositPct = figure(field("deposit_pct").replace(/%$/, ""), "Deposit", 1e3);
+  const pricing = readTerms(field("price_gpu_hr"), field("term_months"), field("deposit_pct"), "");
+  if (typeof pricing === "string") return pricing;
+  const { priceGpuHr, termMonths, depositPct } = pricing;
   const locRequired = field("loc_required") === "yes";
   const locYears = locRequired ? figure(field("loc_years"), "The LOC's years of lease", 100) : null;
-  for (const value of [termMonths, priceGpuHr, depositPct, locYears]) {
-    if (typeof value === "string") return value;
-  }
-  if (termMonths === 0) return "Term must be at least a month.";
-  if (typeof depositPct === "number" && depositPct > 100) return "The deposit can be at most 100% of the contract.";
-  if (typeof depositPct === "number" && Math.abs(Math.round(depositPct * 100) - depositPct * 100) > 1e-6) {
-    return "Give the deposit's percent to at most two decimals.";
-  }
+  if (typeof locYears === "string") return locYears;
   if (locYears === 0) return "The LOC must cover some of the lease.";
   if (typeof locYears === "number" && Math.abs(Math.round(locYears * 100) - locYears * 100) > 1e-6) {
     return "Give the LOC's years of lease to at most two decimals.";
@@ -234,14 +255,7 @@ function readDeployment(formData: FormData): DeploymentInput | string {
   const scheduled = phases.reduce((sum, phase) => sum + phase.nodes, 0);
   if (scheduled > nodes) return `The phases add up to ${scheduled} nodes, more than the deployment's ${nodes}.`;
 
-  const { contractUsd } = totalsOf({
-    nodes,
-    platform,
-    storageTbPerNode,
-    priceGpuHr: priceGpuHr as number | null,
-    termMonths: termMonths as number | null,
-    phases,
-  });
+  const { depositUsd } = totalsOf({ nodes, platform, storageTbPerNode, priceGpuHr, termMonths, depositPct, phases });
 
   return {
     name,
@@ -256,10 +270,10 @@ function readDeployment(formData: FormData): DeploymentInput | string {
     city: city || null,
     placeId: placeId || null,
     facility: facility ? (facility as DeploymentInput["facility"]) : null,
-    termMonths: termMonths as number | null,
-    priceGpuHr: priceGpuHr as number | null,
-    depositPct: depositPct as number | null,
-    depositUsd: depositFor(contractUsd, depositPct as number | null),
+    termMonths,
+    priceGpuHr,
+    depositPct,
+    depositUsd,
     creditRating: creditRating ? (creditRating as DeploymentInput["creditRating"]) : null,
     locRequired,
     locYears: locYears as number | null,

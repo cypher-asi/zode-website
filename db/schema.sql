@@ -1071,6 +1071,15 @@ alter table deployments drop constraint if exists deployments_networking_check;
 alter table deployments add constraint deployments_networking_check
   check (networking in ('infiniband', 'roce', 'ethernet'));
 
+-- Each phase can be priced on its own: its price per GPU-hour, term and
+-- deposit as a percent of its contract value. One left null takes the
+-- deployment's, so a phase not yet priced follows the deployment, or reads
+-- as to follow when the deployment has none either.
+alter table deployment_phases add column if not exists price_gpu_hr numeric(10, 4) check (price_gpu_hr >= 0);
+alter table deployment_phases add column if not exists term_months integer check (term_months > 0);
+alter table deployment_phases add column if not exists deposit_pct numeric(5, 2)
+  check (deposit_pct >= 0 and deposit_pct <= 100);
+
 -- A deployment's bill of materials, the ZODE team's only. Vendor quotes are
 -- price lists: each links to its file in the deployment's data room, and its
 -- items keep the vendor's part numbers, manufacturers, descriptions, unit

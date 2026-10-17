@@ -22,7 +22,7 @@ import {
 import { BRAND } from "@/features/styleguide/brand";
 import { SITE_URL } from "@/lib/site";
 import { clusterArt } from "./clusterArt";
-import { linesOf, type LabeledValue, type PresentationContent, type Section, type SpecCell } from "./types";
+import { linesOf, type LabeledValue, type PresentationContent, type PricingRow, type Section, type SpecCell } from "./types";
 
 /*
  * A presentation as 16:9 ZODE-branded slides, set like a spec sheet: an ink
@@ -392,11 +392,61 @@ function section(deck: Deck, section: Section): void {
   twoColumns(s, BODY_TOP, text, section.facts.length ? { title: "Key facts", facts: section.facts, columns: text ? 1 : 3 } : null);
 }
 
+/** Columns of the pricing table: a share of the width each, and whether it's set flush right. */
+const PRICING_COLUMNS: readonly { label: string; key: keyof PricingRow; share: number; right?: boolean }[] = [
+  { label: "Phase", key: "label", share: 0.15 },
+  { label: "Platform", key: "platform", share: 0.17 },
+  { label: "GPUs", key: "gpus", share: 0.09, right: true },
+  { label: "Per GPU-hour", key: "price", share: 0.13, right: true },
+  { label: "Term", key: "term", share: 0.11, right: true },
+  { label: "Contract value", key: "contract", share: 0.16, right: true },
+  { label: "Deposit", key: "deposit", share: 0.19, right: true },
+];
+
+const TERM_KEYS = new Set<keyof PricingRow>(["price", "term", "contract", "deposit"]);
+
+/** Each phase's terms in a table from `top`, the ones to follow in grey; returns the y under it. */
+function pricingTable(s: Slide, p: PresentationContent, top: number): number {
+  const { fonts, page } = s;
+  const cells = (y: number, value: (key: keyof PricingRow) => string, font: PDFFont, size: number, fill: (key: keyof PricingRow) => Color, tracking = 0) => {
+    let x = MARGIN;
+    for (const column of PRICING_COLUMNS) {
+      const width = CONTENT * column.share - 12;
+      const text = clampLine(value(column.key), font, size, width, tracking);
+      if (column.right) drawTextRight(page, text, x + CONTENT * column.share, y, font, size, fill(column.key), tracking);
+      else s.text(text, x, y, font, size, fill(column.key), tracking);
+      x += CONTENT * column.share;
+    }
+  };
+  const labels = Object.fromEntries(PRICING_COLUMNS.map((column) => [column.key, column.label.toUpperCase()]));
+  cells(top, (key) => labels[key], fonts.mono, 7, () => SECONDARY, 1.2);
+  let y = top - 10;
+  for (const row of p.pricing) {
+    s.hairline(MARGIN, y, CONTENT);
+    y -= 19;
+    const toFollow = !row.term && !row.contract;
+    cells(
+      y,
+      (key) => row[key] || "–",
+      fonts.regular,
+      11.5,
+      (key) => (toFollow && TERM_KEYS.has(key) ? SECONDARY : INK),
+    );
+    y -= 10;
+  }
+  s.hairline(MARGIN, y, CONTENT);
+  return y;
+}
+
 function terms(deck: Deck, p: PresentationContent): void {
   if (!p.terms.length) return;
   const s = deck.slide("Commercial terms");
-  const bottom = s.figures(p.terms, MARGIN, BODY_TOP + 10, CONTENT, 28);
-  s.text("Indicative and non-binding, subject to a definitive agreement.", MARGIN, bottom - 26, s.fonts.regular, 11.5, SECONDARY);
+  let bottom = s.figures(p.terms, MARGIN, BODY_TOP + 10, CONTENT, 28);
+  if (p.pricing.length) bottom = pricingTable(s, p, bottom - 30);
+  const note = p.pricing.length
+    ? "Contract value is GPUs × price per GPU-hour × 730 hours a month over the term. Indicative and non-binding, subject to a definitive agreement."
+    : "Indicative and non-binding, subject to a definitive agreement.";
+  s.line(note, MARGIN, bottom - 24, CONTENT, s.fonts.regular, 10.5, SECONDARY);
 }
 
 function nextSteps(deck: Deck, p: PresentationContent): void {

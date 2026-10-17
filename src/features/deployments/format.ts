@@ -15,6 +15,23 @@ const month = new Intl.DateTimeFormat("en-US", { month: "short", timeZone: "UTC"
 
 export const formatUsd = (value: number): string => usd.format(value);
 export const formatRate = (value: number): string => `${rate.format(value)} /GPU-hr`;
+/** A price per GPU-hour without its unit, e.g. "$4.50". */
+export const formatPrice = (value: number): string => rate.format(value);
+const compact = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+/** e.g. "$403.7M". */
+export const formatUsdShort = (value: number): string => compact.format(value);
+export const formatPct = (value: number): string => `${decimal.format(value)}%`;
+
+/** Figures that may differ, e.g. phases' prices: the one when they agree, "From" the lowest when not, null when there are none. */
+export function formatAcross(values: readonly (number | null)[], format: (value: number) => string): string | null {
+  const set = [...new Set(values.filter((value): value is number => value !== null))].sort((a, b) => a - b);
+  return set.length ? `${set.length > 1 ? "From " : ""}${format(set[0])}` : null;
+}
 export const formatCount = (value: number): string => count.format(value);
 export const formatMw = (value: number): string => `${decimal.format(value)} MW`;
 export const formatTb = (value: number): string => `${count.format(value)} TB`;

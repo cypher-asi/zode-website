@@ -512,6 +512,28 @@
   min-width: 900px;
 }
 
+.pricingHead,
+.pricingRow {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.4fr) 90px 150px 150px 150px minmax(120px, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 840px;
+}
+
+.pricingHead {
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+
+.pricingName {
+  overflow: hidden;
+  font-size: var(--text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .overrides {
   color: var(--color-text-secondary);
   font-size: var(--text-sm);

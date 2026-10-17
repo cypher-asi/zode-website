@@ -45,6 +45,9 @@ import {
   platformBreakdown,
   platformLabel,
   platformSummary,
+  pricedByPhase,
+  pricingLabel,
+  pricingOf,
   rackDesignHref,
   statusLabel,
   totalsOf,
@@ -552,6 +555,9 @@ export async function renderDeploymentPdf(
     { label: "Deposit", value: formatDeposit(d.depositUsd, d.depositPct) ?? "—" },
     { label: "Est. monthly", value: totals.monthlyUsd !== null ? formatUsd(totals.monthlyUsd) : "—" },
     { label: "Est. contract value", value: totals.contractUsd !== null ? formatUsd(totals.contractUsd) : "—" },
+    ...(pricedByPhase(d.phases)
+      ? d.phases.map((phase, i) => ({ label: phase.name || `Phase ${i + 1}`, value: pricingLabel(pricingOf(d, phase)), wide: true }))
+      : []),
   ]);
 
   if (internal) {

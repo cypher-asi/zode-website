@@ -23,6 +23,17 @@ export interface RolloutRow {
   date: string;
 }
 
+/** A phase's terms on the commercial slide, its figures blank while it's to follow. */
+export interface PricingRow {
+  label: string;
+  platform: string;
+  gpus: string;
+  price: string;
+  term: string;
+  contract: string;
+  deposit: string;
+}
+
 /** A cell of the cover's spec grid: a heading over a line of text or a few figures. */
 export interface SpecCell {
   title: string;
@@ -64,7 +75,9 @@ export interface PresentationContent {
   clusterSummary: string;
   specs: LabeledValue[];
   sections: Section[];
+  /** Commercial terms: the figures across the priced phases, then each phase's. */
   terms: LabeledValue[];
+  pricing: PricingRow[];
   /** One per line. */
   nextSteps: string;
   contactName: string;
@@ -92,7 +105,7 @@ export const LIMITS = {
   clusterSummary: 700,
   specs: 8,
   sectionBody: 800,
-  termLabel: 18,
+  termLabel: 48,
   termValue: 32,
   nextSteps: 5,
 } as const;

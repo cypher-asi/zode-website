@@ -36,11 +36,11 @@ import {
   FACILITIES,
   PLATFORM_OPTIONS,
   STATUSES,
-  depositFor,
   gpusFor,
   isOption,
   mwFor,
   platformBreakdown,
+  pricingOf,
   totalsOf,
   type Deployment,
   type Phase,
@@ -120,6 +120,10 @@ interface PhaseDraft {
   /** Whether its MW was entered, so its nodes follow it; otherwise its MW follows its nodes. */
   mwSet: boolean;
   overrides: ConfigOverrides;
+  /** Its own terms, blank to take the deployment's. */
+  price: string;
+  term: string;
+  deposit: string;
 }
 
 const numberOr = (raw: string, fallback: number | null): number | null => {
@@ -159,6 +163,9 @@ const draftOf = (key: number, platform: Platform, s: Settings, phase?: Phase): P
     mw: str(phase?.mw ?? null),
     mwSet: false,
     overrides: phase?.configOverrides ?? {},
+    price: str(phase?.priceGpuHr ?? null),
+    term: str(phase?.termMonths ?? null),
+    deposit: str(phase?.depositPct ?? null),
   };
   if (!phase || phase.mw === null) return row;
   const derived = sized(row, s);
@@ -206,17 +213,22 @@ export function DeploymentForm({
   const [deleting, setDeleting] = useState(false);
 
   const nodeCount = numberOr(nodes, 0)!;
+  const depositPct = numberOr(deposit.replace(/%$/, ""), null);
+  const terms = { priceGpuHr: numberOr(price, null), termMonths: numberOr(term, null), depositPct };
+  const pricedPhases = phases.map((phase) => ({
+    platform: phase.platform,
+    nodes: numberOr(phase.nodes, 0)!,
+    mw: numberOr(phase.mw, null),
+    priceGpuHr: numberOr(phase.price, null),
+    termMonths: numberOr(phase.term, null),
+    depositPct: numberOr(phase.deposit.replace(/%$/, ""), null),
+  }));
   const totals = totalsOf({
     nodes: nodeCount,
     platform,
     storageTbPerNode: settings.storageTbPerNode,
-    priceGpuHr: numberOr(price, null),
-    termMonths: numberOr(term, null),
-    phases: phases.map((phase) => ({
-      platform: phase.platform,
-      nodes: numberOr(phase.nodes, 0)!,
-      mw: numberOr(phase.mw, null),
-    })),
+    ...terms,
+    phases: pricedPhases,
   });
   const allMw = totals.byPlatform.reduce(
     (sum, share) =>
@@ -226,8 +238,7 @@ export function DeploymentForm({
   const scheduledGpus = phases.reduce((sum, phase) => sum + gpusFor(phase.platform, numberOr(phase.nodes, 0)!), 0);
   const resolved = resolvedOf(settings, platform);
   const fields = fieldsFor(resolved);
-  const depositPct = numberOr(deposit.replace(/%$/, ""), null);
-  const depositUsd = depositFor(totals.contractUsd, depositPct);
+  const depositUsd = totals.depositUsd;
   const roomChoices = [
     { value: "", label: "Not linked" },
     ...rooms.map((room) => ({ value: room.id, label: room.name })),
@@ -571,9 +582,21 @@ export function DeploymentForm({
           </div>
         </fieldset>
 
-        {section(
-          "Commercial",
-          <>
+        <fieldset className={styles.fieldset}>
+          <legend className={styles.legend}>Commercial</legend>
+          <p className={styles.summary}>
+            {totals.monthlyUsd !== null
+              ? `Est. ${formatUsd(totals.monthlyUsd)} /mo`
+              : "Add a price to estimate revenue"}
+            {totals.contractUsd !== null ? ` · ${formatUsd(totals.contractUsd)} over the term` : ""}
+            {depositUsd !== null
+              ? ` · ${formatUsd(depositUsd)} deposit`
+              : depositPct
+                ? " · Add a price and term to calculate the deposit"
+                : ""}
+            . A phase priced on its own overrides these; one left blank takes them, or is to follow without them.
+          </p>
+          <div className={styles.grid}>
             {input("term_months", "Term (months)", {
               inputMode: "numeric",
               placeholder: "36",
@@ -592,19 +615,62 @@ export function DeploymentForm({
               value: deposit,
               onChange: (event) => setDeposit(event.target.value),
             })}
-          </>,
-          <p className={styles.summary}>
-            {totals.monthlyUsd !== null
-              ? `Est. ${formatUsd(totals.monthlyUsd)} /mo`
-              : "Add a price to estimate revenue"}
-            {totals.contractUsd !== null ? ` · ${formatUsd(totals.contractUsd)} over the term` : ""}
-            {depositUsd !== null
-              ? ` · ${formatUsd(depositUsd)} deposit`
-              : depositPct
-                ? " · Add a price and term to calculate the deposit"
-                : ""}
-          </p>,
-        )}
+          </div>
+          <div className={styles.phases}>
+            <div className={styles.pricingHead} aria-hidden="true">
+              <span>Phase</span>
+              <span>GPUs</span>
+              <span>$ per GPU-hr</span>
+              <span>Term (months)</span>
+              <span>Deposit (%)</span>
+              <span>Contract</span>
+            </div>
+            {phases.map((phase, i) => {
+              const priced = pricingOf(terms, pricedPhases[i]);
+              const same = (value: string, unit = "") => (value.trim() ? `Same (${value}${unit})` : "");
+              return (
+                <div key={phase.key} className={styles.pricingRow}>
+                  <span className={styles.pricingName}>{phase.name || `Phase ${i + 1}`}</span>
+                  <span className={styles.phaseGpus}>{formatCount(priced.gpus)}</span>
+                  <input
+                    name="phase_price_gpu_hr"
+                    className={ui.input}
+                    inputMode="decimal"
+                    aria-label={`Phase ${i + 1} price per GPU-hour`}
+                    placeholder={same(price)}
+                    value={phase.price}
+                    onChange={(event) => updatePhase(phase.key, { price: event.target.value })}
+                  />
+                  <input
+                    name="phase_term_months"
+                    className={ui.input}
+                    inputMode="numeric"
+                    aria-label={`Phase ${i + 1} term in months`}
+                    placeholder={same(term)}
+                    value={phase.term}
+                    onChange={(event) => updatePhase(phase.key, { term: event.target.value })}
+                  />
+                  <input
+                    name="phase_deposit_pct"
+                    className={ui.input}
+                    inputMode="decimal"
+                    aria-label={`Phase ${i + 1} deposit percent`}
+                    placeholder={same(deposit, "%")}
+                    value={phase.deposit}
+                    onChange={(event) => updatePhase(phase.key, { deposit: event.target.value })}
+                  />
+                  <span className={styles.phaseGpus}>
+                    {priced.contractUsd !== null
+                      ? `${formatUsd(priced.contractUsd)}${priced.depositUsd !== null ? ` · ${formatUsd(priced.depositUsd)} deposit` : ""}`
+                      : priced.priceGpuHr !== null
+                        ? "Add a term"
+                        : "To follow"}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </fieldset>
 
         {section(
           "Credit",

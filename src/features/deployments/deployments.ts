@@ -64,6 +64,9 @@ const toDeployment = (row: Record<string, unknown>): Deployment => ({
     ...phase,
     clusterConfig: configFromJson(phase.clusterConfig),
     configOverrides: readOverrides(phase.configOverrides),
+    priceGpuHr: phase.priceGpuHr ?? null,
+    termMonths: phase.termMonths ?? null,
+    depositPct: phase.depositPct ?? null,
   })),
   updatedAt: new Date(row.updated_at as string | Date).toISOString(),
 });
@@ -84,7 +87,8 @@ export async function listDeployments(): Promise<Deployment[]> {
             json_build_object(
               'id', p.id, 'name', p.name, 'platform', p.platform, 'startOn', p.start_on::text, 'rfsOn', p.rfs_on::text,
               'nodes', p.nodes, 'mw', p.mw::float8, 'clusterConfig', p.cluster_config, 'clusterCopies', p.cluster_copies,
-              'configOverrides', p.config_overrides
+              'configOverrides', p.config_overrides, 'priceGpuHr', p.price_gpu_hr::float8, 'termMonths', p.term_months,
+              'depositPct', p.deposit_pct::float8
             ) order by p.rfs_on, p.position)
           from deployment_phases p where p.deployment_id = d.id),
         '[]'::json
@@ -199,15 +203,18 @@ export async function saveDeployment(
     ...phases.map(
       (phase, position) => sql`
         insert into deployment_phases (
-          id, deployment_id, position, name, platform, start_on, rfs_on, nodes, mw, config_overrides
+          id, deployment_id, position, name, platform, start_on, rfs_on, nodes, mw, config_overrides,
+          price_gpu_hr, term_months, deposit_pct
         )
         select ${phase.id}, id, ${position}, ${phase.name}, ${phase.platform}, ${phase.startOn}, ${phase.rfsOn},
-          ${phase.nodes}, ${phase.mw}, ${JSON.stringify(phase.configOverrides)}::jsonb
+          ${phase.nodes}, ${phase.mw}, ${JSON.stringify(phase.configOverrides)}::jsonb,
+          ${phase.priceGpuHr}, ${phase.termMonths}, ${phase.depositPct}
         from deployments where id = ${deploymentId}
         on conflict (id) do update set
           position = excluded.position, name = excluded.name, platform = excluded.platform,
           start_on = excluded.start_on, rfs_on = excluded.rfs_on, nodes = excluded.nodes, mw = excluded.mw,
-          config_overrides = excluded.config_overrides
+          config_overrides = excluded.config_overrides, price_gpu_hr = excluded.price_gpu_hr,
+          term_months = excluded.term_months, deposit_pct = excluded.deposit_pct
         where deployment_phases.deployment_id = excluded.deployment_id
       `,
     ),
