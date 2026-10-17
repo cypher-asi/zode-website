@@ -15,28 +15,37 @@ import {
   drawTextRight,
   drawWordmark,
   embedBrand,
-  roundedRect,
+  trackedWidth,
   wrapClamped,
   type Fonts,
 } from "@/features/pdf/brand";
 import { BRAND } from "@/features/styleguide/brand";
 import { SITE_URL } from "@/lib/site";
-import { linesOf, type LabeledValue, type PresentationContent, type Section } from "./types";
+import { clusterArt } from "./clusterArt";
+import { linesOf, type LabeledValue, type PresentationContent, type Section, type SpecCell } from "./types";
 
 /*
- * A presentation as 16:9 ZODE-branded slides: an ink cover, then a slide for
- * each part that has something in it (at a glance, the site, capacity and
- * rollout, the cluster, the notes, terms, next steps), each under
- * the wordmark with a numbered kicker and a footer. Every block clamps its
- * lines, and the limits in ./types keep the longest text on its slide.
+ * A presentation as 16:9 ZODE-branded slides, set like a spec sheet: an ink
+ * cover with the site's name and number large over an exploded drawing of the
+ * cluster and a grid of its specs, then a slide for each part that has
+ * something in it (at a glance, the site, capacity and rollout, the cluster,
+ * the notes, terms, next steps), each numbered large beside its heading, over
+ * a footer with the wordmark. Every block clamps its lines, and the limits in
+ * ./types keep the longest text on its slide.
  */
 
 const W = 960;
 const H = 540;
 const MARGIN = 56;
 const CONTENT = W - MARGIN * 2;
-/** Where a slide's body starts, under its heading. */
-const BODY_TOP = H - 138;
+/** The baseline of a slide's heading and number. */
+const HEADER = H - 92;
+/** The light display face's cap height, per point of size. */
+const CAP = 0.7;
+/** Room for the two-line caps label beside a heading. */
+const LABEL = 180;
+/** Where a slide's body starts, under its header. */
+const BODY_TOP = H - 146;
 /** Where a slide's body has to stop, clear of the footer. */
 const FLOOR = 64;
 const COLUMN_GAP = 44;
@@ -70,8 +79,17 @@ class Slide {
     this.line(value.toUpperCase(), x, y, width, this.fonts.mono, 7, fill, 1.2);
   }
 
+  /** Two lines of small caps, as set beside a large heading, their tops at `top`. */
+  caption(lines: readonly string[], x: number, top: number, width: number, fill: Color): void {
+    lines.forEach((value, i) => this.line(value.toUpperCase(), x, top - 6 - i * 10.5, width, this.fonts.regular, 7.5, fill, 0.6));
+  }
+
   hairline(x: number, y: number, width: number, fill: Color = BORDER): void {
     this.page.drawLine({ start: { x, y }, end: { x: x + width, y }, thickness: 0.6, color: fill });
+  }
+
+  rule(x: number, top: number, height: number, fill: Color = BORDER): void {
+    this.page.drawLine({ start: { x, y: top }, end: { x, y: top - height }, thickness: 0.6, color: fill });
   }
 
   link(x: number, y: number, width: number, height: number, url: string): void {
@@ -87,9 +105,9 @@ class Slide {
     this.page.node.addAnnot(annotation);
   }
 
-  /** A caps title over a hairline, `width` wide from `x`; returns the y under it. */
+  /** A caps heading over a hairline, `width` wide from `x`; returns the y under it. */
   title(value: string, x: number, y: number, width: number): number {
-    this.text(value.toUpperCase(), x, y, this.fonts.mono, 7.5, SECONDARY, 1.6);
+    this.text(value.toUpperCase(), x, y, this.fonts.semibold, 8.5, INK, 1.2);
     this.hairline(x, y - 8, width);
     return y - 28;
   }
@@ -123,7 +141,7 @@ class Slide {
     return y;
   }
 
-  /** Labels over values, `columns` to a row, from `y` down; returns the y under them. */
+  /** Values over their caps labels, `columns` to a row, from `y` down; returns the y under them. */
   facts(items: readonly LabeledValue[], x: number, y: number, width: number, columns: number, floor = FLOOR): number {
     const gap = 22;
     const cell = (width - gap * (columns - 1)) / columns;
@@ -132,56 +150,71 @@ class Slide {
       let lowest = y;
       items.slice(start, start + columns).forEach((item, i) => {
         const cx = x + i * (cell + gap);
-        this.label(item.label, cx, y, cell);
-        let vy = y - 18;
+        let vy = y;
         for (const line of wrapClamped(item.value, this.fonts.medium, 12.5, cell, 2)) {
           this.text(line, cx, vy, this.fonts.medium, 12.5, INK);
           vy -= 16;
         }
-        lowest = Math.min(lowest, vy);
+        this.label(item.label, cx, vy + 2, cell);
+        lowest = Math.min(lowest, vy - 8);
       });
-      this.hairline(x, lowest + 2, width);
-      y = lowest - 18;
+      this.hairline(x, lowest, width);
+      y = lowest - 22;
     }
     return y;
   }
+
+  /**
+   * Figures in equal columns from `top` over a hairline, each a large light
+   * value over its caps label, with rules between; returns the y under them.
+   */
+  figures(items: readonly LabeledValue[], x: number, top: number, width: number, size: number): number {
+    const { display } = this.fonts;
+    const cell = width / items.length;
+    const value = top - 12 - size * CAP;
+    const bottom = value - 30;
+    this.hairline(x, bottom, width);
+    items.forEach((item, i) => {
+      const cx = x + i * cell + (i ? 16 : 0);
+      const cw = cell - (i ? 32 : 16);
+      if (i) this.rule(x + i * cell, top, top - bottom);
+      this.line(item.value, cx, value, cw, display, fitSize(item.value, display, size, cw), INK);
+      this.label(item.label, cx, value - 18, cw);
+    });
+    return bottom;
+  }
 }
 
-/** The PDF's slides, each content slide numbered in its kicker. */
+/** The PDF's slides, each content slide numbered large beside its heading. */
 class Deck {
-  private count = 0;
-
   constructor(
     readonly doc: PDFDocument,
     readonly fonts: Fonts,
     readonly wordmark: string,
+    /** Set beside every content slide's heading. */
+    readonly caption: readonly string[],
   ) {}
 
-  /** A content slide under the wordmark, with its kicker and heading; returns it to fill from BODY_TOP. */
-  slide(kicker: string, heading: string): Slide {
+  /** A content slide under its heading and number; returns it to fill from BODY_TOP. */
+  slide(heading: string): Slide {
     const page = this.doc.addPage([W, H]);
     const s = new Slide(this.doc, page, this.fonts);
-    this.count += 1;
-    drawWordmark(page, this.wordmark, MARGIN, H - 30, 10, INK);
-    drawTextRight(
-      page,
-      `${String(this.count).padStart(2, "0")} · ${kicker.toUpperCase()}`,
-      W - MARGIN,
-      H - 38,
-      this.fonts.mono,
-      7,
-      SECONDARY,
-      1.4,
-    );
-    for (const [i, line] of wrapClamped(heading, this.fonts.display, 30, CONTENT, 1).entries()) {
-      s.text(line, MARGIN, H - 96 - i * 34, this.fonts.display, 30, INK);
-    }
+    const { display } = this.fonts;
+    const number = String(this.doc.getPageCount()).padStart(2, "0");
+    const numberWidth = display.widthOfTextAtSize(number, 64);
+    s.text(number, W - MARGIN - numberWidth, HEADER, display, 64, INK);
+    const room = CONTENT - numberWidth - LABEL - 40;
+    const size = fitSize(heading, display, 40, room);
+    const width = s.line(heading, MARGIN, HEADER, room, display, size, INK);
+    s.caption(this.caption, MARGIN + width + 18, HEADER + size * CAP, LABEL, SECONDARY);
+    s.hairline(MARGIN, HEADER - 20, CONTENT);
     return s;
   }
 
-  /** Every slide's footer, numbered of the total, the cover's in white. */
-  footers(): void {
+  /** Every slide's footer, the wordmark and the page of the total, the cover's in white. */
+  footers(today: string): void {
     const pages = this.doc.getPages();
+    const month = formatMonthYear(dayOf(today)).toUpperCase();
     pages.forEach((page, i) => {
       const cover = i === 0;
       const fill = cover ? TERTIARY : SECONDARY;
@@ -191,63 +224,66 @@ class Deck {
         thickness: 0.6,
         color: cover ? SECONDARY : BORDER,
       });
-      drawText(page, `${BRAND.company.toUpperCase()} · ${BRAND.domain.toUpperCase()}`, MARGIN, 26, this.fonts.mono, 6.5, fill, 1);
-      drawTextRight(page, `CONFIDENTIAL · ${i + 1} / ${pages.length}`, W - MARGIN, 26, this.fonts.mono, 6.5, fill, 1);
+      drawWordmark(page, this.wordmark, MARGIN, 32.5, 7, cover ? WHITE : INK);
+      drawText(page, BRAND.domain.toUpperCase(), MARGIN + 54, 26, this.fonts.mono, 6.5, fill, 1);
+      drawTextRight(page, `CONFIDENTIAL · ${month} · ${i + 1} / ${pages.length}`, W - MARGIN, 26, this.fonts.mono, 6.5, fill, 1);
     });
   }
 }
 
-function cover(deck: Deck, p: PresentationContent, today: string): void {
+/** One cell of the cover's spec grid: its heading, then its text or its figures in pairs. */
+function coverCell(s: Slide, cell: SpecCell, x: number, top: number, width: number): void {
+  const { fonts } = s;
+  s.line(cell.title.toUpperCase(), x, top, width, fonts.semibold, 8.5, WHITE, 1.2);
+  if (cell.text) {
+    wrapClamped(cell.text, fonts.regular, 9, Math.min(width, 300), 3).forEach((line, i) =>
+      s.text(line, x, top - 16 - i * 11.5, fonts.regular, 9, PAPER),
+    );
+  }
+  const column = Math.min(150, width / Math.max(cell.values.length, 1));
+  cell.values.forEach((value, i) => {
+    const cx = x + i * column;
+    s.line(value.value, cx, top - 17, column - 14, fonts.medium, 11, WHITE);
+    s.line(value.label, cx, top - 29, column - 14, fonts.regular, 8, TERTIARY);
+  });
+}
+
+function cover(deck: Deck, p: PresentationContent): void {
   const { fonts } = deck;
   const page = deck.doc.addPage([W, H]);
   const s = new Slide(deck.doc, page, fonts);
   page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: INK });
-  drawWordmark(page, deck.wordmark, MARGIN, H - 48, 18, WHITE);
-  drawTextRight(page, "SITE OVERVIEW", W - MARGIN, H - 52, fonts.mono, 7.5, PAPER, 1.4);
-  drawTextRight(page, `CONFIDENTIAL · ${formatMonthYear(dayOf(today)).toUpperCase()}`, W - MARGIN, H - 66, fonts.mono, 7, TERTIARY, 1);
 
-  const title = wrapClamped(p.title, fonts.display, 48, CONTENT - 80, 2);
-  const subtitle = p.subtitle ? wrapClamped(p.subtitle, fonts.regular, 14, CONTENT - 160, 3) : [];
-  // Set from the bottom up so a short cover sits as low as a long one.
-  let y = 118 + subtitle.length * 21 + (subtitle.length ? 18 : 0) + title.length * 54;
-  if (p.eyebrow) {
-    s.line(p.eyebrow.toUpperCase(), MARGIN, y + 20, CONTENT, fonts.mono, 9, ACCENT, 1.6);
-  }
-  for (const line of title) {
-    y -= 54;
-    s.text(line, MARGIN, y + 12, fonts.display, 48, WHITE);
-  }
-  y -= 18;
-  for (const line of subtitle) {
-    y -= 21;
-    s.text(line, MARGIN, y + 12, fonts.regular, 14, PAPER);
-  }
-  if (p.contactEmail) {
-    drawTextRight(page, p.contactEmail, W - MARGIN, 60, fonts.regular, 9, PAPER);
-    const width = fonts.regular.widthOfTextAtSize(p.contactEmail, 9);
-    s.link(W - MARGIN - width, 57, width, 12, `mailto:${p.contactEmail}`);
-  }
+  const top = H - 112;
+  const numberWidth = fonts.display.widthOfTextAtSize("01", 76);
+  s.text("01", W - MARGIN - numberWidth, top, fonts.display, 76, WHITE);
+  const caption = p.eyebrow.split(" · ");
+  const captionWidth = Math.max(...caption.map((line) => trackedWidth(line.toUpperCase(), fonts.regular, 7.5, 0.6)), 0);
+  const room = CONTENT - numberWidth - Math.min(captionWidth, LABEL) - 48;
+  const size = fitSize(p.title, fonts.display, 76, room);
+  const width = s.line(p.title, MARGIN, top, room, fonts.display, size, WHITE);
+  s.caption(caption, MARGIN + width + 16, top + size * CAP, LABEL, PAPER);
+
+  const grid = 104;
+  clusterArt(p.cooling).draw(page, { x: MARGIN, y: grid + 28, width: CONTENT, height: top - 24 - (grid + 28) }, {
+    ground: INK,
+    stroke: WHITE,
+    edge: 0.75,
+    fine: 0.4,
+  });
+
+  const gap = 28;
+  const cell = (CONTENT - gap * (p.cover.length - 1)) / Math.max(p.cover.length, 1);
+  p.cover.forEach((spec, i) => coverCell(s, spec, MARGIN + i * (cell + gap), grid, cell));
 }
 
 function atAGlance(deck: Deck, p: PresentationContent): void {
   const stats = p.stats.filter((stat) => stat.value || stat.label);
   const highlights = linesOf(p.highlights);
   if (!stats.length && !p.summary && !highlights.length) return;
-  const s = deck.slide("At a glance", "At a glance");
-  const { fonts } = deck;
+  const s = deck.slide("At a glance");
   let y = BODY_TOP;
-  if (stats.length) {
-    const gap = 12;
-    const height = 78;
-    const width = (CONTENT - gap * (stats.length - 1)) / stats.length;
-    stats.forEach((stat, i) => {
-      const x = MARGIN + i * (width + gap);
-      s.page.drawSvgPath(roundedRect(width, height, 8), { x, y: y + 12, color: PAPER, borderColor: BORDER, borderWidth: 0.75 });
-      s.line(stat.value, x + 16, y - 22, width - 32, fonts.semibold, fitSize(stat.value, fonts.semibold, 24, width - 32), INK);
-      s.line(stat.label, x + 16, y - 44, width - 32, fonts.regular, 9, SECONDARY);
-    });
-    y -= height + 30;
-  }
+  if (stats.length) y = s.figures(stats, MARGIN, y + 10, CONTENT, 30) - 34;
   twoColumns(s, y, p.summary ? { title: "Overview", text: p.summary } : null, highlights.length ? { title: "Why this site", items: highlights } : null);
 }
 
@@ -276,7 +312,7 @@ function twoColumns(
 
 function site(deck: Deck, p: PresentationContent): void {
   if (!p.siteSummary && !p.siteFacts.length) return;
-  const s = deck.slide("The site", "The site");
+  const s = deck.slide("The site");
   twoColumns(
     s,
     BODY_TOP,
@@ -287,7 +323,7 @@ function site(deck: Deck, p: PresentationContent): void {
 
 function rollout(deck: Deck, p: PresentationContent): void {
   if (!p.rollout.length) return;
-  const s = deck.slide("Capacity and rollout", "Capacity and rollout");
+  const s = deck.slide("Capacity and rollout");
   const { fonts, page } = s;
   const cols = [0, CONTENT * 0.24, CONTENT * 0.66];
   let y = BODY_TOP;
@@ -297,7 +333,7 @@ function rollout(deck: Deck, p: PresentationContent): void {
   drawTextRight(page, "READY FOR SERVICE", MARGIN + CONTENT, y, fonts.mono, 7, SECONDARY, 1.2);
   y -= 10;
   for (const [i, row] of p.rollout.entries()) {
-    s.hairline(MARGIN, y, CONTENT);
+    s.hairline(MARGIN, y, CONTENT, i === 0 ? INK : BORDER);
     y -= 22;
     page.drawSvgPath(DIAMOND, { x: MARGIN + 4, y: y + 4.5, scale: 0.75, color: i === 0 ? ACCENT : INK });
     s.line(row.label, MARGIN + 16, y, cols[1] - 28, fonts.semibold, 12.5, INK);
@@ -324,19 +360,29 @@ function rollout(deck: Deck, p: PresentationContent): void {
   });
 }
 
+/** The exploded drawing on the left, the overview and specifications beside it. */
 function cluster(deck: Deck, p: PresentationContent): void {
   if (!p.clusterSummary && !p.specs.length) return;
-  const s = deck.slide("The cluster", "The cluster");
-  twoColumns(
-    s,
-    BODY_TOP,
-    p.clusterSummary ? { title: "Overview", text: p.clusterSummary } : null,
-    p.specs.length ? { title: "Specifications", facts: p.specs } : null,
-  );
+  const s = deck.slide("The cluster");
+  const art = 340;
+  clusterArt(p.cooling).draw(s.page, { x: MARGIN, y: FLOOR, width: art, height: BODY_TOP + 10 - FLOOR }, {
+    ground: WHITE,
+    stroke: INK,
+    edge: 0.7,
+    fine: 0.35,
+  });
+  const x = MARGIN + art + COLUMN_GAP;
+  const width = CONTENT - art - COLUMN_GAP;
+  let y = BODY_TOP;
+  if (p.clusterSummary) {
+    y = s.title("Overview", x, y, width);
+    y = s.paragraph(p.clusterSummary, x, y, width, 12, 17.5) - 14;
+  }
+  if (p.specs.length) s.facts(p.specs, x, s.title("Specifications", x, y, width), width, 2);
 }
 
 function section(deck: Deck, section: Section): void {
-  const s = deck.slide(section.title, section.title);
+  const s = deck.slide(section.title);
   const bullets = linesOf(section.bullets);
   const text = section.body || bullets.length ? { title: "Overview", text: section.body, items: bullets } : null;
   twoColumns(s, BODY_TOP, text, section.facts.length ? { title: "Key facts", facts: section.facts, columns: text ? 1 : 3 } : null);
@@ -344,31 +390,15 @@ function section(deck: Deck, section: Section): void {
 
 function terms(deck: Deck, p: PresentationContent): void {
   if (!p.terms.length) return;
-  const s = deck.slide("Commercial", "Commercial terms");
-  const { fonts } = deck;
-  const gap = 12;
-  const height = 96;
-  const width = (CONTENT - gap * (p.terms.length - 1)) / p.terms.length;
-  p.terms.forEach((term, i) => {
-    const x = MARGIN + i * (width + gap);
-    s.page.drawSvgPath(roundedRect(width, height, 8), { x, y: BODY_TOP + 12, color: PAPER, borderColor: BORDER, borderWidth: 0.75 });
-    s.label(term.label, x + 18, BODY_TOP - 14, width - 36);
-    s.line(term.value, x + 18, BODY_TOP - 50, width - 36, fonts.semibold, fitSize(term.value, fonts.semibold, 22, width - 36), INK);
-  });
-  s.text(
-    "Indicative and non-binding, subject to a definitive agreement.",
-    MARGIN,
-    BODY_TOP - height - 28,
-    fonts.regular,
-    11.5,
-    SECONDARY,
-  );
+  const s = deck.slide("Commercial terms");
+  const bottom = s.figures(p.terms, MARGIN, BODY_TOP + 10, CONTENT, 28);
+  s.text("Indicative and non-binding, subject to a definitive agreement.", MARGIN, bottom - 26, s.fonts.regular, 11.5, SECONDARY);
 }
 
 function nextSteps(deck: Deck, p: PresentationContent): void {
   const steps = linesOf(p.nextSteps);
-  const s = deck.slide("Next steps", "Next steps");
-  const { fonts, page } = s;
+  const s = deck.slide("Next steps");
+  const { fonts } = s;
   const panel = 300;
   const listWidth = steps.length ? CONTENT - panel - COLUMN_GAP : 0;
   let y = BODY_TOP - 6;
@@ -384,28 +414,26 @@ function nextSteps(deck: Deck, p: PresentationContent): void {
   });
 
   const x = steps.length ? MARGIN + CONTENT - panel : MARGIN;
-  const top = BODY_TOP + 12;
-  page.drawSvgPath(roundedRect(panel, 156, 10), { x, y: top, color: PAPER, borderColor: BORDER, borderWidth: 0.75 });
-  s.label("Contact", x + 22, top - 30, panel - 44);
-  s.line(p.contactName || BRAND.company, x + 22, top - 60, panel - 44, fonts.semibold, 16, INK);
-  let ly = top - 84;
+  let cy = s.title("Contact", x, BODY_TOP, panel);
+  s.line(p.contactName || BRAND.company, x, cy - 10, panel, fonts.display, 24, INK);
+  cy -= 40;
   if (p.contactEmail) {
-    const width = s.line(p.contactEmail, x + 22, ly, panel - 44, fonts.regular, 12, INK);
-    s.link(x + 22, ly - 3, width, 15, `mailto:${p.contactEmail}`);
-    ly -= 22;
+    const width = s.line(p.contactEmail, x, cy, panel, fonts.regular, 12, INK);
+    s.link(x, cy - 3, width, 15, `mailto:${p.contactEmail}`);
+    cy -= 20;
   }
-  const width = s.line(BRAND.domain, x + 22, ly, panel - 44, fonts.regular, 12, SECONDARY);
-  s.link(x + 22, ly - 3, width, 15, SITE_URL);
+  const width = s.line(BRAND.domain, x, cy, panel, fonts.regular, 12, SECONDARY);
+  s.link(x, cy - 3, width, 15, SITE_URL);
 }
 
 /** The presentation's PDF, dated `today` (`YYYY-MM-DD`). */
 export async function renderPresentationPdf(presentation: PresentationContent, today: string): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const { fonts, wordmark } = await embedBrand(doc);
-  const deck = new Deck(doc, fonts, wordmark);
   const p = presentation;
+  const deck = new Deck(doc, fonts, wordmark, [p.title, "Site overview"]);
 
-  cover(deck, p, today);
+  cover(deck, p);
   atAGlance(deck, p);
   site(deck, p);
   rollout(deck, p);
@@ -413,7 +441,7 @@ export async function renderPresentationPdf(presentation: PresentationContent, t
   for (const added of p.sections) section(deck, added);
   terms(deck, p);
   nextSteps(deck, p);
-  deck.footers();
+  deck.footers(today);
 
   doc.setTitle(`ZODE \u2013 ${p.title}`);
   doc.setSubject(p.subtitle || "Site overview");

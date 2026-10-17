@@ -1,5 +1,5 @@
 import { GPUS_PER_NODE } from "@/features/cluster/model/catalog";
-import { formatCount, formatDay, formatMw, formatTb } from "@/features/deployments/format";
+import { dayOf, formatCount, formatDay, formatMonthYear, formatMw, formatTb } from "@/features/deployments/format";
 import {
   coolingLabel,
   facilityLabel,
@@ -11,7 +11,7 @@ import {
   type Deployment,
 } from "@/features/deployments/types";
 import { teaserOf } from "@/features/teasers/content";
-import { LIMITS, type LabeledValue, type PresentationContent } from "./types";
+import { LIMITS, type LabeledValue, type PresentationContent, type SpecCell, type Stat } from "./types";
 
 const COOLING_PROSE: Record<Deployment["cooling"], string> = {
   liquid_dtc: "direct-to-chip liquid cooling",
@@ -62,10 +62,41 @@ export function presentationOf(deployment: Deployment): PresentationContent {
     ". ZODE builds, operates and supports the clusters end to end.",
   ].join("");
 
+  const value = (stat: Stat): Stat => ({ value: cut(stat.value, LIMITS.coverValue), label: cut(stat.label, LIMITS.coverLabel) });
+  const cover: SpecCell[] = [
+    { title: "Overview", text: cut(teaser.headline, LIMITS.coverText), values: [] },
+    {
+      title: "Power",
+      text: "",
+      values: [
+        ...(totals.mw ? [{ value: formatMw(totals.mw), label: "Critical IT" }] : []),
+        { value: formatCount(d.phases.length), label: d.phases.length === 1 ? "Phase" : "Phases" },
+      ].map(value),
+    },
+    {
+      title: "Compute",
+      text: "",
+      values: [
+        { value: formatCount(totals.gpus), label: `${platformSummary(shares)} GPUs` },
+        { value: formatCount(totals.byPlatform.reduce((sum, share) => sum + share.nodes, 0)), label: "Nodes" },
+      ].map(value),
+    },
+    {
+      title: "Ready",
+      text: "",
+      values: [
+        ...(first ? [{ value: formatMonthYear(dayOf(first.rfsOn)), label: "Ready for service" }] : []),
+        { value: coolingLabel(d.cooling), label: "Cooling" },
+      ].map(value),
+    },
+  ];
+
   return {
     eyebrow: cut(["Site overview", place].filter(Boolean).join(" · "), LIMITS.eyebrow),
     title: cut(d.name, LIMITS.title),
     subtitle: cut([teaser.headline, teaser.subheadline].filter(Boolean).join(". "), LIMITS.subtitle),
+    cover: cover.slice(0, LIMITS.cover),
+    cooling: d.cooling,
     stats: teaser.stats,
     summary: cut(teaser.summary, LIMITS.summary),
     highlights: teaser.highlights,

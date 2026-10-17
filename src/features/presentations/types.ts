@@ -4,6 +4,8 @@
  * deployment's figures. The limits keep each slide's text on its page.
  */
 
+import type { Cooling } from "@/features/deployments/types";
+
 export interface Stat {
   value: string;
   label: string;
@@ -21,6 +23,13 @@ export interface RolloutRow {
   date: string;
 }
 
+/** A cell of the cover's spec grid: a heading over a line of text or a few figures. */
+export interface SpecCell {
+  title: string;
+  text: string;
+  values: Stat[];
+}
+
 /** A slide of its own, like the deployment's external notes. */
 export interface Section {
   title: string;
@@ -35,6 +44,10 @@ export interface PresentationContent {
   eyebrow: string;
   title: string;
   subtitle: string;
+  /** In a row under the cover's drawing. */
+  cover: SpecCell[];
+  /** Which cooling the cluster drawings show. */
+  cooling: Cooling;
   /** At a glance. */
   stats: Stat[];
   summary: string;
@@ -61,6 +74,10 @@ export const LIMITS = {
   eyebrow: 60,
   title: 90,
   subtitle: 220,
+  cover: 4,
+  coverText: 200,
+  coverValue: 24,
+  coverLabel: 24,
   summary: 700,
   siteSummary: 700,
   siteFacts: 8,
