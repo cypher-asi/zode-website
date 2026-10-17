@@ -5,6 +5,7 @@ import {
   facilityLabel,
   gpusFor,
   networkingLabel,
+  platformBreakdown,
   platformLabel,
   platformSummary,
   totalsOf,
@@ -62,9 +63,18 @@ export function presentationOf(deployment: Deployment): PresentationContent {
     ". ZODE builds, operates and supports the clusters end to end.",
   ].join("");
 
+  // The cover's caption carries the site's place, so its overview leaves it out.
+  const overview = [
+    shares.length > 1
+      ? `${formatCount(totals.gpus)} NVIDIA GPUs: ${platformBreakdown(shares)}`
+      : `${formatCount(totals.gpus)} NVIDIA ${platformSummary(shares)} GPUs`,
+    facility ? `${facility} site` : null,
+  ]
+    .filter(Boolean)
+    .join(". ");
   const value = (stat: Stat): Stat => ({ value: cut(stat.value, LIMITS.coverValue), label: cut(stat.label, LIMITS.coverLabel) });
   const cover: SpecCell[] = [
-    { title: "Overview", text: cut(teaser.headline, LIMITS.coverText), values: [] },
+    { title: "Overview", text: cut(`${overview}.`, LIMITS.coverText), values: [] },
     {
       title: "Power",
       text: "",
@@ -77,7 +87,7 @@ export function presentationOf(deployment: Deployment): PresentationContent {
       title: "Compute",
       text: "",
       values: [
-        { value: formatCount(totals.gpus), label: `${platformSummary(shares)} GPUs` },
+        { value: formatCount(totals.gpus), label: shares.length > 1 ? "GPUs" : `${platformSummary(shares)} GPUs` },
         { value: formatCount(totals.byPlatform.reduce((sum, share) => sum + share.nodes, 0)), label: "Nodes" },
       ].map(value),
     },
@@ -94,6 +104,7 @@ export function presentationOf(deployment: Deployment): PresentationContent {
   return {
     eyebrow: cut(["Site overview", place].filter(Boolean).join(" · "), LIMITS.eyebrow),
     title: cut(d.name, LIMITS.title),
+    address: cut(address ?? place ?? "", LIMITS.address),
     subtitle: cut([teaser.headline, teaser.subheadline].filter(Boolean).join(". "), LIMITS.subtitle),
     cover: cover.slice(0, LIMITS.cover),
     cooling: d.cooling,

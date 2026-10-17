@@ -42,8 +42,8 @@ const CONTENT = W - MARGIN * 2;
 const HEADER = H - 92;
 /** The light display face's cap height, per point of size. */
 const CAP = 0.7;
-/** Room for the two-line caps label beside a heading. */
-const LABEL = 180;
+/** Room for the two-line caps label beside the cover's title. */
+const LABEL = 220;
 /** Where a slide's body starts, under its header. */
 const BODY_TOP = H - 146;
 /** Where a slide's body has to stop, clear of the footer. */
@@ -54,9 +54,9 @@ const LEFT = 470;
 const RIGHT_X = MARGIN + LEFT + COLUMN_GAP;
 const RIGHT = CONTENT - LEFT - COLUMN_GAP;
 
-/** The largest size up to `max` at which `value` fits `width`. */
+/** The largest size up to `max` at which `value` fits `width`, a hair under so rounding doesn't cut it. */
 const fitSize = (value: string, font: PDFFont, max: number, width: number): number =>
-  Math.max(9, Math.min(max, (max * width) / Math.max(font.widthOfTextAtSize(value, max), 1)));
+  Math.max(9, Math.min(max, (0.995 * max * width) / Math.max(font.widthOfTextAtSize(value, max), 1)));
 
 class Slide {
   constructor(
@@ -79,9 +79,11 @@ class Slide {
     this.line(value.toUpperCase(), x, y, width, this.fonts.mono, 7, fill, 1.2);
   }
 
-  /** Two lines of small caps, as set beside a large heading, their tops at `top`. */
-  caption(lines: readonly string[], x: number, top: number, width: number, fill: Color): void {
-    lines.forEach((value, i) => this.line(value.toUpperCase(), x, top - 6 - i * 10.5, width, this.fonts.regular, 7.5, fill, 0.6));
+  /** Two lines of caps beside a large heading, their tops at `top`, the second in `second`. */
+  caption(lines: readonly string[], x: number, top: number, width: number, fill: Color, second: Color = fill): void {
+    lines.forEach((value, i) =>
+      this.line(value.toUpperCase(), x, top - 8 - i * 13, width, i ? this.fonts.regular : this.fonts.medium, 9.5, i ? second : fill, 0.6),
+    );
   }
 
   hairline(x: number, y: number, width: number, fill: Color = BORDER): void {
@@ -191,8 +193,8 @@ class Deck {
     readonly doc: PDFDocument,
     readonly fonts: Fonts,
     readonly wordmark: string,
-    /** Set beside every content slide's heading. */
-    readonly caption: readonly string[],
+    /** In every content slide's footer; the cover has it beside its title. */
+    readonly address: string,
   ) {}
 
   /** A content slide under its heading and number; returns it to fill from BODY_TOP. */
@@ -203,16 +205,15 @@ class Deck {
     const number = String(this.doc.getPageCount()).padStart(2, "0");
     const numberWidth = display.widthOfTextAtSize(number, 64);
     s.text(number, W - MARGIN - numberWidth, HEADER, display, 64, INK);
-    const room = CONTENT - numberWidth - LABEL - 40;
-    const size = fitSize(heading, display, 40, room);
-    const width = s.line(heading, MARGIN, HEADER, room, display, size, INK);
-    s.caption(this.caption, MARGIN + width + 18, HEADER + size * CAP, LABEL, SECONDARY);
+    const room = CONTENT - numberWidth - 40;
+    s.line(heading, MARGIN, HEADER, room, display, fitSize(heading, display, 40, room), INK);
     s.hairline(MARGIN, HEADER - 20, CONTENT);
     return s;
   }
 
-  /** Every slide's footer, the wordmark and the page of the total, the cover's in white. */
+  /** Every slide's footer: the wordmark, the site's address past the cover, and the page of the total. */
   footers(today: string): void {
+    const { mono } = this.fonts;
     const pages = this.doc.getPages();
     const month = formatMonthYear(dayOf(today)).toUpperCase();
     pages.forEach((page, i) => {
@@ -225,8 +226,11 @@ class Deck {
         color: cover ? SECONDARY : BORDER,
       });
       drawWordmark(page, this.wordmark, MARGIN, 32.5, 7, cover ? WHITE : INK);
-      drawText(page, BRAND.domain.toUpperCase(), MARGIN + 54, 26, this.fonts.mono, 6.5, fill, 1);
-      drawTextRight(page, `CONFIDENTIAL · ${month} · ${i + 1} / ${pages.length}`, W - MARGIN, 26, this.fonts.mono, 6.5, fill, 1);
+      const right = `CONFIDENTIAL · ${month} · ${i + 1} / ${pages.length}`;
+      const room = CONTENT - 54 - trackedWidth(right, mono, 6.5, 1) - 32;
+      const left = [BRAND.domain, cover ? "" : this.address].filter(Boolean).join(" · ").toUpperCase();
+      drawText(page, clampLine(left, mono, 6.5, room, 1), MARGIN + 54, 26, mono, 6.5, fill, 1);
+      drawTextRight(page, right, W - MARGIN, 26, mono, 6.5, fill, 1);
     });
   }
 }
@@ -258,11 +262,11 @@ function cover(deck: Deck, p: PresentationContent): void {
   const numberWidth = fonts.display.widthOfTextAtSize("01", 76);
   s.text("01", W - MARGIN - numberWidth, top, fonts.display, 76, WHITE);
   const caption = p.eyebrow.split(" · ");
-  const captionWidth = Math.max(...caption.map((line) => trackedWidth(line.toUpperCase(), fonts.regular, 7.5, 0.6)), 0);
+  const captionWidth = Math.max(...caption.map((line) => trackedWidth(line.toUpperCase(), fonts.medium, 9.5, 0.6)), 0);
   const room = CONTENT - numberWidth - Math.min(captionWidth, LABEL) - 48;
   const size = fitSize(p.title, fonts.display, 76, room);
   const width = s.line(p.title, MARGIN, top, room, fonts.display, size, WHITE);
-  s.caption(caption, MARGIN + width + 16, top + size * CAP, LABEL, PAPER);
+  s.caption(caption, MARGIN + width + 16, top + size * CAP, LABEL, WHITE, PAPER);
 
   const grid = 104;
   clusterArt(p.cooling).draw(page, { x: MARGIN, y: grid + 28, width: CONTENT, height: top - 24 - (grid + 28) }, {
@@ -431,7 +435,7 @@ export async function renderPresentationPdf(presentation: PresentationContent, t
   const doc = await PDFDocument.create();
   const { fonts, wordmark } = await embedBrand(doc);
   const p = presentation;
-  const deck = new Deck(doc, fonts, wordmark, [p.title, "Site overview"]);
+  const deck = new Deck(doc, fonts, wordmark, p.address);
 
   cover(deck, p);
   atAGlance(deck, p);

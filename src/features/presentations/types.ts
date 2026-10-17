@@ -43,6 +43,8 @@ export interface PresentationContent {
   /** The cover. */
   eyebrow: string;
   title: string;
+  /** Where the site is, its address or else its city, in every content slide's footer. */
+  address: string;
   subtitle: string;
   /** In a row under the cover's drawing. */
   cover: SpecCell[];
@@ -73,6 +75,7 @@ export interface PresentationContent {
 export const LIMITS = {
   eyebrow: 60,
   title: 90,
+  address: 90,
   subtitle: 220,
   cover: 4,
   coverText: 200,
