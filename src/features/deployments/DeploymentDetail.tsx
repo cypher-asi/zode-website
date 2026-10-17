@@ -46,6 +46,44 @@ function Fact({ label, children, wide }: { label: string; children: ReactNode; w
   );
 }
 
+const BULLET = /^[-*•]\s+/;
+
+/**
+ * Notes as typed: blank lines separate blocks, and a block of lines starting
+ * with "- " is a list, under a heading when one line leads it. Other blocks
+ * keep their line breaks.
+ */
+function Notes({ text }: { text: string }): ReactElement {
+  const blocks = text
+    .split(/\n\s*\n/)
+    .map((block) =>
+      block
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean),
+    )
+    .filter((lines) => lines.length);
+  return (
+    <div className={styles.notes}>
+      {blocks.map((lines, i) => {
+        const lead = BULLET.test(lines[0]) ? null : lines[0];
+        const items = lead === null ? lines : lines.slice(1);
+        if (!items.length || !items.every((line) => BULLET.test(line))) return <p key={i}>{lines.join("\n")}</p>;
+        return (
+          <div key={i} className={styles.notesGroup}>
+            {lead === null ? null : <h3>{lead}</h3>}
+            <ul>
+              {items.map((line, j) => (
+                <li key={j}>{line.replace(BULLET, "")}</li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /** The configuration's sections after Platform, which takes the compute group. */
 const SECTIONS: readonly { title: string; groups: readonly ConfigGroup[] }[] = [
   { title: "Networking", groups: ["fabric", "optics", "network"] },
@@ -196,14 +234,14 @@ export function DeploymentDetail({ deployment: d, today }: { deployment: Deploym
       {d.externalNotes ? (
         <section className={styles.block} aria-label="External notes">
           <h2 className={styles.blockTitle}>External notes</h2>
-          <p className={styles.notes}>{d.externalNotes}</p>
+          <Notes text={d.externalNotes} />
         </section>
       ) : null}
 
       {d.notes ? (
         <section className={styles.block} aria-label="Internal notes">
           <h2 className={styles.blockTitle}>Internal notes</h2>
-          <p className={styles.notes}>{d.notes}</p>
+          <Notes text={d.notes} />
         </section>
       ) : null}
     </div>
