@@ -22,6 +22,7 @@
 /* An icon-only `.button`, square and bordered, for a row of actions beside labelled ones. */
 .squareButton {
   composes: secondary sm from "../../components/ui/Button/Button.module.css";
+  composes: square from "./room.module.css";
   flex: none;
   width: 32px;
   padding: 0;

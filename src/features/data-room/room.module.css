@@ -102,6 +102,12 @@
   letter-spacing: -0.01em;
 }
 
+/* Icon-only buttons there are as wide as they are tall. */
+.headerActions > .square {
+  width: 44px;
+  padding: 0;
+}
+
 /* A quiet segmented control: the current tab lifts out as a white chip. 44px tall with its 36px tabs. */
 /* Scrolls sideways when its tabs outgrow a narrow window, e.g. every user role on a phone. */
 .tabs {
