@@ -81,7 +81,7 @@ async function Deployment({ params, searchParams }: PageProps<"/portal/deploymen
                 title="Download PDF"
                 download
               >
-                <Icon name="fileDown" />
+                <Icon name="arrowDown" />
               </a>
               <a
                 href={teaserPdfPath(deployment.id, true)}
