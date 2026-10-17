@@ -1,12 +1,14 @@
 /** A deployment page's tabs, for the server page that picks one and the client switch that changes it. */
-export type DeploymentTab = "summary" | "bom" | "quotes";
+export type DeploymentTab = "summary" | "bom" | "quotes" | "presentation";
 
+/** The header's switch. The presentation opens from its own button, so it isn't listed. */
 export const TABS: readonly { id: DeploymentTab; label: string }[] = [
   { id: "summary", label: "Summary" },
   { id: "bom", label: "BOM" },
   { id: "quotes", label: "Quotes" },
 ];
 
-export const isDeploymentTab = (value: unknown): value is DeploymentTab => TABS.some((tab) => tab.id === value);
+export const isDeploymentTab = (value: unknown): value is DeploymentTab =>
+  value === "presentation" || TABS.some((tab) => tab.id === value);
 
 export const tabHref = (base: string, tab: DeploymentTab): string => (tab === "summary" ? base : `${base}?tab=${tab}`);

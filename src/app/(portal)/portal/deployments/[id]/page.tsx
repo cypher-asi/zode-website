@@ -12,7 +12,8 @@ import { QuotesApp } from "@/features/deployments/bom/QuotesApp";
 import { getDeploymentFor } from "@/features/deployments/deployments";
 import detail from "@/features/deployments/deployments.module.css";
 import { DeploymentDetail } from "@/features/deployments/DeploymentDetail";
-import { DeploymentTabPanel, DeploymentTabs, DeploymentTabSwitch } from "@/features/deployments/DeploymentTabs";
+import { DeploymentTabPanel, DeploymentTabs, DeploymentTabSwitch, TabLink } from "@/features/deployments/DeploymentTabs";
+import { PresentationViewer } from "@/features/deployments/PresentationViewer";
 import { isDeploymentTab, tabHref } from "@/features/deployments/tabs";
 import { todayIso } from "@/features/deployments/format";
 import { ShareLink } from "@/features/deployments/ShareLink";
@@ -22,7 +23,6 @@ import { orLogIn } from "@/features/portal/mine";
 import { PortalLoading } from "@/features/portal/PortalLoading";
 import { PageHeader } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
-import { presentationPdfPath } from "@/features/presentations/types";
 import { teaserPdfPath } from "@/features/teasers/types";
 
 export const metadata: Metadata = {
@@ -32,7 +32,8 @@ export const metadata: Metadata = {
 
 /**
  * One deployment, for every signed-in account, with its PDF, teaser and
- * presentation, each written out from it; the ZODE team can edit it and
+ * presentation, each written out from it, the presentation viewable in place
+ * (`?tab=presentation`); the ZODE team can edit it and
  * switch to its BOM tab (`?tab=bom`) and its Quotes tab
  * (`?tab=quotes`, with `&quote=<id>` open).
  */
@@ -64,7 +65,7 @@ async function Deployment({ params, searchParams }: PageProps<"/portal/deploymen
     : [null, []];
 
   return (
-    <DeploymentTabs base={base} initial={bom ? tab : "summary"}>
+    <DeploymentTabs base={base} initial={bom || tab === "presentation" ? tab : "summary"}>
       <div className={styles.page}>
         <PageHeader
           title={deployment.name}
@@ -92,15 +93,9 @@ async function Deployment({ params, searchParams }: PageProps<"/portal/deploymen
               >
                 <Icon name="page" />
               </a>
-              <a
-                href={presentationPdfPath(deployment.id, true)}
-                className={ui.squareButton}
-                aria-label="Download presentation"
-                title="Download presentation"
-                download
-              >
+              <TabLink tab="presentation" className={ui.squareButton} label="View presentation">
                 <Icon name="slides" />
-              </a>
+              </TabLink>
               {viewer.team ? (
                 <>
                   <ShareLink
@@ -124,6 +119,9 @@ async function Deployment({ params, searchParams }: PageProps<"/portal/deploymen
           <div className={detail.detail}>
             <DeploymentDetail deployment={deployment} today={todayIso()} />
           </div>
+        </DeploymentTabPanel>
+        <DeploymentTabPanel tab="presentation">
+          <PresentationViewer deployment={{ id: deployment.id, name: deployment.name }} today={todayIso()} />
         </DeploymentTabPanel>
         {bom ? (
           <>

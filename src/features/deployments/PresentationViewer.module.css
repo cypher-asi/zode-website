@@ -1,0 +1,16 @@
+/* The presentation's viewer, a card across the page's column, sized like the Quotes tab's (bom/quotes.module.css). */
+.frame {
+  display: flex;
+  flex-direction: column;
+  height: clamp(520px, calc(100dvh - 230px), 1200px);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-bg);
+}
+
+@media (max-width: 700px) {
+  .frame {
+    height: calc(100dvh - 200px);
+  }
+}

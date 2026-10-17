@@ -49,13 +49,31 @@ export function DeploymentTabSwitch(): ReactElement {
   );
 }
 
+/** The open tab, or null outside `DeploymentTabs`. */
+export function useDeploymentTab(): DeploymentTab | null {
+  return use(TabContext)?.tab ?? null;
+}
+
 /** A link to another tab that switches to it in place, like the header's tabs. */
-export function TabLink({ tab, className, children }: { tab: DeploymentTab; className?: string; children: ReactNode }): ReactElement {
+export function TabLink({
+  tab,
+  className,
+  label,
+  children,
+}: {
+  tab: DeploymentTab;
+  className?: string;
+  /** Names the link when its children are only an icon. */
+  label?: string;
+  children: ReactNode;
+}): ReactElement {
   const context = use(TabContext);
   return (
     <a
       href={context ? tabHref(context.base, tab) : undefined}
       className={className}
+      aria-label={label}
+      title={label}
       onClick={(event) => {
         if (!context || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
