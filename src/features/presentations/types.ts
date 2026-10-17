@@ -115,6 +115,7 @@ export interface PresentationContent {
   cooling: Cooling;
   /** At a glance. */
   stats: Stat[];
+  /** A paragraph per line. */
   summary: string;
   /** One per line. */
   highlights: string;

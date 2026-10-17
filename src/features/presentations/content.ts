@@ -87,6 +87,18 @@ export function presentationOf(deployment: Deployment): PresentationContent {
     `, cooled by ${COOLING_PROSE[d.cooling]}.`,
   ].join("");
 
+  // At a glance: what's on offer and where, then how it's built.
+  const summary = [
+    [
+      `Dedicated ${platformSummary(shares)} capacity`,
+      address ? ` at ${address}` : city ? ` in ${city}` : "",
+      ", delivered by ZODE",
+      d.phases.length > 1 && first ? ` in ${d.phases.length} phases from ${formatDay(first.rfsOn)}` : first ? ` from ${formatDay(first.rfsOn)}` : "",
+      ".",
+    ].join(""),
+    `Each cluster runs on ${networkingLabel(d.networking)} with ${COOLING_PROSE[d.cooling]}, and is built, operated and supported by ZODE end to end.`,
+  ].join("\n");
+
   const clusterSummary = [
     `Each phase is built as ${platformSummary(shares)} clusters of ${GPUS_PER_NODE}-GPU nodes,`,
     ` networked over ${networkingLabel(d.networking)}, with ${COOLING_PROSE[d.cooling]}`,
@@ -185,7 +197,7 @@ export function presentationOf(deployment: Deployment): PresentationContent {
     cover: cover.slice(0, LIMITS.cover),
     cooling: d.cooling,
     stats: teaser.stats,
-    summary: cut(teaser.summary, LIMITS.summary),
+    summary: cut(summary, LIMITS.summary),
     highlights: teaser.highlights,
     siteSummary: cut(siteSummary, LIMITS.siteSummary),
     siteFacts: facts(
