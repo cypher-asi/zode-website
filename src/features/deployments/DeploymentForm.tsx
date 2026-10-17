@@ -21,6 +21,7 @@ import { AddressField } from "./AddressField";
 import {
   CONFIG_GROUPS,
   DEFAULT_CONFIG,
+  SYSTEMS,
   optionOf,
   valueLabel,
   type ColumnConfig,
@@ -31,7 +32,7 @@ import {
 } from "./config/catalog";
 import { fieldsFor, resolveConfig, type ConfigSource } from "./config/resolve";
 import { phaseMw, phaseNodesForMw } from "./bom/phase";
-import { formatCount, formatMw, formatTb, formatUsd } from "./format";
+import { formatCount, formatUsd } from "./format";
 import {
   CREDIT_RATINGS,
   FACILITIES,
@@ -70,9 +71,21 @@ const sourceOf = (s: Settings, platform: Platform): ConfigSource => {
   return { platform, cooling, networking, storageTbPerNode, configuration };
 };
 
-/** What settings `s` on `platform` build, as a phase with `overrides` would. */
-const resolvedOf = (s: Settings, platform: Platform, overrides?: ConfigOverrides): ResolvedConfig =>
-  resolveConfig(sourceOf(s, platform), overrides ? { platform, configOverrides: overrides } : null);
+/** What settings `s` build on `platform`. */
+const resolvedOf = (s: Settings, platform: Platform): ResolvedConfig => resolveConfig(sourceOf(s, platform));
+
+/** A phase's settings as saved: rack-scale systems are liquid-cooled whatever's set. */
+const savedSettingsOf = (row: Pick<PhaseDraft, "platform" | "settings">): Settings =>
+  SYSTEMS[row.platform].rackScale ? { ...row.settings, cooling: "liquid_dtc" } : row.settings;
+
+/** Where settings `s` differ from `base`, as a phase's overrides of the deployment's. */
+const overridesOf = (s: Settings, base: Settings): ConfigOverrides =>
+  Object.fromEntries(
+    (Object.keys(s) as (keyof Settings)[]).filter((key) => s[key] !== base[key]).map((key) => [key, s[key]]),
+  ) as ConfigOverrides;
+
+/** The settings a phase's configuration's summary names, e.g. "Liquid DTC · InfiniBand · 4 TB per node". */
+const SUMMARY_KEYS = ["cooling", "networking", "storageTbPerNode"] as const;
 
 const choicesOf = (f: ConfigField) => f.options.map((option) => ({ value: String(option.value), label: option.label }));
 
@@ -120,7 +133,8 @@ interface PhaseDraft {
   mw: string;
   /** Whether its MW was entered, so its nodes follow it; otherwise its MW follows its nodes. */
   mwSet: boolean;
-  overrides: ConfigOverrides;
+  /** Everything it's built to; Phase 1's are saved as the deployment's, the others' as where they differ. */
+  settings: Settings;
   /** Its terms, blank for to follow. */
   price: string;
   term: string;
@@ -134,26 +148,27 @@ const numberOr = (raw: string, fallback: number | null): number | null => {
 
 const str = (value: number | null): string => (value === null ? "" : String(value));
 
-/** The row with its nodes following its MW when that was entered, otherwise its MW following its nodes, under settings `s`. */
-const sized = (row: PhaseDraft, s: Settings): PhaseDraft => {
-  const source = sourceOf(s, row.platform);
-  const phase = { platform: row.platform, configOverrides: row.overrides };
+/** The row with its nodes following its MW when that was entered, otherwise its MW following its nodes. */
+const sized = (row: PhaseDraft): PhaseDraft => {
+  const source = sourceOf(row.settings, row.platform);
+  const phase = { platform: row.platform, configOverrides: {} };
   const mw = numberOr(row.mw, null);
   if (row.mwSet) return mw === null ? row : { ...row, nodes: str(phaseNodesForMw(source, phase, mw)) };
   const nodes = numberOr(row.nodes, null);
   return { ...row, mw: nodes === null ? "" : str(phaseMw(source, { ...phase, nodes })) };
 };
 
-/** `after` under settings `s1`, sized as `before` was under `s0`: nodes cut below what its MW powers stay cut. */
-const resized = (before: PhaseDraft, s0: Settings, after: PhaseDraft, s1: Settings): PhaseDraft =>
-  before.mwSet && before.nodes !== sized(before, s0).nodes ? after : sized(after, s1);
+/** `after`, sized as `before` was: nodes cut below what its MW powers stay cut. */
+const resized = (before: PhaseDraft, after: PhaseDraft): PhaseDraft =>
+  before.mwSet && before.nodes !== sized(before).nodes ? after : sized(after);
 
 type Terms = Pick<Phase, "priceGpuHr" | "termMonths" | "depositPct">;
 
 /**
- * A saved phase, or a new one, with any terms it leaves unset taken from
- * `fallback`. Its MW counts as entered unless it's what its nodes draw, alone
- * or with what's built around them under settings `s`.
+ * A saved phase, or a new one, built to settings `s` with what it overrides,
+ * and with any terms it leaves unset taken from `fallback`. Its MW counts as
+ * entered unless it's what its nodes draw, alone or with what's built around
+ * them.
  */
 const draftOf = (key: number, platform: Platform, s: Settings, phase?: Phase, fallback?: Terms): PhaseDraft => {
   const row: PhaseDraft = {
@@ -166,13 +181,13 @@ const draftOf = (key: number, platform: Platform, s: Settings, phase?: Phase, fa
     nodes: phase ? String(phase.nodes) : "",
     mw: str(phase?.mw ?? null),
     mwSet: false,
-    overrides: phase?.configOverrides ?? {},
+    settings: { ...s, ...phase?.configOverrides },
     price: str(phase?.priceGpuHr ?? fallback?.priceGpuHr ?? null),
     term: str(phase?.termMonths ?? fallback?.termMonths ?? null),
     deposit: str(phase?.depositPct ?? fallback?.depositPct ?? null),
   };
   if (!phase || phase.mw === null) return row;
-  const derived = sized(row, s);
+  const derived = sized(row);
   return phase.mw === mwFor(phase.platform, phase.nodes) || derived.mw === row.mw ? derived : { ...row, mwSet: true };
 };
 
@@ -223,8 +238,8 @@ function Affixed({ prefix, suffix, children }: { prefix?: string; suffix?: strin
 
 /**
  * Adds a deployment, or edits `deployment`, for the ZODE team, linked to one
- * of `rooms` if they choose. Totals follow the figures as they're typed. Its
- * configuration, which each phase can override, sets what its BOM needs.
+ * of `rooms` if they choose. Totals follow the figures as they're typed. Each
+ * phase's configuration sets what its BOM needs.
  */
 export function DeploymentForm({
   deployment,
@@ -236,9 +251,9 @@ export function DeploymentForm({
   const id = useId();
   const d = deployment;
   const [state, action, saving] = useActionState(saveDeploymentAction, INITIAL);
-  const [settings, setSettings] = useState<Settings>(() => settingsOf(d));
   const [loc, setLoc] = useState(d?.locRequired ? "yes" : "no");
   const [phases, setPhases] = useState<PhaseDraft[]>(() => {
+    const settings = settingsOf(d);
     const legacy = d ? legacyTermsOf(d) : undefined;
     return d?.phases.length
       ? d.phases.map((phase, key) => draftOf(key, d.platform, settings, phase, legacy))
@@ -248,6 +263,7 @@ export function DeploymentForm({
   const [deleting, setDeleting] = useState(false);
 
   const platform = phases[0]?.platform ?? d?.platform ?? "b300";
+  const base = phases[0] ? savedSettingsOf(phases[0]) : settingsOf(d);
   const nodeCount = scheduledOf(phases);
   const pricedPhases = phases.map((phase) => ({
     platform: phase.platform,
@@ -260,18 +276,11 @@ export function DeploymentForm({
   const totals = totalsOf({
     nodes: nodeCount,
     platform,
-    storageTbPerNode: settings.storageTbPerNode,
+    storageTbPerNode: base.storageTbPerNode,
     ...NO_TERMS,
     phases: pricedPhases,
   });
-  const allMw = totals.byPlatform.reduce(
-    (sum, share) =>
-      sum + phaseMw(sourceOf(settings, share.platform), { platform: share.platform, nodes: share.nodes, configOverrides: {} }),
-    0,
-  );
   const scheduledGpus = phases.reduce((sum, phase) => sum + gpusFor(phase.platform, numberOr(phase.nodes, 0)!), 0);
-  const resolved = resolvedOf(settings, platform);
-  const fields = fieldsFor(resolved);
   const roomChoices = [
     { value: "", label: "Not linked" },
     ...rooms.map((room) => ({ value: room.id, label: room.name })),
@@ -284,34 +293,25 @@ export function DeploymentForm({
         const next = { ...row, ...patch };
         if ("mw" in patch) next.mwSet = next.mw.trim() !== "";
         const follows = "platform" in patch || (next.mwSet ? "mw" in patch : "nodes" in patch);
-        return follows ? sized(next, settings) : next;
+        return follows ? sized(next) : next;
       }),
     );
 
-  const setSetting = (f: ConfigField, raw: string) => {
+  const setSetting = (key: number, f: ConfigField, raw: string) => {
     const value = optionOf(f, raw);
     if (value === undefined) return;
-    const next: Settings = {
-      ...settings,
-      [f.key]: value,
-      ...(f.key === "cooling" ? { density: value === "air" ? 4 : 8 } : {}),
-    };
-    setSettings(next);
-    setPhases(phases.map((row) => resized(row, settings, row, next)));
-  };
-
-  const setOverride = (key: number, f: ConfigField, raw: string) =>
     setPhases(
       phases.map((row) => {
         if (row.key !== key) return row;
-        const overrides: ConfigOverrides = { ...row.overrides };
-        const value = raw === "" ? undefined : optionOf(f, raw);
-        if (raw !== "" && value === undefined) return row;
-        if (value === undefined) delete overrides[f.key];
-        else (overrides as Record<string, unknown>)[f.key] = value;
-        return resized(row, settings, { ...row, overrides }, settings);
+        const settings: Settings = {
+          ...row.settings,
+          [f.key]: value,
+          ...(f.key === "cooling" ? { density: value === "air" ? 4 : 8 } : {}),
+        };
+        return resized(row, { ...row, settings });
       }),
     );
+  };
 
   // Submitted by hand so a rejected save keeps everything typed.
   const submit = (event: FormEvent<HTMLFormElement>) => {
@@ -388,59 +388,14 @@ export function DeploymentForm({
         )}
 
         <fieldset className={styles.fieldset}>
-          <legend className={styles.legend}>Configuration</legend>
-          <input type="hidden" name="configuration" value={JSON.stringify(settings)} />
-          <p className={styles.summary}>
-            {totals.byPlatform.length > 1
-              ? `${formatCount(totals.gpus)} GPUs (${platformBreakdown(totals.byPlatform)})`
-              : `${formatCount(totals.gpus)} GPUs`}{" "}
-            · {totals.storageTb ? `${formatTb(totals.storageTb)} storage` : "No storage"}
-            {allMw ? ` · Est. ${formatMw(allMw)} IT` : ""}. Each phase builds to this unless it overrides it, and its
-            BOM needs what it sets. Platform, nodes and compute are set by phase in the rollout.
-          </p>
-          {CONFIG_GROUPS.filter((group) => group.id !== "compute").map((group) => {
-            const groupFields = fields.filter((f) => f.group === group.id);
-            return (
-              <div key={group.id} className={styles.configGroup}>
-                <h3 className={styles.configHead}>{group.label}</h3>
-                <div className={styles.grid}>
-                  {groupFields.map((f) => (
-                    <div key={f.key} className={ui.field}>
-                      {label(`config-${f.key}`, f.range ? `${f.label} (${f.range.unit})` : f.label)}
-                      {f.range ? (
-                        <RangeSetting
-                          f={f}
-                          id={`${id}-config-${f.key}`}
-                          aria-labelledby={`${id}-config-${f.key}-label`}
-                          placeholder="0"
-                          value={settings[f.key]}
-                          onChange={(value) => setSetting(f, value || "0")}
-                        />
-                      ) : (
-                        <Select
-                          id={`${id}-config-${f.key}`}
-                          aria-labelledby={`${id}-config-${f.key}-label`}
-                          className={ui.fill}
-                          options={choicesOf(f)}
-                          value={String(settings[f.key])}
-                          onChange={(value) => setSetting(f, value)}
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </fieldset>
-
-        <fieldset className={styles.fieldset}>
           <legend className={styles.legend}>Rollout</legend>
+          <input type="hidden" name="configuration" value={JSON.stringify(base)} />
           <p className={styles.summary}>
             {formatCount(nodeCount)} nodes · {formatCount(scheduledGpus)} GPUs
-            {totals.mw ? ` · ${totals.mw.toLocaleString("en-US", { maximumFractionDigits: 2 })} MW` : ""}. A
-            phase&apos;s IT MW sets its nodes, as many as it powers with their network, storage and management;
-            change the nodes to build fewer.
+            {totals.byPlatform.length > 1 ? ` (${platformBreakdown(totals.byPlatform)})` : ""}
+            {totals.mw ? ` · ${totals.mw.toLocaleString("en-US", { maximumFractionDigits: 2 })} MW` : ""}. Each
+            phase is built to its own configuration, and its BOM needs what it sets. Its IT MW sets its nodes, as
+            many as it powers with their network, storage and management; change the nodes to build fewer.
           </p>
           <div className={styles.phases}>
             <div className={styles.phaseHead} aria-hidden="true">
@@ -454,14 +409,18 @@ export function DeploymentForm({
               <span />
             </div>
             {phases.map((phase, i) => {
-              const phaseConfig = resolvedOf(settings, phase.platform, phase.overrides);
-              const phaseFields = fieldsFor(phaseConfig);
-              const overridden = phaseFields.filter((f) => f.key in phase.overrides).length;
+              const config = resolvedOf(phase.settings, phase.platform);
+              const phaseFields = fieldsFor(config);
+              const saved = savedSettingsOf(phase);
+              const differs = i ? phaseFields.filter((f) => saved[f.key] !== base[f.key]).length : 0;
+              const summary = SUMMARY_KEYS.filter((key) => phaseFields.some((f) => f.key === key)).map((key) =>
+                valueLabel(key, config[key]),
+              );
               return (
               <div key={phase.key} className={styles.phase}>
               <div className={styles.phaseRow}>
                 <input type="hidden" name="phase_id" value={phase.id} />
-                <input type="hidden" name="phase_config" value={JSON.stringify(phase.overrides)} />
+                <input type="hidden" name="phase_config" value={JSON.stringify(i ? overridesOf(saved, base) : {})} />
                 <input
                   name="phase_name"
                   className={ui.input}
@@ -532,37 +491,41 @@ export function DeploymentForm({
               </div>
               <details className={styles.overrides}>
                 <summary>
-                  {overridden
-                    ? `Configuration · ${overridden} setting${overridden === 1 ? "" : "s"} changed from the default`
-                    : "Configuration · default"}
+                  Configuration · {summary.join(" · ")}
+                  {differs ? ` · ${differs} setting${differs === 1 ? "" : "s"} differ from Phase 1` : ""}
                 </summary>
-                <div className={styles.grid}>
-                  {phaseFields.map((f) => (
-                    <div key={f.key} className={ui.field}>
-                      <span className={ui.label}>{f.range ? `${f.label} (${f.range.unit})` : f.label}</span>
-                      {f.range ? (
-                        <RangeSetting
-                          f={f}
-                          aria-label={`Phase ${i + 1} ${f.label.toLowerCase()}`}
-                          placeholder={`Default (${valueLabel(f.key, settings[f.key])})`}
-                          value={phase.overrides[f.key]}
-                          onChange={(value) => setOverride(phase.key, f, value)}
-                        />
-                      ) : (
-                        <Select
-                          className={ui.fill}
-                          aria-label={`Phase ${i + 1} ${f.label.toLowerCase()}`}
-                          options={[
-                            { value: "", label: `Default (${valueLabel(f.key, settings[f.key])})` },
-                            ...choicesOf(f),
-                          ]}
-                          value={f.key in phase.overrides ? String(phase.overrides[f.key]) : ""}
-                          onChange={(value) => setOverride(phase.key, f, value)}
-                        />
-                      )}
+                {CONFIG_GROUPS.map((group) => {
+                  const groupFields = phaseFields.filter((f) => f.group === group.id);
+                  return groupFields.length ? (
+                    <div key={group.id} className={styles.configGroup}>
+                      <h3 className={styles.configHead}>{group.label}</h3>
+                      <div className={styles.grid}>
+                        {groupFields.map((f) => (
+                          <div key={f.key} className={ui.field}>
+                            <span className={ui.label}>{f.range ? `${f.label} (${f.range.unit})` : f.label}</span>
+                            {f.range ? (
+                              <RangeSetting
+                                f={f}
+                                aria-label={`Phase ${i + 1} ${f.label.toLowerCase()}`}
+                                placeholder="0"
+                                value={phase.settings[f.key]}
+                                onChange={(value) => setSetting(phase.key, f, value || "0")}
+                              />
+                            ) : (
+                              <Select
+                                className={ui.fill}
+                                aria-label={`Phase ${i + 1} ${f.label.toLowerCase()}`}
+                                options={choicesOf(f)}
+                                value={String(phase.settings[f.key])}
+                                onChange={(value) => setSetting(phase.key, f, value)}
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  ) : null;
+                })}
               </details>
               </div>
               );
@@ -574,7 +537,7 @@ export function DeploymentForm({
               className={ui.button}
               onClick={() => {
                 const key = nextKey.current++;
-                setPhases((rows) => [...rows, { ...draftOf(key, platform, settings), overrides: { ...rows[0]?.overrides } }]);
+                setPhases((rows) => [...rows, draftOf(key, platform, rows[0]?.settings ?? settingsOf(d))]);
               }}
             >
               Add phase

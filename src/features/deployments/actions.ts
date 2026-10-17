@@ -196,7 +196,7 @@ function readPhases(formData: FormData): PhaseInput[] | string {
     });
   }
   if (phases.length > MAX_PHASES) return `A deployment can have at most ${MAX_PHASES} phases.`;
-  return phases.sort((a, b) => a.rfsOn.localeCompare(b.rfsOn));
+  return phases;
 }
 
 function readDeployment(formData: FormData): DeploymentInput | string {
@@ -209,11 +209,13 @@ function readDeployment(formData: FormData): DeploymentInput | string {
   const status = field("status");
   if (!isOption(STATUSES, status)) return "Choose a status.";
 
-  // Platform and nodes follow the phases: the first phase's platform, and the nodes they all schedule.
+  // Platform, configuration and nodes follow the phases: the first's platform and the configuration it's
+  // built to, which the others override, and the nodes they all schedule.
   const phases = readPhases(formData);
   if (typeof phases === "string") return phases;
   if (!phases.length) return "Add a phase with its RFS date and nodes.";
   const platform = phases[0].platform;
+  phases.sort((a, b) => a.rfsOn.localeCompare(b.rfsOn));
   const nodes = phases.reduce((sum, phase) => sum + phase.nodes, 0);
   if (!nodes) return "Give the phases their nodes.";
   const config = readConfig(formData, platform);
