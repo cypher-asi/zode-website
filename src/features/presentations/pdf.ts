@@ -51,8 +51,8 @@ import {
 
 /*
  * A presentation as 16:9 ZODE-branded slides, set like a spec sheet: an ink
- * cover with the site's name and number large over an exploded drawing of the
- * cluster and a grid of its specs, then a slide for each part that has
+ * cover with the wordmark over its headline, an exploded drawing of the
+ * cluster and a stack of its specs, then a slide for each part that has
  * something in it (at a glance, the site, capacity and rollout, the cluster,
  * the notes, terms), each numbered large beside its heading, over a footer
  * with the wordmark. A site with a profile then gets a section of its own,
@@ -281,7 +281,7 @@ class Deck {
     readonly doc: PDFDocument,
     readonly fonts: Fonts,
     readonly wordmark: string,
-    /** In every content slide's footer; the cover has it beside its title. */
+    /** In every content slide's footer; the cover has it under its headline. */
     readonly address: string,
   ) {}
 
@@ -302,13 +302,13 @@ class Deck {
     return s;
   }
 
-  /** Every slide's footer: the wordmark, the site's address past the cover, and the page of the total. */
+  /** Every slide's footer but the cover's: the wordmark, the site's address, and the page of the total. */
   footers(today: string): void {
     const { mono } = this.fonts;
     const pages = this.doc.getPages();
     const month = formatMonthYear(dayOf(today)).toUpperCase();
     pages.forEach((page, i) => {
-      const cover = i === 0;
+      if (i === 0) return;
       const dark = this.dark.has(i);
       const fill = dark ? TERTIARY : SECONDARY;
       page.drawLine({
@@ -320,57 +320,82 @@ class Deck {
       drawWordmark(page, this.wordmark, MARGIN, 32.5, 7, dark ? WHITE : INK);
       const right = `CONFIDENTIAL · ${month} · ${i + 1} / ${pages.length}`;
       const room = CONTENT - 54 - trackedWidth(right, mono, 6.5, 1) - 32;
-      const left = [BRAND.domain, cover ? "" : this.address].filter(Boolean).join(" · ").toUpperCase();
+      const left = [BRAND.domain, this.address].filter(Boolean).join(" · ").toUpperCase();
       drawText(page, clampLine(left, mono, 6.5, room, 1), MARGIN + 54, 26, mono, 6.5, fill, 1);
       drawTextRight(page, right, W - MARGIN, 26, mono, 6.5, fill, 1);
     });
   }
 }
 
-/** One cell of the cover's spec grid: its heading, then its text or its figures in pairs. */
-function coverCell(s: Slide, cell: SpecCell, x: number, top: number, width: number): void {
+/** The cover's columns: its title on the left, its specs stacked on the right, the drawing between. */
+const COVER_LEFT = 290;
+const COVER_RIGHT = 210;
+const COVER_GAP = 32;
+
+/** The height of one of the cover's spec cells, as `coverCell` sets it. */
+const coverCellHeight = (s: Slide, cell: SpecCell): number =>
+  20 + (cell.text ? wrapClamped(cell.text, s.fonts.regular, 9.5, COVER_RIGHT, 3).length * 13 : 0) + (cell.values.length ? 28 : 0);
+
+/** One cell of the cover's spec stack from `top`: a hairline, its heading, then its text or its figures in pairs. */
+function coverCell(s: Slide, cell: SpecCell, x: number, top: number): void {
   const { fonts } = s;
-  s.line(cell.title.toUpperCase(), x, top, width, fonts.semibold, 8.5, WHITE, 1.2);
+  s.hairline(x, top, COVER_RIGHT, SECONDARY);
+  s.line(cell.title.toUpperCase(), x, top - 16, COVER_RIGHT, fonts.semibold, 8.5, WHITE, 1.2);
+  let y = top - 33;
   if (cell.text) {
-    wrapClamped(cell.text, fonts.regular, 9, Math.min(width, 300), 3).forEach((line, i) =>
-      s.text(line, x, top - 16 - i * 11.5, fonts.regular, 9, PAPER),
-    );
+    for (const line of wrapClamped(cell.text, fonts.regular, 9.5, COVER_RIGHT, 3)) {
+      s.text(line, x, y, fonts.regular, 9.5, PAPER);
+      y -= 13;
+    }
   }
-  const column = Math.min(150, width / Math.max(cell.values.length, 1));
+  const column = COVER_RIGHT / 2;
   cell.values.forEach((value, i) => {
-    const cx = x + i * column;
-    s.line(value.value, cx, top - 17, column - 14, fonts.medium, 11, WHITE);
-    s.line(value.label, cx, top - 29, column - 14, fonts.regular, 8, TERTIARY);
+    const cx = x + (i % 2) * column;
+    s.line(value.value, cx, y - 2, column - 12, fonts.medium, 13, WHITE);
+    s.line(value.label, cx, y - 15, column - 12, fonts.regular, 8.5, TERTIARY);
   });
 }
 
-function cover(deck: Deck, p: PresentationContent): void {
+/**
+ * The cover, on ink without a footer: the wordmark large at the top left
+ * over the headline and the deployment's name and address, the cluster's
+ * drawing in the middle, and its specs stacked down the right.
+ */
+function cover(deck: Deck, p: PresentationContent, today: string): void {
   const { fonts } = deck;
   const page = deck.doc.addPage([W, H]);
   const s = new Slide(deck.doc, page, fonts);
   page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: INK });
 
-  const top = H - 112;
-  const numberWidth = fonts.display.widthOfTextAtSize("01", 76);
-  s.text("01", W - MARGIN - numberWidth, top, fonts.display, 76, WHITE);
-  const caption = p.eyebrow.split(" · ");
-  const captionWidth = Math.max(...caption.map((line) => trackedWidth(line.toUpperCase(), fonts.medium, 9.5, 0.6)), 0);
-  const room = CONTENT - numberWidth - Math.min(captionWidth, LABEL) - 48;
-  const size = fitSize(p.title, fonts.display, 76, room);
-  const width = s.line(p.title, MARGIN, top, room, fonts.display, size, WHITE);
-  s.caption(caption, MARGIN + width + 16, top + size * CAP, LABEL, WHITE, PAPER);
+  const top = H - MARGIN;
+  drawWordmark(page, deck.wordmark, MARGIN, top, 24, WHITE);
+  let y = top - 96;
+  s.label(p.eyebrow, MARGIN, y, COVER_LEFT, PAPER);
+  y -= 46;
+  const size = 34;
+  for (const line of wrapClamped(p.headline, fonts.display, size, COVER_LEFT, 4)) {
+    s.text(line, MARGIN, y, fonts.display, size, WHITE);
+    y -= size * 1.18;
+  }
+  s.caption([p.title, p.address].filter(Boolean), MARGIN, y - 6, COVER_LEFT, WHITE, PAPER);
+  s.label(`Confidential · ${formatMonthYear(dayOf(today))}`, MARGIN, MARGIN, COVER_LEFT, TERTIARY);
 
-  const grid = 104;
-  clusterArt(p.cooling).draw(page, { x: MARGIN, y: grid + 28, width: CONTENT, height: top - 24 - (grid + 28) }, {
+  const artX = MARGIN + COVER_LEFT + COVER_GAP;
+  clusterArt(p.cooling).draw(page, { x: artX, y: MARGIN, width: CONTENT - COVER_LEFT - COVER_RIGHT - COVER_GAP * 2, height: H - MARGIN * 2 }, {
     ground: INK,
     stroke: WHITE,
     edge: 0.75,
     fine: 0.4,
   });
 
-  const gap = 28;
-  const cell = (CONTENT - gap * (p.cover.length - 1)) / Math.max(p.cover.length, 1);
-  p.cover.forEach((spec, i) => coverCell(s, spec, MARGIN + i * (cell + gap), grid, cell));
+  const x = W - MARGIN - COVER_RIGHT;
+  const gap = 18;
+  const heights = p.cover.map((cell) => coverCellHeight(s, cell));
+  let cellTop = H / 2 + (heights.reduce((sum, h) => sum + h, 0) + gap * (heights.length - 1)) / 2;
+  p.cover.forEach((cell, i) => {
+    coverCell(s, cell, x, cellTop);
+    cellTop -= heights[i] + gap;
+  });
 }
 
 function atAGlance(deck: Deck, p: PresentationContent): void {
@@ -751,7 +776,7 @@ export async function renderPresentationPdf(presentation: PresentationContent, t
   const p = presentation;
   const deck = new Deck(doc, fonts, wordmark, p.address);
 
-  cover(deck, p);
+  cover(deck, p, today);
   atAGlance(deck, p);
   // A site's own section covers what the deployment's site slide would.
   if (!p.site) site(deck, p);
