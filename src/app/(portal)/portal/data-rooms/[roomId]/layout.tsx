@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import Link from "next/link";
+import { DataRoomApp } from "@/features/data-room/DataRoomApp";
 import { RoomTabs } from "@/features/data-room/RoomTabs";
 import { ShareButton } from "@/features/data-room/ShareDialog";
-import { listMembers, requireRoomRole } from "@/features/data-room/rooms";
+import { getRoomTree, listMembers, requireRoomRole } from "@/features/data-room/rooms";
+import { getDiligenceSummary } from "@/features/data-room/summary";
+import { SummaryView } from "@/features/data-room/SummaryView";
 import { roleLabel } from "@/features/data-room/types";
 import styles from "@/features/data-room/room.module.css";
 
@@ -16,7 +19,8 @@ export async function generateMetadata({ params }: LayoutProps<"/portal/data-roo
 /**
  * A data room fills the viewport beside the portal's icons, with a Files tab
  * that opens on the summary; admins also get Members, Activity, a Settings
- * gear and a Share button.
+ * gear and a Share button. The file list lives here rather than in the
+ * Files page, so it stays in the sidebar whichever tab is open.
  */
 export default async function DataRoomLayout({
   children,
@@ -25,7 +29,11 @@ export default async function DataRoomLayout({
   const { roomId } = await params;
   const { room, role, account } = await requireRoomRole(roomId);
   const isAdmin = role === "admin";
-  const members = isAdmin ? await listMembers(roomId) : [];
+  const [members, tree, summary] = await Promise.all([
+    isAdmin ? listMembers(roomId) : [],
+    getRoomTree(roomId),
+    getDiligenceSummary(roomId),
+  ]);
 
   return (
     <div className={styles.frame}>
@@ -54,7 +62,16 @@ export default async function DataRoomLayout({
           ) : null}
         </div>
       </header>
-      <div className={styles.body}>{children}</div>
+      <div className={styles.body}>
+        <DataRoomApp
+          roomId={roomId}
+          isAdmin={isAdmin}
+          tree={tree}
+          summary={summary ? { content: <SummaryView roomId={roomId} summary={summary} /> } : null}
+        >
+          {children}
+        </DataRoomApp>
+      </div>
     </div>
   );
 }

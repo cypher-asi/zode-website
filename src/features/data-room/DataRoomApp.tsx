@@ -1,6 +1,7 @@
 "use client";
 
-import { Fragment, useMemo, useRef, useState, type ReactElement } from "react";
+import { Activity, Fragment, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Menu } from "@/components/ui/Menu";
 import { Splitter } from "@/components/ui/Splitter";
 import { SidebarDock, useDocked } from "@/features/portal/PortalFrame";
@@ -26,26 +27,31 @@ interface DataRoomAppProps {
   roomId: string;
   isAdmin: boolean;
   tree: RoomTree;
-  initialFileId: string | null;
   summary: RoomSummary | null;
+  /** The open tab's page; every tab but Files shows it in the viewer's place. */
+  children: ReactNode;
 }
 
 /**
  * The data room itself: the file tree on the left, a resizable divider, and
  * the viewer on the right. While the portal's sidebar is showing, the tree
- * docks there instead and the viewer takes the whole panel. The summary,
+ * docks there instead and the viewer takes the whole panel; it stays docked
+ * on the other tabs, where picking a file goes back to Files. The summary,
  * when written, is pinned atop the tree and open until a file is.
  */
-export function DataRoomApp({ roomId, isAdmin, tree, initialFileId, summary }: DataRoomAppProps): ReactElement {
+export function DataRoomApp({ roomId, isAdmin, tree, summary, children }: DataRoomAppProps): ReactElement {
   const index = useMemo(() => indexTree(tree), [tree]);
   const filesById = useMemo(() => new Map(tree.files.map((file) => [file.id, file])), [tree]);
 
-  const [openFileId, setOpenFileId] = useState<string | null>(() =>
-    initialFileId && filesById.has(initialFileId) ? initialFileId : null,
-  );
-  const [summaryOpen, setSummaryOpen] = useState(
-    () => Boolean(summary) && !(initialFileId && filesById.has(initialFileId)),
-  );
+  const base = `/portal/data-rooms/${roomId}`;
+  const router = useRouter();
+  const onFiles = usePathname() === base;
+  const searchParams = useSearchParams();
+  const fileParam = onFiles ? searchParams.get("file") : null;
+  const initialFileId = fileParam && filesById.has(fileParam) ? fileParam : null;
+
+  const [openFileId, setOpenFileId] = useState<string | null>(initialFileId);
+  const [summaryOpen, setSummaryOpen] = useState(() => Boolean(summary) && !initialFileId);
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(() => {
     const file = initialFileId ? filesById.get(initialFileId) : undefined;
@@ -58,6 +64,25 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId, summary }: D
   const [notice, setNotice] = useState<string | null>(null);
   const uploads = useUploads(roomId);
   const docked = useDocked();
+
+  // Links into the room, e.g. Activity's "Open", name the file to show.
+  const [seenFileParam, setSeenFileParam] = useState(fileParam);
+  if (fileParam !== seenFileParam) {
+    setSeenFileParam(fileParam);
+    const file = fileParam ? filesById.get(fileParam) : undefined;
+    if (file && file.id !== openFileId) {
+      setOpenFileId(file.id);
+      setSummaryOpen(false);
+      setActiveFolderId(file.folderId);
+      const folder = file.folderId;
+      if (folder) setExpanded((current) => new Set([...current, ...ancestorsOf(index, folder), folder]));
+    }
+  }
+
+  // Back on Files with a file still open, the address names it again.
+  useEffect(() => {
+    if (onFiles && openFileId && fileParam !== openFileId) window.history.replaceState(null, "", `?file=${openFileId}`);
+  }, [onFiles, openFileId, fileParam]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -82,23 +107,29 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId, summary }: D
 
   const totalBytes = useMemo(() => tree.files.reduce((sum, file) => sum + file.sizeBytes, 0), [tree]);
 
+  /** Points the address at `href`, going back to Files from another tab. */
+  const show = (href: string) => {
+    if (onFiles) window.history.replaceState(null, "", href);
+    else router.push(href);
+  };
+
   const open = (file: RoomFile) => {
     setOpenFileId(file.id);
     setSummaryOpen(false);
     setActiveFolderId(file.folderId);
-    window.history.replaceState(null, "", `?file=${file.id}`);
+    show(`${base}?file=${file.id}`);
   };
 
   const openSummary = () => {
     setOpenFileId(null);
     setSummaryOpen(true);
-    window.history.replaceState(null, "", window.location.pathname);
+    show(base);
   };
 
   const closeViewer = () => {
     setOpenFileId(null);
     setSummaryOpen(false);
-    window.history.replaceState(null, "", window.location.pathname);
+    show(base);
   };
 
   const toggleExpand = (id: string) =>
@@ -248,7 +279,12 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId, summary }: D
   };
 
   return (
-    <div ref={containerRef} className={styles.app} data-view={openFile || summaryOpen ? "viewer" : "tree"}>
+    <div
+      ref={containerRef}
+      className={styles.app}
+      data-view={openFile || summaryOpen ? "viewer" : "tree"}
+      data-tab={onFiles ? undefined : "page"}
+    >
       <SidebarDock>
         <section className={styles.side} aria-label="Files" data-docked={docked ? "" : undefined}>
           <div className={styles.toolbar}>
@@ -381,7 +417,7 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId, summary }: D
         </section>
       </SidebarDock>
 
-      {docked ? null : (
+      {docked || !onFiles ? null : (
         <Splitter
           containerRef={containerRef}
           storageKey="zode:data-room:tree-share"
@@ -391,13 +427,17 @@ export function DataRoomApp({ roomId, isAdmin, tree, initialFileId, summary }: D
         />
       )}
 
-      <section className={styles.main} aria-label="Viewer">
-        {summary && summaryOpen ? (
-          <SummaryPanel summary={summary} onBack={closeViewer} onOpenFile={openById} />
-        ) : (
-          <Viewer key={openFile?.id ?? "none"} roomId={roomId} file={openFile} onBack={closeViewer} />
-        )}
-      </section>
+      <Activity mode={onFiles ? "visible" : "hidden"}>
+        <section className={styles.main} aria-label="Viewer">
+          {summary && summaryOpen ? (
+            <SummaryPanel summary={summary} onBack={closeViewer} onOpenFile={openById} />
+          ) : (
+            <Viewer key={openFile?.id ?? "none"} roomId={roomId} file={openFile} onBack={closeViewer} />
+          )}
+        </section>
+      </Activity>
+
+      <Activity mode={onFiles ? "hidden" : "visible"}>{children}</Activity>
 
       {dialog ? <Dialog {...dialog} onClose={() => setDialog(null)} /> : null}
     </div>
