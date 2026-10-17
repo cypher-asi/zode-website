@@ -138,7 +138,7 @@ export function presentationOf(deployment: Deployment): PresentationContent {
       title: "Ready",
       text: "",
       values: [
-        ...(first ? [{ value: formatMonthYear(dayOf(first.rfsOn)), label: "Ready for service" }] : []),
+        ...(first ? [{ value: formatMonthYear(dayOf(first.rfsOn)), label: "First deployment" }] : []),
         { value: coolingLabel(d.cooling), label: "Cooling" },
       ].map(value),
     },

@@ -328,8 +328,8 @@ class Deck {
   }
 }
 
-/** The cover's columns: its title on the left, its specs stacked on the right, the drawing between. */
-const COVER_LEFT = 290;
+/** The cover's columns: its title on the left, its specs stacked on the right, the drawing centred on the page between. */
+const COVER_LEFT = 270;
 const COVER_RIGHT = 210;
 const COVER_GAP = 32;
 /** The cover's headline: this size, or smaller until it fits whole in `COVER_LINES`. */
@@ -338,13 +338,34 @@ const COVER_LINES = 5;
 /** The cover's drawing, as a share of its column and the page's height between the margins. */
 const COVER_ART = 0.9;
 
-/** The cover's headline in lines at the largest size up to `COVER_HEADLINE` that keeps all of it in `COVER_LINES`. */
+/**
+ * The cover's headline in lines at the largest size up to `COVER_HEADLINE`
+ * that keeps all of it in `COVER_LINES`, balanced: of the ways to break it
+ * into as many lines as plain wrapping takes, the one whose longest and
+ * shortest lines are closest in width.
+ */
 function coverHeadline(headline: string, font: PDFFont): { size: number; lines: string[] } {
   for (let size = COVER_HEADLINE; size > 16; size -= 1) {
     const lines = wrap(headline, font, size, COVER_LEFT);
-    if (lines.length <= COVER_LINES && lines.every((line) => font.widthOfTextAtSize(line, size) <= COVER_LEFT)) return { size, lines };
+    if (lines.length > COVER_LINES || lines.some((line) => font.widthOfTextAtSize(line, size) > COVER_LEFT)) continue;
+    return { size, lines: balanced(lines.join(" ").split(" "), lines.length, (line) => font.widthOfTextAtSize(line, size)) ?? lines };
   }
   return { size: 16, lines: wrapClamped(headline, font, 16, COVER_LEFT, COVER_LINES) };
+}
+
+/** `words` in `count` lines no wider than `COVER_LEFT`, their longest and shortest closest in width; null if none fit. */
+function balanced(words: string[], count: number, width: (line: string) => number): string[] | null {
+  function* breaks(from: number, lines: string[]): Generator<string[]> {
+    if (lines.length === count - 1) yield [...lines, words.slice(from).join(" ")];
+    else for (let to = from + 1; to <= words.length - (count - 1 - lines.length); to += 1) yield* breaks(to, [...lines, words.slice(from, to).join(" ")]);
+  }
+  let best: { lines: string[]; spread: number } | null = null;
+  for (const lines of breaks(0, [])) {
+    const widths = lines.map(width);
+    const spread = Math.max(...widths) - Math.min(...widths);
+    if (Math.max(...widths) <= COVER_LEFT && (!best || spread < best.spread)) best = { lines, spread };
+  }
+  return best?.lines ?? null;
 }
 
 /** The height of one of the cover's spec cells, as `coverCell` sets it. */
@@ -372,9 +393,9 @@ function coverCell(s: Slide, cell: SpecCell, x: number, top: number): void {
 }
 
 /**
- * The cover, on ink without a footer: the wordmark large at the top left
- * over the headline and the deployment's name, the cluster's drawing
- * centred in the middle, and its specs stacked down the right.
+ * The cover, on ink without a footer: the wordmark large at the top left,
+ * the headline at the bottom left and no address anywhere, the cluster's
+ * drawing centred on the page, and its specs stacked down the right.
  */
 function cover(deck: Deck, p: PresentationContent, today: string): void {
   const { fonts } = deck;
@@ -382,21 +403,15 @@ function cover(deck: Deck, p: PresentationContent, today: string): void {
   const s = new Slide(deck.doc, page, fonts);
   page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: INK });
 
-  const top = H - MARGIN;
-  drawWordmark(page, deck.wordmark, MARGIN, top, 24, WHITE);
-  const { size, lines } = coverHeadline(p.headline, fonts.display);
-  let y = top - 91 - size * CAP;
-  for (const line of lines) {
-    s.text(line, MARGIN, y, fonts.display, size, WHITE);
-    y -= size * 1.18;
-  }
-  s.caption([p.title], MARGIN, y - 6, COVER_LEFT, WHITE);
+  drawWordmark(page, deck.wordmark, MARGIN, H - MARGIN, 24, WHITE);
   s.label(`Confidential · ${formatMonthYear(dayOf(today))}`, MARGIN, MARGIN, COVER_LEFT, TERTIARY);
+  const { size, lines } = coverHeadline(p.headline, fonts.display);
+  const leading = size * 1.18;
+  lines.forEach((line, i) => s.text(line, MARGIN, MARGIN + 30 + (lines.length - 1 - i) * leading, fonts.display, size, WHITE));
 
   const column = CONTENT - COVER_LEFT - COVER_RIGHT - COVER_GAP * 2;
   const art = { width: column * COVER_ART, height: (H - MARGIN * 2) * COVER_ART };
-  const artX = MARGIN + COVER_LEFT + COVER_GAP + (column - art.width) / 2;
-  clusterArt(p.cooling).draw(page, { x: artX, y: (H - art.height) / 2, ...art }, {
+  clusterArt(p.cooling).draw(page, { x: (W - art.width) / 2, y: (H - art.height) / 2, ...art }, {
     ground: INK,
     stroke: WHITE,
     edge: 0.75,
