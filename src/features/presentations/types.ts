@@ -70,6 +70,14 @@ export interface PueRow {
   outcome?: boolean;
 }
 
+/** A person on a team slide, their company set beside their name. */
+export interface TeamMember {
+  name: string;
+  company: string;
+  role: string;
+  bio: string;
+}
+
 /**
  * The presentation's second section, on the building and land rather than
  * the deployment: written by hand from the landlord's materials for the
@@ -90,6 +98,8 @@ export interface SiteContent {
   efficiency: { rows: PueRow[]; figure: LabeledValue; points: string[]; source: string };
   plant: { image: SiteImage; points: string[]; inset: SiteImage };
   location: { image: SiteImage; points: SitePoint[] };
+  /** A slide per group, after location: who's developing and delivering the site. */
+  team: { slides: { title: string; lede: string; members: TeamMember[] }[]; source: string };
 }
 
 export interface PresentationContent {

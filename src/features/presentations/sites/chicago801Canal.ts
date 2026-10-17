@@ -5,7 +5,8 @@ const PHOTOS = "Image: 601W marketing package.";
 /**
  * 801 S Canal, Chicago, from the landlord's tenant deck and the concept
  * data room (Callan's concept design, PUE analysis and Tier III review,
- * WJE's structural findings), as of the August 2026 concept design.
+ * WJE's structural findings), as of the August 2026 concept design, and
+ * the team from Alosanar's representative experience summary.
  */
 export const CHICAGO_801_CANAL: SiteContent = {
   name: "801 S Canal",
@@ -111,5 +112,76 @@ export const CHICAGO_801_CANAL: SiteContent = {
       { title: "On-parcel infrastructure", text: "Generators, transformers and fuel all fit on the existing site." },
       { title: "Rail and utility adjacency", text: "An adjacent rail corridor and utility feeds, coordinated with the canal-bridge work." },
     ],
+  },
+  team: {
+    slides: [
+      {
+        title: "The team",
+        lede: "Alosanar's founders bring Microsoft-scale data center delivery and institutional commercial real estate to the site.",
+        members: [
+          {
+            name: "Emmanuel Daniel",
+            company: "Alosanar",
+            role: "CEO and CTO",
+            bio: "A senior Microsoft executive who ran its global data center development, portfolio, operations and risk, growing the portfolio from about 200 facilities to more than 500 on investment approaching $2 billion a month. Before that he led Microsoft's worldwide smart-buildings and Digital Integration Platform.",
+          },
+          {
+            name: "Tom Shircliff",
+            company: "Alosanar",
+            role: "Corporate strategy and partners",
+            bio: "More than 20 years advising many of the largest commercial real estate owners, investors and operators. As co-founder of Intelligent Buildings he built one of the industry's largest connected-building analytics portfolios, over 100 million sf. A gubernatorial appointee on energy strategy.",
+          },
+          {
+            name: "James Vogtsberger",
+            company: "Alosanar",
+            role: "PMO director",
+            bio: "More than 20 years running portfolios, programs and projects for Fortune 500 customers across complex technical and infrastructure work, now on Alosanar's edge data centers, smart buildings and AI-driven infrastructure. M.S. Project Management; PMP, Certified Scrum Master, Six Sigma Green Belt.",
+          },
+          {
+            name: "Jeff Just",
+            company: "Alosanar",
+            role: "Telecom and broadband",
+            bio: "A 30-year entrepreneur in development, acquisitions, finance and asset management. He founded Dianet Communications and helped structure and finance Transit Wireless's ~$200 million neutral-host network for the New York City Subway, and now supports shared wireless networks across more than 400 million sf.",
+          },
+        ],
+      },
+      {
+        title: "Delivery partners",
+        lede: "The engineering and construction firms on Alosanar's delivery team, each with mission-critical and data center experience.",
+        members: [
+          {
+            name: "Julia Ingersoll",
+            company: "Callan Consulting Engineers",
+            role: "President and managing principal",
+            bio: "Illinois PE and Uptime Institute Certified Data Center Design Professional; B.S. Mechanical Engineering, UW-Madison. Callan prepared the site's concept design and specializes in commercial-to-data-center conversions.",
+          },
+          {
+            name: "Dan McJacobson",
+            company: "Callan Consulting Engineers",
+            role: "Managing principal",
+            bio: "Illinois PE with commissioning (BCxP), WELL AP and LEED AP credentials. Callan's conversions phase power from capacity already on site and reuse existing hydronic plant, towers and chillers.",
+          },
+          {
+            name: "David Langhamer",
+            company: "DW Hammer",
+            role: "Principal and founder",
+            bio: "Founded the Chicago general contractor in 2010 after co-founding another Chicago firm, with more than $1 billion in construction. LEED AP, PMP. DW Hammer builds data halls and upgrades live mission-critical sites.",
+          },
+          {
+            name: "Aidan McGovern",
+            company: "DW Hammer",
+            role: "Principal and director",
+            bio: "A long-time collaborator of David Langhamer's; BSc Construction Management, Limerick Institute of Technology. DW Hammer's mission-critical work includes Morningstar, Northwestern University and Fiserv.",
+          },
+          {
+            name: "Bob Gardner",
+            company: "Gardner Builders",
+            role: "Founder, president and CEO",
+            bio: "Founded the Minneapolis contractor in 2010, now about 200 to 240 people. Its data center practice covers edge, colocation, AI inference and office conversions, including the 18,000 sf Core42 data center in Minneapolis.",
+          },
+        ],
+      },
+    ],
+    source: "Alosanar, Representative Experience & Case Studies, September 2026.",
   },
 };

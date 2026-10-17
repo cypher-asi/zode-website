@@ -58,7 +58,7 @@ import {
  * the notes, terms), each numbered large beside its heading, over a footer
  * with the wordmark. A site with a profile then gets a section of its own,
  * from a divider over its photo through its property, power, reliability,
- * efficiency, plant and location, before next steps. Every block clamps its
+ * efficiency, plant, location and team, before next steps. Every block clamps its
  * lines, and the limits in ./types keep the longest text on its slide.
  */
 
@@ -747,6 +747,38 @@ class SiteSection {
     this.figure(s, location.image, MARGIN, FLOOR + 14, LEFT, BODY_TOP + 10 - FLOOR - 14);
     s.points(location.points, RIGHT_X, BODY_TOP, RIGHT);
   }
+
+  /** A slide per group: its people in a grid, each name with their company beside it, over their role and bio. */
+  team(): void {
+    const { team } = this.site;
+    for (const group of team.slides) {
+      const s = this.deck.slide(group.title);
+      const { fonts } = s;
+      const top = s.paragraph(group.lede, MARGIN, BODY_TOP, CONTENT, 13, 19.5) - 6;
+      const columns = group.members.length > 4 ? 3 : 2;
+      const rows = Math.ceil(group.members.length / columns);
+      const height = (top - FLOOR - 24) / rows;
+      const cell = CONTENT / columns;
+      const lines = Math.floor((height - 70) / 14) + 1;
+      group.members.forEach((member, i) => {
+        const column = i % columns;
+        const rowTop = top - Math.floor(i / columns) * height;
+        const x = MARGIN + column * cell + (column ? 16 : 0);
+        const width = cell - (column ? 32 : 16);
+        if (column === 0) s.hairline(MARGIN, rowTop, CONTENT, i ? BORDER : INK);
+        else s.rule(MARGIN + column * cell, rowTop, height);
+        const name = s.line(member.name, x, rowTop - 24, width, fonts.semibold, 12.5, INK);
+        s.line(member.company.toUpperCase(), x + name + 8, rowTop - 24, width - name - 8, fonts.mono, 7, ACCENT, 0.7);
+        s.line(member.role, x, rowTop - 40, width, fonts.regular, 9.5, SECONDARY);
+        wrapClamped(member.bio, fonts.regular, 10.5, width, lines).forEach((line, j) =>
+          s.text(line, x, rowTop - 60 - j * 14, fonts.regular, 10.5, INK),
+        );
+      });
+      const bottom = top - rows * height;
+      s.hairline(MARGIN, bottom, CONTENT);
+      s.note(team.source, MARGIN, bottom - 18, CONTENT);
+    }
+  }
 }
 
 /** The site's section: a divider over its photo, then a slide for each part of its profile. */
@@ -760,6 +792,7 @@ async function siteSection(deck: Deck, site: SiteContent): Promise<void> {
   section.efficiency();
   section.plant();
   section.location();
+  section.team();
 }
 
 function nextSteps(deck: Deck, p: PresentationContent): void {
