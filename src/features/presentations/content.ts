@@ -56,6 +56,7 @@ const facts = (rows: readonly LabeledValue[], max: number): LabeledValue[] =>
 const NEXT_STEPS = [
   "Sign a mutual NDA to open the data room",
   "Review the site, power and engineering documents",
+  "Sign an exclusivity agreement and pay a $2 million exclusivity deposit",
   "Visit the site and meet the engineering team",
   "Agree indicative terms and reserve capacity",
 ];
