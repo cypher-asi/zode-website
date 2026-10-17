@@ -69,12 +69,11 @@ const isDay = (value: string): boolean => DAY_RE.test(value) && !Number.isNaN(Da
 type Terms = Pick<PhaseInput, "priceGpuHr" | "termMonths" | "depositPct">;
 
 /**
- * A price per GPU-hour, a term in months and a deposit percent, each
- * optional; `whose` leads the errors, e.g. "Phase 1's ", or "" for the
- * deployment's own.
+ * A phase's price per GPU-hour, term in months and deposit percent, each
+ * optional; `whose` leads the errors, e.g. "Phase 1's ".
  */
 function readTerms(price: string, term: string, deposit: string, whose: string): Terms | string {
-  const named = (what: string) => (whose ? `${whose}${what.toLowerCase()}` : what);
+  const named = (what: string) => `${whose}${what.toLowerCase()}`;
   const termMonths = figure(term, named("Term"), 1200, true);
   const priceGpuHr = figure(price, named("Price"), 1e4);
   const depositPct = figure(deposit.replace(/%$/, ""), named("Deposit"), 1e3);
@@ -138,11 +137,8 @@ function readConfig(formData: FormData, platform: Platform): (ColumnConfig & { c
   };
 }
 
-/**
- * The rollout, one phase per row of `phase_*` fields in order; blank rows are
- * skipped, and a row without a platform takes the deployment's.
- */
-function readPhases(formData: FormData, platform: Platform): PhaseInput[] | string {
+/** The rollout, one phase per row of `phase_*` fields in order; blank rows are skipped. */
+function readPhases(formData: FormData): PhaseInput[] | string {
   const ids = formData.getAll("phase_id");
   const names = formData.getAll("phase_name");
   const platforms = formData.getAll("phase_platform");
@@ -163,11 +159,14 @@ function readPhases(formData: FormData, platform: Platform): PhaseInput[] | stri
       rfsOn: text(rfs[i]),
       nodes: text(nodes[i]),
       mw: text(mws[i]),
+      price: text(prices[i]),
+      term: text(phaseTerms[i]),
+      deposit: text(deposits[i]),
     };
-    if (!row.name && !row.startOn && !row.rfsOn && !row.nodes && !row.mw) continue;
+    if (Object.values(row).every((value) => !value)) continue;
     const label = row.name || `Phase ${phases.length + 1}`;
     if (row.name.length > MAX_TEXT) return `${label}'s name is too long.`;
-    const phasePlatform = text(platforms[i]) || platform;
+    const phasePlatform = text(platforms[i]);
     if (!isOption(PLATFORM_OPTIONS, phasePlatform)) return `Choose ${label}'s platform.`;
     if (!isDay(row.rfsOn)) return `${label} needs an RFS date.`;
     if (row.startOn && !isDay(row.startOn)) return `${label}'s start must be a date.`;
@@ -179,7 +178,7 @@ function readPhases(formData: FormData, platform: Platform): PhaseInput[] | stri
     if (typeof mw === "string") return mw;
     const configOverrides = readSettings(overrides[i], `${label}'s`);
     if (typeof configOverrides === "string") return configOverrides;
-    const pricing = readTerms(text(prices[i]), text(phaseTerms[i]), text(deposits[i]), `${label}'s `);
+    const pricing = readTerms(row.price, row.term, row.deposit, `${label}'s `);
     if (typeof pricing === "string") return pricing;
     const id = text(ids[i]);
     if (id && (!isUuid(id) || seen.has(id))) return `${label} no longer exists. Reload and try again.`;
@@ -208,13 +207,15 @@ function readDeployment(formData: FormData): DeploymentInput | string {
   if (name.length > MAX_TEXT) return "Name is too long.";
 
   const status = field("status");
-  const platform = field("platform");
   if (!isOption(STATUSES, status)) return "Choose a status.";
-  if (!isOption(PLATFORM_OPTIONS, platform)) return "Choose a platform.";
 
-  const nodes = figure(field("nodes"), "Nodes", 1e6, true);
-  if (typeof nodes === "string") return nodes;
-  if (!nodes) return "Give the deployment's nodes.";
+  // Platform and nodes follow the phases: the first phase's platform, and the nodes they all schedule.
+  const phases = readPhases(formData);
+  if (typeof phases === "string") return phases;
+  if (!phases.length) return "Add a phase with its RFS date and nodes.";
+  const platform = phases[0].platform;
+  const nodes = phases.reduce((sum, phase) => sum + phase.nodes, 0);
+  if (!nodes) return "Give the phases their nodes.";
   const config = readConfig(formData, platform);
   if (typeof config === "string") return config;
   const { cooling, networking, storageTbPerNode, configuration } = config;
@@ -239,9 +240,6 @@ function readDeployment(formData: FormData): DeploymentInput | string {
   const externalNotes = notesOf("external_notes");
   if (externalNotes.length > MAX_NOTES) return "The external notes are too long.";
 
-  const pricing = readTerms(field("price_gpu_hr"), field("term_months"), field("deposit_pct"), "");
-  if (typeof pricing === "string") return pricing;
-  const { priceGpuHr, termMonths, depositPct } = pricing;
   const locRequired = field("loc_required") === "yes";
   const locYears = locRequired ? figure(field("loc_years"), "The LOC's years of lease", 100) : null;
   if (typeof locYears === "string") return locYears;
@@ -250,11 +248,10 @@ function readDeployment(formData: FormData): DeploymentInput | string {
     return "Give the LOC's years of lease to at most two decimals.";
   }
 
-  const phases = readPhases(formData, platform);
-  if (typeof phases === "string") return phases;
-  const scheduled = phases.reduce((sum, phase) => sum + phase.nodes, 0);
-  if (scheduled > nodes) return `The phases add up to ${scheduled} nodes, more than the deployment's ${nodes}.`;
-
+  // Terms are set by phase; the deployment's own are cleared, so none fall back on them.
+  const termMonths = null;
+  const priceGpuHr = null;
+  const depositPct = null;
   const { depositUsd } = totalsOf({ nodes, platform, storageTbPerNode, priceGpuHr, termMonths, depositPct, phases });
 
   return {

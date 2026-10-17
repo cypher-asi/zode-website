@@ -9,7 +9,7 @@ import {
   type DeploymentConfig,
 } from "./config/catalog";
 import { resolveConfig } from "./config/resolve";
-import { formatCount, formatDeposit, formatRate, formatTerm, formatUsd } from "./format";
+import { formatAcross, formatCount, formatDeposit, formatRate, formatTerm, formatUsd } from "./format";
 
 /*
  * A GPU deployment as the portal shows it, and the figures derived from it.
@@ -236,6 +236,26 @@ export const pricingLabel = (p: Pricing): string =>
       ]
         .filter(Boolean)
         .join(" · ");
+
+/**
+ * Deployment `d`'s term, price and deposit across its phases: the term and
+ * price each the one they agree on or "From" the lowest, the deposit their sum
+ * with its share of the contract.
+ */
+export function termsAcross(
+  d: Pick<Deployment, "nodes" | "platform" | "storageTbPerNode" | "priceGpuHr" | "termMonths" | "depositPct" | "depositUsd"> & {
+    phases: readonly (Pick<Phase, "mw"> & PricedPhase)[];
+  },
+): { term: string | null; price: string | null; deposit: string | null } {
+  const priced = d.phases.map((phase) => pricingOf(d, phase));
+  const { contractUsd, depositUsd } = totalsOf(d);
+  const pct = depositUsd !== null && contractUsd ? Math.round((depositUsd / contractUsd) * 10_000) / 100 : null;
+  return {
+    term: formatAcross(priced.map((p) => p.termMonths), formatTerm) ?? (d.termMonths !== null ? formatTerm(d.termMonths) : null),
+    price: formatAcross(priced.map((p) => p.priceGpuHr), formatRate) ?? (d.priceGpuHr !== null ? formatRate(d.priceGpuHr) : null),
+    deposit: formatDeposit(depositUsd, pct) ?? formatDeposit(d.depositUsd, d.depositPct),
+  };
+}
 
 /** Whether any phase has a price, term or deposit of its own. */
 export const pricedByPhase = (phases: readonly PricedPhase[]): boolean =>

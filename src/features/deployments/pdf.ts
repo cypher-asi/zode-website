@@ -25,12 +25,9 @@ import { SITE_URL } from "@/lib/site";
 import {
   formatCount,
   formatDay,
-  formatDeposit,
   formatMw,
-  formatRate,
   formatTb,
   formatLeaseYears,
-  formatTerm,
   formatUsd,
   plural,
 } from "./format";
@@ -50,6 +47,7 @@ import {
   pricingOf,
   rackDesignHref,
   statusLabel,
+  termsAcross,
   totalsOf,
   type Deployment,
 } from "./types";
@@ -549,10 +547,11 @@ export async function renderDeploymentPdf(
 
   w.rollout(d, today);
 
+  const terms = termsAcross(d);
   w.facts("Commercial", [
-    { label: "Term", value: d.termMonths !== null ? formatTerm(d.termMonths) : "—" },
-    { label: "Price", value: d.priceGpuHr !== null ? formatRate(d.priceGpuHr) : "—" },
-    { label: "Deposit", value: formatDeposit(d.depositUsd, d.depositPct) ?? "—" },
+    { label: "Term", value: terms.term ?? "—" },
+    { label: "Price", value: terms.price ?? "—" },
+    { label: "Deposit", value: terms.deposit ?? "—" },
     { label: "Est. monthly", value: totals.monthlyUsd !== null ? formatUsd(totals.monthlyUsd) : "—" },
     { label: "Est. contract value", value: totals.contractUsd !== null ? formatUsd(totals.contractUsd) : "—" },
     ...(pricedByPhase(d.phases)

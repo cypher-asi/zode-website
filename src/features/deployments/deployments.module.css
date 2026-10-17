@@ -476,11 +476,13 @@
   text-align: right;
 }
 
+/* A table of phases, one row each under a header, in a bordered box that scrolls sideways when narrow. */
 .phases {
   display: flex;
   flex-direction: column;
-  gap: 8px;
   overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
 }
 
 .phaseHead,
@@ -489,13 +491,25 @@
   grid-template-columns: minmax(140px, 1.4fr) 130px 150px 150px 90px 90px 70px 32px;
   align-items: center;
   gap: 8px;
-  min-width: 900px;
 }
 
-.phaseHead {
+.phaseHead,
+.pricingHead {
+  min-height: 36px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-tint);
   color: var(--color-text-secondary);
-  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
   font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+}
+
+.phaseHead [data-num],
+.pricingHead [data-num] {
+  text-align: right;
 }
 
 .phaseGpus {
@@ -508,30 +522,80 @@
 .phase {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-width: 900px;
+  gap: 8px;
+  min-width: 920px;
+  padding: 10px 14px;
+}
+
+.phaseHead {
+  min-width: 920px;
+}
+
+.phase + .phase,
+.pricingRow + .pricingRow {
+  border-top: 1px solid var(--color-border);
 }
 
 .pricingHead,
 .pricingRow {
   display: grid;
-  grid-template-columns: minmax(140px, 1.4fr) 90px 150px 150px 150px minmax(120px, 1fr);
+  grid-template-columns: minmax(110px, 1.2fr) 110px 70px 150px 170px 190px;
   align-items: center;
-  gap: 8px;
-  min-width: 840px;
+  gap: 12px;
+  min-width: 900px;
 }
 
-.pricingHead {
-  color: var(--color-text-secondary);
-  font-size: var(--text-xs);
-  font-weight: 500;
+.pricingRow {
+  padding: 10px 14px;
 }
 
 .pricingName {
   overflow: hidden;
   font-size: var(--text-sm);
+  font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.pricingPlatform {
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A field with its unit inside it; `--suffix` is the unit's length, to keep typing clear of it. */
+.affix {
+  position: relative;
+  display: block;
+}
+
+.prefix,
+.suffix {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.prefix {
+  left: 12px;
+}
+
+.suffix {
+  right: 12px;
+}
+
+.affix[data-prefix] input {
+  padding-left: 24px;
+}
+
+.affix[data-suffix] input {
+  padding-right: calc(18px + var(--suffix));
 }
 
 .overrides {
@@ -549,8 +613,7 @@
 }
 
 .overrides[open] {
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 6px;
 }
 
 /* One group of the deployment's configuration, e.g. its GPU fabric. */

@@ -1,16 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import Link from "next/link";
-import {
-  formatCount,
-  formatDay,
-  formatDeposit,
-  formatMw,
-  formatRate,
-  formatTb,
-  formatLeaseYears,
-  formatTerm,
-  formatUsd,
-} from "./format";
+import { formatCount, formatDay, formatMw, formatTb, formatLeaseYears, formatUsd } from "./format";
 import { phaseLabel } from "./bom/phase";
 import { valueLabel, type ConfigField, type ConfigGroup, type ResolvedConfig } from "./config/catalog";
 import { fieldsFor, overrideLabels, resolveConfig } from "./config/resolve";
@@ -24,6 +14,7 @@ import {
   pricingLabel,
   pricingOf,
   rackDesignHref,
+  termsAcross,
   totalsOf,
   type Deployment,
 } from "./types";
@@ -140,6 +131,7 @@ function configValue(d: Deployment, config: ResolvedConfig, f: ConfigField): Rea
 /** Everything about one deployment: headline figures, the site, how it's built, its rollout, the commercial terms and credit. */
 export function DeploymentDetail({ deployment: d, today }: { deployment: Deployment; today: string }): ReactElement {
   const totals = totalsOf(d);
+  const terms = termsAcross(d);
   const next = d.phases.find((phase) => phase.rfsOn >= today);
   const rackHref = rackDesignHref(d);
   const config = resolveConfig(d);
@@ -218,9 +210,9 @@ export function DeploymentDetail({ deployment: d, today }: { deployment: Deploym
       </section>
 
       <Facts title="Commercial">
-        <Fact label="Term">{d.termMonths !== null ? formatTerm(d.termMonths) : null}</Fact>
-        <Fact label="Price">{d.priceGpuHr !== null ? formatRate(d.priceGpuHr) : null}</Fact>
-        <Fact label="Deposit">{formatDeposit(d.depositUsd, d.depositPct)}</Fact>
+        <Fact label="Term">{terms.term}</Fact>
+        <Fact label="Price">{terms.price}</Fact>
+        <Fact label="Deposit">{terms.deposit}</Fact>
         <Fact label="Est. monthly">{totals.monthlyUsd !== null ? formatUsd(totals.monthlyUsd) : null}</Fact>
         <Fact label="Est. contract value">{totals.contractUsd !== null ? formatUsd(totals.contractUsd) : null}</Fact>
         {pricedByPhase(d.phases)

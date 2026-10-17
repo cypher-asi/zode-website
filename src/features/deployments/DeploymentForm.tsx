@@ -6,6 +6,7 @@ import {
   useId,
   useRef,
   useState,
+  type CSSProperties,
   type FormEvent,
   type InputHTMLAttributes,
   type ReactElement,
@@ -40,7 +41,7 @@ import {
   isOption,
   mwFor,
   platformBreakdown,
-  pricingOf,
+  platformLabel,
   totalsOf,
   type Deployment,
   type Phase,
@@ -120,7 +121,7 @@ interface PhaseDraft {
   /** Whether its MW was entered, so its nodes follow it; otherwise its MW follows its nodes. */
   mwSet: boolean;
   overrides: ConfigOverrides;
-  /** Its own terms, blank to take the deployment's. */
+  /** Its terms, blank for to follow. */
   price: string;
   term: string;
   deposit: string;
@@ -147,11 +148,14 @@ const sized = (row: PhaseDraft, s: Settings): PhaseDraft => {
 const resized = (before: PhaseDraft, s0: Settings, after: PhaseDraft, s1: Settings): PhaseDraft =>
   before.mwSet && before.nodes !== sized(before, s0).nodes ? after : sized(after, s1);
 
+type Terms = Pick<Phase, "priceGpuHr" | "termMonths" | "depositPct">;
+
 /**
- * A saved phase, or a new one. Its MW counts as entered unless it's what its
- * nodes draw, alone or with what's built around them under settings `s`.
+ * A saved phase, or a new one, with any terms it leaves unset taken from
+ * `fallback`. Its MW counts as entered unless it's what its nodes draw, alone
+ * or with what's built around them under settings `s`.
  */
-const draftOf = (key: number, platform: Platform, s: Settings, phase?: Phase): PhaseDraft => {
+const draftOf = (key: number, platform: Platform, s: Settings, phase?: Phase, fallback?: Terms): PhaseDraft => {
   const row: PhaseDraft = {
     key,
     id: phase?.id ?? "",
@@ -163,9 +167,9 @@ const draftOf = (key: number, platform: Platform, s: Settings, phase?: Phase): P
     mw: str(phase?.mw ?? null),
     mwSet: false,
     overrides: phase?.configOverrides ?? {},
-    price: str(phase?.priceGpuHr ?? null),
-    term: str(phase?.termMonths ?? null),
-    deposit: str(phase?.depositPct ?? null),
+    price: str(phase?.priceGpuHr ?? fallback?.priceGpuHr ?? null),
+    term: str(phase?.termMonths ?? fallback?.termMonths ?? null),
+    deposit: str(phase?.depositPct ?? fallback?.depositPct ?? null),
   };
   if (!phase || phase.mw === null) return row;
   const derived = sized(row, s);
@@ -175,12 +179,47 @@ const draftOf = (key: number, platform: Platform, s: Settings, phase?: Phase): P
 const scheduledOf = (rows: readonly PhaseDraft[]): number =>
   rows.reduce((sum, row) => sum + numberOr(row.nodes, 0)!, 0);
 
-/** The deposit's percent, worked out from the amount for deployments saved before it was entered as one. */
-const depositPctOf = (d: Deployment): number | null => {
-  if (d.depositPct !== null || d.depositUsd === null) return d.depositPct;
+/**
+ * The terms deployment `d` was saved with before they were set by phase, for
+ * its phases to start from; the deposit's percent worked out from the amount
+ * for those saved before it was entered as one.
+ */
+const legacyTermsOf = (d: Deployment): Terms => {
   const { contractUsd } = totalsOf(d);
-  return contractUsd ? Math.round((d.depositUsd / contractUsd) * 10_000) / 100 : null;
+  const depositPct =
+    d.depositPct !== null || d.depositUsd === null
+      ? d.depositPct
+      : contractUsd
+        ? Math.round((d.depositUsd / contractUsd) * 10_000) / 100
+        : null;
+  return { priceGpuHr: d.priceGpuHr, termMonths: d.termMonths, depositPct };
 };
+
+const NO_TERMS: Terms = { priceGpuHr: null, termMonths: null, depositPct: null };
+
+/** A field with its unit inside it, e.g. "$" before a price or "%" after a deposit. */
+function Affixed({ prefix, suffix, children }: { prefix?: string; suffix?: string; children: ReactNode }): ReactElement {
+  return (
+    <span
+      className={styles.affix}
+      data-prefix={prefix ? "" : undefined}
+      data-suffix={suffix ? "" : undefined}
+      style={suffix ? ({ "--suffix": `${suffix.length}ch` } as CSSProperties) : undefined}
+    >
+      {prefix ? (
+        <span className={styles.prefix} aria-hidden="true">
+          {prefix}
+        </span>
+      ) : null}
+      {children}
+      {suffix ? (
+        <span className={styles.suffix} aria-hidden="true">
+          {suffix}
+        </span>
+      ) : null}
+    </span>
+  );
+}
 
 /**
  * Adds a deployment, or edits `deployment`, for the ZODE team, linked to one
@@ -197,24 +236,19 @@ export function DeploymentForm({
   const id = useId();
   const d = deployment;
   const [state, action, saving] = useActionState(saveDeploymentAction, INITIAL);
-  const [nodes, setNodes] = useState(String(d?.nodes ?? 64));
-  const [platform, setPlatform] = useState<Platform>(d?.platform ?? "b300");
   const [settings, setSettings] = useState<Settings>(() => settingsOf(d));
-  const [price, setPrice] = useState(str(d?.priceGpuHr ?? null));
-  const [term, setTerm] = useState(str(d?.termMonths ?? null));
-  const [deposit, setDeposit] = useState(() => str(d ? depositPctOf(d) : null));
   const [loc, setLoc] = useState(d?.locRequired ? "yes" : "no");
-  const [phases, setPhases] = useState<PhaseDraft[]>(() =>
-    d?.phases.length
-      ? d.phases.map((phase, key) => draftOf(key, d.platform, settings, phase))
-      : [draftOf(0, d?.platform ?? "b300", settings)],
-  );
+  const [phases, setPhases] = useState<PhaseDraft[]>(() => {
+    const legacy = d ? legacyTermsOf(d) : undefined;
+    return d?.phases.length
+      ? d.phases.map((phase, key) => draftOf(key, d.platform, settings, phase, legacy))
+      : [draftOf(0, d?.platform ?? "b300", settings, undefined, legacy)];
+  });
   const nextKey = useRef(phases.length);
   const [deleting, setDeleting] = useState(false);
 
-  const nodeCount = numberOr(nodes, 0)!;
-  const depositPct = numberOr(deposit.replace(/%$/, ""), null);
-  const terms = { priceGpuHr: numberOr(price, null), termMonths: numberOr(term, null), depositPct };
+  const platform = phases[0]?.platform ?? d?.platform ?? "b300";
+  const nodeCount = scheduledOf(phases);
   const pricedPhases = phases.map((phase) => ({
     platform: phase.platform,
     nodes: numberOr(phase.nodes, 0)!,
@@ -227,7 +261,7 @@ export function DeploymentForm({
     nodes: nodeCount,
     platform,
     storageTbPerNode: settings.storageTbPerNode,
-    ...terms,
+    ...NO_TERMS,
     phases: pricedPhases,
   });
   const allMw = totals.byPlatform.reduce(
@@ -238,22 +272,13 @@ export function DeploymentForm({
   const scheduledGpus = phases.reduce((sum, phase) => sum + gpusFor(phase.platform, numberOr(phase.nodes, 0)!), 0);
   const resolved = resolvedOf(settings, platform);
   const fields = fieldsFor(resolved);
-  const depositUsd = totals.depositUsd;
   const roomChoices = [
     { value: "", label: "Not linked" },
     ...rooms.map((room) => ({ value: room.id, label: room.name })),
   ];
 
-  /** Sets the phases, and the deployment's nodes to what they schedule while it kept up with them or falls short. */
-  const setRows = (rows: PhaseDraft[]) => {
-    const before = scheduledOf(phases);
-    const after = scheduledOf(rows);
-    setPhases(rows);
-    if (nodeCount === before || after > nodeCount) setNodes(String(after));
-  };
-
   const updatePhase = (key: number, patch: Partial<PhaseDraft>) =>
-    setRows(
+    setPhases(
       phases.map((row) => {
         if (row.key !== key) return row;
         const next = { ...row, ...patch };
@@ -272,11 +297,11 @@ export function DeploymentForm({
       ...(f.key === "cooling" ? { density: value === "air" ? 4 : 8 } : {}),
     };
     setSettings(next);
-    setRows(phases.map((row) => resized(row, settings, row, next)));
+    setPhases(phases.map((row) => resized(row, settings, row, next)));
   };
 
   const setOverride = (key: number, f: ConfigField, raw: string) =>
-    setRows(
+    setPhases(
       phases.map((row) => {
         if (row.key !== key) return row;
         const overrides: ConfigOverrides = { ...row.overrides };
@@ -371,39 +396,14 @@ export function DeploymentForm({
               : `${formatCount(totals.gpus)} GPUs`}{" "}
             · {totals.storageTb ? `${formatTb(totals.storageTb)} storage` : "No storage"}
             {allMw ? ` · Est. ${formatMw(allMw)} IT` : ""}. Each phase builds to this unless it overrides it, and its
-            BOM needs what it sets.
+            BOM needs what it sets. Platform, nodes and compute are set by phase in the rollout.
           </p>
-          {CONFIG_GROUPS.map((group) => {
+          {CONFIG_GROUPS.filter((group) => group.id !== "compute").map((group) => {
             const groupFields = fields.filter((f) => f.group === group.id);
             return (
               <div key={group.id} className={styles.configGroup}>
                 <h3 className={styles.configHead}>{group.label}</h3>
                 <div className={styles.grid}>
-                  {group.id === "compute" ? (
-                    <>
-                      <div className={ui.field}>
-                        {label("platform", "Platform")}
-                        <Select
-                          id={`${id}-platform`}
-                          aria-labelledby={`${id}-platform-label`}
-                          name="platform"
-                          className={ui.fill}
-                          options={PLATFORM_OPTIONS}
-                          value={platform}
-                          onChange={(value) => {
-                            if (isOption(PLATFORM_OPTIONS, value)) setPlatform(value);
-                          }}
-                        />
-                      </div>
-                      {input("nodes", "Nodes (all platforms)", {
-                        inputMode: "numeric",
-                        placeholder: "64",
-                        required: true,
-                        value: nodes,
-                        onChange: (event) => setNodes(event.target.value),
-                      })}
-                    </>
-                  ) : null}
                   {groupFields.map((f) => (
                     <div key={f.key} className={ui.field}>
                       {label(`config-${f.key}`, f.range ? `${f.label} (${f.range.unit})` : f.label)}
@@ -436,9 +436,8 @@ export function DeploymentForm({
 
         <fieldset className={styles.fieldset}>
           <legend className={styles.legend}>Rollout</legend>
-          <p className={styles.summary} data-warn={totals.scheduledNodes > nodeCount ? "" : undefined}>
-            {formatCount(totals.scheduledNodes)} of {formatCount(nodeCount)} nodes scheduled ·{" "}
-            {formatCount(scheduledGpus)} GPUs
+          <p className={styles.summary}>
+            {formatCount(nodeCount)} nodes · {formatCount(scheduledGpus)} GPUs
             {totals.mw ? ` · ${totals.mw.toLocaleString("en-US", { maximumFractionDigits: 2 })} MW` : ""}. A
             phase&apos;s IT MW sets its nodes, as many as it powers with their network, storage and management;
             change the nodes to build fewer.
@@ -451,7 +450,7 @@ export function DeploymentForm({
               <span>RFS *</span>
               <span>IT MW</span>
               <span>Nodes *</span>
-              <span>GPUs</span>
+              <span data-num="">GPUs</span>
               <span />
             </div>
             {phases.map((phase, i) => {
@@ -523,7 +522,8 @@ export function DeploymentForm({
                   type="button"
                   className={ui.iconButton}
                   aria-label={`Remove phase ${i + 1}`}
-                  onClick={() => setRows(phases.filter((row) => row.key !== phase.key))}
+                  disabled={phases.length === 1}
+                  onClick={() => setPhases(phases.filter((row) => row.key !== phase.key))}
                 >
                   <svg viewBox="0 0 16 16" aria-hidden="true">
                     <path d="M4 4l8 8M12 4l-8 8" />
@@ -533,8 +533,8 @@ export function DeploymentForm({
               <details className={styles.overrides}>
                 <summary>
                   {overridden
-                    ? `${overridden} setting${overridden === 1 ? "" : "s"} differ from the deployment's`
-                    : "Same configuration as the deployment"}
+                    ? `Configuration · ${overridden} setting${overridden === 1 ? "" : "s"} changed from the default`
+                    : "Configuration · default"}
                 </summary>
                 <div className={styles.grid}>
                   {phaseFields.map((f) => (
@@ -544,7 +544,7 @@ export function DeploymentForm({
                         <RangeSetting
                           f={f}
                           aria-label={`Phase ${i + 1} ${f.label.toLowerCase()}`}
-                          placeholder={`Same (${valueLabel(f.key, settings[f.key])})`}
+                          placeholder={`Default (${valueLabel(f.key, settings[f.key])})`}
                           value={phase.overrides[f.key]}
                           onChange={(value) => setOverride(phase.key, f, value)}
                         />
@@ -553,7 +553,7 @@ export function DeploymentForm({
                           className={ui.fill}
                           aria-label={`Phase ${i + 1} ${f.label.toLowerCase()}`}
                           options={[
-                            { value: "", label: `Same (${valueLabel(f.key, settings[f.key])})` },
+                            { value: "", label: `Default (${valueLabel(f.key, settings[f.key])})` },
                             ...choicesOf(f),
                           ]}
                           value={f.key in phase.overrides ? String(phase.overrides[f.key]) : ""}
@@ -574,7 +574,7 @@ export function DeploymentForm({
               className={ui.button}
               onClick={() => {
                 const key = nextKey.current++;
-                setPhases((rows) => [...rows, draftOf(key, platform, settings)]);
+                setPhases((rows) => [...rows, { ...draftOf(key, platform, settings), overrides: { ...rows[0]?.overrides } }]);
               }}
             >
               Add phase
@@ -586,89 +586,62 @@ export function DeploymentForm({
           <legend className={styles.legend}>Commercial</legend>
           <p className={styles.summary}>
             {totals.monthlyUsd !== null
-              ? `Est. ${formatUsd(totals.monthlyUsd)} /mo`
-              : "Add a price to estimate revenue"}
-            {totals.contractUsd !== null ? ` · ${formatUsd(totals.contractUsd)} over the term` : ""}
-            {depositUsd !== null
-              ? ` · ${formatUsd(depositUsd)} deposit`
-              : depositPct
-                ? " · Add a price and term to calculate the deposit"
-                : ""}
-            . A phase priced on its own overrides these; one left blank takes them, or is to follow without them.
+              ? [
+                  `Est. ${formatUsd(totals.monthlyUsd)} /mo`,
+                  totals.contractUsd !== null ? `${formatUsd(totals.contractUsd)} over the terms` : null,
+                  totals.depositUsd !== null ? `${formatUsd(totals.depositUsd)} deposit` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")
+              : "Price a phase to estimate revenue"}
+            . Each phase is priced on its own; one without a price is to follow.
           </p>
-          <div className={styles.grid}>
-            {input("term_months", "Term (months)", {
-              inputMode: "numeric",
-              placeholder: "36",
-              value: term,
-              onChange: (event) => setTerm(event.target.value),
-            })}
-            {input("price_gpu_hr", "Price ($ per GPU-hr)", {
-              inputMode: "decimal",
-              placeholder: "2.00",
-              value: price,
-              onChange: (event) => setPrice(event.target.value),
-            })}
-            {input("deposit_pct", "Deposit (% of contract)", {
-              inputMode: "decimal",
-              placeholder: "0",
-              value: deposit,
-              onChange: (event) => setDeposit(event.target.value),
-            })}
-          </div>
           <div className={styles.phases}>
             <div className={styles.pricingHead} aria-hidden="true">
               <span>Phase</span>
-              <span>GPUs</span>
-              <span>$ per GPU-hr</span>
-              <span>Term (months)</span>
-              <span>Deposit (%)</span>
-              <span>Contract</span>
+              <span>Platform</span>
+              <span data-num="">GPUs</span>
+              <span>Term</span>
+              <span>Price</span>
+              <span>Deposit</span>
             </div>
-            {phases.map((phase, i) => {
-              const priced = pricingOf(terms, pricedPhases[i]);
-              const same = (value: string, unit = "") => (value.trim() ? `Same (${value}${unit})` : "");
-              return (
-                <div key={phase.key} className={styles.pricingRow}>
-                  <span className={styles.pricingName}>{phase.name || `Phase ${i + 1}`}</span>
-                  <span className={styles.phaseGpus}>{formatCount(priced.gpus)}</span>
-                  <input
-                    name="phase_price_gpu_hr"
-                    className={ui.input}
-                    inputMode="decimal"
-                    aria-label={`Phase ${i + 1} price per GPU-hour`}
-                    placeholder={same(price)}
-                    value={phase.price}
-                    onChange={(event) => updatePhase(phase.key, { price: event.target.value })}
-                  />
+            {phases.map((phase, i) => (
+              <div key={phase.key} className={styles.pricingRow}>
+                <span className={styles.pricingName}>{phase.name || `Phase ${i + 1}`}</span>
+                <span className={styles.pricingPlatform}>{platformLabel(phase.platform)}</span>
+                <span className={styles.phaseGpus}>{formatCount(gpusFor(phase.platform, pricedPhases[i].nodes))}</span>
+                <Affixed suffix="months">
                   <input
                     name="phase_term_months"
                     className={ui.input}
                     inputMode="numeric"
                     aria-label={`Phase ${i + 1} term in months`}
-                    placeholder={same(term)}
                     value={phase.term}
                     onChange={(event) => updatePhase(phase.key, { term: event.target.value })}
                   />
+                </Affixed>
+                <Affixed prefix="$" suffix="/GPU-hr">
+                  <input
+                    name="phase_price_gpu_hr"
+                    className={ui.input}
+                    inputMode="decimal"
+                    aria-label={`Phase ${i + 1} price per GPU-hour`}
+                    value={phase.price}
+                    onChange={(event) => updatePhase(phase.key, { price: event.target.value })}
+                  />
+                </Affixed>
+                <Affixed suffix="% of contract">
                   <input
                     name="phase_deposit_pct"
                     className={ui.input}
                     inputMode="decimal"
-                    aria-label={`Phase ${i + 1} deposit percent`}
-                    placeholder={same(deposit, "%")}
+                    aria-label={`Phase ${i + 1} deposit percent of contract`}
                     value={phase.deposit}
                     onChange={(event) => updatePhase(phase.key, { deposit: event.target.value })}
                   />
-                  <span className={styles.phaseGpus}>
-                    {priced.contractUsd !== null
-                      ? `${formatUsd(priced.contractUsd)}${priced.depositUsd !== null ? ` · ${formatUsd(priced.depositUsd)} deposit` : ""}`
-                      : priced.priceGpuHr !== null
-                        ? "Add a term"
-                        : "To follow"}
-                  </span>
-                </div>
-              );
-            })}
+                </Affixed>
+              </div>
+            ))}
           </div>
         </fieldset>
 
