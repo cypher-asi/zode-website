@@ -726,7 +726,7 @@ class SiteSection {
 
   plant(): void {
     const { plant } = this.site;
-    const s = this.deck.slide("The plant");
+    const s = this.deck.slide("Cooling plant");
     this.figure(s, plant.image, MARGIN, FLOOR + 14, LEFT, BODY_TOP + 10 - FLOOR - 14);
     const y = s.bullets(plant.points, RIGHT_X, s.title("Rooftop heat-rejection yard", RIGHT_X, BODY_TOP, RIGHT), RIGHT, 11);
     const inset = Math.min(y - 18 - FLOOR - 14, 120);
