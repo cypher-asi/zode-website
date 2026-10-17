@@ -81,8 +81,8 @@ export const CHICAGO_801_CANAL: SiteContent = {
   efficiency: {
     rows: [
       { label: "Annual weighted", detail: "Concept-level screening", value: 1.184, outcome: true },
-      { label: "Economizer mode", detail: "Wet bulb at or below 63°F, about 5,840 h", value: 1.171 },
-      { label: "Trim-chiller mode", detail: "Peak and humid hours, about 2,920 h", value: 1.21 },
+      { label: "Economizer mode", detail: "Wet bulb at or below 63°F", value: 1.171 },
+      { label: "Trim-chiller mode", detail: "Peak and humid hours", value: 1.21 },
       { label: "Design basis", detail: "What the plant is sized for", value: 1.3 },
     ],
     figure: { value: "~5,840 h", label: "Free-cooling hours a year" },

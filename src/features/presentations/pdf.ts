@@ -669,7 +669,7 @@ class SiteSection {
       const fill = row.outcome ? ACCENT : row.value >= max ? BORDER : INK;
       page.drawRectangle({ x: x0, y: y - 12, width: at(row.value) - x0, height: 18, color: fill });
       s.text(row.value.toFixed(row.value === max ? 2 : 3), at(row.value) + 8, y - 6, fonts.medium, 11.5, row.outcome ? ACCENT : INK);
-      y -= 50;
+      y -= 58;
     }
     s.hairline(x0, y + 26, span);
     for (const tick of [1, 1.1, 1.2, 1.3]) {
