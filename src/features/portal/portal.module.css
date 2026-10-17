@@ -13,6 +13,12 @@
   display: none;
 }
 
+/* Content that fills the rest of the page under its header (`data-fill`), e.g. a viewer that scrolls inside itself. */
+.page:has(> [data-fill]:not([hidden])) {
+  display: flex;
+  flex-direction: column;
+}
+
 .header {
   display: flex;
   flex-wrap: wrap;

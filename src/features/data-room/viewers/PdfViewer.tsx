@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, type ReactElement, type RefObject } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactElement, type RefObject } from "react";
 import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist/legacy/build/pdf.mjs";
+import { Scrollbars } from "./Scrollbars";
 import type { ViewerProps } from "./types";
 import styles from "../Viewer.module.css";
 
@@ -34,6 +35,7 @@ interface PageSize {
 
 export default function PdfViewer({ url, zoom, onFitScale }: Omit<ViewerProps, "file">): ReactElement {
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollId = useId();
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
   const [sizes, setSizes] = useState<PageSize[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -129,22 +131,31 @@ export default function PdfViewer({ url, zoom, onFitScale }: Omit<ViewerProps, "
   };
 
   return (
-    <div ref={containerRef} className={styles.pdf} onScroll={onScroll} onContextMenu={(event) => event.preventDefault()}>
-      {error ? <div className={styles.status}>{error}</div> : null}
-      {!error && !doc ? <div className={styles.status}>Loading PDF…</div> : null}
-      {doc ? (
-        <>
-          <div className={styles.pdfPages} style={{ padding: PADDING, gap: PAGE_GAP }}>
-            {sizes.map((size, i) => (
-              <PdfPage key={i} doc={doc} number={i + 1} size={size} scale={scale} rootRef={containerRef} />
-            ))}
-          </div>
-          <div className={styles.pageBadge} aria-live="polite">
-            Page {page} of {sizes.length}
-          </div>
-        </>
-      ) : null}
-    </div>
+    <>
+      <div
+        ref={containerRef}
+        id={scrollId}
+        className={styles.pdf}
+        onScroll={onScroll}
+        onContextMenu={(event) => event.preventDefault()}
+      >
+        {error ? <div className={styles.status}>{error}</div> : null}
+        {!error && !doc ? <div className={styles.status}>Loading PDF…</div> : null}
+        {doc ? (
+          <>
+            <div className={styles.pdfPages} style={{ padding: PADDING, gap: PAGE_GAP }}>
+              {sizes.map((size, i) => (
+                <PdfPage key={i} doc={doc} number={i + 1} size={size} scale={scale} rootRef={containerRef} />
+              ))}
+            </div>
+            <div className={styles.pageBadge} aria-live="polite">
+              Page {page} of {sizes.length}
+            </div>
+          </>
+        ) : null}
+      </div>
+      <Scrollbars targetId={scrollId} />
+    </>
   );
 }
 

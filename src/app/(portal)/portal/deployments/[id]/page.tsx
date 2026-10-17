@@ -121,7 +121,7 @@ async function Deployment({ params, searchParams }: PageProps<"/portal/deploymen
             <DeploymentDetail deployment={deployment} today={todayIso()} />
           </div>
         </DeploymentTabPanel>
-        <DeploymentTabPanel tab="presentation">
+        <DeploymentTabPanel tab="presentation" fill>
           <PresentationViewer deployment={{ id: deployment.id, name: presentationName(deployment) }} today={todayIso()} />
         </DeploymentTabPanel>
         {bom ? (

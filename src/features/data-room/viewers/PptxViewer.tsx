@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactElement } from "react";
+import { useEffect, useId, useRef, useState, type ReactElement } from "react";
 import { blockUnsafeLinks, defuseLinks } from "./safeLinks";
+import { Scrollbars } from "./Scrollbars";
 import { fetchFile, type ViewerProps } from "./types";
 import { fitWidth, usePanelSize } from "./useFit";
 import styles from "../Viewer.module.css";
@@ -13,6 +14,7 @@ const SLIDE_HEIGHT = 540;
 export default function PptxViewer({ url, zoom, onFitScale }: ViewerProps): ReactElement {
   const panelRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const scrollId = useId();
   const panel = usePanelSize(panelRef);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
 
@@ -46,21 +48,25 @@ export default function PptxViewer({ url, zoom, onFitScale }: ViewerProps): Reac
   const scale = zoom === "fit" ? fit : zoom;
 
   return (
-    <div
-      ref={panelRef}
-      className={styles.document}
-      onClickCapture={blockUnsafeLinks}
-      onContextMenu={(event) => event.preventDefault()}
-    >
-      {state === "loading" ? <div className={styles.status}>Rendering slides…</div> : null}
-      {state === "error" ? (
-        <div className={styles.status}>This presentation couldn&apos;t be previewed. Download it to open it in PowerPoint.</div>
-      ) : null}
+    <>
       <div
-        ref={contentRef}
-        className={styles.pptx}
-        style={{ zoom: scale, width: SLIDE_WIDTH, visibility: state === "ready" ? "visible" : "hidden" }}
-      />
-    </div>
+        ref={panelRef}
+        id={scrollId}
+        className={styles.document}
+        onClickCapture={blockUnsafeLinks}
+        onContextMenu={(event) => event.preventDefault()}
+      >
+        {state === "loading" ? <div className={styles.status}>Rendering slides…</div> : null}
+        {state === "error" ? (
+          <div className={styles.status}>This presentation couldn&apos;t be previewed. Download it to open it in PowerPoint.</div>
+        ) : null}
+        <div
+          ref={contentRef}
+          className={styles.pptx}
+          style={{ zoom: scale, width: SLIDE_WIDTH, visibility: state === "ready" ? "visible" : "hidden" }}
+        />
+      </div>
+      <Scrollbars targetId={scrollId} />
+    </>
   );
 }

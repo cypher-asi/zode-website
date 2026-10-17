@@ -86,11 +86,26 @@ export function TabLink({
   );
 }
 
-/** One tab's content, laid out as part of the page and hidden while another tab is open. */
-export function DeploymentTabPanel({ tab, children }: { tab: DeploymentTab; children: ReactNode }): ReactElement {
+/**
+ * One tab's content, laid out as part of the page and hidden while another tab
+ * is open; with `fill`, its content takes the page's height under the header.
+ */
+export function DeploymentTabPanel({
+  tab,
+  fill,
+  children,
+}: {
+  tab: DeploymentTab;
+  fill?: boolean;
+  children: ReactNode;
+}): ReactElement {
   const context = use(TabContext);
   return (
-    <div className={styles.tabPanel} hidden={context ? context.tab !== tab : tab !== "summary"}>
+    <div
+      className={styles.tabPanel}
+      hidden={context ? context.tab !== tab : tab !== "summary"}
+      data-fill={fill || undefined}
+    >
       {children}
     </div>
   );

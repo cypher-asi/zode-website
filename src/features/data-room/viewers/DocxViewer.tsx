@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactElement } from "react";
+import { useEffect, useId, useRef, useState, type ReactElement } from "react";
 import { blockUnsafeLinks, defuseLinks } from "./safeLinks";
+import { Scrollbars } from "./Scrollbars";
 import { fetchFile, type ViewerProps } from "./types";
 import { fitWidth, usePanelSize } from "./useFit";
 import styles from "../Viewer.module.css";
@@ -10,6 +11,7 @@ import styles from "../Viewer.module.css";
 export default function DocxViewer({ url, zoom, onFitScale }: ViewerProps): ReactElement {
   const panelRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const scrollId = useId();
   const panel = usePanelSize(panelRef);
   const [pageWidth, setPageWidth] = useState(0);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
@@ -54,22 +56,26 @@ export default function DocxViewer({ url, zoom, onFitScale }: ViewerProps): Reac
   const scale = zoom === "fit" ? fit : zoom;
 
   return (
-    <div
-      ref={panelRef}
-      className={styles.document}
-      onClickCapture={blockUnsafeLinks}
-      onContextMenu={(event) => event.preventDefault()}
-    >
-      {state === "loading" ? <div className={styles.status}>Rendering document…</div> : null}
-      {state === "error" ? (
-        <div className={styles.status}>This document couldn&apos;t be previewed. Download it to open it in Word.</div>
-      ) : null}
-      {/* Laid out while loading (just not shown), so the page width can be measured for "fit". */}
+    <>
       <div
-        ref={contentRef}
-        className={styles.docx}
-        style={{ zoom: scale, visibility: state === "ready" ? "visible" : "hidden" }}
-      />
-    </div>
+        ref={panelRef}
+        id={scrollId}
+        className={styles.document}
+        onClickCapture={blockUnsafeLinks}
+        onContextMenu={(event) => event.preventDefault()}
+      >
+        {state === "loading" ? <div className={styles.status}>Rendering document…</div> : null}
+        {state === "error" ? (
+          <div className={styles.status}>This document couldn&apos;t be previewed. Download it to open it in Word.</div>
+        ) : null}
+        {/* Laid out while loading (just not shown), so the page width can be measured for "fit". */}
+        <div
+          ref={contentRef}
+          className={styles.docx}
+          style={{ zoom: scale, visibility: state === "ready" ? "visible" : "hidden" }}
+        />
+      </div>
+      <Scrollbars targetId={scrollId} />
+    </>
   );
 }

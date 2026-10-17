@@ -43,6 +43,28 @@
   background: rgba(170, 170, 180, 0.8);
 }
 
+/* Along the bottom edge, stopping short of a vertical bar's corner. */
+.horizontal {
+  top: auto;
+  right: 14px;
+  bottom: 3px;
+  left: 6px;
+  width: auto;
+  height: 10px;
+}
+
+.horizontal .thumb {
+  top: auto;
+  bottom: 0;
+  left: 0;
+  height: 6px;
+  transition: background 160ms ease, height 120ms ease;
+}
+
+.horizontal .thumb:hover {
+  height: 8px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .track {
     transition: none;

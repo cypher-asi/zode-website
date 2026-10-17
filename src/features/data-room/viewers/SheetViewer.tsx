@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, type ReactElement } from "react";
+import { useEffect, useId, useState, type ReactElement } from "react";
+import { Scrollbars } from "./Scrollbars";
 import { fetchFile, type ViewerProps } from "./types";
 import styles from "../Viewer.module.css";
 
@@ -38,6 +39,7 @@ export default function SheetViewer({ url, zoom, onFitScale }: ViewerProps): Rea
   const [sheets, setSheets] = useState<Sheet[] | null>(null);
   const [active, setActive] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const scrollId = useId();
 
   useEffect(() => onFitScale(1), [onFitScale]);
 
@@ -80,38 +82,41 @@ export default function SheetViewer({ url, zoom, onFitScale }: ViewerProps): Rea
 
   return (
     <div className={styles.sheet}>
-      <div className={styles.sheetGrid} style={{ zoom: scale }}>
-        {sheet && sheet.totalRows > MAX_ROWS ? (
-          <p className={styles.note}>
-            Showing the first {MAX_ROWS.toLocaleString("en-US")} of {sheet.totalRows.toLocaleString("en-US")} rows.
-          </p>
-        ) : null}
-        {sheet && sheet.rows.length ? (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th aria-hidden="true" />
-                {Array.from({ length: columns }, (_, i) => (
-                  <th key={i} scope="col">
-                    {columnName(i)}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {sheet.rows.map((row, i) => (
-                <tr key={i}>
-                  <th scope="row">{i + 1}</th>
-                  {Array.from({ length: columns }, (_, j) => (
-                    <td key={j}>{row[j] ?? ""}</td>
+      <div className={styles.sheetFrame}>
+        <div id={scrollId} className={styles.sheetGrid} style={{ zoom: scale }}>
+          {sheet && sheet.totalRows > MAX_ROWS ? (
+            <p className={styles.note}>
+              Showing the first {MAX_ROWS.toLocaleString("en-US")} of {sheet.totalRows.toLocaleString("en-US")} rows.
+            </p>
+          ) : null}
+          {sheet && sheet.rows.length ? (
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th aria-hidden="true" />
+                  {Array.from({ length: columns }, (_, i) => (
+                    <th key={i} scope="col">
+                      {columnName(i)}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p className={styles.note}>This sheet is empty.</p>
-        )}
+              </thead>
+              <tbody>
+                {sheet.rows.map((row, i) => (
+                  <tr key={i}>
+                    <th scope="row">{i + 1}</th>
+                    {Array.from({ length: columns }, (_, j) => (
+                      <td key={j}>{row[j] ?? ""}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className={styles.note}>This sheet is empty.</p>
+          )}
+        </div>
+        <Scrollbars targetId={scrollId} />
       </div>
       {sheets.length > 1 ? (
         <div className={styles.sheetTabs} role="tablist" aria-label="Sheets">

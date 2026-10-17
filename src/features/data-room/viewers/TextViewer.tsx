@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, type ReactElement } from "react";
+import { useEffect, useId, useState, type ReactElement } from "react";
 import { extensionOf, fileKind, formatBytes } from "../fileKinds";
+import { Scrollbars } from "./Scrollbars";
 import { fetchFile, type ViewerProps } from "./types";
 import styles from "../Viewer.module.css";
 
@@ -50,6 +51,7 @@ type Content = { kind: "table"; rows: string[][] } | { kind: "text"; text: strin
 export default function TextViewer({ url, file, zoom, onFitScale }: ViewerProps): ReactElement {
   const [content, setContent] = useState<Content | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const scrollId = useId();
   const truncated = file.sizeBytes > MAX_BYTES;
 
   useEffect(() => onFitScale(1), [onFitScale]);
@@ -88,24 +90,27 @@ export default function TextViewer({ url, file, zoom, onFitScale }: ViewerProps)
       : null;
 
   return (
-    <div className={styles.text} style={{ fontSize: `${13 * scale}px` }}>
-      {note ? <p className={styles.note}>{note}</p> : null}
-      {content.kind === "text" ? (
-        <pre className={styles.pre}>{content.text}</pre>
-      ) : (
-        <table className={styles.table}>
-          <tbody>
-            {content.rows.map((row, i) => (
-              <tr key={i}>
-                <th scope="row">{i + 1}</th>
-                {row.map((cell, j) => (
-                  <td key={j}>{cell}</td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
+    <>
+      <div id={scrollId} className={styles.text} style={{ fontSize: `${13 * scale}px` }}>
+        {note ? <p className={styles.note}>{note}</p> : null}
+        {content.kind === "text" ? (
+          <pre className={styles.pre}>{content.text}</pre>
+        ) : (
+          <table className={styles.table}>
+            <tbody>
+              {content.rows.map((row, i) => (
+                <tr key={i}>
+                  <th scope="row">{i + 1}</th>
+                  {row.map((cell, j) => (
+                    <td key={j}>{cell}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+      <Scrollbars targetId={scrollId} />
+    </>
   );
 }

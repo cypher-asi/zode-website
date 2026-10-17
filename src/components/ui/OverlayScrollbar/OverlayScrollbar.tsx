@@ -8,7 +8,9 @@ interface OverlayScrollbarProps {
   readonly targetId?: string;
   /** The scrollable element itself, for one that has no id or is swapped out; wins over `targetId`. */
   readonly target?: HTMLElement | null;
-  /** Minimum thumb height in px. */
+  /** Which way the bar scrolls: down the right edge, or along the bottom. */
+  readonly axis?: "y" | "x";
+  /** Minimum thumb length in px. */
   readonly minThumb?: number;
   /** Idle delay before the bar fades, in ms. */
   readonly hideDelay?: number;
@@ -26,6 +28,7 @@ interface OverlayScrollbarProps {
 export function OverlayScrollbar({
   targetId,
   target,
+  axis = "y",
   minThumb = 28,
   hideDelay = 1200,
   showOnHover = false,
@@ -40,6 +43,7 @@ export function OverlayScrollbar({
     const track = trackRef.current;
     const thumb = thumbRef.current;
     if (!el || !track || !thumb) return;
+    const horizontal = axis === "x";
 
     let hideTimer: ReturnType<typeof setTimeout> | null = null;
     let frame = 0;
@@ -53,20 +57,28 @@ export function OverlayScrollbar({
       }, hideDelay);
     };
 
+    const measure = () => {
+      const viewport = horizontal ? el.clientWidth : el.clientHeight;
+      const content = horizontal ? el.scrollWidth : el.scrollHeight;
+      const trackLength = horizontal ? track.clientWidth : track.clientHeight;
+      const thumbLength = Math.max(minThumb, (viewport / content) * trackLength);
+      return { maxScroll: content - viewport, thumbLength, maxThumbOffset: trackLength - thumbLength };
+    };
+
     const render = (): void => {
       frame = 0;
-      const viewport = el.clientHeight;
-      const content = el.scrollHeight;
-      const maxScroll = content - viewport;
+      const { maxScroll, thumbLength, maxThumbOffset } = measure();
       const canScroll = maxScroll > 1;
       setScrollable(canScroll);
       if (!canScroll) return;
-      const trackH = track.clientHeight;
-      const thumbH = Math.max(minThumb, (viewport / content) * trackH);
-      const maxThumbTop = trackH - thumbH;
-      const top = (el.scrollTop / maxScroll) * maxThumbTop;
-      thumb.style.height = `${thumbH}px`;
-      thumb.style.transform = `translateY(${top}px)`;
+      const offset = ((horizontal ? el.scrollLeft : el.scrollTop) / maxScroll) * maxThumbOffset;
+      if (horizontal) {
+        thumb.style.width = `${thumbLength}px`;
+        thumb.style.transform = `translateX(${offset}px)`;
+      } else {
+        thumb.style.height = `${thumbLength}px`;
+        thumb.style.transform = `translateY(${offset}px)`;
+      }
     };
 
     const schedule = (): void => {
@@ -79,20 +91,17 @@ export function OverlayScrollbar({
       armHide();
     };
 
-    let dragStartY = 0;
+    let dragStart = 0;
     let dragStartScroll = 0;
 
     const onPointerMove = (event: PointerEvent): void => {
       if (!dragging) return;
-      const viewport = el.clientHeight;
-      const content = el.scrollHeight;
-      const maxScroll = content - viewport;
-      const trackH = track.clientHeight;
-      const thumbH = Math.max(minThumb, (viewport / content) * trackH);
-      const maxThumbTop = trackH - thumbH;
-      if (maxThumbTop <= 0) return;
-      const delta = event.clientY - dragStartY;
-      el.scrollTop = dragStartScroll + (delta / maxThumbTop) * maxScroll;
+      const { maxScroll, maxThumbOffset } = measure();
+      if (maxThumbOffset <= 0) return;
+      const delta = (horizontal ? event.clientX : event.clientY) - dragStart;
+      const scroll = dragStartScroll + (delta / maxThumbOffset) * maxScroll;
+      if (horizontal) el.scrollLeft = scroll;
+      else el.scrollTop = scroll;
     };
 
     const onPointerUp = (event: PointerEvent): void => {
@@ -105,8 +114,8 @@ export function OverlayScrollbar({
 
     const onPointerDown = (event: PointerEvent): void => {
       dragging = true;
-      dragStartY = event.clientY;
-      dragStartScroll = el.scrollTop;
+      dragStart = horizontal ? event.clientX : event.clientY;
+      dragStartScroll = horizontal ? el.scrollLeft : el.scrollTop;
       thumb.setPointerCapture?.(event.pointerId);
       window.addEventListener("pointermove", onPointerMove);
       window.addEventListener("pointerup", onPointerUp);
@@ -117,8 +126,14 @@ export function OverlayScrollbar({
     const resize = new ResizeObserver(schedule);
     resize.observe(el);
     for (const child of Array.from(el.children)) resize.observe(child);
-    // Children added later (rows of an expanded list) change the content height without resizing anything observed.
-    const mutations = new MutationObserver(schedule);
+    // Children added later (rows of an expanded list, a document once it loads) change the
+    // content's size without resizing anything observed, and may resize again themselves.
+    const mutations = new MutationObserver((records) => {
+      for (const record of records) {
+        for (const node of Array.from(record.addedNodes)) if (node instanceof Element) resize.observe(node);
+      }
+      schedule();
+    });
     mutations.observe(el, { childList: true });
 
     // The bar's own track sits outside the target, so hovering the thumb counts via the shared parent.
@@ -164,12 +179,12 @@ export function OverlayScrollbar({
       window.removeEventListener("pointerup", onPointerUp);
       window.removeEventListener("resize", schedule);
     };
-  }, [targetId, target, minThumb, hideDelay, showOnHover]);
+  }, [targetId, target, axis, minThumb, hideDelay, showOnHover]);
 
   return (
     <div
       ref={trackRef}
-      className={`${styles.track}${visible && scrollable ? ` ${styles.visible}` : ""}`}
+      className={`${styles.track}${axis === "x" ? ` ${styles.horizontal}` : ""}${visible && scrollable ? ` ${styles.visible}` : ""}`}
       data-overlay-scrollbar=""
       aria-hidden="true"
     >

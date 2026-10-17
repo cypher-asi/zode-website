@@ -67,7 +67,9 @@ button.action {
   white-space: nowrap;
 }
 
+/* Positioned for the PDF viewer's scrollbars, which float over it. */
 .frame {
+  position: relative;
   display: flex;
   flex: 1;
   flex-direction: column;

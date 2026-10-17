@@ -218,6 +218,24 @@
   stroke-linejoin: round;
 }
 
+/* Each previewer's scroll area: native bars hidden, its Scrollbars float over it in `.body`. */
+.pdf,
+.image,
+.text,
+.sheetGrid,
+.document {
+  scrollbar-width: none;
+}
+
+.pdf::-webkit-scrollbar,
+.image::-webkit-scrollbar,
+.text::-webkit-scrollbar,
+.sheetGrid::-webkit-scrollbar,
+.document::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
 /* PDF */
 .pdf {
   position: relative;
@@ -384,6 +402,15 @@
   flex-direction: column;
   min-height: 0;
   background: var(--color-white);
+}
+
+/* Positioned parent the grid's scrollbars draw into, so they stop above the sheet tabs. */
+.sheetFrame {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .sheetGrid {

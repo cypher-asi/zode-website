@@ -1,16 +1,15 @@
-/* The presentation's viewer, a card across the page's column, sized like the Quotes tab's (bom/quotes.module.css). */
+/*
+ * The presentation's viewer, a card across the page's column filling the panel
+ * under the header, so only the PDF scrolls; the page scrolls only when the
+ * panel is too short for the card's minimum.
+ */
 .frame {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  height: clamp(520px, calc(100dvh - 230px), 1200px);
+  min-height: 420px;
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
   background: var(--color-bg);
-}
-
-@media (max-width: 700px) {
-  .frame {
-    height: calc(100dvh - 200px);
-  }
 }
