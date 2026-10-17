@@ -125,13 +125,28 @@ function ShareDialog({
           <label htmlFor={`${id}-link`} className={ui.label}>
             Link
           </label>
-          <input
-            id={`${id}-link`}
-            className={ui.input}
-            value={link}
-            readOnly
-            onFocus={(event) => event.currentTarget.select()}
-          />
+          <div className={share.linkField}>
+            <input
+              id={`${id}-link`}
+              className={ui.input}
+              value={link}
+              readOnly
+              onFocus={(event) => event.currentTarget.select()}
+            />
+            <button
+              type="button"
+              className={ui.iconButton}
+              aria-label={copied ? "Copied" : "Copy link"}
+              title={copied ? "Copied" : "Copy link"}
+              data-copied={copied || undefined}
+              disabled={saving}
+              onClick={async () => {
+                if (await copyText(link)) setCopied(true);
+              }}
+            >
+              <Icon key={copied ? "check" : "copy"} name={copied ? "check" : "copy"} className={share.copyIcon} />
+            </button>
+          </div>
         </div>
 
         <div className={share.footer}>
@@ -144,16 +159,6 @@ function ShareDialog({
               {saving ? "Saving…" : copied ? "Link copied" : ""}
             </p>
           )}
-          <button
-            type="button"
-            className={ui.primary}
-            disabled={saving}
-            onClick={async () => {
-              if (await copyText(link)) setCopied(true);
-            }}
-          >
-            {copied ? "Copied" : "Copy link"}
-          </button>
         </div>
       </div>
     </dialog>

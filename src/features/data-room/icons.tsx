@@ -30,6 +30,8 @@ const paths = {
   page: "M3.5 1.5h9a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-11a1 1 0 0 1 1-1zM5 4.5h6M5 7.5h6M5 10.5h3.5",
   slides: "M1.5 2.5h13M2.5 2.5v7a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-7M8 10.5V13M5.5 14.5 8 13l2.5 1.5",
   pencil: "M10.5 2.5l3 3L6 13H3v-3zM9 4l3 3",
+  copy: "M5.5 5.5h7a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1zM2.5 10.5v-7a1 1 0 0 1 1-1h7",
+  check: "M3 8.5l3.5 3.5L13 4.5",
 } as const;
 
 export function Icon({ name, className }: { name: keyof typeof paths; className?: string }): ReactElement {

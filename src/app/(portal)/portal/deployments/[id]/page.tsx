@@ -13,7 +13,7 @@ import { getDeploymentFor } from "@/features/deployments/deployments";
 import detail from "@/features/deployments/deployments.module.css";
 import { DeploymentDetail } from "@/features/deployments/DeploymentDetail";
 import { DeploymentTabPanel, DeploymentTabs, DeploymentTabSwitch, TabLink } from "@/features/deployments/DeploymentTabs";
-import { PresentationViewer } from "@/features/deployments/PresentationViewer";
+import { DocumentViewer } from "@/features/deployments/DocumentViewer";
 import { isDeploymentTab, tabHref } from "@/features/deployments/tabs";
 import { todayIso } from "@/features/deployments/format";
 import { ShareLink } from "@/features/deployments/ShareLink";
@@ -24,7 +24,6 @@ import { PortalLoading } from "@/features/portal/PortalLoading";
 import { PageHeader } from "@/features/portal/sections";
 import styles from "@/features/portal/portal.module.css";
 import { presentationName } from "@/features/presentations/types";
-import { teaserPdfPath } from "@/features/teasers/types";
 
 export const metadata: Metadata = {
   title: "Deployment | ZODE",
@@ -32,9 +31,9 @@ export const metadata: Metadata = {
 };
 
 /**
- * One deployment, for every signed-in account, with its PDF, teaser and
- * presentation, each written out from it, the presentation viewable in place
- * (`?tab=presentation`); the ZODE team can edit it and
+ * One deployment, for every signed-in account, with its teaser and
+ * presentation, each written out from it and viewable in place
+ * (`?tab=teaser`, `?tab=presentation`); the ZODE team can edit it and
  * switch to its BOM tab (`?tab=bom`) and its Quotes tab
  * (`?tab=quotes`, with `&quote=<id>` open).
  */
@@ -66,7 +65,7 @@ async function Deployment({ params, searchParams }: PageProps<"/portal/deploymen
     : [null, []];
 
   return (
-    <DeploymentTabs base={base} initial={bom || tab === "presentation" ? tab : "summary"}>
+    <DeploymentTabs base={base} initial={bom || tab === "presentation" || tab === "teaser" ? tab : "summary"}>
       <div className={styles.page}>
         <PageHeader
           title={deployment.name}
@@ -76,24 +75,9 @@ async function Deployment({ params, searchParams }: PageProps<"/portal/deploymen
           tabs={bom ? <DeploymentTabSwitch /> : undefined}
           actions={
             <>
-              <a
-                href={`/api/deployments/${deployment.id}/pdf`}
-                className={ui.squareButton}
-                aria-label="Download PDF"
-                title="Download PDF"
-                download
-              >
-                <Icon name="arrowDown" />
-              </a>
-              <a
-                href={teaserPdfPath(deployment.id, true)}
-                className={ui.squareButton}
-                aria-label="Download teaser"
-                title="Download teaser"
-                download
-              >
+              <TabLink tab="teaser" className={ui.squareButton} label="View teaser">
                 <Icon name="page" />
-              </a>
+              </TabLink>
               <TabLink tab="presentation" className={ui.squareButton} label="View presentation">
                 <Icon name="slides" />
               </TabLink>
@@ -122,7 +106,14 @@ async function Deployment({ params, searchParams }: PageProps<"/portal/deploymen
           </div>
         </DeploymentTabPanel>
         <DeploymentTabPanel tab="presentation" fill>
-          <PresentationViewer deployment={{ id: deployment.id, name: presentationName(deployment) }} today={todayIso()} />
+          <DocumentViewer
+            doc="presentation"
+            deployment={{ id: deployment.id, name: presentationName(deployment) }}
+            today={todayIso()}
+          />
+        </DeploymentTabPanel>
+        <DeploymentTabPanel tab="teaser" fill>
+          <DocumentViewer doc="teaser" deployment={{ id: deployment.id, name: deployment.name }} today={todayIso()} />
         </DeploymentTabPanel>
         {bom ? (
           <>

@@ -173,8 +173,8 @@
 }
 
 .roles {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   margin: 0;
   padding: 0;
@@ -229,6 +229,38 @@
 .roleOption > span > span {
   color: var(--color-text-secondary);
   line-height: 1.4;
+}
+
+/* The link's field, with its copy button inside at the far right. */
+.linkField {
+  position: relative;
+}
+
+.linkField input {
+  padding-right: 40px;
+}
+
+/* Centred by margins, not a transform, which the button's press scale replaces. */
+.linkField button {
+  position: absolute;
+  inset-block: 0;
+  right: 4px;
+  margin-block: auto;
+}
+
+.linkField button[data-copied] {
+  color: var(--color-success);
+}
+
+.copyIcon {
+  animation: copy-icon-in var(--duration-base) ease;
+}
+
+@keyframes copy-icon-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
 }
 
 .footer {
@@ -353,5 +385,9 @@
   .chipField,
   .roleOption {
     transition: none;
+  }
+
+  .copyIcon {
+    animation: none;
   }
 }

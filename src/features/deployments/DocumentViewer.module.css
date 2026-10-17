@@ -1,5 +1,5 @@
 /*
- * The presentation's viewer, a card across the page's column filling the panel
+ * A document's viewer, a card across the page's column filling the panel
  * under the header, so only the PDF scrolls; the page scrolls only when the
  * panel is too short for the card's minimum.
  */
