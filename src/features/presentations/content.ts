@@ -1,4 +1,5 @@
 import { GPUS_PER_NODE } from "@/features/cluster/model/catalog";
+import { SYSTEMS } from "@/features/deployments/config/catalog";
 import {
   dayOf,
   formatAcross,
@@ -24,6 +25,7 @@ import {
   pricingOf,
   totalsOf,
   type Deployment,
+  type Platform,
 } from "@/features/deployments/types";
 import { teaserOf } from "@/features/teasers/content";
 import { siteOf } from "./sites";
@@ -46,6 +48,15 @@ const cityOf = (address: string | null): string | null => {
   const parts = (address ?? "").split(/[,\n]/).map((part) => part.trim()).filter(Boolean);
   const state = parts.findIndex((part) => /^[A-Z]{2}(\s+\d{5}(-\d{4})?)?$/.test(part));
   return state >= 2 ? parts[state - 1] : null;
+};
+
+const listOf = (items: readonly string[]): string =>
+  items.length < 2 ? (items[0] ?? "") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
+
+/** Phases by name, e.g. "Phase 1", or "Phases 2 and 3" when they're all numbered. */
+const phasesNamed = (names: readonly string[]): string => {
+  const numbers = names.map((name) => /^Phase (\d+)$/i.exec(name.trim())?.[1]);
+  return names.length > 1 && numbers.every(Boolean) ? `Phases ${listOf(numbers as string[])}` : listOf(names);
 };
 
 const cut = (text: string, max: number): string => (text.length <= max ? text : `${text.slice(0, max - 3).trimEnd()}...`);
@@ -99,8 +110,24 @@ export function presentationOf(deployment: Deployment): PresentationContent {
     `Each cluster runs on ${networkingLabel(d.networking)} with ${COOLING_PROSE[d.cooling]}, and is built, operated and supported by ZODE end to end.`,
   ].join("\n");
 
+  // Each platform with the phases built as it, in the order they come online.
+  const builds = [...new Set(d.phases.map((phase) => phase.platform))].map((platform) => ({
+    platform,
+    phases: d.phases.flatMap((phase, i) => (phase.platform === platform ? [phase.name || `Phase ${i + 1}`] : [])),
+  }));
+  const nodeSizes = new Set(builds.map(({ platform }) => SYSTEMS[platform].gpusPerNode));
+  const nodesOf = (platform: Platform) => (nodeSizes.size > 1 ? ` of ${SYSTEMS[platform].gpusPerNode}-GPU nodes` : "");
+  const built =
+    builds.length > 1
+      ? listOf(
+          builds.map(({ platform, phases }, i) =>
+            [phasesNamed(phases), i ? "" : phases.length > 1 ? " are built" : " is built", ` as ${platformLabel(platform)} clusters`, nodesOf(platform)].join(""),
+          ),
+        ) + (nodeSizes.size === 1 ? `, all of ${[...nodeSizes][0]}-GPU nodes` : "")
+      : `Each phase is built as ${platformSummary(shares)} clusters of ${GPUS_PER_NODE}-GPU nodes`;
+
   const clusterSummary = [
-    `Each phase is built as ${platformSummary(shares)} clusters of ${GPUS_PER_NODE}-GPU nodes,`,
+    `${built},`,
     ` networked over ${networkingLabel(d.networking)}, with ${COOLING_PROSE[d.cooling]}`,
     d.storageTbPerNode ? ` and ${formatTb(d.storageTbPerNode)} of storage per node` : "",
     ". ZODE builds, operates and supports the clusters end to end.",
@@ -221,7 +248,14 @@ export function presentationOf(deployment: Deployment): PresentationContent {
       date: formatDay(phase.rfsOn),
     })),
     clusterSummary: cut(clusterSummary, LIMITS.clusterSummary),
-    specs: facts(teaser.specs, LIMITS.specs),
+    specs: facts(
+      teaser.specs.map((spec) =>
+        spec.label === "Platform" && builds.length > 1
+          ? { ...spec, value: builds.map(({ platform, phases }) => `${platformLabel(platform)} in ${phasesNamed(phases)}`).join(", ") }
+          : spec,
+      ),
+      LIMITS.specs,
+    ),
     sections: d.externalNotes
       ? [{ title: "Notes", body: cut(d.externalNotes, LIMITS.sectionBody), bullets: "", facts: [] }]
       : [],
