@@ -231,6 +231,48 @@
   line-height: 1.4;
 }
 
+/* A deployment's share dialog: one row each for it, its teaser and its presentation. */
+.shareRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shareRow + .shareRow {
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.shareRowHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.shareRowText {
+  flex: 1;
+  min-width: 0;
+}
+
+.shareRowTitle {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.shareRowDetail {
+  margin: 2px 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+
+/* One width for every row's dropdown, so they line up down the dialog. */
+.shareRowAccess {
+  flex: none;
+  width: 200px;
+}
+
 /* The link's field, with its copy button inside at the far right. */
 .linkField {
   position: relative;

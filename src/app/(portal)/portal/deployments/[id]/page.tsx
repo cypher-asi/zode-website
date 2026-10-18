@@ -17,7 +17,7 @@ import { DocumentViewer } from "@/features/deployments/DocumentViewer";
 import { isDeploymentTab, tabHref } from "@/features/deployments/tabs";
 import { todayIso } from "@/features/deployments/format";
 import { ShareLink } from "@/features/deployments/ShareLink";
-import { statusLabel } from "@/features/deployments/types";
+import { canOpenDoc, statusLabel } from "@/features/deployments/types";
 import { loadViewer } from "@/features/deployments/view";
 import { orLogIn } from "@/features/portal/mine";
 import { PortalLoading } from "@/features/portal/PortalLoading";
@@ -63,9 +63,14 @@ async function Deployment({ params, searchParams }: PageProps<"/portal/deploymen
         deployment.dataRoomId ? listFileNames(deployment.dataRoomId) : Promise.resolve([]),
       ])
     : [null, []];
+  const teaser = canOpenDoc(deployment, "teaser", viewer);
+  const presentation = canOpenDoc(deployment, "presentation", viewer);
 
   return (
-    <DeploymentTabs base={base} initial={bom || tab === "presentation" || tab === "teaser" ? tab : "summary"}>
+    <DeploymentTabs
+      base={base}
+      initial={bom || (tab === "presentation" && presentation) || (tab === "teaser" && teaser) ? tab : "summary"}
+    >
       <div className={styles.page}>
         <PageHeader
           title={deployment.name}
@@ -75,12 +80,16 @@ async function Deployment({ params, searchParams }: PageProps<"/portal/deploymen
           tabs={bom ? <DeploymentTabSwitch /> : undefined}
           actions={
             <>
-              <TabLink tab="teaser" className={ui.squareButton} label="View teaser">
-                <Icon name="page" />
-              </TabLink>
-              <TabLink tab="presentation" className={ui.squareButton} label="View presentation">
-                <Icon name="slides" />
-              </TabLink>
+              {teaser ? (
+                <TabLink tab="teaser" className={ui.squareButton} label="View teaser">
+                  <Icon name="page" />
+                </TabLink>
+              ) : null}
+              {presentation ? (
+                <TabLink tab="presentation" className={ui.squareButton} label="View presentation">
+                  <Icon name="slides" />
+                </TabLink>
+              ) : null}
               {viewer.team ? (
                 <>
                   <ShareLink
@@ -89,6 +98,7 @@ async function Deployment({ params, searchParams }: PageProps<"/portal/deploymen
                       name: deployment.name,
                       access: deployment.access,
                       shareToken: deployment.shareToken,
+                      docs: deployment.docs,
                     }}
                   />
                   <Link href={`${base}/edit`} className={ui.primary}>
@@ -105,16 +115,20 @@ async function Deployment({ params, searchParams }: PageProps<"/portal/deploymen
             <DeploymentDetail deployment={deployment} today={todayIso()} />
           </div>
         </DeploymentTabPanel>
-        <DeploymentTabPanel tab="presentation" fill>
-          <DocumentViewer
-            doc="presentation"
-            deployment={{ id: deployment.id, name: presentationName(deployment) }}
-            today={todayIso()}
-          />
-        </DeploymentTabPanel>
-        <DeploymentTabPanel tab="teaser" fill>
-          <DocumentViewer doc="teaser" deployment={{ id: deployment.id, name: deployment.name }} today={todayIso()} />
-        </DeploymentTabPanel>
+        {presentation ? (
+          <DeploymentTabPanel tab="presentation" fill>
+            <DocumentViewer
+              doc="presentation"
+              deployment={{ id: deployment.id, name: presentationName(deployment) }}
+              today={todayIso()}
+            />
+          </DeploymentTabPanel>
+        ) : null}
+        {teaser ? (
+          <DeploymentTabPanel tab="teaser" fill>
+            <DocumentViewer doc="teaser" deployment={{ id: deployment.id, name: deployment.name }} today={todayIso()} />
+          </DeploymentTabPanel>
+        ) : null}
         {bom ? (
           <>
             <DeploymentTabPanel tab="bom">

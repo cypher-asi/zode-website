@@ -9,7 +9,10 @@ import {
   canOpen,
   type Deployment,
   type DeploymentAccess,
+  type DeploymentDoc,
   type DeploymentViewer,
+  type DocAccess,
+  type DocSharing,
   type Phase,
   type PhaseInput,
   type RoomChoice,
@@ -20,7 +23,7 @@ export const DEPLOYMENTS_TAG = "deployments";
 
 export type DeploymentInput = Omit<
   Deployment,
-  "id" | "updatedAt" | "dataRoomName" | "shareToken" | "access" | "privateTo" | "phases"
+  "id" | "updatedAt" | "dataRoomName" | "shareToken" | "access" | "privateTo" | "docs" | "phases"
 > & {
   phases: PhaseInput[];
 };
@@ -60,6 +63,16 @@ const toDeployment = (row: Record<string, unknown>): Deployment => ({
   shareToken: row.share_token == null ? null : String(row.share_token),
   access: (row.access ?? "users") as DeploymentAccess,
   privateTo: row.private_to == null ? null : String(row.private_to),
+  docs: {
+    teaser: {
+      access: (row.teaser_access ?? "deployment") as DocAccess,
+      token: row.teaser_token == null ? null : String(row.teaser_token),
+    },
+    presentation: {
+      access: (row.presentation_access ?? "deployment") as DocAccess,
+      token: row.presentation_token == null ? null : String(row.presentation_token),
+    },
+  },
   phases: ((row.phases as Phase[]) ?? []).map((phase) => ({
     ...phase,
     clusterConfig: configFromJson(phase.clusterConfig),
@@ -82,6 +95,7 @@ export async function listDeployments(): Promise<Deployment[]> {
       d.deposit_pct::float8 as deposit_pct, d.deposit_usd::float8 as deposit_usd, d.credit_rating, d.loc_required,
       d.loc_years::float8 as loc_years, d.credit_guarantee, d.lease_guarantee, d.notes, d.external_notes, d.updated_at,
       d.data_room_id, dr.name as data_room_name, d.share_token, d.access, d.private_to,
+      d.teaser_access, d.teaser_token, d.presentation_access, d.presentation_token,
       coalesce(
         (select json_agg(
             json_build_object(
@@ -120,6 +134,16 @@ export async function getSharedDeployment(token: string): Promise<Deployment | n
   );
 }
 
+/** The deployment whose `doc` is shared on its own under `token`, from the cached list. */
+export async function getSharedDoc(doc: DeploymentDoc, token: string): Promise<Deployment | null> {
+  if (!SHARE_TOKEN_RE.test(token)) return null;
+  return (
+    (await listDeployments()).find(
+      (deployment) => deployment.docs[doc].access === "public" && deployment.docs[doc].token === token,
+    ) ?? null
+  );
+}
+
 /** Deployment `id`, when `viewer` can open it. */
 export async function getDeploymentFor(id: string, viewer: DeploymentViewer): Promise<Deployment | null> {
   const deployment = await getDeployment(id);
@@ -148,6 +172,40 @@ export async function setAccess(
     returning access, share_token
   `;
   return row ? { access: row.access as DeploymentAccess, token: (row.share_token as string | null) ?? null } : undefined;
+}
+
+/**
+ * Sets who can open deployment `id`'s `doc`. Going public gives it `token` as
+ * its link unless it has one already. A deployment private to someone other
+ * than `userId` isn't changed. Returns the document's access and token, or
+ * undefined when the deployment is gone or not `userId`'s to change.
+ */
+export async function setDocAccess(
+  id: string,
+  doc: DeploymentDoc,
+  access: DocAccess,
+  userId: string,
+  token: string,
+): Promise<DocSharing | undefined> {
+  if (!isUuid(id)) return undefined;
+  const sql = db();
+  const [row] =
+    doc === "teaser"
+      ? await sql`
+          update deployments set
+            teaser_access = ${access},
+            teaser_token = case when ${access} = 'public' then coalesce(teaser_token, ${token}) else teaser_token end
+          where id = ${id} and (access <> 'private' or private_to = ${userId})
+          returning teaser_access as access, teaser_token as token
+        `
+      : await sql`
+          update deployments set
+            presentation_access = ${access},
+            presentation_token = case when ${access} = 'public' then coalesce(presentation_token, ${token}) else presentation_token end
+          where id = ${id} and (access <> 'private' or private_to = ${userId})
+          returning presentation_access as access, presentation_token as token
+        `;
+  return row ? { access: row.access as DocAccess, token: (row.token as string | null) ?? null } : undefined;
 }
 
 /**

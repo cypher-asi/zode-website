@@ -27,6 +27,20 @@ export type CreditRating = "ig" | "high" | "not_required";
 /** Who can open a deployment: anyone with its public link, every signed-in account, the ZODE team, or one account. */
 export type DeploymentAccess = "public" | "users" | "team" | "private";
 
+/** The documents written out from a deployment, each shared on its own. */
+export type DeploymentDoc = "teaser" | "presentation";
+
+export const DEPLOYMENT_DOCS: readonly DeploymentDoc[] = ["teaser", "presentation"];
+
+/** Who can open one of its documents: anyone with its own link, whoever can open the deployment, or the ZODE team. */
+export type DocAccess = "public" | "deployment" | "team";
+
+export interface DocSharing {
+  access: DocAccess;
+  /** The secret in its own public link (`docSharePath`), which only opens while `access` is public. */
+  token: string | null;
+}
+
 /** One rollout phase of one platform, ready for service (RFS) on `rfsOn`. Dates are `YYYY-MM-DD`. */
 export interface Phase {
   /** Kept across saves, so the phase's bill of materials stays with it. */
@@ -112,6 +126,8 @@ export interface Deployment {
   access: DeploymentAccess;
   /** The ZOS user id of the one account a private deployment opens for. */
   privateTo: string | null;
+  /** Who can open its teaser and presentation, each shared on its own. */
+  docs: Record<DeploymentDoc, DocSharing>;
   /** In RFS order. */
   phases: Phase[];
   /** ISO timestamp. */
@@ -419,3 +435,40 @@ export const deploymentLink = (d: Pick<Deployment, "id" | "access" | "shareToken
 /** The public PDF behind `sharePath(token)`, inline, or as a download with `download`. */
 export const sharedPdfPath = (token: string, download = false): string =>
   `/api/shared/deployments/${token}/pdf${download ? "?download=1" : ""}`;
+
+/** The share dialog's choices for a teaser or presentation, from widest to narrowest. */
+export const DOC_ACCESS_OPTIONS: readonly (Option<DocAccess> & { detail: string })[] = [
+  { value: "public", label: "Anyone with the link", detail: "No sign-in needed. They see just this document." },
+  {
+    value: "deployment",
+    label: "Same as the deployment",
+    detail: "Whoever can open the deployment can open this, its public link included.",
+  },
+  { value: "team", label: "ZODE team", detail: "Only the ZODE team can open it." },
+];
+
+/** Whether `viewer` can open deployment `d`'s `doc` in the portal. */
+export function canOpenDoc(
+  d: Pick<Deployment, "access" | "privateTo" | "docs">,
+  doc: DeploymentDoc,
+  viewer: DeploymentViewer,
+): boolean {
+  return canOpen(d, viewer) && (d.docs[doc].access !== "team" || viewer.team);
+}
+
+/** Whether a public deployment's page and its links hand out `doc` too. */
+export const sharedWithDeployment = (d: Pick<Deployment, "docs">, doc: DeploymentDoc): boolean =>
+  d.docs[doc].access !== "team";
+
+/** A document's own public page, which anyone with `token` can open. */
+export const docSharePath = (doc: DeploymentDoc, token: string): string => `/shared/${doc}s/${token}`;
+
+/** The PDF behind `docSharePath(doc, token)`, inline, or as a download with `download`. */
+export const docSharedPdfPath = (doc: DeploymentDoc, token: string, download = false): string =>
+  `/api/shared/${doc}s/${token}${download ? "?download=1" : ""}`;
+
+/** The link the share dialog copies for `doc`: its own public page while it's public, otherwise its tab in the portal. */
+export const docLink = (id: string, doc: DeploymentDoc, sharing: DocSharing): string =>
+  sharing.access === "public" && sharing.token
+    ? docSharePath(doc, sharing.token)
+    : `/portal/deployments/${id}?tab=${doc}`;

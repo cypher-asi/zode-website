@@ -1023,6 +1023,19 @@ end $$;
 
 alter table deployments add column if not exists private_to text;
 
+-- Who can open a deployment's teaser and presentation, each set on its own
+-- from the share dialog: `public`, anyone with that document's own link
+-- (/shared/teasers/<token>, /shared/presentations/<token>), which shows just
+-- it; `deployment`, whoever can open the deployment, its public link
+-- included; `team`, only the ZODE team. Tokens are kept like `share_token`,
+-- so making a document public again brings the same link back.
+alter table deployments add column if not exists teaser_access text not null default 'deployment'
+  check (teaser_access in ('public', 'deployment', 'team'));
+alter table deployments add column if not exists teaser_token text unique;
+alter table deployments add column if not exists presentation_access text not null default 'deployment'
+  check (presentation_access in ('public', 'deployment', 'team'));
+alter table deployments add column if not exists presentation_token text unique;
+
 -- Notes for whoever the deployment is shown to, its public link included;
 -- `notes` holds the internal ones, which never leave the portal.
 alter table deployments add column if not exists external_notes text;

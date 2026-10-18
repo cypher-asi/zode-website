@@ -14,6 +14,7 @@ import {
   roomExists,
   saveDeployment,
   setAccess,
+  setDocAccess,
   type DeploymentInput,
 } from "./deployments";
 import { quoteBlobPrefix } from "./bom/bom";
@@ -29,6 +30,8 @@ import {
 import {
   ACCESS_OPTIONS,
   CREDIT_RATINGS,
+  DEPLOYMENT_DOCS,
+  DOC_ACCESS_OPTIONS,
   FACILITIES,
   PLATFORM_OPTIONS,
   STATUSES,
@@ -36,6 +39,9 @@ import {
   isPlaceId,
   totalsOf,
   type DeploymentAccess,
+  type DeploymentDoc,
+  type DocAccess,
+  type DocSharing,
   type PhaseInput,
   type Platform,
 } from "./types";
@@ -335,6 +341,20 @@ export async function setDeploymentAccessAction(id: string, access: DeploymentAc
   if (!account) return { error: "You don't have access to this. Try reloading the page." };
   if (!ACCESS_OPTIONS.some((option) => option.value === access)) return { error: "Pick who can open it." };
   const saved = await setAccess(id, access, account.userId, newShareToken());
+  if (!saved) return { error: "This deployment was deleted. Reload to see the current list." };
+  updateTag(DEPLOYMENTS_TAG);
+  return saved;
+}
+
+export type DocShareResult = DocSharing | { error: string };
+
+/** Sets who can open deployment `id`'s teaser or presentation (see `DOC_ACCESS_OPTIONS`). The ZODE team only. */
+export async function setDocAccessAction(id: string, doc: DeploymentDoc, access: DocAccess): Promise<DocShareResult> {
+  const account = await teamAccount();
+  if (!account) return { error: "You don't have access to this. Try reloading the page." };
+  if (!DEPLOYMENT_DOCS.includes(doc)) return { error: "Pick the teaser or the presentation." };
+  if (!DOC_ACCESS_OPTIONS.some((option) => option.value === access)) return { error: "Pick who can open it." };
+  const saved = await setDocAccess(id, doc, access, account.userId, newShareToken());
   if (!saved) return { error: "This deployment was deleted. Reload to see the current list." };
   updateTag(DEPLOYMENTS_TAG);
   return saved;
