@@ -156,7 +156,7 @@ function ShareDialog({
             </p>
           ) : (
             <p className={ui.ok} aria-live="polite">
-              {saving ? "Saving…" : copied ? "Link copied" : ""}
+              {saving ? "Saving…" : ""}
             </p>
           )}
         </div>
