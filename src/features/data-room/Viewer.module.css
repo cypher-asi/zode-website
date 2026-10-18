@@ -284,6 +284,7 @@
 
 /* Images */
 .image {
+  position: relative;
   flex: 1;
   min-height: 0;
   overflow: auto;
@@ -465,6 +466,9 @@
   overflow: auto;
 }
 
+/* Scroll areas aren't flex, so `margin: auto` alone wouldn't centre a status vertically. */
+.pdf > .status,
+.image > .status,
 .document > .status {
   position: absolute;
   inset: 0;
