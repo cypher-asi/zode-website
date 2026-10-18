@@ -10,26 +10,24 @@ const PHOTOS = "Image: 601W marketing package.";
  */
 export const CHICAGO_801_CANAL: SiteContent = {
   name: "801 S Canal",
-  caption: "The site · Canal Station, South Loop",
-  lede: "A renovated six-story building in downtown Chicago, once a Northern Trust data center, with a 31 MW utility service, a geothermal-assisted plant and room in the building to grow.",
+  caption: "The site · South Loop, Chicago",
+  lede: "A former Northern Trust data center, renovated as Canal Station.",
   folder: "chicago-801-canal",
-  photo: { file: "building.jpg", caption: `801 S Canal Street, renovated as Canal Station. ${PHOTOS}` },
+  photo: { file: "building.jpg", caption: PHOTOS },
   property: {
-    image: { file: "street.jpg", caption: `The renovated building and lobby entrance from S Canal Street. ${PHOTOS}` },
+    image: { file: "street.jpg", caption: `Lobby entrance on S Canal Street. ${PHOTOS}` },
     facts: [
-      { label: "Address", value: "801 S Canal St, Chicago, IL 60607, in the South Loop" },
-      { label: "Building", value: "About 600,000 sf on six stories, Type I-A, recently renovated as Canal Station" },
-      { label: "History", value: "Built in 1990 for Northern Trust, which ran a data center in it" },
+      { label: "Building", value: "About 600,000 sf on six stories, Type I-A, built in 1990" },
       { label: "For ZODE", value: "About 200,000 sf: 50,000 sf of white space and 150,000 sf of gray space" },
       { label: "Clear height", value: "About 14 ft on floors 2 to 5 and 16 ft on floor 6" },
-      { label: "Parcel", value: "A yard for transformers, generators, fuel and the geothermal wells, beside a rail corridor" },
+      { label: "Parcel", value: "A yard for transformers, generators, fuel and the geothermal wells" },
     ],
   },
   why: [
-    { title: "Purpose-built reliability", text: "A Tier III, N+1 design across power and cooling, so it stays up while equipment is serviced." },
-    { title: "Efficient by design", text: "A PUE near 1.18 means a lower power cost per IT kW and a cleaner sustainability story." },
-    { title: "Carrier-rich and connected", text: "Four long-haul and eight metro carriers already at the building, with diverse-path fiber." },
-    { title: "Room to grow", text: "Take capacity now, with a clear path to expand inside the building." },
+    { title: "Power in the building today", text: "Phase 1 runs on ComEd service already at the site, with room to grow to about 100 MW." },
+    { title: "Tier III reliability", text: "Power and cooling can be serviced without dropping the load." },
+    { title: "PUE of 1.18", text: "Geothermal-assisted free cooling most of the year keeps the power cost per IT kW low." },
+    { title: "Downtown and connected", text: "In the South Loop, with twelve carriers already in the building." },
   ],
   capacity: {
     figures: [
@@ -43,37 +41,36 @@ export const CHICAGO_801_CANAL: SiteContent = {
       {
         title: "Power",
         items: [
-          "Three existing ComEd vaults, about 7 MVA, carry Phase 1 on power already at the site",
-          "A new vault brings the full 31 MW service",
-          "15 MW of dual-fuel bridge turbines cover the interim",
+          "Three existing ComEd vaults, about 7 MVA, carry Phase 1",
+          "A fourth vault completes the service",
         ],
       },
       {
         title: "Ready for liquid cooling",
         items: [
           "About 80% of the IT load on a 70/85°F facility-glycol loop, through CDUs and rear-door heat exchangers",
-          "The rest on a chilled-water white-space loop",
+          "The rest on a chilled-water loop",
         ],
       },
       {
         title: "Grow without moving",
         items: [
           "The powered-shell backbone is sized ahead of fit-out",
-          "A phased build lets capacity follow demand",
+          "Each phase adds capacity as demand comes",
           "Structural and site headroom already assessed",
         ],
       },
     ],
   },
   reliability: {
-    lede: "A Tier III, N+1 approach: any single component can come offline for maintenance without dropping the critical load.",
+    lede: "Tier III with N+1 throughout: any single component can be taken out for maintenance without dropping the critical load.",
     cells: [
-      { title: "Concurrent maintainability", text: "Double-ended M-T-T-M switchgear, fully duplicated and PLC-actuated; either half shuts down with output held." },
-      { title: "Redundant heat rejection", text: "Geothermal wells, adiabatic fluid coolers and trim chillers, each on an N+1 basis." },
-      { title: "Standby generation", text: "N+1 prime-rated generators on separate boards, with 12 hours of full-load fuel on site." },
-      { title: "Continuous power", text: "1 MW double-conversion UPS blocks of 250 kW modules, N+1, on lithium batteries." },
-      { title: "Water resilience", text: "Two 170,000-gallon tanks: one serviced while the other covers 12 hours of makeup." },
-      { title: "Bridging power", text: "Four 5 MW+ dual-fuel turbines on a looped N+1 ring bus while the new vault is built." },
+      { title: "Switchgear", text: "Double-ended M-T-T-M, fully duplicated and PLC-actuated; either half can shut down with the load held." },
+      { title: "Heat rejection", text: "A spare at every stage, from the geothermal wells through the fluid coolers to the trim chillers." },
+      { title: "Standby generation", text: "Prime-rated generators on separate boards, with 12 hours of full-load fuel on site." },
+      { title: "UPS", text: "1 MW double-conversion blocks of 250 kW modules, on lithium batteries." },
+      { title: "Water", text: "Two 170,000-gallon tanks, either covering 12 hours of makeup while the other is serviced." },
+      { title: "Bridging power", text: "Four 5 MW+ dual-fuel turbines on a looped ring bus carry the site until the fourth vault is in service." },
     ],
     source: "Callan Consulting Engineers, Tier III single-point-of-failure review, August 7, 2026.",
   },
@@ -86,29 +83,26 @@ export const CHICAGO_801_CANAL: SiteContent = {
     ],
     figure: { value: "~5,840 h", label: "Free-cooling hours a year" },
     points: [
-      "A PUE near 1.18 means less overhead energy for every IT kW",
-      "Geothermal and free cooling take load off the compressors most of the year",
+      "Less overhead energy for every IT kW",
       "Reusing the building keeps embodied carbon well below a new build",
     ],
     source: "Callan Consulting Engineers, Preliminary PUE and Energy Analysis, July 29, 2026.",
   },
   plant: {
-    image: { file: "roof.jpg", caption: "Rooftop heat-rejection yard layout." },
+    image: { file: "roof.jpg", caption: "Roof plan." },
     points: [
       "Two cooling towers, nine adiabatic fluid coolers and eight air-cooled trim chillers",
-      "All behind a 25 ft acoustic barrier wall, modelled against Chicago and Illinois limits",
-      "Data halls, the central plant and support fill the floors below",
-      "Two modes keep it simple: economizer coolers when it's cool out, trim chillers when it's warm",
+      "Behind a 25 ft acoustic wall, modelled against Chicago and Illinois noise limits",
+      "Data halls, central plant and support space on the floors below",
     ],
     inset: { file: "wells.jpg", caption: "Geothermal well field: eight wells along S Canal Street." },
   },
   location: {
-    image: { file: "siteplan.jpg", caption: "Site plan: transformers, generators and fuel in the yard off S Canal Street." },
+    image: { file: "siteplan.jpg", caption: "Site plan." },
     points: [
-      { title: "South Loop, Chicago", text: "An established downtown site rather than a greenfield on the edge of town, about 3 km from 350 E Cermak." },
-      { title: "Carrier-rich connectivity", text: "Four long-haul and eight metro carriers already at the building, with diverse-path fiber entries." },
-      { title: "On-parcel infrastructure", text: "Generators, transformers and fuel all fit on the existing site." },
-      { title: "Rail and utility adjacency", text: "An adjacent rail corridor and utility feeds, coordinated with the canal-bridge work." },
+      { title: "Twelve carriers", text: "Four long-haul and eight metro, entering the building over diverse paths." },
+      { title: "Near 350 E Cermak", text: "About 3 km from Chicago's largest carrier hotel." },
+      { title: "Rail and utilities", text: "Beside a rail corridor and utility feeds, coordinated with the canal-bridge work." },
     ],
   },
   team: {
@@ -150,7 +144,7 @@ export const CHICAGO_801_CANAL: SiteContent = {
     slides: [
       {
         title: "Project team",
-        lede: "Alosanar's founders bring Microsoft-scale data center delivery and institutional commercial real estate to the site.",
+        lede: "Alosanar is developing the site.",
         members: [
           {
             name: "Emmanuel Daniel",
@@ -180,7 +174,7 @@ export const CHICAGO_801_CANAL: SiteContent = {
       },
       {
         title: "Delivery partners",
-        lede: "The engineering and construction firms on Alosanar's delivery team, each with mission-critical and data center experience.",
+        lede: "The engineers and builders delivering it with Alosanar.",
         members: [
           {
             name: "Julia Ingersoll",
