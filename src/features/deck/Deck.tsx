@@ -16,7 +16,7 @@ import {
 import { flushSync } from "react-dom";
 import type { PolicyMap } from "./policyTypes";
 import { ShareMenu } from "./ShareMenu";
-import { SlideView, hasHead } from "./Slide";
+import { PAGING_KEYS, SlideView, hasHead } from "./Slide";
 import { DEMAND_DETAILS, SLIDES } from "./slides";
 import styles from "./Deck.module.css";
 
@@ -93,16 +93,19 @@ function follow(
     : next;
 }
 
-/** Whether a key press belongs to a control rather than the deck: text fields, menus, and Space on buttons. */
+/** Whether a key press belongs to a control rather than the deck: text fields, menus, modals, and Space on buttons. */
 function ownedByControl(event: KeyboardEvent): boolean {
   const target = event.target as HTMLElement | null;
   if (!target) return false;
-  // `dialog` covers a route modal (e.g. Invest) opened over the deck.
   if (
     target.closest(
-      "input, textarea, select, [contenteditable=true], [role=menu], dialog",
+      "input, textarea, select, [contenteditable=true], [role=menu]",
     )
   )
+    return true;
+  // A route modal (e.g. Invest) keeps every key; an open detail modal all but the paging keys, wherever its focus has gone.
+  const detail = document.querySelector("dialog[data-deck-keys][open]");
+  if (detail ? !PAGING_KEYS.has(event.key) : target.closest("dialog"))
     return true;
   return (
     event.key === " " && target.closest("button, a, [role=button]") !== null

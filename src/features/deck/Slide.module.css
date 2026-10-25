@@ -1005,6 +1005,37 @@
   height: 100%;
 }
 
+.detailStage {
+  height: 100%;
+}
+
+/*
+ * The slide fades in over the demand slide, and the whole modal fades out
+ * on its close or Escape (DETAIL_EXIT_MS). A step between details keeps the
+ * stage, so only the new slide's own entrances play.
+ */
+@media screen and (prefers-reduced-motion: no-preference) {
+  .detailStage {
+    animation: detail-in 280ms ease both;
+  }
+
+  .detailDialog[data-closing] .detailBox {
+    animation: detail-out 220ms ease forwards;
+  }
+}
+
+@keyframes detail-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes detail-out {
+  to {
+    opacity: 0;
+  }
+}
+
 .detailClose {
   position: absolute;
   top: calc((var(--header-band) - var(--detail-close)) / 2);
@@ -1065,6 +1096,10 @@
 .detailDialog[data-compact] .detailBox {
   height: auto;
   min-height: 100%;
+}
+
+.detailDialog[data-compact] .detailStage {
+  height: auto;
 }
 
 .detailDialog[data-compact] .detailClose {

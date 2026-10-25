@@ -394,26 +394,83 @@ function Stats({
   );
 }
 
+/** The modal's fade out; keep in step with `detail-out` in Slide.module.css. */
+const DETAIL_EXIT_MS = 220;
+
+/** The deck's paging keys, which a detail modal (`data-deck-keys`) leaves to the deck (Deck.tsx). */
+export const PAGING_KEYS: ReadonlySet<string> = new Set([
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowUp",
+  "ArrowDown",
+  "PageUp",
+  "PageDown",
+  " ",
+  "Home",
+  "End",
+]);
+
+/**
+ * A detail slide in its modal. It renders inactive and turns active two
+ * frames on, once its resting state is painted, so its entrances play as on
+ * the stage. Keyed by slide, so stepping to another detail plays them again.
+ */
+function DetailSlide({
+  slide,
+  compact,
+  policy,
+}: {
+  slide: Slide;
+  compact: boolean;
+  policy: PolicyMap | null;
+}): ReactElement {
+  const [entered, setEntered] = useState(false);
+  useEffect(() => {
+    let raf = requestAnimationFrame(() => {
+      raf = requestAnimationFrame(() => setEntered(true));
+    });
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  return (
+    <SlideView
+      slide={slide}
+      index={0}
+      total={0}
+      active={entered}
+      near
+      numbered={false}
+      compact={compact}
+      policy={policy}
+    />
+  );
+}
+
 /**
  * One of the demand slide's detail slides, drawn whole in a full-screen modal
  * over the deck, its close in the band across the top. It's portalled to the
  * body, so the stage's insets and the side column's styles don't reach it.
- * The close or Escape shuts it, and focus goes back to the button that opened
- * it. In the deck's scroll mode the slide scrolls in it.
+ * It fades in, and the close or Escape fades it out, focus going back to the
+ * button that opened it. On the stage Up and Down step through the details
+ * (`onStep`), and the deck's other paging keys pass through to turn the
+ * slide, which shuts it (`data-deck-keys`, Deck.tsx). In the deck's scroll
+ * mode the slide scrolls in it.
  */
 function DetailModal({
   slide,
   compact,
   policy,
+  onStep,
   onClose,
 }: {
   slide: Slide;
   compact: boolean;
   policy: PolicyMap | null;
+  onStep: (delta: number) => void;
   onClose: () => void;
 }): ReactElement {
   const ref = useRef<HTMLDialogElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const [closing, setClosing] = useState(false);
   // Not closed on unmount: that queues a close event, which would shut it again as it reopens. Unmounting takes it off the top layer.
   useEffect(() => {
     const dialog = ref.current;
@@ -422,7 +479,56 @@ function DetailModal({
     closeRef.current?.focus({ preventScroll: true });
     dialog.scrollTop = 0;
   }, []);
-  const dismiss = () => ref.current?.close();
+  useEffect(() => {
+    if (!closing) return;
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const timer = window.setTimeout(
+      () => ref.current?.close(),
+      reduced ? 0 : DETAIL_EXIT_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [closing]);
+  // Up and Down are taken in the window's capture, wherever focus sits, so the deck sees them handled. Any other paging
+  // key the deck handles turns the slide under the modal, which holds its content a while as it leaves, so the modal
+  // fades out with it rather than after.
+  useEffect(() => {
+    const onStepKey = (event: KeyboardEvent) => {
+      if (
+        compact ||
+        event.defaultPrevented ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        (event.key !== "ArrowDown" && event.key !== "ArrowUp")
+      )
+        return;
+      event.preventDefault();
+      onStep(event.key === "ArrowDown" ? 1 : -1);
+    };
+    const onTurnKey = (event: KeyboardEvent) => {
+      if (
+        !event.defaultPrevented ||
+        !PAGING_KEYS.has(event.key) ||
+        event.key === "ArrowDown" ||
+        event.key === "ArrowUp"
+      )
+        return;
+      // Space on a control is the control's, as the deck leaves it (ownedByControl).
+      const target = event.target as Element | null;
+      if (event.key === " " && target?.closest("button, a, [role=button]"))
+        return;
+      setClosing(true);
+    };
+    window.addEventListener("keydown", onStepKey, true);
+    window.addEventListener("keydown", onTurnKey);
+    return () => {
+      window.removeEventListener("keydown", onStepKey, true);
+      window.removeEventListener("keydown", onTurnKey);
+    };
+  }, [compact, onStep]);
+  const dismiss = () => setClosing(true);
 
   return createPortal(
     <dialog
@@ -430,20 +536,24 @@ function DetailModal({
       className={styles.detailDialog}
       data-compact={compact || undefined}
       data-surface={slide.ground === "ink" ? "dark" : "light"}
+      data-closing={closing || undefined}
+      data-deck-keys=""
       aria-label={slide.title}
+      onCancel={(event) => {
+        event.preventDefault();
+        dismiss();
+      }}
       onClose={onClose}
     >
       <div className={styles.detailBox}>
-        <SlideView
-          slide={slide}
-          index={0}
-          total={0}
-          active
-          near
-          numbered={false}
-          compact={compact}
-          policy={policy}
-        />
+        <div className={styles.detailStage}>
+          <DetailSlide
+            key={slide.id}
+            slide={slide}
+            compact={compact}
+            policy={policy}
+          />
+        </div>
         <button
           ref={closeRef}
           type="button"
@@ -463,8 +573,8 @@ function DetailModal({
 
 /**
  * The demand chart, and beside it a button for each of the slides behind the
- * gap (`DEMAND_DETAILS`), each opening its slide in a modal. Turning the
- * slide shuts it.
+ * gap (`DEMAND_DETAILS`), each opening its slide in a modal, where Up and
+ * Down step to its neighbours, stopping at the ends. Turning the slide shuts it.
  */
 function Demand({
   active,
@@ -481,6 +591,16 @@ function Demand({
     setShown(active);
     if (!active) setDetail(null);
   }
+  const step = (delta: number) =>
+    setDetail((open) => {
+      if (!open) return open;
+      const at = DEMAND_DETAILS.findIndex((item) => item.id === open.id);
+      const next = Math.min(
+        Math.max(at + delta, 0),
+        DEMAND_DETAILS.length - 1,
+      );
+      return DEMAND_DETAILS[next];
+    });
   return (
     <div className={styles.chartBody} data-split="details">
       <figure {...rise(2)} className={`${styles.rise} ${styles.figure}`}>
@@ -536,6 +656,7 @@ function Demand({
           slide={detail}
           compact={compact}
           policy={policy}
+          onStep={step}
           onClose={() => setDetail(null)}
         />
       ) : null}
