@@ -395,12 +395,11 @@ function Stats({
 }
 
 /**
- * One of the demand slide's detail slides, drawn whole in a modal over the
- * deck with a close in its corner. It's portalled to the body, so the stage's
- * header insets and the side column's styles don't reach it. The close,
- * Escape or a click on the backdrop shuts it, and focus goes back to the
- * button that opened it. In the deck's scroll mode it fills the screen and
- * scrolls.
+ * One of the demand slide's detail slides, drawn whole in a full-screen modal
+ * over the deck, its close in the band across the top. It's portalled to the
+ * body, so the stage's insets and the side column's styles don't reach it.
+ * The close or Escape shuts it, and focus goes back to the button that opened
+ * it. In the deck's scroll mode the slide scrolls in it.
  */
 function DetailModal({
   slide,
@@ -414,10 +413,14 @@ function DetailModal({
   onClose: () => void;
 }): ReactElement {
   const ref = useRef<HTMLDialogElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
   // Not closed on unmount: that queues a close event, which would shut it again as it reopens. Unmounting takes it off the top layer.
   useEffect(() => {
     const dialog = ref.current;
-    if (dialog && !dialog.open) dialog.showModal();
+    if (!dialog || dialog.open) return;
+    dialog.showModal();
+    closeRef.current?.focus({ preventScroll: true });
+    dialog.scrollTop = 0;
   }, []);
   const dismiss = () => ref.current?.close();
 
@@ -429,9 +432,6 @@ function DetailModal({
       data-surface={slide.ground === "ink" ? "dark" : "light"}
       aria-label={slide.title}
       onClose={onClose}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) dismiss();
-      }}
     >
       <div className={styles.detailBox}>
         <SlideView
@@ -445,6 +445,7 @@ function DetailModal({
           policy={policy}
         />
         <button
+          ref={closeRef}
           type="button"
           className={styles.detailClose}
           onClick={dismiss}

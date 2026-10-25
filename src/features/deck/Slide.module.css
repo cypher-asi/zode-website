@@ -950,42 +950,46 @@
 }
 
 /*
- * The modal a detail opens in (DetailModal): a 16:9 slide as large as the
- * window allows, over a dimmed deck, its close in the top corner. In the
- * deck's scroll mode it takes the whole screen and the slide scrolls in it.
+ * The modal a detail opens in (DetailModal): the whole window, as the stage.
+ * The slide clears a band across the top as it clears the site header there,
+ * and the close sits in that band on the content edge, where the header's
+ * button is, so it never lands on the slide's title. In the deck's scroll
+ * mode the slide scrolls in it, under the close.
  */
 .detailDialog {
-  width: min(94vw, 94dvh * 16 / 9);
+  --detail-close: 36px;
+  --slide-top: var(--header-band);
+  --slide-edge: var(--edge-deck);
+  --slide-bottom: 64px;
+
+  position: fixed;
+  inset: 0;
+  width: 100vw;
   max-width: none;
-  height: min(94vw * 9 / 16, 94dvh);
+  height: 100dvh;
   max-height: none;
-  margin: auto;
+  margin: 0;
   padding: 0;
-  overflow: visible;
+  overflow: hidden;
   border: 0;
   background: none;
-}
-
-.detailDialog::backdrop {
-  background: rgba(0, 0, 0, 0.72);
 }
 
 .detailBox {
   position: relative;
   width: 100%;
   height: 100%;
-  container-type: size;
 }
 
 .detailClose {
   position: absolute;
-  top: 1.6cqw;
-  right: 1.6cqw;
+  top: calc((var(--header-band) - var(--detail-close)) / 2);
+  right: var(--edge-deck);
   z-index: 3;
   display: grid;
   place-items: center;
-  width: 2.4cqw;
-  height: 2.4cqw;
+  width: var(--detail-close);
+  height: var(--detail-close);
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.32);
   background: none;
@@ -1021,9 +1025,15 @@
   outline-offset: 2px;
 }
 
+/* The modal covers the pinned header, so nothing in it fades under the header's corners (useHeaderSurface.ts masks it inline). */
+.detailDialog [data-top-fade] {
+  mask-image: none !important;
+}
+
 .detailDialog[data-compact] {
-  width: 100vw;
-  height: 100dvh;
+  --slide-edge: initial;
+  --slide-bottom: initial;
+
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -1031,20 +1041,16 @@
 .detailDialog[data-compact] .detailBox {
   height: auto;
   min-height: 100%;
-  container-type: normal;
-}
-
-/* The modal covers the pinned header, so nothing in it fades under the header's corners (useHeaderSurface.ts masks it inline). */
-.detailDialog [data-top-fade] {
-  mask-image: none !important;
 }
 
 .detailDialog[data-compact] .detailClose {
   position: fixed;
-  top: 12px;
-  right: 12px;
-  width: 36px;
-  height: 36px;
+  right: 16px;
+}
+
+/* In scroll mode a slide's frame keeps its own top padding, so the band is added above it. */
+.detailDialog[data-compact] .slide .frame {
+  padding-top: var(--header-band);
 }
 
 /* State legend, keyed to the tile map's fills. */
