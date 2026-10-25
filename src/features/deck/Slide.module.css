@@ -3231,17 +3231,29 @@ a.measureTitle:focus-visible {
   outline-offset: -2px;
 }
 
-/* A model's summary: sites beside the stack, then the case range. */
+/* A model's summary: sites beside the stack, then the case range. The title is a step smaller so a long sentence still leaves the cases on the page. */
+.slide[data-kind="model"] .title {
+  font-size: calc(1.85 * var(--u));
+  line-height: 1.12;
+}
+
+.slide[data-kind="model"] .head {
+  padding-bottom: calc(0.8 * var(--u));
+}
+
+.slide[data-kind="model"] .main {
+  padding-top: calc(1 * var(--u));
+}
+
 .model {
   display: flex;
   flex-direction: column;
-  gap: calc(1 * var(--u));
+  gap: calc(0.45 * var(--u));
   min-height: 0;
 }
 
 .main > .model {
   flex: none;
-  margin-block: auto;
 }
 
 .modelColumns {
@@ -3261,8 +3273,8 @@ a.measureTitle:focus-visible {
 .modelSites li {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: calc(0.15 * var(--u)) calc(0.8 * var(--u));
-  padding-block: calc(0.4 * var(--u));
+  gap: calc(0.1 * var(--u)) calc(0.8 * var(--u));
+  padding-block: calc(0.28 * var(--u));
   border-bottom: 1px solid var(--rule);
 }
 
@@ -3293,14 +3305,35 @@ a.measureTitle:focus-visible {
 
 .modelSites .fine,
 .model .dealStack {
-  margin-top: calc(0.5 * var(--u));
+  margin-top: calc(0.35 * var(--u));
+}
+
+.model .dealLayer {
+  flex: none;
+  align-items: center;
+  padding: calc(0.28 * var(--u)) calc(0.7 * var(--u));
+}
+
+.model .dealLayerLabel {
+  font-size: calc(0.85 * var(--u));
+}
+
+.model .dealLayerTerms {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: calc(0.15 * var(--u)) calc(0.5 * var(--u));
+  font-size: calc(0.55 * var(--u));
+}
+
+.model .raiseValue {
+  font-size: calc(1.2 * var(--u));
 }
 
 .modelFacts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: calc(0.55 * var(--u)) calc(1.2 * var(--u));
-  margin: calc(0.8 * var(--u)) 0 0;
+  margin: calc(0.35 * var(--u)) 0 0;
 }
 
 .modelFacts div {
@@ -3337,7 +3370,7 @@ a.measureTitle:focus-visible {
 }
 
 .modelCases :is(th, td) {
-  padding: calc(0.28 * var(--u)) 0;
+  padding: calc(0.12 * var(--u)) 0;
   font-weight: 400;
   vertical-align: middle;
 }
@@ -3363,7 +3396,7 @@ a.measureTitle:focus-visible {
 
 .modelCases tbody td {
   font-family: var(--font-display);
-  font-size: calc(1.05 * var(--u));
+  font-size: calc(0.95 * var(--u));
   font-weight: 300;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
@@ -3374,7 +3407,7 @@ a.measureTitle:focus-visible {
 }
 
 .modelGroup th {
-  padding-top: calc(0.55 * var(--u));
+  padding-top: calc(0.35 * var(--u));
   color: var(--fg);
 }
 
