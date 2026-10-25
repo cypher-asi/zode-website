@@ -3078,6 +3078,12 @@ a.measureTitle:focus-visible {
   cursor: pointer;
 }
 
+.raiseDeal,
+.raiseDeal .dealLayer,
+.raiseDeal .raiseFleet .stat {
+  transition: background-color var(--duration-fast) ease;
+}
+
 .raiseDeal .dealHead {
   --fig: calc(4.6 * var(--u));
 
@@ -3278,13 +3284,10 @@ a.measureTitle:focus-visible {
 }
 
 @media (hover: hover) {
-  .raiseDeal:hover {
-    background: var(--tint);
-  }
-
+  .raiseDeal:hover,
   .raiseDeal:hover .dealLayer,
   .raiseDeal:hover .raiseFleet .stat {
-    background: var(--tint);
+    background: color-mix(in srgb, var(--fg) 3%, var(--card));
   }
 
   .raiseDeal:hover .raisePlus {

@@ -903,8 +903,8 @@ export const RAISE_DETAILS: readonly Extract<Slide, { kind: "model" }>[] = [
     title: "Converting 50 MW with ZODE modules.",
     ground: "paper",
     sites: [
-      { name: "Olds", figure: "22 MW", detail: "Five clusters · 2 MW third party" },
-      { name: "Calgary", figure: "13 MW", detail: "Three clusters · 1 MW third party" },
+      { name: "Calgary I", figure: "22 MW", detail: "Five clusters · 2 MW third party" },
+      { name: "Calgary II", figure: "13 MW", detail: "Three clusters · 1 MW third party" },
       { name: "Next 1", figure: "8 MW", detail: "Two clusters · not yet identified" },
       { name: "Next 2", figure: "8 MW", detail: "Two clusters · not yet identified" },
     ],
