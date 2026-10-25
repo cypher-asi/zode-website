@@ -3298,13 +3298,10 @@ a.measureTitle:focus-visible {
   }
 }
 
-/* Set as `.label`, in a ruled pill. */
+/* Set as `.label`. */
 .years {
   grid-area: years;
   justify-self: end;
-  padding: calc(0.2 * var(--u)) calc(0.6 * var(--u));
-  border: 1px solid var(--rule-strong);
-  border-radius: 999px;
   font-family: var(--font-mono);
   font-size: calc(0.62 * var(--u));
   font-weight: 500;
@@ -3492,26 +3489,18 @@ a.measureTitle:focus-visible {
   border-bottom: 1px solid var(--rule);
 }
 
-.partnerLink {
+.partnerMark {
   display: flex;
   min-height: calc(3 * var(--u));
   align-items: center;
 }
 
-.partnerLink img {
+.partnerMark img {
   opacity: 0.85;
-  transition: opacity 200ms ease;
 }
 
-.partnerLink:focus-visible {
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: 2px;
-}
-
-@media (hover: hover) {
-  .partnerLink:hover img {
-    opacity: 1;
-  }
+.networkTitle {
+  white-space: nowrap;
 }
 
 /* One mark per row, so the column reads as a list. */
@@ -5233,7 +5222,6 @@ a.measureTitle:focus-visible {
 }
 
 .slide[data-compact] .years {
-  padding: 2px 8px;
   font-size: 10px;
 }
 
@@ -5268,7 +5256,7 @@ a.measureTitle:focus-visible {
   margin-bottom: 4px;
 }
 
-.slide[data-compact] .partnerLink {
+.slide[data-compact] .partnerMark {
   min-height: 36px;
 }
 

@@ -1909,16 +1909,13 @@ function Team({ slide }: { slide: Of<"team"> }): ReactElement {
             <h3 className={styles.networkLabel}>{area.label}</h3>
             <div className={styles.partner}>
               <span className={styles.label}>{network.partnerLabel}</span>
-              <a
-                className={`${styles.logos} ${styles.partnerLink}`}
-                href={area.partner.href}
-                target="_blank"
-                rel="noreferrer noopener"
-              >
+              <div className={`${styles.logos} ${styles.partnerMark}`}>
                 <LogoMark logo={area.partner} size={1.6} />
-              </a>
+              </div>
             </div>
-            <span className={styles.label}>{network.title}</span>
+            <span className={`${styles.label} ${styles.networkTitle}`}>
+              {network.title}
+            </span>
             <ul className={styles.logos}>
               {area.logos.map((logo) => (
                 <li key={logo.name}>
