@@ -257,7 +257,7 @@ export const SLIDES: readonly Slide[] = [
     id: "cover",
     kind: "cover",
     section: "Cover",
-    eyebrow: "Investor presentation · October 2026",
+    eyebrow: "Investor presentation · Q4 2026",
     title: "The Sovereign Intelligence Network",
     lede: "ZODE manufactures rapidly deployable data centers and sells the compute.",
     meta: "ZODE Inc.",
