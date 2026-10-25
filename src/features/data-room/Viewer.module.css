@@ -415,10 +415,93 @@
 }
 
 .sheetGrid {
+  display: flex;
   flex: 1;
+  flex-direction: column;
   min-height: 0;
   overflow: auto;
-  font-size: var(--text-sm);
+}
+
+/* The full sheet's size at the current zoom; only the rows and columns in view are drawn into it. */
+.gridCanvas {
+  position: relative;
+  isolation: isolate;
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.gridHead,
+.gridRow {
+  display: grid;
+  height: var(--row);
+  line-height: calc(var(--row) - 1px);
+  white-space: nowrap;
+}
+
+.gridHead {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+.cell,
+.colHead,
+.rowHead,
+.corner {
+  min-width: 0;
+  padding: 0 0.4em;
+  overflow: hidden;
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  text-overflow: ellipsis;
+}
+
+.colHead,
+.rowHead,
+.corner {
+  background: var(--color-paper);
+  color: var(--color-text-secondary);
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+.colHead {
+  text-align: center;
+}
+
+.rowHead,
+.corner {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  text-align: right;
+}
+
+.right {
+  text-align: right;
+}
+
+.center {
+  text-align: center;
+}
+
+.bold {
+  font-weight: 600;
+}
+
+/* Left-aligned text runs over the empty cells to its right, as in Excel, covering their gridlines. */
+.spill {
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+}
+
+.spill span {
+  display: block;
+  width: max-content;
+  overflow: hidden;
+  background: var(--color-white);
+  text-overflow: ellipsis;
 }
 
 .sheetTabs {
