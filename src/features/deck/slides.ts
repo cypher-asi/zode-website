@@ -240,8 +240,12 @@ export type Slide =
         /** Drawn under the side projects; `FOUNDER_CONTRIBUTIONS` in `./github`. */
         contributions?: Contributions;
       };
-      /** The team, alliances and advisors, by area. */
-      network: { title: string; areas: readonly { label: string; logos: readonly Logo[] }[] };
+      /** One column per area: its key strategic partner, linked to its site, over the team and advisors from it. */
+      network: {
+        title: string;
+        partnerLabel: string;
+        areas: readonly { label: string; partner: Logo & { href: string }; logos: readonly Logo[] }[];
+      };
     })
   | (Base & { kind: "close"; lede: string; contact: string })
   | (Base & { kind: "sources" });
@@ -579,18 +583,43 @@ export const SLIDES: readonly Slide[] = [
       },
     },
     network: {
-      title: "Team members and strategic advisors from",
+      title: "Team members and advisors from",
+      partnerLabel: "Key strategic partnership",
       areas: [
         {
+          label: "AI",
+          partner: {
+            name: "San Francisco Compute Company",
+            src: `${LOGO_DIR}/sf-compute.svg`,
+            aspect: 2000 / 336,
+            scale: 1.05,
+            href: "https://sfcompute.com",
+          },
+          logos: [
+            { name: "OpenAI", src: `${LOGO_DIR}/openai.svg`, aspect: 288 / 78, center: 31 / 78 },
+            { name: "Lambda", src: `${LOGO_DIR}/lambda.svg`, aspect: 196 / 42, scale: 0.95 },
+            { name: "Voltage Park", src: `${LOGO_DIR}/voltage-park.svg`, aspect: 2542 / 350, scale: 1.05 },
+          ],
+        },
+        {
           label: "Capital markets",
+          partner: { name: "Ezra", src: `${LOGO_DIR}/ezra.svg`, aspect: 299 / 92, scale: 0.9, href: "https://ezra.fi" },
           logos: [
             { name: "Goldman Sachs", src: `${LOGO_DIR}/goldman-sachs.svg`, aspect: 192.76 / 85.04, scale: 0.9 },
             { name: "Brookfield", src: `${LOGO_DIR}/brookfield.svg`, aspect: 240 / 35.933, scale: 0.8 },
             { name: "Merrill", src: `${LOGO_DIR}/merrill.svg`, aspect: 150 / 43, scale: 1.15 },
+            { name: "Crusoe", src: `${LOGO_DIR}/crusoe.svg`, aspect: 119 / 29, scale: 1.1 },
           ],
         },
         {
           label: "Data centers",
+          partner: {
+            name: "Inovi",
+            src: `${LOGO_DIR}/inovi.webp`,
+            aspect: 900 / 212,
+            scale: 0.85,
+            href: "https://www.inovihq.com/",
+          },
           logos: [
             { name: "AWS", src: `${LOGO_DIR}/aws.svg`, aspect: 188.726 / 125.89, scale: 0.8 },
             { name: "Meta", src: `${LOGO_DIR}/meta.svg`, aspect: 948 / 191, scale: 0.9 },
@@ -599,9 +628,16 @@ export const SLIDES: readonly Slide[] = [
         },
         {
           label: "Manufacturing",
+          partner: {
+            name: "Foundry Robotics",
+            src: `${LOGO_DIR}/foundry-robotics.svg`,
+            aspect: 154 / 46,
+            href: "https://foundryrobotics.ai",
+          },
           logos: [
             { name: "SpaceX", src: `${LOGO_DIR}/spacex.svg`, aspect: 400 / 50, scale: 0.95 },
-            { name: "Tesla", src: `${LOGO_DIR}/tesla.svg`, aspect: 993.047 / 100, scale: 0.85 },          ],
+            { name: "Tesla", src: `${LOGO_DIR}/tesla.svg`, aspect: 993.047 / 100, scale: 0.85 },
+          ],
         },
       ],
     },

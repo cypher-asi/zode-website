@@ -1045,8 +1045,16 @@ function Unit({
 /** Square slide units every logo covers, its height found from its aspect, so long and compact marks weigh the same. */
 const LOGO_AREA = 7;
 
-function LogoMark({ logo }: { logo: Logo }): ReactElement {
-  const height = Math.sqrt(LOGO_AREA / logo.aspect) * (logo.scale ?? 1);
+function LogoMark({
+  logo,
+  size = 1,
+}: {
+  logo: Logo;
+  /** Scales the mark's area, for one set larger than the logos around it. */
+  size?: number;
+}): ReactElement {
+  const height =
+    Math.sqrt((LOGO_AREA * size) / logo.aspect) * (logo.scale ?? 1);
   return (
     // eslint-disable-next-line @next/next/no-img-element -- the SVG logos scale with the slide
     <img
@@ -1732,10 +1740,10 @@ function ContributionGraph({ data }: { data: Contributions }): ReactElement {
 }
 
 /**
- * The founder on the left, the ventures ruled under the name as main
- * quests, each company's years and outcome on the right, the side quests as one
- * small line of links, and any year of commits under them;
- * on the right the team and advisors as rows of logos by area.
+ * The founder in the left third, the ventures ruled under the name as main
+ * quests, each company's years beside it and its outcome under its role; in
+ * the right two thirds a column per area, its key strategic partner over the
+ * team and advisors from it.
  */
 function Team({ slide }: { slide: Of<"team"> }): ReactElement {
   const { founder, network } = slide;
@@ -1780,7 +1788,6 @@ function Team({ slide }: { slide: Of<"team"> }): ReactElement {
                 </span>
                 <span className={styles.years}>{venture.years}</span>
                 <p className={styles.ventureRole}>{venture.role}</p>
-                <p className={styles.ventureText}>{venture.description}</p>
                 {venture.outcome && (
                   <p
                     className={`${styles.ventureText} ${styles.ventureOutcome}`}
@@ -1792,19 +1799,6 @@ function Team({ slide }: { slide: Of<"team"> }): ReactElement {
             ))}
           </ul>
         </section>
-        <section
-          {...rise(4.2)}
-          className={`${styles.rise} ${styles.sideQuests}`}
-        >
-          <h4 className={styles.figLabel}>{founder.side.title}</h4>
-          <ul>
-            {founder.side.links.map((link) => (
-              <li key={link.href}>
-                <OutLink href={link.href}>{link.label}</OutLink>
-              </li>
-            ))}
-          </ul>
-        </section>
         {founder.contributions && (
           <div {...rise(4.6)} className={styles.rise}>
             <ContributionGraph data={founder.contributions} />
@@ -1812,16 +1806,25 @@ function Team({ slide }: { slide: Of<"team"> }): ReactElement {
         )}
       </div>
       <section className={styles.network}>
-        <h3 {...rise(4)} className={`${styles.rise} ${styles.figLabel}`}>
-          {network.title}
-        </h3>
         {network.areas.map((area, i) => (
           <div
             key={area.label}
-            {...rise(4.5 + i * 0.5)}
+            {...rise(3.5 + i * 0.4)}
             className={`${styles.rise} ${styles.networkArea}`}
           >
-            <span className={styles.label}>{area.label}</span>
+            <h3 className={styles.networkLabel}>{area.label}</h3>
+            <div className={styles.partner}>
+              <span className={styles.label}>{network.partnerLabel}</span>
+              <a
+                className={`${styles.logos} ${styles.partnerLink}`}
+                href={area.partner.href}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                <LogoMark logo={area.partner} size={1.6} />
+              </a>
+            </div>
+            <span className={styles.label}>{network.title}</span>
             <ul className={styles.logos}>
               {area.logos.map((logo) => (
                 <li key={logo.name}>
