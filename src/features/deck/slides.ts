@@ -860,9 +860,9 @@ export const RAISE_DETAILS: readonly Extract<Slide, { kind: "model" }>[] = [
     title: "Leasing 50 MW.",
     ground: "paper",
     sites: [
-      { name: "Mississauga", figure: "2 MW", detail: "128 nodes · SFC signed" },
+      { name: "Mississauga", figure: "2 MW", detail: "128 nodes" },
       { name: "Chicago", figure: "24 MW", detail: "1,536 nodes · one phase signed" },
-      { name: "Placeholder colo", figure: "24 MW", detail: "1,536 nodes · site unidentified" },
+      { name: "Next colo", figure: "24 MW", detail: "1,536 nodes · site unidentified" },
     ],
     sitesNote: "14 clusters, 2 with a signed contract. 3,200 nodes and 25,600 GPUs.",
     layers: [
@@ -893,7 +893,7 @@ export const RAISE_DETAILS: readonly Extract<Slide, { kind: "model" }>[] = [
         },
       ],
     },
-    note: "Live base case, held to repayment. One raise funds both equity layers. The Chicago lease is unsigned and the placeholder colo is not a named site.",
+    note: "Live base case, held to repayment. One raise funds both equity layers. The Chicago lease is unsigned and the next colo is not yet a named site.",
   },
   {
     id: "retro",
@@ -905,8 +905,8 @@ export const RAISE_DETAILS: readonly Extract<Slide, { kind: "model" }>[] = [
     sites: [
       { name: "Olds", figure: "22 MW", detail: "Five clusters · 2 MW third party" },
       { name: "Calgary", figure: "13 MW", detail: "Three clusters · 1 MW third party" },
-      { name: "Placeholder 1", figure: "8 MW", detail: "Two clusters · not yet identified" },
-      { name: "Placeholder 2", figure: "8 MW", detail: "Two clusters · not yet identified" },
+      { name: "Next 1", figure: "8 MW", detail: "Two clusters · not yet identified" },
+      { name: "Next 2", figure: "8 MW", detail: "Two clusters · not yet identified" },
     ],
     sitesNote: "3,072 nodes · 24,576 GPUs.",
     layers: [
@@ -942,7 +942,7 @@ export const RAISE_DETAILS: readonly Extract<Slide, { kind: "model" }>[] = [
         },
       ],
     },
-    note: "October 20, 2026 sale case, with two unidentified placeholder sites. Contract value, prepayment and GPU debt are the first GPU generation, from the workbook recalculated with those sites.",
+    note: "October 20, 2026 sale case, with two sites not yet identified. Contract value, prepayment and GPU debt are the first GPU generation, from the workbook recalculated with those sites.",
   },
 ];
 

@@ -1842,8 +1842,25 @@ function RaiseDisclaimer({
 }): ReactElement {
   const id = useId();
   const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (event: PointerEvent) => {
+      if (!ref.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
   return (
     <div
+      ref={ref}
       {...rise(3.2)}
       className={`${styles.rise} ${styles.raiseDisclaimer}`}
       data-open={open || undefined}

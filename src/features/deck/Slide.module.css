@@ -3252,7 +3252,7 @@ a.measureTitle:focus-visible {
   box-shadow: 0 0 0 1px var(--rule);
 }
 
-.raiseDisclaimer:is(:hover, :focus-within, [data-open]) .raisePanel {
+.raiseDisclaimer:is(:hover, [data-open]) .raisePanel {
   visibility: visible;
   opacity: 1;
   transition-delay: 0s;
