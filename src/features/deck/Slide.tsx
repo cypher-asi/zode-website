@@ -10,6 +10,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import { NorthAmericaFlags } from "@/components/ui/NorthAmericaFlags";
 import { OverlayScrollbar } from "@/components/ui/OverlayScrollbar";
 import {
@@ -41,13 +42,13 @@ import {
 } from "./policyTypes";
 import {
   AS_OF,
-  MARKET_TIGHTNESS,
   SOURCES,
   sourceUrl,
   type Source,
   type SourceId,
 } from "./research";
 import {
+  DEMAND_DETAILS,
   SLIDES,
   type ContractSide,
   type Logo,
@@ -393,15 +394,92 @@ function Stats({
   );
 }
 
+/**
+ * One of the demand slide's detail slides, drawn whole in a modal over the
+ * deck with a close in its corner. It's portalled to the body, so the stage's
+ * header insets and the side column's styles don't reach it. The close,
+ * Escape or a click on the backdrop shuts it, and focus goes back to the
+ * button that opened it. In the deck's scroll mode it fills the screen and
+ * scrolls.
+ */
+function DetailModal({
+  slide,
+  compact,
+  policy,
+  onClose,
+}: {
+  slide: Slide;
+  compact: boolean;
+  policy: PolicyMap | null;
+  onClose: () => void;
+}): ReactElement {
+  const ref = useRef<HTMLDialogElement>(null);
+  // Not closed on unmount: that queues a close event, which would shut it again as it reopens. Unmounting takes it off the top layer.
+  useEffect(() => {
+    const dialog = ref.current;
+    if (dialog && !dialog.open) dialog.showModal();
+  }, []);
+  const dismiss = () => ref.current?.close();
+
+  return createPortal(
+    <dialog
+      ref={ref}
+      className={styles.detailDialog}
+      data-compact={compact || undefined}
+      data-surface={slide.ground === "ink" ? "dark" : "light"}
+      aria-label={slide.title}
+      onClose={onClose}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) dismiss();
+      }}
+    >
+      <div className={styles.detailBox}>
+        <SlideView
+          slide={slide}
+          index={0}
+          total={0}
+          active
+          near
+          numbered={false}
+          compact={compact}
+          policy={policy}
+        />
+        <button
+          type="button"
+          className={styles.detailClose}
+          onClick={dismiss}
+          aria-label="Close"
+        >
+          <svg viewBox="0 0 12 12" aria-hidden="true">
+            <path d="M1 1l10 10M11 1L1 11" />
+          </svg>
+        </button>
+      </div>
+    </dialog>,
+    document.body,
+  );
+}
+
+/**
+ * The demand chart, and beside it a button for each of the slides behind the
+ * gap (`DEMAND_DETAILS`), each opening its slide in a modal. Turning the
+ * slide shuts it.
+ */
 function Demand({
   active,
-  playing,
   compact,
+  policy,
 }: {
   active: boolean;
-  playing: boolean;
   compact: boolean;
+  policy: PolicyMap | null;
 }): ReactElement {
+  const [detail, setDetail] = useState<Slide | null>(null);
+  const [shown, setShown] = useState(active);
+  if (shown !== active) {
+    setShown(active);
+    if (!active) setDetail(null);
+  }
   return (
     <div className={styles.chartBody}>
       <figure {...rise(2)} className={`${styles.rise} ${styles.figure}`}>
@@ -422,29 +500,41 @@ function Demand({
       </figure>
       <aside className={styles.side}>
         <h3 {...rise(3)} className={`${styles.rise} ${styles.label}`}>
-          Market tightness
+          Behind the gap
         </h3>
-        <ul className={styles.drawnStats}>
-          {MARKET_TIGHTNESS.map((item, i) => (
-            <li
-              key={item.label}
-              {...rise(4 + i * 0.5)}
-              className={`${styles.rise} ${styles.drawnStat}`}
-            >
-              <div className={styles.drawnFigure}>
-                <MacroArt id={item.art} playing={playing} />
-              </div>
-              <div className={styles.drawnText}>
-                <span className={styles.statValue}>{item.value}</span>
-                <span className={styles.statLabel}>{item.label}</span>
-                <span className={styles.statSource}>
-                  <Cited id={item.cite}>{item.source}</Cited>
+        <ul className={styles.detailList}>
+          {DEMAND_DETAILS.map((item, i) => (
+            <li key={item.id} {...rise(4 + i * 0.5)}>
+              <button
+                type="button"
+                className={styles.detailButton}
+                aria-haspopup="dialog"
+                onClick={() => setDetail(item)}
+              >
+                <span className={styles.label}>{pad(i + 1)}</span>
+                <span className={styles.detailTitle}>
+                  {item.title.replace(/\.$/, "")}
                 </span>
-              </div>
+                <svg
+                  className={styles.detailIcon}
+                  viewBox="0 0 12 12"
+                  aria-hidden="true"
+                >
+                  <path d="M6 1v10M1 6h10" />
+                </svg>
+              </button>
             </li>
           ))}
         </ul>
       </aside>
+      {detail ? (
+        <DetailModal
+          slide={detail}
+          compact={compact}
+          policy={policy}
+          onClose={() => setDetail(null)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -1898,7 +1988,9 @@ const SOURCE_GROUP: Readonly<Record<SourceId, SourceGroup>> = {
   evPerMw: "Cost and valuation",
 };
 
-const CITED = new Set(SLIDES.flatMap((slide) => slide.sources ?? []));
+const CITED = new Set(
+  [...SLIDES, ...DEMAND_DETAILS].flatMap((slide) => slide.sources ?? []),
+);
 
 /** A group's cited sources, in the order SOURCE_GROUP lists them. */
 const citedIn = (group: SourceGroup): SourceId[] =>
@@ -1998,7 +2090,7 @@ function Body({
         />
       );
     case "demand":
-      return <Demand active={active} playing={playing} compact={compact} />;
+      return <Demand active={active} compact={compact} policy={policy} />;
     case "shortfall":
       return <Shortfall active={active} compact={compact} />;
     case "states":
@@ -2105,7 +2197,9 @@ const pad = (n: number) => String(n).padStart(2, "0");
  * deck's scroll mode: one column at the site's mobile type sizes, as tall as
  * its content, fading out under the pinned header's corners as it scrolls up
  * into them. `policy` is the policy tracker's map for the states slide.
- * Memoized, so turning a slide redraws only the slides whose state changed.
+ * `numbered` sets the page number in its foot; a slide off the sequence (the
+ * demand slide's details) goes without. Memoized, so turning a slide redraws
+ * only the slides whose state changed.
  */
 export const SlideView = memo(function SlideView({
   slide,
@@ -2118,6 +2212,7 @@ export const SlideView = memo(function SlideView({
   branded = false,
   grid = true,
   compact = false,
+  numbered = true,
   policy,
 }: {
   slide: Slide;
@@ -2130,6 +2225,7 @@ export const SlideView = memo(function SlideView({
   branded?: boolean;
   grid?: boolean;
   compact?: boolean;
+  numbered?: boolean;
   policy: PolicyMap | null;
 }): ReactElement {
   const head = hasHead(slide);
@@ -2200,9 +2296,11 @@ export const SlideView = memo(function SlideView({
               {slide.sources ? (
                 <FootSources ids={slide.sources} inline={compact} />
               ) : null}
-              <span className={styles.number}>
-                {pad(index + 1)} / {pad(total)}
-              </span>
+              {numbered ? (
+                <span className={styles.number}>
+                  {pad(index + 1)} / {pad(total)}
+                </span>
+              ) : null}
               {slide.kind === "cover" ? null : mark}
             </div>
           </footer>

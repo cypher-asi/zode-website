@@ -258,7 +258,7 @@ export const SLIDES: readonly Slide[] = [
     kind: "cover",
     section: "Cover",
     eyebrow: "Investor presentation · October 2026",
-    title: "Sovereign AI capacity, online in 90 days.",
+    title: "The Sovereign Intelligence Network",
     lede: "ZODE manufactures rapidly deployable data centers and sells the compute.",
     meta: "ZODE Inc.",
     image: "/images/future-home/zode-hero.jpg",
@@ -294,71 +294,7 @@ export const SLIDES: readonly Slide[] = [
     eyebrow: "Macro · Demand",
     title: "Demand is outrunning what the grid can connect.",
     ground: "ink",
-    sources: ["bnef", "epri", "utilityDive", "cbre", "jll"],
-  },
-  {
-    id: "shortfall",
-    kind: "shortfall",
-    section: "Shortfall",
-    eyebrow: "Macro · Shortfall",
-    title: "A 33 GW compute crunch through 2028.",
-    ground: "ink",
-    sources: ["morganStanley"],
-  },
-  {
-    id: "problem",
-    kind: "problems",
-    section: "Problem",
-    eyebrow: "Problem",
-    title: "Data centers are slow to build and hard to host.",
-    ground: "ink",
-    groups: [
-      {
-        label: "Building",
-        lead: {
-          title: "Regulation moves at a crawl.",
-          body: "Monolithic campuses face years of permits, zoning and hearings, and any one can kill the project.",
-          art: "regulation",
-          hard: true,
-        },
-        rest: [
-          { title: "Patchwork local builds", art: "localBuild" },
-          { title: "Volatile supply chains", art: "supplyChain" },
-          { title: "Risk capital stays away", art: "financing" },
-        ],
-      },
-      {
-        label: "Community",
-        lead: {
-          title: "Huge, loud and ugly.",
-          body: "Windowless monoliths that hum day and night next to homes.",
-          art: "monolith",
-        },
-        rest: [
-          { title: "Water drawn for cooling", art: "water" },
-          { title: "Higher power bills", art: "powerBill" },
-          { title: "No share of the upside", art: "economics" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "states",
-    kind: "states",
-    section: "State moratoriums",
-    eyebrow: "Policy",
-    title: "States are starting to say no.",
-    ground: "ink",
-    sources: ["ncsl", "newYork", "texas", "oregon", "ercot", "moratoriumNation"],
-  },
-  {
-    id: "local",
-    kind: "news",
-    section: "Local pauses",
-    eyebrow: "Policy · Local",
-    title: "Local pauses are spreading.",
-    ground: "ink",
-    sources: ["dataCenterWatch"],
+    sources: ["bnef", "epri", "utilityDive"],
   },
   {
     id: "solution",
@@ -834,5 +770,73 @@ export const SLIDES: readonly Slide[] = [
     eyebrow: "Sources",
     title: "All sources.",
     ground: "paper",
+  },
+];
+
+/** Off the sequence: the demand slide opens each over the deck, from the buttons in its side column. */
+export const DEMAND_DETAILS: readonly Slide[] = [
+  {
+    id: "shortfall",
+    kind: "shortfall",
+    section: "Shortfall",
+    eyebrow: "Macro · Shortfall",
+    title: "A 33 GW compute crunch through 2028.",
+    ground: "ink",
+    sources: ["morganStanley"],
+  },
+  {
+    id: "problem",
+    kind: "problems",
+    section: "Problem",
+    eyebrow: "Problem",
+    title: "Data centers are slow to build and hard to host.",
+    ground: "ink",
+    groups: [
+      {
+        label: "Building",
+        lead: {
+          title: "Regulation moves at a crawl.",
+          body: "Monolithic campuses face years of permits, zoning and hearings, and any one can kill the project.",
+          art: "regulation",
+          hard: true,
+        },
+        rest: [
+          { title: "Patchwork local builds", art: "localBuild" },
+          { title: "Volatile supply chains", art: "supplyChain" },
+          { title: "Risk capital stays away", art: "financing" },
+        ],
+      },
+      {
+        label: "Community",
+        lead: {
+          title: "Huge, loud and ugly.",
+          body: "Windowless monoliths that hum day and night next to homes.",
+          art: "monolith",
+        },
+        rest: [
+          { title: "Water drawn for cooling", art: "water" },
+          { title: "Higher power bills", art: "powerBill" },
+          { title: "No share of the upside", art: "economics" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "states",
+    kind: "states",
+    section: "State moratoriums",
+    eyebrow: "Policy",
+    title: "States are starting to say no.",
+    ground: "ink",
+    sources: ["ncsl", "newYork", "texas", "oregon", "ercot", "moratoriumNation"],
+  },
+  {
+    id: "local",
+    kind: "news",
+    section: "Local pauses",
+    eyebrow: "Policy · Local",
+    title: "Local pauses are spreading.",
+    ground: "ink",
+    sources: ["dataCenterWatch"],
   },
 ];

@@ -17,7 +17,7 @@ import { flushSync } from "react-dom";
 import type { PolicyMap } from "./policyTypes";
 import { ShareMenu } from "./ShareMenu";
 import { SlideView, hasHead } from "./Slide";
-import { SLIDES } from "./slides";
+import { DEMAND_DETAILS, SLIDES } from "./slides";
 import styles from "./Deck.module.css";
 
 const TOTAL = SLIDES.length;
@@ -169,7 +169,7 @@ export function Deck({
     around(clamp(initialSlide)),
   );
   const [overview, setOverview] = useState(false);
-  // Its 21 thumbnails are whole slides, so they're drawn while the page is idle and kept, rather than on opening.
+  // Its thumbnails are whole slides, so they're drawn while the page is idle and kept, rather than on opening.
   const [overviewDrawn, setOverviewDrawn] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [printing, setPrinting] = useState(false);
@@ -223,7 +223,7 @@ export function Deck({
       if (next === index) return;
       if (!open.has(next)) {
         flushSync(() => setOpen((slots) => new Set(slots).add(next)));
-        stageRef.current?.children[next]?.getBoundingClientRect();
+        slotRefs.current[next]?.getBoundingClientRect();
       }
       setLeaving(index);
       setIndex(next);
@@ -261,13 +261,13 @@ export function Deck({
   // Scrolling slides each draw their own.
   useEffect(() => {
     const grid = gridRef.current;
-    const slots = stageRef.current?.children;
-    const frame = slots?.[index]?.querySelector<HTMLElement>("[data-frame]");
+    const slots = slotRefs.current;
+    const frame = slots[index]?.querySelector<HTMLElement>("[data-frame]");
     if (!grid || !frame || scroll) return;
     const head = frame.querySelector<HTMLElement>("[data-band=head]");
     const foot = frame.querySelector<HTMLElement>("[data-band=foot]");
     const name =
-      slots?.[NAMED[index]]?.querySelector<HTMLElement>("[data-band=name]");
+      slots[NAMED[index]]?.querySelector<HTMLElement>("[data-band=name]");
     const nameFoot = name?.closest<HTMLElement>("[data-band=foot]");
     // A slide without a head (the cover) folds the head rule into the top one; without a foot (the close) the foot rules go.
     grid.toggleAttribute("data-head", head !== null);
@@ -704,6 +704,28 @@ export function Deck({
                     policy={policy}
                   />
                 </section>
+                {/* The demand slide's details open in a modal on screen; printed, they follow it as pages. */}
+                {printing && entry.kind === "demand"
+                  ? DEMAND_DETAILS.map((detail) => (
+                      <section
+                        key={detail.id}
+                        className={styles.slot}
+                        aria-hidden="true"
+                        inert
+                      >
+                        <SlideView
+                          slide={detail}
+                          index={i}
+                          total={TOTAL}
+                          active
+                          near
+                          branded
+                          numbered={false}
+                          policy={policy}
+                        />
+                      </section>
+                    ))
+                  : null}
               </Fragment>
             );
           })}

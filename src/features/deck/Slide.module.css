@@ -877,43 +877,174 @@
   font-size: calc(2.4 * var(--u));
 }
 
-/* Figures with a drawing (MacroArt.tsx) beside each, as rows ruled apart like the macro slide's chain. */
-.drawnStats {
+/* The demand slide's details (DEMAND_DETAILS), as rows ruled apart like the macro slide's chain, each opening its slide. */
+.detailList {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.drawnStat {
-  display: grid;
-  grid-template-columns: calc(5.6 * var(--u)) minmax(0, 1fr);
-  align-items: center;
-  gap: calc(1.4 * var(--u));
-  padding: calc(1.4 * var(--u)) 0;
+.detailList > li {
   border-top: 1px solid var(--rule-strong);
 }
 
-.drawnStat:last-child {
+.detailList > li:last-child {
   border-bottom: 1px solid var(--rule-strong);
 }
 
-.drawnFigure {
-  aspect-ratio: 1;
+.detailButton {
+  --pad: calc(0.6 * var(--u));
+
+  display: grid;
+  grid-template-columns: calc(2 * var(--u)) minmax(0, 1fr) calc(1 * var(--u));
+  align-items: center;
+  gap: calc(1 * var(--u));
+  width: calc(100% + 2 * var(--pad));
+  margin: 0 calc(-1 * var(--pad));
+  padding: calc(1.4 * var(--u)) var(--pad);
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 150ms ease;
 }
 
-.drawnText {
-  display: flex;
-  flex-direction: column;
-  gap: calc(0.5 * var(--u));
-  min-width: 0;
+.detailButton .label {
+  color: var(--fg-2);
 }
 
-.drawnText .statLabel {
+.detailTitle {
+  font-family: var(--font-display);
+  font-size: calc(1.3 * var(--u));
+  font-weight: 300;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
   text-wrap: balance;
 }
 
-.drawnText .statSource {
-  margin-top: 0;
+.detailIcon {
+  width: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: square;
+  vector-effect: non-scaling-stroke;
+  transition: rotate 150ms ease;
+}
+
+@media (hover: hover) {
+  .detailButton:hover {
+    background: var(--tint);
+  }
+
+  .detailButton:hover .detailIcon {
+    rotate: 90deg;
+  }
+}
+
+.detailButton:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+/*
+ * The modal a detail opens in (DetailModal): a 16:9 slide as large as the
+ * window allows, over a dimmed deck, its close in the top corner. In the
+ * deck's scroll mode it takes the whole screen and the slide scrolls in it.
+ */
+.detailDialog {
+  width: min(94vw, 94dvh * 16 / 9);
+  max-width: none;
+  height: min(94vw * 9 / 16, 94dvh);
+  max-height: none;
+  margin: auto;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  background: none;
+}
+
+.detailDialog::backdrop {
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.detailBox {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  container-type: size;
+}
+
+.detailClose {
+  position: absolute;
+  top: 1.6cqw;
+  right: 1.6cqw;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 2.4cqw;
+  height: 2.4cqw;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  background: none;
+  color: var(--color-white);
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+
+.detailDialog[data-surface="light"] .detailClose {
+  border-color: var(--color-border-hover);
+  color: var(--color-text-primary);
+}
+
+.detailClose svg {
+  width: 40%;
+  height: 40%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: square;
+  vector-effect: non-scaling-stroke;
+}
+
+.detailClose:hover {
+  border-color: currentColor;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.detailClose:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.detailDialog[data-compact] {
+  width: 100vw;
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.detailDialog[data-compact] .detailBox {
+  height: auto;
+  min-height: 100%;
+  container-type: normal;
+}
+
+/* The modal covers the pinned header, so nothing in it fades under the header's corners (useHeaderSurface.ts masks it inline). */
+.detailDialog [data-top-fade] {
+  mask-image: none !important;
+}
+
+.detailDialog[data-compact] .detailClose {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
 }
 
 /* State legend, keyed to the tile map's fills. */
@@ -4167,10 +4298,14 @@ a.measureTitle:focus-visible {
   padding-top: 18px;
 }
 
-.slide[data-compact] .drawnStat {
-  grid-template-columns: 64px minmax(0, 1fr);
-  gap: 16px;
-  padding: 16px 0;
+.slide[data-compact] .detailButton {
+  grid-template-columns: 24px minmax(0, 1fr) 12px;
+  gap: 12px;
+  padding: 16px var(--pad);
+}
+
+.slide[data-compact] .detailTitle {
+  font-size: var(--text-lg);
 }
 
 .slide[data-compact] :is(.legend, .caption) {
