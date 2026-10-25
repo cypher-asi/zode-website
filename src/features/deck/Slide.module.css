@@ -2853,7 +2853,8 @@ a.measureTitle:focus-visible {
 
 /*
  * The capital stack as blocks joined by hairlines, as the cards are, pushed to
- * the card's foot so the stacks stand on one line across the row; debt tinted.
+ * the card's foot so the stacks stand on one line across the row; debt tinted
+ * on the finance slide's cards, and on the raise's set as one ground.
  */
 .dealStack {
   display: flex;
@@ -2876,7 +2877,7 @@ a.measureTitle:focus-visible {
   box-shadow: 0 0 0 1px var(--rule);
 }
 
-.dealLayer[data-kind="debt"] {
+.deal .dealLayer[data-kind="debt"] {
   background:
     linear-gradient(var(--color-surface-tint), var(--color-surface-tint)),
     var(--card);
@@ -3067,7 +3068,7 @@ a.measureTitle:focus-visible {
   gap: calc(0.9 * var(--u));
   min-width: 0;
   margin: 0;
-  padding: 0 calc(1.6 * var(--u)) calc(1.3 * var(--u));
+  padding: 0 calc(1.6 * var(--u)) calc(0.9 * var(--u));
   border: 0;
   background: var(--card);
   box-shadow: 0 0 0 1px var(--rule);
@@ -3182,7 +3183,7 @@ a.measureTitle:focus-visible {
 }
 
 .raiseLayer .raiseLayerText {
-  padding: calc(0.5 * var(--u)) calc(1 * var(--u));
+  padding: calc(0.3 * var(--u)) calc(1 * var(--u));
 }
 
 .raiseLayer .dealLayerTerms,
@@ -3218,22 +3219,62 @@ a.measureTitle:focus-visible {
   white-space: nowrap;
 }
 
-.raiseNotes {
-  display: flex;
+/* Set as the foot's sources label, its panel opening above it from its left edge. */
+.raiseDisclaimer {
+  position: relative;
   flex: none;
-  flex-direction: column;
-  gap: calc(0.4 * var(--u));
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: calc(0.64 * var(--u));
+  letter-spacing: 0.04em;
 }
 
-.raiseHint {
-  margin: 0 0 calc(0.2 * var(--u));
-  font-family: var(--font-mono);
-  font-size: calc(0.66 * var(--u));
-  font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: var(--eyebrow-tracking);
-  text-transform: uppercase;
-  color: var(--fg);
+.raisePanel {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  z-index: 3;
+  width: calc(44 * var(--u));
+  padding-bottom: calc(0.8 * var(--u));
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    opacity var(--duration-fast) ease,
+    visibility 0s linear var(--duration-fast);
+}
+
+.raisePanelBox {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.5 * var(--u));
+  padding: calc(1 * var(--u)) calc(1.3 * var(--u)) calc(1.1 * var(--u));
+  background: var(--card);
+  box-shadow: 0 0 0 1px var(--rule);
+}
+
+.raiseDisclaimer:is(:hover, :focus-within, [data-open]) .raisePanel {
+  visibility: visible;
+  opacity: 1;
+  transition-delay: 0s;
+}
+
+.raiseDisclaimer[data-inline] .sourcesToggle {
+  text-decoration: none;
+  cursor: auto;
+}
+
+.raiseDisclaimer[data-inline] .raisePanel {
+  position: static;
+  width: auto;
+  padding: calc(0.4 * var(--u)) 0 0;
+  visibility: visible;
+  opacity: 1;
+}
+
+.raiseDisclaimer[data-inline] .raisePanelBox {
+  padding: 0;
+  background: none;
+  box-shadow: none;
 }
 
 @media (hover: hover) {
@@ -3244,12 +3285,6 @@ a.measureTitle:focus-visible {
   .raiseDeal:hover .dealLayer,
   .raiseDeal:hover .raiseFleet .stat {
     background: var(--tint);
-  }
-
-  .raiseDeal:hover .dealLayer[data-kind="debt"] {
-    background:
-      linear-gradient(var(--color-surface-tint), var(--color-surface-tint)),
-      var(--tint);
   }
 
   .raiseDeal:hover .raisePlus {
@@ -3276,52 +3311,104 @@ a.measureTitle:focus-visible {
   padding-top: calc(1 * var(--u));
 }
 
+/*
+ * One frame of hairlines: the sites beside the capital, the case range across
+ * the foot. Every rule is a cell's border, so each meets another or the frame.
+ */
 .model {
+  --split: 46%;
+  --pad: calc(1.4 * var(--u));
+
   display: flex;
   flex-direction: column;
-  gap: calc(0.7 * var(--u));
+  gap: calc(0.9 * var(--u));
   min-height: 0;
 }
 
-.main > .model {
-  flex: none;
+.modelGrid {
+  display: grid;
+  grid-template-columns: var(--split) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  flex: 1;
+  min-height: 0;
+  border: 1px solid var(--rule);
+  background: var(--card);
 }
 
-.modelColumns {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-  gap: calc(2 * var(--u));
+.modelCell {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.modelGrid > .modelCell:last-child {
+  border-bottom: 0;
+}
+
+.modelSites {
+  border-right: 1px solid var(--rule);
+}
+
+.modelWide {
+  grid-column: 1 / -1;
+}
+
+.modelHead {
+  display: flex;
+  flex: none;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: calc(1 * var(--u));
+  padding: calc(0.75 * var(--u)) var(--pad);
+  border-bottom: 1px solid var(--rule);
+}
+
+.modelHead .fine {
+  text-align: right;
+}
+
+.modelNote {
+  flex: none;
+  padding: calc(0.75 * var(--u)) var(--pad);
+}
+
+.modelCapital .modelNote {
+  border-top: 1px solid var(--rule);
 }
 
 .modelSites ul {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  margin: calc(0.5 * var(--u)) 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .modelSites li {
   display: grid;
+  flex: 1;
   grid-template-columns: auto minmax(0, 1fr) auto;
+  align-content: center;
   align-items: baseline;
-  gap: calc(0.8 * var(--u));
-  padding-block: calc(0.5 * var(--u));
-  border-bottom: 1px solid var(--rule);
+  gap: calc(1 * var(--u));
+  padding: calc(0.6 * var(--u)) var(--pad);
 }
 
-.modelSites li:last-child {
-  border-bottom: 0;
+.modelSites li + li {
+  border-top: 1px solid var(--rule);
 }
 
 .modelSiteName {
-  font-size: calc(0.9 * var(--u));
+  font-size: calc(1 * var(--u));
   line-height: 1.3;
 }
 
 .modelSiteFigure {
   font-family: var(--font-display);
-  font-size: calc(1.15 * var(--u));
+  font-size: calc(1.3 * var(--u));
   font-weight: 300;
   line-height: 1.1;
   letter-spacing: -0.02em;
@@ -3331,22 +3418,24 @@ a.measureTitle:focus-visible {
 .modelSiteDetail {
   font-size: calc(0.72 * var(--u));
   line-height: 1.35;
+  text-align: right;
   color: var(--fg-2);
 }
 
-.modelSites .fine,
 .model .dealStack {
-  margin-top: calc(0.35 * var(--u));
+  flex: 1;
+  gap: 0;
+  padding: 0;
 }
 
 .model .dealLayer {
-  flex: none;
   align-items: center;
-  padding: calc(0.55 * var(--u)) calc(0.9 * var(--u));
+  padding: calc(0.6 * var(--u)) var(--pad);
+  box-shadow: none;
 }
 
-.model .dealLayerLabel {
-  font-size: calc(0.95 * var(--u));
+.model .dealLayer + .dealLayer {
+  border-top: 1px solid var(--rule);
 }
 
 .model .dealLayerTerms {
@@ -3356,20 +3445,36 @@ a.measureTitle:focus-visible {
 }
 
 .model .raiseValue {
-  font-size: calc(1.2 * var(--u));
+  font-size: calc(1.45 * var(--u));
 }
 
+/* The first column takes back half the sites' border, so its rule meets the case table's group column. */
 .modelFacts {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: calc(0.55 * var(--u)) calc(1.2 * var(--u));
-  margin: calc(0.35 * var(--u)) 0 0;
+  grid-template-columns: calc(50% + 0.5px) minmax(0, 1fr);
+  flex: none;
+  margin: 0;
+  border-top: 1px solid var(--rule);
 }
 
 .modelFacts div {
   display: flex;
   flex-direction: column;
-  gap: calc(0.1 * var(--u));
+  gap: calc(0.3 * var(--u));
+  padding: calc(0.7 * var(--u)) var(--pad);
+}
+
+.modelFacts div:nth-child(n + 3) {
+  border-top: 1px solid var(--rule);
+}
+
+.modelFacts div:nth-child(odd) {
+  border-right: 1px solid var(--rule);
+}
+
+.modelFacts div:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  border-right: 0;
 }
 
 .modelFacts dt {
@@ -3386,66 +3491,84 @@ a.measureTitle:focus-visible {
 .modelAside dd {
   margin: 0;
   font-family: var(--font-display);
-  font-size: calc(1.15 * var(--u));
+  font-size: calc(1.35 * var(--u));
   font-weight: 300;
   line-height: 1.1;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
 
+/* Separate borders, so each rule sits inside its cell as the grid's do and the split column's lines up with the sites'. */
 .modelCases {
   width: 100%;
-  margin-top: calc(0.4 * var(--u));
-  border-collapse: collapse;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* The two label columns together are --split wide, halved as the facts are. */
+.modelGroupCol,
+.modelRowCol {
+  width: calc(var(--split) / 2);
 }
 
 .modelCases :is(th, td) {
-  padding: calc(0.18 * var(--u)) 0;
+  padding: calc(0.6 * var(--u)) var(--pad);
   font-weight: 400;
+  text-align: left;
   vertical-align: middle;
 }
 
-.modelCases thead th,
-.modelGroup th,
-.modelCases tbody th {
+.modelCases th {
   font-family: var(--font-mono);
-  font-size: calc(0.6 * var(--u));
+  font-size: calc(0.62 * var(--u));
   font-weight: 500;
   letter-spacing: var(--eyebrow-tracking);
   line-height: 1.3;
-  text-align: left;
   text-transform: uppercase;
   color: var(--fg-2);
 }
 
-.modelCases thead th,
-.modelCases tbody td {
-  padding-left: calc(1 * var(--u));
+.modelCases thead th:first-child {
+  padding-block: calc(0.75 * var(--u));
+  font-size: calc(0.72 * var(--u));
+  line-height: 1.4;
+}
+
+.modelCases thead th:nth-child(n + 2) {
   text-align: right;
 }
 
-.modelCases tbody td {
-  font-family: var(--font-display);
-  font-size: calc(1.1 * var(--u));
-  font-weight: 300;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
+.modelCases tbody :is(th, td) {
+  border-top: 1px solid var(--rule);
 }
 
-.modelCases tbody tr {
-  border-bottom: 1px solid var(--rule);
+.modelCases :is(thead th:first-child, th[scope="rowgroup"], th[scope="row"]),
+.modelCases :is(thead th:nth-child(n + 2), td):not(:last-child) {
+  border-right: 1px solid var(--rule);
 }
 
-.modelGroup th {
-  padding-top: calc(0.6 * var(--u));
+.modelCases th[scope="rowgroup"] {
   color: var(--fg);
+}
+
+.modelCases td {
+  font-family: var(--font-display);
+  font-size: calc(1.3 * var(--u));
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .modelAside {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: calc(0.8 * var(--u));
-  margin: calc(0.7 * var(--u)) 0 0;
+  margin: 0;
+  padding: calc(0.8 * var(--u)) var(--pad);
 }
 
 .modelAside div {
@@ -3890,6 +4013,20 @@ a.measureTitle:focus-visible {
   }
 
   .sourcesPanel .sources {
+    padding: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .raisePanel {
+    position: static;
+    width: auto;
+    padding: calc(0.4 * var(--u)) 0 0;
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .raisePanelBox {
     padding: 0;
     background: none;
     box-shadow: none;
@@ -5406,7 +5543,7 @@ a.measureTitle:focus-visible {
 
 .slide[data-compact] .raiseDeal {
   gap: 12px;
-  padding: 0 16px 16px;
+  padding: 0 16px 12px;
 }
 
 .slide[data-compact] .raiseDeal .dealHead {
@@ -5459,8 +5596,8 @@ a.measureTitle:focus-visible {
   font-size: 14px;
 }
 
-.slide[data-compact] .raiseNotes {
-  gap: 8px;
+.slide[data-compact] .raiseDisclaimer {
+  font-size: var(--text-2xs);
 }
 
 .slide[data-compact] .main > .model {
@@ -5468,26 +5605,60 @@ a.measureTitle:focus-visible {
 }
 
 .slide[data-compact] .model {
-  gap: 20px;
+  --pad: 12px;
+
+  gap: 16px;
 }
 
-.slide[data-compact] .modelColumns,
-.slide[data-compact] .modelFacts,
+.slide[data-compact] .modelGrid,
 .slide[data-compact] .modelAside {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.slide[data-compact] .modelSites {
+  border-right: 0;
+}
+
+/* Too narrow to line the case table up with the sites: its columns size to their figures, which wrap at their dot. */
+.slide[data-compact] .modelCases {
+  table-layout: auto;
+}
+
+.slide[data-compact] :is(.modelGroupCol, .modelRowCol) {
+  width: auto;
+}
+
+.slide[data-compact] .modelWide {
+  overflow-x: auto;
+}
+
+.slide[data-compact] .modelCases :is(th, td) {
+  padding: 8px 6px;
+}
+
+.slide[data-compact] .modelCases th {
+  letter-spacing: 0.04em;
+}
+
+.slide[data-compact] .modelCases td {
+  white-space: normal;
+}
+
 .slide[data-compact] .modelSiteName,
 .slide[data-compact] .modelSiteDetail,
+.slide[data-compact] .modelFacts dt,
 .slide[data-compact] .modelCases :is(th, td) {
   font-size: var(--text-2xs);
 }
 
 .slide[data-compact] .modelSiteFigure,
 .slide[data-compact] .modelFacts dd,
-.slide[data-compact] .modelAside dd,
-.slide[data-compact] .modelCases tbody td {
+.slide[data-compact] .modelAside dd {
   font-size: 18px;
+}
+
+.slide[data-compact] .modelCases td {
+  font-size: 16px;
 }
 
 /* Team. */

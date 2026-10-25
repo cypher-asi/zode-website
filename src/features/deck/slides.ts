@@ -216,9 +216,7 @@ export type Slide =
           returns?: string;
         }[];
       }[];
-      /** Under the deals, ahead of the note: that each deal opens its summary. */
-      hint: string;
-      /** Where the figures come from, in small type under the deals. */
+      /** Where the figures come from, behind the disclaimer under the deals. */
       note: string;
     })
   | (Base & {
@@ -734,8 +732,8 @@ export const SLIDES: readonly Slide[] = [
   {
     id: "raise",
     kind: "raise",
-    section: "The raise",
-    eyebrow: "The raise",
+    section: "Capital raise",
+    eyebrow: "Capital raise",
     title: "Raising equity for ZODE Colo I and ZODE Retro I.",
     ground: "paper",
     deals: [
@@ -784,7 +782,7 @@ export const SLIDES: readonly Slide[] = [
         id: "retro",
         icon: "building",
         title: "ZODE Retro I",
-        overview: "Acquiring and converting 50 MW of data center space using ZODE modular units.",
+        overview: "Acquiring and converting 50 MW of data center space.",
         fleet: [
           { value: "51", label: "MW" },
           { value: "$3.41B", label: "Contract value" },
@@ -827,7 +825,6 @@ export const SLIDES: readonly Slide[] = [
         ],
       },
     ],
-    hint: "Click either deal to read its model summary, with sites, cases and the basis for each figure.",
     note: "Preliminary, from the October 2026 models: Colo I is the live base case, held through repayment, and Retro I the stored 51 MW sale case. Unsigned contracts assume 25% prepaid; GPU debt is sized to 1.15x DSCR, below its 80% LTV cap.",
   },
   {

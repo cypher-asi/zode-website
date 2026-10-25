@@ -1815,11 +1815,7 @@ function Raise({
           </li>
         ))}
       </ul>
-      <div {...rise(3.2)} className={`${styles.rise} ${styles.raiseNotes}`}>
-        <p className={styles.raiseHint}>{slide.hint}</p>
-        <p className={styles.fine}>{slide.note}</p>
-        <p className={styles.fine}>{RAISE_NOTE}</p>
-      </div>
+      <RaiseDisclaimer note={slide.note} inline={compact} />
       {detail ? (
         <DetailModal
           slide={detail}
@@ -1834,6 +1830,49 @@ function Raise({
 }
 
 /**
+ * The raise's basis and securities legend behind one label, opened as the
+ * foot's sources are. Set out in full in the scroll mode and on paper.
+ */
+function RaiseDisclaimer({
+  note,
+  inline,
+}: {
+  note: string;
+  inline: boolean;
+}): ReactElement {
+  const id = useId();
+  const [open, setOpen] = useState(false);
+  return (
+    <div
+      {...rise(3.2)}
+      className={`${styles.rise} ${styles.raiseDisclaimer}`}
+      data-open={open || undefined}
+      data-inline={inline || undefined}
+    >
+      {inline ? (
+        <span className={styles.sourcesToggle}>Disclaimer</span>
+      ) : (
+        <button
+          type="button"
+          className={styles.sourcesToggle}
+          aria-expanded={open}
+          aria-controls={id}
+          onClick={() => setOpen((value) => !value)}
+        >
+          Disclaimer
+        </button>
+      )}
+      <div id={id} className={styles.raisePanel}>
+        <div className={styles.raisePanelBox}>
+          <p className={styles.fine}>{note}</p>
+          <p className={styles.fine}>{RAISE_NOTE}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
  * One SPV's model: its sites, capital stack and the stored case range.
  * Opened from the raise slide, and printed after it.
  */
@@ -1843,7 +1882,12 @@ function ModelSummary({ slide }: { slide: Of<"model"> }): ReactElement {
     <div className={styles.model}>
       <div {...rise(1.4)} className={`${styles.rise} ${styles.modelGrid}`}>
         <section className={`${styles.modelCell} ${styles.modelSites}`}>
-          <h3 className={`${styles.label} ${styles.modelHead}`}>Sites</h3>
+          <div className={styles.modelHead}>
+            <h3 className={styles.label}>Sites</h3>
+            <p {...rise(2.6)} className={`${styles.rise} ${styles.fine}`}>
+              {slide.sitesNote}
+            </p>
+          </div>
           <ul>
             {slide.sites.map((site, i) => (
               <li key={site.name} {...rise(1.8 + i * 0.15)} className={styles.rise}>
@@ -1853,9 +1897,6 @@ function ModelSummary({ slide }: { slide: Of<"model"> }): ReactElement {
               </li>
             ))}
           </ul>
-          <p {...rise(2.6)} className={`${styles.rise} ${styles.fine} ${styles.modelNote}`}>
-            {slide.sitesNote}
-          </p>
           {slide.facts.length > 0 ? (
             <dl {...rise(2.6)} className={`${styles.rise} ${styles.modelFacts}`}>
               {slide.facts.map((fact) => (
