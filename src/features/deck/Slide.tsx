@@ -1771,9 +1771,9 @@ function Raise({
                       </svg>
                     </span>
                   </span>
+                  <span className={styles.raiseOverview}>{deal.overview}</span>
                 </span>
               </span>
-              <span className={styles.raiseOverview}>{deal.overview}</span>
               <span className={styles.raiseFleet}>
                 {deal.fleet.map((stat) => (
                   <span key={stat.label} className={styles.stat}>
@@ -1802,13 +1802,11 @@ function Raise({
                         </span>
                       ) : null}
                     </span>
-                    <span className={styles.raiseFigures}>
-                      <span className={styles.raiseValue}>{layer.value}</span>
-                      {layer.returns ? (
-                        <span className={styles.raiseReturns}>
-                          {layer.returns}
-                        </span>
-                      ) : null}
+                    <span className={`${styles.raiseCell} ${styles.raiseValue}`}>
+                      {layer.value}
+                    </span>
+                    <span className={`${styles.raiseCell} ${styles.raiseReturns}`}>
+                      {layer.returns}
                     </span>
                   </span>
                 ))}
@@ -1818,6 +1816,7 @@ function Raise({
         ))}
       </ul>
       <div {...rise(3.2)} className={`${styles.rise} ${styles.raiseNotes}`}>
+        <p className={styles.raiseHint}>{slide.hint}</p>
         <p className={styles.fine}>{slide.note}</p>
         <p className={styles.fine}>{RAISE_NOTE}</p>
       </div>
@@ -1842,11 +1841,9 @@ function ModelSummary({ slide }: { slide: Of<"model"> }): ReactElement {
   const { cases, aside } = slide;
   return (
     <div className={styles.model}>
-      <div className={styles.modelColumns}>
-        <section className={styles.modelSites}>
-          <h3 {...rise(1.6)} className={`${styles.rise} ${styles.label}`}>
-            Sites
-          </h3>
+      <div {...rise(1.4)} className={`${styles.rise} ${styles.modelGrid}`}>
+        <section className={`${styles.modelCell} ${styles.modelSites}`}>
+          <h3 className={`${styles.label} ${styles.modelHead}`}>Sites</h3>
           <ul>
             {slide.sites.map((site, i) => (
               <li key={site.name} {...rise(1.8 + i * 0.15)} className={styles.rise}>
@@ -1856,7 +1853,7 @@ function ModelSummary({ slide }: { slide: Of<"model"> }): ReactElement {
               </li>
             ))}
           </ul>
-          <p {...rise(2.6)} className={`${styles.rise} ${styles.fine}`}>
+          <p {...rise(2.6)} className={`${styles.rise} ${styles.fine} ${styles.modelNote}`}>
             {slide.sitesNote}
           </p>
           {slide.facts.length > 0 ? (
@@ -1870,10 +1867,8 @@ function ModelSummary({ slide }: { slide: Of<"model"> }): ReactElement {
             </dl>
           ) : null}
         </section>
-        <section>
-          <h3 {...rise(1.8)} className={`${styles.rise} ${styles.label}`}>
-            Capital
-          </h3>
+        <section className={`${styles.modelCell} ${styles.modelCapital}`}>
+          <h3 className={`${styles.label} ${styles.modelHead}`}>Capital</h3>
           <ol
             {...rise(2)}
             className={`${styles.rise} ${styles.dealStack}`}
@@ -1900,61 +1895,65 @@ function ModelSummary({ slide }: { slide: Of<"model"> }): ReactElement {
             ))}
           </ol>
           {slide.stackNote ? (
-            <p {...rise(2.4)} className={`${styles.rise} ${styles.fine}`}>
+            <p {...rise(2.4)} className={`${styles.rise} ${styles.fine} ${styles.modelNote}`}>
               {slide.stackNote}
             </p>
           ) : null}
         </section>
-      </div>
-      <section>
-        <h3 {...rise(2.8)} className={`${styles.rise} ${styles.label}`}>
-          {cases.label}
-        </h3>
-        <table {...rise(3)} className={`${styles.rise} ${styles.modelCases}`}>
-          <thead>
-            <tr>
-              <td />
+        <section className={`${styles.modelCell} ${styles.modelWide}`}>
+          <table className={styles.modelCases}>
+            <colgroup>
+              <col className={styles.modelGroupCol} />
+              <col className={styles.modelRowCol} />
               {cases.columns.map((column) => (
-                <th key={column} scope="col">
-                  {column}
-                </th>
+                <col key={column} />
               ))}
-            </tr>
-          </thead>
-          {cases.groups.map((group) => (
-            <tbody key={group.label}>
-              <tr className={styles.modelGroup}>
-                <th scope="colgroup" colSpan={cases.columns.length + 1}>
-                  {group.label}
+            </colgroup>
+            <thead>
+              <tr>
+                <th scope="col" colSpan={2}>
+                  {cases.label}
                 </th>
+                {cases.columns.map((column) => (
+                  <th key={column} scope="col">
+                    {column}
+                  </th>
+                ))}
               </tr>
-              {group.rows.map((row) => (
-                <tr key={row.label}>
-                  <th scope="row">{row.label}</th>
-                  {row.cells.map((cell, i) => (
-                    <td key={cases.columns[i]}>{cell}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          ))}
-        </table>
-      </section>
-      {aside ? (
-        <section>
-          <h3 {...rise(3.4)} className={`${styles.rise} ${styles.label}`}>
-            {aside.label}
-          </h3>
-          <dl {...rise(3.6)} className={`${styles.rise} ${styles.modelAside}`}>
-            {aside.rows.map((row) => (
-              <div key={row.label}>
-                <dd>{row.value}</dd>
-                <dt>{row.label}</dt>
-              </div>
+            </thead>
+            {cases.groups.map((group, g) => (
+              <tbody key={group.label} {...rise(3 + g * 0.3)} className={styles.rise}>
+                {group.rows.map((row, i) => (
+                  <tr key={row.label}>
+                    {i === 0 ? (
+                      <th scope="rowgroup" rowSpan={group.rows.length}>
+                        {group.label}
+                      </th>
+                    ) : null}
+                    <th scope="row">{row.label}</th>
+                    {row.cells.map((cell, c) => (
+                      <td key={cases.columns[c]}>{cell}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
             ))}
-          </dl>
+          </table>
         </section>
-      ) : null}
+        {aside ? (
+          <section className={`${styles.modelCell} ${styles.modelWide}`}>
+            <h3 className={`${styles.label} ${styles.modelHead}`}>{aside.label}</h3>
+            <dl {...rise(3.6)} className={`${styles.rise} ${styles.modelAside}`}>
+              {aside.rows.map((row) => (
+                <div key={row.label}>
+                  <dd>{row.value}</dd>
+                  <dt>{row.label}</dt>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ) : null}
+      </div>
       <p {...rise(3.8)} className={`${styles.rise} ${styles.fine}`}>
         {slide.note}
       </p>

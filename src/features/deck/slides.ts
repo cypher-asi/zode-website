@@ -216,6 +216,8 @@ export type Slide =
           returns?: string;
         }[];
       }[];
+      /** Under the deals, ahead of the note: that each deal opens its summary. */
+      hint: string;
       /** Where the figures come from, in small type under the deals. */
       note: string;
     })
@@ -825,7 +827,8 @@ export const SLIDES: readonly Slide[] = [
         ],
       },
     ],
-    note: "Preliminary, from the October 2026 models. Colo I is the live base case, held through repayment; one raise funds both its equity layers. The Chicago lease is unsigned and the placeholder colo is unidentified. Retro I is the stored 51 MW sale case with two unidentified placeholder sites; its contract value, prepayment and GPU debt are the first GPU generation, from the workbook recalculated with those sites. Unsigned contracts assume 25% prepaid, signed ones 27.5–30%. GPU debt is sized to 1.15x DSCR, below its 80% LTV cap.",
+    hint: "Click either deal to read its model summary, with sites, cases and the basis for each figure.",
+    note: "Preliminary, from the October 2026 models: Colo I is the live base case, held through repayment, and Retro I the stored 51 MW sale case. Unsigned contracts assume 25% prepaid; GPU debt is sized to 1.15x DSCR, below its 80% LTV cap.",
   },
   {
     id: "close",
@@ -942,7 +945,7 @@ export const RAISE_DETAILS: readonly Extract<Slide, { kind: "model" }>[] = [
         },
       ],
     },
-    note: "October 20, 2026 sale case, placeholders included. Prepayment and GPU debt are the first GPU generation.",
+    note: "October 20, 2026 sale case, with two unidentified placeholder sites. Contract value, prepayment and GPU debt are the first GPU generation, from the workbook recalculated with those sites.",
   },
 ];
 
