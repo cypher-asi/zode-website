@@ -240,7 +240,7 @@ export type Slide =
         /** Drawn under the side projects; `FOUNDER_CONTRIBUTIONS` in `./github`. */
         contributions?: Contributions;
       };
-      /** One column per area: its key strategic partner over the team members from it. */
+      /** One column per area: its key partner over the team members from it. */
       network: {
         title: string;
         partnerLabel: string;
@@ -472,8 +472,8 @@ export const SLIDES: readonly Slide[] = [
   {
     id: "team",
     kind: "team",
-    section: "Leadership",
-    eyebrow: "Leadership",
+    section: "Team",
+    eyebrow: "Team",
     title: "Led by a three-time founder.",
     ground: "paper",
     founder: {
@@ -520,7 +520,7 @@ export const SLIDES: readonly Slide[] = [
     },
     network: {
       title: "Team members from",
-      partnerLabel: "Key strategic partnership",
+      partnerLabel: "Key partnership",
       areas: [
         {
           label: "AI",

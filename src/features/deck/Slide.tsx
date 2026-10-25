@@ -1957,7 +1957,7 @@ function ContributionGraph({ data }: { data: Contributions }): ReactElement {
 /**
  * The founder in the left third, the ventures ruled under the name as main
  * quests, each company's years beside it and its outcome under its role; in
- * the right two thirds a column per area, its key strategic partner over the
+ * the right two thirds a column per area, its key partner over the
  * team and advisors from it.
  */
 function Team({ slide }: { slide: Of<"team"> }): ReactElement {

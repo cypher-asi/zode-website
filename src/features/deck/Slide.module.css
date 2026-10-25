@@ -3524,6 +3524,10 @@ a.measureTitle:focus-visible {
   border-bottom: 1px solid var(--rule);
 }
 
+.partner .label {
+  white-space: nowrap;
+}
+
 .partnerMark {
   display: flex;
   min-height: calc(3 * var(--u));
