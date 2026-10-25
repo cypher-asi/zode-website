@@ -1859,6 +1859,16 @@ function ModelSummary({ slide }: { slide: Of<"model"> }): ReactElement {
           <p {...rise(2.6)} className={`${styles.rise} ${styles.fine}`}>
             {slide.sitesNote}
           </p>
+          {slide.facts.length > 0 ? (
+            <dl {...rise(2.6)} className={`${styles.rise} ${styles.modelFacts}`}>
+              {slide.facts.map((fact) => (
+                <div key={fact.label}>
+                  <dt>{fact.label}</dt>
+                  <dd>{fact.value}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
         </section>
         <section>
           <h3 {...rise(1.8)} className={`${styles.rise} ${styles.label}`}>
@@ -1894,14 +1904,6 @@ function ModelSummary({ slide }: { slide: Of<"model"> }): ReactElement {
               {slide.stackNote}
             </p>
           ) : null}
-          <dl {...rise(2.6)} className={`${styles.rise} ${styles.modelFacts}`}>
-            {slide.facts.map((fact) => (
-              <div key={fact.label}>
-                <dt>{fact.label}</dt>
-                <dd>{fact.value}</dd>
-              </div>
-            ))}
-          </dl>
         </section>
       </div>
       <section>

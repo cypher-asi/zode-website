@@ -3064,7 +3064,7 @@ a.measureTitle:focus-visible {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: calc(0.9 * var(--u));
+  gap: calc(0.75 * var(--u));
   min-width: 0;
   margin: 0;
   padding: calc(1 * var(--u)) calc(1.3 * var(--u)) calc(1.2 * var(--u));
@@ -3130,7 +3130,7 @@ a.measureTitle:focus-visible {
 
 .raiseFleet {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   flex: none;
   gap: calc(0.8 * var(--u));
   margin: 0;
@@ -3156,7 +3156,7 @@ a.measureTitle:focus-visible {
 
 .raiseLayer {
   align-items: center;
-  padding-block: calc(0.55 * var(--u));
+  padding-block: calc(0.3 * var(--u));
 }
 
 .raiseLayerText {
@@ -3233,8 +3233,8 @@ a.measureTitle:focus-visible {
 
 /* A model's summary: sites beside the stack, then the case range. The title is a step smaller so a long sentence still leaves the cases on the page. */
 .slide[data-kind="model"] .title {
-  font-size: calc(1.85 * var(--u));
-  line-height: 1.12;
+  font-size: calc(2.15 * var(--u));
+  line-height: 1.15;
 }
 
 .slide[data-kind="model"] .head {
@@ -3248,7 +3248,7 @@ a.measureTitle:focus-visible {
 .model {
   display: flex;
   flex-direction: column;
-  gap: calc(0.45 * var(--u));
+  gap: calc(0.7 * var(--u));
   min-height: 0;
 }
 
@@ -3272,9 +3272,10 @@ a.measureTitle:focus-visible {
 
 .modelSites li {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: calc(0.1 * var(--u)) calc(0.8 * var(--u));
-  padding-block: calc(0.28 * var(--u));
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: calc(0.8 * var(--u));
+  padding-block: calc(0.5 * var(--u));
   border-bottom: 1px solid var(--rule);
 }
 
@@ -3297,8 +3298,7 @@ a.measureTitle:focus-visible {
 }
 
 .modelSiteDetail {
-  grid-column: 1 / -1;
-  font-size: calc(0.68 * var(--u));
+  font-size: calc(0.72 * var(--u));
   line-height: 1.35;
   color: var(--fg-2);
 }
@@ -3311,18 +3311,17 @@ a.measureTitle:focus-visible {
 .model .dealLayer {
   flex: none;
   align-items: center;
-  padding: calc(0.28 * var(--u)) calc(0.7 * var(--u));
+  padding: calc(0.55 * var(--u)) calc(0.9 * var(--u));
 }
 
 .model .dealLayerLabel {
-  font-size: calc(0.85 * var(--u));
+  font-size: calc(0.95 * var(--u));
 }
 
 .model .dealLayerTerms {
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: calc(0.15 * var(--u)) calc(0.5 * var(--u));
-  font-size: calc(0.55 * var(--u));
+  flex-direction: column;
+  gap: calc(0.15 * var(--u));
+  font-size: calc(0.62 * var(--u));
 }
 
 .model .raiseValue {
@@ -3370,7 +3369,7 @@ a.measureTitle:focus-visible {
 }
 
 .modelCases :is(th, td) {
-  padding: calc(0.12 * var(--u)) 0;
+  padding: calc(0.18 * var(--u)) 0;
   font-weight: 400;
   vertical-align: middle;
 }
@@ -3396,7 +3395,7 @@ a.measureTitle:focus-visible {
 
 .modelCases tbody td {
   font-family: var(--font-display);
-  font-size: calc(0.95 * var(--u));
+  font-size: calc(1.1 * var(--u));
   font-weight: 300;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
@@ -3407,7 +3406,7 @@ a.measureTitle:focus-visible {
 }
 
 .modelGroup th {
-  padding-top: calc(0.35 * var(--u));
+  padding-top: calc(0.6 * var(--u));
   color: var(--fg);
 }
 
@@ -3415,7 +3414,7 @@ a.measureTitle:focus-visible {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: calc(0.8 * var(--u));
-  margin: calc(0.4 * var(--u)) 0 0;
+  margin: calc(0.7 * var(--u)) 0 0;
 }
 
 .modelAside div {
