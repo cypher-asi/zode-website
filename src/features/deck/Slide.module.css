@@ -877,19 +877,23 @@
   font-size: calc(2.4 * var(--u));
 }
 
-/* The demand slide's details (DEMAND_DETAILS), as rows ruled apart like the macro slide's chain, each opening its slide. */
+/*
+ * The demand slide's details (DEMAND_DETAILS), as rows ruled apart like the
+ * macro slide's chain, each opening its slide. Every row is as tall as the
+ * tallest, its text centred, and its hover tint fills it between the rules.
+ */
 .detailList {
+  display: grid;
+  grid-auto-rows: 1fr;
   margin: 0;
   padding: 0;
+  border-bottom: 1px solid var(--rule-strong);
   list-style: none;
 }
 
 .detailList > li {
+  display: grid;
   border-top: 1px solid var(--rule-strong);
-}
-
-.detailList > li:last-child {
-  border-bottom: 1px solid var(--rule-strong);
 }
 
 .detailButton {
