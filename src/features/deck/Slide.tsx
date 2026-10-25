@@ -482,7 +482,7 @@ function Demand({
     if (!active) setDetail(null);
   }
   return (
-    <div className={styles.chartBody}>
+    <div className={styles.chartBody} data-split="details">
       <figure {...rise(2)} className={`${styles.rise} ${styles.figure}`}>
         <DemandChart active={active} compact={compact} />
         <figcaption className={styles.legend}>
@@ -513,8 +513,11 @@ function Demand({
                 onClick={() => setDetail(item)}
               >
                 <span className={styles.label}>{pad(i + 1)}</span>
-                <span className={styles.detailTitle}>
-                  {item.title.replace(/\.$/, "")}
+                <span className={styles.detailText}>
+                  <span className={styles.detailTitle}>
+                    {item.title.replace(/\.$/, "")}
+                  </span>
+                  <span className={styles.detailSummary}>{item.summary}</span>
                 </span>
                 <svg
                   className={styles.detailIcon}

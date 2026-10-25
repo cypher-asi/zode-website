@@ -740,6 +740,11 @@
   grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
 }
 
+/* The demand slide's side column holds its detail rows, each a title over a line of figures. */
+.chartBody[data-split="details"] {
+  grid-template-columns: minmax(0, 1fr) calc(26 * var(--u));
+}
+
 /*
  * Moratorium status in steps of one red, mixed into the ground so a tile's
  * fill and stroke match. Map and key in halves, split by a page-grid rule as
@@ -900,12 +905,13 @@
   --pad: calc(0.6 * var(--u));
 
   display: grid;
-  grid-template-columns: calc(2 * var(--u)) minmax(0, 1fr) calc(1 * var(--u));
+  grid-template-columns: calc(1.6 * var(--u)) minmax(0, 1fr) calc(1 * var(--u));
   align-items: center;
   gap: calc(1 * var(--u));
-  width: calc(100% + 2 * var(--pad));
-  margin: 0 calc(-1 * var(--pad));
-  padding: calc(1.4 * var(--u)) var(--pad);
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: calc(1 * var(--u)) var(--pad);
   border: 0;
   background: none;
   font: inherit;
@@ -921,11 +927,25 @@
 
 .detailTitle {
   font-family: var(--font-display);
-  font-size: calc(1.3 * var(--u));
+  font-size: calc(1.15 * var(--u));
   font-weight: 300;
   line-height: 1.15;
   letter-spacing: -0.02em;
   text-wrap: balance;
+}
+
+.detailText {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.4 * var(--u));
+  min-width: 0;
+}
+
+.detailSummary {
+  font-size: calc(0.74 * var(--u));
+  line-height: 1.4;
+  color: var(--fg-2);
+  text-wrap: pretty;
 }
 
 .detailIcon {
@@ -4316,6 +4336,14 @@ a.measureTitle:focus-visible {
 
 .slide[data-compact] .detailTitle {
   font-size: var(--text-lg);
+}
+
+.slide[data-compact] .detailText {
+  gap: 6px;
+}
+
+.slide[data-compact] .detailSummary {
+  font-size: var(--text-sm);
 }
 
 .slide[data-compact] :is(.legend, .caption) {

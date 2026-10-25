@@ -773,14 +773,19 @@ export const SLIDES: readonly Slide[] = [
   },
 ];
 
-/** Off the sequence: the demand slide opens each over the deck, from the buttons in its side column. */
-export const DEMAND_DETAILS: readonly Slide[] = [
+/**
+ * Off the sequence: the demand slide opens each over the deck, from the
+ * buttons in its side column. `summary` is set under each button's title: one
+ * line of the slide's own figures, from the sources the deck already cites.
+ */
+export const DEMAND_DETAILS: readonly (Slide & { summary: string })[] = [
   {
     id: "shortfall",
     kind: "shortfall",
     section: "Shortfall",
     eyebrow: "Macro · Shortfall",
     title: "A 33 GW compute crunch through 2028.",
+    summary: "97 GW of new load meets 64 GW of new power, leaving a third of demand unserved.",
     ground: "ink",
     sources: ["morganStanley"],
   },
@@ -790,6 +795,7 @@ export const DEMAND_DETAILS: readonly Slide[] = [
     section: "Problem",
     eyebrow: "Problem",
     title: "Data centers are slow to build and hard to host.",
+    summary: "A substation transformer takes 160+ weeks, and 71% of Americans oppose a data center near them.",
     ground: "ink",
     groups: [
       {
@@ -827,6 +833,7 @@ export const DEMAND_DETAILS: readonly Slide[] = [
     section: "State moratoriums",
     eyebrow: "Policy",
     title: "States are starting to say no.",
+    summary: "Lawmakers in 18 states have moved to pause data centers; New York and Texas already have.",
     ground: "ink",
     sources: ["ncsl", "newYork", "texas", "oregon", "ercot", "moratoriumNation"],
   },
@@ -836,6 +843,7 @@ export const DEMAND_DETAILS: readonly Slide[] = [
     section: "Local pauses",
     eyebrow: "Policy · Local",
     title: "Local pauses are spreading.",
+    summary: "Local opposition blocked or delayed $198B of US projects in H1 2026, 120+ in all.",
     ground: "ink",
     sources: ["dataCenterWatch"],
   },
