@@ -17,7 +17,7 @@ import { flushSync } from "react-dom";
 import type { PolicyMap } from "./policyTypes";
 import { ShareMenu } from "./ShareMenu";
 import { PAGING_KEYS, SlideView, hasHead } from "./Slide";
-import { DEMAND_DETAILS, SLIDES } from "./slides";
+import { DEMAND_DETAILS, RAISE_DETAILS, SLIDES } from "./slides";
 import styles from "./Deck.module.css";
 
 const TOTAL = SLIDES.length;
@@ -707,28 +707,31 @@ export function Deck({
                     policy={policy}
                   />
                 </section>
-                {/* The demand slide's details open in a modal on screen; printed, they follow it as pages. */}
-                {printing && entry.kind === "demand"
-                  ? DEMAND_DETAILS.map((detail) => (
-                      <section
-                        key={detail.id}
-                        className={styles.slot}
-                        aria-hidden="true"
-                        inert
-                      >
-                        <SlideView
-                          slide={detail}
-                          index={i}
-                          total={TOTAL}
-                          active
-                          near
-                          branded
-                          numbered={false}
-                          policy={policy}
-                        />
-                      </section>
-                    ))
-                  : null}
+                {/* Detail slides open in a modal on screen; printed, they follow their slide as pages. */}
+                {(printing && entry.kind === "demand"
+                  ? DEMAND_DETAILS
+                  : printing && entry.kind === "raise"
+                    ? RAISE_DETAILS
+                    : []
+                ).map((detail) => (
+                  <section
+                    key={detail.id}
+                    className={styles.slot}
+                    aria-hidden="true"
+                    inert
+                  >
+                    <SlideView
+                      slide={detail}
+                      index={i}
+                      total={TOTAL}
+                      active
+                      near
+                      branded
+                      numbered={false}
+                      policy={policy}
+                    />
+                  </section>
+                ))}
               </Fragment>
             );
           })}

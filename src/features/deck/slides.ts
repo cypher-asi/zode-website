@@ -198,21 +198,49 @@ export type Slide =
     })
   | (Base & {
       kind: "raise";
-      /** Set on ink under the cards, beside the note. */
-      firstClose: Stat;
-      cluster: { purpose: string; rows: readonly { label: string; value: string }[] };
-      /** The issuer's capital stack, top to bottom: equity over debt, the most senior last. */
-      capital: {
-        purpose: string;
-        layers: readonly { label: string; kind: "equity" | "debt"; value: string; terms: readonly string[] }[];
+      /** One SPV per half. Clicking it opens the matching summary in `RAISE_DETAILS`. */
+      deals: readonly {
+        id: string;
+        icon: UnitIconId;
+        title: string;
+        /** What the SPV does, in one line. */
+        overview: string;
+        /** Nodes, GPUs and power. */
+        fleet: readonly Stat[];
+        /** Capital stack, top to bottom: equity over debt, the most senior last. `returns` is that layer's investor IRR and multiple. */
+        layers: readonly {
+          label: string;
+          kind: "equity" | "debt";
+          value: string;
+          terms: readonly string[];
+          returns?: string;
+        }[];
+      }[];
+      /** Where the figures come from, in small type under the deals. */
+      note: string;
+    })
+  | (Base & {
+      kind: "model";
+      /** The sites in the program. */
+      sites: readonly { name: string; figure: string; detail: string }[];
+      sitesNote: string;
+      /** Capital stack, top to bottom: equity over debt, the most senior last. */
+      layers: readonly { label: string; kind: "equity" | "debt"; value: string; terms: readonly string[] }[];
+      /** Under the stack, where a dollar figure was not kept in the run. */
+      stackNote?: string;
+      /** Uses, equity calls and residual. */
+      facts: readonly Stat[];
+      /** Downside, base and upside. One group per investor class. */
+      cases: {
+        label: string;
+        columns: readonly string[];
+        groups: readonly {
+          label: string;
+          rows: readonly { label: string; cells: readonly string[] }[];
+        }[];
       };
-      /** Each figure over the contract's term and as its yearly average. */
-      revenue: {
-        purpose: string;
-        columns: readonly [string, string];
-        rows: readonly { label: string; contract: string; annual: string }[];
-      };
-      /** Where the figures come from, in small type under the cards. */
+      /** A short comparison under the cases, such as other exits. */
+      aside?: { label: string; rows: readonly Stat[] };
       note: string;
     })
   | (Base & {
@@ -523,7 +551,7 @@ export const SLIDES: readonly Slide[] = [
       partnerLabel: "Key partnership",
       areas: [
         {
-          label: "AI",
+          label: "Compute",
           partner: { name: "San Francisco Compute Company", src: `${LOGO_DIR}/sf-compute.svg`, aspect: 2000 / 336, scale: 0.91 },
           logos: [
             { name: "OpenAI", src: `${LOGO_DIR}/openai.svg`, aspect: 288 / 78, scale: 0.91, center: 31 / 78 },
@@ -706,36 +734,71 @@ export const SLIDES: readonly Slide[] = [
     kind: "raise",
     section: "The raise",
     eyebrow: "The raise",
-    title: "Raising equity for ZODE Super Cluster B, LLC.",
+    title: "Raising equity for ZODE Colo I and ZODE Retro I.",
     ground: "paper",
-    firstClose: { value: "$20M", label: "First close · Preferred equity in ZODE Super Cluster B, LLC" },
-    cluster: {
-      purpose: "NVIDIA B300 compute across six sites",
-      rows: [
-        { label: "Target power", value: "100 MW IT" },
-        { label: "Target nodes", value: "6,400" },
-        { label: "Target GPUs", value: "51,200" },
-        { label: "Target sites", value: "6" },
-      ],
-    },
-    capital: {
-      purpose: "Equity over debt, the most senior last",
-      layers: [
-        { label: "Target equity", kind: "equity", value: "$135M", terms: ["18% pref · 1.5x minimum"] },
-        { label: "Target project debt", kind: "debt", value: "$657M", terms: ["DSCR gap and site loans"] },
-        { label: "Target GPU debt", kind: "debt", value: "$1.24B", terms: ["1.15x DSCR · 3-year term"] },
-      ],
-    },
-    revenue: {
-      purpose: "Take-or-pay at $4.20 per GPU-hour",
-      columns: ["Contract · 5 yr", "Annual"],
-      rows: [
-        { label: "Contract value", contract: "$9.43B", annual: "$1.89B" },
-        { label: "Contract EBITDA", contract: "$7.02B", annual: "$1.40B" },
-        { label: "Contract net income", contract: "$2.01B", annual: "$403M" },
-      ],
-    },
-    note: "Preliminary, per the project model: 51,200 GPUs at $4.20 per GPU-hour over 5 years, 30% prepaid ($2.83B, alongside); half the sites leased at $170/kW-mo, half bought at $1M per MW and converted at $5M. Project debt fills the GPU debt's DSCR gap at 12% interest-only, with $180M of site loans. Net income is after depreciation and interest, before income tax. Annual is the contract's yearly average.",
+    deals: [
+      {
+        id: "colo",
+        icon: "node",
+        title: "ZODE Colo I",
+        overview: "Leasing 50 MW of data center space.",
+        fleet: [
+          { value: "3,200", label: "Nodes" },
+          { value: "25,600", label: "GPUs" },
+          { value: "50", label: "MW" },
+        ],
+        layers: [
+          {
+            label: "Preferred equity",
+            kind: "equity",
+            value: "$356M",
+            terms: ["15% simple · 1.5x minimum", "Then 20% to 2.5x, then 10%"],
+            returns: "17% IRR · 1.71x",
+          },
+          { label: "Customer prepayments", kind: "debt", value: "$935M", terms: [] },
+          {
+            label: "GPU debt",
+            kind: "debt",
+            value: "$817M",
+            terms: ["12% · 1.15x DSCR · 48 months"],
+          },
+        ],
+      },
+      {
+        id: "retro",
+        icon: "building",
+        title: "ZODE Retro I",
+        overview: "Acquiring and converting 50 MW of data center space using ZODE modular units.",
+        fleet: [
+          { value: "3,072", label: "Nodes" },
+          { value: "24,576", label: "GPUs" },
+          { value: "51", label: "MW" },
+        ],
+        layers: [
+          {
+            label: "Site equity",
+            kind: "equity",
+            value: "$193M",
+            terms: ["12% pref · 95/5 co-invest", "Then 70/30 to 2x, then 50/50"],
+            returns: "39% IRR · 2.84x",
+          },
+          {
+            label: "Compute equity",
+            kind: "equity",
+            value: "$373M",
+            terms: ["15% simple · 1.5x minimum", "Then 20% to 2.5x, then 10%"],
+            returns: "18% IRR · 2.51x",
+          },
+          {
+            label: "Real estate debt",
+            kind: "debt",
+            value: "$255M",
+            terms: ["Peak · 55% of price", "60% of conversion · 11%"],
+          },
+        ],
+      },
+    ],
+    note: "Preliminary, from the October 20, 2026 models. Colo I is the live base case, held through repayment: the Chicago lease is unsigned and the placeholder colo is unidentified. Retro I returns are the stored 51 MW sale case, including two placeholder sites the workbook’s current formulas exclude. Its nodes and GPUs are that case’s twelve 4 MW clusters.",
   },
   {
     id: "close",
@@ -744,7 +807,7 @@ export const SLIDES: readonly Slide[] = [
     eyebrow: "ZODE",
     title: "From order to tokens in 90 days.",
     ground: "ink",
-    lede: "Raising a $20M first close in ZODE Super Cluster B, LLC, alongside project debt, senior GPU debt and customer prepayments.",
+    lede: "Raising preferred equity in ZODE Colo I and ZODE Retro I.",
     contact: "hello@zode.org · zode.org",
   },
   {
@@ -754,6 +817,137 @@ export const SLIDES: readonly Slide[] = [
     eyebrow: "Sources",
     title: "All sources.",
     ground: "paper",
+  },
+];
+
+/**
+ * Off the sequence: the raise slide opens each over the deck, from its two
+ * deals. Printed, they follow that slide as pages.
+ */
+export const RAISE_DETAILS: readonly Extract<Slide, { kind: "model" }>[] = [
+  {
+    id: "colo",
+    kind: "model",
+    section: "ZODE Colo I",
+    eyebrow: "ZODE Colo I",
+    title: "Leasing 50 MW of data center space.",
+    ground: "paper",
+    sites: [
+      { name: "Mississauga", figure: "2 MW", detail: "128 nodes · 1,024 GPUs · SFC contract signed" },
+      { name: "Chicago", figure: "24 MW", detail: "1,536 nodes · 12,288 GPUs · one phase signed" },
+      {
+        name: "Placeholder colo",
+        figure: "24 MW",
+        detail: "1,536 nodes · 12,288 GPUs · target price, site unidentified",
+      },
+    ],
+    sitesNote: "14 clusters, 2 with a signed contract. 3,200 nodes and 25,600 GPUs.",
+    layers: [
+      {
+        label: "Preferred equity",
+        kind: "equity",
+        value: "$356M",
+        terms: ["15% simple · 1.5x minimum", "Then 20% to 2.5x, then 10%"],
+      },
+      { label: "Customer prepayments", kind: "debt", value: "$935M", terms: [] },
+      { label: "GPU debt", kind: "debt", value: "$817M", terms: ["12% · 1.15x DSCR · 48 months"] },
+    ],
+    facts: [
+      { value: "$20.5M", label: "Lease NRCs" },
+      { value: "$2.14B", label: "GPU hardware" },
+      { value: "$3.69B", label: "Contract value" },
+      { value: "$11M", label: "Equity by Jan 2027" },
+      { value: "$75M", label: "Equity by Oct 2027" },
+      { value: "$17M", label: "Receivable loan, peak" },
+      { value: "$206M", label: "ZODE residual" },
+    ],
+    cases: {
+      label: "Investor returns, hold",
+      columns: ["Downside", "Base", "Upside"],
+      groups: [
+        {
+          label: "Preferred equity",
+          rows: [
+            { label: "Capital", cells: ["$505M", "$356M", "$209M"] },
+            { label: "IRR", cells: ["10%", "17%", "26%"] },
+            { label: "Multiple", cells: ["1.44x", "1.71x", "2.07x"] },
+          ],
+        },
+      ],
+    },
+    note: "Live base case, held through repayment, on the preferred terms accepted for the initial investors. Downside and upside are stored runs from the same model. The Chicago lease is not signed; its upfront payment and the signed prepayment depend on it. The placeholder colo is not a named site. Working draft, October 20, 2026.",
+  },
+  {
+    id: "retro",
+    kind: "model",
+    section: "ZODE Retro I",
+    eyebrow: "ZODE Retro I",
+    title: "Acquiring and converting 50 MW of data center space using ZODE modular units.",
+    ground: "paper",
+    sites: [
+      { name: "Olds", figure: "22 MW", detail: "Five 4 MW clusters · 2 MW leased to a third party" },
+      { name: "Calgary", figure: "13 MW", detail: "Three 4 MW clusters · 1 MW leased to a third party" },
+      { name: "Placeholder 1", figure: "8 MW", detail: "Two 4 MW clusters · site, price and power not identified" },
+      { name: "Placeholder 2", figure: "8 MW", detail: "Two 4 MW clusters · site, price and power not identified" },
+    ],
+    sitesNote: "51 MW in the stored case. Twelve clusters, 3,072 nodes and 24,576 GPUs in the first generation.",
+    layers: [
+      {
+        label: "Site equity",
+        kind: "equity",
+        value: "$193M",
+        terms: ["12% pref · 95/5 co-invest", "Then 70/30 to 2x, then 50/50"],
+      },
+      {
+        label: "Compute equity",
+        kind: "equity",
+        value: "$373M",
+        terms: ["15% simple · 1.5x minimum", "Then 20% to 2.5x, then 10%"],
+      },
+      {
+        label: "Real estate debt",
+        kind: "debt",
+        value: "$255M",
+        terms: ["Peak · 55% of price", "60% of conversion · 11%"],
+      },
+    ],
+    stackNote:
+      "GPU debt is sized to 1.15x DSCR at 12%, about 45% of hardware cost, with 25% of the contract prepaid at order. The stored run did not keep those dollar totals.",
+    facts: [
+      { value: "1.39x", label: "Min real estate DSCR" },
+      { value: "1.16x", label: "Min GPU DSCR" },
+    ],
+    cases: {
+      label: "Investor returns, sale",
+      columns: ["Downside", "Base", "Upside"],
+      groups: [
+        {
+          label: "Site investors",
+          rows: [
+            { label: "Capital", cells: ["$271M", "$193M", "$148M"] },
+            { label: "IRR", cells: ["13%", "39%", "55%"] },
+            { label: "Multiple", cells: ["1.48x", "2.84x", "4.01x"] },
+          ],
+        },
+        {
+          label: "Compute investors",
+          rows: [
+            { label: "Capital", cells: ["$677M", "$373M", "$271M"] },
+            { label: "IRR", cells: ["12%", "18%", "25%"] },
+            { label: "Multiple", cells: ["2.51x", "2.51x", "2.68x"] },
+          ],
+        },
+      ],
+    },
+    aside: {
+      label: "Site investors, by exit",
+      rows: [
+        { value: "17% · 6.31x", label: "Hold to 2046" },
+        { value: "39% · 2.84x", label: "Sale" },
+        { value: "22% · 5.58x", label: "Refinancing" },
+      ],
+    },
+    note: "Stored runs from October 20, 2026, with the two placeholder sites included and the sites sold about five years in. The workbook’s live formulas currently exclude those sites and calculate 35 MW. Placeholders have no site, price or power identified, and purchase prices and offtake are illustrative. Compute investors are unaffected by the site exit.",
   },
 ];
 
