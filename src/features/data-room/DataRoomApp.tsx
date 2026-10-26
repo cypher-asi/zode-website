@@ -461,36 +461,44 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summary, children
               </>
             ) : (
               <>
-                <span className={styles.count}>
-                  {checked.size && !allChecked
-                    ? `${checked.size} selected · ${formatBytes(selectedBytes())}`
-                    : `${allChecked ? "All " : ""}${tree.files.length.toLocaleString()} files · ${formatBytes(totalBytes)}`}
-                </span>
-                {allChecked || !rootRefs.length ? null : (
-                  <button type="button" className={styles.linkButton} onClick={selectAll}>
-                    Select all
-                  </button>
-                )}
-                {checked.size ? (
-                  <button type="button" className={styles.linkButton} onClick={() => setChecked(new Set())}>
-                    Clear
-                  </button>
-                ) : null}
-                {isAdmin && checked.size ? (
-                  <>
-                    <button type="button" className={styles.linkButton} onClick={() => runAction("move", checkedRefs)}>
-                      Move
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.linkButton}
-                      data-danger=""
-                      onClick={() => runAction("delete", checkedRefs)}
-                    >
-                      Delete
-                    </button>
-                  </>
-                ) : null}
+                <div className={styles.footerInfo}>
+                  <span className={styles.count}>
+                    {checked.size && !allChecked
+                      ? `${checked.size} selected · ${formatBytes(selectedBytes())}`
+                      : `${allChecked ? "All " : ""}${tree.files.length.toLocaleString()} files · ${formatBytes(totalBytes)}`}
+                  </span>
+                  <div className={styles.footerLinks}>
+                    {allChecked || !rootRefs.length ? null : (
+                      <button type="button" className={styles.linkButton} onClick={selectAll}>
+                        Select all
+                      </button>
+                    )}
+                    {checked.size ? (
+                      <button type="button" className={styles.linkButton} onClick={() => setChecked(new Set())}>
+                        Clear
+                      </button>
+                    ) : null}
+                    {isAdmin && checked.size ? (
+                      <>
+                        <button
+                          type="button"
+                          className={styles.linkButton}
+                          onClick={() => runAction("move", checkedRefs)}
+                        >
+                          Move
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.linkButton}
+                          data-danger=""
+                          onClick={() => runAction("delete", checkedRefs)}
+                        >
+                          Delete
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
+                </div>
                 <button
                   type="button"
                   className={ui.primary}
