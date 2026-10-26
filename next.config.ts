@@ -167,6 +167,12 @@ const nextConfig: NextConfig = {
           { key: "X-XSS-Protection", value: "0" },
         ],
       },
+      // The data room's zip service worker and the library it loads are checked
+      // for updates on every registration, so a fix reaches browsers at once.
+      ...["/data-room-sw.js", "/data-room-zip.js"].map((source) => ({
+        source,
+        headers: [{ key: "Cache-Control", value: "no-cache" }],
+      })),
       // The public brand files are meant to be fetched and embedded from other
       // origins (agents, partner sites), so they relax the same-origin policy
       // above; a later match overrides the same key.

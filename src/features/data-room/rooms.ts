@@ -244,11 +244,14 @@ export async function getFile(roomId: string, fileId: string): Promise<StoredFil
   return row ? toStoredFile(row) : null;
 }
 
-/** Live files among `fileIds`, plus every live file under `folderIds`, each with its folder path. */
+/**
+ * Live files among `fileIds`, plus every live file under `folderIds`, each with
+ * its folder path; `"all"` takes every live file in the room.
+ */
 export async function resolveSelection(
   roomId: string,
-  fileIds: string[],
-  folderIds: string[],
+  fileIds: string[] | "all",
+  folderIds: string[] = [],
 ): Promise<(StoredFile & { path: string })[]> {
   const sql = db();
   const [folders, files] = await Promise.all([
@@ -276,13 +279,30 @@ export async function resolveSelection(
     }
     return false;
   };
-  const wantedFiles = new Set(fileIds);
+  const wantedFiles = new Set(fileIds === "all" ? [] : fileIds);
 
   return files
     .map(toStoredFile)
-    .filter((file) => wantedFiles.has(file.id) || underWanted(file.folderId))
+    .filter((file) => fileIds === "all" || wantedFiles.has(file.id) || underWanted(file.folderId))
     .map((file) => ({ ...file, path: pathOf(file.folderId) }));
 }
+
+/** Each file's path in a zip, repeats given a " (2)" suffix before the extension, as a file manager would. */
+export function zipPaths(files: { path: string; name: string }[]): string[] {
+  const seen = new Map<string, number>();
+  return files.map((file) => {
+    const path = file.path ? `${file.path}/${file.name}` : file.name;
+    const count = seen.get(path.toLowerCase()) ?? 0;
+    seen.set(path.toLowerCase(), count + 1);
+    if (!count) return path;
+    const dot = path.lastIndexOf(".");
+    const slash = path.lastIndexOf("/");
+    return dot > slash + 1 ? `${path.slice(0, dot)} (${count + 1})${path.slice(dot)}` : `${path} (${count + 1})`;
+  });
+}
+
+/** The name a room's zip downloads as. */
+export const zipName = (roomName: string): string => `${roomName} ${new Date().toISOString().slice(0, 10)}.zip`;
 
 export async function folderExists(roomId: string, folderId: string | null): Promise<boolean> {
   if (folderId === null) return true;

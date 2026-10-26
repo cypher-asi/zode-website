@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // One-off Node build scripts (not part of the app bundle).
     "scripts/**",
+    // Vendored, minified client-zip build the data room's service worker loads.
+    "public/data-room-zip.js",
   ]),
 ]);
 

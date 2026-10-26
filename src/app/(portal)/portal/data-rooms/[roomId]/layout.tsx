@@ -65,6 +65,7 @@ export default async function DataRoomLayout({
       <div className={styles.body}>
         <DataRoomApp
           roomId={roomId}
+          roomName={room.name}
           isAdmin={isAdmin}
           tree={tree}
           summary={summary ? { content: <SummaryView roomId={roomId} summary={summary} /> } : null}

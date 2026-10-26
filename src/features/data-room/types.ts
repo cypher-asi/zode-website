@@ -72,6 +72,13 @@ export type PreviewFile = Pick<RoomFile, "name" | "sizeBytes" | "createdAt">;
  */
 export const MAX_ARCHIVE_BYTES = 1024 ** 3;
 
+/** What the browser needs to zip a selection itself, fetching each file straight from Blob. */
+export interface ZipManifest {
+  /** The zip's file name. */
+  name: string;
+  files: { path: string; size: number; lastModified: string; url: string }[];
+}
+
 export interface RoomTree {
   folders: RoomFolder[];
   files: RoomFile[];

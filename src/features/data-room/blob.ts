@@ -18,20 +18,43 @@ export function readBlob(pathname: string, range: string | null) {
   return get(pathname, { access: "private", headers: range ? { range } : undefined });
 }
 
-const DOWNLOAD_URL_TTL_MS = 5 * 60 * 1000;
+/**
+ * Blob checks expiry on every request, including the range requests a browser
+ * sends to resume a download, so this must outlast a multi-gigabyte download
+ * on a slow link; a shorter one fails partway with 403 Forbidden.
+ */
+const DOWNLOAD_URL_TTL_MS = 6 * 60 * 60 * 1000;
 
 /**
- * A short-lived signed URL that downloads one blob straight from Blob storage
- * as an attachment, so large files don't stream through (and time out in) a
+ * A signed URL that downloads one blob straight from Blob storage as an
+ * attachment, so large files don't stream through (and time out in) a
  * function. Anyone holding it can use it until it expires; check access first.
  */
 export async function presignedDownloadUrl(pathname: string): Promise<string> {
+  const [url] = await presignedDownloadUrls([pathname]);
+  return url;
+}
+
+/**
+ * Signed download URLs for many blobs with one token request. The token's
+ * signing key stays on the server, so each URL opens only its own blob.
+ */
+export async function presignedDownloadUrls(pathnames: string[]): Promise<string[]> {
+  if (!pathnames.length) return [];
   const validUntil = Date.now() + DOWNLOAD_URL_TTL_MS;
-  const token = await issueSignedToken({ pathname, operations: ["get"], validUntil });
-  const { presignedUrl } = await presignUrl(token, { operation: "get", pathname, validUntil, access: "private" });
-  const url = new URL(presignedUrl);
-  url.searchParams.set("download", "1");
-  return url.toString();
+  const token = await issueSignedToken({
+    pathname: pathnames.length === 1 ? pathnames[0] : "*",
+    operations: ["get"],
+    validUntil,
+  });
+  return Promise.all(
+    pathnames.map(async (pathname) => {
+      const { presignedUrl } = await presignUrl(token, { operation: "get", pathname, validUntil, access: "private" });
+      const url = new URL(presignedUrl);
+      url.searchParams.set("download", "1");
+      return url.toString();
+    }),
+  );
 }
 
 export async function blobInfo(pathname: string): Promise<HeadBlobResult | null> {

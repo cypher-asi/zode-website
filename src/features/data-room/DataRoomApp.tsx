@@ -14,17 +14,37 @@ import {
 } from "./actions";
 import { Dialog, type DialogProps } from "./Dialog";
 import { formatBytes } from "./fileKinds";
-import { FileTree, ancestorsOf, folderPath, indexTree, type TreeAction } from "./FileTree";
+import { FileTree, ancestorsOf, fileKey, folderKey, folderPath, indexTree, type TreeAction } from "./FileTree";
 import { Icon } from "./icons";
 import { MAX_ARCHIVE_BYTES, type RoomFile, type RoomTree } from "./types";
 import { UploadList } from "./UploadList";
 import { useUploads } from "./useUploads";
 import { SummaryPanel, Viewer, type RoomSummary } from "./Viewer";
+import { downloadRoomZip, type ZipProgress, type ZipSelection } from "./zipDownload";
 import styles from "./DataRoomApp.module.css";
 import ui from "./ui.module.css";
 
+/** Posts the selection to the server's zip route, for browsers that can't zip on their own. */
+function postArchive(roomId: string, items: ItemRef[]) {
+  const form = document.createElement("form");
+  form.method = "post";
+  form.action = `/api/data-rooms/${roomId}/archive`;
+  form.hidden = true;
+  for (const item of items) {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = item.kind;
+    input.value = item.id;
+    form.append(input);
+  }
+  document.body.append(form);
+  form.submit();
+  form.remove();
+}
+
 interface DataRoomAppProps {
   roomId: string;
+  roomName: string;
   isAdmin: boolean;
   tree: RoomTree;
   summary: RoomSummary | null;
@@ -39,7 +59,7 @@ interface DataRoomAppProps {
  * on the other tabs, where picking a file goes back to Files. The summary,
  * when written, is pinned atop the tree and open until a file is.
  */
-export function DataRoomApp({ roomId, isAdmin, tree, summary, children }: DataRoomAppProps): ReactElement {
+export function DataRoomApp({ roomId, roomName, isAdmin, tree, summary, children }: DataRoomAppProps): ReactElement {
   const index = useMemo(() => indexTree(tree), [tree]);
   const filesById = useMemo(() => new Map(tree.files.map((file) => [file.id, file])), [tree]);
 
@@ -62,6 +82,9 @@ export function DataRoomApp({ roomId, isAdmin, tree, summary, children }: DataRo
   const [query, setQuery] = useState("");
   const [dialog, setDialog] = useState<Omit<DialogProps, "onClose"> | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /** The zip being saved: `preparing` until its first bytes arrive. */
+  const [download, setDownload] = useState<ZipProgress | "preparing" | null>(null);
+  const downloadAbort = useRef<AbortController | null>(null);
   const uploads = useUploads(roomId);
   const docked = useDocked();
 
@@ -86,7 +109,6 @@ export function DataRoomApp({ roomId, isAdmin, tree, summary, children }: DataRo
 
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const archiveRef = useRef<HTMLFormElement>(null);
 
   const openFile = openFileId ? (filesById.get(openFileId) ?? null) : null;
   const folderId = activeFolderId && index.folders.has(activeFolderId) ? activeFolderId : null;
@@ -106,6 +128,18 @@ export function DataRoomApp({ roomId, isAdmin, tree, summary, children }: DataRo
   }));
 
   const totalBytes = useMemo(() => tree.files.reduce((sum, file) => sum + file.sizeBytes, 0), [tree]);
+
+  /** The top-level folders and files; checking them all checks everything. */
+  const rootRefs = useMemo<ItemRef[]>(
+    () => [
+      ...(index.childFolders.get(null) ?? []).map((folder) => ({ kind: "folder" as const, id: folder.id })),
+      ...(index.childFiles.get(null) ?? []).map((file) => ({ kind: "file" as const, id: file.id })),
+    ],
+    [index],
+  );
+  const refKey = (item: ItemRef) => (item.kind === "folder" ? folderKey(item.id) : fileKey(item.id));
+  const allChecked = rootRefs.length > 0 && rootRefs.every((item) => checked.has(refKey(item)));
+  const selectAll = () => setChecked(new Set(rootRefs.map(refKey)));
 
   /** Points the address at `href`, going back to Files from another tab. */
   const show = (href: string) => {
@@ -262,20 +296,55 @@ export function DataRoomApp({ roomId, isAdmin, tree, summary, children }: DataRo
       .reduce((sum, file) => sum + file.sizeBytes, 0);
   };
 
-  const downloadSelected = () => {
-    if (checkedRefs.length === 1 && checkedRefs[0].kind === "file") {
-      window.location.assign(`/api/data-rooms/${roomId}/files/${checkedRefs[0].id}?download=1`);
+  /** Downloads the checked items, or with nothing checked the whole room, as one zip; a lone file downloads as itself. */
+  const downloadSelected = async () => {
+    if (download) return;
+    const everything = !checked.size || allChecked;
+    const items = everything ? rootRefs : checkedRefs;
+    if (!items.length) return;
+    if (items.length === 1 && items[0].kind === "file") {
+      window.location.assign(`/api/data-rooms/${roomId}/files/${items[0].id}?download=1`);
       return;
     }
-    const bytes = selectedBytes();
-    if (bytes > MAX_ARCHIVE_BYTES) {
-      setNotice(
-        `That selection is ${formatBytes(bytes)}; zip downloads are limited to ${formatBytes(MAX_ARCHIVE_BYTES)}. ` +
-          "Download fewer folders at a time, or large files individually.",
-      );
-      return;
+    if (everything) selectAll();
+    const bytes = everything ? totalBytes : selectedBytes();
+    const selection: ZipSelection = everything
+      ? { all: true }
+      : {
+          files: items.filter((item) => item.kind === "file").map((item) => item.id),
+          folders: items.filter((item) => item.kind === "folder").map((item) => item.id),
+        };
+
+    const controller = new AbortController();
+    downloadAbort.current = controller;
+    setNotice(null);
+    setDownload("preparing");
+    try {
+      const result = await downloadRoomZip({
+        roomId,
+        roomName,
+        selection,
+        signal: controller.signal,
+        onProgress: setDownload,
+      });
+      if (result === "unsupported") {
+        if (bytes > MAX_ARCHIVE_BYTES) {
+          setNotice(
+            `This browser can only zip up to ${formatBytes(MAX_ARCHIVE_BYTES)} at a time, and this is ${formatBytes(bytes)}. ` +
+              "Use Chrome or Edge to download it all at once, or download fewer folders at a time.",
+          );
+        } else {
+          postArchive(roomId, items);
+        }
+      }
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        setNotice(error instanceof Error && error.message ? error.message : "The download failed. Try again.");
+      }
+    } finally {
+      downloadAbort.current = null;
+      setDownload(null);
     }
-    archiveRef.current?.requestSubmit();
   };
 
   return (
@@ -378,13 +447,36 @@ export function DataRoomApp({ roomId, isAdmin, tree, summary, children }: DataRo
           ) : null}
 
           <div className={styles.footer}>
-            {checked.size ? (
+            {download ? (
               <>
-                <span className={styles.count}>{checked.size} selected</span>
-                <button type="button" className={styles.linkButton} onClick={() => setChecked(new Set())}>
-                  Clear
+                <span className={styles.count} role="status">
+                  {download === "preparing"
+                    ? "Preparing download…"
+                    : `Downloading ${download.files.toLocaleString()} of ${download.totalFiles.toLocaleString()} files · ` +
+                      `${formatBytes(download.bytes)} of ${formatBytes(download.totalBytes)}`}
+                </span>
+                <button type="button" className={ui.button} onClick={() => downloadAbort.current?.abort()}>
+                  Cancel
                 </button>
-                {isAdmin ? (
+              </>
+            ) : (
+              <>
+                <span className={styles.count}>
+                  {checked.size && !allChecked
+                    ? `${checked.size} selected · ${formatBytes(selectedBytes())}`
+                    : `${allChecked ? "All " : ""}${tree.files.length.toLocaleString()} files · ${formatBytes(totalBytes)}`}
+                </span>
+                {allChecked || !rootRefs.length ? null : (
+                  <button type="button" className={styles.linkButton} onClick={selectAll}>
+                    Select all
+                  </button>
+                )}
+                {checked.size ? (
+                  <button type="button" className={styles.linkButton} onClick={() => setChecked(new Set())}>
+                    Clear
+                  </button>
+                ) : null}
+                {isAdmin && checked.size ? (
                   <>
                     <button type="button" className={styles.linkButton} onClick={() => runAction("move", checkedRefs)}>
                       Move
@@ -399,21 +491,18 @@ export function DataRoomApp({ roomId, isAdmin, tree, summary, children }: DataRo
                     </button>
                   </>
                 ) : null}
-                <button type="button" className={ui.primary} onClick={downloadSelected}>
+                <button
+                  type="button"
+                  className={ui.primary}
+                  onClick={downloadSelected}
+                  disabled={!rootRefs.length}
+                >
                   <Icon name="download" />
-                  Download
+                  {checked.size && !allChecked ? "Download" : "Download all"}
                 </button>
               </>
-            ) : (
-              <span className={styles.count}>{formatBytes(totalBytes)}</span>
             )}
           </div>
-
-          <form ref={archiveRef} method="post" action={`/api/data-rooms/${roomId}/archive`} hidden>
-            {checkedRefs.map((item) => (
-              <input key={`${item.kind}:${item.id}`} type="hidden" name={item.kind} value={item.id} />
-            ))}
-          </form>
         </section>
       </SidebarDock>
 
