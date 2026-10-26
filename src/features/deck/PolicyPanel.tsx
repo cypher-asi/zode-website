@@ -107,16 +107,13 @@ function dates({ adopted, ends }: PolicyMeasure): string | null {
  * stands and when, and the tracker's note. The list scrolls under the head,
  * its bar drawn over it while hovered or scrolling (OverlayScrollbar), and the
  * deck leaves its wheel and swipes alone (`data-deck-scroll`, Deck.tsx), but
- * the deck's keys still turn the slide. It takes focus when it opens or changes,
- * and in the deck's scroll mode (`compact`), where it runs on down the page,
- * scrolls into view.
+ * the deck's keys still turn the slide. It takes focus when it opens or changes.
  */
 export function PolicyPanel({
   id,
   policy,
   pauses,
   choice,
-  compact,
   onClose,
 }: {
   id: string;
@@ -124,7 +121,6 @@ export function PolicyPanel({
   /** The local pauses: undefined while they load, null if they couldn't be read. */
   pauses: LocalPauses | null | undefined;
   choice: PolicyChoice;
-  compact: boolean;
   onClose: () => void;
 }): ReactElement {
   const ref = useRef<HTMLElement>(null);
@@ -137,8 +133,7 @@ export function PolicyPanel({
     if (!panel) return;
     if (listRef.current) listRef.current.scrollTop = 0;
     panel.focus({ preventScroll: true });
-    if (compact) panel.scrollIntoView({ block: "start" });
-  }, [title, compact]);
+  }, [title]);
 
   return (
     <section

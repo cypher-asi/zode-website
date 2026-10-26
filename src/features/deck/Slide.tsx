@@ -4,6 +4,7 @@ import {
   memo,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -144,18 +145,11 @@ function StatBlock({
  * The cover's securities legend in fine print, and the full disclaimer
  * behind it: a button opens it in a panel over the cover's image, which its
  * close, Escape, the button again or turning the slide shuts, back on the
- * button. In the deck's scroll mode (`compact`) it sets out in full under the legend,
- * and printed it takes the image's place, so the PDF's first page carries it
+ * button. Printed, it takes the image's place, so the PDF's first page carries it
  * whole. Nothing around the panel may take a transform (`.rise`), or it would
  * position against that instead of the frame.
  */
-function CoverDisclaimer({
-  active,
-  compact,
-}: {
-  active: boolean;
-  compact: boolean;
-}): ReactElement {
+function CoverDisclaimer({ active }: { active: boolean }): ReactElement {
   const id = useId();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLElement>(null);
@@ -194,19 +188,17 @@ function CoverDisclaimer({
       >
         {LEGAL_LEGEND}
       </p>
-      {compact ? null : (
-        <button
-          ref={buttonRef}
-          type="button"
-          {...rise(3.5)}
-          className={`${styles.rise} ${styles.sourcesToggle} ${styles.disclaimerToggle}`}
-          aria-expanded={open}
-          aria-controls={id}
-          onClick={() => (open ? close() : setOpen(true))}
-        >
-          Important legal information
-        </button>
-      )}
+      <button
+        ref={buttonRef}
+        type="button"
+        {...rise(3.5)}
+        className={`${styles.rise} ${styles.sourcesToggle} ${styles.disclaimerToggle}`}
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => (open ? close() : setOpen(true))}
+      >
+        Important legal information
+      </button>
       <section
         ref={panelRef}
         id={id}
@@ -220,18 +212,16 @@ function CoverDisclaimer({
           <h3 id={`${id}-title`} className={styles.label}>
             Important legal information
           </h3>
-          {compact ? null : (
-            <button
-              type="button"
-              className={styles.disclaimerClose}
-              onClick={close}
-              aria-label="Close"
-            >
-              <svg viewBox="0 0 12 12" aria-hidden="true">
-                <path d="M1 1l10 10M11 1L1 11" />
-              </svg>
-            </button>
-          )}
+          <button
+            type="button"
+            className={styles.disclaimerClose}
+            onClick={close}
+            aria-label="Close"
+          >
+            <svg viewBox="0 0 12 12" aria-hidden="true">
+              <path d="M1 1l10 10M11 1L1 11" />
+            </svg>
+          </button>
         </header>
         <div className={styles.disclaimerFrame}>
           <div id={`${id}-list`} className={styles.disclaimerList}>
@@ -255,18 +245,13 @@ function CoverDisclaimer({
 function Cover({
   slide,
   active,
-  compact,
 }: {
   slide: Of<"cover">;
   active: boolean;
-  compact: boolean;
 }): ReactElement {
   return (
     <div className={styles.cover}>
-      <div
-        className={styles.coverText}
-        data-top-fade={compact ? "" : undefined}
-      >
+      <div className={styles.coverText}>
         {/* eslint-disable-next-line @next/next/no-img-element -- the SVG wordmark scales with the slide */}
         <img
           className={styles.printMark}
@@ -284,7 +269,7 @@ function Cover({
             {slide.lede}
           </p>
         </div>
-        <CoverDisclaimer active={active} compact={compact} />
+        <CoverDisclaimer active={active} />
       </div>
       <div className={styles.coverImage} data-media data-surface="light">
         <Image
@@ -397,6 +382,8 @@ function Stats({
 
 /** The modal's fade out; keep in step with `detail-out` in Slide.module.css. */
 const DETAIL_EXIT_MS = 220;
+/** On a phone, a swipe up or down this far steps to the next or previous detail, as Down and Up do. */
+const DETAIL_SWIPE = 48;
 
 /** The deck's paging keys, which a detail modal (`data-deck-keys`) leaves to the deck (Deck.tsx). */
 export const PAGING_KEYS: ReadonlySet<string> = new Set([
@@ -453,8 +440,8 @@ function DetailSlide({
  * It fades in, and the close or Escape fades it out, focus going back to the
  * button that opened it. On the stage Up and Down step through the details
  * (`onStep`), and the deck's other paging keys pass through to turn the
- * slide, which shuts it (`data-deck-keys`, Deck.tsx). In the deck's scroll
- * mode the slide scrolls in it.
+ * slide, which shuts it (`data-deck-keys`, Deck.tsx). On a phone
+ * (`compact`) a swipe up or down steps too.
  */
 function DetailModal({
   slide,
@@ -471,6 +458,7 @@ function DetailModal({
 }): ReactElement {
   const ref = useRef<HTMLDialogElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const swipe = useRef<{ x: number; y: number } | null>(null);
   const [closing, setClosing] = useState(false);
   // Not closed on unmount: that queues a close event, which would shut it again as it reopens. Unmounting takes it off the top layer.
   useEffect(() => {
@@ -497,7 +485,6 @@ function DetailModal({
   useEffect(() => {
     const onStepKey = (event: KeyboardEvent) => {
       if (
-        compact ||
         event.defaultPrevented ||
         event.metaKey ||
         event.ctrlKey ||
@@ -528,7 +515,7 @@ function DetailModal({
       window.removeEventListener("keydown", onStepKey, true);
       window.removeEventListener("keydown", onTurnKey);
     };
-  }, [compact, onStep]);
+  }, [onStep]);
   const dismiss = () => setClosing(true);
 
   return createPortal(
@@ -545,6 +532,23 @@ function DetailModal({
         dismiss();
       }}
       onClose={onClose}
+      onPointerDown={(event) => {
+        swipe.current =
+          compact &&
+          !(event.target as Element).closest("[data-deck-scroll]")
+            ? { x: event.clientX, y: event.clientY }
+            : null;
+      }}
+      onPointerUp={(event) => {
+        const start = swipe.current;
+        swipe.current = null;
+        if (!start) return;
+        const dx = event.clientX - start.x;
+        const dy = event.clientY - start.y;
+        if (Math.abs(dy) > DETAIL_SWIPE && Math.abs(dy) > Math.abs(dx) * 1.5)
+          onStep(dy < 0 ? 1 : -1);
+      }}
+      onPointerCancel={() => (swipe.current = null)}
     >
       <div className={styles.detailBox}>
         <div className={styles.detailStage}>
@@ -778,7 +782,7 @@ function States({
     setChoice((open) =>
       open?.state === next.state && open?.key === next.key ? null : next,
     );
-  const covered = Boolean(choice) && !compact;
+  const covered = Boolean(choice);
   // The opener may sit under the panel, inert until it shuts, so it's focused a frame later.
   const close = () => {
     const opener = rootRef.current?.querySelector<HTMLElement>(
@@ -856,7 +860,6 @@ function States({
                 policy={policy}
                 pauses={pauses}
                 choice={choice}
-                compact={compact}
                 onClose={close}
               />
             ) : null}
@@ -1116,11 +1119,9 @@ function DesignPrinciples({ active }: { active: boolean }): ReactElement {
 function Stack({
   slide,
   active,
-  compact,
 }: {
   slide: Of<"stack">;
   active: boolean;
-  compact: boolean;
 }): ReactElement {
   return (
     <div
@@ -1134,7 +1135,7 @@ function Stack({
       </div>
       <StackFigure
         exploded={active}
-        side={!compact}
+        side
         className={styles.stackFigure}
       />
     </div>
@@ -1815,7 +1816,7 @@ function Raise({
           </li>
         ))}
       </ul>
-      <RaiseDisclaimer note={slide.note} inline={compact} />
+      <RaiseDisclaimer note={slide.note} />
       {detail ? (
         <DetailModal
           slide={detail}
@@ -1831,15 +1832,9 @@ function Raise({
 
 /**
  * The raise's basis and securities legend behind one label, opened as the
- * foot's sources are. Set out in full in the scroll mode and on paper.
+ * foot's sources are. Set out in full on paper.
  */
-function RaiseDisclaimer({
-  note,
-  inline,
-}: {
-  note: string;
-  inline: boolean;
-}): ReactElement {
+function RaiseDisclaimer({ note }: { note: string }): ReactElement {
   const id = useId();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -1864,21 +1859,16 @@ function RaiseDisclaimer({
       {...rise(3.2)}
       className={`${styles.rise} ${styles.raiseDisclaimer}`}
       data-open={open || undefined}
-      data-inline={inline || undefined}
     >
-      {inline ? (
-        <span className={styles.sourcesToggle}>Disclaimer</span>
-      ) : (
-        <button
-          type="button"
-          className={styles.sourcesToggle}
-          aria-expanded={open}
-          aria-controls={id}
-          onClick={() => setOpen((value) => !value)}
-        >
-          Disclaimer
-        </button>
-      )}
+      <button
+        type="button"
+        className={styles.sourcesToggle}
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen((value) => !value)}
+      >
+        Disclaimer
+      </button>
       <div id={id} className={styles.raisePanel}>
         <div className={styles.raisePanelBox}>
           <p className={styles.fine}>{note}</p>
@@ -2374,7 +2364,7 @@ function Body({
 }): ReactNode {
   switch (slide.kind) {
     case "cover":
-      return <Cover slide={slide} active={active} compact={compact} />;
+      return <Cover slide={slide} active={active} />;
     case "stats":
       return (
         <Stats
@@ -2403,7 +2393,7 @@ function Body({
     case "principles":
       return <DesignPrinciples active={active} />;
     case "stack":
-      return <Stack slide={slide} active={active} compact={compact} />;
+      return <Stack slide={slide} active={active} />;
     case "steps":
       return <Steps slide={slide} playing={playing} />;
     case "unit":
@@ -2447,25 +2437,11 @@ export const hasHead = (slide: Slide): boolean => !NO_HEAD.has(slide.kind);
 /**
  * A slide's sources, folded behind a label at the foot: hovering or focusing
  * it opens them above, and a click pins them open where there's no hover.
- * Printed, and in the deck's scroll mode (`inline`), they set out in the foot in full.
+ * Printed, they set out in the foot in full.
  */
-function FootSources({
-  ids,
-  inline,
-}: {
-  ids: readonly SourceId[];
-  inline: boolean;
-}): ReactElement {
+function FootSources({ ids }: { ids: readonly SourceId[] }): ReactElement {
   const id = useId();
   const [open, setOpen] = useState(false);
-  if (inline) {
-    return (
-      <div className={styles.footSources} data-inline="">
-        <span className={styles.sourcesToggle}>Sources</span>
-        <SourceLine ids={ids} />
-      </div>
-    );
-  }
   return (
     <div className={styles.footSources} data-open={open || undefined}>
       <button
@@ -2486,6 +2462,57 @@ function FootSources({
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
+/** A phone page is laid out this many pixels wide, then scaled to the screen, up to `MAX_FIT` on a tablet. */
+const PHONE_W = 390;
+const MAX_FIT = 1.6;
+
+/**
+ * Scales a phone page (`compact`) to fit its slide: as wide as the screen,
+ * unless its bands would then run past the header band or the deck's
+ * controls (the frame's padding), when it shrinks to their height and
+ * centres. A band marked `data-deck-scroll` takes what room is left and
+ * scrolls, so it isn't counted. Sets `--fit` on the slide, which
+ * Slide.module.css scales by. A parked slide has no layout, so it's
+ * measured as it opens.
+ */
+function useFit(on: boolean) {
+  const slideRef = useRef<HTMLDivElement>(null);
+  const fitRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const slide = slideRef.current;
+    const fit = fitRef.current;
+    const frame = fit?.parentElement;
+    if (!on || !slide || !fit || !frame) return;
+    const measure = () => {
+      const bands = [...fit.children] as HTMLElement[];
+      const height = bands.reduce(
+        (sum, band) =>
+          band.hasAttribute("data-deck-scroll") ? sum : sum + band.offsetHeight,
+        0,
+      );
+      if (!height || !slide.clientWidth) return;
+      const { paddingTop, paddingBottom } = getComputedStyle(frame);
+      const room =
+        slide.clientHeight - parseFloat(paddingTop) - parseFloat(paddingBottom);
+      const scale = Math.min(
+        slide.clientWidth / PHONE_W,
+        room / height,
+        MAX_FIT,
+      );
+      slide.style.setProperty("--fit", scale.toFixed(4));
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(slide);
+    for (const band of fit.children) observer.observe(band);
+    return () => {
+      observer.disconnect();
+      slide.style.removeProperty("--fit");
+    };
+  }, [on]);
+  return { slideRef, fitRef };
+}
+
 /**
  * One 16:9 slide. Everything is sized in container units of the stage, so a
  * slide reads the same full-screen, in the overview and on a printed page.
@@ -2498,10 +2525,10 @@ const pad = (n: number) => String(n).padStart(2, "0");
  * thumbnail. `playing` runs its looping drawings, by default while it's
  * active and not still. `near` loads its images ahead, for the open slide
  * and its neighbours. `branded` adds the wordmark to its foot for print,
- * where the site header isn't on the page. `compact` reflows it for the
- * deck's scroll mode: one column at the site's mobile type sizes, as tall as
- * its content, fading out under the pinned header's corners as it scrolls up
- * into them. `policy` is the policy tracker's map for the states slide.
+ * where the site header isn't on the page. `compact` makes it a phone page:
+ * one column at the site's mobile type sizes, laid out `PHONE_W` wide and
+ * scaled to fit the screen (`useFit`). `policy` is the policy tracker's map
+ * for the states slide.
  * `numbered` sets the page number in its foot; a slide off the sequence (the
  * demand slide's details) goes without. Memoized, so turning a slide redraws
  * only the slides whose state changed.
@@ -2536,6 +2563,7 @@ export const SlideView = memo(function SlideView({
   const head = hasHead(slide);
   const foot = !NO_FOOT.has(slide.kind);
   const dark = slide.ground === "ink";
+  const { slideRef, fitRef } = useFit(compact);
   const mark = branded ? (
     // eslint-disable-next-line @next/next/no-img-element -- the SVG wordmark scales with the slide
     <img
@@ -2548,8 +2576,58 @@ export const SlideView = memo(function SlideView({
       alt="ZODE"
     />
   ) : null;
+  const bands = (
+    <>
+      {head ? (
+        <header className={styles.head} data-band="head">
+          <h2 {...rise(1)} className={`${styles.rise} ${styles.title}`}>
+            {slide.title}
+          </h2>
+        </header>
+      ) : null}
+      <div
+        className={styles.main}
+        data-deck-scroll={(compact && slide.kind === "sources") || undefined}
+      >
+        <Body
+          slide={slide}
+          active={active}
+          playing={playing}
+          near={near}
+          compact={compact}
+          policy={policy}
+        />
+      </div>
+      {!foot ? (
+        mark && <footer className={styles.foot}>{mark}</footer>
+      ) : (
+        <footer className={styles.foot} data-band="foot">
+          {head ? (
+            <span className={styles.sectionName} data-band="name">
+              {slide.eyebrow}
+            </span>
+          ) : null}
+          {slide.kind === "cover" ? (
+            <p className={styles.footLabel}>
+              {slide.meta} · {slide.eyebrow}
+            </p>
+          ) : null}
+          <div className={styles.footEnd}>
+            {slide.sources ? <FootSources ids={slide.sources} /> : null}
+            {numbered ? (
+              <span className={styles.number}>
+                {pad(index + 1)} / {pad(total)}
+              </span>
+            ) : null}
+            {slide.kind === "cover" ? null : mark}
+          </div>
+        </footer>
+      )}
+    </>
+  );
   return (
     <div
+      ref={slideRef}
       className={styles.slide}
       data-ground={slide.ground}
       data-kind={slide.kind}
@@ -2560,55 +2638,16 @@ export const SlideView = memo(function SlideView({
       <div
         className={styles.frame}
         data-frame=""
-        // The cover's render opens the page under the header, so only its text fades (Cover).
-        data-top-fade={compact && slide.kind !== "cover" ? "" : undefined}
         data-grid={grid || undefined}
         data-head={head || undefined}
         data-foot={foot || undefined}
       >
-        {head ? (
-          <header className={styles.head} data-band="head">
-            <h2 {...rise(1)} className={`${styles.rise} ${styles.title}`}>
-              {slide.title}
-            </h2>
-          </header>
-        ) : null}
-        <div className={styles.main}>
-          <Body
-            slide={slide}
-            active={active}
-            playing={playing}
-            near={near}
-            compact={compact}
-            policy={policy}
-          />
-        </div>
-        {!foot ? (
-          mark && <footer className={styles.foot}>{mark}</footer>
+        {compact ? (
+          <div ref={fitRef} className={styles.fit}>
+            {bands}
+          </div>
         ) : (
-          <footer className={styles.foot} data-band="foot">
-            {head ? (
-              <span className={styles.sectionName} data-band="name">
-                {slide.eyebrow}
-              </span>
-            ) : null}
-            {slide.kind === "cover" ? (
-              <p className={styles.footLabel}>
-                {slide.meta} · {slide.eyebrow}
-              </p>
-            ) : null}
-            <div className={styles.footEnd}>
-              {slide.sources ? (
-                <FootSources ids={slide.sources} inline={compact} />
-              ) : null}
-              {numbered ? (
-                <span className={styles.number}>
-                  {pad(index + 1)} / {pad(total)}
-                </span>
-              ) : null}
-              {slide.kind === "cover" ? null : mark}
-            </div>
-          </footer>
+          bands
         )}
       </div>
     </div>

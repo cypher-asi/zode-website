@@ -4,8 +4,9 @@
  * ../why-zode/Features.module.css. `--ink` is the host colour the drawings
  * read. Another host (the investor deck) retunes the custom properties
  * through the root's `className`: `--cols`, `--grid-max` and `--grid-h` lay
- * out the grid, `--card-h` and `--card-pad` size the cards, and `--px` is
- * the length one pixel of the drawings' size takes.
+ * out the grid, `--card-h` and `--card-pad` size the cards, `--px` is
+ * the length one pixel of the drawings' size takes, and on touch screens
+ * `--figure-min` and `--reveal` size the drawing and keep the description.
  */
 .root {
   --ink: var(--color-ink);
@@ -344,7 +345,7 @@
   }
 }
 
-/* No hover to open a card, so every description stays out and the cards size to it. */
+/* No hover to open a card, so every description stays out and the cards size to it, unless the host folds them away (`--reveal: none`). */
 @media (hover: none) {
   .card {
     height: auto;
@@ -352,10 +353,11 @@
   }
 
   .figure {
-    min-height: 220px;
+    min-height: var(--figure-min, 220px);
   }
 
   .reveal {
+    display: var(--reveal, grid);
     grid-template-rows: 1fr;
   }
 

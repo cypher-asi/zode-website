@@ -1085,31 +1085,12 @@
   mask-image: none !important;
 }
 
+/* On a phone the detail is a page of its own, fitted as the deck's are; swipes step through the details, so the modal takes them. */
 .detailDialog[data-compact] {
-  --slide-edge: initial;
-  --slide-bottom: initial;
+  --slide-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
 
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-.detailDialog[data-compact] .detailBox {
-  height: auto;
-  min-height: 100%;
-}
-
-.detailDialog[data-compact] .detailStage {
-  height: auto;
-}
-
-.detailDialog[data-compact] .detailClose {
-  position: fixed;
-  right: 16px;
-}
-
-/* In scroll mode a slide's frame keeps its own top padding, so the band is added above it. */
-.detailDialog[data-compact] .slide .frame {
-  padding-top: var(--header-band);
+  touch-action: pinch-zoom;
+  user-select: none;
 }
 
 /* State legend, keyed to the tile map's fills. */
@@ -1270,12 +1251,12 @@
 }
 
 /* What the panel covers goes out first, and the panel comes in once it's gone, so the two never show through each other. */
-.slide:not([data-compact]) .side[data-open] > :not(.policyPanel) {
+.side[data-open] > :not(.policyPanel) {
   opacity: 0;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .slide:not([data-compact]) .side[data-open] > :not(.policyPanel) {
+  .side[data-open] > :not(.policyPanel) {
     transition: opacity 160ms ease;
   }
 
@@ -3264,25 +3245,6 @@ a.measureTitle:focus-visible {
   transition-delay: 0s;
 }
 
-.raiseDisclaimer[data-inline] .sourcesToggle {
-  text-decoration: none;
-  cursor: auto;
-}
-
-.raiseDisclaimer[data-inline] .raisePanel {
-  position: static;
-  width: auto;
-  padding: calc(0.4 * var(--u)) 0 0;
-  visibility: visible;
-  opacity: 1;
-}
-
-.raiseDisclaimer[data-inline] .raisePanelBox {
-  padding: 0;
-  background: none;
-  box-shadow: none;
-}
-
 @media (hover: hover) {
   .raiseDeal:hover,
   .raiseDeal:hover .dealLayer,
@@ -4357,78 +4319,83 @@ a.measureTitle:focus-visible {
   margin-top: calc(1.6 * var(--u));
 }
 
-/* ---------- Scrolling slides ---------- */
+/* ---------- Phone pages ---------- */
 
 /*
- * A slide in the deck's scroll mode (`data-compact`, set by Deck.tsx on
- * portrait screens and landscape phones): the slides stand one after another
- * down the page, each as tall as its content, and everything stacks into one
- * column. `--u` becomes a fixed spacing step and type takes the site's mobile
- * sizes, since a hundredth of a phone's width is too small to read. The rails
- * run down each slide, so they read as one pair down the page. Clipped rather
- * than hidden, so nothing in a slide becomes a scroller and its sticky heads
- * hold against the page.
+ * A slide in the deck's phone mode (`data-compact`, set by Deck.tsx on
+ * portrait screens and landscape phones), and its details' modal: a portrait
+ * page, everything stacked into one column at the site's mobile type sizes.
+ * The page (`.fit`) is laid out `PHONE_W` (390px) wide and scaled by
+ * `--fit` (Slide.tsx) so it fills the screen's width, or, where its bands
+ * would run past the header band or the controls (the frame's padding),
+ * their height. The ground runs to every edge; the rails run down the page.
+ * Lengths in the page are in its own pixels, so the stage's insets are
+ * divided by `--fit` to land where they would unscaled.
  */
 .slide[data-compact] {
-  /* Where a slide's title lands when the deck jumps to it, and where its sticky heads hold: clear of the pinned header's corner fade. */
-  --anchor-top: calc(var(--slide-top, 0px) + 56px);
-
-  height: auto;
-  overflow: clip;
-  container-type: inline-size;
+  --fit: 1;
 }
 
-/* On wider screens the column keeps a reading width, centred, while the ground and rails run to the edges. */
 .slide[data-compact] .frame {
-  --u: 8px;
-  --rail: var(--frame-inset);
-  --inset-x: max(var(--slide-edge, 24px), (100cqw - 720px) / 2);
-
-  position: relative;
-  inset: auto;
-  grid-template-rows: auto 1fr auto;
-  padding: 48px var(--inset-x) 0;
-  overflow-x: clip;
-}
-
-/* The first slide opens the page, under the header. */
-.slide[data-compact][data-kind="cover"] .frame {
-  padding-top: calc(var(--slide-top, 0px) + 2.4 * var(--u));
-}
-
-/* The close holds a screen of its own, its call to action centred in it. */
-.slide[data-compact][data-kind="close"] .frame {
-  min-height: 80svh;
-}
-
-.slide[data-compact] .frame:not([data-foot]) {
-  padding-bottom: 32px;
+  display: block;
+  padding: var(--slide-top, 0px) 0 var(--slide-bottom, 0px);
 }
 
 .slide[data-compact] .frame[data-grid]::before {
   display: none;
 }
 
-.slide[data-compact]::after {
+.fit {
+  --u: 8px;
+  --rail: 8px;
+  --inset-x: calc(max(var(--slide-edge, 0px), 24px * var(--fit)) / var(--fit));
+
+  position: absolute;
+  top: 0;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  width: 390px;
+  min-height: calc(100cqh / var(--fit));
+  padding: calc(var(--slide-top, 0px) / var(--fit)) var(--inset-x)
+    calc(var(--slide-bottom, 0px) / var(--fit));
+  container-type: inline-size;
+  translate: -50% 0;
+  scale: var(--fit);
+  transform-origin: 50% 0;
+}
+
+.fit::before {
   content: "";
   position: absolute;
-  inset: 0 var(--frame-inset);
+  inset: 0 var(--rail);
   z-index: 2;
   border-inline: 1px solid var(--rule);
   pointer-events: none;
 }
 
+.fit > * {
+  flex: none;
+}
+
+/* The foot closes the page, on the controls' top edge. */
+.fit > .foot {
+  margin-top: auto;
+}
+
 .slide[data-compact] .frame[data-grid][data-foot]:not([data-head])::after {
-  top: calc(var(--slide-top, 0px) + 1 * var(--u) - var(--pip) / 2);
+  display: none;
 }
 
 .slide[data-compact] .main {
   min-height: auto;
-  padding-top: 20px;
+  padding-top: 16px;
 }
 
+/* The page's top band clears the header's by this much; the bands' heights are all `useFit` measures, so it's padding. */
+.slide[data-compact] .head,
 .slide[data-compact]:is([data-kind="cover"], [data-kind="close"]) .main {
-  padding-top: 0;
+  padding-top: 20px;
 }
 
 .slide[data-compact] .main > * {
@@ -4436,7 +4403,7 @@ a.measureTitle:focus-visible {
 }
 
 .slide[data-compact] .frame[data-foot] .main {
-  padding-bottom: 32px;
+  padding-bottom: 16px;
 }
 
 .slide[data-compact] .main > .split {
@@ -4466,7 +4433,7 @@ a.measureTitle:focus-visible {
 
 .slide[data-compact] .title {
   max-width: none;
-  font-size: clamp(26px, 7.2cqw, 34px);
+  font-size: 26px;
 }
 
 .slide[data-compact] .h3 {
@@ -4506,12 +4473,11 @@ a.measureTitle:focus-visible {
   padding: 14px 16px 16px;
 }
 
-/* The foot closes the slide: section name, then the sources in full; the bar carries the page number. */
+/* The foot closes the page: the section name, then the sources folded behind their label; the bar carries the page number. */
 .slide[data-compact] .foot {
-  flex-wrap: wrap;
-  gap: 12px 20px;
-  min-height: 48px;
-  padding: 12px 0 20px;
+  gap: 12px 16px;
+  min-height: 44px;
+  padding: 8px 0;
   font-size: var(--text-2xs);
 }
 
@@ -4526,43 +4492,34 @@ a.measureTitle:focus-visible {
   font-size: var(--text-2xs);
 }
 
-.slide[data-compact] .footEnd {
-  display: contents;
-}
-
 .slide[data-compact] .number {
   display: none;
 }
 
-.slide[data-compact] .footSources {
-  display: flex;
-  flex: 1 1 100%;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-}
-
+/* A tap's target, as tall as a thumb. */
 .slide[data-compact] .sourcesToggle {
-  text-decoration: none;
-  cursor: auto;
+  min-height: 32px;
 }
 
-.slide[data-compact] .sources {
+.slide[data-compact] .sourcesPanel {
+  width: calc(100cqw - 2 * var(--inset-x));
   max-width: none;
+  padding-bottom: 8px;
 }
 
-/* Cover: the render under the top rule, rail to rail and about half the screen tall, then the title. */
+.slide[data-compact] .sourcesPanel .sources {
+  max-width: none;
+  padding: 12px 14px;
+}
+
+/* Cover: the render under the top rule, rail to rail, then the title, the lede and the legal legend. */
 .slide[data-compact] .cover {
   flex-direction: column;
-  gap: 28px;
+  gap: 20px;
 }
 
 .slide[data-compact] .coverText {
   max-width: none;
-}
-
-.slide[data-compact] .cover::after {
-  display: none;
 }
 
 .slide[data-compact] .cover::after {
@@ -4575,8 +4532,8 @@ a.measureTitle:focus-visible {
   flex: none;
   order: -1;
   width: auto;
-  height: clamp(200px, 48svh, 480px);
-  margin: calc(-1.4 * var(--u)) calc(var(--rail) + 1px - var(--inset-x)) 0;
+  height: 210px;
+  margin: -12px calc(var(--rail) + 1px - var(--inset-x)) 0;
   border-bottom: 1px solid var(--rule-strong);
   border-left: 0;
 }
@@ -4585,42 +4542,45 @@ a.measureTitle:focus-visible {
   max-width: none;
 }
 
-.slide[data-compact] .coverTitle {
-  margin-top: 12px;
-}
-
 .slide[data-compact] .coverLede {
-  margin-top: 16px;
-  font-size: 17px;
+  margin-top: 12px;
+  font-size: 16px;
 }
 
-/* The legend under the title, then the full disclaimer on down the slide. */
 .slide[data-compact] .disclaimer {
-  gap: 0;
-  margin-top: 28px;
+  gap: 4px;
+  margin-top: 20px;
 }
 
 .slide[data-compact] .legalLegend {
   max-width: none;
-  padding-bottom: 18px;
+  font-size: 9px;
 }
 
+.slide[data-compact] .disclaimerToggle {
+  font-size: var(--text-2xs);
+}
+
+/* The full disclaimer opens over the page, between the header band and the controls, its list scrolling. */
 .slide[data-compact] .disclaimerPanel {
-  position: static;
-  padding: 0;
-  background: none;
-  visibility: visible;
-  opacity: 1;
+  top: calc(var(--slide-top, 0px) / var(--fit) + 12px);
+  right: calc(var(--rail) + 1px);
+  bottom: calc(var(--slide-bottom, 0px) / var(--fit));
+  left: calc(var(--rail) + 1px);
+  padding: 16px var(--inset-x) 0 calc(var(--inset-x) - var(--rail));
 }
 
 .slide[data-compact] .disclaimerHead {
-  padding: 18px 0 10px;
-  border-top: 1px solid var(--rule);
+  padding-bottom: 10px;
+}
+
+.slide[data-compact] .disclaimerClose {
+  width: 40px;
+  height: 40px;
 }
 
 .slide[data-compact] .disclaimerList {
-  padding: 4px 0 0;
-  overflow: visible;
+  padding: 12px 8px 24px 0;
 }
 
 .slide[data-compact] .disclaimerSection + .disclaimerSection {
@@ -4636,10 +4596,38 @@ a.measureTitle:focus-visible {
   font-size: 13px;
 }
 
+/* Close: the call to action centred in the page. */
+.fit > .main:only-child {
+  margin-block: auto;
+}
+
+/* The shortfall's detail page keeps its main chart, without the gap by year. */
+.slide[data-compact][data-kind="shortfall"] .figure + .figure {
+  display: none;
+}
+
+/* A page too long to fit (the sources) keeps the screen's height, its body scrolling between the head and foot. */
+.fit:has(> [data-deck-scroll]) {
+  height: calc(100cqh / var(--fit));
+}
+
+.fit > .main[data-deck-scroll] {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y pinch-zoom;
+}
+
+/* Nothing scrolls under the pinned header, so nothing fades under its corners (useHeaderSurface.ts masks it inline). */
+.slide[data-compact] [data-top-fade] {
+  mask-image: none !important;
+}
+
 /* Stats, steps, notes and sources: one column. */
 .slide[data-compact] .statsBody {
   justify-content: flex-start;
-  gap: 36px;
+  gap: 16px;
 }
 
 .slide[data-compact] :is(.notes, .sourcesBody) {
@@ -4647,86 +4635,140 @@ a.measureTitle:focus-visible {
   gap: 28px;
 }
 
-/* Steps: the cards stacked, each drawing at a fixed height. */
+/* Steps: the cards stacked, each drawing beside its number, title and description. */
 .slide[data-compact] .steps {
   flex: none;
   grid-template: none / minmax(0, 1fr);
 }
 
 .slide[data-compact] .step {
-  padding: 20px 24px 24px;
+  display: grid;
+  grid-template:
+    "figure index" auto
+    "figure title" auto
+    "figure body" auto / 64px minmax(0, 1fr);
+  column-gap: 14px;
+  padding: 10px 14px 12px 10px;
+}
+
+.slide[data-compact] .stepIndex {
+  grid-area: index;
+  font-size: var(--text-2xs);
 }
 
 .slide[data-compact] .stepFigure {
-  flex: none;
-  height: 140px;
-  padding: 16px 0;
+  grid-area: figure;
+  align-self: center;
+  height: 60px;
+  padding: 0;
 }
 
 .slide[data-compact] .stepTitle {
-  margin-bottom: 8px;
-  font-size: 22px;
+  grid-area: title;
+  margin: 2px 0 4px;
+  font-size: 18px;
 }
 
 .slide[data-compact] .step .body {
-  font-size: 15px;
+  grid-area: body;
+  font-size: 13px;
+  line-height: 1.4;
 }
 
-/* Macro: the cards stacked full width, then the statement and the supply chain's rows. */
+.slide[data-compact] .statsBody > .statement {
+  font-size: 18px;
+}
+
+.slide[data-compact] .statsBody > .statement > :last-child {
+  display: none;
+}
+
+/* Macro: the three figures in a row, then the statement and the supply chain's rows; the token chart stays on the stage. */
 .slide[data-compact] .macro {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: none;
-  gap: 36px;
+  gap: 16px;
 }
 
 .slide[data-compact] .macro::after {
   display: none;
 }
 
-/* Stacked, a rule between each card and the next. */
 .slide[data-compact] .macroCards {
-  grid-template: none / minmax(0, 1fr);
+  grid-template: none / repeat(3, minmax(0, 1fr));
   gap: 1px;
   background: var(--rule);
 }
 
 .slide[data-compact] .macroCard {
-  padding: 28px 0 48px;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 6px 0;
   background: var(--bg);
 }
 
+.slide[data-compact] .macroCard:first-child {
+  padding-left: 0;
+}
+
+.slide[data-compact] .macroCard:nth-child(3) {
+  padding-right: 0;
+}
+
+.slide[data-compact] .macroCard:nth-child(4) {
+  display: none;
+}
+
 .slide[data-compact] .macroFigure {
-  height: 180px;
+  flex: none;
+  height: 72px;
 }
 
 .slide[data-compact] .macroCaption {
-  bottom: 18px;
-  left: 0;
-  font-size: var(--text-2xs);
+  position: static;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 9px;
+}
+
+.slide[data-compact] .macroValue {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 300;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.slide[data-compact] .macroStatement {
+  --h3-size: 18px;
+
+  margin-bottom: 4px;
 }
 
 .slide[data-compact] .macroChain {
-  gap: 12px;
+  gap: 8px;
 }
 
 .slide[data-compact] .chain {
   --step-pad: 12px;
-  --index-w: 20px;
-  --figure-w: 56px;
+  --index-w: 18px;
+  --figure-w: 44px;
 
   grid-template-rows: none;
 }
 
 .slide[data-compact] .chainStep {
-  padding: 8px;
+  height: 34px;
+  padding: 2px 8px;
 }
 
 .slide[data-compact] .chainFigure {
-  height: 44px;
+  height: 30px;
 }
 
 .slide[data-compact] .chainLabel {
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .slide[data-compact] .chainNote {
@@ -4743,7 +4785,7 @@ a.measureTitle:focus-visible {
 .slide[data-compact] .chartBody {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: none;
-  gap: 28px;
+  gap: 16px;
 }
 
 .slide[data-compact] .chartBody[data-split="map"]::after {
@@ -4751,38 +4793,77 @@ a.measureTitle:focus-visible {
 }
 
 .slide[data-compact] .map {
+  width: 88%;
   max-width: none;
+  margin-inline: auto;
 }
 
 .slide[data-compact] .side {
-  gap: 18px;
+  gap: 10px;
 }
 
 .slide[data-compact] .side .statValue {
-  font-size: 30px;
+  font-size: 26px;
 }
 
+/* The figures a row each, value beside label, their sources left to the foot's. */
 .slide[data-compact] .policyStats {
-  gap: 16px;
-  padding-top: 18px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  padding-top: 10px;
+}
+
+.slide[data-compact] .policyStats .stat {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.slide[data-compact] .policyStats .statValue {
+  font-size: 24px;
+  white-space: nowrap;
+}
+
+.slide[data-compact] .policyStats .statSource {
+  display: none;
+}
+
+/* The demand slide's details two a row, by title alone. */
+.slide[data-compact] .detailList {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-bottom: 0;
+}
+
+.slide[data-compact] .detailList > li {
+  border-bottom: 1px solid var(--rule-strong);
+}
+
+.slide[data-compact] .detailList > li:nth-child(odd) {
+  border-right: 1px solid var(--rule-strong);
 }
 
 .slide[data-compact] .detailButton {
-  grid-template-columns: 24px minmax(0, 1fr) 12px;
-  gap: 12px;
-  padding: 16px var(--pad);
+  grid-template-columns: minmax(0, 1fr) 10px;
+  align-items: start;
+  gap: 8px;
+  padding: 8px 10px 10px;
+}
+
+.slide[data-compact] .detailButton > .label {
+  display: none;
 }
 
 .slide[data-compact] .detailTitle {
-  font-size: var(--text-lg);
-}
-
-.slide[data-compact] .detailText {
-  gap: 6px;
+  font-size: 14px;
 }
 
 .slide[data-compact] .detailSummary {
-  font-size: var(--text-sm);
+  display: none;
+}
+
+.slide[data-compact] .detailIcon {
+  margin-top: 3px;
 }
 
 .slide[data-compact] :is(.legend, .caption) {
@@ -4790,16 +4871,32 @@ a.measureTitle:focus-visible {
 }
 
 .slide[data-compact] .legend {
-  gap: 8px 16px;
-  margin-top: 12px;
+  gap: 4px 16px;
+  margin-top: 8px;
 }
 
 .slide[data-compact] .caption {
   margin-top: 10px;
 }
 
+/* Each key as running text, its citation in line, the swatch hung in the margin. */
 .slide[data-compact] .key {
-  gap: 8px;
+  position: relative;
+  display: block;
+  padding-left: 26px;
+}
+
+.slide[data-compact] .key::before {
+  position: absolute;
+  top: 0.65em;
+  left: 0;
+  width: 18px;
+}
+
+.slide[data-compact] .key[data-key="gap"]::before {
+  top: 0.3em;
+  width: 9px;
+  height: 9px;
 }
 
 .slide[data-compact] .status {
@@ -4807,8 +4904,13 @@ a.measureTitle:focus-visible {
 
   grid-template-columns: 12px minmax(0, 1fr) auto;
   gap: 12px;
-  padding: 8px var(--pad);
-  font-size: 14px;
+  padding: 4px var(--pad);
+  font-size: 13px;
+}
+
+/* The note on the two executive pauses is left to the 16:9 slide; the sources page carries its date. */
+.slide[data-compact] .chartBody[data-split="map"] .side > .fine:last-child {
+  display: none;
 }
 
 .slide[data-compact] .swatch {
@@ -4831,32 +4933,10 @@ a.measureTitle:focus-visible {
   font-size: var(--text-xs);
 }
 
-/* The list runs on down the page in place of the figures; its head holds under the pinned header so the close stays in reach. */
-.slide[data-compact] .policyPanel {
-  position: static;
-  display: block;
-  animation: none;
-  scroll-margin-top: var(--anchor-top);
-}
-
-.slide[data-compact] .panelList {
-  padding-right: 0;
-  overflow: visible;
-}
-
-@media screen {
-  .slide[data-compact] .side[data-open] .policyStats {
-    display: none;
-  }
-}
-
+/* A state's or a status's measures cover the legend and figures under the map, as they cover the side column at 16:9, and scroll in place. */
 .slide[data-compact] .panelHead {
-  position: sticky;
-  top: var(--anchor-top);
-  z-index: 1;
-  gap: 16px;
-  padding: 18px 0 10px;
-  border-top: 1px solid var(--rule);
+  gap: 12px;
+  padding-bottom: 10px;
 }
 
 .slide[data-compact] .panelHead .h3 {
@@ -4904,20 +4984,29 @@ a.measureTitle:focus-visible {
   font-size: 13px;
 }
 
-/* News: the lead figure, then a card per row. */
+/* News: the blocked total beside the TV, then the first three stories, a card per row. */
 .slide[data-compact] .newsBody {
   grid-template-columns: minmax(0, 1fr);
-  gap: 28px;
+  gap: 14px;
 }
 
 .slide[data-compact] .newsLead {
-  justify-content: flex-start;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px;
+  align-items: center;
+  gap: 14px;
+}
+
+.slide[data-compact] .newsLead .stat[data-size="xl"] .statValue {
+  font-size: 44px;
+}
+
+.slide[data-compact] .newsLead .statLabel,
+.slide[data-compact] .newsLead .statSource {
+  font-size: 9px;
 }
 
 .slide[data-compact] .newsTV {
-  flex: none;
-  max-width: 320px;
   min-height: 0;
 }
 
@@ -4928,90 +5017,112 @@ a.measureTitle:focus-visible {
 .slide[data-compact] .newsGrid {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: none;
-  gap: 1px;
-  background: var(--rule);
+  background: none;
+}
+
+.slide[data-compact] .newsGrid > li + li {
+  border-top: 1px solid var(--rule);
+}
+
+.slide[data-compact] .newsGrid > li:nth-child(n + 4) {
+  display: none;
 }
 
 .slide[data-compact] .newsCard {
-  gap: 8px;
-  background: var(--bg);
+  gap: 5px;
+  padding: 10px 0;
 }
 
 .slide[data-compact] .newsCard .h3 {
-  --h3-size: 18px;
+  --h3-size: 17px;
 }
 
 .slide[data-compact] :is(.newsPlace, .newsMeta) {
-  font-size: var(--text-2xs);
+  font-size: 9px;
 }
 
 .slide[data-compact] .newsSummary {
-  font-size: 14px;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
-/* Problems: each half stacked, its large card then the small ones, a rule between each card and the next. */
+/*
+ * Problems: each half stacked, its lead card as the figure beside its title
+ * and text, then the other problems by name alone, three across.
+ */
 .slide[data-compact] .problems {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: none;
-  row-gap: 36px;
+  row-gap: 18px;
 }
 
-.slide[data-compact] .problems::after {
+.slide[data-compact] .problems::after,
+.slide[data-compact] .problemCard:not([data-lead]) .problemFigure {
   display: none;
 }
 
 .slide[data-compact] .problemGroup {
-  gap: 12px;
+  gap: 8px;
+}
+
+.slide[data-compact] .problemGroup > .label {
+  font-size: 9px;
 }
 
 .slide[data-compact] .problemCards {
-  grid-template: none / minmax(0, 1fr);
-  gap: 1px;
-  background: var(--rule);
+  grid-template: auto auto / repeat(3, minmax(0, 1fr));
+  background: none;
+}
+
+.slide[data-compact] .problemCard:not([data-lead]) {
+  border-top: 1px solid var(--rule);
+}
+
+.slide[data-compact] .problemCard:nth-child(n + 3) {
+  border-left: 1px solid var(--rule);
 }
 
 .slide[data-compact] .problemCard {
-  gap: 12px;
-  padding: 24px 0;
-  background: var(--bg);
+  justify-content: center;
+  padding: 10px 8px;
 }
 
 .slide[data-compact] .problemCard[data-lead] {
-  grid-template-columns: minmax(0, 1fr);
-  padding-top: 8px;
+  grid-template-columns: 104px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px 12px 0;
 }
 
 .slide[data-compact] .problemCard[data-lead] .problemFigure {
   order: 0;
-  height: 180px;
-}
-
-.slide[data-compact] .problemFigure {
-  height: 120px;
+  height: 96px;
 }
 
 .slide[data-compact] .problemTitle {
-  --h3-size: 24px;
+  --h3-size: 19px;
 }
 
 .slide[data-compact] .problemLead {
-  gap: 8px;
+  gap: 6px;
 }
 
 .slide[data-compact] .problemLead .body {
   max-width: none;
-  font-size: 15px;
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 .slide[data-compact] .problemCaption {
-  font-size: var(--text-2xs);
+  font-size: 9px;
+  white-space: normal;
 }
 
-/* Problem and solution: one column, each problem card then ZODE's answer under it, the arrow pointing down. */
+/* Problem and solution: a row each, the problem's figure and name over ZODE's answer by title alone. */
 .slide[data-compact] .problemSolution {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: none;
-  row-gap: 24px;
+  row-gap: 12px;
 }
 
 .slide[data-compact] .psHead {
@@ -5020,50 +5131,62 @@ a.measureTitle:focus-visible {
 
 .slide[data-compact] .psRow {
   grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
+  gap: 1px;
 }
 
 .slide[data-compact] .psProblem,
 .slide[data-compact] .psSolution {
-  padding: 16px 20px;
+  padding: 10px 14px;
   border-top: 0;
   background: var(--card);
   box-shadow: 0 0 0 1px var(--rule);
 }
 
 .slide[data-compact] .psProblem {
-  grid-template-columns: 72px minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 14px;
 }
 
 .slide[data-compact] .psFigure {
-  height: 56px;
+  height: 48px;
 }
 
 .slide[data-compact] .psText {
-  gap: 6px;
+  gap: 4px;
 }
 
 .slide[data-compact] .psProblem .h3 {
-  --h3-size: 16px;
+  --h3-size: 14px;
+}
+
+.slide[data-compact] .psStat {
+  gap: 10px;
 }
 
 .slide[data-compact] .psStatValue {
-  font-size: 32px;
+  font-size: 28px;
 }
 
 .slide[data-compact] .psSolution {
-  gap: 8px;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 10px;
 }
 
 .slide[data-compact] .psSolution .h3 {
-  --h3-size: 21px;
+  --h3-size: 17px;
 }
 
+.slide[data-compact] .psSolution .body,
 .slide[data-compact] .psArrow {
-  width: 32px;
-  rotate: 90deg;
-  margin-block: 12px;
+  display: none;
+}
+
+/* Where the arrow pointed, a mark before the answer. */
+.slide[data-compact] .psSolution::before {
+  content: "→";
+  color: var(--fg-2);
 }
 
 /* Solution: the cabin across the card, the facts under it. */
@@ -5083,7 +5206,9 @@ a.measureTitle:focus-visible {
 }
 
 .slide[data-compact] .facts {
+  display: grid;
   grid-column: auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .slide[data-compact] .solutionFlags {
@@ -5098,10 +5223,8 @@ a.measureTitle:focus-visible {
 }
 
 .slide[data-compact] .fact {
-  flex-direction: row;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 6px;
+  padding: 12px 12px 14px;
 }
 
 .slide[data-compact] .factValue {
@@ -5109,20 +5232,21 @@ a.measureTitle:focus-visible {
 }
 
 .slide[data-compact] .factLabel {
-  font-size: var(--text-2xs);
-  text-align: right;
+  font-size: 9px;
 }
 
-/* Design principles: the cards stacked. */
+/* Design principles: the cards two a row, drawing and name, the descriptions left to the stage. */
 .slide[data-compact] .designPrinciples {
   grid-template-rows: none;
 }
 
 .slide[data-compact] .designPrinciples .principles {
-  --cols: 1;
+  --cols: 2;
   --grid-h: auto;
-  --card-h: 340px;
-  --card-pad: 18px 20px 20px;
+  --card-h: 196px;
+  --card-pad: 12px 14px 14px;
+  --figure-min: 0px;
+  --reveal: none;
   --px: 1px;
   --h2-size: 22px;
   --text-base: 14px;
@@ -5131,11 +5255,11 @@ a.measureTitle:focus-visible {
   height: auto;
 }
 
-/* Stack: the lede, the plates, then their labels as a list under them. */
+/* Stack: the first paragraph of the lede, then the plates left of centre, each named beside it. */
 .slide[data-compact] .stack {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: none;
-  gap: 24px;
+  gap: 16px;
   margin-bottom: 0;
   container-type: normal;
 }
@@ -5143,29 +5267,38 @@ a.measureTitle:focus-visible {
 .slide[data-compact] .stack .lede {
   width: auto;
   margin-left: 0;
+  font-size: 15px;
 }
 
-/* The home page's restack (FullStack.module.css), its figure following the lede and sized by its content. */
+.slide[data-compact] .stack .lede > p + p {
+  display: none;
+}
+
 .slide[data-compact] .stackFigure {
-  --art: min(100%, 220px);
+  --art: 196px;
   --px: 1px;
-  --text-base: 14px;
+  --lead: 20px;
+  --label-end: 0px;
+  --label-body: none;
+  --text-base: 13px;
   --eyebrow-size: var(--text-2xs);
 
   grid-area: auto;
   height: auto;
-  margin-top: 0;
+  margin-left: -110px;
   translate: none;
 }
 
-/* Unit: the render first, then the cards one to a row. */
+/* Unit: the render, its links in a row, then six of the figures two to a row (fabric and storage dropped). */
 .slide[data-compact] .unit {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: none;
-  gap: 28px;
+  gap: 14px;
 }
 
-.slide[data-compact] .unit::after {
+.slide[data-compact] .unit::after,
+.slide[data-compact] .renderCaption .figLabel,
+.slide[data-compact] .unitCard:is(:nth-child(4), :nth-child(5)) {
   display: none;
 }
 
@@ -5173,42 +5306,49 @@ a.measureTitle:focus-visible {
   order: -1;
 }
 
-.slide[data-compact] .unitCards {
-  grid-template-columns: minmax(0, 1fr);
+.slide[data-compact] .renderImage {
+  aspect-ratio: 2 / 1;
 }
 
 .slide[data-compact] .unitCard {
-  --card-h: 92px;
+  grid-template-columns: minmax(0, 1fr);
+  height: auto;
 }
 
-.slide[data-compact] .unitFigure > svg {
-  width: 56px;
-  height: 56px;
+.slide[data-compact] .unitFigure {
+  display: none;
 }
 
 .slide[data-compact] .unitText {
-  gap: 6px;
-  padding: 14px 16px;
+  gap: 5px;
+  padding: 10px 12px;
+  border-left: 0;
 }
 
 .slide[data-compact] .unitValue {
-  font-size: 26px;
+  font-size: 20px;
 }
 
-.slide[data-compact] .unitText .statLabel,
-.slide[data-compact] .renderLinks {
-  gap: 8px;
-  font-size: var(--text-2xs);
+.slide[data-compact] .unitText .statLabel {
+  font-size: 9px;
 }
 
 .slide[data-compact] .renderCaption {
   margin-top: 10px;
 }
 
+.slide[data-compact] .renderLinks {
+  flex: 1;
+  flex-direction: row;
+  gap: 8px;
+  font-size: var(--text-2xs);
+}
+
 .slide[data-compact] .renderLink {
+  flex: 1;
   gap: 6px;
-  height: 28px;
-  padding: 0 10px;
+  height: 36px;
+  padding: 0 12px;
 }
 
 .slide[data-compact] .renderArrow {
@@ -5226,216 +5366,260 @@ a.measureTitle:focus-visible {
   gap: 20px;
 }
 
+/*
+ * Pipeline: the sites as rows of text (the city maps dropped), the total,
+ * the capacity, the plan's years across one row, then the statement without
+ * its basis.
+ */
+.slide[data-compact] .split[data-split="sites"] {
+  gap: 16px;
+}
+
 .slide[data-compact] .siteCard {
-  --card-h: 84px;
+  --card-h: 40px;
+
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.slide[data-compact] .siteMap,
+.slide[data-compact] .planBar,
+.slide[data-compact] .planNote .fine {
+  display: none;
 }
 
 .slide[data-compact] .siteText {
-  gap: 6px;
-  padding: 0 14px;
+  gap: 4px;
+  padding: 0 12px;
+  border-left: 0;
 }
 
 .slide[data-compact] .siteName {
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .slide[data-compact] .siteText .statLabel,
 .slide[data-compact] .siteTotal,
 .slide[data-compact] .planYear {
-  font-size: var(--text-2xs);
+  font-size: 9px;
 }
 
 .slide[data-compact] .siteMw {
-  padding-right: 14px;
-  font-size: 22px;
+  padding-right: 12px;
+  font-size: 18px;
 }
 
 .slide[data-compact] .siteFoot {
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .slide[data-compact] .pipelineSide {
-  gap: 28px;
-}
-
-.slide[data-compact] .pipelineSide section {
-  gap: 12px;
-}
-
-.slide[data-compact] .capacity {
-  gap: 16px;
-}
-
-.slide[data-compact] .planRow {
-  grid-template-columns: 40px minmax(0, 1fr) 92px;
-  gap: 12px;
-  height: 40px;
-  padding: 0 14px;
-}
-
-.slide[data-compact] .planBar {
-  height: 4px;
-}
-
-.slide[data-compact] .planValue {
-  font-size: 15px;
-}
-
-.slide[data-compact] .planNote {
-  gap: 8px;
-  margin-top: -8px;
-}
-
-.slide[data-compact] .planStatement {
-  font-size: 20px;
-}
-
-.slide[data-compact] .planNote .fine {
-  font-size: var(--text-2xs);
-}
-
-.slide[data-compact] .traction {
-  gap: 32px;
-}
-
-.slide[data-compact] .contractCard {
-  gap: 16px;
-  padding: 16px 18px 18px;
-}
-
-.slide[data-compact] .contractCard[data-size="mini"] {
-  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
 }
 
-.slide[data-compact] .contractCards > .fine {
-  margin-top: 10px;
-  font-size: var(--text-2xs);
-}
-
-.slide[data-compact] .blocks {
-  --block: 12px;
-  --block-gap: 3px;
-
+.slide[data-compact] .pipelineSide section {
   gap: 8px;
 }
 
-.slide[data-compact] .blockCount {
-  font-size: var(--text-2xs);
+.slide[data-compact] .pipelineSide .label {
+  font-size: 9px;
 }
 
-.slide[data-compact] .contractSides {
-  gap: 28px;
+.slide[data-compact] .capacity {
+  gap: 12px;
+}
+
+.slide[data-compact] .capacity .statValue {
+  font-size: 24px;
+}
+
+.slide[data-compact] .plan {
+  flex-direction: row;
+}
+
+.slide[data-compact] .planRow {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  height: auto;
+  padding: 8px;
+}
+
+.slide[data-compact] .planValue {
+  font-size: 12px;
+  text-align: left;
+}
+
+.slide[data-compact] .planNote {
+  margin-top: 0;
+}
+
+.slide[data-compact] .planStatement {
+  max-width: none;
+  font-size: 16px;
+  text-wrap: wrap;
+}
+
+/*
+ * Traction: the signed total and the LOIs side by side (the cards' block
+ * counts carry the note), the demand-side contract without its capacity row,
+ * the supply side dropped, then the logos.
+ */
+.slide[data-compact] .traction {
+  gap: 16px;
+}
+
+.slide[data-compact] .traction > .split {
+  gap: 16px;
+}
+
+.slide[data-compact] .contractCards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.slide[data-compact] :is(.contractCard, .contractCard[data-size="mini"]) {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+
+.slide[data-compact] .contractCard .stat {
+  gap: 6px;
+}
+
+.slide[data-compact] .contractCard .statValue,
+.slide[data-compact] .contractCard .stat[data-size="xl"] .statValue {
+  font-size: 32px;
+}
+
+.slide[data-compact] .contractCard .statLabel {
+  font-size: 9px;
+}
+
+.slide[data-compact] .contractCard:not([data-size]) .statValue[data-highlight] {
+  -webkit-text-stroke-width: 3px;
+}
+
+.slide[data-compact] .contractCards > .fine {
+  display: none;
+}
+
+.slide[data-compact] .blocks {
+  --block: 11px;
+  --block-gap: 2px;
+
+  gap: 6px;
+}
+
+.slide[data-compact] .blockCount {
+  font-size: 9px;
+}
+
+.slide[data-compact] .contractSide + .contractSide,
+.slide[data-compact] .contractSide .detail:nth-child(2) {
+  display: none;
 }
 
 .slide[data-compact] .contractTitle {
-  padding-bottom: 8px;
+  padding-bottom: 6px;
   font-size: var(--text-2xs);
+}
+
+.slide[data-compact] .detail {
+  grid-template-columns: 116px minmax(0, 1fr);
+  padding: 7px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.slide[data-compact] .detail dt {
+  font-size: 9px;
+}
+
+.slide[data-compact] .detail dd {
+  font-size: 13px;
 }
 
 .slide[data-compact] .customers {
   grid-template-columns: minmax(0, 1fr);
-  gap: 20px;
-  padding-top: 20px;
+  gap: 12px;
+  padding-top: 0;
 }
 
 .slide[data-compact] .customerGroup {
-  gap: 12px;
+  gap: 8px;
 }
 
 .slide[data-compact] .customerGroup .figLabel {
-  font-size: var(--text-2xs);
+  font-size: 9px;
 }
 
 .slide[data-compact] .logos {
-  gap: 14px 24px;
+  gap: 10px 16px;
 }
 
 .slide[data-compact] .logos img {
-  height: calc(var(--h) * 14px);
+  height: calc(var(--h) * 10.5px);
 }
 
-.slide[data-compact] .detail {
-  grid-template-columns: minmax(0, 1fr);
-  gap: 4px;
-  padding: 10px 0;
-  border-top: 1px solid var(--rule);
-}
-
-.slide[data-compact] .detail dt {
-  font-size: var(--text-2xs);
-}
-
-.slide[data-compact] .detail dd {
-  font-size: 16px;
-}
-
-/* The comparison: each axis across the card over its two cells, traditional then ZODE, the corner dropped. */
+/* The comparison: the table kept, each axis's name over two lines, the figures without their sublabels. */
 .slide[data-compact] .compareBody {
   grid-template-rows: none;
-  gap: 16px;
+  gap: 12px;
 }
 
 .slide[data-compact] .compare {
-  display: block;
   height: auto;
 }
 
-.slide[data-compact] .compare :is(thead, tbody) {
-  display: block;
-}
-
-.slide[data-compact] .compare tr {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 .slide[data-compact] .compare :is(th, td) {
-  padding: 12px 14px;
+  height: 44px;
+  padding: 6px 10px;
 }
 
 .slide[data-compact] .compare thead td {
-  display: none;
+  width: 92px;
 }
 
 .slide[data-compact] .compare thead th {
-  display: flex;
-  align-items: center;
-  height: 40px;
-  padding-block: 0;
-  font-size: var(--text-2xs);
+  height: 32px;
+  font-size: 9px;
 }
 
 .slide[data-compact] .compare tbody th {
-  grid-column: 1 / -1;
-  font-size: var(--text-2xs);
-}
-
-.slide[data-compact] .compare :is(th, td):nth-child(2) {
-  border-left: 1px solid var(--rule);
+  font-size: 9px;
 }
 
 .slide[data-compact] .compareMark {
-  height: 13px;
+  height: 11px;
 }
 
 .slide[data-compact] .compareValue {
-  font-size: 18px;
+  font-size: 14px;
 }
 
 .slide[data-compact] .compare tr[data-highlight] .compareValue {
-  font-size: 26px;
+  font-size: 18px;
 }
 
 .slide[data-compact] .compareCell .statLabel {
-  font-size: var(--text-2xs);
+  display: none;
 }
 
-/* Finance: the deals and the bar both stack, the bar's layers sized by their figures rather than their widths. */
+.slide[data-compact] .compareBody > .fine {
+  font-size: 9px;
+}
+
+/*
+ * Finance: each deal's icon, title and purpose in a row, without its body or
+ * terms; then the example's layers as rows of name and figure, in the bar's
+ * shading, over the total and the note.
+ */
 .slide[data-compact] .finance {
-  gap: 32px;
+  gap: 16px;
 }
 
 .slide[data-compact] .main > .finance {
@@ -5448,68 +5632,67 @@ a.measureTitle:focus-visible {
 }
 
 .slide[data-compact] .deal {
-  gap: 14px;
-  padding-top: 0;
+  display: block;
+  padding: 0;
 }
 
-.slide[data-compact] .dealHead {
-  --fig: 96px;
-
-  margin-inline: -16px;
+.slide[data-compact] .dealBody,
+.slide[data-compact] .deal > .dealStack,
+.slide[data-compact] .stackGroupName,
+.slide[data-compact] .stackTag {
+  display: none;
 }
 
-.slide[data-compact] .dealFigure > svg {
-  width: 64px;
-  height: 64px;
+.slide[data-compact] .deal > .dealHead {
+  --fig: 52px;
+
+  margin-inline: 0;
+  border-bottom: 0;
 }
 
-.slide[data-compact] .dealHeading {
-  gap: 6px;
-  padding-inline: 16px;
+.slide[data-compact] .deal .dealFigure > svg {
+  width: 34px;
+  height: 34px;
 }
 
-.slide[data-compact] .dealTitle,
-.slide[data-compact] .stackValue {
-  font-size: 22px;
+.slide[data-compact] .deal .dealHeading {
+  gap: 4px;
+  padding-inline: 12px;
 }
 
-.slide[data-compact] .dealLayer {
-  padding: 11px 12px;
+.slide[data-compact] .dealTitle {
+  font-size: 17px;
 }
 
-.slide[data-compact] .dealLayerLabel {
-  font-size: 15px;
-}
-
-.slide[data-compact] :is(.dealLayerTerms, .stackTag) {
-  font-size: var(--text-2xs);
+.slide[data-compact] .deal .dealHeading .statLabel {
+  font-size: 9px;
 }
 
 .slide[data-compact] .stackExample {
-  gap: 12px;
+  gap: 8px;
 }
 
-.slide[data-compact] .stackRow {
+.slide[data-compact] .stackExample > .label {
+  font-size: 9px;
+}
+
+.slide[data-compact] .stackRow,
+.slide[data-compact] .stackBar,
+.slide[data-compact] .stackGroupLayers {
   flex-direction: column;
 }
 
 .slide[data-compact] .stackBar {
-  flex-direction: column;
-  gap: 24px;
+  gap: 1px;
 }
 
 .slide[data-compact] .stackGroup {
   flex: none;
-  gap: 8px;
-}
-
-.slide[data-compact] .stackGroupName {
-  height: auto;
-  font-size: var(--text-2xs);
+  gap: 0;
 }
 
 .slide[data-compact] .stackGroupLayers {
-  flex-direction: column;
+  gap: 1px;
 }
 
 .slide[data-compact]
@@ -5521,44 +5704,98 @@ a.measureTitle:focus-visible {
 
 .slide[data-compact] .stackSegment {
   flex: none;
-  gap: 4px;
+  flex-direction: row-reverse;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  padding: 7px 12px;
+}
+
+.slide[data-compact] .stackValue {
+  font-size: 17px;
 }
 
 .slide[data-compact] .stackLabel {
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .slide[data-compact] .stackTotal {
-  flex-direction: row;
+  flex-direction: row-reverse;
   align-items: baseline;
   justify-content: space-between;
-  padding: 12px 0 0;
+  padding: 6px 12px 0;
 }
 
-/* Raise: the two deals stack, and a model summary stacks its columns. */
+.slide[data-compact] .stackTotal .stackValue {
+  font-size: 22px;
+}
+
+.slide[data-compact] .stackExample > .fine {
+  font-size: 9px;
+}
+
+/*
+ * Raise: the two deals side by side, their rows level across them: each its
+ * title, the fleet figures two to a row and the stack as rows of name and
+ * amount. The icon, overview, terms and returns are left to the summary.
+ */
 .slide[data-compact] .raise {
-  gap: 20px;
+  gap: 12px;
 }
 
 .slide[data-compact] .raiseDeals {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: repeat(3, auto);
+  gap: 0 8px;
+}
+
+.slide[data-compact] :is(.raiseDeals > li, .raiseDeal) {
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
 }
 
 .slide[data-compact] .raiseDeal {
-  gap: 12px;
-  padding: 0 16px 12px;
+  gap: 8px;
+  padding: 0 8px 8px;
 }
 
 .slide[data-compact] .raiseDeal .dealHead {
-  --fig: 72px;
-
+  grid-template-columns: minmax(0, 1fr);
   height: auto;
-  min-height: var(--fig);
-  margin-inline: -16px;
+  margin-inline: -8px;
+}
+
+.slide[data-compact] .raiseDeal .dealFigure,
+.slide[data-compact] .raiseOverview,
+.slide[data-compact] .raiseLayer .dealLayerTerms,
+.slide[data-compact] .raiseReturns {
+  display: none;
 }
 
 .slide[data-compact] .raiseDeal .dealHeading {
-  padding-block: 10px;
+  gap: 6px;
+  padding: 10px 8px;
+  border-left: 0;
+}
+
+.slide[data-compact] .raiseTitle {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.slide[data-compact] .raiseDeal .dealTitle {
+  font-size: 17px;
+}
+
+.slide[data-compact] .raiseOpen {
+  gap: 6px;
+  font-size: 9px;
+}
+
+.slide[data-compact] .raisePlus {
+  width: 10px;
+  height: 10px;
 }
 
 .slide[data-compact] .raiseFleet {
@@ -5566,117 +5803,143 @@ a.measureTitle:focus-visible {
 }
 
 .slide[data-compact] .raiseFleet .stat {
-  padding: 10px 12px;
+  gap: 3px;
+  padding: 6px 8px;
+}
+
+.slide[data-compact] .raiseFleet .statValue {
+  font-size: 16px;
+}
+
+.slide[data-compact] .raiseFleet .statLabel {
+  font-size: 8px;
 }
 
 .slide[data-compact] .raiseLayer {
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) 54px;
 }
 
 .slide[data-compact] .raiseLayer .raiseLayerText,
 .slide[data-compact] .raiseCell {
-  padding: 8px 10px;
+  padding: 5px 7px;
 }
 
-.slide[data-compact] .raiseDeal .dealFigure > svg {
-  width: 48px;
-  height: 48px;
-}
-
-.slide[data-compact] .raiseOverview {
-  font-size: 15px;
-}
-
-.slide[data-compact] .raiseFleet .statValue {
-  font-size: 26px;
+.slide[data-compact] .raiseLayer .dealLayerLabel {
+  font-size: 11px;
+  line-height: 1.25;
+  white-space: normal;
 }
 
 .slide[data-compact] .raiseValue {
-  font-size: 20px;
-}
-
-.slide[data-compact] .raiseReturns {
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .slide[data-compact] .raiseDisclaimer {
   font-size: var(--text-2xs);
 }
 
+/*
+ * A model summary: the sites, the capital stack by amount, then the base
+ * case's returns alone. The facts, the aside and the stack's terms and note
+ * are left to the 16:9 page.
+ */
 .slide[data-compact] .main > .model {
   margin-block: 0;
 }
 
 .slide[data-compact] .model {
-  --pad: 12px;
+  --pad: 10px;
 
-  gap: 16px;
+  gap: 10px;
 }
 
-.slide[data-compact] .modelGrid,
-.slide[data-compact] .modelAside {
+.slide[data-compact] .modelGrid {
   grid-template-columns: minmax(0, 1fr);
+}
+
+.slide[data-compact] .modelFacts,
+.slide[data-compact] .modelWide:has(.modelAside),
+.slide[data-compact] .modelNote,
+.slide[data-compact] .model .dealLayerTerms,
+.slide[data-compact] .modelCases thead th:is(:nth-child(2), :nth-child(4)),
+.slide[data-compact] .modelCases td:is(:nth-of-type(1), :nth-of-type(3)) {
+  display: none;
 }
 
 .slide[data-compact] .modelSites {
   border-right: 0;
 }
 
-/* Too narrow to line the case table up with the sites: its columns size to their figures, which wrap at their dot. */
 .slide[data-compact] .modelCases {
   table-layout: auto;
 }
 
-.slide[data-compact] :is(.modelGroupCol, .modelRowCol) {
+.slide[data-compact] .modelCases col {
   width: auto;
 }
 
-.slide[data-compact] .modelWide {
-  overflow-x: auto;
-}
-
 .slide[data-compact] .modelCases :is(th, td) {
-  padding: 8px 6px;
+  padding: 6px 8px;
 }
 
 .slide[data-compact] .modelCases th {
   letter-spacing: 0.04em;
 }
 
-.slide[data-compact] .modelCases td {
-  white-space: normal;
-}
-
 .slide[data-compact] .modelSiteName,
 .slide[data-compact] .modelSiteDetail,
-.slide[data-compact] .modelFacts dt,
 .slide[data-compact] .modelCases :is(th, td) {
-  font-size: var(--text-2xs);
+  font-size: 9px;
 }
 
-.slide[data-compact] .modelSiteFigure,
-.slide[data-compact] .modelFacts dd,
-.slide[data-compact] .modelAside dd {
-  font-size: 18px;
+.slide[data-compact] .modelSiteFigure {
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.slide[data-compact] .model .dealLayerLabel {
+  font-size: 12px;
+}
+
+.slide[data-compact] .model .raiseValue {
+  font-size: 14px;
 }
 
 .slide[data-compact] .modelCases td {
-  font-size: 16px;
+  font-size: 15px;
+  text-align: right;
 }
 
-/* Team. */
+.slide[data-compact] .model > .fine {
+  font-size: 9px;
+}
+
+/*
+ * Team: the founder's name and role, each venture's name, years and outcome,
+ * then the four areas two to a row: the partner's mark over its rule, the
+ * member logos in a wrapping line.
+ */
+.slide[data-compact] .split[data-split="team"] {
+  gap: 18px;
+}
+
 .slide[data-compact] .person {
-  --h3-size: 30px;
+  --h3-size: 26px;
 
-  margin: 6px 0 0;
+  margin: 4px 0 0;
 }
 
-.slide[data-compact] .split[data-split="team"]::after {
+.slide[data-compact] .split[data-split="team"]::after,
+.slide[data-compact] .founder > :has(.contrib),
+.slide[data-compact] .quests > .figLabel,
+.slide[data-compact] .ventureRole,
+.slide[data-compact] .partner .label,
+.slide[data-compact] .networkTitle {
   display: none;
 }
 
 .slide[data-compact] .founder {
-  gap: 16px;
+  gap: 12px;
 }
 
 .slide[data-compact] .founderRole {
@@ -5693,98 +5956,68 @@ a.measureTitle:focus-visible {
 }
 
 .slide[data-compact] .quests {
-  gap: 8px;
-}
-
-.slide[data-compact] .contrib {
   gap: 6px;
 }
 
-.slide[data-compact] .contribHead {
-  flex-wrap: wrap;
-  gap: 6px 12px;
-  margin-bottom: 2px;
-}
-
-.slide[data-compact] :is(.contribKey, .contribMonths) {
-  font-size: 9px;
-}
-
-.slide[data-compact] .contribKey {
-  gap: 3px;
-}
-
-.slide[data-compact] .contribKey i {
-  width: 9px;
-  height: 9px;
-}
-
-.slide[data-compact] .contribKey i:first-of-type {
-  margin-left: 3px;
-}
-
-.slide[data-compact] .contribKey i:last-of-type {
-  margin-right: 3px;
-}
-
 .slide[data-compact] .venture {
-  padding: 10px 0;
+  padding: 7px 0;
 }
 
 .slide[data-compact] .ventureName {
-  margin-bottom: 4px;
-  font-size: 20px;
-}
-
-.slide[data-compact] .ventureOutcome {
-  margin-bottom: 0;
+  margin-bottom: 2px;
+  font-size: 18px;
 }
 
 .slide[data-compact] .years {
   font-size: 10px;
 }
 
-.slide[data-compact] .ventureRole {
-  margin-bottom: 4px;
-  font-size: 10px;
-}
-
 .slide[data-compact] .ventureText {
-  font-size: 14px;
+  font-size: 13px;
 }
 
-/* Two areas a row, as a phone has no room for four. */
+.slide[data-compact] .ventureOutcome {
+  margin-bottom: 0;
+}
+
 .slide[data-compact] .network {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px 20px;
+  gap: 0 16px;
 }
 
 .slide[data-compact] .networkArea {
-  gap: 12px;
-  padding: 12px 0;
+  gap: 8px;
+  padding: 10px 0;
+}
+
+.slide[data-compact] .networkArea:nth-child(n + 3) {
+  border-top: 0;
 }
 
 .slide[data-compact] .networkLabel {
-  margin-bottom: 4px;
-  font-size: 20px;
+  margin: 0;
+  font-size: 17px;
 }
 
 .slide[data-compact] .partner {
-  gap: 10px;
-  padding-bottom: 16px;
-  margin-bottom: 4px;
+  gap: 6px;
+  padding-bottom: 8px;
+  margin-bottom: 0;
 }
 
 .slide[data-compact] .partnerMark {
-  min-height: 36px;
+  min-height: 24px;
 }
 
 .slide[data-compact] .networkArea ul.logos {
-  gap: 16px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
 }
 
 .slide[data-compact] .networkArea .logos img {
-  height: calc(1.15 * var(--h) * 14px);
+  height: calc(var(--h) * 10px);
 }
 
 /* Close: the calls to action full width, at a thumb's height. */

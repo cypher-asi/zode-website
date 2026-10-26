@@ -18,12 +18,12 @@ const Y_TICKS = [0, 50, 100, 150, 200];
 
 /**
  * The slide's wide plot, with the series and the gap named at its right
- * end, and a squarer one for the deck's scroll mode, where the legend names
+ * end, and a squarer one for the deck's phone pages, where the legend names
  * them and every other year is marked.
  */
 const LAYOUTS = {
   wide: { W: 1000, H: 500, pad: { top: 20, right: 200, bottom: 40, left: 64 }, yearStep: 1 },
-  compact: { W: 560, H: 540, pad: { top: 24, right: 12, bottom: 48, left: 92 }, yearStep: 2 },
+  compact: { W: 560, H: 340, pad: { top: 24, right: 12, bottom: 48, left: 92 }, yearStep: 2 },
 } as const;
 
 const [startYear, startGw] = DEMAND.installed[DEMAND.installed.length - 1];

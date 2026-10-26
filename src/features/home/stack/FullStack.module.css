@@ -57,8 +57,9 @@
  * The SVG is the only in-flow child, so label `top` percentages track its
  * height. `--lift` is how far a hovered plate rises, in viewBox units.
  * Another host (the investor deck) sets `--art`, `--art-max` and `--lead`
- * itself, `--label-end` for where the labels stop, and `--px`, the length
- * one pixel of the labels' spacing takes.
+ * itself, `--label-end` for where the labels stop, `--px`, the length
+ * one pixel of the labels' spacing takes, and `--label-body: none` to name
+ * the plates without describing them.
  */
 .figure {
   --gap: 30;
@@ -372,7 +373,7 @@
 }
 
 .labelBody {
-  display: block;
+  display: var(--label-body, block);
   margin-top: calc(4 * var(--px, 1px));
 }
 

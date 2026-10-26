@@ -602,151 +602,96 @@
 }
 
 /*
- * Scroll mode, on a portrait screen or a landscape phone (`data-scroll`,
- * Deck.tsx): the slides stand one after another down the page, each reflowed
- * to one column (Slide.module.css) and drawing its own grid, so the shared
- * one goes and the page scrolls. The controls are pinned to the window's
- * foot, with thumb-sized targets under the segmented progress, and slip away
- * while you read down (`data-controls` drops), back as you scroll up.
+ * Phone mode, on a portrait screen or a landscape phone (`data-phone`,
+ * Deck.tsx): one portrait page at a time, each reflowed to one column and
+ * scaled to fit (Slide.module.css), drawing its own grid, so the shared one
+ * goes. The pages slide up as the deck goes on and down as it goes back. A
+ * swipe or a tap turns them, so the stage takes every touch but a pinch, and
+ * the page never scrolls or pulls to refresh. The controls stay pinned to
+ * the window's foot, with thumb-sized targets under the segmented progress.
  */
-.root[data-scroll] {
-  --bar-h: 60px;
-
-  position: relative;
-  min-height: 100svh;
-  padding-bottom: calc(var(--bar-h) + env(safe-area-inset-bottom, 0px));
+.root[data-phone] {
+  --bar-h: 56px;
 }
 
-.root[data-scroll] :is(.viewport, .stage) {
-  position: static;
+:global(html):has(.root[data-phone]) {
+  overscroll-behavior: none;
 }
 
-/*
- * Off-screen slides skip layout and paint, each keeping its size once drawn.
- * A jump lands the title just below the header's corner fade, the slide's
- * top under the header (Slide.module.css pads the title 48px down).
- */
-.root[data-scroll] .slot {
-  position: relative;
-  inset: auto;
-  overflow: visible;
-  visibility: visible;
-  opacity: 1;
-  transition: none;
-  content-visibility: auto;
-  contain-intrinsic-block-size: auto 900px;
-  scroll-margin-top: calc(var(--header-band) + 8px);
+.root[data-phone] .stage {
+  touch-action: pinch-zoom;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
-/*
- * Half a screen between slides, on the incoming slide's ground: its number
- * and name between two rules, the rails running on through it, so each new
- * page reads as one even between slides on the same ground.
- */
-.divider {
-  --rule: var(--color-border);
-  --rule-strong: var(--color-border-hover);
-  --pip: 3px;
-
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-items: center;
-  justify-content: center;
-  min-height: 50svh;
-  padding: 32px calc(var(--frame-inset) + 24px);
-  background: var(--color-white);
-  color: var(--color-text-primary);
-  text-align: center;
+.root[data-phone] .slot {
+  transition:
+    opacity var(--duration-slow) var(--ease-out),
+    translate var(--duration-slow) var(--ease-in-out),
+    visibility 0s linear var(--duration-slow);
 }
 
-.divider[data-ground="paper"] {
-  background: var(--color-paper);
+.root[data-phone] .slot[data-state="current"] {
+  transition-delay: 0s;
 }
 
-.divider[data-ground="ink"] {
-  --rule: rgba(255, 255, 255, 0.14);
-  --rule-strong: rgba(255, 255, 255, 0.32);
-
-  background: var(--color-ink);
-  color: var(--color-text-inverse);
+.root[data-phone] .slot[data-state="before"] {
+  translate: 0 -100%;
 }
 
-.divider::before {
-  content: "";
-  position: absolute;
-  inset: 0 var(--frame-inset);
-  border-inline: 1px solid var(--rule);
-  pointer-events: none;
+.root[data-phone] .slot[data-state="after"] {
+  translate: 0 100%;
 }
 
-/* A rule across the top and the foot, rail to rail, with a pip centred on each rail. */
-.divider::after {
-  --bleed: calc(var(--frame-inset) + 0.5px - var(--pip) / 2);
-  --mid: calc(var(--pip) / 2 - 0.5px);
-
-  content: "";
-  position: absolute;
-  inset: calc(-1 * var(--mid)) var(--bleed);
-  background:
-    linear-gradient(var(--rule-strong), var(--rule-strong)) left top /
-      var(--pip) var(--pip) no-repeat,
-    linear-gradient(var(--rule-strong), var(--rule-strong)) right top /
-      var(--pip) var(--pip) no-repeat,
-    linear-gradient(var(--rule-strong), var(--rule-strong)) left bottom /
-      var(--pip) var(--pip) no-repeat,
-    linear-gradient(var(--rule-strong), var(--rule-strong)) right bottom /
-      var(--pip) var(--pip) no-repeat,
-    linear-gradient(var(--rule), var(--rule)) left 0 top var(--mid) / 100% 1px
-      no-repeat,
-    linear-gradient(var(--rule), var(--rule)) left 0 bottom var(--mid) / 100%
-      1px no-repeat;
-  pointer-events: none;
+@media (prefers-reduced-motion: reduce) {
+  .root[data-phone] .slot[data-state] {
+    translate: none;
+  }
 }
 
-.dividerNumber {
-  font-family: var(--font-mono);
-  font-size: var(--text-2xs);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: var(--caps-tracking);
-  text-transform: uppercase;
-  color: var(--color-text-secondary);
-}
-
-.divider[data-ground="ink"] .dividerNumber {
-  color: var(--color-text-inverse-secondary);
-}
-
-.dividerName {
-  max-width: 720px;
-  font-family: var(--font-display);
-  font-size: clamp(32px, 9.4vw, 44px);
-  font-weight: 300;
-  line-height: var(--h1-leading);
-  letter-spacing: var(--h1-tracking);
-  text-wrap: balance;
-}
-
-/* Before the deck reads the screen, the server's render is the stage; on a screen that scrolls it would flash 16:9 slides. */
-@media screen and (orientation: portrait), screen and (max-height: 500px) {
-  .root:not([data-scroll]) :is(.viewport, .bar) {
+/* Before the deck reads the screen, the server's render is the stage; on a phone it would flash 16:9 slides. */
+@media screen and (orientation: portrait),
+  screen and (max-height: 500px) and (pointer: coarse) {
+  .root:not([data-phone]) :is(.viewport, .bar) {
     visibility: hidden;
   }
 }
 
-.root[data-scroll] .bar {
-  position: fixed;
+/* A portrait page on a landscape phone would be too small to read, so the deck asks to be turned upright. */
+.turn {
+  display: none;
+}
+
+@media screen and (orientation: landscape) {
+  .root[data-phone] .turn {
+    position: absolute;
+    inset: 0;
+    z-index: 8;
+    display: grid;
+    place-items: center;
+    margin: 0;
+    padding: var(--header-band) var(--content-edge) 0;
+    background: var(--deck-bg);
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 300;
+    line-height: 1.3;
+    text-align: center;
+    color: var(--deck-fg);
+  }
+}
+
+.root[data-phone] .bar {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
 }
 
-.root[data-scroll] .barStart,
-.root[data-scroll] .barEnd {
+.root[data-phone] .barStart,
+.root[data-phone] .barEnd {
   gap: 4px;
 }
 
-.root[data-scroll] :is(.iconButton, .textButton) {
+.root[data-phone] :is(.iconButton, .textButton) {
   width: 44px;
   height: 44px;
   padding: 0;
@@ -754,23 +699,23 @@
   font-size: 0;
 }
 
-.root[data-scroll] .icon {
+.root[data-phone] .icon {
   width: 14px;
   height: 14px;
 }
 
-.root[data-scroll] .counter {
+.root[data-phone] .counter {
   margin-left: 6px;
 }
 
-.root[data-scroll] .section {
+.root[data-phone] .section {
   display: block;
   min-width: 0;
   margin-left: 4px;
   padding-left: 12px;
 }
 
-.root[data-scroll] .progress {
+.root[data-phone] .progress {
   position: absolute;
   top: 0;
   right: max(var(--content-edge), env(safe-area-inset-right, 0px));
@@ -779,18 +724,17 @@
   height: 8px;
 }
 
-.root[data-scroll] .tick {
+.root[data-phone] .tick {
   height: 12px;
   margin-top: -2px;
 }
 
-.root[data-scroll] .tick::after {
+.root[data-phone] .tick::after {
   display: none;
 }
 
 /* The slides as a list, between the header band and the bar, each row jumping to its slide. */
-.root[data-scroll] .overview {
-  position: fixed;
+.root[data-phone] .overview {
   padding-inline: max(var(--content-edge), env(safe-area-inset-left, 0px));
 }
 
