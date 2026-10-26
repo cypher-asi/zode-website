@@ -184,7 +184,8 @@ class HttpError extends Error {}
 async function zipWorker(): Promise<ServiceWorker | null> {
   if (!("serviceWorker" in navigator)) return null;
   try {
-    const registration = await navigator.serviceWorker.register(SW_URL, { scope: SW_SCOPE });
+    // The CDN gives these scripts a long browser cache, so updates are checked past it.
+    const registration = await navigator.serviceWorker.register(SW_URL, { scope: SW_SCOPE, updateViaCache: "none" });
     const worker = registration.installing ?? registration.waiting ?? registration.active;
     if (!worker) return null;
     if (worker.state === "activated") return worker;
