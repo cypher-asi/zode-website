@@ -492,7 +492,6 @@ export const SLIDES: readonly Slide[] = [
         logos: [
           { name: "Anthropic", src: `${LOGO_DIR}/anthropic.svg`, aspect: 1024.2 / 115, scale: 0.88 },
           { name: "OpenAI", src: `${LOGO_DIR}/openai.svg`, aspect: 288 / 78, center: 31 / 78 },
-          { name: "SpaceXAI", src: `${LOGO_DIR}/spacexai.svg`, aspect: 1294 / 158, scale: 1.3, center: 108 / 158 },
         ],
       },
     ],
