@@ -23,6 +23,8 @@ export interface MndaContract extends ContractBase {
   roomName: string | null;
   /** Bound to the ZOS account that signed it; unbound ones show only to the team. */
   linked: boolean;
+  /** The version of the agreement signed, e.g. zode-mnda-v2. */
+  templateVersion: string;
 }
 
 /** One of a compute deal's executed PDFs, e.g. its MSA or an order form. */
@@ -82,6 +84,7 @@ const toMnda = (row: Record<string, unknown>): MndaContract => ({
   signedAt: new Date(row.signed_at as string | Date),
   roomName: row.room_name == null ? null : String(row.room_name),
   linked: row.user_id != null,
+  templateVersion: String(row.template_version),
 });
 
 // Noon UTC, so the calendar date reads the same in every US timezone.
@@ -121,7 +124,8 @@ const toCompute = (row: Record<string, unknown>): ComputeContract => {
 /** Agreements this ZOS account signed, newest first. Matched by account, never by email. */
 export async function listContractsForUser(userId: string): Promise<Contract[]> {
   const rows = await db()`
-    select m.id, m.entity_name, m.signer_name, m.signer_title, m.signer_email, m.signed_at, m.user_id, r.name as room_name
+    select m.id, m.entity_name, m.signer_name, m.signer_title, m.signer_email, m.signed_at, m.user_id, m.template_version,
+      r.name as room_name
     from mndas m
     left join data_rooms r on r.id = m.room_id
     where m.user_id = ${userId}
@@ -134,7 +138,8 @@ export async function listContractsForUser(userId: string): Promise<Contract[]> 
 export async function listAllContracts(): Promise<Contract[]> {
   const [mndas, compute] = await Promise.all([
     db()`
-      select m.id, m.entity_name, m.signer_name, m.signer_title, m.signer_email, m.signed_at, m.user_id, r.name as room_name
+      select m.id, m.entity_name, m.signer_name, m.signer_title, m.signer_email, m.signed_at, m.user_id, m.template_version,
+        r.name as room_name
       from mndas m
       left join data_rooms r on r.id = m.room_id
     `,

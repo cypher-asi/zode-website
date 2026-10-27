@@ -6,7 +6,15 @@ import { signMndaAndAcceptInviteAction } from "./actions";
 import type { ActionState, InviteRef } from "./types";
 
 /** Signs the MNDA and accepts the invite in one step; success redirects into the room. */
-export function SignMndaToJoin({ invite, email }: { invite: InviteRef; email: string }): ReactElement {
+export function SignMndaToJoin({
+  invite,
+  email,
+  templateVersion,
+}: {
+  invite: InviteRef;
+  email: string;
+  templateVersion: string;
+}): ReactElement {
   const [state, sign, pending] = useActionState<ActionState, FormData>(
     signMndaAndAcceptInviteAction.bind(null, invite),
     {},
@@ -17,6 +25,7 @@ export function SignMndaToJoin({ invite, email }: { invite: InviteRef; email: st
       pending={pending}
       error={state.error ?? null}
       lockedEmail={email}
+      templateVersion={templateVersion}
       submitLabel="Sign and open the data room"
     />
   );

@@ -188,6 +188,7 @@ function MndaDetails({ contract, showSigner }: { contract: MndaContract; showSig
         facts={[
           ["Counterparty", contract.counterparty],
           ["Signed", signedAt.format(contract.signedAt)],
+          ["Template", contract.templateVersion],
           ["Data room", contract.roomName],
           ["Account", showSigner ? (contract.linked ? "Linked to a ZOS account" : "No account") : null],
         ]}

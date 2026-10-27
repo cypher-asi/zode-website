@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import { AgreementText } from "@/features/mnda/AgreementText";
+import { CURRENT_TEMPLATE } from "@/features/mnda/templates";
 import { AcceptInvite } from "./AcceptInvite";
 import type { InviteDetails } from "./invites";
 import { SignMndaToJoin } from "./SignMndaToJoin";
@@ -43,8 +44,8 @@ export function JoinInvite({
             countersigns right away and you get the executed copy by email. Views and downloads in data rooms are
             recorded for the room&apos;s admins.
           </p>
-          <AgreementText />
-          <SignMndaToJoin invite={inviteRef} email={invite.email} />
+          <AgreementText template={CURRENT_TEMPLATE} />
+          <SignMndaToJoin invite={inviteRef} email={invite.email} templateVersion={CURRENT_TEMPLATE.version} />
         </>
       ) : (
         <>

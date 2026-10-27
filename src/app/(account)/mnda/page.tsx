@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import { AgreementText } from "@/features/mnda/AgreementText";
 import { MndaSigner } from "@/features/mnda/MndaSigner";
+import { CURRENT_TEMPLATE } from "@/features/mnda/templates";
 import styles from "@/features/mnda/Mnda.module.css";
 
 export const metadata: Metadata = {
@@ -21,8 +22,8 @@ export default function MndaPage(): ReactElement {
           executed PDF by email.
         </p>
       </header>
-      <AgreementText />
-      <MndaSigner />
+      <AgreementText template={CURRENT_TEMPLATE} />
+      <MndaSigner templateVersion={CURRENT_TEMPLATE.version} />
     </div>
   );
 }

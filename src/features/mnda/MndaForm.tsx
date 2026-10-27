@@ -24,6 +24,8 @@ interface MndaFormProps {
   error: string | null;
   /** The signer's address when it's already known and proven, as in a data room invite. */
   lockedEmail?: string;
+  /** The version of the agreement shown beside the form; signing fails if it's been replaced since. */
+  templateVersion: string;
   submitLabel: string;
 }
 
@@ -31,7 +33,14 @@ interface MndaFormProps {
  * The counterparty's details and typed signature. Inputs are controlled so a
  * server-side error doesn't clear them when React resets the form.
  */
-export function MndaForm({ action, pending, error, lockedEmail, submitLabel }: MndaFormProps): ReactElement {
+export function MndaForm({
+  action,
+  pending,
+  error,
+  lockedEmail,
+  templateVersion,
+  submitLabel,
+}: MndaFormProps): ReactElement {
   const id = useId();
   const [values, setValues] = useState<Values>({ ...EMPTY, signerEmail: lockedEmail ?? "" });
   const [consent, setConsent] = useState(false);
@@ -45,6 +54,7 @@ export function MndaForm({ action, pending, error, lockedEmail, submitLabel }: M
 
   return (
     <form action={action} className={styles.form}>
+      <input type="hidden" name="templateVersion" value={templateVersion} />
       <fieldset className={styles.group}>
         <legend className={styles.legend}>The entity</legend>
         <div className={styles.fields}>

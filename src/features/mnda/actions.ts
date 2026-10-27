@@ -33,7 +33,7 @@ export async function signMndaAction(_prev: MndaState, formData: FormData): Prom
   const userId = account && account.email.trim().toLowerCase() === party.signerEmail ? account.userId : null;
 
   try {
-    const mnda = await createMnda(party, { userId, room: null });
+    const mnda = await createMnda(party, parsed.templateVersion, { userId, room: null });
     after(() => sendMndaEmails(mnda, null));
   } catch (err) {
     return { status: "error", error: signFailure(err) };

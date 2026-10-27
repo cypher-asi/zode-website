@@ -6,7 +6,7 @@ import { MndaForm } from "./MndaForm";
 import styles from "./Mnda.module.css";
 
 /** The public signing form, replaced by a confirmation once the agreement is executed. */
-export function MndaSigner(): ReactElement {
+export function MndaSigner({ templateVersion }: { templateVersion: string }): ReactElement {
   const [state, sign, pending] = useActionState<MndaState, FormData>(signMndaAction, { status: "idle" });
 
   if (state.status === "signed") {
@@ -31,6 +31,7 @@ export function MndaSigner(): ReactElement {
       action={sign}
       pending={pending}
       error={state.status === "error" ? state.error : null}
+      templateVersion={templateVersion}
       submitLabel="Sign the MNDA"
     />
   );

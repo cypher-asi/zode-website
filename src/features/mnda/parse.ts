@@ -24,7 +24,15 @@ export const FIELD_LIMITS = {
 /** The signature page has three address lines. */
 export const MAX_ADDRESS_LINES = 3;
 
-export type ParsedMnda = { ok: true; party: MndaParty; spam: boolean } | { ok: false; error: string };
+export type ParsedMnda =
+  | {
+      ok: true;
+      party: MndaParty;
+      /** The version of the agreement the form was showing. */
+      templateVersion: string;
+      spam: boolean;
+    }
+  | { ok: false; error: string };
 
 const field = (formData: FormData, name: string): string => {
   const value = formData.get(name);
@@ -75,6 +83,7 @@ export function parseMnda(formData: FormData, lockedEmail?: string): ParsedMnda 
   return {
     ok: true,
     party: { entityName, entityType, entityAddress, signerName, signerTitle, signerEmail },
+    templateVersion: field(formData, "templateVersion"),
     spam: field(formData, HONEYPOT_FIELD) !== "",
   };
 }

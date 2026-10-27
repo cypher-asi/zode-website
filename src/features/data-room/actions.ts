@@ -590,7 +590,7 @@ export async function signMndaAndAcceptInviteAction(
     }
     let mnda: ExecutedMnda;
     try {
-      mnda = await createMnda(parsed.party, {
+      mnda = await createMnda(parsed.party, parsed.templateVersion, {
         userId: account.userId,
         room: { id: invite.roomId, name: invite.roomName },
       });

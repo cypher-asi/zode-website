@@ -4,25 +4,24 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
-import { TEMPLATE_VERSION, ZODE_PARTY, consentText } from "./agreement";
+import { ZODE_PARTY, consentText } from "./agreement";
 import type { MndaParty } from "./parse";
+import type { Blank, MndaTemplate } from "./templates";
 
 /** Loaded with fs from the project root; next.config's outputFileTracingIncludes ships them with the routes that sign. */
 const ASSETS = path.join(process.cwd(), "src/features/mnda/assets");
 
-let assets: Promise<{ template: Buffer; regular: Buffer; bold: Buffer; italic: Buffer }> | undefined;
+const files = new Map<string, Promise<Buffer>>();
 
-function loadAssets() {
-  assets ??= Promise.all(
-    ["zode-mnda-v1.pdf", "LiberationSans-Regular.ttf", "LiberationSans-Bold.ttf", "LiberationSans-Italic.ttf"].map(
-      (name) => readFile(path.join(ASSETS, name)),
-    ),
-  ).then(([template, regular, bold, italic]) => ({ template, regular, bold, italic }));
-  return assets;
+function asset(name: string): Promise<Buffer> {
+  let file = files.get(name);
+  if (!file) files.set(name, (file = readFile(path.join(ASSETS, name))));
+  return file;
 }
 
 export interface ExecutedMndaInput {
   id: string;
+  template: MndaTemplate;
   party: MndaParty;
   zodeSigner: { name: string; title: string };
   signedAt: Date;
@@ -89,13 +88,6 @@ function fit(
   return { size: (width / font.widthOfTextAtSize(text, 1)) * 0.98, lines: [text] };
 }
 
-interface Blank {
-  x: number;
-  /** Baseline of the printed line the blank sits on. */
-  y: number;
-  width: number;
-}
-
 /** Writes `text` into a blank, the last line just above `y` and any others stacked above it. */
 function fillBlank(
   page: PDFPage,
@@ -121,35 +113,12 @@ function fillBlank(
   });
 }
 
-// Positions on the template, in PDF points from the bottom left, measured
-// from zode-mnda-v1.pdf. A new template version needs them re-measured.
-
-/** Page 1, the preamble's first two lines. */
-const PREAMBLE = {
-  date: { x: 330.7, y: 651.95, width: 72 },
-  year: { x: 419.2, y: 651.95, width: 9.5 },
-  entityName: { x: 151.5, y: 641.6, width: 130.5 },
-  entityType: { x: 294.2, y: 641.6, width: 126 },
-};
-
-/** Page 3, the signature blocks; `y` is each rule's height. */
-const SIGNATURES = {
-  zodeBy: { x: 54, y: 654, width: 234 },
-  zodeName: { x: 68, y: 625, width: 220 },
-  zodeTitle: { x: 68, y: 605, width: 220 },
-  entityName: { x: 335.5, y: 673, width: 199.5 },
-  entityBy: { x: 323, y: 654, width: 235 },
-  entityPrintedName: { x: 337, y: 625, width: 221 },
-  entityAddress: [
-    { x: 350, y: 605, width: 208 },
-    { x: 306, y: 596, width: 252 },
-    { x: 306, y: 586, width: 252 },
-  ],
-};
-
 /** The template, filled in and signed by both parties, with a signature certificate appended. */
 export async function renderExecutedMnda(input: ExecutedMndaInput): Promise<{ bytes: Uint8Array; sha256: string }> {
-  const { template, regular: regularBytes, bold: boldBytes, italic: italicBytes } = await loadAssets();
+  const [template, regularBytes, boldBytes, italicBytes] = await Promise.all(
+    [input.template.pdf, "LiberationSans-Regular.ttf", "LiberationSans-Bold.ttf", "LiberationSans-Italic.ttf"].map(asset),
+  );
+  const { preamble, signatures } = input.template.blanks;
   const doc = await PDFDocument.load(template);
   doc.registerFontkit(fontkit);
   const [regular, bold, italic] = await Promise.all([
@@ -162,36 +131,36 @@ export async function renderExecutedMnda(input: ExecutedMndaInput): Promise<{ by
   if (pages.length !== 3) throw new Error(`MNDA template has ${pages.length} pages; expected 3.`);
   const [first, , signaturePage] = pages;
 
-  fillBlank(first, monthDay(signedAt), PREAMBLE.date, regular, { maxSize: 8, minSize: 5, align: "center" });
-  fillBlank(first, String(signedAt.getUTCFullYear() % 100).padStart(2, "0"), PREAMBLE.year, regular, {
+  fillBlank(first, monthDay(signedAt), preamble.date, regular, { maxSize: 8, minSize: 5, align: "center" });
+  fillBlank(first, String(signedAt.getUTCFullYear() % 100).padStart(2, "0"), preamble.year, regular, {
     maxSize: 8,
     minSize: 5,
     align: "center",
   });
   const preambleFit = { maxSize: 8, minSize: 5.5, maxLines: 2, wrappedMax: 4 };
-  fillBlank(first, party.entityName, PREAMBLE.entityName, regular, preambleFit);
-  fillBlank(first, party.entityType, PREAMBLE.entityType, regular, preambleFit);
+  fillBlank(first, party.entityName, preamble.entityName, regular, preambleFit);
+  fillBlank(first, party.entityType, preamble.entityType, regular, preambleFit);
 
   const signed = `Signed electronically ${longDate(signedAt)} \u00b7 ID ${input.id}`;
   const signature = (blank: Blank, name: string) => {
     fillBlank(signaturePage, name, blank, italic, { maxSize: 14, minSize: 7, lift: 2 });
     fillBlank(signaturePage, signed, { ...blank, y: blank.y - 7.5 }, regular, { maxSize: 5.5, minSize: 4, lift: 0 });
   };
-  signature(SIGNATURES.zodeBy, zodeSigner.name);
-  fillBlank(signaturePage, zodeSigner.name, SIGNATURES.zodeName, regular, { maxSize: 8.5, minSize: 5.5 });
-  fillBlank(signaturePage, zodeSigner.title, SIGNATURES.zodeTitle, regular, { maxSize: 8.5, minSize: 5.5 });
+  signature(signatures.zodeBy, zodeSigner.name);
+  fillBlank(signaturePage, zodeSigner.name, signatures.zodeName, regular, { maxSize: 8.5, minSize: 5.5 });
+  fillBlank(signaturePage, zodeSigner.title, signatures.zodeTitle, regular, { maxSize: 8.5, minSize: 5.5 });
 
-  fillBlank(signaturePage, party.entityName, SIGNATURES.entityName, bold, { maxSize: 8.5, minSize: 5.5, maxLines: 2 });
-  signature(SIGNATURES.entityBy, party.signerName);
-  fillBlank(signaturePage, `${party.signerName}, ${party.signerTitle}`, SIGNATURES.entityPrintedName, regular, {
+  fillBlank(signaturePage, party.entityName, signatures.entityName, bold, { maxSize: 8.5, minSize: 5.5, maxLines: 2 });
+  signature(signatures.entityBy, party.signerName);
+  fillBlank(signaturePage, `${party.signerName}, ${party.signerTitle}`, signatures.entityPrintedName, regular, {
     maxSize: 8.5,
     minSize: 5.5,
   });
   party.entityAddress
     .split("\n")
-    .slice(0, SIGNATURES.entityAddress.length)
+    .slice(0, signatures.entityAddress.length)
     .forEach((line, i) =>
-      fillBlank(signaturePage, line, SIGNATURES.entityAddress[i], regular, { maxSize: 7.5, minSize: 4.5, lift: 1.2 }),
+      fillBlank(signaturePage, line, signatures.entityAddress[i], regular, { maxSize: 7.5, minSize: 4.5, lift: 1.2 }),
     );
 
   drawCertificate(doc, input, { regular, bold }, createHash("sha256").update(template).digest("hex"));
@@ -243,7 +212,7 @@ function drawCertificate(
 
   section("Agreement", [
     ["Agreement ID", input.id],
-    ["Template", `${TEMPLATE_VERSION} (SHA-256 ${templateSha256})`],
+    ["Template", `${input.template.version} (SHA-256 ${templateSha256})`],
     ["Effective date", longDate(input.signedAt)],
   ]);
   section("Entity", [
