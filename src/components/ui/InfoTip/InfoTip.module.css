@@ -1,0 +1,93 @@
+.trigger {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin: -2px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  vertical-align: middle;
+  cursor: help;
+  transition: color var(--duration-fast) ease;
+}
+
+.trigger:is(:hover, :focus-visible, [aria-expanded="true"]) {
+  color: var(--color-text-primary);
+}
+
+.trigger svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+/* `inset` and `margin` undo the UA's centred popover; `display` only applies while open so the UA can hide it. */
+.tip {
+  position: fixed;
+  inset: auto;
+  box-sizing: border-box;
+  max-width: min(340px, calc(100vw - 16px));
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-inset);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-md);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: 1.45;
+  text-align: left;
+  text-transform: none;
+  white-space: normal;
+  transition:
+    opacity var(--duration-fast) ease,
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.tip:popover-open {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 3px 14px;
+}
+
+@starting-style {
+  .tip:popover-open {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+
+  .tip[data-side="bottom"]:popover-open {
+    transform: translateY(-3px);
+  }
+}
+
+.row {
+  display: contents;
+}
+
+.label {
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger,
+  .tip {
+    transition: none;
+  }
+}

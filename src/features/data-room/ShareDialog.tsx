@@ -12,10 +12,11 @@ import {
   type ReactElement,
 } from "react";
 import Link from "next/link";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { isEmail } from "@/lib/validation";
 import { inviteMembersAction } from "./actions";
 import { Icon } from "./icons";
-import { ROLES, roleLabel, type ActionState, type PersonSuggestion, type RoomMember } from "./types";
+import { ROLES, memberHistory, roleLabel, type ActionState, type PersonSuggestion, type RoomMember } from "./types";
 import styles from "./share.module.css";
 import ui from "./ui.module.css";
 
@@ -409,6 +410,7 @@ function ShareDialog({ roomId, roomName, members, selfEmail, onClose }: SharePro
                   {member.email}
                   {member.email === selfEmail ? <span className={styles.you}>You</span> : null}
                 </span>
+                <InfoTip rows={memberHistory(member)} label={`Invite details for ${member.email}`} />
                 {member.status !== "active" ? (
                   <span className={styles.status} data-status={member.status}>
                     {STATUS_LABELS[member.status]}

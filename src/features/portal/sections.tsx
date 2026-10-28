@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import Link from "next/link";
+import { InfoTip } from "@/components/ui/InfoTip";
 import type { OrderSummary } from "@/features/configurator/orders";
 import { ContractBrowser, type BrowserGroup, type BrowserItem } from "@/features/contracts/ContractBrowser";
 import { ContractDetails, ContractPdfButtons } from "@/features/contracts/ContractDetails";
@@ -128,7 +129,11 @@ export function InviteList({ invites }: { invites: PendingInvite[] }): ReactElem
       <ul className={styles.list}>
         {invites.map((invite) => (
           <li key={invite.memberId}>
-            <Link className={styles.row} href={`/portal/data-rooms/join/${invite.memberId}`}>
+            <Link
+              className={styles.row}
+              href={`/portal/data-rooms/join/${invite.memberId}`}
+              aria-describedby={`invite-${invite.memberId}-details`}
+            >
               <span className={styles.rowIcon}>
                 <PortalIcon name="site" />
               </span>
@@ -136,7 +141,16 @@ export function InviteList({ invites }: { invites: PendingInvite[] }): ReactElem
                 <span className={styles.rowTitle}>{invite.roomName}</span>
                 <span className={styles.rowMeta}>
                   {invite.invitedBy ? `${invite.invitedBy} invited you` : "You're invited"} as{" "}
-                  {invite.role === "admin" ? "an Admin" : "a Viewer"}
+                  {invite.role === "admin" ? "an Admin" : "a Viewer"}{" "}
+                  <InfoTip
+                    id={`invite-${invite.memberId}-details`}
+                    label="Invite details"
+                    rows={[
+                      ...(invite.invitedBy ? [{ label: "Invited by", value: invite.invitedBy }] : []),
+                      { label: "Sent", date: invite.invitedAt },
+                      ...(invite.expiresAt ? [{ label: "Expires", date: invite.expiresAt }] : []),
+                    ]}
+                  />
                 </span>
               </span>
               <span className={styles.rowEnd}>

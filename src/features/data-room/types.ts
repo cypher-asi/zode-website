@@ -1,3 +1,5 @@
+import type { InfoTipRow } from "@/components/ui/InfoTip";
+
 export type RoomRole = "admin" | "viewer";
 
 export const ROLES: readonly { id: RoomRole; label: string; detail: string }[] = [
@@ -90,10 +92,35 @@ export interface RoomMember {
   role: RoomRole;
   status: "active" | "pending" | "expired";
   invitedBy: string | null;
+  /** The latest send; a resend moves it. */
   invitedAt: string;
   acceptedAt: string | null;
+  /** When the pending invite's link stops working; null once accepted. */
+  expiresAt: string | null;
+  /** The first send, from the audit trail; null for invites older than its email detail. */
+  firstSentAt: string | null;
+  /** Invites and resends to the address, from the audit trail. */
+  sends: number;
   /** The invite asks for a signed MNDA before joining. */
   requiresMnda: boolean;
+}
+
+/** A member's invite history, for its info tip. The room's creator joined without one. */
+export function memberHistory(member: RoomMember): InfoTipRow[] {
+  if (member.invitedBy === member.email && member.acceptedAt) return [{ label: "Created room", date: member.acceptedAt }];
+  const resent = member.sends > 1;
+  const rows: (InfoTipRow | null)[] = [
+    member.invitedBy ? { label: resent ? "Last sent by" : "Invited by", value: member.invitedBy } : null,
+    resent && member.firstSentAt ? { label: "First sent", date: member.firstSentAt } : null,
+    { label: resent ? "Last sent" : "Sent", date: member.invitedAt },
+    resent ? { label: "Times sent", value: String(member.sends) } : null,
+    member.acceptedAt ? { label: "Accepted", date: member.acceptedAt } : null,
+    member.status !== "active" && member.expiresAt
+      ? { label: member.status === "expired" ? "Expired" : "Expires", date: member.expiresAt }
+      : null,
+    member.status !== "active" && member.requiresMnda ? { label: "MNDA", value: "Required before joining" } : null,
+  ];
+  return rows.filter((row) => row !== null);
 }
 
 /** Someone the share dialog suggests inviting; `name` is null when only their email is known. */
@@ -168,6 +195,8 @@ export interface PendingInvite {
   roomName: string;
   role: RoomRole;
   invitedBy: string | null;
+  invitedAt: string;
+  expiresAt: string | null;
   /** The invite requires the MNDA and the account hasn't signed one yet. */
   needsMnda: boolean;
 }

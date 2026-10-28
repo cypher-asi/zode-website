@@ -1,10 +1,11 @@
 "use client";
 
 import { useOptimistic, useState, useTransition, type ReactElement } from "react";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { Select } from "@/components/ui/Select";
 import { changeRoleAction, removeMemberAction, resendInviteAction } from "./actions";
 import { Dialog, type DialogProps } from "./Dialog";
-import { ROLES, type ActionState, type RoomMember, type RoomRole } from "./types";
+import { ROLES, memberHistory, type ActionState, type RoomMember, type RoomRole } from "./types";
 import styles from "./admin.module.css";
 import ui from "./ui.module.css";
 
@@ -66,6 +67,7 @@ export function MembersPanel({ roomId, roomName, members, selfEmail }: MembersPa
             {member.status === "active" && member.acceptedAt
               ? `Joined ${date.format(new Date(member.acceptedAt))}`
               : `Invited ${date.format(new Date(member.invitedAt))}${member.invitedBy ? ` by ${member.invitedBy}` : ""}`}
+            <InfoTip rows={memberHistory(member)} label={`Invite details for ${member.email}`} />
           </span>
         </div>
         <Select

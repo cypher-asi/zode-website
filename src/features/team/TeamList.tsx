@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import { InfoTip, type InfoTipRow } from "@/components/ui/InfoTip";
 import { PortalIcon } from "@/features/portal/icons";
 import styles from "@/features/portal/portal.module.css";
 import { ROLE_LABELS, type User } from "@/features/users/types";
@@ -6,6 +7,16 @@ import type { PendingTeamInvite } from "./invites";
 import { PendingInviteButtons, RemoveFromTeamButton } from "./TeamButtons";
 
 const date = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
+
+function teamInviteHistory(invite: PendingTeamInvite): InfoTipRow[] {
+  const rows: (InfoTipRow | null)[] = [
+    invite.invitedBy ? { label: "Invited by", value: invite.invitedBy } : null,
+    { label: "Sent", date: invite.invitedAt },
+    invite.expiresAt ? { label: invite.expired ? "Expired" : "Expires", date: invite.expiresAt } : null,
+    { label: "Grants", value: ROLE_LABELS[invite.role] },
+  ];
+  return rows.filter((row) => row !== null);
+}
 
 /** The team, with Remove on each Team row for super admins. Super admins are changed on the Users page. */
 export function TeamList({
@@ -64,7 +75,8 @@ export function PendingTeamInvites({ invites }: { invites: PendingTeamInvite[] }
               <span className={styles.rowTitle}>{invite.email}</span>
               <span className={styles.rowMeta}>
                 {invite.expired ? "Expired" : "Invited"} {date.format(invite.invitedAt)}
-                {invite.invitedBy ? ` by ${invite.invitedBy}` : ""}
+                {invite.invitedBy ? ` by ${invite.invitedBy}` : ""}{" "}
+                <InfoTip rows={teamInviteHistory(invite)} label={`Invite details for ${invite.email}`} />
               </span>
             </span>
             <span className={styles.rowEnd}>

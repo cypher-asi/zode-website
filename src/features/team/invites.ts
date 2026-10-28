@@ -32,6 +32,7 @@ export interface PendingTeamInvite {
   role: InviteRole;
   invitedBy: string | null;
   invitedAt: Date;
+  expiresAt: Date | null;
   expired: boolean;
 }
 
@@ -98,6 +99,7 @@ export async function listPendingTeamInvites(role?: InviteRole): Promise<Pending
     role: row.role as InviteRole,
     invitedBy: row.invited_by == null ? null : String(row.invited_by),
     invitedAt: new Date(row.invited_at as string | Date),
+    expiresAt: row.invite_expires_at == null ? null : new Date(row.invite_expires_at as string | Date),
     expired: !row.invite_expires_at || new Date(row.invite_expires_at as string).getTime() <= now,
   }));
 }

@@ -89,6 +89,8 @@ export interface InviteDetails {
   email: string;
   role: RoomRole;
   invitedBy: string | null;
+  invitedAt: string;
+  expiresAt: string | null;
   expired: boolean;
   requiresMnda: boolean;
 }
@@ -102,6 +104,8 @@ const toInvite = (row: Record<string, unknown>): InviteDetails => ({
   email: String(row.email),
   role: row.role as RoomRole,
   invitedBy: row.invited_by_email == null ? null : String(row.invited_by_email),
+  invitedAt: new Date(row.invited_at as string).toISOString(),
+  expiresAt: row.invite_expires_at == null ? null : new Date(row.invite_expires_at as string).toISOString(),
   expired: !row.invite_expires_at || new Date(row.invite_expires_at as string).getTime() <= Date.now(),
   requiresMnda: Boolean(row.requires_mnda),
 });
@@ -113,7 +117,7 @@ export async function findInvite(ref: InviteRef): Promise<InviteDetails | null> 
   if ("token" in ref) {
     if (typeof ref.token !== "string" || !TOKEN_RE.test(ref.token)) return null;
     const [row] = await sql`
-      select m.id, m.room_id, r.name, m.email, m.role, m.invited_by_email, m.invite_expires_at, m.requires_mnda
+      select m.id, m.room_id, r.name, m.email, m.role, m.invited_by_email, m.invited_at, m.invite_expires_at, m.requires_mnda
       from data_room_members m
       join data_rooms r on r.id = m.room_id
       where m.invite_token_hash = ${hashToken(ref.token)} and m.accepted_at is null
@@ -122,7 +126,7 @@ export async function findInvite(ref: InviteRef): Promise<InviteDetails | null> 
   }
   if (!("memberId" in ref) || !isUuid(ref.memberId)) return null;
   const [row] = await sql`
-    select m.id, m.room_id, r.name, m.email, m.role, m.invited_by_email, m.invite_expires_at, m.requires_mnda
+    select m.id, m.room_id, r.name, m.email, m.role, m.invited_by_email, m.invited_at, m.invite_expires_at, m.requires_mnda
     from data_room_members m
     join data_rooms r on r.id = m.room_id
     where m.id = ${ref.memberId} and m.accepted_at is null
@@ -199,7 +203,7 @@ export async function shareWithAccount(
 /** Unexpired invites to the account's email, for rooms it isn't in yet, oldest first. */
 async function pendingInvitesFor(account: Account): Promise<InviteDetails[]> {
   const rows = await db()`
-    select m.id, m.room_id, r.name, m.email, m.role, m.invited_by_email, m.invite_expires_at, m.requires_mnda
+    select m.id, m.room_id, r.name, m.email, m.role, m.invited_by_email, m.invited_at, m.invite_expires_at, m.requires_mnda
     from data_room_members m
     join data_rooms r on r.id = m.room_id
     where m.email = ${normalizeEmail(account.email)} and m.accepted_at is null and m.invite_expires_at > now()
@@ -221,6 +225,8 @@ export async function listPendingInvites(account: Account): Promise<PendingInvit
     roomName: invite.roomName,
     role: invite.role,
     invitedBy: invite.invitedBy,
+    invitedAt: invite.invitedAt,
+    expiresAt: invite.expiresAt,
     needsMnda: invite.requiresMnda && !signed,
   }));
 }

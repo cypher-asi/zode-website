@@ -324,13 +324,35 @@ export async function folderSubtree(roomId: string, folderId: string): Promise<s
   return rows.map((row) => String(row.id));
 }
 
-/** Active members by role, then invites oldest first. Cached per request, since a room's layout and its Members tab both list them. */
+/**
+ * Active members by role, then invites oldest first. A member row only keeps
+ * its latest send, so the first send and the count come from the audit trail,
+ * since the address was last revoked or removed. Cached per request, since a
+ * room's layout and its Members tab both list them.
+ */
 export const listMembers = cache(async (roomId: string): Promise<RoomMember[]> => {
   const rows = await db()`
-    select id, email, role, invited_by_email, invited_at, accepted_at, invite_expires_at, requires_mnda
-    from data_room_members
-    where room_id = ${roomId}
-    order by accepted_at is null, case when accepted_at is null then invited_at end, role, email
+    with history as materialized (
+      select detail->>'email' as email, action, created_at
+      from data_room_events
+      where room_id = ${roomId} and action in ('invite', 'invite_resend', 'invite_revoke', 'remove')
+    ),
+    sends as (
+      select h.email, min(h.created_at) as first_sent_at, count(*)::int as sends
+      from history h
+      where h.action in ('invite', 'invite_resend')
+        and h.created_at > coalesce(
+          (select max(r.created_at) from history r where r.email = h.email and r.action in ('invite_revoke', 'remove')),
+          '-infinity'::timestamptz
+        )
+      group by h.email
+    )
+    select m.id, m.email, m.role, m.invited_by_email, m.invited_at, m.accepted_at, m.invite_expires_at, m.requires_mnda,
+      s.first_sent_at, coalesce(s.sends, 0) as sends
+    from data_room_members m
+    left join sends s on s.email = m.email
+    where m.room_id = ${roomId}
+    order by m.accepted_at is null, case when m.accepted_at is null then m.invited_at end, m.role, m.email
   `;
   const now = Date.now();
   return rows.map((row) => ({
@@ -345,6 +367,9 @@ export const listMembers = cache(async (roomId: string): Promise<RoomMember[]> =
     invitedBy: row.invited_by_email == null ? null : String(row.invited_by_email),
     invitedAt: iso(row.invited_at),
     acceptedAt: row.accepted_at == null ? null : iso(row.accepted_at),
+    expiresAt: row.invite_expires_at == null ? null : iso(row.invite_expires_at),
+    firstSentAt: row.first_sent_at == null ? null : iso(row.first_sent_at),
+    sends: Number(row.sends),
     requiresMnda: Boolean(row.requires_mnda),
   }));
 });
