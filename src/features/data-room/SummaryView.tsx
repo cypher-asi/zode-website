@@ -11,6 +11,7 @@ import {
   summaryEconomics,
   toUsd,
   type AcquisitionTerms,
+  type DiligenceItem,
   type DiligenceSource,
   type DiligenceStatus,
   type DiligenceSummary,
@@ -22,6 +23,7 @@ import {
   type SummaryEconomics,
 } from "./summary";
 import { CapitalStack, type CapitalSource, type Payout } from "./CapitalStack";
+import { CopyButton } from "./CopyButton";
 import { Icon } from "./icons";
 import { siteMapSrc } from "./rooms";
 import { SiteMap } from "./SiteMap";
@@ -65,6 +67,30 @@ function diligenceLede(statuses: DiligenceStatus[]): string {
   ]
     .filter(Boolean)
     .join(" ");
+}
+
+/**
+ * The diligence answers as plain text, in display order: each item's status,
+ * headline and reasoning, then the files it cites by name and room path.
+ */
+function diligenceText(items: { label: string; item: DiligenceItem }[], names: Map<string, string>): string {
+  const blocks = items.map(({ label, item }) => {
+    const files = item.sources.map((source) => {
+      const name = names.get(source.fileId);
+      return name
+        ? `- ${name} (${source.path})`
+        : `- ${source.path.split("/").pop()} (${source.path}, no longer in the room)`;
+    });
+    return [
+      `${label}: ${STATUS_LABELS[item.status]}`,
+      item.headline,
+      item.detail.replace(/\*\*(.+?)\*\*/g, "$1").trim(),
+      files.length ? `Files:\n${files.join("\n")}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  });
+  return ["Diligence", diligenceLede(items.map(({ item }) => item.status)), ...blocks].join("\n\n");
 }
 
 /** `**bold**` spans; everything else stays plain text. */
@@ -1109,6 +1135,7 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
               <h2 id="diligence-heading" className={styles.heading}>
                 Diligence
               </h2>
+              <CopyButton text={diligenceText(items, summary.sourceNames)} label="diligence" />
             </div>
             <p className={styles.lede}>{diligenceLede(items.map(({ item }) => item.status))}</p>
             <ul className={styles.list}>
