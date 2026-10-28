@@ -196,7 +196,7 @@ export async function shareWithAccount(
   return result.ok ? result : null;
 }
 
-/** Unexpired invites to the account's email, for rooms it isn't in yet. */
+/** Unexpired invites to the account's email, for rooms it isn't in yet, oldest first. */
 async function pendingInvitesFor(account: Account): Promise<InviteDetails[]> {
   const rows = await db()`
     select m.id, m.room_id, r.name, m.email, m.role, m.invited_by_email, m.invite_expires_at, m.requires_mnda
@@ -207,7 +207,7 @@ async function pendingInvitesFor(account: Account): Promise<InviteDetails[]> {
         select 1 from data_room_members a
         where a.room_id = m.room_id and a.user_id = ${account.userId} and a.accepted_at is not null
       )
-    order by m.invited_at desc
+    order by m.invited_at asc
   `;
   return rows.map(toInvite);
 }

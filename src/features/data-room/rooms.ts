@@ -324,13 +324,13 @@ export async function folderSubtree(roomId: string, folderId: string): Promise<s
   return rows.map((row) => String(row.id));
 }
 
-/** Cached per request, since a room's layout and its Members tab both list them. */
+/** Active members by role, then invites oldest first. Cached per request, since a room's layout and its Members tab both list them. */
 export const listMembers = cache(async (roomId: string): Promise<RoomMember[]> => {
   const rows = await db()`
     select id, email, role, invited_by_email, invited_at, accepted_at, invite_expires_at, requires_mnda
     from data_room_members
     where room_id = ${roomId}
-    order by accepted_at is null, role, email
+    order by accepted_at is null, case when accepted_at is null then invited_at end, role, email
   `;
   const now = Date.now();
   return rows.map((row) => ({
