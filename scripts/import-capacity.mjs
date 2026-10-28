@@ -55,7 +55,6 @@ const SECTIONS = {
       { room: "369 Union Road, Somerville, AL" }],
     ["Alabama position B", "Alabama", "Syaala", 10, "Lease", 50, 0, null, null, null, null, "2027-03-31",
       { room: "Arab, AL (AL04)" }],
-    ["Alabama position C", "Alabama", "Syaala", 10, "Lease", 50, 0, null, null, null, null, "2027-03-31"],
     ["North Texas position 1", "Wichita Falls, Texas", "Syaala", 10, "Lease", 20, 0, null, null, null, null, "2027-03-31"],
     ["Missouri", "Missouri", "Big Watt", 10, "Lease", 350, 450, null, null, null, null, "2027-01-01"],
   ],
