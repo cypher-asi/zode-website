@@ -29,7 +29,10 @@ export function CopyButton({ text, label }: { text: string; label: string }): Re
           if (await copyText(text)) setCopied(true);
         }}
       >
-        {copied ? "Copied" : "Copy"}
+        <span className={styles.copyLabel}>
+          <span>Copy</span>
+          <span>Copied</span>
+        </span>
         <Icon key={copied ? "check" : "copy"} name={copied ? "check" : "copy"} className={styles.copyIcon} />
       </button>
       <span className={styles.srOnly} aria-live="polite">
