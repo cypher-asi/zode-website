@@ -1,5 +1,5 @@
 import "server-only";
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import { isTeam } from "@/features/account/admin";
@@ -7,6 +7,7 @@ import { getAccount, requireAccount } from "@/features/account/session";
 import type { Account } from "@/features/account/zos";
 import { mapsConfigured } from "@/features/deployments/places";
 import { db } from "@/lib/db";
+import { PUBLIC_LINK_EMAIL, type AuditActor } from "./audit";
 import {
   leaseEconomics,
   type RoomFile,
@@ -23,6 +24,11 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 /** Postgres rejects malformed uuids with an error, so ids from URLs are checked first. */
 export const isUuid = (value: unknown): value is string => typeof value === "string" && UUID_RE.test(value);
+
+/** 32 random bytes, base64url, which is what a public link is. Anything else never matches a row. */
+const SHARE_TOKEN_RE = /^[A-Za-z0-9_-]{43}$/;
+
+export const isShareToken = (value: unknown): value is string => typeof value === "string" && SHARE_TOKEN_RE.test(value);
 
 export const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 
@@ -169,10 +175,19 @@ export async function getRoomSite(roomId: string): Promise<RoomSite | null> {
  * The site's satellite map, from the room's map route; null when Maps isn't
  * set up. Browsers keep the map for a day, so a new address needs a new URL.
  */
+function mapVersion(site: RoomSite): string {
+  return createHash("sha256").update(`${site.address}\n${site.placeId ?? ""}`).digest("hex").slice(0, 12);
+}
+
 export function siteMapSrc(roomId: string, site: RoomSite): string | null {
   if (!mapsConfigured()) return null;
-  const version = createHash("sha256").update(`${site.address}\n${site.placeId ?? ""}`).digest("hex").slice(0, 12);
-  return `/api/data-rooms/${roomId}/map?v=${version}`;
+  return `/api/data-rooms/${roomId}/map?v=${mapVersion(site)}`;
+}
+
+/** Same map, for the public browser, so the summary's satellite image doesn't require a membership. */
+export function sharedMapSrc(token: string, site: RoomSite): string | null {
+  if (!mapsConfigured()) return null;
+  return `/api/shared/data-rooms/${encodeURIComponent(token)}/map?v=${mapVersion(site)}`;
 }
 
 /** `null` clears the address. */
@@ -186,6 +201,46 @@ export async function setRoomSite(roomId: string, site: RoomSite | null): Promis
 
 export async function deleteRoom(roomId: string): Promise<void> {
   await db()`delete from data_rooms where id = ${roomId}`;
+}
+
+/** The room a public link opens, or null when the link is off or unknown. */
+export async function roomByShareToken(token: string): Promise<{ id: string; name: string } | null> {
+  if (!isShareToken(token)) return null;
+  const [row] = await db()`select id, name from data_rooms where share_token = ${token}`;
+  return row ? { id: String(row.id), name: String(row.name) } : null;
+}
+
+export async function getShareToken(roomId: string): Promise<string | null> {
+  const [row] = await db()`select share_token from data_rooms where id = ${roomId}`;
+  return row?.share_token == null ? null : String(row.share_token);
+}
+
+/** Writes a new token, or the current one when `rotate` is false and a link is already on. */
+export async function issueShareToken(roomId: string, rotate: boolean): Promise<string> {
+  if (!rotate) {
+    const existing = await getShareToken(roomId);
+    if (existing) return existing;
+  }
+  const token = randomBytes(32).toString("base64url");
+  await db()`update data_rooms set share_token = ${token} where id = ${roomId}`;
+  return token;
+}
+
+export async function clearShareToken(roomId: string): Promise<void> {
+  await db()`update data_rooms set share_token = null where id = ${roomId}`;
+}
+
+/** Who a public-link request is audited as: the session when there is one, otherwise the link itself. */
+export async function shareActor(): Promise<AuditActor> {
+  const account = await getAccount();
+  return account ?? { userId: null, email: PUBLIC_LINK_EMAIL };
+}
+
+/** The portal room for a member of it; everyone else lands on the portal, which asks them to log in. */
+export async function osHrefFor(roomId: string, userId: string | null): Promise<string> {
+  if (!userId) return "/portal";
+  const access = await loadAccess(roomId, userId);
+  return access ? `/portal/data-rooms/${roomId}` : "/portal";
 }
 
 const toFile = (row: Record<string, unknown>): RoomFile => ({

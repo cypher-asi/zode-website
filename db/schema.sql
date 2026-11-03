@@ -120,6 +120,12 @@ alter table data_rooms add column if not exists address text;
 alter table data_rooms add column if not exists city text;
 alter table data_rooms add column if not exists place_id text;
 
+-- The public browser's link (/shared/data-rooms/<token>). Null means it is off.
+-- The token is the secret; replacing it is what makes the previous link 404.
+alter table data_rooms add column if not exists share_token text;
+create unique index if not exists data_rooms_share_token_idx
+  on data_rooms (share_token) where share_token is not null;
+
 -- One row per invited email. A row grants access only once a ZOS account with
 -- that email joins, from the invite link or straight away when it already
 -- exists, which binds user_id.

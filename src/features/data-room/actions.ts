@@ -31,6 +31,7 @@ import {
   ROOM_QUOTA_BYTES,
   accountRoomsTag,
   canCreateRooms,
+  clearShareToken,
   countOtherAdmins,
   createRoom,
   deleteRoom,
@@ -38,7 +39,9 @@ import {
   folderSubtree,
   getMember,
   getRoomSite,
+  getShareToken,
   isUuid,
+  issueShareToken,
   normalizeEmail,
   renameRoom,
   roomAccess,
@@ -176,6 +179,36 @@ export async function deleteRoomAction(roomId: string, _prev: ActionState, formD
   await deleteRoomBlobs(roomId);
   await deleteRoom(roomId);
   redirect("/portal/data-rooms");
+}
+
+/** Turns the public browser link on, replaces it, or turns it off. The token is the whole credential. */
+export async function setShareLinkAction(
+  roomId: string,
+  mode: "on" | "rotate" | "off",
+): Promise<ActionState & { token?: string | null }> {
+  const access = await roomAccess(roomId, "admin");
+  if (!access) return NO_ACCESS;
+  if (mode === "off") {
+    if (!(await getShareToken(roomId))) return { token: null };
+    await clearShareToken(roomId);
+    await recordEvent({ roomId, account: access.account, action: "share_link", detail: { change: "off" } });
+    refresh();
+    return { ok: "Public link is off.", token: null };
+  }
+  const existing = mode === "on" ? await getShareToken(roomId) : null;
+  if (existing) return { token: existing };
+  const token = await issueShareToken(roomId, mode === "rotate");
+  await recordEvent({
+    roomId,
+    account: access.account,
+    action: "share_link",
+    detail: { change: mode === "rotate" ? "rotate" : "on" },
+  });
+  refresh();
+  return {
+    ok: mode === "rotate" ? "New link ready. The previous one no longer opens the room." : "Public link is on.",
+    token,
+  };
 }
 
 // Folders and files

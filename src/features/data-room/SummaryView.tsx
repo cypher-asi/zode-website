@@ -900,9 +900,9 @@ function leaseKeyFigures(cluster: KeyFigure[], x: SummaryEconomics, e: LeaseEcon
 }
 
 /** Where the site is, linked to Google Maps, over a satellite preview when Maps is set up. */
-function Site({ roomId, site }: { roomId: string; site: RoomSite }) {
+function Site({ roomId, site, mapSrc }: { roomId: string; site: RoomSite; mapSrc?: string | null }) {
   const href = googleMapsHref(site);
-  const src = siteMapSrc(roomId, site);
+  const src = mapSrc === undefined ? siteMapSrc(roomId, site) : mapSrc;
   return (
     <section className={styles.section} aria-labelledby="site-heading">
       <div className={styles.sectionHead}>
@@ -939,7 +939,16 @@ function Site({ roomId, site }: { roomId: string; site: RoomSite }) {
  * figure's reasoning, the model's assumptions and each answer's sources sit
  * behind a disclosure.
  */
-export function SummaryView({ roomId, summary }: { roomId: string; summary: Summary }): ReactElement {
+export function SummaryView({
+  roomId,
+  summary,
+  mapSrc,
+}: {
+  roomId: string;
+  summary: Summary;
+  /** The public browser passes its own map URL. Unset, the member map route. */
+  mapSrc?: string | null;
+}): ReactElement {
   const e = summary.economics;
   const deal = summary.kind === "purchase" ? summary.economics.deal : undefined;
   const lease = summary.kind !== "purchase" ? summary.economics : undefined;
@@ -1074,7 +1083,7 @@ export function SummaryView({ roomId, summary }: { roomId: string; summary: Summ
 
   return (
     <div className={styles.summary}>
-      {summary.site ? <Site roomId={roomId} site={summary.site} /> : null}
+      {summary.site ? <Site roomId={roomId} site={summary.site} mapSrc={mapSrc} /> : null}
       <div className={styles.columns}>
         <section className={styles.section} aria-labelledby="economics-heading">
           <div className={styles.sectionHead}>

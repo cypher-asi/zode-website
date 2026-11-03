@@ -1,0 +1,636 @@
+/* Public data room. `data-theme="dark"` on `.page` swaps the site tokens, so this stays on the palette. */
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+.toolbar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.mark {
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: 36px;
+  padding: 0 6px;
+  border-radius: var(--radius-inset);
+}
+
+.mark img {
+  display: block;
+  width: auto;
+  max-width: none;
+  height: 16px;
+}
+
+.mark:hover {
+  background: var(--color-surface-hover);
+}
+
+.search {
+  position: relative;
+  flex: 1;
+  min-width: 140px;
+  max-width: 420px;
+}
+
+.search svg {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--color-text-tertiary);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform: translateY(-50%);
+}
+
+.search input {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px 0 36px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-card);
+  background: var(--color-bg-elevated);
+  color: inherit;
+  font: inherit;
+  font-size: var(--text-sm);
+}
+
+.search input:focus {
+  border-color: var(--color-text-secondary);
+  outline: none;
+}
+
+.tools {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-card);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.tool:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+}
+
+.tool:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.tool svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.progress {
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.menuWrap {
+  position: relative;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 5;
+  min-width: 220px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-card);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-md);
+}
+
+.menu li[data-sep] {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--color-border);
+}
+
+.menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--radius-inset);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu button:hover,
+.menu button:focus-visible {
+  background: var(--color-surface-hover);
+}
+
+.menu svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  visibility: hidden;
+}
+
+.menu button[aria-checked="true"] svg {
+  visibility: visible;
+}
+
+.notice {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 10px 20px;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+}
+
+.notice button {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-inset);
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.notice svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.browser {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Dropbox keeps the listing in a centred column on wide screens. */
+.browser {
+  --column: max(12px, calc((100% - 1080px) / 2));
+}
+
+.heading {
+  flex: none;
+  padding: 22px calc(var(--column) + 8px) 8px;
+}
+
+.crumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.crumb > span {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.crumb button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.crumb button:hover {
+  color: var(--color-text-primary);
+}
+
+.heading h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.scroller {
+  flex: 1;
+  min-height: 0;
+  padding: 0 var(--column) 24px;
+  overflow: auto;
+}
+
+.empty {
+  margin: 48px 16px;
+  color: var(--color-text-secondary);
+}
+
+.scroller[data-view="details"] {
+  --glyph: 22px;
+}
+
+.scroller[data-view="list"] {
+  --glyph: 16px;
+}
+
+.scroller[data-view="icons-sm"] {
+  --glyph: 32px;
+  --cell: 104px;
+}
+
+.scroller[data-view="icons-md"] {
+  --glyph: 56px;
+  --cell: 132px;
+}
+
+.scroller[data-view="icons-lg"] {
+  --glyph: 88px;
+  --cell: 168px;
+}
+
+.scroller[data-view="icons-xl"] {
+  --glyph: 128px;
+  --cell: 210px;
+}
+
+.scroller[data-view="tiles"] {
+  --glyph: 40px;
+}
+
+.folder,
+.fileGlyph,
+.summaryGlyph,
+.thumb {
+  flex: none;
+  width: var(--glyph, 22px);
+  height: var(--glyph, 22px);
+}
+
+.folder {
+  fill: var(--color-info);
+  stroke: none;
+}
+
+.fileGlyph,
+.summaryGlyph {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.summaryGlyph {
+  color: var(--color-text-secondary);
+}
+
+.thumb {
+  object-fit: cover;
+  border-radius: var(--radius-inset);
+  background: var(--color-surface-tint);
+}
+
+.check {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0 8px;
+  height: 40px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-align: left;
+}
+
+.table td {
+  height: 52px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+  vertical-align: middle;
+}
+
+.table tbody tr:hover,
+.list li:hover,
+.icons li:hover,
+.tiles li:hover {
+  background: var(--color-surface-hover);
+}
+
+.table tbody tr[data-selected],
+.list li[data-selected],
+.icons li[data-selected],
+.tiles li[data-selected] {
+  background: var(--color-surface-active);
+}
+
+.checkCol {
+  width: 40px;
+  padding-right: 0;
+}
+
+.modified,
+.size {
+  width: 9rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.size {
+  width: 6.5rem;
+}
+
+.sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.sort svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+}
+
+.sort[data-active] svg {
+  opacity: 1;
+}
+
+.sort[data-dir="asc"] svg {
+  transform: rotate(180deg);
+}
+
+.nameButton,
+.listButton,
+.icons button,
+.tiles button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nameText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.nameText > span:first-child,
+.listButton span,
+.tileName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.path {
+  overflow: hidden;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list,
+.icons,
+.tiles {
+  margin: 0;
+  padding: 4px 0 24px;
+  list-style: none;
+}
+
+.list {
+  display: grid;
+  grid-auto-columns: minmax(200px, 260px);
+  grid-auto-flow: column;
+  grid-template-rows: repeat(auto-fill, 32px);
+  align-content: start;
+  height: 100%;
+  min-height: 240px;
+}
+
+.list li,
+.tiles li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 8px;
+  border-radius: var(--radius-inset);
+}
+
+.listButton {
+  height: 32px;
+}
+
+.icons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--cell), 1fr));
+  gap: 4px;
+  align-content: start;
+}
+
+.icons li {
+  position: relative;
+}
+
+.icons button {
+  flex-direction: column;
+  gap: 8px;
+  padding: 28px 8px 12px;
+  text-align: center;
+}
+
+.icons .check,
+.tiles .check {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 1;
+}
+
+/* As in Explorer, a tile's checkbox shows on hover, focus, or once ticked. */
+@media (hover: hover) {
+  .icons li:not(:hover, :focus-within, [data-selected]) .check {
+    opacity: 0;
+  }
+}
+
+.iconName {
+  display: -webkit-box;
+  width: 100%;
+  overflow: hidden;
+  font-size: var(--text-sm);
+  text-align: center;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 6px;
+  align-content: start;
+}
+
+.tiles li {
+  position: relative;
+  min-height: 72px;
+  padding: 8px 12px 8px 36px;
+  border-radius: var(--radius-card);
+}
+
+.tiles button {
+  min-height: 56px;
+}
+
+.tileName {
+  display: block;
+  font-size: var(--text-sm);
+}
+
+.preview {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  margin: 12px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-bg-elevated);
+}
+
+@media (max-width: 720px) {
+  .toolbar {
+    flex-wrap: wrap;
+  }
+
+  .search {
+    order: 3;
+    flex-basis: 100%;
+    max-width: none;
+  }
+
+  .modified {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .toolLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .tool {
+    justify-content: center;
+    width: 36px;
+    padding: 0;
+  }
+
+  .browser {
+    --column: 8px;
+  }
+}

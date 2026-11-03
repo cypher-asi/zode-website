@@ -11,7 +11,8 @@ export interface ZipProgress {
 }
 
 interface ZipDownloadOptions {
-  roomId: string;
+  /** Where the selection is exchanged for signed file URLs. */
+  manifestUrl: string;
   roomName: string;
   selection: ZipSelection;
   signal: AbortSignal;
@@ -35,6 +36,24 @@ const SW_URL = "/data-room-sw.js";
 const SW_SCOPE = "/api/data-rooms/zip/";
 const RETRIES = 3;
 
+/** Posts the selection to a server zip route, for browsers that can't zip on their own. */
+export function postRoomArchive(action: string, items: { kind: "file" | "folder"; id: string }[]): void {
+  const form = document.createElement("form");
+  form.method = "post";
+  form.action = action;
+  form.hidden = true;
+  for (const item of items) {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = item.kind;
+    input.value = item.id;
+    form.append(input);
+  }
+  document.body.append(form);
+  form.submit();
+  form.remove();
+}
+
 /**
  * Zips a room's selection in the browser, each file fetched straight from Blob
  * with a signed URL, so there's no size or time limit. Browsers with a save
@@ -54,7 +73,7 @@ export async function downloadRoomZip(options: ZipDownloadOptions): Promise<ZipR
     });
     if (!handle) return "cancelled";
     try {
-      const manifest = await fetchManifest(options.roomId, options.selection, options.signal);
+      const manifest = await fetchManifest(options.manifestUrl, options.selection, options.signal);
       const writable = await handle.createWritable();
       await zipStream(manifest, options.signal, progressReporter(manifest, options.onProgress)).pipeTo(writable, {
         signal: options.signal,
@@ -68,13 +87,13 @@ export async function downloadRoomZip(options: ZipDownloadOptions): Promise<ZipR
 
   const worker = await zipWorker();
   if (!worker) return "unsupported";
-  const manifest = await fetchManifest(options.roomId, options.selection, options.signal);
+  const manifest = await fetchManifest(options.manifestUrl, options.selection, options.signal);
   await zipInWorker(worker, manifest, options);
   return "done";
 }
 
-async function fetchManifest(roomId: string, selection: ZipSelection, signal: AbortSignal): Promise<ZipManifest> {
-  const res = await fetch(`/api/data-rooms/${roomId}/manifest`, {
+async function fetchManifest(manifestUrl: string, selection: ZipSelection, signal: AbortSignal): Promise<ZipManifest> {
+  const res = await fetch(manifestUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(selection),

@@ -77,5 +77,7 @@ export function headerFor(pathname: string): HeaderRoute {
   const tool = Object.keys(TOOLS).find((path) => under(pathname, path));
   if (tool) return TOOLS[tool];
   if (HIDDEN_PATHS.some((path) => under(pathname, path))) return HIDDEN;
+  // The public data room has its own bar; the site header would sit on top of it.
+  if (under(pathname, "/shared/data-rooms")) return HIDDEN;
   return SITE;
 }

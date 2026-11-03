@@ -6,6 +6,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   useTransition,
   type ClipboardEvent,
   type KeyboardEvent,
@@ -13,12 +14,85 @@ import {
 } from "react";
 import Link from "next/link";
 import { InfoTip } from "@/components/ui/InfoTip";
+import { copyText } from "@/features/profile/ProfileClient";
 import { isEmail } from "@/lib/validation";
-import { inviteMembersAction } from "./actions";
+import { inviteMembersAction, setShareLinkAction } from "./actions";
 import { Icon } from "./icons";
-import { ROLES, memberHistory, roleLabel, type ActionState, type PersonSuggestion, type RoomMember } from "./types";
+import {
+  ROLES,
+  memberHistory,
+  roleLabel,
+  sharedRoomPath,
+  type ActionState,
+  type PersonSuggestion,
+  type RoomMember,
+} from "./types";
 import styles from "./share.module.css";
 import ui from "./ui.module.css";
+
+const noSubscription = () => () => {};
+const browserOrigin = () => window.location.origin;
+const serverOrigin = () => "";
+
+function PublicLink({ roomId, token: initial }: { roomId: string; token: string | null }): ReactElement {
+  const [token, setToken] = useState(initial);
+  const origin = useSyncExternalStore(noSubscription, browserOrigin, serverOrigin);
+  const [message, setMessage] = useState<ActionState>({});
+  const [pending, start] = useTransition();
+
+  const run = (mode: "on" | "rotate" | "off") => {
+    start(async () => {
+      const result = await setShareLinkAction(roomId, mode);
+      if (result.error) {
+        setMessage({ error: result.error });
+        return;
+      }
+      setToken(result.token ?? null);
+      setMessage(result.ok ? { ok: result.ok } : {});
+    });
+  };
+
+  const url = token && origin ? `${origin}${sharedRoomPath(token)}` : "";
+
+  return (
+    <section className={styles.public} aria-labelledby="public-link-heading">
+      <h3 id="public-link-heading" className={styles.peopleHeading}>
+        Public link
+      </h3>
+      <p className={styles.publicText}>
+        Anyone with the link can browse and download, without a ZODE account. Turning it off or replacing it stops the
+        old link.
+      </p>
+      {token ? (
+        <div className={styles.linkRow}>
+          <input className={ui.input} readOnly value={url} aria-label="Public link" onFocus={(event) => event.currentTarget.select()} />
+          <button
+            type="button"
+            className={ui.button}
+            disabled={!url || pending}
+            onClick={async () => {
+              if (await copyText(url)) setMessage({ ok: "Link copied." });
+            }}
+          >
+            Copy
+          </button>
+          <button type="button" className={ui.button} disabled={pending} onClick={() => run("rotate")}>
+            Replace
+          </button>
+          <button type="button" className={ui.button} disabled={pending} onClick={() => run("off")}>
+            Turn off
+          </button>
+        </div>
+      ) : (
+        <button type="button" className={ui.primary} disabled={pending} onClick={() => run("on")}>
+          {pending ? "Creating…" : "Create public link"}
+        </button>
+      )}
+      {message.error ? <p className={ui.error}>{message.error}</p> : null}
+      {message.ok ? <p className={ui.ok}>{message.ok}</p> : null}
+    </section>
+  );
+}
 
 const SEARCH_DELAY_MS = 200;
 const GAP = 4;
@@ -58,6 +132,7 @@ interface ShareProps {
   roomName: string;
   members: RoomMember[];
   selfEmail: string;
+  shareToken: string | null;
 }
 
 /** Opens the share dialog; shown to the room's admins beside its tabs. */
@@ -79,7 +154,14 @@ export function ShareButton(props: ShareProps): ReactElement {
  * suggests people as you type: everyone ZODE knows for ZODE admins, otherwise
  * people you've invited before (see `searchPeople`).
  */
-function ShareDialog({ roomId, roomName, members, selfEmail, onClose }: ShareProps & { onClose: () => void }): ReactElement {
+function ShareDialog({
+  roomId,
+  roomName,
+  members,
+  selfEmail,
+  shareToken,
+  onClose,
+}: ShareProps & { onClose: () => void }): ReactElement {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const fieldRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -386,6 +468,8 @@ function ShareDialog({ roomId, roomName, members, selfEmail, onClose }: SharePro
             {sending ? "Sending…" : "Send invites"}
           </button>
         </div>
+
+        <PublicLink roomId={roomId} token={shareToken} />
 
         <section className={styles.people} aria-labelledby={`${id}-people`}>
           <div className={styles.peopleHeader}>

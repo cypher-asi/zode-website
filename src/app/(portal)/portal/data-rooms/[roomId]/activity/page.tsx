@@ -25,8 +25,18 @@ function describe(event: AuditEvent): { subject: string; detail: string } {
   const d = event.detail;
   const name = typeof d.name === "string" ? d.name : "";
   switch (event.action) {
+    case "view":
+      return { subject: name, detail: d.via === "share-link" ? "Via public link" : "" };
     case "download":
-      return { subject: name, detail: d.archive ? "In a zip" : "" };
+      return {
+        subject: name,
+        detail: [d.archive ? "In a zip" : "", d.via === "share-link" ? "Via public link" : ""].filter(Boolean).join(", "),
+      };
+    case "share_link":
+      return {
+        subject: "Public link",
+        detail: d.change === "off" ? "Turned off" : d.change === "rotate" ? "Replaced" : "Turned on",
+      };
     case "upload":
       return { subject: name, detail: "" };
     case "rename":

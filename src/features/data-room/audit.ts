@@ -4,9 +4,18 @@ import { clientMeta } from "@/lib/clientMeta";
 import { db } from "@/lib/db";
 import type { AuditAction, AuditEvent } from "./types";
 
+/** Recorded when someone opens a public link without a ZODE session. */
+export const PUBLIC_LINK_EMAIL = "public link";
+
+/** A signed-in account, or a public-link visitor (`userId` null). */
+export interface AuditActor {
+  userId: string | null;
+  email: string;
+}
+
 export interface EventInput {
   roomId: string;
-  account: Account;
+  account: Account | AuditActor;
   action: AuditAction;
   fileId?: string | null;
   detail?: Record<string, unknown>;

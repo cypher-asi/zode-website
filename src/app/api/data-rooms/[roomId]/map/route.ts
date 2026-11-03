@@ -1,6 +1,6 @@
 import { notFoundResponse } from "@/features/data-room/http";
 import { getRoomSite, roomAccess } from "@/features/data-room/rooms";
-import { staticMap } from "@/features/deployments/places";
+import { siteMapResponse } from "@/features/data-room/siteMap";
 import { RATE_LIMITED, withinLimits } from "@/lib/rateLimit";
 
 /**
@@ -18,17 +18,5 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/data-rooms/
   if (!(await withinLimits([{ key: `room-map:user:${access.account.userId}`, max: 300, windowSeconds: 60 * 60 }]))) {
     return new Response(RATE_LIMITED, { status: 429, headers: { "Cache-Control": "private, no-store" } });
   }
-
-  const map = await staticMap(site.address).catch((error: unknown) => {
-    console.error("[data-room] static map failed", error);
-    return null;
-  });
-  if (!map) return notFoundResponse();
-  return new Response(map.body, {
-    headers: {
-      "Content-Type": map.contentType,
-      "Cache-Control": "private, max-age=86400",
-      "X-Content-Type-Options": "nosniff",
-    },
-  });
+  return siteMapResponse(site.address);
 }

@@ -147,7 +147,8 @@ export type AuditAction =
   | "accept"
   | "mnda_sign"
   | "role_change"
-  | "remove";
+  | "remove"
+  | "share_link";
 
 export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   view: "Viewed",
@@ -168,7 +169,14 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   mnda_sign: "Signed MNDA",
   role_change: "Changed role",
   remove: "Removed",
+  share_link: "Public link",
 };
+
+/** The Dropbox-style browser. The token is the only credential the page needs. */
+export const sharedRoomPath = (token: string): string => `/shared/data-rooms/${encodeURIComponent(token)}`;
+
+export const sharedFilePath = (token: string, fileId: string): string =>
+  `/api/shared/data-rooms/${encodeURIComponent(token)}/files/${fileId}`;
 
 export interface AuditEvent {
   id: string;

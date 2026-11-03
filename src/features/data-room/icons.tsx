@@ -32,6 +32,8 @@ const paths = {
   pencil: "M10.5 2.5l3 3L6 13H3v-3zM9 4l3 3",
   copy: "M5.5 5.5h7a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1zM2.5 10.5v-7a1 1 0 0 1 1-1h7",
   check: "M3 8.5l3.5 3.5L13 4.5",
+  grid: "M2 2h5v5H2zM9 2h5v5H9zM2 9h5v5H2zM9 9h5v5H9z",
+  link: "M6.5 9.5l3-3M5.2 7.2 4 8.4a2.6 2.6 0 0 0 3.6 3.6l1.2-1.2M10.8 8.8 12 7.6a2.6 2.6 0 0 0-3.6-3.6L7.2 5.2",
 } as const;
 
 export function Icon({ name, className }: { name: keyof typeof paths; className?: string }): ReactElement {

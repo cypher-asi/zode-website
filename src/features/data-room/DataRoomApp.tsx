@@ -20,27 +20,9 @@ import { MAX_ARCHIVE_BYTES, type RoomFile, type RoomTree } from "./types";
 import { UploadList } from "./UploadList";
 import { useUploads } from "./useUploads";
 import { SummaryPanel, Viewer, type RoomSummary } from "./Viewer";
-import { downloadRoomZip, type ZipProgress, type ZipSelection } from "./zipDownload";
+import { downloadRoomZip, postRoomArchive, type ZipProgress, type ZipSelection } from "./zipDownload";
 import styles from "./DataRoomApp.module.css";
 import ui from "./ui.module.css";
-
-/** Posts the selection to the server's zip route, for browsers that can't zip on their own. */
-function postArchive(roomId: string, items: ItemRef[]) {
-  const form = document.createElement("form");
-  form.method = "post";
-  form.action = `/api/data-rooms/${roomId}/archive`;
-  form.hidden = true;
-  for (const item of items) {
-    const input = document.createElement("input");
-    input.type = "hidden";
-    input.name = item.kind;
-    input.value = item.id;
-    form.append(input);
-  }
-  document.body.append(form);
-  form.submit();
-  form.remove();
-}
 
 interface DataRoomAppProps {
   roomId: string;
@@ -321,7 +303,7 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summary, children
     setDownload("preparing");
     try {
       const result = await downloadRoomZip({
-        roomId,
+        manifestUrl: `/api/data-rooms/${roomId}/manifest`,
         roomName,
         selection,
         signal: controller.signal,
@@ -334,7 +316,7 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summary, children
               "Use Chrome or Edge to download it all at once, or download fewer folders at a time.",
           );
         } else {
-          postArchive(roomId, items);
+          postRoomArchive(`/api/data-rooms/${roomId}/archive`, items);
         }
       }
     } catch (error) {
