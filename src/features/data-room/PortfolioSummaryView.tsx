@@ -7,10 +7,6 @@ import { Icon } from "./icons";
 import type { CaseFormat, InvestorReturns, PortfolioMetrics, PortfolioModel, PortfolioSite, TermSet } from "./portfolio";
 import type { PortfolioSummary } from "./summary";
 import {
-  DiligenceHead,
-  DiligenceList,
-  diligenceLede,
-  diligenceRows,
   KeyFigures,
   plural,
   TermGroup,
@@ -412,8 +408,8 @@ function Section({ id, title, action, children }: { id: string; title: string; a
  * A portfolio room's summary, the deal first: the model's results across its
  * sites, the capital that builds them and what each class of investor takes
  * out, the sites side by side, and the stored downside, base and upside runs
- * of the full program. Each site's diligence follows, from its folder's own
- * summary, which opens from here too.
+ * of the full program. Each site's diligence stays in its folder's own
+ * summary, which opens from the sites table.
  */
 export function PortfolioSummaryView({ roomId, summary }: { roomId: string; summary: PortfolioSummary }): ReactElement {
   const m = summary.model;
@@ -447,10 +443,6 @@ export function PortfolioSummaryView({ roomId, summary }: { roomId: string; summ
     { label: "Site investors, IRR · multiple", value: returns(m.investors.site.irr, m.investors.site.multiple) },
     { label: "Compute investors, IRR · multiple", value: returns(m.investors.compute.irr, m.investors.compute.multiple) },
   ];
-
-  const withDiligence = summary.sites.flatMap(({ site, summary: s }) =>
-    s && site.folderId ? [{ site, folderId: site.folderId, items: diligenceRows(s.diligence), names: s.sourceNames }] : [],
-  );
 
   return (
     <div className={styles.summary}>
@@ -572,35 +564,6 @@ export function PortfolioSummaryView({ roomId, summary }: { roomId: string; summ
           ))}
         </div>
       </Section>
-
-      {withDiligence.length ? (
-        <section className={styles.section} aria-labelledby="diligence-heading">
-          <div className={styles.sectionHead}>
-            <h2 id="diligence-heading" className={styles.heading}>
-              Diligence by site
-            </h2>
-          </div>
-          <ul className={p.ledes}>
-            {withDiligence.map(({ site, items }) => (
-              <li key={site.name}>
-                <strong>{site.name}:</strong> {diligenceLede(items.map(({ item }) => item.status))}
-              </li>
-            ))}
-          </ul>
-          {withDiligence.map(({ site, folderId, items, names: siteNames }) => (
-            <div key={site.name} className={p.siteDiligence}>
-              <DiligenceHead id={`diligence-${folderId}`} title={site.name} items={items} names={siteNames} level={3} />
-              <p className={p.siteLine}>
-                {site.address} ·{" "}
-                <FolderLink roomId={roomId} folderId={folderId} summary>
-                  Site summary
-                </FolderLink>
-              </p>
-              <DiligenceList roomId={roomId} items={items} names={siteNames} />
-            </div>
-          ))}
-        </section>
-      ) : null}
 
       <p className={styles.assumptions}>
         {m.model.name}, {caseLine}. {m.model.prepared} Planning estimates, not an offer or investment advice.

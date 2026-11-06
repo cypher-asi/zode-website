@@ -318,24 +318,18 @@ export function DiligenceHead({
   title,
   items,
   names,
-  level = 2,
 }: {
   id: string;
   title: string;
   items: DiligenceRow[];
   names: Map<string, string>;
-  level?: 2 | 3;
 }): ReactElement {
-  const Heading = level === 2 ? "h2" : "h3";
   return (
     <div className={styles.sectionHead}>
-      <Heading id={id} className={level === 2 ? styles.heading : styles.groupHeading}>
+      <h2 id={id} className={styles.heading}>
         {title}
-      </Heading>
-      <CopyButton
-        text={diligenceText(items, names, level === 2 ? title : `${title} diligence`)}
-        label={level === 2 ? title.toLowerCase() : `${title} diligence`}
-      />
+      </h2>
+      <CopyButton text={diligenceText(items, names, title)} label={title.toLowerCase()} />
     </div>
   );
 }
