@@ -12,9 +12,13 @@ export interface ViewerProps {
   onFitScale: (scale: number) => void;
 }
 
-/** Fetches a file the viewer renders itself, failing on non-2xx so revoked access shows an error. */
+/**
+ * Fetches a file the viewer renders itself, failing on non-2xx so revoked access
+ * shows an error. A copy in the browser's cache is revalidated, so the server
+ * still checks access, but unchanged bytes aren't downloaded again.
+ */
 export async function fetchFile(url: string, signal: AbortSignal): Promise<ArrayBuffer> {
-  const res = await fetch(url, { signal, cache: "no-store" });
+  const res = await fetch(url, { signal, cache: "no-cache" });
   if (!res.ok) throw new Error(res.status === 404 ? "This file is no longer available to you." : "The file couldn't be loaded.");
   return res.arrayBuffer();
 }

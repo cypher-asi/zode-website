@@ -1,12 +1,12 @@
 import "server-only";
 import { downloadZip } from "client-zip";
-import type { NextRequest } from "next/server";
+import { after, type NextRequest } from "next/server";
 import type { Account } from "@/features/account/zos";
 import { recordEvent, recordEvents, type AuditActor } from "./audit";
 import { presignedDownloadUrl, presignedDownloadUrls, readBlob } from "./blob";
 import { formatBytes, isActiveContent } from "./fileKinds";
-import { contentDisposition, fileHeaders, isSameOrigin, notFoundResponse } from "./http";
-import { getFile, isUuid, resolveSelection, zipName, zipPaths, type StoredFile } from "./rooms";
+import { contentDisposition, etagMatches, fileHeaders, isSameOrigin, notFoundResponse } from "./http";
+import { isUuid, resolveSelection, zipName, zipPaths, type StoredFile } from "./rooms";
 import { MAX_ARCHIVE_BYTES, type ZipManifest } from "./types";
 
 /** Past this, a download would risk outlasting the function, so it always goes straight to Blob. */
@@ -29,24 +29,34 @@ function redirectsToBlob(file: StoredFile): boolean {
 /**
  * Streams one file: inline for the viewer, or as an attachment with
  * `?download=1`. Attachments that `redirectsToBlob` go to a short-lived signed
- * Blob URL. Each view or download is audited; a `?thumb=1` image (a room
+ * Blob URL. Inline bytes may be cached by the browser but are revalidated on
+ * every use, answered with 304 when unchanged. Each view (including a 304) or
+ * download is audited after the response starts; a `?thumb=1` image (a room
  * browser's icon views) and follow-up range requests are not, so one viewing
- * logs once and browsing a folder of images doesn't.
+ * logs once and browsing a folder of images doesn't. `file` is null when it
+ * isn't in the room.
  */
 export async function serveRoomFile(
   request: NextRequest,
   roomId: string,
-  fileId: string,
+  file: StoredFile | null,
   actor: Actor,
   detail: Record<string, unknown> = {},
 ): Promise<Response> {
-  const file = await getFile(roomId, fileId);
   if (!file) return notFoundResponse();
 
   const active = isActiveContent(file.name, file.contentType);
   const attachment = active || request.nextUrl.searchParams.get("download") === "1";
   const thumb = !attachment && request.nextUrl.searchParams.get("thumb") === "1";
   const range = attachment ? null : request.headers.get("range");
+  // A file's bytes never change under its id, so the id and blob are its version.
+  const etag = attachment ? undefined : `"${file.id}:${file.blobPathname.slice(file.blobPathname.lastIndexOf("/") + 1)}"`;
+  const audit = (action: "view" | "download") =>
+    after(() =>
+      recordEvent({ roomId, account: actor, action, fileId: file.id, detail: { name: file.name, ...detail } }).catch(
+        (error: unknown) => console.error(`[data-room] couldn't audit a ${action} of ${file.id}`, error),
+      ),
+    );
 
   if (attachment && redirectsToBlob(file)) {
     const url = await presignedDownloadUrl(file.blobPathname).catch((error: unknown) => {
@@ -54,15 +64,16 @@ export async function serveRoomFile(
       return null;
     });
     if (url) {
-      await recordEvent({
-        roomId,
-        account: actor,
-        action: "download",
-        fileId: file.id,
-        detail: { name: file.name, ...detail },
-      });
+      audit("download");
       return new Response(null, { status: 302, headers: { Location: url, "Cache-Control": "private, no-store" } });
     }
+  }
+
+  if (etag && !range && etagMatches(request.headers.get("if-none-match"), etag)) {
+    if (!thumb) audit("view");
+    const headers = fileHeaders(file.contentType, contentDisposition("inline", file.name), etag);
+    headers.delete("Content-Type");
+    return new Response(null, { status: 304, headers });
   }
 
   let blob: Awaited<ReturnType<typeof readBlob>>;
@@ -77,19 +88,12 @@ export async function serveRoomFile(
   }
   if (!blob || blob.statusCode !== 200) return notFoundResponse();
 
-  if (!thumb && (!range || /^bytes=0-/.test(range.trim()))) {
-    await recordEvent({
-      roomId,
-      account: actor,
-      action: attachment ? "download" : "view",
-      fileId: file.id,
-      detail: { name: file.name, ...detail },
-    });
-  }
+  if (!thumb && (!range || /^bytes=0-/.test(range.trim()))) audit(attachment ? "download" : "view");
 
   const headers = fileHeaders(
     active ? "application/octet-stream" : file.contentType,
     contentDisposition(attachment ? "attachment" : "inline", file.name),
+    etag,
   );
   headers.set("Accept-Ranges", "bytes");
   const length = blob.headers.get("content-length");

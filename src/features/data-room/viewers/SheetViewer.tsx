@@ -2,9 +2,9 @@
 
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement } from "react";
 import { Scrollbars } from "./Scrollbars";
-import { fetchFile, type ViewerProps } from "./types";
+import type { ViewerProps } from "./types";
 import { ALIGN_CENTER, ALIGN_MASK, ALIGN_RIGHT, BOLD, type SheetGrid } from "./sheetGrid";
-import type { SheetWorkerMessage, SheetWorkerRequest } from "./sheet.worker";
+import { rememberScroll, selectSheet, sheetScroll, useWorkbook } from "./sheetCache";
 import styles from "../Viewer.module.css";
 
 const ROW_HEIGHT = 22;
@@ -12,13 +12,6 @@ const HEADER_WIDTH = 48;
 const FONT_SIZE = 13;
 /** Rows and columns drawn past each edge of the view, so fast scrolls don't flash blank. */
 const OVERSCAN = 6;
-const UNREADABLE = "This workbook couldn't be previewed. Download it to open it in Excel.";
-
-interface Book {
-  names: string[];
-  grids: (SheetGrid | null)[];
-  failed: boolean[];
-}
 
 function columnName(index: number): string {
   let name = "";
@@ -48,49 +41,14 @@ function alignClass(flags: number): string {
 /**
  * Excel workbooks as grids, one tab per sheet, with Excel's number formats,
  * column widths and bold text. The workbook is read in a worker and only the
- * cells in view are drawn, so large models stay responsive.
+ * cells in view are drawn, so large models stay responsive. Read workbooks are
+ * kept for the session, so going back to one shows it where it was left.
  */
 export default function SheetViewer({ url, zoom, onFitScale }: ViewerProps): ReactElement {
-  const [book, setBook] = useState<Book | null>(null);
-  const [active, setActive] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+  const { book, error, active } = useWorkbook(url);
   const scrollId = useId();
 
   useEffect(() => onFitScale(1), [onFitScale]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    const fail = (message: string) => {
-      if (!controller.signal.aborted) setError(message);
-    };
-    const worker = new Worker(new URL("./sheet.worker.ts", import.meta.url), { type: "module" });
-    worker.onerror = () => fail(UNREADABLE);
-    worker.onmessageerror = () => fail(UNREADABLE);
-    worker.onmessage = ({ data }: MessageEvent<SheetWorkerMessage>) => {
-      if (data.type === "workbook") {
-        setActive(data.active);
-        setBook({ names: data.sheets, grids: data.sheets.map(() => null), failed: data.sheets.map(() => false) });
-      } else if (data.type === "sheet") {
-        setBook((b) => b && { ...b, grids: b.grids.map((grid, i) => (i === data.index ? data.grid : grid)) });
-      } else if (data.index === undefined) {
-        fail(UNREADABLE);
-      } else {
-        setBook((b) => b && { ...b, failed: b.failed.map((failed, i) => failed || i === data.index) });
-      }
-    };
-    fetchFile(url, controller.signal).then(
-      (buffer) => {
-        const request: SheetWorkerRequest = { buffer };
-        worker.postMessage(request, [buffer]);
-      },
-      (err: unknown) =>
-        fail(err instanceof Error && err.message.includes("no longer available") ? err.message : UNREADABLE),
-    );
-    return () => {
-      controller.abort();
-      worker.terminate();
-    };
-  }, [url]);
 
   if (error) return <div className={styles.status}>{error}</div>;
   if (!book) return <div className={styles.status}>Loading workbook…</div>;
@@ -120,7 +78,17 @@ export default function SheetViewer({ url, zoom, onFitScale }: ViewerProps): Rea
         </p>
       ) : null}
       <div className={styles.sheetFrame}>
-        <Grid scrollId={scrollId} grid={status ? null : grid} status={status} scale={scale} />
+        <Grid
+          scrollId={scrollId}
+          grid={status ? null : grid}
+          status={status}
+          scale={scale}
+          initialScroll={() => {
+            const { top, left } = sheetScroll(url, index);
+            return { top: top * scale, left: left * scale };
+          }}
+          onScroll={(top, left) => rememberScroll(url, index, top / scale, left / scale)}
+        />
         <Scrollbars targetId={scrollId} />
       </div>
       {book.names.length > 1 ? (
@@ -132,7 +100,7 @@ export default function SheetViewer({ url, zoom, onFitScale }: ViewerProps): Rea
               role="tab"
               aria-selected={i === index}
               className={styles.sheetTab}
-              onClick={() => setActive(i)}
+              onClick={() => selectSheet(url, i)}
             >
               {name}
             </button>
@@ -152,21 +120,33 @@ interface View {
 
 /**
  * The scroll area. It stays mounted across sheets so its overlay scrollbars
- * keep tracking it, and draws only the rows and columns in view.
+ * keep tracking it, and draws only the rows and columns in view. Each sheet
+ * opens at `initialScroll`, and scrolling is reported through `onScroll`.
  */
 function Grid({
   scrollId,
   grid,
   status,
   scale,
+  initialScroll,
+  onScroll,
 }: {
   scrollId: string;
   grid: SheetGrid | null;
   status: string | null;
   scale: number;
+  initialScroll: () => { top: number; left: number };
+  onScroll: (top: number, left: number) => void;
 }): ReactElement {
   const ref = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<View>({ top: 0, left: 0, width: 0, height: 0 });
+  const initialScrollRef = useRef(initialScroll);
+  const onScrollRef = useRef(onScroll);
+
+  useLayoutEffect(() => {
+    initialScrollRef.current = initialScroll;
+    onScrollRef.current = onScroll;
+  });
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -177,18 +157,23 @@ function Grid({
           ? v
           : { top: el.scrollTop, left: el.scrollLeft, width: el.clientWidth, height: el.clientHeight },
       );
+    const scrolled = () => {
+      update();
+      onScrollRef.current(el.scrollTop, el.scrollLeft);
+    };
     update();
     const resize = new ResizeObserver(update);
     resize.observe(el);
-    el.addEventListener("scroll", update, { passive: true });
+    el.addEventListener("scroll", scrolled, { passive: true });
     return () => {
       resize.disconnect();
-      el.removeEventListener("scroll", update);
+      el.removeEventListener("scroll", scrolled);
     };
   }, []);
 
   useLayoutEffect(() => {
-    ref.current?.scrollTo(0, 0);
+    const { top, left } = initialScrollRef.current();
+    ref.current?.scrollTo(left, top);
   }, [grid]);
 
   const rowHeight = ROW_HEIGHT * scale;
