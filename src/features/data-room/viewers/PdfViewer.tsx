@@ -1,25 +1,30 @@
 "use client";
 
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactElement, type RefObject } from "react";
-import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist/legacy/build/pdf.mjs";
+import type { PDFDocumentProxy, PDFWorker, RenderTask } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { Scrollbars } from "./Scrollbars";
 import type { ViewerProps } from "./types";
 import styles from "../Viewer.module.css";
 
 type PdfJs = typeof import("pdfjs-dist/legacy/build/pdf.mjs");
 
-let pdfjsPromise: Promise<PdfJs> | undefined;
+let pdfjsPromise: Promise<{ pdfjs: PdfJs; worker: PDFWorker }> | undefined;
 
 /**
  * pdf.js and one shared worker, loaded on first use. The legacy build, because
  * the modern one calls APIs (Uint8Array#toHex and others) that browsers only
- * shipped recently, and fails every document without them.
+ * shipped recently, and fails every document without them. The worker is passed
+ * to each document rather than set as `GlobalWorkerOptions.workerPort`: a
+ * loading task destroys a worker it picked up from there, failing the next
+ * document opened before that finishes.
  */
-function loadPdfJs(): Promise<PdfJs> {
-  pdfjsPromise ??= import("pdfjs-dist/legacy/build/pdf.mjs").then((pdfjs) => {
-    pdfjs.GlobalWorkerOptions.workerPort = new Worker(new URL("./pdf.worker.ts", import.meta.url), { type: "module" });
-    return pdfjs;
-  });
+function loadPdfJs(): Promise<{ pdfjs: PdfJs; worker: PDFWorker }> {
+  pdfjsPromise ??= import("pdfjs-dist/legacy/build/pdf.mjs").then((pdfjs) => ({
+    pdfjs,
+    worker: pdfjs.PDFWorker.create({
+      port: new Worker(new URL("./pdf.worker.ts", import.meta.url), { type: "module" }),
+    }),
+  }));
   return pdfjsPromise;
 }
 
@@ -47,11 +52,12 @@ export default function PdfViewer({ url, zoom, onFitScale }: Omit<ViewerProps, "
     let destroy: (() => void) | undefined;
     (async () => {
       try {
-        const pdfjs = await loadPdfJs();
+        const { pdfjs, worker } = await loadPdfJs();
         // One whole-file request, so the view is audited once. The CSP doesn't allow
         // compiling WebAssembly, so pdf.js keeps to its JavaScript decoders.
         const task = pdfjs.getDocument({
           url,
+          worker,
           useWasm: false,
           disableRange: true,
           disableStream: true,
@@ -70,6 +76,7 @@ export default function PdfViewer({ url, zoom, onFitScale }: Omit<ViewerProps, "
         setSizes(pages);
       } catch (err) {
         if (cancelled) return;
+        console.error("[pdf] couldn't load", url, err);
         const name = (err as { name?: string })?.name;
         setError(
           name === "PasswordException"
