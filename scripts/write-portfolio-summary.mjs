@@ -205,8 +205,9 @@ const metricsFor = (col) => {
     const v = maybe(at(label, keyMetrics));
     return v === null ? null : isoDate(v);
   };
+  // The workbook's "critical IT" rows hold the sponsor's facility power (Olds 22 MW is its site power, not IT load).
   return {
-    criticalItMw: num(at("Critical IT planned", keyMetrics), `Critical IT (${col})`),
+    facilityMw: num(at("Critical IT planned", keyMetrics), `facility power (${col})`),
     zodeMw: num(at("First lease: ZODE compute clusters", keyMetrics), `ZODE MW (${col})`),
     thirdPartyMw: num(at("First lease: third-party", keyMetrics), `third-party MW (${col})`),
     clusters: num(at("ZODE compute clusters (4 MW", keyMetrics), `clusters (${col})`),
@@ -258,7 +259,7 @@ const termsFor = (col) => {
     closingCosts: input("Closing and transaction costs", col),
     conversionPerMw: input("Conversion cost ($ per MW", col),
     utilityUpgrade: input("Utility re-energization", col),
-    diligenceMw: blocks("diligence basis", col).reduce((a, b) => a + b, 0),
+    diligenceItMw: blocks("diligence basis", col).reduce((a, b) => a + b, 0),
     expansion: expansionMw
       ? {
           mw: expansionMw,
@@ -399,7 +400,7 @@ const caseRows = (rows) =>
 const resultRows = summary.between(resultsAt, summary.rowOf("Site investors:", resultsAt));
 const cases = {
   title: text(summary.label(casesAt)).replace(/\s*\(stored values.*$/i, ""),
-  criticalItMw: num(summary.cell(resultRows[0], "D"), "case critical IT"),
+  facilityMw: num(summary.cell(resultRows[0], "D"), "case facility power"),
   assumptions: caseRows(summary.between(summary.rowOf("Assumption", casesAt), sameAt)),
   results: caseRows(resultRows.slice(1)),
   notes: [summary.label(sameAt), summary.label(summary.rowOf("Site investors:", resultsAt))],
@@ -489,8 +490,8 @@ for (const s of siteArgs) {
 
 const t = portfolio.total;
 console.log(
-  `[portfolio] "${room.name}" from ${modelFile.name}: ${sites.map((s) => `${s.name} ${s.metrics.criticalItMw} MW`).join(", ")}, ` +
-    `${t.criticalItMw} MW total; ${cases.criticalItMw} MW stored cases; sources and uses balance at $${(totalSources / 1e6).toFixed(1)}M.`,
+  `[portfolio] "${room.name}" from ${modelFile.name}: ${sites.map((s) => `${s.name} ${s.metrics.facilityMw} MW`).join(", ")}, ` +
+    `${t.facilityMw} MW facility power in total; ${cases.facilityMw} MW stored cases; sources and uses balance at $${(totalSources / 1e6).toFixed(1)}M.`,
 );
 for (const f of folderSummaries) console.log(`[portfolio] ${f.folderPath}: the ${f.kind} summary from "${f.from}", every source resolved.`);
 if (args.out) {

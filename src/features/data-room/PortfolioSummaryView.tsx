@@ -150,11 +150,13 @@ interface MetricRow {
   value: (m: PortfolioMetrics) => string;
 }
 
-const METRIC_GROUPS: { title: string; rows: MetricRow[] }[] = [
+/** The workbook's MW are facility power, so IT load is each over the model's PUE. */
+const metricGroups = (pue: number): { title: string; rows: MetricRow[] }[] => [
   {
     title: "Capacity",
     rows: [
-      { label: "Critical IT", value: (m) => mw(m.criticalItMw) },
+      { label: "Facility power", value: (m) => mw(m.facilityMw) },
+      { label: `IT load at ${pue} PUE`, value: (m) => mw(m.facilityMw / pue) },
       { label: "ZODE compute clusters", value: (m) => `${m.clusters} · ${mw(m.zodeMw)}` },
       { label: "Third-party GPU owners", value: (m) => (m.thirdPartyMw ? mw(m.thirdPartyMw) : "None") },
       { label: "First block ready", value: (m) => monthYear(m.firstReady) },
@@ -194,11 +196,13 @@ function SitesTable({
   roomId,
   sites,
   total,
+  pue,
   summaries,
 }: {
   roomId: string;
   sites: PortfolioSite[];
   total: PortfolioMetrics;
+  pue: number;
   summaries: Set<string>;
 }): ReactElement {
   const columns = [...sites.map((s) => s.metrics), total];
@@ -235,7 +239,7 @@ function SitesTable({
             </th>
           </tr>
         </thead>
-        {METRIC_GROUPS.map((group) => (
+        {metricGroups(pue).map((group) => (
           <tbody key={group.title}>
             <tr className={p.groupRow}>
               <th scope="colgroup" colSpan={columns.length + 1}>
@@ -265,7 +269,7 @@ function siteTermGroups(m: PortfolioModel): { title: string; terms: Term[] }[] {
   return [
     ...m.sites.map((s) => {
       const st = s.terms;
-      const conversion = st.conversionPerMw * s.metrics.criticalItMw;
+      const conversion = st.conversionPerMw * s.metrics.facilityMw;
       return {
         title: s.name,
         terms: [
@@ -279,19 +283,19 @@ function siteTermGroups(m: PortfolioModel): { title: string; terms: Term[] }[] {
           {
             label: "Conversion",
             value: usdShort(conversion),
-            note: `${usdShort(st.conversionPerMw, 2)} / MW of critical IT`,
+            note: `${usdShort(st.conversionPerMw, 2)} / MW of facility power`,
           },
           { label: "Utility re-energization", value: usdShort(st.utilityUpgrade) },
           {
-            label: "Power on the diligence basis",
-            value: mw(st.diligenceMw),
-            note: `Against ${mw(s.metrics.criticalItMw)} in the model`,
+            label: "IT load on the diligence basis",
+            value: mw(st.diligenceItMw),
+            note: `Against ${mw(s.metrics.facilityMw / t.pue)} from the sponsor's ${mw(s.metrics.facilityMw)} of facility power`,
           },
           ...(st.expansion
             ? [
                 {
                   label: "Expansion option",
-                  value: `+${mw(st.expansion.mw)}`,
+                  value: `+${mw(st.expansion.mw)} facility`,
                   note: `${st.expansion.included ? "In" : "Off in"} the base case, ${usdShort(st.expansion.cost)} upgrade`,
                 },
               ]
@@ -302,7 +306,7 @@ function siteTermGroups(m: PortfolioModel): { title: string; terms: Term[] }[] {
     {
       title: "Every site",
       terms: [
-        { label: "Rent", value: `$${t.rentPerKwMonth} / kW-mo`, note: "Of critical IT" },
+        { label: "Rent", value: `$${t.rentPerKwMonth} / kW-mo`, note: "Per kW of facility power" },
         {
           label: "GPU contract",
           value: `$${t.contractPricePerGpuHour.toFixed(2)} / GPU-hr`,
@@ -311,8 +315,9 @@ function siteTermGroups(m: PortfolioModel): { title: string; terms: Term[] }[] {
         {
           label: "Cluster",
           value: `${t.gpusPerCluster.toLocaleString("en-US")} GPUs`,
-          note: `${(t.gpusPerCluster / GPUS_PER_NODE).toLocaleString("en-US")} nodes in ${mw(m.total.zodeMw / m.total.clusters)}, PUE ${t.pue}`,
+          note: `${(t.gpusPerCluster / GPUS_PER_NODE).toLocaleString("en-US")} nodes per ${mw(m.total.zodeMw / m.total.clusters)} block`,
         },
+        { label: "PUE", value: `${t.pue}`, note: "IT load is facility power over this" },
         {
           label: "Real estate debt",
           value: `${pct(t.reRate, 1)}`,
@@ -427,12 +432,13 @@ export function PortfolioSummaryView({ roomId, summary }: { roomId: string; summ
   const siteSummaries = new Set(summary.sites.flatMap(({ site, summary: s }) => (s && site.folderId ? [site.folderId] : [])));
 
   const lede =
-    `${m.model.title} buys and converts ${mw(t.criticalItMw)} of critical IT across ${andList(m.sites.map((s) => s.name))} ` +
+    `${m.model.title} buys and converts ${mw(t.facilityMw)} of facility power, ${mw(t.facilityMw / m.terms.pue)} of IT load at ` +
+    `${m.terms.pue} PUE, across ${andList(m.sites.map((s) => s.name))} ` +
     `for ${plural(t.clusters, "ZODE compute cluster", "ZODE compute clusters")} of ${gpus.toLocaleString("en-US")} GPUs: ` +
     `the first block ready ${monthYear(t.firstReady)}, the last ${monthYear(t.lastReady)}, and the sites sold ${monthYear(m.terms.exitDate)}.`;
 
   const keyFigures: KeyFigure[] = [
-    { label: "Critical IT", value: mw(t.criticalItMw) },
+    { label: `Facility power, ${mw(t.facilityMw / m.terms.pue)} IT`, value: mw(t.facilityMw) },
     { label: `GPUs, ${plural(t.clusters, "cluster", "clusters")}`, value: gpus.toLocaleString("en-US") },
     { label: "Acquisition and conversion", value: usdShort(t.acquisitionAndConversion) },
     { label: `Capital to ${monthYear(su.through)}`, value: usdShort(capital) },
@@ -494,7 +500,7 @@ export function PortfolioSummaryView({ roomId, summary }: { roomId: string; summ
       </Section>
 
       <Section id="sites" title="Sites">
-        <SitesTable roomId={roomId} sites={m.sites} total={t} summaries={siteSummaries} />
+        <SitesTable roomId={roomId} sites={m.sites} total={t} pue={m.terms.pue} summaries={siteSummaries} />
         <div className={styles.dealGroups}>
           {siteTermGroups(m).map((group) => (
             <TermGroup key={group.title} title={group.title} terms={group.terms} />
@@ -513,9 +519,9 @@ export function PortfolioSummaryView({ roomId, summary }: { roomId: string; summ
         </div>
       </Section>
 
-      <Section id="program" title={`Full program, ${mw(m.cases.criticalItMw)}`}>
+      <Section id="program" title={`Full program, ${mw(m.cases.facilityMw)} facility power`}>
         <p className={styles.lede}>
-          The model&apos;s stored downside, base and upside runs, with {mw(m.cases.criticalItMw - t.criticalItMw)} at sites
+          The model&apos;s stored downside, base and upside runs, with {mw(m.cases.facilityMw - t.facilityMw)} of facility power at sites
           still to identify beside {andList(m.sites.map((s) => s.name))}. {sentence(m.cases.title.replace(/^[^-]*-\s*/, ""))}
         </p>
         <Table

@@ -7,7 +7,8 @@
 
 /** One site's results, or the total across them, from the model's key metrics. */
 export interface PortfolioMetrics {
-  criticalItMw: number;
+  /** The sponsor's facility power, which the workbook labels critical IT; IT load is this over PUE. */
+  facilityMw: number;
   zodeMw: number;
   thirdPartyMw: number;
   clusters: number;
@@ -45,8 +46,8 @@ export interface PortfolioSiteTerms {
   closingCosts: number;
   conversionPerMw: number;
   utilityUpgrade: number;
-  /** Critical IT if the seller data rooms' power is all there is. */
-  diligenceMw: number;
+  /** IT load if the seller data rooms' power is all there is. */
+  diligenceItMw: number;
   /** Further power the site could add, off unless `included`. */
   expansion: { mw: number; included: boolean; cost: number; note: string } | null;
 }
@@ -123,7 +124,7 @@ export type CaseFormat = "months" | "usd" | "usdPerMw" | "kwMonth" | "gpuHour" |
 /** A stored table of downside, base and upside runs. */
 export interface CaseTable {
   title: string;
-  criticalItMw: number;
+  facilityMw: number;
   assumptions: { label: string; format: CaseFormat; values: [number, number, number] }[];
   results: { label: string; format: CaseFormat; values: [number, number, number] }[];
   notes: string[];
