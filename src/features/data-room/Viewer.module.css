@@ -18,7 +18,7 @@
   display: none;
 }
 
-/* The public browser has no file list beside the preview, so Back stays in the title bar. */
+/* A room's browser has no file list beside the preview, so Back stays in the title bar. */
 .viewer[data-show-back] .back {
   display: inline-grid;
 }

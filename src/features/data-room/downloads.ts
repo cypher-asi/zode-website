@@ -29,8 +29,8 @@ function redirectsToBlob(file: StoredFile): boolean {
 /**
  * Streams one file: inline for the viewer, or as an attachment with
  * `?download=1`. Attachments that `redirectsToBlob` go to a short-lived signed
- * Blob URL. Each view or download is audited; a `?thumb=1` image (the public
- * browser's icon view) and follow-up range requests are not, so one viewing
+ * Blob URL. Each view or download is audited; a `?thumb=1` image (a room
+ * browser's icon views) and follow-up range requests are not, so one viewing
  * logs once and browsing a folder of images doesn't.
  */
 export async function serveRoomFile(

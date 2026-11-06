@@ -1,9 +1,12 @@
-/* Tree | divider | viewer. `--tree-width` is written by the Splitter. */
+/*
+ * A data room: the toolbar over its browser (RoomBrowser.module.css), or the
+ * open tab's page. The list, row, upload and footer styles further down are
+ * also the BOM's Quotes tab's.
+ */
 .app {
-  --tree-width: 33%;
-  display: grid;
-  grid-template-columns: var(--tree-width) 9px minmax(0, 1fr);
+  display: flex;
   flex: 1;
+  flex-direction: column;
   min-height: 0;
   overflow: hidden;
   border: 1px solid var(--color-border);
@@ -11,11 +14,28 @@
   background: var(--color-bg);
 }
 
-/* The Splitter writes drags and window resizes past this. */
-@media (prefers-reduced-motion: no-preference) {
-  .app {
-    transition: grid-template-columns 360ms var(--ease-out);
-  }
+/* Members, Activity and Settings take the browser's place. */
+.app[data-tab="page"] {
+  background: none;
+}
+
+.files {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* What's checked, and what can be done with it, between the toolbar and the files. */
+.selection {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-tint);
 }
 
 .side {
@@ -24,42 +44,6 @@
   min-width: 0;
   min-height: 0;
   background: var(--color-paper);
-}
-
-/*
- * Wherever the portal's sidebar shows (`SIDEBAR_MEDIA` in portal/nav.ts), the
- * list docks there on the sidebar's glass and the viewer has the room to
- * itself. Hiding the list here also covers the first paint, before it has
- * moved over.
- */
-.side[data-docked] {
-  flex: 1;
-  background: none;
-}
-
-@media (min-width: 1101px) {
-  .app {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .app > .side,
-  .app > [role="separator"] {
-    display: none;
-  }
-}
-
-/*
- * Members, Activity and Settings take the viewer's place. The list stays
- * docked in the sidebar, and steps aside where there's no sidebar to hold it.
- */
-.app[data-tab="page"] {
-  display: flex;
-  flex-direction: column;
-  background: none;
-}
-
-.app[data-tab="page"] > .side {
-  display: none;
 }
 
 .toolbar {
@@ -128,48 +112,6 @@
   .searchField input {
     font-size: var(--text-md);
   }
-}
-
-/* The active folder as a path; uploads and new folders land there. */
-.location {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  margin: 0;
-  padding: 0 14px 8px;
-  color: var(--color-text-tertiary);
-  font-size: var(--text-xs);
-  line-height: 1.5;
-}
-
-.location button {
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  padding: 0 1px;
-  border: 0;
-  border-radius: var(--radius-control);
-  background: none;
-  color: var(--color-text-secondary);
-  font: inherit;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.location button:hover {
-  color: var(--color-text-primary);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.location button[aria-current] {
-  color: var(--color-text-primary);
-  font-weight: 600;
-}
-
-.location button:focus-visible {
-  outline: 2px solid var(--color-focus-ring);
 }
 
 .linkButton {
@@ -275,31 +217,6 @@
   box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-focus-ring) 55%, transparent);
 }
 
-/* Out of the way until wanted: on hover, once anything is selected, or always on touch screens. */
-.check {
-  flex: none;
-  width: 14px;
-  height: 14px;
-  margin: 0;
-  accent-color: var(--color-text-primary);
-  opacity: 0;
-  cursor: pointer;
-}
-
-.row:hover .check,
-.row:focus-within .check,
-.check:checked,
-.tree[data-selecting] .check {
-  opacity: 1;
-}
-
-@media (hover: none) {
-  .check {
-    opacity: 1;
-  }
-}
-
-.check:focus-visible,
 .linkButton:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
@@ -577,16 +494,4 @@
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-}
-
-/* Phones: one panel at a time, the viewer opening over the list. */
-@media (max-width: 700px) {
-  .app {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .app[data-view="tree"] .main,
-  .app[data-view="viewer"] .side {
-    display: none;
-  }
 }

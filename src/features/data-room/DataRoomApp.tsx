@@ -1,10 +1,7 @@
 "use client";
 
-import { Activity, Fragment, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from "react";
+import { Activity, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Menu } from "@/components/ui/Menu";
-import { Splitter } from "@/components/ui/Splitter";
-import { SidebarDock, useDocked } from "@/features/portal/PortalFrame";
 import {
   createFolderAction,
   deleteItemsAction,
@@ -14,15 +11,20 @@ import {
 } from "./actions";
 import { Dialog, type DialogProps } from "./Dialog";
 import { formatBytes } from "./fileKinds";
-import { FileTree, ancestorsOf, fileKey, folderKey, folderPath, indexTree, type TreeAction } from "./FileTree";
 import { Icon } from "./icons";
+import { checkedBytes, refsOf, RoomBrowser, ToolMenu, useStoredView, ViewMenu } from "./RoomBrowser";
+import browser from "./RoomBrowser.module.css";
+import { ancestorsOf, folderPath, indexTree, type TreeAction, type TreeIndex } from "./tree";
 import { MAX_ARCHIVE_BYTES, type RoomFile, type RoomTree } from "./types";
 import { UploadList } from "./UploadList";
 import { useUploads } from "./useUploads";
-import { SummaryPanel, Viewer, type RoomSummary } from "./Viewer";
+import { FilePreview, SummaryPanel, type RoomSummary } from "./Viewer";
+import viewer from "./Viewer.module.css";
 import { downloadRoomZip, postRoomArchive, type ZipProgress, type ZipSelection } from "./zipDownload";
 import styles from "./DataRoomApp.module.css";
 import ui from "./ui.module.css";
+
+const VIEW_KEY = "zode:data-room:view";
 
 interface DataRoomAppProps {
   roomId: string;
@@ -30,16 +32,44 @@ interface DataRoomAppProps {
   isAdmin: boolean;
   tree: RoomTree;
   summary: RoomSummary | null;
-  /** The open tab's page; every tab but Files shows it in the viewer's place. */
+  /** The open tab's page; every tab but Files shows it in the browser's place. */
   children: ReactNode;
 }
 
+/** Where the Files tab is: a folder, and maybe a file or the summary open over it. */
+interface Place {
+  folderId: string | null;
+  fileId: string | null;
+  summary: boolean;
+}
+
+const placeHref = (base: string, place: Place): string => {
+  const params = new URLSearchParams();
+  if (place.folderId) params.set("folder", place.folderId);
+  if (place.fileId) params.set("file", place.fileId);
+  if (place.summary) params.set("summary", "1");
+  const search = params.toString();
+  return search ? `${base}?${search}` : base;
+};
+
+/** The place `params` name; a file alone opens over its own folder. */
+function placeOf(params: URLSearchParams, index: TreeIndex, files: Map<string, RoomFile>): Place {
+  const file = files.get(params.get("file") ?? "");
+  const folder = params.get("folder") ?? file?.folderId ?? null;
+  return {
+    folderId: folder && index.folders.has(folder) ? folder : null,
+    fileId: file?.id ?? null,
+    summary: !file && params.get("summary") === "1",
+  };
+}
+
 /**
- * The data room itself: the file tree on the left, a resizable divider, and
- * the viewer on the right. While the portal's sidebar is showing, the tree
- * docks there instead and the viewer takes the whole panel; it stays docked
- * on the other tabs, where picking a file goes back to Files. The summary,
- * when written, is pinned atop the tree and open until a file is.
+ * The data room itself, as the public link shows it: a toolbar over the open
+ * folder's files and folders, in Explorer's views, with a file or the summary
+ * opening in their place. The place rides in the address (`?folder=`,
+ * `?file=`, `?summary=1`) so Back steps out again; the other tabs show their
+ * page instead, and the place is kept for coming back to Files. Admins upload,
+ * add folders, and rename, move or delete from here.
  */
 export function DataRoomApp({ roomId, roomName, isAdmin, tree, summary, children }: DataRoomAppProps): ReactElement {
   const index = useMemo(() => indexTree(tree), [tree]);
@@ -49,52 +79,45 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summary, children
   const router = useRouter();
   const onFiles = usePathname() === base;
   const searchParams = useSearchParams();
-  const fileParam = onFiles ? searchParams.get("file") : null;
-  const initialFileId = fileParam && filesById.has(fileParam) ? fileParam : null;
+  const search = searchParams.toString();
 
-  const [openFileId, setOpenFileId] = useState<string | null>(initialFileId);
-  const [summaryOpen, setSummaryOpen] = useState(() => Boolean(summary) && !initialFileId);
-  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<Set<string>>(() => {
-    const file = initialFileId ? filesById.get(initialFileId) : undefined;
-    const folder = file?.folderId ?? null;
-    return new Set(folder ? [...ancestorsOf(index, folder), folder] : []);
-  });
+  const [place, setPlace] = useState<Place>(() =>
+    onFiles ? placeOf(searchParams, index, filesById) : { folderId: null, fileId: null, summary: false },
+  );
   const [checkedRaw, setChecked] = useState<Set<string>>(() => new Set());
   const [query, setQuery] = useState("");
+  const [view, setView] = useStoredView(VIEW_KEY, "icons-md");
   const [dialog, setDialog] = useState<Omit<DialogProps, "onClose"> | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   /** The zip being saved: `preparing` until its first bytes arrive. */
   const [download, setDownload] = useState<ZipProgress | "preparing" | null>(null);
   const downloadAbort = useRef<AbortController | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const uploads = useUploads(roomId);
-  const docked = useDocked();
 
-  // Links into the room, e.g. Activity's "Open", name the file to show.
-  const [seenFileParam, setSeenFileParam] = useState(fileParam);
-  if (fileParam !== seenFileParam) {
-    setSeenFileParam(fileParam);
-    const file = fileParam ? filesById.get(fileParam) : undefined;
-    if (file && file.id !== openFileId) {
-      setOpenFileId(file.id);
-      setSummaryOpen(false);
-      setActiveFolderId(file.folderId);
-      const folder = file.folderId;
-      if (folder) setExpanded((current) => new Set([...current, ...ancestorsOf(index, folder), folder]));
+  // Follow the address on Files, e.g. Back or Activity's "Open". Coming back
+  // from another tab by its bare link keeps the place you left.
+  const [seen, setSeen] = useState({ onFiles, search });
+  if (seen.onFiles !== onFiles || seen.search !== search) {
+    const returning = onFiles && !seen.onFiles && search === "";
+    setSeen({ onFiles, search });
+    if (onFiles && !returning) {
+      setPlace(placeOf(searchParams, index, filesById));
+      setChecked(new Set());
     }
   }
 
-  // Back on Files with a file still open, the address names it again.
+  // Back on Files, the address names the place again.
   useEffect(() => {
-    if (onFiles && openFileId && fileParam !== openFileId) window.history.replaceState(null, "", `?file=${openFileId}`);
-  }, [onFiles, openFileId, fileParam]);
+    if (onFiles && search === "") {
+      const href = placeHref(base, place);
+      if (href !== base) window.history.replaceState(null, "", href);
+    }
+  }, [onFiles, search, base, place]);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const openFile = openFileId ? (filesById.get(openFileId) ?? null) : null;
-  const folderId = activeFolderId && index.folders.has(activeFolderId) ? activeFolderId : null;
-  const trail = folderId ? [...ancestorsOf(index, folderId), folderId] : [];
+  const folderId = place.folderId && index.folders.has(place.folderId) ? place.folderId : null;
+  const openFile = place.fileId ? (filesById.get(place.fileId) ?? null) : null;
+  const summaryOpen = Boolean(summary) && !openFile && place.summary;
 
   // Drop selections whose items were deleted or moved out from under us.
   const checked = useMemo(
@@ -104,14 +127,11 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summary, children
       ),
     [checkedRaw, index, filesById],
   );
-  const checkedRefs: ItemRef[] = [...checked].map((key) => ({
-    kind: key.startsWith("d:") ? "folder" : "file",
-    id: key.slice(2),
-  }));
+  const checkedRefs = refsOf(checked);
 
   const totalBytes = useMemo(() => tree.files.reduce((sum, file) => sum + file.sizeBytes, 0), [tree]);
 
-  /** The top-level folders and files; checking them all checks everything. */
+  /** The top-level folders and files; downloading them is downloading everything. */
   const rootRefs = useMemo<ItemRef[]>(
     () => [
       ...(index.childFolders.get(null) ?? []).map((folder) => ({ kind: "folder" as const, id: folder.id })),
@@ -119,62 +139,27 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summary, children
     ],
     [index],
   );
-  const refKey = (item: ItemRef) => (item.kind === "folder" ? folderKey(item.id) : fileKey(item.id));
-  const allChecked = rootRefs.length > 0 && rootRefs.every((item) => checked.has(refKey(item)));
-  const selectAll = () => setChecked(new Set(rootRefs.map(refKey)));
 
-  /** Points the address at `href`, going back to Files from another tab. */
-  const show = (href: string) => {
-    if (onFiles) window.history.replaceState(null, "", href);
+  /** Goes to `next`, a step Back can undo; from another tab, back to Files. */
+  const go = (next: Place, { keepQuery = false } = {}) => {
+    setPlace(next);
+    setChecked(new Set());
+    if (!keepQuery) setQuery("");
+    const href = placeHref(base, next);
+    if (onFiles) window.history.pushState(null, "", href);
     else router.push(href);
   };
 
-  const open = (file: RoomFile) => {
-    setOpenFileId(file.id);
-    setSummaryOpen(false);
-    setActiveFolderId(file.folderId);
-    show(`${base}?file=${file.id}`);
-  };
+  const openFolder = (id: string | null) => go({ folderId: id, fileId: null, summary: false });
 
-  const openSummary = () => {
-    setOpenFileId(null);
-    setSummaryOpen(true);
-    show(base);
-  };
-
-  const closeViewer = () => {
-    setOpenFileId(null);
-    setSummaryOpen(false);
-    show(base);
-  };
-
-  const toggleExpand = (id: string) =>
-    setExpanded((current) => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-
-  const expandTo = (id: string | null) => {
-    if (!id) return;
-    setExpanded((current) => new Set([...current, ...ancestorsOf(index, id), id]));
-  };
+  const open = (file: RoomFile) => go({ folderId: file.folderId, fileId: file.id, summary: false });
 
   const openById = (fileId: string) => {
     const file = filesById.get(fileId);
-    if (!file) return;
-    expandTo(file.folderId);
-    open(file);
+    if (file) open(file);
   };
 
-  const toggleCheck = (key: string) =>
-    setChecked((current) => {
-      const next = new Set(current);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
+  const closePreview = () => openFolder(openFile?.folderId && index.folders.has(openFile.folderId) ? openFile.folderId : folderId);
 
   const nameOf = (item: ItemRef): string =>
     item.kind === "folder" ? (index.folders.get(item.id)?.name ?? "") : (filesById.get(item.id)?.name ?? "");
@@ -214,7 +199,7 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summary, children
         confirmLabel: "Move",
         onConfirm: async (target) => {
           const result = await moveItemsAction(roomId, items, target || null);
-          if (!result.error) expandTo(target || null);
+          if (!result.error) setChecked(new Set());
           return result.error;
         },
       });
@@ -227,10 +212,7 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summary, children
         danger: true,
         onConfirm: async () => {
           const result = await deleteItemsAction(roomId, items);
-          if (!result.error) {
-            setChecked(new Set());
-            if (openFileId && items.some((i) => i.kind === "file" && i.id === openFileId)) closeViewer();
-          }
+          if (!result.error) setChecked(new Set());
           return result.error;
         },
       });
@@ -243,53 +225,30 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summary, children
       description: `In ${folderPath(index, folderId)}`,
       input: { label: "Folder name", initial: "" },
       confirmLabel: "Create",
-      onConfirm: async (name) => {
-        const result = await createFolderAction(roomId, folderId, name);
-        if (result.id) {
-          expandTo(folderId);
-          setActiveFolderId(result.id);
-        }
-        return result.error;
-      },
+      onConfirm: async (name) => (await createFolderAction(roomId, folderId, name)).error,
     });
 
   const startUpload = (files: File[], target: string | null) => {
-    if (!files.length) return;
-    expandTo(target);
-    uploads.start(files, target);
+    if (files.length) uploads.start(files, target);
   };
 
   const move = async (items: ItemRef[], target: string | null) => {
     const result = await moveItemsAction(roomId, items, target);
     if (result.error) setNotice(result.error);
-    else expandTo(target);
-  };
-
-  /** Bytes a zip of the checked files and folders would hold, counting each file once. */
-  const selectedBytes = () => {
-    const folders = new Set(checkedRefs.filter((item) => item.kind === "folder").map((item) => item.id));
-    const files = new Set(checkedRefs.filter((item) => item.kind === "file").map((item) => item.id));
-    return tree.files
-      .filter(
-        (file) =>
-          files.has(file.id) ||
-          (file.folderId !== null && [...ancestorsOf(index, file.folderId), file.folderId].some((id) => folders.has(id))),
-      )
-      .reduce((sum, file) => sum + file.sizeBytes, 0);
+    else setChecked(new Set());
   };
 
   /** Downloads the checked items, or with nothing checked the whole room, as one zip; a lone file downloads as itself. */
   const downloadSelected = async () => {
     if (download) return;
-    const everything = !checked.size || allChecked;
+    const everything = !checked.size;
     const items = everything ? rootRefs : checkedRefs;
     if (!items.length) return;
     if (items.length === 1 && items[0].kind === "file") {
       window.location.assign(`/api/data-rooms/${roomId}/files/${items[0].id}?download=1`);
       return;
     }
-    if (everything) selectAll();
-    const bytes = everything ? totalBytes : selectedBytes();
+    const bytes = everything ? totalBytes : checkedBytes(tree, index, checked);
     const selection: ZipSelection = everything
       ? { all: true }
       : {
@@ -329,38 +288,45 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summary, children
     }
   };
 
+  const fileUrl = (fileId: string) => `/api/data-rooms/${roomId}/files/${fileId}`;
+  const backButton = (onBack: () => void) => (
+    <button type="button" className={`${ui.iconButton} ${viewer.back}`} onClick={onBack} aria-label="Back to files">
+      <Icon name="back" />
+    </button>
+  );
+
   return (
-    <div
-      ref={containerRef}
-      className={styles.app}
-      data-view={openFile || summaryOpen ? "viewer" : "tree"}
-      data-tab={onFiles ? undefined : "page"}
-    >
-      <SidebarDock>
-        <section className={styles.side} aria-label="Files" data-docked={docked ? "" : undefined}>
-          <div className={styles.toolbar}>
-            <div className={styles.search}>
-              <label className={styles.searchField}>
-                <Icon name="search" />
-                <input
-                  type="search"
-                  placeholder="Search files"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  aria-label="Search files"
-                />
-              </label>
+    <div className={styles.app} data-tab={onFiles ? undefined : "page"}>
+      <Activity mode={onFiles ? "visible" : "hidden"}>
+        <section className={styles.files} aria-label="Files">
+          <div className={browser.toolbar}>
+            <label className={browser.search}>
+              <Icon name="search" />
+              <input
+                type="search"
+                value={query}
+                placeholder="Search"
+                aria-label="Search files"
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setChecked(new Set());
+                  if (openFile || summaryOpen) go({ folderId, fileId: null, summary: false }, { keepQuery: true });
+                }}
+              />
+            </label>
+            <div className={browser.tools}>
               {isAdmin ? (
                 <>
-                  <Menu
-                    label="Add files or folder"
+                  <ToolMenu
+                    label="Add"
                     items={[
                       { id: "upload", label: "Upload files", onSelect: () => fileInputRef.current?.click() },
                       { id: "folder", label: "New folder", onSelect: newFolder },
                     ]}
                   >
                     <Icon name="plus" />
-                  </Menu>
+                    <span className={browser.toolLabel}>Add</span>
+                  </ToolMenu>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -373,54 +339,36 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summary, children
                   />
                 </>
               ) : null}
-            </div>
-          </div>
-          <nav className={styles.location} aria-label="Current folder">
-            <button
-              type="button"
-              onClick={() => setActiveFolderId(null)}
-              aria-current={folderId ? undefined : "location"}
-              aria-label="All files"
-              title="All files"
-            >
-              /
-            </button>
-            {trail.map((id, i) => (
-              <Fragment key={id}>
-                {i > 0 ? <span aria-hidden="true">/</span> : null}
+              {download ? (
+                <>
+                  <span className={browser.progress} role="status">
+                    {download === "preparing"
+                      ? "Preparing…"
+                      : `${download.files.toLocaleString()} of ${download.totalFiles.toLocaleString()} · ` +
+                        `${formatBytes(download.bytes)} of ${formatBytes(download.totalBytes)}`}
+                  </span>
+                  <button type="button" className={browser.tool} onClick={() => downloadAbort.current?.abort()}>
+                    Cancel
+                  </button>
+                </>
+              ) : (
                 <button
                   type="button"
-                  onClick={() => setActiveFolderId(id)}
-                  aria-current={id === folderId ? "location" : undefined}
+                  className={browser.tool}
+                  onClick={downloadSelected}
+                  disabled={!rootRefs.length}
+                  aria-label={checked.size ? "Download selected" : "Download all"}
                 >
-                  {index.folders.get(id)?.name}
+                  <Icon name="download" />
+                  <span className={browser.toolLabel}>{checked.size ? "Download" : "Download all"}</span>
                 </button>
-              </Fragment>
-            ))}
-          </nav>
-
-          <FileTree
-            index={index}
-            isAdmin={isAdmin}
-            query={query}
-            openFileId={openFileId}
-            activeFolderId={folderId}
-            checked={checked}
-            expanded={expanded}
-            onToggleExpand={toggleExpand}
-            onToggleCheck={toggleCheck}
-            onOpenFile={open}
-            onSelectFolder={setActiveFolderId}
-            onAction={(action, item) => runAction(action, [item])}
-            onDropFiles={startUpload}
-            onMove={move}
-            summary={summary ? { open: summaryOpen, onOpen: openSummary } : undefined}
-          />
-
-          <UploadList uploads={uploads} />
+              )}
+              <ViewMenu view={view} onChange={setView} />
+            </div>
+          </div>
 
           {notice ? (
-            <p className={styles.notice} role="alert">
+            <p className={browser.notice} role="alert">
               {notice}
               <button type="button" onClick={() => setNotice(null)} aria-label="Dismiss">
                 <Icon name="close" />
@@ -428,91 +376,66 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summary, children
             </p>
           ) : null}
 
-          <div className={styles.footer}>
-            {download ? (
-              <>
-                <span className={styles.count} role="status">
-                  {download === "preparing"
-                    ? "Preparing download…"
-                    : `Downloading ${download.files.toLocaleString()} of ${download.totalFiles.toLocaleString()} files · ` +
-                      `${formatBytes(download.bytes)} of ${formatBytes(download.totalBytes)}`}
-                </span>
-                <button type="button" className={ui.button} onClick={() => downloadAbort.current?.abort()}>
-                  Cancel
-                </button>
-              </>
-            ) : (
-              <>
-                <div className={styles.footerInfo}>
-                  <span className={styles.count}>
-                    {checked.size && !allChecked
-                      ? `${checked.size} selected · ${formatBytes(selectedBytes())}`
-                      : `${allChecked ? "All " : ""}${tree.files.length.toLocaleString()} files · ${formatBytes(totalBytes)}`}
-                  </span>
-                  <div className={styles.footerLinks}>
-                    {allChecked || !rootRefs.length ? null : (
-                      <button type="button" className={styles.linkButton} onClick={selectAll}>
-                        Select all
-                      </button>
-                    )}
-                    {checked.size ? (
-                      <button type="button" className={styles.linkButton} onClick={() => setChecked(new Set())}>
-                        Clear
-                      </button>
-                    ) : null}
-                    {isAdmin && checked.size ? (
-                      <>
-                        <button
-                          type="button"
-                          className={styles.linkButton}
-                          onClick={() => runAction("move", checkedRefs)}
-                        >
-                          Move
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.linkButton}
-                          data-danger=""
-                          onClick={() => runAction("delete", checkedRefs)}
-                        >
-                          Delete
-                        </button>
-                      </>
-                    ) : null}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className={ui.primary}
-                  onClick={downloadSelected}
-                  disabled={!rootRefs.length}
-                >
-                  <Icon name="download" />
-                  {checked.size && !allChecked ? "Download" : "Download all"}
-                </button>
-              </>
-            )}
-          </div>
-        </section>
-      </SidebarDock>
+          {checked.size && !openFile && !summaryOpen ? (
+            <div className={styles.selection}>
+              <span className={styles.count}>
+                {checked.size.toLocaleString()} selected · {formatBytes(checkedBytes(tree, index, checked))}
+              </span>
+              {isAdmin ? (
+                <>
+                  <button type="button" className={styles.linkButton} onClick={() => runAction("move", checkedRefs)}>
+                    Move
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.linkButton}
+                    data-danger=""
+                    onClick={() => runAction("delete", checkedRefs)}
+                  >
+                    Delete
+                  </button>
+                </>
+              ) : null}
+              <button type="button" className={styles.linkButton} onClick={() => setChecked(new Set())}>
+                Clear
+              </button>
+            </div>
+          ) : null}
 
-      {docked || !onFiles ? null : (
-        <Splitter
-          containerRef={containerRef}
-          storageKey="zode:data-room:tree-share"
-          label="Resize file list"
-          cssVar="--tree-width"
-          defaultFraction={0.33}
-        />
-      )}
-
-      <Activity mode={onFiles ? "visible" : "hidden"}>
-        <section className={styles.main} aria-label="Viewer">
-          {summary && summaryOpen ? (
-            <SummaryPanel summary={summary} onBack={closeViewer} onOpenFile={openById} />
+          {openFile ? (
+            <div className={browser.preview}>
+              <FilePreview key={openFile.id} url={fileUrl(openFile.id)} file={openFile} showBack leading={backButton(closePreview)} />
+            </div>
+          ) : summary && summaryOpen ? (
+            <div className={browser.preview}>
+              <SummaryPanel summary={summary} showBack onBack={() => openFolder(null)} onOpenFile={openById} />
+            </div>
           ) : (
-            <Viewer key={openFile?.id ?? "none"} roomId={roomId} file={openFile} onBack={closeViewer} />
+            <RoomBrowser
+              tree={tree}
+              index={index}
+              rootName="All files"
+              rootCrumb={`${tree.files.length.toLocaleString()} ${tree.files.length === 1 ? "file" : "files"} · ${formatBytes(totalBytes)}`}
+              titleAs="h2"
+              folderId={folderId}
+              query={query}
+              view={view}
+              hasSummary={Boolean(summary)}
+              checked={checked}
+              onCheckedChange={setChecked}
+              thumbUrl={(fileId) => `${fileUrl(fileId)}?thumb=1`}
+              onOpenFolder={openFolder}
+              onOpenFile={open}
+              onOpenSummary={() => go({ folderId: null, fileId: null, summary: true })}
+              admin={
+                isAdmin
+                  ? { onAction: (action, item) => runAction(action, [item]), onDropFiles: startUpload, onMove: move }
+                  : undefined
+              }
+            />
           )}
+
+          <UploadList uploads={uploads} />
         </section>
       </Activity>
 

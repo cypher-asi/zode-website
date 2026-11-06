@@ -3,15 +3,11 @@
  * the rail's trays. Its place and the `--glass-*` surface come from `.frame`
  * (shell.module.css); it's hidden under 1100px.
  *
- * `.dock` is where a page renders its own explorer (a data room's files);
- * while it's filled, the app's default list below it steps aside.
  * `.extra`, under the app's links, holds a page's own section (ZRM's types).
- * Both go by `data-filled`, not `:empty`: a page navigation keeps hidden
- * leaves its hidden nodes behind in them.
+ * It goes by `data-filled`, not `:empty`: a page navigation keeps hidden
+ * leaves its hidden nodes behind in it.
  */
 .sidebar {
-  /* The crumb's height plus its gap to the title: how far the border moves in and out of a room. */
-  --crumb-shift: 20px;
   position: fixed;
   top: var(--portal-top);
   bottom: calc(var(--portal-gap) + env(safe-area-inset-bottom, 0px));
@@ -63,30 +59,7 @@
   white-space: nowrap;
 }
 
-.crumb {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  align-self: flex-start;
-  height: calc(var(--crumb-shift) - 2px);
-  margin-left: -4px;
-  color: var(--color-text-tertiary);
-  font-size: var(--text-xs);
-  text-decoration: none;
-  transition: color var(--duration-base) ease;
-}
-
-.crumb svg {
-  width: 14px;
-  height: 14px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-/* Everything under the head, its top border being the line that moves when the head grows or shrinks. */
+/* Everything under the head. */
 .content {
   display: flex;
   flex: 1;
@@ -95,26 +68,11 @@
   border-top: 1px solid var(--glass-border);
 }
 
-.dock {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.dock:not([data-filled]) {
-  display: none;
-}
-
 .body {
   flex: 1;
   min-height: 0;
   padding: 10px;
   overflow-y: auto;
-}
-
-.dock[data-filled] + .body {
-  display: none;
 }
 
 .section + .section {
@@ -237,7 +195,6 @@ button.link {
   color: var(--color-text-primary);
 }
 
-.crumb:focus-visible,
 .link:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
@@ -247,36 +204,23 @@ button.link {
   .link:not([aria-current="page"], [aria-pressed="true"]):hover {
     background: var(--color-surface-hover);
   }
-
-  .crumb:hover {
-    color: var(--color-text-primary);
-  }
 }
 
-/* Pulses where a room's search box and first rows will land, after a beat so quick loads skip it. */
+/* Pulses where the rooms will land, after a beat so quick loads skip it. */
 .placeholder {
   display: flex;
   flex-direction: column;
   animation: fade-in var(--duration-base) ease 150ms backwards;
 }
 
-.placeholderSearch,
 .placeholderRow {
   display: block;
-  border-radius: var(--radius-inset);
-  background: var(--color-surface-tint);
-  animation: pulse 1.4s ease-in-out infinite;
-}
-
-.placeholderSearch {
-  height: 32px;
-  margin-bottom: 38px;
-}
-
-.placeholderRow {
   width: 64%;
   height: 12px;
   margin: 10px 0 10px 10px;
+  border-radius: var(--radius-inset);
+  background: var(--color-surface-tint);
+  animation: pulse 1.4s ease-in-out infinite;
 }
 
 .placeholderRow:nth-child(odd) {
@@ -284,10 +228,8 @@ button.link {
 }
 
 /*
- * Moving between views (`data-motion`), in transforms and opacity only so it
- * stays smooth while the next page mounts. The head takes its new height at
- * once; the content, border and all, starts from where it was and slides
- * into place, the title riding along, and whatever's new fades up into it.
+ * Moving between apps (`data-motion`), in transforms and opacity only so it
+ * stays smooth while the next page mounts: the new title and list rise in.
  */
 @media (prefers-reduced-motion: no-preference) {
   /* Only the flat page colour sits behind the sidebar, so the blur can go without a visible change. */
@@ -295,59 +237,9 @@ button.link {
     backdrop-filter: none;
   }
 
-  .sidebar[data-motion="down"] .content {
-    animation: from-above var(--duration-fast) var(--ease-out);
-  }
-
-  .sidebar[data-motion="up"] .content {
-    animation: from-below var(--duration-fast) var(--ease-out);
-  }
-
-  .sidebar[data-motion="down"] .title {
-    animation:
-      from-above var(--duration-fast) var(--ease-out),
-      fade-in var(--duration-fast) ease;
-  }
-
-  .sidebar[data-motion="up"] .title {
-    animation:
-      from-below var(--duration-fast) var(--ease-out),
-      fade-in var(--duration-fast) ease;
-  }
-
-  .sidebar[data-motion="swap"] .title,
-  .sidebar[data-motion] .crumb,
+  .sidebar[data-motion] .title,
   .sidebar[data-motion] .body {
     animation: rise var(--duration-fast) var(--ease-out);
-  }
-
-  /* A docked explorer's parts (search, path, list, footer) rise in one after another. */
-  .sidebar[data-motion] .dock > * > * {
-    animation: rise var(--duration-fast) var(--ease-out) backwards;
-  }
-
-  .sidebar[data-motion] .dock > * > :nth-child(2) {
-    animation-delay: 20ms;
-  }
-
-  .sidebar[data-motion] .dock > * > :nth-child(3) {
-    animation-delay: 40ms;
-  }
-
-  .sidebar[data-motion] .dock > * > :nth-child(n + 4) {
-    animation-delay: 60ms;
-  }
-}
-
-@keyframes from-above {
-  from {
-    translate: 0 calc(-1 * var(--crumb-shift));
-  }
-}
-
-@keyframes from-below {
-  from {
-    translate: 0 var(--crumb-shift);
   }
 }
 
@@ -372,14 +264,12 @@ button.link {
 
 @media (prefers-reduced-motion: reduce) {
   .sidebar,
-  .crumb,
   .link,
   .linkOut {
     transition: none;
   }
 
   .placeholder,
-  .placeholderSearch,
   .placeholderRow {
     animation: none;
   }

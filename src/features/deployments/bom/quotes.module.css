@@ -1,8 +1,7 @@
 /*
- * The Quotes tab, laid out like a data room (../../data-room/DataRoomApp.module.css,
- * whose list, rows, uploads and footer it reuses): list | divider | viewer.
- * `--tree-width` is written by the Splitter. Unlike a data room's, the list
- * never docks in the portal's sidebar, which keeps the deployments menu.
+ * The Quotes tab: list | divider | viewer, reusing the list, rows, uploads
+ * and footer in ../../data-room/DataRoomApp.module.css. `--tree-width` is
+ * written by the Splitter.
  */
 .app {
   --tree-width: 28%;

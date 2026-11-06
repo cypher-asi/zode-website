@@ -17,7 +17,7 @@ import dynamic from "next/dynamic";
 import { OverlayScrollbar } from "@/components/ui/OverlayScrollbar";
 import { fileKind, formatBytes, typeLabel, type FileKind } from "./fileKinds";
 import { FileGlyph, Icon } from "./icons";
-import type { PreviewFile, RoomFile } from "./types";
+import type { PreviewFile } from "./types";
 import type { ViewerProps, Zoom } from "./viewers/types";
 import styles from "./Viewer.module.css";
 import ui from "./ui.module.css";
@@ -69,7 +69,7 @@ export function SummaryPanel({
   summary: RoomSummary;
   onBack: () => void;
   onOpenFile: (fileId: string) => void;
-  /** The public browser replaces the file list with this panel, so the way back stays visible. */
+  /** A room's browser replaces the file list with this panel, so the way back stays visible. */
   showBack?: boolean;
 }): ReactElement {
   const scrollId = useId();
@@ -98,28 +98,6 @@ export function SummaryPanel({
   );
 }
 
-export function Viewer({ roomId, file, onBack }: { roomId: string; file: RoomFile | null; onBack: () => void }): ReactElement {
-  if (!file) {
-    return (
-      <div className={styles.empty}>
-        <Icon name="file" />
-        <p>Select a file to preview it here.</p>
-      </div>
-    );
-  }
-  return (
-    <FilePreview
-      url={`/api/data-rooms/${roomId}/files/${file.id}`}
-      file={file}
-      leading={
-        <button type="button" className={`${ui.iconButton} ${styles.back}`} onClick={onBack} aria-label="Back to files">
-          <Icon name="back" />
-        </button>
-      }
-    />
-  );
-}
-
 /**
  * Any file in the preview frame, by the previewer for its kind, or its details
  * and Download where there's none. `url` serves its bytes inline, and as an
@@ -139,7 +117,7 @@ export function FilePreview({
   meta?: ReactNode;
   leading?: ReactNode;
   trailing?: ReactNode;
-  /** The public browser replaces the file list with the preview, so the way back stays visible. */
+  /** A room's browser replaces the file list with the preview, so the way back stays visible. */
   showBack?: boolean;
 }): ReactElement {
   const kind = fileKind(file.name);
