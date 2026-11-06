@@ -298,7 +298,7 @@ export interface RoomBrowserProps {
   folderId: string | null;
   query: string;
   view: ViewMode;
-  /** Pins a Summary entry first at the top level. */
+  /** Pins a Summary entry first, when the folder on show has one. */
   hasSummary: boolean;
   checked: Set<string>;
   onCheckedChange: (checked: Set<string>) => void;
@@ -379,7 +379,7 @@ export function RoomBrowser({
       ];
     } else {
       rows = [
-        ...(hasSummary && !folderId
+        ...(hasSummary
           ? [{ kind: "summary" as const, id: "summary" as const, name: "Summary" as const, path: "" as const }]
           : []),
         ...(index.childFolders.get(folderId) ?? []).map(

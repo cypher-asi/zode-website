@@ -2,6 +2,8 @@ import type { RoomFile, RoomFolder, RoomTree } from "./types";
 
 export const fileKey = (id: string): string => `f:${id}`;
 export const folderKey = (id: string): string => `d:${id}`;
+/** A summary's place among a room's summaries: its folder, `""` for the room's own. */
+export const summaryKey = (folderId: string | null): string => folderId ?? "";
 
 export type TreeAction = "rename" | "move" | "delete";
 

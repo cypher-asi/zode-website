@@ -52,33 +52,45 @@ const onFullscreenChange = (callback: () => void) => {
 };
 
 export interface RoomSummary {
-  /** The rendered summary; its source links carry `data-file-id`. */
+  /**
+   * The rendered summary; its source links carry `data-file-id`, and links to
+   * a folder `data-folder-id`, with `data-summary` to open that folder's summary.
+   */
   content: ReactNode;
 }
 
+/** A room's summaries by the folder they sit in, `""` for the room's own. */
+export type RoomSummaries = Readonly<Record<string, RoomSummary>>;
+
 /**
- * The room's diligence summary in the viewer's place. Plain clicks on a
- * source link open that file here instead of navigating.
+ * A room's or folder's summary in the viewer's place. Plain clicks on a source
+ * link open that file here, and on a folder link that folder, instead of navigating.
  */
 export function SummaryPanel({
   summary,
   onBack,
   onOpenFile,
+  onOpenFolder,
   showBack = false,
 }: {
   summary: RoomSummary;
   onBack: () => void;
   onOpenFile: (fileId: string) => void;
+  onOpenFolder: (folderId: string, summary: boolean) => void;
   /** A room's browser replaces the file list with this panel, so the way back stays visible. */
   showBack?: boolean;
 }): ReactElement {
   const scrollId = useId();
   const onClick = (event: MouseEvent<HTMLDivElement>) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    const link = (event.target as Element).closest<HTMLElement>("a[data-file-id]");
-    if (!link?.dataset.fileId) return;
-    event.preventDefault();
-    onOpenFile(link.dataset.fileId);
+    const link = (event.target as Element).closest<HTMLElement>("a[data-file-id], a[data-folder-id]");
+    if (link?.dataset.fileId) {
+      event.preventDefault();
+      onOpenFile(link.dataset.fileId);
+    } else if (link?.dataset.folderId) {
+      event.preventDefault();
+      onOpenFolder(link.dataset.folderId, link.dataset.summary !== undefined);
+    }
   };
 
   return (

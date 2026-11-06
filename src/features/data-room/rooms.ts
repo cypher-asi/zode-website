@@ -142,12 +142,18 @@ export async function renameRoom(roomId: string, name: string): Promise<void> {
   await db()`update data_rooms set name = ${name} where id = ${roomId}`;
 }
 
-/** A summary's economics follow the kind, so moving to or from a purchase drops the summary written for the old one. */
+/**
+ * A summary's economics follow the kind, so moving to or from a purchase drops
+ * the site summaries written for the old one; folder summaries with their own
+ * kind and portfolio summaries stay.
+ */
 export async function setRoomKind(roomId: string, from: RoomKind, to: RoomKind): Promise<void> {
   const sql = db();
   await sql.transaction([
     sql`update data_rooms set kind = ${to} where id = ${roomId}`,
-    ...(leaseEconomics(from) === leaseEconomics(to) ? [] : [sql`delete from data_room_summaries where room_id = ${roomId}`]),
+    ...(leaseEconomics(from) === leaseEconomics(to)
+      ? []
+      : [sql`delete from data_room_summaries where room_id = ${roomId} and kind is null and layout = 'site'`]),
   ]);
 }
 

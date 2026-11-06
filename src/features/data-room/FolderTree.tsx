@@ -5,17 +5,17 @@ import type { ItemRef } from "./actions";
 import { fileKind } from "./fileKinds";
 import { FileGlyph, Icon } from "./icons";
 import { DRAG_TYPE, type BrowserAdmin } from "./RoomBrowser";
-import { ancestorsOf, fileKey, folderKey, type TreeIndex } from "./tree";
+import { ancestorsOf, fileKey, folderKey, summaryKey, type TreeIndex } from "./tree";
 import type { RoomFile } from "./types";
 import styles from "./FolderTree.module.css";
 
 const ROOT_KEY = "root";
-const SUMMARY_KEY = "summary";
+const summaryRowKey = (folderId: string | null) => (folderId ? `summary:${folderId}` : "summary");
 const INDENT = 16;
 
 type Row =
   | { kind: "root"; key: string; depth: number }
-  | { kind: "summary"; key: string; depth: number }
+  | { kind: "summary"; key: string; depth: number; folderId: string | null }
   | { kind: "folder"; key: string; depth: number; id: string; name: string; parentId: string | null; hasChildren: boolean }
   | { kind: "file"; key: string; depth: number; file: RoomFile };
 
@@ -26,8 +26,11 @@ export interface FolderTreeProps {
   /** The folder on show, or the open file's. */
   folderId: string | null;
   openFileId: string | null;
-  /** Pins a Summary row first, when the room has one. */
-  summary: { open: boolean; onOpen: () => void } | null;
+  /**
+   * Pins a Summary row first in each folder that has one, by `summaryKey`; `open`
+   * when the one in `folderId` is on show.
+   */
+  summaries: { folders: ReadonlySet<string>; open: boolean; onOpen: (folderId: string | null) => void } | null;
   onOpenFolder: (folderId: string | null) => void;
   onOpenFile: (file: RoomFile) => void;
   /** Lets admins drop files and dragged items onto a folder. */
@@ -45,7 +48,7 @@ export function FolderTree({
   rootName,
   folderId,
   openFileId,
-  summary,
+  summaries,
   onOpenFolder,
   onOpenFile,
   admin,
@@ -56,8 +59,8 @@ export function FolderTree({
   const [dropKey, setDropKey] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const currentKey = summary?.open
-    ? SUMMARY_KEY
+  const currentKey = summaries?.open
+    ? summaryRowKey(folderId)
     : openFileId
       ? fileKey(openFileId)
       : folderId
@@ -77,8 +80,10 @@ export function FolderTree({
 
   const rows = useMemo(() => {
     const list: Row[] = [{ kind: "root", key: ROOT_KEY, depth: 0 }];
-    if (summary) list.push({ kind: "summary", key: SUMMARY_KEY, depth: 1 });
     const walk = (parent: string | null, depth: number) => {
+      if (summaries?.folders.has(summaryKey(parent))) {
+        list.push({ kind: "summary", key: summaryRowKey(parent), depth, folderId: parent });
+      }
       for (const folder of index.childFolders.get(parent) ?? []) {
         list.push({
           kind: "folder",
@@ -87,7 +92,11 @@ export function FolderTree({
           id: folder.id,
           name: folder.name,
           parentId: folder.parentId && index.folders.has(folder.parentId) ? folder.parentId : null,
-          hasChildren: Boolean(index.childFolders.get(folder.id)?.length || index.childFiles.get(folder.id)?.length),
+          hasChildren: Boolean(
+            index.childFolders.get(folder.id)?.length ||
+              index.childFiles.get(folder.id)?.length ||
+              summaries?.folders.has(folder.id),
+          ),
         });
         if (expanded.has(folder.id)) walk(folder.id, depth + 1);
       }
@@ -95,7 +104,7 @@ export function FolderTree({
     };
     walk(null, 1);
     return list;
-  }, [index, expanded, summary]);
+  }, [index, expanded, summaries]);
 
   const fileParents = useMemo(
     () => new Map([...index.childFiles].flatMap(([parent, files]) => files.map((file) => [file.id, parent] as const))),
@@ -113,7 +122,7 @@ export function FolderTree({
 
   const activate = (row: Row) => {
     if (row.kind === "root") onOpenFolder(null);
-    else if (row.kind === "summary") summary?.onOpen();
+    else if (row.kind === "summary") summaries?.onOpen(row.folderId);
     else if (row.kind === "folder") onOpenFolder(row.id);
     else onOpenFile(row.file);
   };
@@ -126,7 +135,12 @@ export function FolderTree({
 
   const parentRow = (row: Row): Row | undefined => {
     if (row.kind === "root") return undefined;
-    const parent = row.kind === "folder" ? row.parentId : row.kind === "file" ? (fileParents.get(row.file.id) ?? null) : null;
+    const parent =
+      row.kind === "folder"
+        ? row.parentId
+        : row.kind === "file"
+          ? (fileParents.get(row.file.id) ?? null)
+          : row.folderId;
     return rows.find((r) => r.key === (parent ? folderKey(parent) : ROOT_KEY));
   };
 

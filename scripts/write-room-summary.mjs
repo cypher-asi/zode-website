@@ -385,8 +385,8 @@ if (args["dry-run"]) {
 await sql`
   insert into data_room_summaries (room_id, diligence, economics, updated_by_email)
   values (${args.room}, ${JSON.stringify(diligence)}::jsonb, ${JSON.stringify(economics)}::jsonb, ${args.as.trim().toLowerCase()})
-  on conflict (room_id) do update
-    set diligence = excluded.diligence, economics = excluded.economics,
+  on conflict (room_id, folder_id) do update
+    set diligence = excluded.diligence, economics = excluded.economics, layout = 'site', kind = null,
         updated_at = now(), updated_by_email = excluded.updated_by_email
 `;
 console.log(`[summary] wrote the summary for "${room.name}" to ${new URL(databaseUrl).hostname}.`);

@@ -273,6 +273,20 @@ create table if not exists data_room_summaries (
   updated_by_email text not null
 );
 
+-- A summary can also sit in a folder, such as a site's room copied into a
+-- portfolio room, where it opens first among the folder's items. `kind`, when
+-- set, is the site's own kind rather than the room's. A portfolio summary
+-- holds a model's results across sites in `economics`, read from the workbook
+-- by scripts/write-portfolio-summary.mjs, and leaves `diligence` to the sites'
+-- folder summaries.
+alter table data_room_summaries add column if not exists folder_id uuid references data_room_folders (id) on delete cascade;
+alter table data_room_summaries add column if not exists kind text check (kind in ('purchase', 'lease', 'colo'));
+alter table data_room_summaries add column if not exists layout text not null default 'site';
+alter table data_room_summaries drop constraint if exists data_room_summaries_layout_check;
+alter table data_room_summaries add constraint data_room_summaries_layout_check check (layout in ('site', 'portfolio'));
+alter table data_room_summaries drop constraint if exists data_room_summaries_pkey;
+create unique index if not exists data_room_summaries_place_idx on data_room_summaries (room_id, folder_id) nulls not distinct;
+
 -- Public links to a room, one per recipient email (/shared/data-rooms/<token>),
 -- opened without a ZODE account. `email` is null only for the room-wide link
 -- that came before them. The token is the secret; revoking makes it 404.

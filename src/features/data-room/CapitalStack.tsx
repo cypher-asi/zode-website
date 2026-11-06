@@ -5,7 +5,19 @@ import { pct, usdShort } from "@/features/compute-model/format";
 import styles from "./CapitalStack.module.css";
 
 export interface CapitalSource {
-  key: "equity" | "deposits" | "charges" | "itEquity" | "projectDebt" | "mortgage" | "prepayment" | "gpu";
+  key:
+    | "equity"
+    | "deposits"
+    | "charges"
+    | "itEquity"
+    | "projectDebt"
+    | "mortgage"
+    | "prepayment"
+    | "gpu"
+    | "siteEquity"
+    | "computeEquity"
+    | "reDebt"
+    | "operating";
   label: string;
   amount: number;
   /** What the source costs, in a few words. */
@@ -14,11 +26,19 @@ export interface CapitalSource {
 
 /** What a class of equity takes out over the deal, and when. */
 export interface Payout {
-  key: "pref" | "common";
+  key: "pref" | "common" | "site" | "compute";
   label: string;
   amount: number;
   note: string;
 }
+
+/** The bar segment each payout's swatch matches. */
+const PAYOUT_TONES: Record<Payout["key"], string> = {
+  pref: "equity",
+  common: "common",
+  site: "siteEquity",
+  compute: "computeEquity",
+};
 
 /**
  * All the capital that enters the project as one bar, each source as wide as
@@ -81,7 +101,7 @@ export function CapitalStack({
       {payouts.length ? (
         <dl className={styles.payouts}>
           {payouts.map((p) => (
-            <div key={p.key} className={styles.payout} data-source={p.key === "pref" ? "equity" : "common"}>
+            <div key={p.key} className={styles.payout} data-source={PAYOUT_TONES[p.key]}>
               <dt className={styles.payoutLabel}>
                 <span className={styles.payoutName}>
                   <span className={styles.swatch} aria-hidden="true" />

@@ -9,6 +9,7 @@ import {
 } from "@/features/compute-model/model/engine";
 import { DEFAULT_INPUTS, type ModelInputs } from "@/features/compute-model/model/inputs";
 import { writeInputParams } from "@/features/compute-model/model/url";
+import type { PortfolioModel, PortfolioSite } from "./portfolio";
 import { toRoomSite } from "./rooms";
 import type { RoomSite } from "./types";
 
@@ -280,49 +281,102 @@ export function criticalIt(summary: DiligenceSummary): CriticalIt {
   return { value: power.mw / power.pue, estimate: power.estimate, note: power.note, sources: power.sources };
 }
 
+/** Whether the room has a site summary that follows its kind, the one a change of kind discards. */
 export async function hasDiligenceSummary(roomId: string): Promise<boolean> {
-  const [row] = await db()`select exists (select 1 from data_room_summaries where room_id = ${roomId}) as found`;
+  const [row] = await db()`
+    select exists (
+      select 1 from data_room_summaries where room_id = ${roomId} and kind is null and layout = 'site'
+    ) as found
+  `;
   return Boolean(row.found);
 }
 
 /**
- * The room's summary, or null before diligence is written. `sourceNames` maps
- * each cited file that is still live to its current name; `site` is the room's
- * address, when it has one.
+ * A site's summary. `sourceNames` maps each cited file that is still live to
+ * its current name; `site` is the room's address, when it has one, for the
+ * room's own summary.
  */
-export async function getDiligenceSummary(
-  roomId: string,
-): Promise<(DiligenceSummary & { sourceNames: Map<string, string>; site: RoomSite | null }) | null> {
+export type SiteSummary = DiligenceSummary & {
+  layout: "site";
+  folderId: string | null;
+  sourceNames: Map<string, string>;
+  site: RoomSite | null;
+};
+
+/** A model's results across sites, each beside its folder's site summary when it has one. */
+export interface PortfolioSummary {
+  layout: "portfolio";
+  folderId: string | null;
+  model: PortfolioModel;
+  sites: { site: PortfolioSite; summary: SiteSummary | null }[];
+  updatedAt: string;
+  updatedBy: string;
+  sourceNames: Map<string, string>;
+}
+
+export type LoadedSummary = SiteSummary | PortfolioSummary;
+
+/**
+ * Every summary in the room: its own, at the top level, and any in its folders,
+ * each opening first among that folder's items. Empty before any is written.
+ */
+export async function listSummaries(roomId: string): Promise<LoadedSummary[]> {
   const sql = db();
-  const [row] = await sql`
-    select s.diligence, s.economics, s.updated_at, s.updated_by_email, r.kind, r.address, r.city, r.place_id
+  const rows = await sql`
+    select s.folder_id, s.layout, coalesce(s.kind, r.kind) as kind, s.diligence, s.economics,
+           s.updated_at, s.updated_by_email, r.address, r.city, r.place_id
     from data_room_summaries s
     join data_rooms r on r.id = s.room_id
     where s.room_id = ${roomId}
   `;
-  if (!row) return null;
-  const summary = {
-    kind: row.kind,
-    diligence: row.diligence,
-    economics: row.economics,
-    updatedAt: new Date(row.updated_at as string).toISOString(),
-    updatedBy: String(row.updated_by_email),
-  } as DiligenceSummary;
+  if (!rows.length) return [];
 
-  const ids = [...Object.values(summary.diligence).flatMap((item) => item.sources), ...economicsSources(summary)].map(
-    (source) => source.fileId,
-  );
+  const sites: (DiligenceSummary & { folderId: string | null; site: RoomSite | null })[] = [];
+  const portfolios: { folderId: string | null; model: PortfolioModel; updatedAt: string; updatedBy: string }[] = [];
+  for (const row of rows) {
+    const folderId = row.folder_id == null ? null : String(row.folder_id);
+    const updatedAt = new Date(row.updated_at as string).toISOString();
+    const updatedBy = String(row.updated_by_email);
+    if (row.layout === "portfolio") {
+      portfolios.push({ folderId, model: row.economics as PortfolioModel, updatedAt, updatedBy });
+    } else {
+      sites.push({
+        kind: row.kind,
+        diligence: row.diligence,
+        economics: row.economics,
+        updatedAt,
+        updatedBy,
+        folderId,
+        site: folderId ? null : toRoomSite(row),
+      } as DiligenceSummary & { folderId: string | null; site: RoomSite | null });
+    }
+  }
+
+  const ids = [
+    ...sites.flatMap((s) => [...Object.values(s.diligence).flatMap((item) => item.sources), ...economicsSources(s)]),
+    ...portfolios.map((p) => ({ fileId: p.model.model.fileId })),
+  ].map((source) => source.fileId);
   const files = ids.length
     ? await sql`
         select id, name from data_room_files
         where room_id = ${roomId} and deleted_at is null and id = any(${[...new Set(ids)]}::uuid[])
       `
     : [];
-  return {
-    ...summary,
-    sourceNames: new Map(files.map((f) => [String(f.id), String(f.name)])),
-    site: toRoomSite(row),
-  };
+  const sourceNames = new Map(files.map((f) => [String(f.id), String(f.name)]));
+
+  const siteSummaries: SiteSummary[] = sites.map((s) => ({ ...s, layout: "site", sourceNames }));
+  const byFolder = new Map(siteSummaries.map((s) => [s.folderId, s]));
+  return [
+    ...siteSummaries,
+    ...portfolios.map(
+      (p): PortfolioSummary => ({
+        ...p,
+        layout: "portfolio",
+        sites: p.model.sites.map((site) => ({ site, summary: site.folderId ? (byFolder.get(site.folderId) ?? null) : null })),
+        sourceNames,
+      }),
+    ),
+  ];
 }
 
 export interface SummaryEconomics {

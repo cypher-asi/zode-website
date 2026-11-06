@@ -16,11 +16,11 @@ import { FolderTree } from "./FolderTree";
 import { Icon } from "./icons";
 import { checkedBytes, refsOf, RoomBrowser, ToolMenu, useStoredView, ViewMenu } from "./RoomBrowser";
 import browser from "./RoomBrowser.module.css";
-import { ancestorsOf, folderPath, indexTree, type TreeAction, type TreeIndex } from "./tree";
+import { ancestorsOf, folderPath, indexTree, summaryKey, type TreeAction, type TreeIndex } from "./tree";
 import { MAX_ARCHIVE_BYTES, type RoomFile, type RoomTree } from "./types";
 import { UploadList } from "./UploadList";
 import { useUploads } from "./useUploads";
-import { FilePreview, SummaryPanel, type RoomSummary } from "./Viewer";
+import { FilePreview, SummaryPanel, type RoomSummaries } from "./Viewer";
 import viewer from "./Viewer.module.css";
 import { downloadRoomZip, postRoomArchive, type ZipProgress, type ZipSelection } from "./zipDownload";
 import styles from "./DataRoomApp.module.css";
@@ -33,7 +33,7 @@ interface DataRoomAppProps {
   roomName: string;
   isAdmin: boolean;
   tree: RoomTree;
-  summary: RoomSummary | null;
+  summaries: RoomSummaries;
   /** The open tab's page; every tab but Files shows it in the browser's place. */
   children: ReactNode;
 }
@@ -73,7 +73,7 @@ function placeOf(params: URLSearchParams, index: TreeIndex, files: Map<string, R
  * page instead, and the place is kept for coming back to Files. Admins upload,
  * add folders, and rename, move or delete from here.
  */
-export function DataRoomApp({ roomId, roomName, isAdmin, tree, summary, children }: DataRoomAppProps): ReactElement {
+export function DataRoomApp({ roomId, roomName, isAdmin, tree, summaries, children }: DataRoomAppProps): ReactElement {
   const index = useMemo(() => indexTree(tree), [tree]);
   const filesById = useMemo(() => new Map(tree.files.map((file) => [file.id, file])), [tree]);
 
@@ -120,7 +120,9 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summary, children
 
   const folderId = place.folderId && index.folders.has(place.folderId) ? place.folderId : null;
   const openFile = place.fileId ? (filesById.get(place.fileId) ?? null) : null;
+  const summary = summaries[summaryKey(folderId)] ?? null;
   const summaryOpen = Boolean(summary) && !openFile && place.summary;
+  const summaryFolders = useMemo(() => new Set(Object.keys(summaries)), [summaries]);
 
   // Drop selections whose items were deleted or moved out from under us.
   const checked = useMemo(
@@ -413,7 +415,11 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summary, children
             rootName={rootName}
             folderId={openFile?.folderId && index.folders.has(openFile.folderId) ? openFile.folderId : folderId}
             openFileId={onFiles ? (openFile?.id ?? null) : null}
-            summary={summary ? { open: onFiles && summaryOpen, onOpen: () => go({ folderId: null, fileId: null, summary: true }) } : null}
+            summaries={
+              summaryFolders.size
+                ? { folders: summaryFolders, open: onFiles && summaryOpen, onOpen: (id) => go({ folderId: id, fileId: null, summary: true }) }
+                : null
+            }
             onOpenFolder={openFolder}
             onOpenFile={open}
             admin={isAdmin ? { onDropFiles: startUpload, onMove: move } : undefined}
@@ -437,7 +443,7 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summary, children
             thumbUrl={(fileId) => `${fileUrl(fileId)}?thumb=1`}
             onOpenFolder={openFolder}
             onOpenFile={open}
-            onOpenSummary={() => go({ folderId: null, fileId: null, summary: true })}
+            onOpenSummary={() => go({ folderId, fileId: null, summary: true })}
             admin={
               isAdmin
                 ? { onAction: (action, item) => runAction(action, [item]), onDropFiles: startUpload, onMove: move }
@@ -456,8 +462,17 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summary, children
                 : summary && summaryOpen
                   ? {
                       name: "Summary",
-                      folderId: null,
-                      content: <SummaryPanel summary={summary} showBack onBack={() => openFolder(null)} onOpenFile={openById} />,
+                      folderId,
+                      content: (
+                        <SummaryPanel
+                          key={summaryKey(folderId)}
+                          summary={summary}
+                          showBack
+                          onBack={() => openFolder(folderId)}
+                          onOpenFile={openById}
+                          onOpenFolder={(id, withSummary) => go({ folderId: id, fileId: null, summary: withSummary })}
+                        />
+                      ),
                     }
                   : undefined
             }

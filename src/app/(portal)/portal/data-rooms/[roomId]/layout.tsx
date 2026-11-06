@@ -6,8 +6,8 @@ import { RoomTabs } from "@/features/data-room/RoomTabs";
 import { ShareButton } from "@/features/data-room/ShareDialog";
 import { getRoomTree, listMembers, requireRoomRole } from "@/features/data-room/rooms";
 import { listShareLinks } from "@/features/data-room/shareLinks";
-import { getDiligenceSummary } from "@/features/data-room/summary";
-import { SummaryView } from "@/features/data-room/SummaryView";
+import { renderSummaries } from "@/features/data-room/RoomSummaries";
+import { listSummaries } from "@/features/data-room/summary";
 import { roleLabel } from "@/features/data-room/types";
 import styles from "@/features/data-room/room.module.css";
 
@@ -30,10 +30,10 @@ export default async function DataRoomLayout({
   const { roomId } = await params;
   const { room, role, account } = await requireRoomRole(roomId);
   const isAdmin = role === "admin";
-  const [members, tree, summary, links] = await Promise.all([
+  const [members, tree, summaries, links] = await Promise.all([
     isAdmin ? listMembers(roomId) : [],
     getRoomTree(roomId),
-    getDiligenceSummary(roomId),
+    listSummaries(roomId),
     isAdmin ? listShareLinks(roomId) : [],
   ]);
 
@@ -71,7 +71,7 @@ export default async function DataRoomLayout({
           roomName={room.name}
           isAdmin={isAdmin}
           tree={tree}
-          summary={summary ? { content: <SummaryView roomId={roomId} summary={summary} /> } : null}
+          summaries={renderSummaries(roomId, summaries)}
         >
           {children}
         </DataRoomApp>

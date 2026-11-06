@@ -9,9 +9,9 @@ import { Icon } from "./icons";
 import { checkedBytes, refsOf, RoomBrowser, useStoredView, ViewMenu } from "./RoomBrowser";
 import browser from "./RoomBrowser.module.css";
 import { useShareVisit } from "./shareTracker";
-import { indexTree } from "./tree";
+import { indexTree, summaryKey } from "./tree";
 import { MAX_ARCHIVE_BYTES, sharedFilePath, sharedRoomPath, type RoomTree } from "./types";
-import { FilePreview, SummaryPanel, type RoomSummary } from "./Viewer";
+import { FilePreview, SummaryPanel, type RoomSummaries } from "./Viewer";
 import viewer from "./Viewer.module.css";
 import { downloadRoomZip, postRoomArchive, type ZipProgress, type ZipSelection } from "./zipDownload";
 import styles from "./SharedRoom.module.css";
@@ -24,13 +24,13 @@ export function SharedRoom({
   roomName,
   tree,
   osHref,
-  summary,
+  summaries,
 }: {
   token: string;
   roomName: string;
   tree: RoomTree;
   osHref: string;
-  summary: RoomSummary | null;
+  summaries: RoomSummaries;
 }): ReactElement {
   const router = useRouter();
   const pathname = usePathname();
@@ -39,7 +39,9 @@ export function SharedRoom({
   const requestedFolder = searchParams.get("folder");
   const folderId = requestedFolder && index.folders.has(requestedFolder) ? requestedFolder : null;
   const openFile = tree.files.find((file) => file.id === searchParams.get("file")) ?? null;
+  const summary = summaries[summaryKey(folderId)] ?? null;
   const summaryOpen = Boolean(summary) && !openFile && searchParams.get("summary") === "1";
+  const summaryFolders = useMemo(() => new Set(Object.keys(summaries)), [summaries]);
   useShareVisit(token, openFile?.id ?? null);
 
   const [query, setQuery] = useState("");
@@ -208,7 +210,11 @@ export function SharedRoom({
               rootName={roomName}
               folderId={openFile ? openFolderId : folderId}
               openFileId={openFile?.id ?? null}
-              summary={summary ? { open: summaryOpen, onOpen: () => go({ folder: null, summary: true }) } : null}
+              summaries={
+                summaryFolders.size
+                  ? { folders: summaryFolders, open: summaryOpen, onOpen: (id) => go({ folder: id, summary: true }) }
+                  : null
+              }
               onOpenFolder={(id) => go({ folder: id })}
               onOpenFile={(file) => go({ folder: file.folderId && index.folders.has(file.folderId) ? file.folderId : null, file: file.id })}
             />
@@ -227,7 +233,7 @@ export function SharedRoom({
         thumbUrl={(fileId) => `${sharedFilePath(token, fileId)}?thumb=1`}
         onOpenFolder={(id) => go({ folder: id })}
         onOpenFile={(file) => go({ folder: file.folderId && index.folders.has(file.folderId) ? file.folderId : null, file: file.id })}
-        onOpenSummary={() => go({ folder: null, summary: true })}
+        onOpenSummary={() => go({ summary: true })}
         toolbar={toolbar}
         open={
           openFile
@@ -251,9 +257,16 @@ export function SharedRoom({
             : summary && summaryOpen
               ? {
                   name: "Summary",
-                  folderId: null,
+                  folderId,
                   content: (
-                    <SummaryPanel summary={summary} showBack onBack={() => go({ folder: null })} onOpenFile={(fileId) => go({ file: fileId })} />
+                    <SummaryPanel
+                      key={summaryKey(folderId)}
+                      summary={summary}
+                      showBack
+                      onBack={() => go({})}
+                      onOpenFile={(fileId) => go({ file: fileId })}
+                      onOpenFolder={(id, withSummary) => go({ folder: id, summary: withSummary })}
+                    />
                   ),
                 }
               : undefined

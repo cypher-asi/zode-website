@@ -6,8 +6,8 @@ import { getRoomTree, osHrefFor, sharedMapSrc } from "@/features/data-room/rooms
 import { roomByShareToken } from "@/features/data-room/shareLinks";
 import { SharedRoom } from "@/features/data-room/SharedRoom";
 import styles from "@/features/data-room/SharedRoom.module.css";
-import { getDiligenceSummary } from "@/features/data-room/summary";
-import { SummaryView } from "@/features/data-room/SummaryView";
+import { renderSummaries } from "@/features/data-room/RoomSummaries";
+import { listSummaries } from "@/features/data-room/summary";
 
 export async function generateMetadata({ params }: PageProps<"/shared/data-rooms/[token]">): Promise<Metadata> {
   const room = await roomByShareToken((await params).token);
@@ -34,26 +34,14 @@ async function Room({
   const { token } = await params;
   const room = await roomByShareToken(token);
   if (!room) notFound();
-  const [tree, summary, account] = await Promise.all([getRoomTree(room.id), getDiligenceSummary(room.id), getAccount()]);
+  const [tree, summaries, account] = await Promise.all([getRoomTree(room.id), listSummaries(room.id), getAccount()]);
   return (
     <SharedRoom
       token={token}
       roomName={room.name}
       tree={tree}
       osHref={await osHrefFor(room.id, account?.userId ?? null)}
-      summary={
-        summary
-          ? {
-              content: (
-                <SummaryView
-                  roomId={room.id}
-                  summary={summary}
-                  mapSrc={summary.site ? sharedMapSrc(token, summary.site) : null}
-                />
-              ),
-            }
-          : null
-      }
+      summaries={renderSummaries(room.id, summaries, (site) => sharedMapSrc(token, site))}
     />
   );
 }

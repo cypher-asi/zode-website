@@ -280,6 +280,12 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+@container summary (min-width: 820px) {
+  .keyFigures[data-count="8"] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 .keyFigure {
   display: flex;
   flex-direction: column;

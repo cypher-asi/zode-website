@@ -1,199 +1,49 @@
-import { Fragment, type ReactElement, type ReactNode } from "react";
-import Link from "next/link";
+import type { ReactElement } from "react";
 import { multiple, pct, usdShort } from "@/features/compute-model/format";
 import { GPUS_PER_NODE, OPERATING_MONTHS } from "@/features/compute-model/model/inputs";
 import { STATIC_MAP } from "@/features/deployments/places";
 import {
-  DILIGENCE_FIELDS,
-  STATUS_LABELS,
   conversionUsd,
   criticalIt,
   summaryEconomics,
   toUsd,
   type AcquisitionTerms,
-  type DiligenceItem,
-  type DiligenceSource,
-  type DiligenceStatus,
-  type DiligenceSummary,
   type LeaseDeal,
   type LeaseEconomics,
   type LeaseTerms,
   type Money,
   type PurchaseEconomics,
+  type SiteSummary,
   type SummaryEconomics,
 } from "./summary";
 import { CapitalStack, type CapitalSource, type Payout } from "./CapitalStack";
-import { CopyButton } from "./CopyButton";
 import { Icon } from "./icons";
 import { siteMapSrc } from "./rooms";
 import { SiteMap } from "./SiteMap";
+import {
+  DiligenceHead,
+  DiligenceList,
+  diligenceLede,
+  diligenceRows,
+  KeyFigures,
+  plural,
+  Prose,
+  Sources,
+  TermGroups,
+  type Figure,
+  type KeyFigure,
+  type Term,
+} from "./SummaryParts";
 import { googleMapsHref, type RoomSite } from "./types";
 import styles from "./Summary.module.css";
 
-type Summary = DiligenceSummary & { sourceNames: Map<string, string>; site: RoomSite | null };
+type Summary = SiteSummary;
 
 /** "CAD 31.5M"; USD keeps its dollar sign. */
 const native = (amount: number, currency: string) =>
   currency === "USD" ? usdShort(amount) : usdShort(amount).replace("$", `${currency} `);
 
 const irr = (n: number | null) => (n === null ? "n.a." : pct(n, 1));
-
-/** Diligence rows lead with what the room confirms. */
-const STATUS_ORDER: DiligenceStatus[] = ["confirmed", "claimed", "gap", "risk"];
-
-const STATUS_HINTS: Record<DiligenceStatus, string> = {
-  confirmed: "Rests on records in the room",
-  claimed: "On the seller's word",
-  gap: "Nothing in the room either way",
-  risk: "A known concern",
-};
-
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-
-/** "3 of 8 confirmed. 3 risks and 2 gaps to resolve." */
-function diligenceLede(statuses: DiligenceStatus[]): string {
-  const count = (status: DiligenceStatus) => statuses.filter((s) => s === status).length;
-  const confirmed = count("confirmed");
-  if (confirmed === statuses.length) return `All ${statuses.length} confirmed.`;
-  const open = [
-    count("risk") && plural(count("risk"), "risk", "risks"),
-    count("gap") && plural(count("gap"), "gap", "gaps"),
-  ].filter(Boolean);
-  const claimed = count("claimed");
-  return [
-    `${confirmed} of ${statuses.length} confirmed.`,
-    open.length ? `${open.join(" and ")} to resolve.` : "",
-    claimed ? `${claimed} on the seller's word.` : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-}
-
-/**
- * The diligence answers as plain text, in display order: each item's status,
- * headline and reasoning, then the files it cites by name and room path.
- */
-function diligenceText(items: { label: string; item: DiligenceItem }[], names: Map<string, string>): string {
-  const blocks = items.map(({ label, item }) => {
-    const files = item.sources.map((source) => {
-      const name = names.get(source.fileId);
-      return name
-        ? `- ${name} (${source.path})`
-        : `- ${source.path.split("/").pop()} (${source.path}, no longer in the room)`;
-    });
-    return [
-      `${label}: ${STATUS_LABELS[item.status]}`,
-      item.headline,
-      item.detail.replace(/\*\*(.+?)\*\*/g, "$1").trim(),
-      files.length ? `Files:\n${files.join("\n")}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
-  });
-  return ["Diligence", diligenceLede(items.map(({ item }) => item.status)), ...blocks].join("\n\n");
-}
-
-/** `**bold**` spans; everything else stays plain text. */
-function inline(text: string): ReactNode[] {
-  return text.split(/\*\*(.+?)\*\*/g).map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : part));
-}
-
-/**
- * A summary's reasoning: blank lines separate paragraphs, and lines starting
- * with "- " form a list, optionally under a lead-in line.
- */
-function Prose({ text }: { text: string }) {
-  const blocks = text
-    .split(/\n\s*\n/)
-    .map((block) =>
-      block
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean),
-    )
-    .filter((lines) => lines.length);
-  return (
-    <div className={styles.detail}>
-      {blocks.map((lines, i) => {
-        const isItem = (line: string) => line.startsWith("- ");
-        const lead = isItem(lines[0]) ? null : lines[0];
-        const rest = lead === null ? lines : lines.slice(1);
-        if (!rest.length || !rest.every(isItem)) return <p key={i}>{inline(lines.join(" "))}</p>;
-        return (
-          <Fragment key={i}>
-            {lead === null ? null : <p>{inline(lead)}</p>}
-            <ul>
-              {rest.map((line, j) => (
-                <li key={j}>{inline(line.slice(2))}</li>
-              ))}
-            </ul>
-          </Fragment>
-        );
-      })}
-    </div>
-  );
-}
-
-function Sources({ roomId, sources, names }: { roomId: string; sources: DiligenceSource[]; names: Map<string, string> }) {
-  if (!sources.length) return null;
-  return (
-    <ul className={styles.sources} aria-label="Sources">
-      {sources.map((source) => {
-        const name = names.get(source.fileId);
-        return (
-          <li key={source.fileId}>
-            {name ? (
-              <Link
-                href={`/portal/data-rooms/${roomId}?file=${source.fileId}`}
-                title={source.path}
-                data-file-id={source.fileId}
-              >
-                {name}
-              </Link>
-            ) : (
-              <span className={styles.gone} title="No longer in the room">
-                {source.path.split("/").pop()}
-              </span>
-            )}
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
-interface KeyFigure {
-  label: string;
-  value: string;
-  estimate?: boolean;
-}
-
-/** Headline numbers in a grid, largest type on the page after the headings. */
-function KeyFigures({ figures }: { figures: KeyFigure[] }) {
-  return (
-    <ul className={styles.keyFigures} data-count={figures.length}>
-      {figures.map((f) => (
-        <li key={f.label} className={styles.keyFigure}>
-          <span className={styles.keyValue}>{f.value}</span>
-          <span className={styles.keyLabel}>
-            {f.label}
-            {f.estimate ? <span className={styles.est}> · est.</span> : null}
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-interface Figure {
-  label: string;
-  value: string;
-  /** A few words under the label; the full reasoning is in `detail`. */
-  note?: string;
-  detail: string;
-  estimate?: boolean;
-  sources?: DiligenceSource[];
-}
 
 const moneyFigure = (label: string, money: Money, usd: number | null): Figure => ({
   label,
@@ -255,13 +105,6 @@ function upfront(summary: Summary): { usd: number | null; estimate: boolean } {
     usd: price === null || conversion === null ? null : price + conversion,
     estimate: purchasePrice.estimate || conversionCost.estimate,
   };
-}
-
-interface Term {
-  label: string;
-  value: string;
-  note?: string;
-  estimate?: boolean;
 }
 
 const DAY = 86_400_000;
@@ -602,79 +445,6 @@ function Deal({
   ];
 
   return <TermGroups id="deal" title="Deal terms" groups={groups} notes={notes} roomId={roomId} names={names} />;
-}
-
-/** Groups of label and value rows, with each figure's reasoning and sources behind a disclosure. */
-function TermGroups({
-  id,
-  title,
-  lede,
-  groups,
-  notes,
-  roomId,
-  names,
-}: {
-  id: string;
-  title: string;
-  lede?: string;
-  groups: { title: string; terms: Term[] }[];
-  notes: Figure[];
-  roomId: string;
-  names: Map<string, string>;
-}) {
-  return (
-    <section className={styles.section} aria-labelledby={`${id}-heading`}>
-      <div className={styles.sectionHead}>
-        <h2 id={`${id}-heading`} className={styles.heading}>
-          {title}
-        </h2>
-      </div>
-      {lede ? <p className={styles.lede}>{lede}</p> : null}
-      <div className={styles.dealGroups}>
-        {groups.map((group) => (
-          <div key={group.title} className={styles.dealGroup}>
-            <h3 className={styles.groupHeading}>{group.title}</h3>
-            <dl className={styles.terms}>
-              {group.terms.map((t) => (
-                <div key={t.label} className={styles.term}>
-                  <dt className={styles.termLabel}>
-                    <span>
-                      {t.label}
-                      {t.estimate ? <span className={styles.est}> · est.</span> : null}
-                    </span>
-                    {t.note ? <span className={styles.termNote}>{t.note}</span> : null}
-                  </dt>
-                  <dd className={styles.termValue}>{t.value}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        ))}
-      </div>
-      <details className={styles.more}>
-        <summary className={styles.moreHead}>
-          Terms and sources
-          <Icon name="chevron" className={styles.chevron} />
-        </summary>
-        <ul className={styles.figures}>
-          {notes.map((f) => (
-            <li key={f.label} className={styles.figure}>
-              <div className={styles.figureHead}>
-                <span className={styles.figureLabel}>
-                  {f.label}
-                  {f.estimate ? <span className={styles.estimate}>Estimate</span> : null}
-                  {f.note ? <span className={styles.figureNote}>{f.note}</span> : null}
-                </span>
-                <span className={styles.figureValue}>{f.value}</span>
-              </div>
-              <Prose text={f.detail} />
-              {f.sources?.length ? <Sources roomId={roomId} sources={f.sources} names={names} /> : null}
-            </li>
-          ))}
-        </ul>
-      </details>
-    </section>
-  );
 }
 
 /** A lease's headline terms: its phases, the security and non-recurring charges it asks for, its running rates and how it ends. */
@@ -1076,10 +846,7 @@ export function SummaryView({
       : []),
   ];
 
-  const items = DILIGENCE_FIELDS.flatMap(({ key, label }) => {
-    const item = summary.diligence[key];
-    return item ? [{ key, label, item }] : [];
-  }).sort((a, b) => STATUS_ORDER.indexOf(a.item.status) - STATUS_ORDER.indexOf(b.item.status));
+  const items = diligenceRows(summary.diligence);
 
   return (
     <div className={styles.summary}>
@@ -1140,34 +907,9 @@ export function SummaryView({
           </section>
 
           <section className={styles.section} aria-labelledby="diligence-heading">
-            <div className={styles.sectionHead}>
-              <h2 id="diligence-heading" className={styles.heading}>
-                Diligence
-              </h2>
-              <CopyButton text={diligenceText(items, summary.sourceNames)} label="diligence" />
-            </div>
+            <DiligenceHead id="diligence-heading" title="Diligence" items={items} names={summary.sourceNames} />
             <p className={styles.lede}>{diligenceLede(items.map(({ item }) => item.status))}</p>
-            <ul className={styles.list}>
-              {items.map(({ key, label, item }) => (
-                <li key={key}>
-                  <details className={styles.row}>
-                    <summary className={styles.rowHead}>
-                      <span className={styles.dot} data-status={item.status} aria-hidden="true" />
-                      <span className={styles.rowLabel}>{label}</span>
-                      <span className={styles.status} data-status={item.status} title={STATUS_HINTS[item.status]}>
-                        {STATUS_LABELS[item.status]}
-                      </span>
-                      <Icon name="chevron" className={styles.chevron} />
-                    </summary>
-                    <div className={styles.rowBody}>
-                      <p className={styles.headline}>{item.headline}</p>
-                      <Prose text={item.detail} />
-                      <Sources roomId={roomId} sources={item.sources} names={summary.sourceNames} />
-                    </div>
-                  </details>
-                </li>
-              ))}
-            </ul>
+            <DiligenceList roomId={roomId} items={items} names={summary.sourceNames} />
           </section>
         </div>
       </div>

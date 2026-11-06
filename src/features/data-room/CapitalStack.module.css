@@ -8,18 +8,21 @@
 }
 
 .stack [data-source="equity"],
-.stack [data-source="deposits"] {
+.stack [data-source="deposits"],
+.stack [data-source="siteEquity"] {
   --tone: var(--color-accent-strong);
 }
 
 /* A lease's equity runs deposits, the rest of the non-recurring charges, then the IT equipment's share. */
 .stack [data-source="projectDebt"],
-.stack [data-source="charges"] {
+.stack [data-source="charges"],
+.stack [data-source="computeEquity"] {
   --tone: color-mix(in srgb, var(--color-accent-strong) 78%, var(--color-bg-elevated));
 }
 
 .stack [data-source="mortgage"],
-.stack [data-source="itEquity"] {
+.stack [data-source="itEquity"],
+.stack [data-source="reDebt"] {
   --tone: color-mix(in srgb, var(--color-accent-strong) 58%, var(--color-bg-elevated));
 }
 
@@ -29,6 +32,11 @@
 
 .stack [data-source="gpu"] {
   --tone: color-mix(in srgb, var(--color-accent-strong) 24%, var(--color-bg-elevated));
+}
+
+/* A portfolio's operating cash, recycled into the build before the last block is ready. */
+.stack [data-source="operating"] {
+  --tone: color-mix(in srgb, var(--color-accent-strong) 12%, var(--color-bg-elevated));
 }
 
 .head {
