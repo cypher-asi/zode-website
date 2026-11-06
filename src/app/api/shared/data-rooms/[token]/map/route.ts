@@ -1,5 +1,6 @@
 import { notFoundResponse } from "@/features/data-room/http";
-import { getRoomSite, roomByShareToken } from "@/features/data-room/rooms";
+import { getRoomSite } from "@/features/data-room/rooms";
+import { roomByShareToken } from "@/features/data-room/shareLinks";
 import { siteMapResponse } from "@/features/data-room/siteMap";
 import { clientMeta } from "@/lib/clientMeta";
 import { RATE_LIMITED, withinLimits } from "@/lib/rateLimit";

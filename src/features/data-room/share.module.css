@@ -1,4 +1,4 @@
-/* The share dialog: inviting by email, with suggestions, and who already has access. */
+/* The share dialog: links and invites by email, with suggestions, each link's activity, and who has access. */
 .dialog {
   --dialog-width: 540px;
 }
@@ -342,6 +342,140 @@
 .linkRow input {
   flex: 1;
   min-width: 12rem;
+}
+
+/* Membership invites, folded under the links that are the usual way to share. */
+.memberSummary {
+  width: fit-content;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.memberSummary:hover {
+  color: var(--color-text-primary);
+}
+
+.member[open] > .memberSummary {
+  margin-bottom: 12px;
+}
+
+.member[open] > .publicText,
+.member[open] > .roles {
+  margin-bottom: 12px;
+}
+
+.link {
+  padding: 6px 0;
+}
+
+.link + .link {
+  border-top: 1px solid var(--color-border);
+}
+
+.linkHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* The email and its counts; pressing it opens the detail. */
+.linkMain {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.linkMain:focus-visible {
+  border-radius: var(--radius-control);
+  outline: 2px solid var(--color-focus-ring);
+}
+
+.linkStats {
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.linkActions {
+  display: flex;
+  flex: none;
+  gap: 6px;
+}
+
+.linkDetail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 6px 0 6px 38px;
+  padding: 12px 14px;
+  border-radius: var(--radius-inset);
+  background: var(--color-surface-tint);
+}
+
+.detailGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detailHeading {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: var(--caps-tracking);
+  text-transform: uppercase;
+}
+
+.detailList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.detailItem {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 3px 0;
+  font-size: var(--text-sm);
+}
+
+.detailName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detailMeta {
+  flex: none;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+}
+
+.detailEmpty {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.link > .detailEmpty {
+  margin: 4px 0 6px 38px;
 }
 
 .people {

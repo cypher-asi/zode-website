@@ -1,6 +1,7 @@
 import { render } from "@react-email/render";
 import { createElement, type ReactElement } from "react";
 import DataRoomInvite from "@/emails/DataRoomInvite";
+import DataRoomLink from "@/emails/DataRoomLink";
 import EngineerRequestNotification from "@/emails/EngineerRequestNotification";
 import InvestorRequestNotification from "@/emails/InvestorRequestNotification";
 import MailingListConfirm from "@/emails/MailingListConfirm";
@@ -11,6 +12,7 @@ import {
   PREVIEW_ACCOUNT,
   PREVIEW_BUY,
   PREVIEW_DATA_ROOM_INVITE,
+  PREVIEW_DATA_ROOM_LINK,
   PREVIEW_ENGINEER,
   PREVIEW_INVESTOR,
   PREVIEW_LOGO,
@@ -37,6 +39,7 @@ const TEMPLATES: Record<string, (search: URLSearchParams) => ReactElement> = {
       ...(search.has("shared") ? { shared: true, inviteUrl: "https://zode.org/portal/data-rooms/preview-room" } : {}),
       logoSrc: PREVIEW_LOGO,
     }),
+  "data-room-link": () => createElement(DataRoomLink, { ...PREVIEW_DATA_ROOM_LINK, logoSrc: PREVIEW_LOGO }),
   "team-invite": (search) =>
     createElement(TeamInvite, {
       ...PREVIEW_TEAM_INVITE,
@@ -62,7 +65,7 @@ const TEMPLATES: Record<string, (search: URLSearchParams) => ReactElement> = {
  * Development only: an email rendered with sample data, e.g.
  * /dev/emails/confirmation, /dev/emails/notification?mode=rent,
  * /dev/emails/engineer, /dev/emails/investor, /dev/emails/welcome, /dev/emails/registration,
- * /dev/emails/data-room-invite?shared, /dev/emails/team-invite?role=member, /dev/emails/mailing-list-confirm?list=changelog, /dev/emails/mnda?audience=team,
+ * /dev/emails/data-room-invite?shared, /dev/emails/data-room-link, /dev/emails/team-invite?role=member, /dev/emails/mailing-list-confirm?list=changelog, /dev/emails/mnda?audience=team,
  * or add `&text` for the plain-text part.
  */
 export async function GET(request: Request, { params }: { params: Promise<{ template: string }> }): Promise<Response> {

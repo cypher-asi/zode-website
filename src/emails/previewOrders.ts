@@ -71,6 +71,13 @@ export const PREVIEW_DATA_ROOM_INVITE = {
   requiresMnda: true,
 };
 
+export const PREVIEW_DATA_ROOM_LINK = {
+  roomName: "Project Atlas",
+  inviterName: "Ada Lovelace",
+  inviterEmail: "ada@example.com",
+  linkUrl: "https://zode.org/shared/data-rooms/preview-token",
+};
+
 export const PREVIEW_TEAM_INVITE = {
   inviterName: "Ada Lovelace",
   inviterEmail: "ada@example.com",

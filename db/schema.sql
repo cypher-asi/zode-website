@@ -120,8 +120,8 @@ alter table data_rooms add column if not exists address text;
 alter table data_rooms add column if not exists city text;
 alter table data_rooms add column if not exists place_id text;
 
--- The public browser's link (/shared/data-rooms/<token>). Null means it is off.
--- The token is the secret; replacing it is what makes the previous link 404.
+-- The room's one public link, before links per recipient. Copied into
+-- data_room_share_links below as its unnamed link, then cleared.
 alter table data_rooms add column if not exists share_token text;
 create unique index if not exists data_rooms_share_token_idx
   on data_rooms (share_token) where share_token is not null;
@@ -272,6 +272,61 @@ create table if not exists data_room_summaries (
   updated_at timestamptz not null default now(),
   updated_by_email text not null
 );
+
+-- Public links to a room, one per recipient email (/shared/data-rooms/<token>),
+-- opened without a ZODE account. `email` is null only for the room-wide link
+-- that came before them. The token is the secret; revoking makes it 404.
+create table if not exists data_room_share_links (
+  id uuid primary key default gen_random_uuid(),
+  room_id uuid not null references data_rooms (id) on delete cascade,
+  email text,
+  token text not null unique,
+  created_by_email text not null,
+  created_at timestamptz not null default now(),
+  revoked_at timestamptz,
+  -- Times the link was emailed, which keys each send's idempotency.
+  sends integer not null default 0
+);
+
+create unique index if not exists data_room_share_links_room_email_idx
+  on data_room_share_links (room_id, email) where revoked_at is null and email is not null;
+create index if not exists data_room_share_links_room_idx on data_room_share_links (room_id);
+
+insert into data_room_share_links (room_id, email, token, created_by_email)
+select id, null, share_token, created_by_email from data_rooms where share_token is not null
+on conflict (token) do nothing;
+update data_rooms set share_token = null where share_token is not null;
+
+-- One row per visit to a share link: a browser, by its zode_drv cookie, coming
+-- back after 30 minutes away starts a new one. engaged_ms is foreground time.
+create table if not exists data_room_share_visits (
+  id uuid primary key default gen_random_uuid(),
+  link_id uuid not null references data_room_share_links (id) on delete cascade,
+  visitor_id uuid not null,
+  started_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now(),
+  engaged_ms integer not null default 0,
+  ip text,
+  user_agent text,
+  -- e.g. "Chrome on macOS" and "Austin, US", from the first request.
+  device text,
+  location text
+);
+
+create index if not exists data_room_share_visits_link_idx
+  on data_room_share_visits (link_id, visitor_id, last_seen_at desc);
+
+-- Foreground time each file was open in the shared viewer, per visit.
+create table if not exists data_room_share_file_time (
+  visit_id uuid not null references data_room_share_visits (id) on delete cascade,
+  file_id uuid not null references data_room_files (id) on delete cascade,
+  engaged_ms integer not null default 0,
+  primary key (visit_id, file_id)
+);
+
+-- A share link's views and downloads, read from the audit trail.
+create index if not exists data_room_events_link_idx
+  on data_room_events ((detail->>'linkId'), created_at desc) where detail ? 'linkId';
 
 -- News and changelog posts, written by ZODE admins in the portal. The body is
 -- Markdown, and images live in the private Blob store under posts/, served by

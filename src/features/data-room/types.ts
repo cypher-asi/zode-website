@@ -148,7 +148,8 @@ export type AuditAction =
   | "mnda_sign"
   | "role_change"
   | "remove"
-  | "share_link";
+  | "share_link"
+  | "share_visit";
 
 export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   view: "Viewed",
@@ -169,7 +170,8 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   mnda_sign: "Signed MNDA",
   role_change: "Changed role",
   remove: "Removed",
-  share_link: "Public link",
+  share_link: "Share link",
+  share_visit: "Opened room",
 };
 
 /** The Dropbox-style browser. The token is the only credential the page needs. */
@@ -177,6 +179,51 @@ export const sharedRoomPath = (token: string): string => `/shared/data-rooms/${e
 
 export const sharedFilePath = (token: string, fileId: string): string =>
   `/api/shared/data-rooms/${encodeURIComponent(token)}/files/${fileId}`;
+
+export const sharedVisitPath = (token: string): string => `/api/shared/data-rooms/${encodeURIComponent(token)}/visit`;
+
+/** A room's public link for one recipient; `email` is null for the room-wide link from before. */
+export interface ShareLink {
+  id: string;
+  email: string | null;
+  token: string;
+  createdBy: string;
+  createdAt: string;
+  sends: number;
+  views: number;
+  devices: number;
+  /** Foreground time across every visit. */
+  engagedMs: number;
+  /** Files downloaded, counting each file once. */
+  downloads: number;
+  lastViewedAt: string | null;
+}
+
+/** What one link's recipient did, for its expanded row in the share dialog. */
+export interface ShareLinkDetail {
+  visits: {
+    id: string;
+    startedAt: string;
+    engagedMs: number;
+    device: string | null;
+    location: string | null;
+    ip: string | null;
+  }[];
+  /** Time each file was open, most read first. */
+  files: { fileId: string; name: string; engagedMs: number; live: boolean }[];
+  /** Downloads by file, latest first. */
+  downloads: { fileId: string | null; name: string; count: number; lastAt: string; zipped: boolean }[];
+}
+
+/** "45s", "18m", "1h 20m". */
+export function formatEngaged(ms: number): string {
+  const seconds = Math.round(ms / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  return minutes % 60 ? `${hours}h ${minutes % 60}m` : `${hours}h`;
+}
 
 export interface AuditEvent {
   id: string;

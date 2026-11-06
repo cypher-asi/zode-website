@@ -3,7 +3,7 @@
 import { refresh, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
-import { sendDataRoomInvite, sendMndaEmails } from "@/emails/send";
+import { sendDataRoomInvite, sendDataRoomLink, sendMndaEmails } from "@/emails/send";
 import { getAccount } from "@/features/account/session";
 import type { Account } from "@/features/account/zos";
 import { createMnda, hasSignedMnda, signFailure, type ExecutedMnda } from "@/features/mnda/mndas";
@@ -11,6 +11,7 @@ import { parseMnda } from "@/features/mnda/parse";
 import { db } from "@/lib/db";
 import { RATE_LIMITED, withinLimits } from "@/lib/rateLimit";
 import { isPlaceId } from "@/features/deployments/types";
+import { siteOrigin } from "@/lib/site";
 import { isEmail, singleLine } from "@/lib/validation";
 import { recordEvent, recordEvents } from "./audit";
 import { blobInfo, deleteBlobs, deleteRoomBlobs, roomBlobPrefix } from "./blob";
@@ -31,7 +32,6 @@ import {
   ROOM_QUOTA_BYTES,
   accountRoomsTag,
   canCreateRooms,
-  clearShareToken,
   countOtherAdmins,
   createRoom,
   deleteRoom,
@@ -39,9 +39,7 @@ import {
   folderSubtree,
   getMember,
   getRoomSite,
-  getShareToken,
   isUuid,
-  issueShareToken,
   normalizeEmail,
   renameRoom,
   roomAccess,
@@ -50,14 +48,17 @@ import {
   setRoomSite,
   type RoomAccess,
 } from "./rooms";
+import { countSend, issueShareLinks, revokeShareLink, shareLinkDetail } from "./shareLinks";
 import {
   ROLES,
   isRoomKind,
   roomKindLabel,
+  sharedRoomPath,
   type ActionState,
   type InviteRef,
   type RoomKind,
   type RoomRole,
+  type ShareLinkDetail,
 } from "./types";
 
 const MAX_ADDRESS_LENGTH = 500;
@@ -181,34 +182,105 @@ export async function deleteRoomAction(roomId: string, _prev: ActionState, formD
   redirect("/portal/data-rooms");
 }
 
-/** Turns the public browser link on, replaces it, or turns it off. The token is the whole credential. */
-export async function setShareLinkAction(
-  roomId: string,
-  mode: "on" | "rotate" | "off",
-): Promise<ActionState & { token?: string | null }> {
+// Share links
+
+const list = (emails: string[]): string => emails.join(", ");
+
+function emailShareLink(access: RoomAccess, link: { id: string; email: string; token: string; sends: number }): void {
+  after(() =>
+    sendDataRoomLink(
+      link.email,
+      {
+        roomName: access.room.name,
+        inviterName: access.account.displayName,
+        inviterEmail: access.account.email,
+        linkUrl: `${siteOrigin()}${sharedRoomPath(link.token)}`,
+      },
+      `${link.id}-${link.sends}`,
+    ),
+  );
+}
+
+/**
+ * Gives each address its own link to the room, opened without an account, and
+ * with `sendEmail` emails it to them. An address that already has a link keeps it.
+ */
+export async function createShareLinksAction(roomId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
   const access = await roomAccess(roomId, "admin");
   if (!access) return NO_ACCESS;
-  if (mode === "off") {
-    if (!(await getShareToken(roomId))) return { token: null };
-    await clearShareToken(roomId);
-    await recordEvent({ roomId, account: access.account, action: "share_link", detail: { change: "off" } });
-    refresh();
-    return { ok: "Public link is off.", token: null };
+  const emails = parseEmails(formData);
+  if (!Array.isArray(emails)) return emails;
+  const sendEmail = formData.get("sendEmail") === "on";
+  if (sendEmail && !(await withinInviteLimits(roomId, access, emails.length))) return { error: RATE_LIMITED };
+
+  const by = access.account.email.toLowerCase();
+  const links = await issueShareLinks(roomId, emails, by);
+  const emailed: string[] = [];
+  for (const link of links) {
+    const sent = sendEmail ? await countSend(roomId, link.id) : null;
+    if (sent) {
+      emailShareLink(access, { id: link.id, ...sent });
+      emailed.push(link.email);
+    }
+    if (link.created || sent) {
+      await recordEvent({
+        roomId,
+        account: access.account,
+        action: "share_link",
+        detail: { change: link.created ? "create" : "resend", email: link.email, linkId: link.id, emailed: Boolean(sent) },
+      });
+    }
   }
-  const existing = mode === "on" ? await getShareToken(roomId) : null;
-  if (existing) return { token: existing };
-  const token = await issueShareToken(roomId, mode === "rotate");
+
+  refresh();
+  const created = links.filter((link) => link.created).map((link) => link.email);
+  const existing = links.filter((link) => !link.created).map((link) => link.email);
+  const parts = [];
+  if (created.length) parts.push(`Created ${created.length === 1 ? "a link" : "links"} for ${list(created)}.`);
+  if (existing.length) {
+    parts.push(`${list(existing)} already ${existing.length === 1 ? "has a link" : "have links"}${sendEmail ? ", sent again" : ""}.`);
+  }
+  if (sendEmail && emailed.length) parts.push(emailed.length === 1 ? "Emailed it." : "Emailed each person theirs.");
+  return parts.length ? { ok: parts.join(" ") } : { error: "No links were created. Try again." };
+}
+
+export async function resendShareLinkAction(roomId: string, linkId: string): Promise<ActionState> {
+  const access = await roomAccess(roomId, "admin");
+  if (!access) return NO_ACCESS;
+  if (!(await withinInviteLimits(roomId, access, 1))) return { error: RATE_LIMITED };
+  const sent = await countSend(roomId, linkId);
+  if (!sent) return { error: "That link was revoked." };
+  emailShareLink(access, { id: linkId, ...sent });
   await recordEvent({
     roomId,
     account: access.account,
     action: "share_link",
-    detail: { change: mode === "rotate" ? "rotate" : "on" },
+    detail: { change: "resend", email: sent.email, linkId, emailed: true },
   });
   refresh();
-  return {
-    ok: mode === "rotate" ? "New link ready. The previous one no longer opens the room." : "Public link is on.",
-    token,
-  };
+  return { ok: `Sent ${sent.email} their link again.` };
+}
+
+/** The link stops opening the room at once; what its recipient did stays in the trail. */
+export async function revokeShareLinkAction(roomId: string, linkId: string): Promise<ActionState> {
+  const access = await roomAccess(roomId, "admin");
+  if (!access) return NO_ACCESS;
+  const revoked = await revokeShareLink(roomId, linkId);
+  if (!revoked) return {};
+  await recordEvent({
+    roomId,
+    account: access.account,
+    action: "share_link",
+    detail: { change: "revoke", email: revoked.email, linkId },
+  });
+  refresh();
+  return { ok: revoked.email ? `${revoked.email}'s link no longer opens the room.` : "The link no longer opens the room." };
+}
+
+export async function shareLinkDetailAction(roomId: string, linkId: string): Promise<ShareLinkDetail | null> {
+  const access = await roomAccess(roomId, "admin");
+  if (!access) return null;
+  return shareLinkDetail(roomId, linkId);
 }
 
 // Folders and files
@@ -436,6 +508,23 @@ export async function registerUploadAction(
 
 const MAX_INVITES = 50;
 
+/** The form's `emails`, deduplicated and lowercased, or the error to show. */
+function parseEmails(formData: FormData): string[] | { error: string } {
+  const emails = [
+    ...new Set(
+      String(formData.get("emails") ?? "")
+        .split(/[\s,;]+/)
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  ];
+  if (!emails.length) return { error: "Enter at least one email." };
+  if (emails.length > MAX_INVITES) return { error: `Share with up to ${MAX_INVITES} people at a time.` };
+  const invalid = emails.find((e) => !isEmail(e));
+  if (invalid) return { error: `${invalid} is not a valid email.` };
+  return emails;
+}
+
 const DAY = 24 * 60 * 60;
 
 /** Every invite emails an address the admin typed, so sends are capped per admin and per room. */
@@ -452,18 +541,8 @@ export async function inviteMembersAction(roomId: string, _prev: ActionState, fo
   if (!isRole(role)) return { error: "Choose a role." };
   const requiresMnda = formData.get("requireMnda") === "on";
 
-  const emails = [
-    ...new Set(
-      String(formData.get("emails") ?? "")
-        .split(/[\s,;]+/)
-        .map((e) => e.trim().toLowerCase())
-        .filter(Boolean),
-    ),
-  ];
-  if (!emails.length) return { error: "Enter at least one email." };
-  if (emails.length > MAX_INVITES) return { error: `Invite up to ${MAX_INVITES} people at a time.` };
-  const invalid = emails.find((e) => !isEmail(e));
-  if (invalid) return { error: `${invalid} is not a valid email.` };
+  const emails = parseEmails(formData);
+  if (!Array.isArray(emails)) return emails;
   if (!(await withinInviteLimits(roomId, access, emails.length))) return { error: RATE_LIMITED };
 
   const shared: string[] = [];

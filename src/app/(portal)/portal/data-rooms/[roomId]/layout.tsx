@@ -4,7 +4,8 @@ import Link from "next/link";
 import { DataRoomApp } from "@/features/data-room/DataRoomApp";
 import { RoomTabs } from "@/features/data-room/RoomTabs";
 import { ShareButton } from "@/features/data-room/ShareDialog";
-import { getRoomTree, getShareToken, listMembers, requireRoomRole } from "@/features/data-room/rooms";
+import { getRoomTree, listMembers, requireRoomRole } from "@/features/data-room/rooms";
+import { listShareLinks } from "@/features/data-room/shareLinks";
 import { getDiligenceSummary } from "@/features/data-room/summary";
 import { SummaryView } from "@/features/data-room/SummaryView";
 import { roleLabel } from "@/features/data-room/types";
@@ -29,11 +30,11 @@ export default async function DataRoomLayout({
   const { roomId } = await params;
   const { room, role, account } = await requireRoomRole(roomId);
   const isAdmin = role === "admin";
-  const [members, tree, summary, shareToken] = await Promise.all([
+  const [members, tree, summary, links] = await Promise.all([
     isAdmin ? listMembers(roomId) : [],
     getRoomTree(roomId),
     getDiligenceSummary(roomId),
-    isAdmin ? getShareToken(roomId) : null,
+    isAdmin ? listShareLinks(roomId) : [],
   ]);
 
   return (
@@ -59,7 +60,7 @@ export default async function DataRoomLayout({
               roomName={room.name}
               members={members}
               selfEmail={account.email.toLowerCase()}
-              shareToken={shareToken}
+              links={links}
             />
           ) : null}
         </div>

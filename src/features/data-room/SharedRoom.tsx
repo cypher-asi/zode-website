@@ -6,6 +6,7 @@ import { copyText } from "@/features/profile/ProfileClient";
 import { fileKind, formatBytes } from "./fileKinds";
 import { ancestorsOf, folderPath, indexTree, type TreeIndex } from "./FileTree";
 import { FileGlyph, Icon } from "./icons";
+import { useShareVisit } from "./shareTracker";
 import { MAX_ARCHIVE_BYTES, sharedFilePath, sharedRoomPath, type RoomFile, type RoomTree } from "./types";
 import { FilePreview, SummaryPanel, type RoomSummary } from "./Viewer";
 import viewer from "./Viewer.module.css";
@@ -123,6 +124,7 @@ export function SharedRoom({
   const folderId = requestedFolder && index.folders.has(requestedFolder) ? requestedFolder : null;
   const openFile = tree.files.find((file) => file.id === searchParams.get("file")) ?? null;
   const summaryOpen = Boolean(summary) && !openFile && searchParams.get("summary") === "1";
+  useShareVisit(token, openFile?.id ?? null);
 
   const [query, setQuery] = useState("");
   const view = useSyncExternalStore(subscribeView, storedView, serverView);

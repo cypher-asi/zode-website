@@ -20,23 +20,37 @@ const roleName = (value: unknown) => (value === "admin" ? "Admin" : value === "v
 
 const kindName = (value: unknown) => (isRoomKind(value) ? roomKindLabel(value) : String(value ?? ""));
 
+const SHARE_LINK_CHANGES: Record<string, string> = {
+  create: "Created",
+  resend: "Emailed again",
+  revoke: "Revoked",
+  on: "Turned on",
+  off: "Turned off",
+  rotate: "Replaced",
+};
+
+/** Events from a recipient's own link name it; older public-link events don't. */
+const via = (d: Record<string, unknown>): string =>
+  d.via === "share-link" ? (typeof d.linkId === "string" ? "Via their link" : "Via public link") : "";
+
 /** The subject and any detail of an event, from the snapshot taken when it happened. */
 function describe(event: AuditEvent): { subject: string; detail: string } {
   const d = event.detail;
   const name = typeof d.name === "string" ? d.name : "";
   switch (event.action) {
     case "view":
-      return { subject: name, detail: d.via === "share-link" ? "Via public link" : "" };
+      return { subject: name, detail: via(d) };
     case "download":
+      return { subject: name, detail: [d.archive ? "In a zip" : "", via(d)].filter(Boolean).join(", ") };
+    case "share_link": {
+      const change = SHARE_LINK_CHANGES[String(d.change)] ?? "";
       return {
-        subject: name,
-        detail: [d.archive ? "In a zip" : "", d.via === "share-link" ? "Via public link" : ""].filter(Boolean).join(", "),
+        subject: typeof d.email === "string" ? d.email : "Public link",
+        detail: [change, d.change === "create" && d.emailed ? "emailed" : ""].filter(Boolean).join(", "),
       };
-    case "share_link":
-      return {
-        subject: "Public link",
-        detail: d.change === "off" ? "Turned off" : d.change === "rotate" ? "Replaced" : "Turned on",
-      };
+    }
+    case "share_visit":
+      return { subject: "Room", detail: via(d) };
     case "upload":
       return { subject: name, detail: "" };
     case "rename":

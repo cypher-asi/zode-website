@@ -11,6 +11,7 @@ import { accountEmailProps } from "./accountEmailProps";
 import { executedFileName } from "@/features/mnda/agreement";
 import type { ExecutedMnda } from "@/features/mnda/mndas";
 import DataRoomInvite, { dataRoomInviteSubject, type DataRoomInviteProps } from "./DataRoomInvite";
+import DataRoomLink, { dataRoomLinkSubject, type DataRoomLinkProps } from "./DataRoomLink";
 import EngineerRequestNotification, { engineerRequestSubject } from "./EngineerRequestNotification";
 import MailingListConfirm, { mailingListConfirmSubject, type MailingListConfirmProps } from "./MailingListConfirm";
 import { engineerRequestEmailProps } from "./engineerRequestEmailProps";
@@ -213,6 +214,25 @@ export async function sendDataRoomInvite(to: string, props: DataRoomInviteProps,
     });
   } catch (err) {
     console.error(`[email] data room invite to ${to} failed:`, err);
+  }
+}
+
+/**
+ * Emails a recipient their own share link; replies go to whoever shared it.
+ * `key` names the link and its send count, so a resend goes out. Never throws:
+ * the link already exists and can be copied or resent.
+ */
+export async function sendDataRoomLink(to: string, props: DataRoomLinkProps, key: string): Promise<void> {
+  try {
+    await send({
+      to,
+      replyTo: props.inviterEmail,
+      subject: dataRoomLinkSubject(props),
+      email: <DataRoomLink {...props} />,
+      idempotencyKey: `data-room-link-${key}`,
+    });
+  } catch (err) {
+    console.error(`[email] data room link to ${to} failed:`, err);
   }
 }
 
