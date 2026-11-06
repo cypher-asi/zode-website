@@ -8,6 +8,32 @@
   color: var(--color-text-primary);
 }
 
+/* The folder tree under the toolbar, left of the files, as in Explorer; narrow windows keep just the files. */
+.pane {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 280px;
+  border-right: 1px solid var(--color-border);
+}
+
+/* Where you are, in the toolbar only while the tree that already shows it is hidden. */
+.trail {
+  display: contents;
+}
+
+@media (min-width: 901px) {
+  .trail {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .pane {
+    display: none;
+  }
+}
+
 .mark {
   display: flex;
   flex: none;

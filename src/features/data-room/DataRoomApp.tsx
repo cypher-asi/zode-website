@@ -2,6 +2,7 @@
 
 import { Activity, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { SidebarDock, useDocked } from "@/features/portal/PortalFrame";
 import {
   createFolderAction,
   deleteItemsAction,
@@ -11,6 +12,7 @@ import {
 } from "./actions";
 import { Dialog, type DialogProps } from "./Dialog";
 import { formatBytes } from "./fileKinds";
+import { FolderTree } from "./FolderTree";
 import { Icon } from "./icons";
 import { checkedBytes, refsOf, RoomBrowser, ToolMenu, useStoredView, ViewMenu } from "./RoomBrowser";
 import browser from "./RoomBrowser.module.css";
@@ -94,6 +96,7 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summary, children
   const downloadAbort = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploads = useUploads(roomId);
+  const docked = useDocked();
 
   // Follow the address on Files, e.g. Back or Activity's "Open". Coming back
   // from another tab by its bare link keeps the place you left.
@@ -295,145 +298,170 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summary, children
     </button>
   );
 
-  return (
-    <div className={styles.app} data-tab={onFiles ? undefined : "page"}>
-      <Activity mode={onFiles ? "visible" : "hidden"}>
-        <section className={styles.files} aria-label="Files">
-          <div className={browser.toolbar}>
-            <label className={browser.search}>
-              <Icon name="search" />
+  const rootName = "All files";
+  const rootCrumb = `${tree.files.length.toLocaleString()} ${tree.files.length === 1 ? "file" : "files"} · ${formatBytes(totalBytes)}`;
+
+  const toolbar = (trail: ReactNode) => (
+    <>
+      <div className={browser.toolbar}>
+        {trail}
+        <div className={browser.tools}>
+          <label className={browser.search}>
+            <Icon name="search" />
+            <input
+              type="search"
+              value={query}
+              placeholder="Search"
+              aria-label="Search files"
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setChecked(new Set());
+                if (openFile || summaryOpen) go({ folderId, fileId: null, summary: false }, { keepQuery: true });
+              }}
+            />
+          </label>
+          {isAdmin ? (
+            <>
+              <ToolMenu
+                label="Add"
+                items={[
+                  { id: "upload", label: "Upload files", onSelect: () => fileInputRef.current?.click() },
+                  { id: "folder", label: "New folder", onSelect: newFolder },
+                ]}
+              >
+                <Icon name="plus" />
+                <span className={browser.toolLabel}>Add</span>
+              </ToolMenu>
               <input
-                type="search"
-                value={query}
-                placeholder="Search"
-                aria-label="Search files"
+                ref={fileInputRef}
+                type="file"
+                multiple
+                hidden
                 onChange={(event) => {
-                  setQuery(event.target.value);
-                  setChecked(new Set());
-                  if (openFile || summaryOpen) go({ folderId, fileId: null, summary: false }, { keepQuery: true });
+                  startUpload([...(event.target.files ?? [])], folderId);
+                  event.target.value = "";
                 }}
               />
-            </label>
-            <div className={browser.tools}>
-              {isAdmin ? (
-                <>
-                  <ToolMenu
-                    label="Add"
-                    items={[
-                      { id: "upload", label: "Upload files", onSelect: () => fileInputRef.current?.click() },
-                      { id: "folder", label: "New folder", onSelect: newFolder },
-                    ]}
-                  >
-                    <Icon name="plus" />
-                    <span className={browser.toolLabel}>Add</span>
-                  </ToolMenu>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    hidden
-                    onChange={(event) => {
-                      startUpload([...(event.target.files ?? [])], folderId);
-                      event.target.value = "";
-                    }}
-                  />
-                </>
-              ) : null}
-              {download ? (
-                <>
-                  <span className={browser.progress} role="status">
-                    {download === "preparing"
-                      ? "Preparing…"
-                      : `${download.files.toLocaleString()} of ${download.totalFiles.toLocaleString()} · ` +
-                        `${formatBytes(download.bytes)} of ${formatBytes(download.totalBytes)}`}
-                  </span>
-                  <button type="button" className={browser.tool} onClick={() => downloadAbort.current?.abort()}>
-                    Cancel
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  className={browser.tool}
-                  onClick={downloadSelected}
-                  disabled={!rootRefs.length}
-                  aria-label={checked.size ? "Download selected" : "Download all"}
-                >
-                  <Icon name="download" />
-                  <span className={browser.toolLabel}>{checked.size ? "Download" : "Download all"}</span>
-                </button>
-              )}
-              <ViewMenu view={view} onChange={setView} />
-            </div>
-          </div>
-
-          {notice ? (
-            <p className={browser.notice} role="alert">
-              {notice}
-              <button type="button" onClick={() => setNotice(null)} aria-label="Dismiss">
-                <Icon name="close" />
-              </button>
-            </p>
+            </>
           ) : null}
-
-          {checked.size && !openFile && !summaryOpen ? (
-            <div className={styles.selection}>
-              <span className={styles.count}>
-                {checked.size.toLocaleString()} selected · {formatBytes(checkedBytes(tree, index, checked))}
+          {download ? (
+            <>
+              <span className={browser.progress} role="status">
+                {download === "preparing"
+                  ? "Preparing…"
+                  : `${download.files.toLocaleString()} of ${download.totalFiles.toLocaleString()} · ` +
+                    `${formatBytes(download.bytes)} of ${formatBytes(download.totalBytes)}`}
               </span>
-              {isAdmin ? (
-                <>
-                  <button type="button" className={styles.linkButton} onClick={() => runAction("move", checkedRefs)}>
-                    Move
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.linkButton}
-                    data-danger=""
-                    onClick={() => runAction("delete", checkedRefs)}
-                  >
-                    Delete
-                  </button>
-                </>
-              ) : null}
-              <button type="button" className={styles.linkButton} onClick={() => setChecked(new Set())}>
-                Clear
+              <button type="button" className={browser.tool} onClick={() => downloadAbort.current?.abort()}>
+                Cancel
               </button>
-            </div>
-          ) : null}
-
-          {openFile ? (
-            <div className={browser.preview}>
-              <FilePreview key={openFile.id} url={fileUrl(openFile.id)} file={openFile} showBack leading={backButton(closePreview)} />
-            </div>
-          ) : summary && summaryOpen ? (
-            <div className={browser.preview}>
-              <SummaryPanel summary={summary} showBack onBack={() => openFolder(null)} onOpenFile={openById} />
-            </div>
+            </>
           ) : (
-            <RoomBrowser
-              tree={tree}
-              index={index}
-              rootName="All files"
-              rootCrumb={`${tree.files.length.toLocaleString()} ${tree.files.length === 1 ? "file" : "files"} · ${formatBytes(totalBytes)}`}
-              titleAs="h2"
-              folderId={folderId}
-              query={query}
-              view={view}
-              hasSummary={Boolean(summary)}
-              checked={checked}
-              onCheckedChange={setChecked}
-              thumbUrl={(fileId) => `${fileUrl(fileId)}?thumb=1`}
-              onOpenFolder={openFolder}
-              onOpenFile={open}
-              onOpenSummary={() => go({ folderId: null, fileId: null, summary: true })}
-              admin={
-                isAdmin
-                  ? { onAction: (action, item) => runAction(action, [item]), onDropFiles: startUpload, onMove: move }
-                  : undefined
-              }
-            />
+            <button
+              type="button"
+              className={browser.tool}
+              onClick={downloadSelected}
+              disabled={!rootRefs.length}
+              aria-label={checked.size ? "Download selected" : "Download all"}
+            >
+              <Icon name="download" />
+              <span className={browser.toolLabel}>{checked.size ? "Download" : "Download all"}</span>
+            </button>
           )}
+          <ViewMenu view={view} onChange={setView} />
+        </div>
+      </div>
+
+      {notice ? (
+        <p className={browser.notice} role="alert">
+          {notice}
+          <button type="button" onClick={() => setNotice(null)} aria-label="Dismiss">
+            <Icon name="close" />
+          </button>
+        </p>
+      ) : null}
+
+      {checked.size && !openFile && !summaryOpen ? (
+        <div className={styles.selection}>
+          <span className={styles.count}>
+            {checked.size.toLocaleString()} selected · {formatBytes(checkedBytes(tree, index, checked))}
+          </span>
+          {isAdmin ? (
+            <>
+              <button type="button" className={styles.linkButton} onClick={() => runAction("move", checkedRefs)}>
+                Move
+              </button>
+              <button type="button" className={styles.linkButton} data-danger="" onClick={() => runAction("delete", checkedRefs)}>
+                Delete
+              </button>
+            </>
+          ) : null}
+          <button type="button" className={styles.linkButton} onClick={() => setChecked(new Set())}>
+            Clear
+          </button>
+        </div>
+      ) : null}
+    </>
+  );
+
+  return (
+    <div className={styles.app} data-tab={onFiles ? undefined : "page"}>
+      {docked ? (
+        <SidebarDock>
+          <FolderTree
+            index={index}
+            rootName={rootName}
+            folderId={openFile?.folderId && index.folders.has(openFile.folderId) ? openFile.folderId : folderId}
+            openFileId={onFiles ? (openFile?.id ?? null) : null}
+            summary={summary ? { open: onFiles && summaryOpen, onOpen: () => go({ folderId: null, fileId: null, summary: true }) } : null}
+            onOpenFolder={openFolder}
+            onOpenFile={open}
+            admin={isAdmin ? { onDropFiles: startUpload, onMove: move } : undefined}
+          />
+        </SidebarDock>
+      ) : null}
+      <Activity mode={onFiles ? "visible" : "hidden"}>
+        <section className={styles.files} aria-label="Files">
+          <RoomBrowser
+            tree={tree}
+            index={index}
+            rootName={rootName}
+            rootCrumb={rootCrumb}
+            titleAs="h2"
+            folderId={folderId}
+            query={query}
+            view={view}
+            hasSummary={Boolean(summary)}
+            checked={checked}
+            onCheckedChange={setChecked}
+            thumbUrl={(fileId) => `${fileUrl(fileId)}?thumb=1`}
+            onOpenFolder={openFolder}
+            onOpenFile={open}
+            onOpenSummary={() => go({ folderId: null, fileId: null, summary: true })}
+            admin={
+              isAdmin
+                ? { onAction: (action, item) => runAction(action, [item]), onDropFiles: startUpload, onMove: move }
+                : undefined
+            }
+            toolbar={toolbar}
+            open={
+              openFile
+                ? {
+                    name: openFile.name,
+                    folderId: openFile.folderId && index.folders.has(openFile.folderId) ? openFile.folderId : null,
+                    content: (
+                      <FilePreview key={openFile.id} url={fileUrl(openFile.id)} file={openFile} showBack leading={backButton(closePreview)} />
+                    ),
+                  }
+                : summary && summaryOpen
+                  ? {
+                      name: "Summary",
+                      folderId: null,
+                      content: <SummaryPanel summary={summary} showBack onBack={() => openFolder(null)} onOpenFile={openById} />,
+                    }
+                  : undefined
+            }
+          />
 
           <UploadList uploads={uploads} />
         </section>

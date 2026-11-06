@@ -25,6 +25,9 @@ import { togglePortalTheme, usePortalThemeCookie } from "./themeStore";
 type SidebarContextValue = {
   /** Whether the window is wide enough to show the sidebar at all. */
   wide: boolean;
+  /** The sidebar's slot for the page's own explorer, e.g. a data room's files. */
+  dock: HTMLElement | null;
+  setDock: (element: HTMLElement | null) => void;
   /** The sidebar's slot under the app's links, for a page's own section, e.g. ZRM's types. */
   extra: HTMLElement | null;
   setExtra: (element: HTMLElement | null) => void;
@@ -34,16 +37,20 @@ type SidebarContextValue = {
    * being empty doesn't say.
    */
   filled: SlotsFilled;
+  claimDock: () => () => void;
   claimExtra: () => () => void;
 };
 
-export type SlotsFilled = { extra: boolean };
+export type SlotsFilled = { dock: boolean; extra: boolean };
 
 const SidebarContext = createContext<SidebarContextValue>({
   wide: false,
+  dock: null,
+  setDock: () => {},
   extra: null,
   setExtra: () => {},
-  filled: { extra: false },
+  filled: { dock: false, extra: false },
+  claimDock: () => () => {},
   claimExtra: () => () => {},
 });
 
@@ -74,8 +81,8 @@ const subscribeWide = (onChange: () => void) => {
 };
 
 /**
- * Wraps the portal shell, tracks where pages can add their own section to
- * the sidebar, and carries the light or dark theme (globals.css) for everything
+ * Wraps the portal shell, tracks where pages can dock their explorer in the
+ * sidebar, and carries the light or dark theme (globals.css) for everything
  * inside; the pinned header, mounted above it, follows the same cookie. The
  * server renders light; an inline script switches a hard load to dark before
  * it paints. The browser's theme colour (the status bar, in the installed
@@ -83,7 +90,9 @@ const subscribeWide = (onChange: () => void) => {
  * cookie and script the same way.
  */
 export function PortalFrame({ children }: { children: ReactNode }): ReactElement {
+  const [dock, setDock] = useState<HTMLElement | null>(null);
   const [extra, setExtra] = useState<HTMLElement | null>(null);
+  const [dockFilled, claimDock] = useClaims();
   const [extraFilled, claimExtra] = useClaims();
   const theme = usePortalThemeCookie();
   const rail = usePortalRailCookie();
@@ -126,12 +135,15 @@ export function PortalFrame({ children }: { children: ReactNode }): ReactElement
   const sidebarValue = useMemo(
     () => ({
       wide,
+      dock,
+      setDock,
       extra,
       setExtra,
-      filled: { extra: extraFilled },
+      filled: { dock: dockFilled, extra: extraFilled },
+      claimDock,
       claimExtra,
     }),
-    [wide, extra, extraFilled, claimExtra],
+    [wide, dock, extra, dockFilled, extraFilled, claimDock, claimExtra],
   );
 
   return (
@@ -165,7 +177,12 @@ export function usePortalRail(): { expanded: boolean; toggle: () => void } {
   return use(RailContext);
 }
 
-/** Whether a showing page fills the sidebar's extra slot. */
+/** The ref callback for the sidebar's dock slot. */
+export function useDockRef(): (element: HTMLElement | null) => void {
+  return use(SidebarContext).setDock;
+}
+
+/** Whether a showing page fills the sidebar's dock and extra slots. */
 export function useSlotsFilled(): SlotsFilled {
   return use(SidebarContext).filled;
 }
@@ -174,6 +191,24 @@ export function useSlotsFilled(): SlotsFilled {
 function useClaim(target: HTMLElement | null, claim: () => () => void): void {
   const active = target !== null;
   useLayoutEffect(() => (active ? claim() : undefined), [active, claim]);
+}
+
+/** Whether a page's explorer is docked in the sidebar: the window is wide enough to show it, and its slot is mounted. */
+export function useDocked(): boolean {
+  const { wide, dock } = use(SidebarContext);
+  return wide && dock !== null;
+}
+
+/**
+ * Renders `children` in the sidebar while it's showing, and in place on
+ * narrow windows; `useDocked` says which. State stays with the page either
+ * way, since a portal keeps its React parent.
+ */
+export function SidebarDock({ children }: { children: ReactNode }): ReactNode {
+  const { dock, claimDock } = use(SidebarContext);
+  const target = useDocked() ? dock : null;
+  useClaim(target, claimDock);
+  return target ? createPortal(children, target) : children;
 }
 
 /** The ref callback for the sidebar's slot under the app's links. */

@@ -11,9 +11,8 @@
 
 .search {
   position: relative;
-  flex: 1;
-  min-width: 140px;
-  max-width: 420px;
+  flex: none;
+  width: 240px;
 }
 
 .search svg {
@@ -203,26 +202,44 @@
   display: flex;
   flex: 1;
   flex-direction: column;
+  min-width: 0;
   min-height: 0;
 }
 
+/* Under the toolbar: a pane, when there is one, beside the files or what's open. */
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* The trail and title, in the toolbar's free space before its tools. */
 .heading {
-  flex: none;
-  padding: 22px calc(var(--column) + 8px) 8px;
+  flex: 1;
+  min-width: 0;
 }
 
 .crumb {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  margin: 0 0 6px;
+  margin: 0 0 2px;
+  overflow: hidden;
   color: var(--color-text-secondary);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
+  white-space: nowrap;
 }
 
 .crumb > span {
   display: inline-flex;
+  flex: none;
   gap: 6px;
 }
 
@@ -242,15 +259,18 @@
 
 .title {
   margin: 0;
-  font-size: 22px;
+  overflow: hidden;
+  font-size: 18px;
   font-weight: 600;
   letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .scroller {
   flex: 1;
   min-height: 0;
-  padding: 0 var(--column) 24px;
+  padding: 16px var(--column) 24px;
   overflow: auto;
 }
 
@@ -655,10 +675,15 @@
     flex-wrap: wrap;
   }
 
-  .search {
-    order: 3;
+  .tools {
     flex-basis: 100%;
-    max-width: none;
+    margin-left: 0;
+  }
+
+  .search {
+    flex: 1;
+    width: auto;
+    min-width: 0;
   }
 
   .modified {

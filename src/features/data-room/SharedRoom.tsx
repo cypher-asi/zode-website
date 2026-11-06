@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { copyText } from "@/features/profile/ProfileClient";
 import { formatBytes } from "./fileKinds";
+import { FolderTree } from "./FolderTree";
 import { Icon } from "./icons";
 import { checkedBytes, refsOf, RoomBrowser, useStoredView, ViewMenu } from "./RoomBrowser";
 import browser from "./RoomBrowser.module.css";
@@ -130,28 +131,29 @@ export function SharedRoom({
     go({ folder: parent });
   };
 
-  return (
-    <div className={styles.page} data-theme="dark">
+  const toolbar = (trail: ReactNode) => (
+    <>
       <header className={browser.toolbar}>
         <a className={styles.mark} href={osHref} aria-label="Open in ZODE">
           {/* The wordmark is white; this page is always the dark browser. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/wordmark.png" alt="" />
         </a>
-        <label className={browser.search}>
-          <Icon name="search" />
-          <input
-            type="search"
-            value={query}
-            placeholder="Search"
-            aria-label="Search files"
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setChecked(new Set());
-            }}
-          />
-        </label>
+        <div className={styles.trail}>{trail}</div>
         <div className={browser.tools}>
+          <label className={browser.search}>
+            <Icon name="search" />
+            <input
+              type="search"
+              value={query}
+              placeholder="Search"
+              aria-label="Search files"
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setChecked(new Set());
+              }}
+            />
+          </label>
           {download ? (
             <>
               <span className={browser.progress} role="status">
@@ -191,43 +193,72 @@ export function SharedRoom({
           </button>
         </p>
       ) : null}
+    </>
+  );
 
-      {openFile ? (
-        <div className={browser.preview}>
-          <FilePreview
-            key={openFile.id}
-            url={sharedFilePath(token, openFile.id)}
-            file={openFile}
-            showBack
-            leading={
-              <button type="button" className={`${ui.iconButton} ${viewer.back}`} onClick={closePreview} aria-label="Back to files">
-                <Icon name="back" />
-              </button>
-            }
-          />
-        </div>
-      ) : summary && summaryOpen ? (
-        <div className={browser.preview}>
-          <SummaryPanel summary={summary} showBack onBack={() => go({ folder: null })} onOpenFile={(fileId) => go({ file: fileId })} />
-        </div>
-      ) : (
-        <RoomBrowser
-          tree={tree}
-          index={index}
-          rootName={roomName}
-          rootCrumb="Data room"
-          folderId={folderId}
-          query={query}
-          view={view}
-          hasSummary={Boolean(summary)}
-          checked={checked}
-          onCheckedChange={setChecked}
-          thumbUrl={(fileId) => `${sharedFilePath(token, fileId)}?thumb=1`}
-          onOpenFolder={(id) => go({ folder: id })}
-          onOpenFile={(file) => go({ folder: file.folderId && index.folders.has(file.folderId) ? file.folderId : null, file: file.id })}
-          onOpenSummary={() => go({ folder: null, summary: true })}
-        />
-      )}
+  const openFolderId = openFile?.folderId && index.folders.has(openFile.folderId) ? openFile.folderId : null;
+
+  return (
+    <div className={styles.page} data-theme="dark">
+      <RoomBrowser
+        pane={
+          <aside className={styles.pane} aria-label="Folders">
+            <FolderTree
+              index={index}
+              rootName={roomName}
+              folderId={openFile ? openFolderId : folderId}
+              openFileId={openFile?.id ?? null}
+              summary={summary ? { open: summaryOpen, onOpen: () => go({ folder: null, summary: true }) } : null}
+              onOpenFolder={(id) => go({ folder: id })}
+              onOpenFile={(file) => go({ folder: file.folderId && index.folders.has(file.folderId) ? file.folderId : null, file: file.id })}
+            />
+          </aside>
+        }
+        tree={tree}
+        index={index}
+        rootName={roomName}
+        rootCrumb="Data room"
+        folderId={folderId}
+        query={query}
+        view={view}
+        hasSummary={Boolean(summary)}
+        checked={checked}
+        onCheckedChange={setChecked}
+        thumbUrl={(fileId) => `${sharedFilePath(token, fileId)}?thumb=1`}
+        onOpenFolder={(id) => go({ folder: id })}
+        onOpenFile={(file) => go({ folder: file.folderId && index.folders.has(file.folderId) ? file.folderId : null, file: file.id })}
+        onOpenSummary={() => go({ folder: null, summary: true })}
+        toolbar={toolbar}
+        open={
+          openFile
+            ? {
+                name: openFile.name,
+                folderId: openFolderId,
+                content: (
+                  <FilePreview
+                    key={openFile.id}
+                    url={sharedFilePath(token, openFile.id)}
+                    file={openFile}
+                    showBack
+                    leading={
+                      <button type="button" className={`${ui.iconButton} ${viewer.back}`} onClick={closePreview} aria-label="Back to files">
+                        <Icon name="back" />
+                      </button>
+                    }
+                  />
+                ),
+              }
+            : summary && summaryOpen
+              ? {
+                  name: "Summary",
+                  folderId: null,
+                  content: (
+                    <SummaryPanel summary={summary} showBack onBack={() => go({ folder: null })} onOpenFile={(fileId) => go({ file: fileId })} />
+                  ),
+                }
+              : undefined
+        }
+      />
     </div>
   );
 }

@@ -5,13 +5,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PortalIcon } from "./icons";
 import { activeApp, activeHref, portalApps, RESOURCE_LINKS, roomIdIn, type NavAccess, type NavLink } from "./nav";
-import { useExtraRef, useSlotsFilled } from "./PortalFrame";
+import { useDockRef, useExtraRef, useSlotsFilled } from "./PortalFrame";
 import styles from "./sidebar.module.css";
 
 export type SidebarRoom = { id: string; name: string };
 
 /** Rooms on the Home sidebar; Data rooms lists them all. */
 const RECENT_ROOMS = 5;
+
+const PLACEHOLDER_ROWS = 6;
 
 const ROOM_PLACEHOLDER_ROWS = 3;
 
@@ -100,11 +102,30 @@ function Rooms({
   );
 }
 
+/** Stands in for a room's file explorer until the room's page docks the real one. */
+function ExplorerPlaceholder(): ReactElement {
+  return (
+    <div className={styles.placeholder} role="status" aria-label="Loading files">
+      <span className={styles.placeholderSearch} />
+      {Array.from({ length: PLACEHOLDER_ROWS }, (_, index) => (
+        <span key={index} className={styles.placeholderRow} />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * How the sidebar changed last: into a room (`down`, the crumb pushing the
+ * head's border down), back out (`up`), or across apps (`swap`). None on first
+ * paint, so a fresh page load doesn't animate.
+ */
+type Motion = "down" | "up" | "swap";
+
 /**
  * The panel beside the rail, for whichever app you're in: its pages, or for
- * Data rooms the rooms themselves, the open one marked. `rooms` is
- * `undefined` while the session's rooms load. Switching apps animates
- * (`data-motion`); a fresh page load doesn't.
+ * Data rooms the rooms themselves. Inside a room the page docks its file
+ * explorer here, in place of the room list. `rooms` is `undefined` while
+ * the session's rooms load.
  */
 export function PortalSidebar({
   access,
@@ -114,35 +135,51 @@ export function PortalSidebar({
   rooms: readonly SidebarRoom[] | null | undefined;
 }): ReactElement {
   const pathname = usePathname() ?? "/portal";
+  const dockRef = useDockRef();
   const extraRef = useExtraRef();
   const filled = useSlotsFilled();
   const app = activeApp(pathname, portalApps(access));
   const roomId = app.id === "rooms" ? roomIdIn(pathname) : null;
+  const room = roomId ? rooms?.find(({ id }) => id === roomId) : undefined;
   const current = activeHref(
     pathname,
     app.links.map(({ href }) => href),
   );
 
-  const [shown, setShown] = useState(app.id);
-  const [moved, setMoved] = useState(false);
-  if (shown !== app.id) {
-    setMoved(true);
-    setShown(app.id);
+  const view = roomId ? `room:${roomId}` : app.id;
+  const [shown, setShown] = useState({ view, inRoom: roomId !== null });
+  const [motion, setMotion] = useState<Motion | null>(null);
+  if (shown.view !== view) {
+    const inRoom = roomId !== null;
+    setMotion(inRoom === shown.inRoom ? "swap" : inRoom ? "down" : "up");
+    setShown({ view, inRoom });
   }
 
   return (
-    <aside className={styles.sidebar} aria-label={`${app.label} sidebar`} data-motion={moved ? "swap" : undefined}>
+    <aside className={styles.sidebar} aria-label={`${app.label} sidebar`} data-motion={motion ?? undefined}>
       <div className={styles.head}>
         <div className={styles.titleGroup}>
-          <h2 key={app.id} className={styles.title}>
-            {app.label}
+          {roomId ? (
+            <Link href="/portal/data-rooms" className={styles.crumb}>
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M10 3.5 5.5 8l4.5 4.5" />
+              </svg>
+              Data Rooms
+            </Link>
+          ) : null}
+          <h2 key={view} className={styles.title}>
+            {roomId ? (room?.name ?? "Data room") : app.label}
           </h2>
         </div>
       </div>
 
       <div className={styles.content}>
-        <div key={app.id} className={styles.body}>
-          {app.id === "home" ? (
+        <div ref={dockRef} className={styles.dock} data-filled={filled.dock || undefined} />
+
+        <div key={roomId ? "room" : app.id} className={styles.body}>
+          {roomId ? (
+            <ExplorerPlaceholder />
+          ) : app.id === "home" ? (
             <>
               <section className={styles.section} aria-label="Recent data rooms">
                 <h3 className={styles.heading}>Recent data rooms</h3>
@@ -158,7 +195,7 @@ export function PortalSidebar({
               </section>
             </>
           ) : app.id === "rooms" ? (
-            <Rooms rooms={rooms} current={roomId} />
+            <Rooms rooms={rooms} current={null} />
           ) : (
             <>
               <Links links={app.links} current={current} />

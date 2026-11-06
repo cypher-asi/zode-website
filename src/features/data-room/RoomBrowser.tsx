@@ -19,7 +19,7 @@ import styles from "./RoomBrowser.module.css";
 
 const THUMB_MAX_BYTES = 12 * 1024 * 1024;
 
-const DRAG_TYPE = "application/x-zode-data-room-items";
+export const DRAG_TYPE = "application/x-zode-data-room-items";
 
 export const VIEWS = [
   { id: "icons-xl", label: "Extra large icons" },
@@ -217,6 +217,69 @@ function Thumb({ src }: { src: string }): ReactElement {
   return <img className={styles.thumb} src={src} alt="" decoding="async" loading="lazy" onError={() => setFailed(true)} />;
 }
 
+export interface TrailProps {
+  index: TreeIndex;
+  /** The top level's name, in the trail and as the title there. */
+  rootName: string;
+  /** Over the title at the top level, where there's no trail. */
+  rootCrumb: ReactNode;
+  titleAs?: "h1" | "h2";
+  folderId: string | null;
+  /** An open file's name, or "Summary": the title, with `folderId` a step back up rather than where you are. */
+  leaf?: string;
+  /** In the trail's place, e.g. a search's match count. */
+  status?: ReactNode;
+  onOpenFolder: (folderId: string | null) => void;
+  /** Extra props for the step up to `target`, e.g. to take drops. */
+  stepProps?: (key: string, target: string | null) => object;
+}
+
+/** Where you are, for the toolbar: the trail back up, then the folder's, file's or search's title. */
+export function Trail({
+  index,
+  rootName,
+  rootCrumb,
+  titleAs: Title = "h1",
+  folderId,
+  leaf,
+  status,
+  onOpenFolder,
+  stepProps = () => ({}),
+}: TrailProps): ReactElement {
+  const steps = folderId ? [...ancestorsOf(index, folderId), folderId] : [];
+  const title = status ? "Search" : (leaf ?? (folderId ? (index.folders.get(folderId)?.name ?? rootName) : rootName));
+  return (
+    <div className={styles.heading}>
+      {status ? (
+        <p className={styles.crumb}>{status}</p>
+      ) : steps.length || leaf ? (
+        <nav className={styles.crumb} aria-label="Folder">
+          <button type="button" onClick={() => onOpenFolder(null)} {...stepProps("crumb:", null)}>
+            {rootName}
+          </button>
+          {steps.map((id, i) => (
+            <span key={id}>
+              <span aria-hidden="true">/</span>
+              {i === steps.length - 1 && !leaf ? (
+                <span aria-current="location">{index.folders.get(id)?.name}</span>
+              ) : (
+                <button type="button" onClick={() => onOpenFolder(id)} {...stepProps(`crumb:${id}`, id)}>
+                  {index.folders.get(id)?.name}
+                </button>
+              )}
+            </span>
+          ))}
+        </nav>
+      ) : (
+        <p className={styles.crumb}>{rootCrumb}</p>
+      )}
+      <Title className={styles.title} title={title}>
+        {title}
+      </Title>
+    </div>
+  );
+}
+
 /** What an admin can do from the browser: act on an item, drop files in, and drag items into folders. */
 export interface BrowserAdmin {
   onAction: (action: TreeAction, item: ItemRef) => void;
@@ -245,11 +308,17 @@ export interface RoomBrowserProps {
   onOpenFile: (file: RoomFile) => void;
   onOpenSummary: () => void;
   admin?: BrowserAdmin;
+  /** The toolbar over the files, given where you are to show in it. */
+  toolbar: (trail: ReactNode) => ReactNode;
+  /** A file or the summary open in the files' place, under the same toolbar so its search keeps focus. */
+  open?: { name: string; folderId: string | null; content: ReactNode };
+  /** Beside the files and under the toolbar, which then runs across both, e.g. a folder tree. */
+  pane?: ReactNode;
 }
 
 /**
- * A room's folder as Explorer or Dropbox shows one: a trail back up, then its
- * folders and files in the chosen view, or every match while searching.
+ * A room's folder as Explorer or Dropbox shows one: a toolbar with the trail
+ * back up, then its folders and files in the chosen view, or every match while searching.
  * Folders, files and the summary open through the callbacks; checked items
  * are the caller's, for downloads and bulk actions.
  */
@@ -258,7 +327,7 @@ export function RoomBrowser({
   index,
   rootName,
   rootCrumb,
-  titleAs: Title = "h1",
+  titleAs,
   folderId,
   query,
   view,
@@ -270,6 +339,9 @@ export function RoomBrowser({
   onOpenFile,
   onOpenSummary,
   admin,
+  toolbar,
+  open,
+  pane,
 }: RoomBrowserProps): ReactElement {
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "name", dir: "asc" });
   const [menuKey, setMenuKey] = useState<string | null>(null);
@@ -503,8 +575,6 @@ export function RoomBrowser({
     );
   };
 
-  const trail = folderId ? [...ancestorsOf(index, folderId), folderId] : [];
-  const title = searching ? "Search" : folderId ? (index.folders.get(folderId)?.name ?? rootName) : rootName;
   const glyphThumb = showsThumb(view) ? thumbUrl : null;
   const empty = searching
     ? "Nothing matches that search."
@@ -514,141 +584,139 @@ export function RoomBrowser({
 
   return (
     <div className={styles.browser}>
-      <div className={styles.heading}>
-        {searching ? (
-          <p className={styles.crumb}>
-            {entries.length.toLocaleString()} {entries.length === 1 ? "match" : "matches"} for “{query.trim()}”
-          </p>
-        ) : trail.length ? (
-          <nav className={styles.crumb} aria-label="Folder">
-            <button type="button" onClick={() => onOpenFolder(null)} {...dropProps("crumb:", null)}>
-              {rootName}
-            </button>
-            {trail.map((id, i) => (
-              <span key={id}>
-                <span aria-hidden="true">/</span>
-                {i === trail.length - 1 ? (
-                  <span aria-current="location">{index.folders.get(id)?.name}</span>
-                ) : (
-                  <button type="button" onClick={() => onOpenFolder(id)} {...dropProps(`crumb:${id}`, id)}>
-                    {index.folders.get(id)?.name}
-                  </button>
-                )}
-              </span>
-            ))}
-          </nav>
-        ) : (
-          <p className={styles.crumb}>{rootCrumb}</p>
-        )}
-        <Title className={styles.title}>{title}</Title>
-      </div>
-      <div className={styles.scroller} data-view={view} {...(searching ? {} : dropProps("here", folderId))}>
-        {entries.length === 0 ? (
-          <p className={styles.empty}>{empty}</p>
-        ) : view === "details" ? (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th className={styles.checkCol}>
-                  <input
-                    ref={allRef}
-                    type="checkbox"
-                    className={styles.check}
-                    checked={allSelected}
-                    disabled={!selectable.length}
-                    aria-label={allSelected ? "Clear selection" : "Select all"}
-                    onChange={() => onCheckedChange(allSelected ? new Set() : new Set(selectable))}
-                  />
-                </th>
-                {(["name", "modified", "size"] as const).map((key) => (
-                  <th key={key} className={key === "name" ? undefined : styles[key]}>
-                    <button
-                      type="button"
-                      className={styles.sort}
-                      data-active={sort.key === key || undefined}
-                      data-dir={sort.dir}
-                      onClick={() => toggleSort(key)}
-                    >
-                      {key === "name" ? "Name" : key === "modified" ? "Modified" : "Size"}
-                      <Icon name="arrowDown" />
-                    </button>
-                  </th>
-                ))}
-                {admin ? <th className={styles.actionCol} aria-label="Actions" /> : null}
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((entry) => (
-                <tr key={entry.kind + entry.id} data-selected={isChecked(entry) ? "" : undefined} {...entryProps(entry)}>
-                  <td className={styles.checkCol}>{checkbox(entry)}</td>
-                  <td>
-                    <button type="button" className={styles.nameButton} onClick={() => openEntry(entry)}>
-                      <EntryGlyph entry={entry} thumbUrl={null} />
-                      <span className={styles.nameText}>
+      {toolbar(
+        <Trail
+          index={index}
+          rootName={rootName}
+          rootCrumb={rootCrumb}
+          titleAs={titleAs}
+          folderId={open ? open.folderId : folderId}
+          leaf={open?.name}
+          status={
+            !open && searching
+              ? `${entries.length.toLocaleString()} ${entries.length === 1 ? "match" : "matches"} for “${query.trim()}”`
+              : undefined
+          }
+          onOpenFolder={onOpenFolder}
+          stepProps={open ? undefined : dropProps}
+        />,
+      )}
+      <div className={styles.body}>
+        {pane}
+        <div className={styles.main}>
+          {open ? (
+            <div className={styles.preview}>{open.content}</div>
+          ) : (
+            <div className={styles.scroller} data-view={view} {...(searching ? {} : dropProps("here", folderId))}>
+              {entries.length === 0 ? (
+                <p className={styles.empty}>{empty}</p>
+              ) : view === "details" ? (
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th className={styles.checkCol}>
+                        <input
+                          ref={allRef}
+                          type="checkbox"
+                          className={styles.check}
+                          checked={allSelected}
+                          disabled={!selectable.length}
+                          aria-label={allSelected ? "Clear selection" : "Select all"}
+                          onChange={() => onCheckedChange(allSelected ? new Set() : new Set(selectable))}
+                        />
+                      </th>
+                      {(["name", "modified", "size"] as const).map((key) => (
+                        <th key={key} className={key === "name" ? undefined : styles[key]}>
+                          <button
+                            type="button"
+                            className={styles.sort}
+                            data-active={sort.key === key || undefined}
+                            data-dir={sort.dir}
+                            onClick={() => toggleSort(key)}
+                          >
+                            {key === "name" ? "Name" : key === "modified" ? "Modified" : "Size"}
+                            <Icon name="arrowDown" />
+                          </button>
+                        </th>
+                      ))}
+                      {admin ? <th className={styles.actionCol} aria-label="Actions" /> : null}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entries.map((entry) => (
+                      <tr key={entry.kind + entry.id} data-selected={isChecked(entry) ? "" : undefined} {...entryProps(entry)}>
+                        <td className={styles.checkCol}>{checkbox(entry)}</td>
+                        <td>
+                          <button type="button" className={styles.nameButton} onClick={() => openEntry(entry)}>
+                            <EntryGlyph entry={entry} thumbUrl={null} />
+                            <span className={styles.nameText}>
+                              <span>{entry.name}</span>
+                              {entry.path ? <span className={styles.path}>{entry.path}</span> : null}
+                            </span>
+                          </button>
+                        </td>
+                        <td className={styles.modified}>
+                          {entry.kind === "file" ? modifiedOn.format(new Date(entry.file.createdAt)) : "—"}
+                        </td>
+                        <td className={styles.size}>{entry.kind === "file" ? formatBytes(entry.file.sizeBytes) : "—"}</td>
+                        {admin ? <td className={styles.actionCol}>{itemMenu(entry)}</td> : null}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : view === "list" ? (
+                <ul className={styles.list}>
+                  {entries.map((entry) => (
+                    <li key={entry.kind + entry.id} data-selected={isChecked(entry) ? "" : undefined} {...entryProps(entry)}>
+                      {checkbox(entry)}
+                      <button type="button" className={styles.listButton} onClick={() => openEntry(entry)}>
+                        <EntryGlyph entry={entry} thumbUrl={null} />
                         <span>{entry.name}</span>
-                        {entry.path ? <span className={styles.path}>{entry.path}</span> : null}
-                      </span>
-                    </button>
-                  </td>
-                  <td className={styles.modified}>
-                    {entry.kind === "file" ? modifiedOn.format(new Date(entry.file.createdAt)) : "—"}
-                  </td>
-                  <td className={styles.size}>{entry.kind === "file" ? formatBytes(entry.file.sizeBytes) : "—"}</td>
-                  {admin ? <td className={styles.actionCol}>{itemMenu(entry)}</td> : null}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : view === "list" ? (
-          <ul className={styles.list}>
-            {entries.map((entry) => (
-              <li key={entry.kind + entry.id} data-selected={isChecked(entry) ? "" : undefined} {...entryProps(entry)}>
-                {checkbox(entry)}
-                <button type="button" className={styles.listButton} onClick={() => openEntry(entry)}>
-                  <EntryGlyph entry={entry} thumbUrl={null} />
-                  <span>{entry.name}</span>
-                </button>
-                {itemMenu(entry)}
-              </li>
-            ))}
-          </ul>
-        ) : view === "tiles" ? (
-          <ul className={styles.tiles}>
-            {entries.map((entry) => (
-              <li key={entry.kind + entry.id} data-selected={isChecked(entry) ? "" : undefined} {...entryProps(entry)}>
-                {checkbox(entry)}
-                <button type="button" onClick={() => openEntry(entry)}>
-                  <EntryGlyph entry={entry} thumbUrl={glyphThumb} />
-                  <span>
-                    <span className={styles.tileName}>{entry.name}</span>
-                    <span className={styles.path}>
-                      {entry.path ||
-                        (entry.kind === "file"
-                          ? `${modifiedOn.format(new Date(entry.file.createdAt))} · ${formatBytes(entry.file.sizeBytes)}`
-                          : entry.kind === "folder"
-                            ? "Folder"
-                            : "Overview")}
-                    </span>
-                  </span>
-                </button>
-                {itemMenu(entry)}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <ul className={styles.icons}>
-            {entries.map((entry) => (
-              <li key={entry.kind + entry.id} data-selected={isChecked(entry) ? "" : undefined} {...entryProps(entry)}>
-                {checkbox(entry)}
-                <button type="button" onClick={() => openEntry(entry)}>
-                  <EntryGlyph entry={entry} thumbUrl={glyphThumb} />
-                  <span className={styles.iconName}>{entry.name}</span>
-                </button>
-                {itemMenu(entry)}
-              </li>
-            ))}
-          </ul>
-        )}
+                      </button>
+                      {itemMenu(entry)}
+                    </li>
+                  ))}
+                </ul>
+              ) : view === "tiles" ? (
+                <ul className={styles.tiles}>
+                  {entries.map((entry) => (
+                    <li key={entry.kind + entry.id} data-selected={isChecked(entry) ? "" : undefined} {...entryProps(entry)}>
+                      {checkbox(entry)}
+                      <button type="button" onClick={() => openEntry(entry)}>
+                        <EntryGlyph entry={entry} thumbUrl={glyphThumb} />
+                        <span>
+                          <span className={styles.tileName}>{entry.name}</span>
+                          <span className={styles.path}>
+                            {entry.path ||
+                              (entry.kind === "file"
+                                ? `${modifiedOn.format(new Date(entry.file.createdAt))} · ${formatBytes(entry.file.sizeBytes)}`
+                                : entry.kind === "folder"
+                                  ? "Folder"
+                                  : "Overview")}
+                          </span>
+                        </span>
+                      </button>
+                      {itemMenu(entry)}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <ul className={styles.icons}>
+                  {entries.map((entry) => (
+                    <li key={entry.kind + entry.id} data-selected={isChecked(entry) ? "" : undefined} {...entryProps(entry)}>
+                      {checkbox(entry)}
+                      <button type="button" onClick={() => openEntry(entry)}>
+                        <EntryGlyph entry={entry} thumbUrl={glyphThumb} />
+                        <span className={styles.iconName}>{entry.name}</span>
+                      </button>
+                      {itemMenu(entry)}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
