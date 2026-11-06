@@ -196,9 +196,9 @@
   stroke-linejoin: round;
 }
 
-/* Dropbox keeps the listing in a centred column on wide screens. */
+/* As in Explorer and Finder, the listing runs from the left edge across the window. */
 .browser {
-  --column: max(12px, calc((100% - 1080px) / 2));
+  --column: 12px;
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -270,7 +270,7 @@
 .scroller {
   flex: 1;
   min-height: 0;
-  padding: 16px var(--column) 24px;
+  padding: 8px var(--column) 16px;
   overflow: auto;
 }
 
@@ -300,22 +300,22 @@
 
 .scroller[data-view="icons-sm"] {
   --glyph: 32px;
-  --cell: 104px;
+  --cell: 80px;
 }
 
 .scroller[data-view="icons-md"] {
-  --glyph: 56px;
-  --cell: 132px;
+  --glyph: 48px;
+  --cell: 100px;
 }
 
 .scroller[data-view="icons-lg"] {
   --glyph: 88px;
-  --cell: 168px;
+  --cell: 140px;
 }
 
 .scroller[data-view="icons-xl"] {
   --glyph: 128px;
-  --cell: 210px;
+  --cell: 184px;
 }
 
 .scroller[data-view="tiles"] {
@@ -501,7 +501,7 @@
 .icons,
 .tiles {
   margin: 0;
-  padding: 4px 0 24px;
+  padding: 0;
   list-style: none;
 }
 
@@ -529,10 +529,11 @@
   height: 32px;
 }
 
+/* Fixed cells packed from the left, as Explorer lays out icons, rather than stretched to fill the row. */
 .icons {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--cell), 1fr));
-  gap: 4px;
+  grid-template-columns: repeat(auto-fill, var(--cell));
+  gap: 2px;
   align-content: start;
 }
 
@@ -543,8 +544,8 @@
 
 .icons li > button {
   flex-direction: column;
-  gap: 8px;
-  padding: 28px 8px 12px;
+  gap: 4px;
+  padding: 10px 4px 6px;
   text-align: center;
 }
 
@@ -554,6 +555,11 @@
   top: 8px;
   left: 8px;
   z-index: 1;
+}
+
+.icons .check {
+  top: 4px;
+  left: 4px;
 }
 
 /* An admin's Rename, Move and Delete for one item. */
@@ -707,6 +713,6 @@
   }
 
   .browser {
-    --column: 8px;
+    --column: 6px;
   }
 }
