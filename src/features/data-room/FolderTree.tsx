@@ -1,10 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type ReactElement } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type DragEvent,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactElement,
+} from "react";
 import type { ItemRef } from "./actions";
 import { fileKind } from "./fileKinds";
 import { FileGlyph, Icon } from "./icons";
-import { DRAG_TYPE, type BrowserAdmin } from "./RoomBrowser";
+import { ContextMenu, DRAG_TYPE, itemContext, type BrowserAdmin, type ItemContext } from "./RoomBrowser";
 import { ancestorsOf, fileKey, folderKey, summaryKey, type TreeIndex } from "./tree";
 import type { RoomFile } from "./types";
 import styles from "./FolderTree.module.css";
@@ -33,8 +42,8 @@ export interface FolderTreeProps {
   summaries: { folders: ReadonlySet<string>; open: boolean; onOpen: (folderId: string | null) => void } | null;
   onOpenFolder: (folderId: string | null) => void;
   onOpenFile: (file: RoomFile) => void;
-  /** Lets admins drop files and dragged items onto a folder. */
-  admin?: Pick<BrowserAdmin, "onDropFiles" | "onMove">;
+  /** Lets admins drag folders and files between folders, drop files in, and right-click to rename, move or delete. */
+  admin?: BrowserAdmin;
 }
 
 /**
@@ -57,6 +66,7 @@ export function FolderTree({
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set(chain));
   const [focusKey, setFocusKey] = useState<string | null>(null);
   const [dropKey, setDropKey] = useState<string | null>(null);
+  const [context, setContext] = useState<ItemContext | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   const currentKey = summaries?.open
@@ -213,6 +223,28 @@ export function FolderTree({
         }
       : {};
 
+  /** A folder or file row drags into other folders, and right-clicks for its actions. */
+  const handleProps = (item: ItemRef) =>
+    admin
+      ? {
+          draggable: true,
+          onDragStart: (event: DragEvent) => {
+            event.dataTransfer.setData(DRAG_TYPE, JSON.stringify([item]));
+            event.dataTransfer.effectAllowed = "move";
+          },
+          onContextMenu: (event: MouseEvent<HTMLElement>) => setContext(itemContext(event, [item])),
+        }
+      : {};
+
+  const rowProps = (row: Row) =>
+    row.kind === "folder"
+      ? { ...handleProps({ kind: "folder", id: row.id }), ...dropProps(row.key, row.id) }
+      : row.kind === "file"
+        ? handleProps({ kind: "file", id: row.file.id })
+        : row.kind === "root"
+          ? dropProps(row.key, null)
+          : {};
+
   return (
     <div ref={listRef} className={styles.tree} role="tree" aria-label="Folders">
       {rows.map((row, i) => {
@@ -238,7 +270,7 @@ export function FolderTree({
             }}
             onFocus={() => setFocusKey(row.key)}
             onKeyDown={(event) => onKeyDown(event, row, i)}
-            {...(row.kind === "folder" ? dropProps(row.key, row.id) : row.kind === "root" ? dropProps(row.key, null) : {})}
+            {...rowProps(row)}
           >
             {row.kind === "folder" && row.hasChildren ? (
               <span
@@ -267,6 +299,14 @@ export function FolderTree({
           </div>
         );
       })}
+      {admin && context ? (
+        <ContextMenu
+          key={context.id}
+          context={context}
+          onAction={admin.onAction}
+          onClose={() => setContext((current) => (current === context ? null : current))}
+        />
+      ) : null}
     </div>
   );
 }

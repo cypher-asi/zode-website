@@ -3,10 +3,13 @@
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
   type DragEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent,
   type ReactElement,
   type ReactNode,
 } from "react";
@@ -280,9 +283,139 @@ export function Trail({
   );
 }
 
-/** What an admin can do from the browser: act on an item, drop files in, and drag items into folders. */
+/** Rename only takes one item at a time. */
+const actionsFor = (count: number): TreeAction[] => (count > 1 ? ["move", "delete"] : ["rename", "move", "delete"]);
+
+const actionLabel = (action: TreeAction, count: number): string => {
+  const items = count > 1 ? ` ${count.toLocaleString()} items` : "";
+  return action === "rename" ? "Rename" : action === "move" ? `Move${items} to…` : `Delete${items}`;
+};
+
+/** An admin's actions for `count` items, as a menu's entries. */
+function ActionItems({ count, onSelect }: { count: number; onSelect: (action: TreeAction) => void }): ReactElement {
+  return (
+    <>
+      {actionsFor(count).map((action) => (
+        <li key={action} role="none">
+          <button
+            type="button"
+            role="menuitem"
+            data-danger={action === "delete" ? "" : undefined}
+            onClick={() => onSelect(action)}
+          >
+            {actionLabel(action, count)}
+          </button>
+        </li>
+      ))}
+    </>
+  );
+}
+
+/** A right-click on items: where its menu opens and what it acts on. */
+export interface ItemContext {
+  id: number;
+  x: number;
+  y: number;
+  items: ItemRef[];
+}
+
+let contextCount = 0;
+
+/**
+ * The menu for a right-click on `event.currentTarget`, in place of the browser's.
+ * Opened from the keyboard, the event has no pointer, so the menu opens under the item.
+ */
+export function itemContext(event: MouseEvent<HTMLElement>, items: ItemRef[]): ItemContext {
+  event.preventDefault();
+  event.stopPropagation();
+  let { clientX: x, clientY: y } = event;
+  if (!x && !y) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    x = rect.left + 8;
+    y = rect.bottom;
+  }
+  contextCount += 1;
+  return { id: contextCount, x, y, items };
+}
+
+const EDGE = 4;
+
+/**
+ * An admin's Rename, Move and Delete at the pointer, as Explorer's right-click
+ * menu. It's a popover, so it sits above scrolling panes, and the browser
+ * dismisses it on Escape or a click elsewhere and hands focus back.
+ */
+export function ContextMenu({
+  context,
+  onAction,
+  onClose,
+}: {
+  context: ItemContext;
+  onAction: (action: TreeAction, items: ItemRef[]) => void;
+  onClose: () => void;
+}): ReactElement {
+  const ref = useRef<HTMLUListElement>(null);
+
+  useLayoutEffect(() => {
+    const menu = ref.current;
+    if (!menu) return;
+    menu.showPopover();
+    const { width, height } = menu.getBoundingClientRect();
+    menu.style.left = `${Math.max(EDGE, Math.min(context.x, window.innerWidth - width - EDGE))}px`;
+    menu.style.top = `${Math.max(EDGE, Math.min(context.y, window.innerHeight - height - EDGE))}px`;
+    menu.querySelector("button")?.focus({ preventScroll: true });
+    const hide = () => {
+      if (menu.matches(":popover-open")) menu.hidePopover();
+    };
+    window.addEventListener("resize", hide);
+    window.addEventListener("scroll", hide, true);
+    return () => {
+      window.removeEventListener("resize", hide);
+      window.removeEventListener("scroll", hide, true);
+    };
+  }, [context]);
+
+  const onKeyDown = (event: ReactKeyboardEvent<HTMLUListElement>) => {
+    if (event.key === "Tab") {
+      ref.current?.hidePopover();
+      return;
+    }
+    const buttons = [...(ref.current?.querySelectorAll("button") ?? [])];
+    const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
+    const next =
+      event.key === "ArrowDown" ? at + 1 : event.key === "ArrowUp" ? at - 1 : event.key === "Home" ? 0 : event.key === "End" ? -1 : null;
+    if (next === null) return;
+    event.preventDefault();
+    buttons.at(next % buttons.length)?.focus();
+  };
+
+  return (
+    <ul
+      ref={ref}
+      popover="auto"
+      role="menu"
+      aria-label="Actions"
+      className={`${styles.menu} ${styles.contextMenu}`}
+      onKeyDown={onKeyDown}
+      onContextMenu={(event) => event.preventDefault()}
+      onToggle={(event) => {
+        if (event.newState === "closed") onClose();
+      }}
+    >
+      <ActionItems
+        count={context.items.length}
+        onSelect={(action) => {
+          ref.current?.hidePopover();
+          onAction(action, context.items);
+        }}
+      />
+    </ul>
+  );
+}
+
+/** What an admin can do from the browser: act on items, drop files in, and drag items into folders. */
 export interface BrowserAdmin {
-  onAction: (action: TreeAction, item: ItemRef) => void;
+  onAction: (action: TreeAction, items: ItemRef[]) => void;
   onDropFiles: (files: File[], folderId: string | null) => void;
   onMove: (items: ItemRef[], folderId: string | null) => void;
 }
@@ -345,6 +478,7 @@ export function RoomBrowser({
 }: RoomBrowserProps): ReactElement {
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "name", dir: "asc" });
   const [menuKey, setMenuKey] = useState<string | null>(null);
+  const [context, setContext] = useState<ItemContext | null>(null);
   const [dropKey, setDropKey] = useState<string | null>(null);
   const allRef = useRef<HTMLInputElement>(null);
 
@@ -513,23 +647,30 @@ export function RoomBrowser({
         }
       : {};
 
-  /** Drags the checked items when this one is among them, otherwise just this one. */
-  const dragProps = (entry: Entry) => {
+  /**
+   * Drags, or right-clicks on, the checked items when this one is among them,
+   * otherwise just this one.
+   */
+  const handleProps = (entry: Entry) => {
     const key = selectKey(entry);
     if (!admin || !key || entry.kind === "summary") return {};
+    const items = (): ItemRef[] => (checked.has(key) ? refsOf(checked) : [{ kind: entry.kind, id: entry.id }]);
     return {
       draggable: true,
       onDragStart: (event: DragEvent) => {
-        const items: ItemRef[] = checked.has(key) ? refsOf(checked) : [{ kind: entry.kind, id: entry.id }];
-        event.dataTransfer.setData(DRAG_TYPE, JSON.stringify(items));
+        event.dataTransfer.setData(DRAG_TYPE, JSON.stringify(items()));
         event.dataTransfer.effectAllowed = "move";
+      },
+      onContextMenu: (event: MouseEvent<HTMLElement>) => {
+        setMenuKey(null);
+        setContext(itemContext(event, items()));
       },
     };
   };
 
   /** Drops onto a folder land in it. */
   const entryProps = (entry: Entry) => ({
-    ...dragProps(entry),
+    ...handleProps(entry),
     ...(entry.kind === "folder" ? dropProps(folderKey(entry.id), entry.id) : {}),
   });
 
@@ -554,21 +695,13 @@ export function RoomBrowser({
         </button>
         {open ? (
           <ul className={styles.menu} role="menu" aria-label={`Actions for ${entry.name}`}>
-            {(["rename", "move", "delete"] as const).map((action) => (
-              <li key={action} role="none">
-                <button
-                  type="button"
-                  role="menuitem"
-                  data-danger={action === "delete" ? "" : undefined}
-                  onClick={() => {
-                    setMenuKey(null);
-                    admin.onAction(action, { kind: entry.kind, id: entry.id });
-                  }}
-                >
-                  {action === "rename" ? "Rename" : action === "move" ? "Move to…" : "Delete"}
-                </button>
-              </li>
-            ))}
+            <ActionItems
+              count={1}
+              onSelect={(action) => {
+                setMenuKey(null);
+                admin.onAction(action, [{ kind: entry.kind, id: entry.id }]);
+              }}
+            />
           </ul>
         ) : null}
       </span>
@@ -718,6 +851,14 @@ export function RoomBrowser({
           )}
         </div>
       </div>
+      {admin && context ? (
+        <ContextMenu
+          key={context.id}
+          context={context}
+          onAction={admin.onAction}
+          onClose={() => setContext((current) => (current === context ? null : current))}
+        />
+      ) : null}
     </div>
   );
 }

@@ -422,7 +422,7 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summaries, childr
             }
             onOpenFolder={openFolder}
             onOpenFile={open}
-            admin={isAdmin ? { onDropFiles: startUpload, onMove: move } : undefined}
+            admin={isAdmin ? { onAction: runAction, onDropFiles: startUpload, onMove: move } : undefined}
           />
         </SidebarDock>
       ) : null}
@@ -446,7 +446,7 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summaries, childr
             onOpenSummary={() => go({ folderId, fileId: null, summary: true })}
             admin={
               isAdmin
-                ? { onAction: (action, item) => runAction(action, [item]), onDropFiles: startUpload, onMove: move }
+                ? { onAction: runAction, onDropFiles: startUpload, onMove: move }
                 : undefined
             }
             toolbar={toolbar}

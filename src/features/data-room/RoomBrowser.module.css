@@ -285,9 +285,15 @@
   background: color-mix(in srgb, var(--color-focus-ring) 14%, transparent);
 }
 
+.scroller:has(> .empty) {
+  display: grid;
+  place-items: center;
+}
+
 .empty {
-  margin: 48px 16px;
+  margin: 16px;
   color: var(--color-text-secondary);
+  text-align: center;
 }
 
 .scroller[data-view="details"] {
@@ -579,6 +585,15 @@
 
 .itemMenu .menu {
   min-width: 160px;
+}
+
+/* The same actions on a right-click, at the pointer; placed by the script. */
+.contextMenu {
+  position: fixed;
+  inset: auto;
+  min-width: 180px;
+  margin: 0;
+  color: var(--color-text-primary);
 }
 
 .itemMenuButton {
