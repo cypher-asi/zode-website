@@ -450,17 +450,23 @@ export function PortfolioSummaryView({ roomId, summary }: { roomId: string; summ
         id="deal"
         title="Deal summary"
         action={
-          modelName ? (
-            <Link
-              href={`/portal/data-rooms/${roomId}?file=${m.model.fileId}`}
-              data-file-id={m.model.fileId}
-              className={styles.modelLink}
-              title={m.model.path}
-            >
-              Model
+          <div className={styles.headLinks}>
+            <a href="/deck" target="_blank" rel="noopener" className={styles.modelLink} title="ZODE investor deck">
+              Deck
               <Icon name="external" />
-            </Link>
-          ) : null
+            </a>
+            {modelName ? (
+              <Link
+                href={`/portal/data-rooms/${roomId}?file=${m.model.fileId}`}
+                data-file-id={m.model.fileId}
+                className={styles.modelLink}
+                title={m.model.path}
+              >
+                Model
+                <Icon name="external" />
+              </Link>
+            ) : null}
+          </div>
         }
       >
         <p className={styles.lede}>{lede}</p>
