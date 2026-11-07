@@ -212,7 +212,12 @@ export function SharedRoom({
               openFileId={openFile?.id ?? null}
               summaries={
                 summaryFolders.size
-                  ? { folders: summaryFolders, open: summaryOpen, onOpen: (id) => go({ folder: id, summary: true }) }
+                  ? {
+                      folders: summaryFolders,
+                      links: (key) => summaries[key]?.links ?? [],
+                      open: summaryOpen,
+                      onOpen: (id) => go({ folder: id, summary: true }),
+                    }
                   : null
               }
               onOpenFolder={(id) => go({ folder: id })}
@@ -228,6 +233,7 @@ export function SharedRoom({
         query={query}
         view={view}
         hasSummary={Boolean(summary)}
+        links={summary?.links}
         checked={checked}
         onCheckedChange={setChecked}
         thumbUrl={(fileId) => `${sharedFilePath(token, fileId)}?thumb=1`}

@@ -417,7 +417,12 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summaries, childr
             openFileId={onFiles ? (openFile?.id ?? null) : null}
             summaries={
               summaryFolders.size
-                ? { folders: summaryFolders, open: onFiles && summaryOpen, onOpen: (id) => go({ folderId: id, fileId: null, summary: true }) }
+                ? {
+                    folders: summaryFolders,
+                    links: (key) => summaries[key]?.links ?? [],
+                    open: onFiles && summaryOpen,
+                    onOpen: (id) => go({ folderId: id, fileId: null, summary: true }),
+                  }
                 : null
             }
             onOpenFolder={openFolder}
@@ -438,6 +443,7 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summaries, childr
             query={query}
             view={view}
             hasSummary={Boolean(summary)}
+            links={summary?.links}
             checked={checked}
             onCheckedChange={setChecked}
             thumbUrl={(fileId) => `${fileUrl(fileId)}?thumb=1`}

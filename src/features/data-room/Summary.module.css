@@ -120,13 +120,6 @@
   text-transform: uppercase;
 }
 
-/* More than one `.modelLink` at the end of a section's head. */
-.headLinks {
-  display: flex;
-  flex: none;
-  gap: 8px;
-}
-
 /* A muted tint in caps at rest, filling from the bottom on hover like the header's Buy compute button. */
 .modelLink {
   display: inline-flex;

@@ -57,6 +57,14 @@ export interface RoomSummary {
    * a folder `data-folder-id`, with `data-summary` to open that folder's summary.
    */
   content: ReactNode;
+  /** Pages of the site listed after the summary like files, opening in a new tab. */
+  links?: readonly RoomLink[];
+}
+
+/** A page of the site that lives outside the room, e.g. the investor deck at /deck. */
+export interface RoomLink {
+  name: string;
+  href: string;
 }
 
 /** A room's summaries by the folder they sit in, `""` for the room's own. */

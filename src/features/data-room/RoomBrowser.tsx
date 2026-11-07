@@ -18,6 +18,7 @@ import { fileKind, formatBytes } from "./fileKinds";
 import { FileGlyph, Icon } from "./icons";
 import { ancestorsOf, fileKey, folderKey, folderPath, type TreeAction, type TreeIndex } from "./tree";
 import type { RoomFile, RoomTree } from "./types";
+import type { RoomLink } from "./Viewer";
 import styles from "./RoomBrowser.module.css";
 
 const THUMB_MAX_BYTES = 12 * 1024 * 1024;
@@ -56,7 +57,17 @@ interface SummaryEntry {
   name: "Summary";
   path: "";
 }
-type Entry = FolderEntry | FileEntry | SummaryEntry;
+interface LinkEntry {
+  kind: "link";
+  id: string;
+  name: string;
+  path: "";
+  href: string;
+}
+type Entry = FolderEntry | FileEntry | SummaryEntry | LinkEntry;
+
+/** The summary first, then its links, then folders before files. */
+const PINNED: Partial<Record<Entry["kind"], number>> = { summary: 0, link: 1 };
 
 const isViewMode = (value: string | null): value is ViewMode => VIEWS.some((view) => view.id === value);
 
@@ -205,6 +216,7 @@ export function ViewMenu({ view, onChange }: { view: ViewMode; onChange: (mode: 
 function EntryGlyph({ entry, thumbUrl }: { entry: Entry; thumbUrl: ((fileId: string) => string) | null }): ReactElement {
   if (entry.kind === "folder") return <Icon name="folder" className={styles.folder} />;
   if (entry.kind === "summary") return <Icon name="summary" className={styles.summaryGlyph} />;
+  if (entry.kind === "link") return <FileGlyph kind="pptx" className={styles.fileGlyph} />;
   const kind = fileKind(entry.file.name);
   if (thumbUrl && kind === "image" && entry.file.sizeBytes <= THUMB_MAX_BYTES) {
     return <Thumb src={thumbUrl(entry.file.id)} />;
@@ -433,6 +445,8 @@ export interface RoomBrowserProps {
   view: ViewMode;
   /** Pins a Summary entry first, when the folder on show has one. */
   hasSummary: boolean;
+  /** Pinned after the summary, opening in a new tab. */
+  links?: readonly RoomLink[];
   checked: Set<string>;
   onCheckedChange: (checked: Set<string>) => void;
   /** A small copy of an image, for the icon views. */
@@ -465,6 +479,7 @@ export function RoomBrowser({
   query,
   view,
   hasSummary,
+  links = [],
   checked,
   onCheckedChange,
   thumbUrl,
@@ -516,6 +531,7 @@ export function RoomBrowser({
         ...(hasSummary
           ? [{ kind: "summary" as const, id: "summary" as const, name: "Summary" as const, path: "" as const }]
           : []),
+        ...links.map((link): LinkEntry => ({ kind: "link", id: link.href, name: link.name, path: "", href: link.href })),
         ...(index.childFolders.get(folderId) ?? []).map(
           (folder): FolderEntry => ({ kind: "folder", id: folder.id, name: folder.name, path: "" }),
         ),
@@ -526,8 +542,8 @@ export function RoomBrowser({
     }
     const dir = sort.dir === "asc" ? 1 : -1;
     return rows.sort((a, b) => {
-      if (a.kind === "summary") return -1;
-      if (b.kind === "summary") return 1;
+      const pinned = (PINNED[a.kind] ?? 2) - (PINNED[b.kind] ?? 2);
+      if (pinned) return pinned;
       if (a.kind !== b.kind) return a.kind === "folder" ? -1 : 1;
       if (sort.key === "size") {
         const size = (entry: Entry) => (entry.kind === "file" ? entry.file.sizeBytes : -1);
@@ -581,6 +597,7 @@ export function RoomBrowser({
 
   const openEntry = (entry: Entry) => {
     if (entry.kind === "summary") onOpenSummary();
+    else if (entry.kind === "link") window.open(entry.href, "_blank", "noopener");
     else if (entry.kind === "folder") onOpenFolder(entry.id);
     else onOpenFile(entry.file);
   };
@@ -653,7 +670,7 @@ export function RoomBrowser({
    */
   const handleProps = (entry: Entry) => {
     const key = selectKey(entry);
-    if (!admin || !key || entry.kind === "summary") return {};
+    if (!admin || !key || entry.kind === "summary" || entry.kind === "link") return {};
     const items = (): ItemRef[] => (checked.has(key) ? refsOf(checked) : [{ kind: entry.kind, id: entry.id }]);
     return {
       draggable: true,
@@ -676,7 +693,7 @@ export function RoomBrowser({
 
   const itemMenu = (entry: Entry) => {
     const key = selectKey(entry);
-    if (!admin || !key || entry.kind === "summary") return null;
+    if (!admin || !key || entry.kind === "summary" || entry.kind === "link") return null;
     const open = menuKey === key;
     return (
       <span className={styles.itemMenu} data-item-menu>
@@ -825,7 +842,9 @@ export function RoomBrowser({
                                 ? `${modifiedOn.format(new Date(entry.file.createdAt))} · ${formatBytes(entry.file.sizeBytes)}`
                                 : entry.kind === "folder"
                                   ? "Folder"
-                                  : "Overview")}
+                                  : entry.kind === "link"
+                                    ? "Presentation"
+                                    : "Overview")}
                           </span>
                         </span>
                       </button>

@@ -16,6 +16,7 @@ import { FileGlyph, Icon } from "./icons";
 import { ContextMenu, DRAG_TYPE, itemContext, type BrowserAdmin, type ItemContext } from "./RoomBrowser";
 import { ancestorsOf, fileKey, folderKey, summaryKey, type TreeIndex } from "./tree";
 import type { RoomFile } from "./types";
+import type { RoomLink } from "./Viewer";
 import styles from "./FolderTree.module.css";
 
 const ROOT_KEY = "root";
@@ -25,6 +26,7 @@ const INDENT = 16;
 type Row =
   | { kind: "root"; key: string; depth: number }
   | { kind: "summary"; key: string; depth: number; folderId: string | null }
+  | { kind: "link"; key: string; depth: number; folderId: string | null; link: RoomLink }
   | { kind: "folder"; key: string; depth: number; id: string; name: string; parentId: string | null; hasChildren: boolean }
   | { kind: "file"; key: string; depth: number; file: RoomFile };
 
@@ -36,10 +38,15 @@ export interface FolderTreeProps {
   folderId: string | null;
   openFileId: string | null;
   /**
-   * Pins a Summary row first in each folder that has one, by `summaryKey`; `open`
-   * when the one in `folderId` is on show.
+   * Pins a Summary row first in each folder that has one, by `summaryKey`, and
+   * its links after it; `open` when the one in `folderId` is on show.
    */
-  summaries: { folders: ReadonlySet<string>; open: boolean; onOpen: (folderId: string | null) => void } | null;
+  summaries: {
+    folders: ReadonlySet<string>;
+    links: (key: string) => readonly RoomLink[];
+    open: boolean;
+    onOpen: (folderId: string | null) => void;
+  } | null;
   onOpenFolder: (folderId: string | null) => void;
   onOpenFile: (file: RoomFile) => void;
   /** Lets admins drag folders and files between folders, drop files in, and right-click to rename, move or delete. */
@@ -93,6 +100,9 @@ export function FolderTree({
     const walk = (parent: string | null, depth: number) => {
       if (summaries?.folders.has(summaryKey(parent))) {
         list.push({ kind: "summary", key: summaryRowKey(parent), depth, folderId: parent });
+        for (const link of summaries.links(summaryKey(parent))) {
+          list.push({ kind: "link", key: `link:${summaryKey(parent)}:${link.href}`, depth, folderId: parent, link });
+        }
       }
       for (const folder of index.childFolders.get(parent) ?? []) {
         list.push({
@@ -133,6 +143,7 @@ export function FolderTree({
   const activate = (row: Row) => {
     if (row.kind === "root") onOpenFolder(null);
     else if (row.kind === "summary") summaries?.onOpen(row.folderId);
+    else if (row.kind === "link") window.open(row.link.href, "_blank", "noopener");
     else if (row.kind === "folder") onOpenFolder(row.id);
     else onOpenFile(row.file);
   };
@@ -250,7 +261,15 @@ export function FolderTree({
       {rows.map((row, i) => {
         const open = row.kind === "folder" && expanded.has(row.id);
         const name =
-          row.kind === "root" ? rootName : row.kind === "summary" ? "Summary" : row.kind === "folder" ? row.name : row.file.name;
+          row.kind === "root"
+            ? rootName
+            : row.kind === "summary"
+              ? "Summary"
+              : row.kind === "link"
+                ? row.link.name
+                : row.kind === "folder"
+                  ? row.name
+                  : row.file.name;
         const current = row.key === currentKey;
         return (
           <div
@@ -288,6 +307,8 @@ export function FolderTree({
             )}
             {row.kind === "file" ? (
               <FileGlyph kind={fileKind(row.file.name)} className={styles.fileGlyph} />
+            ) : row.kind === "link" ? (
+              <FileGlyph kind="pptx" className={styles.fileGlyph} />
             ) : row.kind === "summary" ? (
               <Icon name="summary" className={styles.summaryGlyph} />
             ) : (

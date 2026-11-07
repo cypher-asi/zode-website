@@ -3,11 +3,15 @@ import type { LoadedSummary } from "./summary";
 import { SummaryView } from "./SummaryView";
 import { summaryKey } from "./tree";
 import type { RoomSite } from "./types";
-import type { RoomSummaries } from "./Viewer";
+import type { RoomLink, RoomSummaries } from "./Viewer";
+
+/** The live deck, so a room never holds a copy that falls behind it. */
+const DECK: RoomLink = { name: "Deck", href: "/deck" };
 
 /**
  * A room's summaries rendered for its browser, by the folder each sits in.
- * `mapSrc` serves a site's satellite preview where the portal's own route can't.
+ * A portfolio's is followed by the investor deck. `mapSrc` serves a site's
+ * satellite preview where the portal's own route can't.
  */
 export function renderSummaries(
   roomId: string,
@@ -28,6 +32,7 @@ export function renderSummaries(
               mapSrc={summary.site && mapSrc ? mapSrc(summary.site) : undefined}
             />
           ),
+        links: summary.layout === "portfolio" ? [DECK] : [],
       },
     ]),
   );
