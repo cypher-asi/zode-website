@@ -510,14 +510,15 @@ const investment = [
 const equity = [
   { label: "Pre-seed equity raised", values: preSeed },
   { label: "Third-party pref contributed", values: addUp(all.map((s) => s.thirdPartyIn)) },
-  { label: "Distributions to third-party pref and partners", values: addUp(all.map((s) => s.thirdPartyOut)).map((v) => -v) },
-  { label: "Distributions to TopCo shareholders", values: toShareholders },
 ];
+/** Not shown; they close the check against TopCo's cash. */
+const distributions = [addUp(all.map((s) => s.thirdPartyOut)).map((v) => -v), toShareholders];
 const totalRevenue = addUp(revenue.map((r) => r.values));
 const totalCosts = addUp(costs.map((r) => r.values));
 const ebitda = addUp([totalRevenue, totalCosts]);
 const toEquityHolders = addUp([ebitda, ...investment.map((r) => r.values)]);
-const netCash = addUp([toEquityHolders, ...equity.map((r) => r.values)]);
+const equityRaised = addUp(equity.map((r) => r.values));
+const netCash = addUp([toEquityHolders, equityRaised, ...distributions]);
 
 const spvsToEquity = addUp(all.map((s) => addUp(Object.values(s.lines))));
 years.forEach((year, t) => {
@@ -536,7 +537,7 @@ const statement = {
     { title: "Revenue", rows: [...moving(revenue), subtotal("Total revenue", totalRevenue)] },
     { title: "Operating costs", rows: [...moving(costs), subtotal("Total operating costs", totalCosts), subtotal("EBITDA", ebitda)] },
     { title: "Investment and financing", rows: [...moving(investment), subtotal("Cash flow to equity holders", toEquityHolders)] },
-    { title: "Equity", rows: [...moving(equity), subtotal("Change in TopCo cash", netCash)] },
+    { title: "Equity", rows: [...moving(equity), subtotal("Total equity raised", equityRaised)] },
   ],
 };
 
