@@ -1714,7 +1714,8 @@ a.measureTitle:focus-visible {
 /* The problem: its drawing, then its name over one figure. */
 .psProblem {
   display: grid;
-  grid-template-columns: calc(9 * var(--u)) minmax(0, 1fr);
+  grid-template-columns: calc(9 * var(--u)) minmax(0, max-content);
+  justify-content: center;
   align-items: center;
   gap: calc(2.4 * var(--u));
 }
@@ -1762,9 +1763,9 @@ a.measureTitle:focus-visible {
 
 /* ZODE's answer. */
 .psSolution {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: minmax(0, max-content);
+  place-content: center;
   gap: calc(0.7 * var(--u));
 }
 
@@ -5168,6 +5169,7 @@ a.measureTitle:focus-visible {
 }
 
 .slide[data-compact] .psSolution {
+  display: flex;
   flex-direction: row;
   align-items: baseline;
   justify-content: flex-start;
