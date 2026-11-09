@@ -340,6 +340,22 @@ const LINES = [
 const PHASES = ["site", "conversion", "gpu"];
 
 /**
+ * An SPV's critical IT in MW at each year end: a site company's capacity
+ * ready, or a colocated cluster's while it runs into the next year. Null for
+ * compute companies, whose clusters sit in their site company's.
+ */
+const criticalItOf = (sheet, yearRow, end) => {
+  const rows = sheet.between(yearRow, end);
+  const ready = rows.find((r) => sheet.label(r) === "MW ready by year end");
+  if (ready) return yearly(sheet, yearRow, ready);
+  const operating = rows.find((r) => sheet.label(r).startsWith("Share of year operating (all cases)"));
+  if (!operating) return null;
+  const mw = num(sheet.cell(sheet.rowOf("Critical IT (kW)"), "D"), "Critical IT (kW)") / 1000;
+  const share = yearly(sheet, yearRow, operating);
+  return share.map((s, t) => (s > 0 && (t === share.length - 1 || share[t + 1] > 0) ? mw : 0));
+};
+
+/**
  * An SPV's block of its tab, from the "Year" header above the "Equity needed"
  * row that matches its pref to the next header: its yearly lines, which add up
  * to its cash flow to equity every year, and its pref in and out.
@@ -368,6 +384,7 @@ const sectionOf = (spv) => {
       });
       const after = (label) => yearly(sheet, yearRow, sheet.rowOf(label, toEquity));
       return {
+        criticalIt: criticalItOf(sheet, yearRow, end),
         lines,
         needed: yearly(sheet, yearRow, r),
         thirdPartyIn: after("Pref contributions: third-party investors"),
@@ -486,6 +503,18 @@ const siteRentKept = addUp(
   }),
 );
 
+const criticalIt = addUp(
+  projectArgs.map((p) => {
+    const held = p.columns.map((name) => sections.get(name).criticalIt).filter(Boolean);
+    if (!held.length) fail(`${modelFile.name}: no tab gives --project ${p.name}'s critical IT year by year.`);
+    return addUp(held);
+  }),
+);
+// Facility power from critical IT at the workbook's one PUE.
+const pues = [...new Set(tabs.flatMap(({ sheet }) => sheet.between(0).filter((r) => sheet.label(r) === "PUE").map((r) => sheet.cell(r, "D"))))];
+if (pues.length !== 1 || typeof pues[0] !== "number") fail(`${modelFile.name}: expected one PUE across the tabs, found ${JSON.stringify(pues)}.`);
+const facility = criticalIt.map((mw) => mw * pues[0]);
+
 const revenue = [
   { label: "Compute revenue", values: line("compute") },
   { label: "Data center rent", values: addUp([line("rent"), siteRentKept.map((v) => -v)]) },
@@ -534,11 +563,14 @@ const statementRow = ({ label, values }, kind) => {
   return { label, values: shown, total: sumOf(shown), ...(kind ? { kind } : {}) };
 };
 const subtotal = (label, values) => statementRow({ label, values }, "subtotal");
+/** Capacity at each year end, which doesn't add up across years. */
+const capacityRow = (label, values) => ({ label, values: values.slice(0, SHOWN_YEARS), total: null, unit: "mw" });
 /** A group's lines, less any that never move. */
 const moving = (rows) => rows.filter((r) => r.values.slice(0, SHOWN_YEARS).some((v) => Math.abs(v) >= 0.5)).map((r) => statementRow(r));
 const statement = {
   years: years.slice(0, SHOWN_YEARS),
   groups: [
+    { title: "Capacity", rows: [capacityRow("Facility power", facility), capacityRow("Critical IT", criticalIt)] },
     { title: "Revenue", rows: [...moving(revenue), subtotal("Total revenue", totalRevenue)] },
     { title: "Operating costs", rows: [...moving(costs), subtotal("Total operating costs", totalCosts), subtotal("EBITDA", ebitda)] },
     { title: "Investment and financing", rows: [...moving(investment), subtotal("Cash flow to equity holders", toEquityHolders)] },

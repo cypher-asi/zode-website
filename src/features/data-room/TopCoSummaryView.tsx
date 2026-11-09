@@ -15,6 +15,7 @@ const irr = (n: number | null) => orNa(n, (v) => pct(v, 1));
 const returns = (rate: number | null, x: number | null) => `${irr(rate)} · ${orNa(x, (v) => multiple(v))}`;
 /** Yearly cash, with a dash where nothing moves. */
 const cash = (n: number) => (Math.abs(n) < 500 ? "–" : usdShort(n));
+const capacity = (n: number) => (n === 0 ? "–" : mw(n));
 const andList = (names: string[]) =>
   names.length < 3 ? names.join(" and ") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
 
@@ -236,7 +237,10 @@ export function TopCoSummaryView({ roomId, summary }: { roomId: string; summary:
           head={[...statement.years.map(String), "Total"]}
           groups={statement.groups.map((g) => ({
             title: g.title,
-            rows: g.rows.map((r) => ({ label: r.label, values: [...r.values.map(cash), cash(r.total)], kind: r.kind })),
+            rows: g.rows.map((r) => {
+              const format = r.unit === "mw" ? capacity : cash;
+              return { label: r.label, values: [...r.values.map(format), r.total === null ? "" : format(r.total)], kind: r.kind };
+            }),
           }))}
         />
       </Section>

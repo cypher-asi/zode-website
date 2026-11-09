@@ -68,12 +68,13 @@ export interface TopCoTotal {
   capital: TopCoCapital;
 }
 
-/** A row of the consolidated statement, in USD, inflows positive. */
+/** A row of the consolidated statement, in USD, inflows positive; or capacity in MW at each year end, with no total. */
 export interface TopCoStatementRow {
   label: string;
   values: number[];
-  total: number;
+  total: number | null;
   kind?: "subtotal";
+  unit?: "mw";
 }
 
 /**
