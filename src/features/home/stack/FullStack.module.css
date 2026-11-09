@@ -218,7 +218,7 @@
 }
 
 .figure[data-active] .layer:not([data-on]) .detail {
-  opacity: 0;
+  opacity: 0.2;
 }
 
 /* Drawing primitives (see StackArt.tsx). The face shades are artwork, matched to the shared line art. */
