@@ -463,16 +463,16 @@ export const SLIDES: readonly Slide[] = [
         icon: "rate",
         byMode: {
           offtake: { value: "$5.00", label: "Contracted price per GPU-hour, 5-year term" },
-          merchant: { value: "$6.50", label: "Merchant price per GPU-hour, at 100% utilization" },
-          inference: { value: "$16.90", label: "Inference net revenue per GPU-hour, B300 base case" },
+          merchant: { value: "$6.50", label: "Merchant price per GPU-hour, 100% utilized" },
+          inference: { value: "$16.90", label: "Inference net revenue per GPU-hour" },
         },
       },
       {
         icon: "profit",
         byMode: {
-          offtake: { value: "$26.3M", label: "Year 1 net profit, after depreciation and interest" },
-          merchant: { value: "$37.8M", label: "Year 1 net profit, after depreciation and interest" },
-          inference: { value: "$209.3M", label: "Year 1 net profit, after depreciation and interest" },
+          offtake: { value: "$26.3M", label: "Year 1 net profit, after all costs" },
+          merchant: { value: "$37.8M", label: "Year 1 net profit, after all costs" },
+          inference: { value: "$209.3M", label: "Year 1 net profit, after all costs" },
         },
       },
       {

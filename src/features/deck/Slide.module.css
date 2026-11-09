@@ -1943,13 +1943,14 @@ a.measureTitle:focus-visible {
   align-self: center;
   width: var(--text-w);
   margin-left: calc((50% - var(--art) / 2 - var(--text-w)) / 2);
-  font-size: calc(1.15 * var(--u));
-  line-height: 1.55;
+  font-size: calc(1 * var(--u));
+  line-height: 1.5;
   color: var(--fg-2);
 }
 
 .lede > p {
   margin: 0;
+  text-wrap: pretty;
 }
 
 /*
@@ -2266,9 +2267,15 @@ a.measureTitle:focus-visible {
   font-variant-numeric: tabular-nums;
 }
 
+/* Two lines held and no more, so a figure stays put as the toggle changes its label. */
 .unitText .statLabel {
+  display: -webkit-box;
+  min-height: 3em;
+  overflow: hidden;
   font-size: calc(0.6 * var(--u));
   text-wrap: balance;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 /* The pipeline's sites, joined by hairlines as the unit cards, one to a row. */
