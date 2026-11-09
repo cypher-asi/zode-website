@@ -173,8 +173,8 @@ export type Slide =
       }[];
       total: string;
       capacity: readonly Stat[];
-      /** Capacity online by year; each step is ten times the last, so it's drawn on a log scale. */
-      plan: readonly { year: string; value: string }[];
+      /** Capacity online by year, drawn on a log scale from `mw`; a row without it is the end of the scale. */
+      plan: readonly { year: string; value: string; mw?: number }[];
       /** A statement under the plan, each entry on its own line; its dollar figures are set in the foreground. */
       planNote: readonly string[];
       /** Where the statement's figures come from, in small type under it. */
@@ -301,7 +301,7 @@ export const SLIDES: readonly Slide[] = [
     kind: "cover",
     section: "Cover",
     eyebrow: "Investor presentation · Q4 2026",
-    title: "The Sovereign Intelligence Network",
+    title: "The industrialization of intelligence.",
     lede: "ZODE manufactures rapidly deployable data centers and sells the compute.",
     meta: "ZODE Inc.",
     image: "/images/future-home/zode-hero.jpg",
@@ -378,7 +378,7 @@ export const SLIDES: readonly Slide[] = [
         },
         solution: {
           title: "Small, quiet and beautiful.",
-          body: "4 MW in existing buildings, owned by the communities that host them. No evaporative water, no gas plant.",
+          body: "1 MW pods in existing buildings, owned by the communities that host them. No evaporative water, no gas plant.",
         },
       },
       {
@@ -668,14 +668,19 @@ export const SLIDES: readonly Slide[] = [
       { value: "1 GW+", label: "In active negotiations" },
     ],
     plan: [
-      { year: "2026", value: "100 MW" },
-      { year: "2027", value: "1 GW" },
-      { year: "2028", value: "10 GW" },
-      { year: "2029", value: "100 GW" },
+      { year: "2026", value: "1 MW", mw: 1 },
+      { year: "2027", value: "100 MW", mw: 100 },
+      { year: "2028", value: "1 GW", mw: 1_000 },
+      { year: "2029", value: "10 GW", mw: 10_000 },
       { year: "2030", value: "Singularity" },
     ],
-    planNote: ["Every MW is worth $22.4M in annual revenue", "and $50–75M in enterprise value (2.2–3.3× revenue)."],
-    planBasis: "Enterprise value per MW as CoreWeave, Nebius and IREN traded on October 13, 2026.",
+    planNote: [
+      "Every MW earns $22.4M a year on contract,",
+      "$29.2–75.8M sold as merchant compute or inference,",
+      "and is valued at $50–75M by public comparables.",
+    ],
+    planBasis:
+      "Annual revenue per MW of IT load, from the unit economics: $5.00 contracted, $6.50 merchant and $16.90 inference per GPU-hour. Enterprise value per MW as CoreWeave, Nebius and IREN traded on October 13, 2026.",
     sources: ["evPerMw"],
   },
   {

@@ -8,9 +8,8 @@ import { AS_OF } from "./research";
  * exemption, issuer or jurisdictions needs counsel to revisit this text.
  */
 
-/** Set in fine print on the cover. */
-export const LEGAL_LEGEND =
-  "For accredited investors only. This presentation is not an offer to sell or a solicitation of an offer to buy securities. Any offer will be made only through definitive offering documents, to accredited investors verified under Rule 506(c) of Regulation D and, in Canada, under NI 45-106. The securities are not registered and have not been approved by the SEC or any state or Canadian regulator.";
+/** Set in fine print on the cover, one line over the toggle that opens `DISCLAIMER`, which says it in full. */
+export const LEGAL_LEGEND = "For accredited investors only. Not an offer to sell securities.";
 
 /** Under the raise's terms, for readers who land on that slide by a shared link. */
 export const RAISE_NOTE =
