@@ -54,6 +54,7 @@ import {
   SLIDES,
   type ContractSide,
   type Logo,
+  type SaleModeId,
   type Slide,
   type Stat,
 } from "./slides";
@@ -1235,8 +1236,9 @@ function Timeline({
 /**
  * The cluster, two halves split by a page-grid rule as the problems slide:
  * its figures as mini-cards on the left, each an isometric icon in a square
- * cell ruled off from its value and label, the contract's revenue set on
- * ink; on the right the cluster builder's render of it, with the builder and
+ * cell ruled off from its value and label, the revenue set on ink, under a
+ * toggle that switches the price figures between the ways the output is
+ * sold; on the right the cluster builder's render of it, with the builder and
  * the compute model a new tab away. The render loads once the slide is `near`,
  * as a lazy image in a parked slide never comes into view to load.
  */
@@ -1249,29 +1251,51 @@ function Unit({
   playing: boolean;
   near: boolean;
 }): ReactElement {
+  const [mode, setMode] = useState<SaleModeId>(slide.modes[0].id);
   return (
     <div className={styles.unit}>
-      <ul className={styles.unitCards}>
-        {slide.specs.map((spec, i) => {
-          const ink = i === slide.highlight;
-          return (
-            <li
-              key={spec.label}
-              {...rise(2 + i * 0.4)}
-              className={`${styles.rise} ${styles.unitCard}`}
-              data-ink={ink || undefined}
+      <div className={styles.unitSide}>
+        <div
+          {...rise(2)}
+          className={`${styles.rise} ${styles.modes}`}
+          role="group"
+          aria-label="Figures by how the compute is sold"
+        >
+          {slide.modes.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              className={styles.mode}
+              aria-pressed={m.id === mode}
+              onClick={() => setMode(m.id)}
             >
-              <div className={styles.unitFigure}>
-                <UnitIcon id={spec.icon} light={!ink} playing={playing} />
-              </div>
-              <div className={styles.unitText}>
-                <span className={styles.unitValue}>{spec.value}</span>
-                <span className={styles.statLabel}>{spec.label}</span>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+              {m.label}
+            </button>
+          ))}
+        </div>
+        <ul className={styles.unitCards}>
+          {slide.specs.map((spec, i) => {
+            const ink = i === slide.highlight;
+            const stat = "byMode" in spec ? spec.byMode[mode] : spec;
+            return (
+              <li
+                key={spec.icon}
+                {...rise(2 + i * 0.4)}
+                className={`${styles.rise} ${styles.unitCard}`}
+                data-ink={ink || undefined}
+              >
+                <div className={styles.unitFigure}>
+                  <UnitIcon id={spec.icon} light={!ink} playing={playing} />
+                </div>
+                <div className={styles.unitText}>
+                  <span className={styles.unitValue}>{stat.value}</span>
+                  <span className={styles.statLabel}>{stat.label}</span>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
       <figure {...rise(3)} className={`${styles.rise} ${styles.render}`}>
         <div className={styles.renderImage} data-media>
           <Image
@@ -1481,9 +1505,9 @@ function Traction({ slide }: { slide: Of<"traction"> }): ReactElement {
 }
 
 /**
- * The sites as mini-cards down the left, as the unit slide's: a line map of
- * each city filling a square cell, ruled off from its name, path, status and
- * IT MW, the total under them. On the right the capacity contracted beyond
+ * The sites as mini-cards down the left, as the unit slide's, grouped under
+ * how soon they close: a line map of each city filling a square cell, ruled
+ * off from its name, path, status and IT MW, the total under them. On the right the capacity contracted beyond
  * them, then the plan by year, its bars on a log scale so each tenfold year
  * adds one step; the last year is set on ink.
  */
@@ -1495,29 +1519,45 @@ function Pipeline({ slide }: { slide: Of<"pipeline"> }): ReactElement {
   return (
     <div className={styles.split} data-split="sites">
       <div className={styles.sites}>
-        <ul className={styles.siteCards}>
-          {slide.sites.map((site, i) => (
-            <li
-              key={`${site.map}-${site.mw}`}
-              {...rise(2 + i * 0.4)}
-              className={`${styles.rise} ${styles.siteCard}`}
-            >
-              <div className={styles.siteMap}>
-                <SiteMap id={site.map} />
-              </div>
-              <div className={styles.siteText}>
-                <span className={styles.siteName}>{site.site}</span>
-                <span className={styles.statLabel}>
-                  {site.path} · {site.status}
-                </span>
-              </div>
-              <span className={styles.siteMw}>
-                {site.mw}
-                <span className={styles.siteUnit}> MW</span>
-              </span>
-            </li>
-          ))}
-        </ul>
+        {slide.groups.map((group, g) => {
+          const before = slide.groups
+            .slice(0, g)
+            .reduce((n, prev) => n + prev.sites.length, 0);
+          return (
+            <section key={group.label} className={styles.siteGroup}>
+              <h3
+                {...rise(2 + before * 0.4)}
+                className={`${styles.rise} ${styles.siteGroupHead}`}
+              >
+                {group.label}
+                <span>{group.mw} MW</span>
+              </h3>
+              <ul className={styles.siteCards}>
+                {group.sites.map((site, i) => (
+                  <li
+                    key={`${site.map}-${site.mw}`}
+                    {...rise(2 + (before + i) * 0.4)}
+                    className={`${styles.rise} ${styles.siteCard}`}
+                  >
+                    <div className={styles.siteMap}>
+                      <SiteMap id={site.map} />
+                    </div>
+                    <div className={styles.siteText}>
+                      <span className={styles.siteName}>{site.site}</span>
+                      <span className={styles.statLabel}>
+                        {site.path} · {site.status}
+                      </span>
+                    </div>
+                    <span className={styles.siteMw}>
+                      {site.mw}
+                      <span className={styles.siteUnit}> MW</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })}
         <p {...rise(4.5)} className={`${styles.rise} ${styles.siteFoot}`}>
           <span className={styles.siteTotal}>
             Total <span>{slide.total} IT MW</span>

@@ -78,6 +78,9 @@ export interface ContractSide {
   readonly rows: readonly { label: string; value: string }[];
 }
 
+/** How a cluster's output is sold; the unit slide switches its price figures between them. */
+export type SaleModeId = "offtake" | "merchant" | "inference";
+
 /** A project's capital comes in up to three deals, each its own financing. */
 export type DealId = "compute" | "realEstate" | "gpu";
 
@@ -138,8 +141,10 @@ export type Slide =
     })
   | (Base & {
       kind: "unit";
-      /** The `highlight` card is set on ink, to stand out. */
-      specs: readonly (Stat & { icon: UnitIconId })[];
+      /** A toggle over the cards switches between these, the first shown first. */
+      modes: readonly { id: SaleModeId; label: string }[];
+      /** The `highlight` card is set on ink, to stand out. A figure that turns on the price gives one per mode. */
+      specs: readonly ({ icon: UnitIconId } & (Stat | { byMode: Record<SaleModeId, Stat> }))[];
       highlight: number;
       image: string;
       /** Open in a new tab, under the image. */
@@ -160,8 +165,12 @@ export type Slide =
     })
   | (Base & {
       kind: "pipeline";
-      /** One mini-card per site, led by a line map of its city (art/SiteMap.tsx). */
-      sites: readonly { site: string; map: SiteMapId; path: string; mw: string; status: string }[];
+      /** The sites by how close they are to closing, each under its label: one mini-card per site, led by a line map of its city (art/SiteMap.tsx). */
+      groups: readonly {
+        label: string;
+        mw: string;
+        sites: readonly { site: string; map: SiteMapId; path: string; mw: string; status: string }[];
+      }[];
       total: string;
       capacity: readonly Stat[];
       /** Capacity online by year; each step is ten times the last, so it's drawn on a log scale. */
@@ -450,9 +459,35 @@ export const SLIDES: readonly Slide[] = [
       { value: "4 MW", label: "Critical IT load, direct liquid cooling", icon: "power" },
       { value: "800G", label: "Quantum-X800 InfiniBand fabric", icon: "fabric" },
       { value: "2 PB", label: "High-performance storage", icon: "storage" },
-      { value: "$5.00", label: "Contracted price per GPU-hour, 5-year term", icon: "rate" },
-      { value: "$26.3M", label: "Year 1 net profit, after depreciation and interest", icon: "profit" },
-      { value: "$89.7M", label: "Annual contracted revenue at $5/GPU-hr", icon: "revenue" },
+      {
+        icon: "rate",
+        byMode: {
+          offtake: { value: "$5.00", label: "Contracted price per GPU-hour, 5-year term" },
+          merchant: { value: "$6.50", label: "Merchant price per GPU-hour, at 100% utilization" },
+          inference: { value: "$16.90", label: "Inference net revenue per GPU-hour, B300 base case" },
+        },
+      },
+      {
+        icon: "profit",
+        byMode: {
+          offtake: { value: "$26.3M", label: "Year 1 net profit, after depreciation and interest" },
+          merchant: { value: "$37.8M", label: "Year 1 net profit, after depreciation and interest" },
+          inference: { value: "$209.3M", label: "Year 1 net profit, after depreciation and interest" },
+        },
+      },
+      {
+        icon: "revenue",
+        byMode: {
+          offtake: { value: "$89.7M", label: "Annual contracted revenue at $5/GPU-hr" },
+          merchant: { value: "$116.6M", label: "Annual merchant revenue at $6.50/GPU-hr" },
+          inference: { value: "$303.2M", label: "Annual inference revenue at $16.90/GPU-hr" },
+        },
+      },
+    ],
+    modes: [
+      { id: "offtake", label: "Offtake" },
+      { id: "merchant", label: "Merchant" },
+      { id: "inference", label: "Inference" },
     ],
     highlight: 7,
     image: "/images/deck/cluster-2048.png",
@@ -527,13 +562,14 @@ export const SLIDES: readonly Slide[] = [
             years: "2020–Present",
             role: "Co-founder, CEO & Executive Chairman",
             description: "Persistent simulation with Samsung, NVIDIA and Epic Games.",
-            outcome: "$4 billion peak EV",
+            outcome: "$4 billion+ EV",
           },
           {
-            company: "Factory ZERO",
+            company: "F0",
             years: "2011–2020",
             role: "Co-founder & CEO",
             description: "Venture studio for Apple, Nike, Google and the Fortune 100.",
+            outcome: "Converted to HF0",
           },
           {
             company: "Curve Dental",
@@ -541,7 +577,7 @@ export const SLIDES: readonly Slide[] = [
             years: "2004–2011",
             role: "Founder & CEO",
             description: "The #1 cloud-based dental EMR system.",
-            outcome: "$1 billion current EV",
+            outcome: "$1 billion+ EV",
           },
         ],
       },
@@ -607,12 +643,24 @@ export const SLIDES: readonly Slide[] = [
     eyebrow: "Pipeline",
     title: "66.8 MW ready to close.",
     ground: "paper",
-    sites: [
-      { site: "Illinois", map: "chicago", path: "Lease", mw: "24.0", status: "Contracted" },
-      { site: "Alberta", map: "calgary", path: "Purchase", mw: "22.0", status: "LOI, lead position" },
-      { site: "Alberta", map: "calgary", path: "Purchase", mw: "13.0", status: "In diligence" },
-      { site: "Ontario", map: "milton", path: "Joint venture", mw: "6.6", status: "In diligence" },
-      { site: "Ontario", map: "mississauga", path: "Colocation", mw: "1.2", status: "In diligence" },
+    groups: [
+      {
+        label: "Imminent",
+        mw: "36.2",
+        sites: [
+          { site: "Mississauga", map: "mississauga", path: "Colocation", mw: "1.2", status: "In diligence" },
+          { site: "Calgary", map: "calgary", path: "Purchase", mw: "22.0", status: "LOI, lead position" },
+          { site: "Calgary", map: "calgary", path: "Purchase", mw: "13.0", status: "In diligence" },
+        ],
+      },
+      {
+        label: "Soon",
+        mw: "30.6",
+        sites: [
+          { site: "Illinois", map: "chicago", path: "Lease", mw: "24.0", status: "Contracted" },
+          { site: "Ontario", map: "milton", path: "Joint venture", mw: "6.6", status: "In diligence" },
+        ],
+      },
     ],
     total: "66.8",
     capacity: [
