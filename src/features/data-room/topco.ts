@@ -123,6 +123,8 @@ export interface TopCoModel {
     budgetYears: number;
     /** The model's last year, through which distributions count. */
     through: number;
+    /** TopCo's pref, common and fees through the statement's last year. */
+    cashToTopcoBy: { year: number; amount: number };
   };
   statement: TopCoStatement;
   team: TopCoHire[];

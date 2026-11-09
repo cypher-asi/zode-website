@@ -488,6 +488,12 @@ const feeIncome = addUp(
     .filter((r) => topco.label(r).endsWith(": fees"))
     .map((r) => yearly(topco, topcoYearRow, r)),
 );
+const toTopco = addUp(
+  topco.between(topco.rowOf("SPV cash flows", topcoYearRow), topco.rowOf("Net cash from SPVs", topcoYearRow))
+    .filter((r) => /: (pref distributions|common \(sponsor\) distributions|fees)$/.test(topco.label(r)))
+    .map((r) => yearly(topco, topcoYearRow, r)),
+);
+if (!close(sumOf(toTopco), total.cashToTopco)) fail(`${modelFile.name}: TopCo's yearly pref, common and fees add up to ${sumOf(toTopco)}, not the Summary's ${total.cashToTopco}.`);
 const preSeed = yearly(topco, topcoYearRow, topco.rowOf("Pre-seed equity raised", topcoCash));
 const toShareholders = yearly(topco, topcoYearRow, topco.rowOf("Distributions to TopCo shareholders", topcoCash)).map((v) => -v);
 const cashChange = addUp([yearly(topco, topcoYearRow, topco.rowOf("Closing cash", topcoCash)), yearly(topco, topcoYearRow, topco.rowOf("Opening cash", topcoCash)).map((v) => -v)]);
@@ -610,6 +616,7 @@ const topcoModel = {
     lowestCash: at(summary, "Lowest TopCo cash"),
     budgetYears: at(summary, "Years of TopCo costs covered"),
     through: years.at(-1),
+    cashToTopcoBy: { year: statement.years.at(-1), amount: sumOf(toTopco.slice(0, SHOWN_YEARS)) },
   },
   statement,
   team,

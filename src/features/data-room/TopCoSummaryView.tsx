@@ -176,7 +176,7 @@ export function TopCoSummaryView({ roomId, summary }: { roomId: string; summary:
     { label: `Pre-seed IRR · multiple, to ${m.returns.through}`, value: returns(m.returns.preSeedIrr, m.returns.preSeedMultiple) },
     { label: `Critical IT, ${plural(m.projects.length, "project", "projects")}`, value: mw(total.criticalItMw) },
     { label: `Project cost to ${m.returns.through}`, value: usdShort(total.projectCost) },
-    { label: `Cash to TopCo to ${m.returns.through}`, value: usdShort(total.cashToTopco) },
+    { label: `Cash to TopCo to ${m.returns.cashToTopcoBy.year}`, value: usdShort(m.returns.cashToTopcoBy.amount) },
     { label: "Lowest TopCo cash", value: usdShort(m.returns.lowestCash) },
   ];
 
