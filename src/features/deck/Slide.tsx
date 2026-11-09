@@ -1507,7 +1507,7 @@ function Traction({ slide }: { slide: Of<"traction"> }): ReactElement {
 /**
  * The sites as mini-cards down the left, as the unit slide's, grouped under
  * how soon they close: a line map of each city filling a square cell, ruled
- * off from its name, path, status and IT MW, the total under them. On the right the capacity contracted beyond
+ * off from its name, path, status and facility MW, the total under them. On the right the capacity contracted beyond
  * them, then the plan by year, its bars on a log scale so each tenfold year
  * adds one step; the last year is set on ink.
  */
@@ -1560,7 +1560,7 @@ function Pipeline({ slide }: { slide: Of<"pipeline"> }): ReactElement {
         })}
         <p {...rise(4.5)} className={`${styles.rise} ${styles.siteFoot}`}>
           <span className={styles.siteTotal}>
-            Total <span>{slide.total} IT MW</span>
+            Total <span>{slide.total} facility MW</span>
           </span>
         </p>
       </div>

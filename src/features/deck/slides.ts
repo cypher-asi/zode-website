@@ -641,7 +641,7 @@ export const SLIDES: readonly Slide[] = [
     kind: "pipeline",
     section: "Pipeline",
     eyebrow: "Pipeline",
-    title: "66.8 MW ready to close.",
+    title: "72.8 MW ready to close.",
     ground: "paper",
     groups: [
       {
@@ -649,20 +649,20 @@ export const SLIDES: readonly Slide[] = [
         mw: "36.2",
         sites: [
           { site: "Mississauga", map: "mississauga", path: "Colocation", mw: "1.2", status: "In diligence" },
-          { site: "Calgary", map: "calgary", path: "Purchase", mw: "22.0", status: "LOI, lead position" },
-          { site: "Calgary", map: "calgary", path: "Purchase", mw: "13.0", status: "In diligence" },
+          { site: "Calgary", map: "calgary", path: "Purchase", mw: "22.0", status: "LOI" },
+          { site: "Calgary", map: "calgary", path: "Purchase", mw: "13.0", status: "LOI" },
         ],
       },
       {
         label: "Soon",
-        mw: "30.6",
+        mw: "36.6",
         sites: [
-          { site: "Illinois", map: "chicago", path: "Lease", mw: "24.0", status: "Contracted" },
+          { site: "Illinois", map: "chicago", path: "Lease", mw: "30.0", status: "Contracted" },
           { site: "Ontario", map: "milton", path: "Joint venture", mw: "6.6", status: "In diligence" },
         ],
       },
     ],
-    total: "66.8",
+    total: "72.8",
     capacity: [
       { value: "~925 MW", label: "Under LOI" },
       { value: "1 GW+", label: "In active negotiations" },
