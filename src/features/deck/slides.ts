@@ -705,7 +705,7 @@ export const SLIDES: readonly Slide[] = [
       {
         label: "Site size",
         them: { value: "100 MW–1 GW+", label: "One campus, over the statewide pause thresholds" },
-        us: { value: "4 MW", label: "Under New York's 50 MW and Texas's 75 MW" },
+        us: { value: "1–50 MW", label: "Up to New York's 50 MW, under Texas's 75 MW" },
       },
       {
         label: "Cost per MW",
