@@ -529,7 +529,7 @@ const investment = [
   { label: "Interest", values: line("interest") },
   { label: "Site acquisition", values: line("site") },
   { label: "Conversion", values: line("conversion") },
-  { label: "GPUs and colocation setup", values: line("gpu") },
+  { label: "GPUs", values: line("gpu") },
   { label: "Asset sales", values: line("sales") },
   { label: "GPU value at end of model, not cash", values: line("gpuValue") },
   { label: "Customer prepayments, net", values: line("prepayments") },
