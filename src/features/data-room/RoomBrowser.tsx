@@ -729,18 +729,22 @@ export function RoomBrowser({
   /** Out of what's open to its folder, or up a folder; nowhere at the top level. */
   const backTo = open ? open.folderId : folderId ? (index.folders.get(folderId)?.parentId ?? null) : undefined;
   const backName = backTo ? (index.folders.get(backTo)?.name ?? rootName) : rootName;
-  const back = (
-    <button
-      type="button"
-      className={`${styles.tool} ${styles.back}`}
-      onClick={open ? open.onClose : () => onOpenFolder(backTo ?? null)}
-      disabled={backTo === undefined}
-      aria-label={`Back to ${backName}`}
-      title={`Back to ${backName}`}
-    >
-      <Icon name="back" />
-    </button>
-  );
+  const back =
+    backTo === undefined ? (
+      <button type="button" className={`${styles.tool} ${styles.back}`} disabled aria-label="At the top level">
+        <span aria-hidden="true">/</span>
+      </button>
+    ) : (
+      <button
+        type="button"
+        className={`${styles.tool} ${styles.back}`}
+        onClick={open ? open.onClose : () => onOpenFolder(backTo)}
+        aria-label={`Back to ${backName}`}
+        title={`Back to ${backName}`}
+      >
+        <Icon name="back" />
+      </button>
+    );
 
   const glyphThumb = showsThumb(view) ? thumbUrl : null;
   const empty = searching

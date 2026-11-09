@@ -404,25 +404,28 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summaries, childr
     <div className={styles.app} data-tab={onFiles ? undefined : "page"}>
       {docked ? (
         <SidebarDock>
-          <FolderTree
-            index={index}
-            rootName={rootName}
-            folderId={openFile?.folderId && index.folders.has(openFile.folderId) ? openFile.folderId : folderId}
-            openFileId={onFiles ? (openFile?.id ?? null) : null}
-            summaries={
-              summaryFolders.size
-                ? {
-                    folders: summaryFolders,
-                    links: (key) => summaries[key]?.links ?? [],
-                    open: onFiles && summaryOpen,
-                    onOpen: (id) => go({ folderId: id, fileId: null, summary: true }),
-                  }
-                : null
-            }
-            onOpenFolder={openFolder}
-            onOpenFile={open}
-            admin={isAdmin ? { onAction: runAction, onDropFiles: startUpload, onMove: move } : undefined}
-          />
+          <div className={styles.explorer}>
+            <FolderTree
+              index={index}
+              rootName={rootName}
+              folderId={openFile?.folderId && index.folders.has(openFile.folderId) ? openFile.folderId : folderId}
+              openFileId={onFiles ? (openFile?.id ?? null) : null}
+              summaries={
+                summaryFolders.size
+                  ? {
+                      folders: summaryFolders,
+                      links: (key) => summaries[key]?.links ?? [],
+                      open: onFiles && summaryOpen,
+                      onOpen: (id) => go({ folderId: id, fileId: null, summary: true }),
+                    }
+                  : null
+              }
+              onOpenFolder={openFolder}
+              onOpenFile={open}
+              admin={isAdmin ? { onAction: runAction, onDropFiles: startUpload, onMove: move } : undefined}
+            />
+            <p className={styles.total}>{rootCrumb}</p>
+          </div>
         </SidebarDock>
       ) : null}
       <Activity mode={onFiles ? "visible" : "hidden"}>
@@ -431,7 +434,7 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summaries, childr
             tree={tree}
             index={index}
             rootName={rootName}
-            rootCrumb={rootCrumb}
+            rootCrumb={docked ? null : rootCrumb}
             titleAs="h2"
             folderId={folderId}
             query={query}

@@ -88,7 +88,7 @@
   stroke-linejoin: round;
 }
 
-/* Up a level, before the trail; kept in place but unseen at the top level, so the trail doesn't shift. */
+/* Up a level, before the trail; at the top level it holds its place as a "/", so the trail doesn't shift. */
 .back {
   flex: none;
   justify-content: center;
@@ -97,7 +97,8 @@
 }
 
 .back:disabled {
-  visibility: hidden;
+  color: var(--color-text-tertiary);
+  opacity: 1;
 }
 
 .progress {
