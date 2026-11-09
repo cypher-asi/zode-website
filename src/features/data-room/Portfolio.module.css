@@ -77,6 +77,20 @@
   font-weight: 500;
 }
 
+/* A value given layer by layer, such as a site company's and its compute companies'. */
+.layer {
+  display: block;
+}
+
+.layer + .layer {
+  margin-top: 4px;
+}
+
+.layerName {
+  font-weight: 400;
+  color: var(--color-text-tertiary);
+}
+
 .table a {
   color: inherit;
   text-decoration-color: var(--color-border-strong);

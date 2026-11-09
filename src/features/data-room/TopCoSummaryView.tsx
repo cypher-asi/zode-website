@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import Link from "next/link";
 import { multiple, pct, usdShort } from "@/features/compute-model/format";
 import { Icon } from "./icons";
@@ -18,9 +18,21 @@ const cash = (n: number) => (Math.abs(n) < 500 ? "–" : usdShort(n));
 const andList = (names: string[]) =>
   names.length < 3 ? names.join(" and ") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
 
+const TENURE: Record<TopCoProject["tenure"], string> = { own: "Own", lease: "Lease" };
+
+/** A rate for each of a project's SPVs, each beside its layer's name where there are several. */
+function byLayer<T extends { layer: string }>(values: T[], format: (v: T) => string): ReactNode {
+  if (values.length === 1) return format(values[0]);
+  return values.map((v) => (
+    <span key={v.layer} className={p.layer}>
+      {format(v)} <span className={p.layerName}>{v.layer}</span>
+    </span>
+  ));
+}
+
 interface ProjectRow {
   label: string;
-  value: (m: TopCoProject) => string;
+  value: (m: TopCoProject) => ReactNode;
   /** The Total column's value; blank where the workbook adds nothing up. */
   total?: (t: TopCoTotal) => string;
 }
@@ -40,15 +52,15 @@ const projectGroups: { title: string; rows: ProjectRow[] }[] = [
   {
     title: "Returns",
     rows: [
-      { label: "Project IRR, unlevered", value: (m) => irr(m.projectIrr) },
-      { label: "Preferred investors, IRR · multiple", value: (m) => returns(m.prefIrr, m.prefMultiple) },
+      { label: "Project IRR, unlevered", value: (m) => byLayer(m.projectIrr, (v) => irr(v.value)) },
+      { label: "Preferred investors, IRR · multiple", value: (m) => byLayer(m.pref, (v) => returns(v.irr, v.multiple)) },
       { label: "Cash to ZODE TopCo: pref, common and fees", value: (m) => usdShort(m.cashToTopco), total: (t) => usdShort(t.cashToTopco) },
       { label: "ZODE TopCo, IRR · multiple", value: (m) => returns(m.topcoIrr, m.topcoMultiple) },
     ],
   },
 ];
 
-/** The SPVs side by side with their total, each opening its project's folder and the summary there. */
+/** The projects side by side with their total, each opening its folder and the summary there. */
 function ProjectsTable({ roomId, m, summaries }: { roomId: string; m: TopCoModel; summaries: Set<string> }): ReactElement {
   return (
     <div className={p.scroll}>
@@ -67,7 +79,7 @@ function ProjectsTable({ roomId, m, summaries }: { roomId: string; m: TopCoModel
                     s.name
                   )}
                 </span>
-                <span className={p.siteAddress}>{s.structure}</span>
+                <span className={p.siteAddress}>{TENURE[s.tenure]}</span>
                 {s.folderId && summaries.has(s.folderId) ? (
                   <span className={p.siteLink}>
                     <FolderLink roomId={roomId} folderId={s.folderId} summary>
@@ -79,7 +91,7 @@ function ProjectsTable({ roomId, m, summaries }: { roomId: string; m: TopCoModel
             ))}
             <th scope="col" className={p.siteHead}>
               <span className={p.siteName}>Total</span>
-              <span className={p.siteAddress}>{plural(m.projects.length, "SPV", "SPVs")}</span>
+              <span className={p.siteAddress}>{plural(m.projects.length, "project", "projects")}</span>
             </th>
           </tr>
         </thead>
@@ -133,7 +145,7 @@ export function TopCoSummaryView({ roomId, summary }: { roomId: string; summary:
     { label: `Pre-money, ${usdShort(raise.postMoney, 0)} post`, value: usdShort(raise.preMoney, 0) },
     { label: "Pre-seed ownership", value: pct(raise.ownership, 1) },
     { label: `Pre-seed IRR · multiple, to ${m.returns.through}`, value: returns(m.returns.preSeedIrr, m.returns.preSeedMultiple) },
-    { label: `Critical IT, ${plural(m.projects.length, "SPV", "SPVs")}`, value: mw(total.criticalItMw) },
+    { label: `Critical IT, ${plural(m.projects.length, "project", "projects")}`, value: mw(total.criticalItMw) },
     { label: `Project cost to ${m.returns.through}`, value: usdShort(total.projectCost) },
     { label: `Cash to TopCo to ${m.returns.through}`, value: usdShort(total.cashToTopco) },
     { label: "Lowest TopCo cash", value: usdShort(m.returns.lowestCash) },

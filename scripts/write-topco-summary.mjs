@@ -4,17 +4,22 @@
  *
  *   node --env-file=.env.production.local scripts/write-topco-summary.mjs \
  *     --room <room id> --model "01 PRE-SEED/ZODE_TopCo_Model_26.11.09.xlsx" \
- *     --project "Retro 1 site=02 PROJECT DEAL" --project "Retro 1 compute=02 PROJECT DEAL" \
- *     --project "Toronto=02 ZODE TORONTO" --project "BigWatt=04 ZODE BIG WATT" \
+ *     --project "Toronto=Toronto:02 ZODE TORONTO" \
+ *     --project "Calgary=Retro 1 site+Retro 1 compute:03 ZODE CALGARY" \
+ *     --project "BigWatt=BigWatt:04 ZODE BIG WATT" \
  *     [--as n3o@zero.tech] [--out topco.json] [--dry-run]
  *
  * The workbook is a ZODE TopCo model: Summary, TopCo, then one tab per project
  * SPV. Its cached values are read by their row labels in column B, so rows can
  * move between versions; a label that's missing fails the run rather than
- * writing a gap. `--project <column>=<folder path>` names the Summary tab's
- * SPV column a project folder holds, so the summary links to it and to the
+ * writing a gap. `--project <name>=<SPV column>[+<SPV column>...][:<folder path>]`
+ * names a project, in display order, by the Summary tab's SPV columns it
+ * holds and the folder it sits in, so the summary links to it and to the
  * project's own summary there (scripts/write-portfolio-summary.mjs --folder).
- * `--out` also saves what was read from the workbook, to check it by eye.
+ * Every SPV column belongs to one project. A project of several SPVs adds up
+ * their amounts and takes TopCo's IRR from their yearly cash to TopCo
+ * together; its other rates stay by SPV. `--out` also saves what was read
+ * from the workbook, to check it by eye.
  */
 import { writeFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
@@ -45,10 +50,15 @@ if (!databaseUrl) fail("DATABASE_URL is not set.");
 if (!process.env.BLOB_READ_WRITE_TOKEN) fail("BLOB_READ_WRITE_TOKEN is not set.");
 
 const projectArgs = args.project.map((arg) => {
-  const match = /^([^=]+)=(.+)$/.exec(arg);
-  if (!match) fail(`--project "${arg}": expected <column>=<folder path>.`);
-  return { column: match[1].trim(), folderPath: match[2].trim().replace(/^\/+|\/+$/g, "") };
+  const match = /^([^=]+)=([^:]+)(?::(.+))?$/.exec(arg);
+  if (!match) fail(`--project "${arg}": expected <name>=<SPV column>[+<SPV column>...][:<folder path>].`);
+  return {
+    name: match[1].trim(),
+    columns: match[2].split("+").map((c) => c.trim()),
+    folderPath: match[3]?.trim().replace(/^\/+|\/+$/g, "") || null,
+  };
 });
+if (!projectArgs.length) fail("--project is required, once per project.");
 
 const sql = neon(databaseUrl);
 const [room] = await sql`select id, name from data_rooms where id = ${args.room}`;
@@ -81,7 +91,9 @@ const fileByPath = new Map(
 const modelPath = args.model.replace(/^\/+/, "");
 const modelFile = fileByPath.get(modelPath);
 if (!modelFile) fail(`No file "${modelPath}" in "${room.name}".`);
-for (const p of projectArgs) if (!folderByPath.has(p.folderPath)) fail(`--project ${p.column}: no folder "${p.folderPath}" in "${room.name}".`);
+for (const p of projectArgs) {
+  if (p.folderPath && !folderByPath.has(p.folderPath)) fail(`--project ${p.name}: no folder "${p.folderPath}" in "${room.name}".`);
+}
 
 // The workbook's cached values, by sheet and cell.
 const blob = await get(modelFile.blob, { access: "private" });
@@ -199,8 +211,15 @@ const columns = headerColumns.map((col) => ({ col, name: text(summary.cell(heade
 if (columns.at(-1)?.name !== "Total") fail(`${modelFile.name}: expected the SPV table's last column to read Total.`);
 const spvColumns = columns.slice(0, -1);
 const totalCol = columns.at(-1).col;
+const spvNames = spvColumns.map((c) => c.name);
 for (const p of projectArgs) {
-  if (!spvColumns.some((c) => c.name === p.column)) fail(`--project ${p.column}: the workbook's SPVs are ${spvColumns.map((c) => c.name).join(", ")}.`);
+  for (const column of p.columns) {
+    if (!spvNames.includes(column)) fail(`--project ${p.name}: no SPV "${column}"; the workbook's are ${spvNames.join(", ")}.`);
+  }
+}
+for (const name of spvNames) {
+  const holders = projectArgs.filter((p) => p.columns.includes(name));
+  if (holders.length !== 1) fail(`SPV "${name}" belongs to ${holders.length} projects; give it to exactly one --project.`);
 }
 
 const spvRow = (label) => summary.rowOf(label, header);
@@ -220,30 +239,106 @@ const rowsOf = {
   topcoMultiple: spvRow("ZODE TopCo all-in multiple"),
 };
 const amount = (key, col) => num(summary.cell(rowsOf[key], col), `${summary.label(rowsOf[key])} (${col})`);
-const projects = spvColumns.map(({ col, name }) => {
-  const folderPath = projectArgs.find((p) => p.column === name)?.folderPath ?? null;
-  return {
+const AMOUNTS = ["criticalItMw", "projectCost", "debt", "prefNeeded", "topcoPref", "thirdPartyPref", "cashToTopco"];
+const spvs = new Map(
+  spvColumns.map(({ col, name }) => [
     name,
-    structure: text(summary.cell(rowsOf.structure, col)),
-    folderId: folderPath ? folderByPath.get(folderPath) : null,
-    folderPath,
-    criticalItMw: amount("criticalItMw", col),
-    projectCost: amount("projectCost", col),
-    debt: amount("debt", col),
-    prefNeeded: amount("prefNeeded", col),
-    topcoPref: amount("topcoPref", col),
-    thirdPartyPref: amount("thirdPartyPref", col),
-    projectIrr: maybe(summary.cell(rowsOf.projectIrr, col)),
-    prefIrr: maybe(summary.cell(rowsOf.prefIrr, col)),
-    prefMultiple: maybe(summary.cell(rowsOf.prefMultiple, col)),
-    cashToTopco: amount("cashToTopco", col),
-    topcoIrr: maybe(summary.cell(rowsOf.topcoIrr, col)),
-    topcoMultiple: maybe(summary.cell(rowsOf.topcoMultiple, col)),
+    {
+      name,
+      structure: text(summary.cell(rowsOf.structure, col)),
+      ...Object.fromEntries(AMOUNTS.map((key) => [key, amount(key, col)])),
+      projectIrr: maybe(summary.cell(rowsOf.projectIrr, col)),
+      prefIrr: maybe(summary.cell(rowsOf.prefIrr, col)),
+      prefMultiple: maybe(summary.cell(rowsOf.prefMultiple, col)),
+      topcoIrr: maybe(summary.cell(rowsOf.topcoIrr, col)),
+      topcoMultiple: maybe(summary.cell(rowsOf.topcoMultiple, col)),
+    },
+  ]),
+);
+const total = Object.fromEntries(AMOUNTS.map((key) => [key, amount(key, totalCol)]));
+
+/** The rate at which yearly cash flows are worth nothing today, as Excel's IRR; null when they never change sign. */
+const irrOf = (flows) => {
+  if (!flows.some((v) => v < 0) || !flows.some((v) => v > 0)) return null;
+  const npv = (rate) => flows.reduce((sum, v, t) => sum + v / (1 + rate) ** t, 0);
+  let [low, high] = [-0.99, 1000];
+  if (npv(low) * npv(high) > 0) return null;
+  for (let i = 0; i < 200; i += 1) {
+    const mid = (low + high) / 2;
+    if (npv(low) * npv(mid) <= 0) high = mid;
+    else low = mid;
+  }
+  return (low + high) / 2;
+};
+
+// Each SPV's yearly net cash to TopCo, from its tab: the "ZODE TopCo all-in"
+// row whose total is the cash TopCo takes out less the pref it puts in.
+const tabs = [...sheetPaths.keys()].filter((name) => !["Readme", "Summary", "TopCo"].includes(name)).map((name) => ({ name, sheet: readSheet(name) }));
+const topcoFlows = (spv) => {
+  const net = spv.cashToTopco - spv.topcoPref;
+  for (const { name, sheet } of tabs) {
+    for (const r of sheet.between(0)) {
+      if (!sheet.label(r).startsWith("ZODE TopCo all-in: net cash flow")) continue;
+      if (Math.abs(num(sheet.cell(r, "D"), `${name} row ${r} total`) - net) > 1) continue;
+      const yearRow = sheet.between(0, r).findLast((y) => sheet.label(y) === "Year");
+      if (!yearRow) fail(`${modelFile.name}: no "Year" header above ${name} row ${r}.`);
+      const cols = sheet.columnsOf(yearRow).filter((col) => typeof sheet.cell(yearRow, col) === "number");
+      const flows = cols.map((col) => maybe(sheet.cell(r, col)) ?? 0);
+      const check = irrOf(flows);
+      if (spv.topcoIrr !== null && (check === null || Math.abs(check - spv.topcoIrr) > 1e-4)) {
+        fail(`${modelFile.name}: TopCo's IRR on ${spv.name} from ${name} row ${r} is ${check}, not the Summary's ${spv.topcoIrr}.`);
+      }
+      return flows;
+    }
+  }
+  fail(`${modelFile.name}: no tab has ${spv.name}'s yearly cash to TopCo (a "ZODE TopCo all-in: net cash flow" row totalling ${net}).`);
+};
+
+/** What sets a project's SPVs apart, by their names less what they share: "Retro 1 site" and "Retro 1 compute" are site and compute. */
+const layerNames = (names) => {
+  if (names.length < 2) return names.map(() => "");
+  const words = names.map((n) => n.split(/\s+/));
+  let shared = 0;
+  while (words.every((w) => w.length > shared + 1 && w[shared] === words[0][shared])) shared += 1;
+  return words.map((w) => w.slice(shared).join(" "));
+};
+
+const projects = projectArgs.map((p) => {
+  const members = p.columns.map((name) => spvs.get(name));
+  const sum = (key) => members.reduce((total, s) => total + s[key], 0);
+  const layers = layerNames(p.columns);
+  let topcoIrr = members[0].topcoIrr;
+  if (members.length > 1) {
+    const flows = members.map(topcoFlows);
+    if (flows.some((f) => f.length !== flows[0].length)) fail(`--project ${p.name}: its SPVs' tabs run different years.`);
+    topcoIrr = irrOf(flows[0].map((_, t) => flows.reduce((total, f) => total + f[t], 0)));
+  }
+  const topcoPref = sum("topcoPref");
+  return {
+    name: p.name,
+    tenure: members.some((s) => /^site\b/i.test(s.structure)) ? "own" : "lease",
+    spvs: members.map((s, i) => ({ name: s.name, layer: layers[i], structure: s.structure })),
+    folderId: p.folderPath ? folderByPath.get(p.folderPath) : null,
+    folderPath: p.folderPath,
+    ...Object.fromEntries(AMOUNTS.map((key) => [key, sum(key)])),
+    projectIrr: members.map((s, i) => ({ layer: layers[i], value: s.projectIrr })),
+    pref: members.map((s, i) => ({ layer: layers[i], irr: s.prefIrr, multiple: s.prefMultiple })),
+    topcoIrr,
+    topcoMultiple: members.length > 1 ? (topcoPref > 0 ? sum("cashToTopco") / topcoPref : null) : members[0].topcoMultiple,
   };
 });
-const total = Object.fromEntries(
-  ["criticalItMw", "projectCost", "debt", "prefNeeded", "topcoPref", "thirdPartyPref", "cashToTopco"].map((key) => [key, amount(key, totalCol)]),
-);
+
+/** A label that names a project's SPV, or the tab they share, renamed for the project: "Pref into Retro 1" reads "Pref into Calgary". */
+const renamed = (label) => {
+  for (const p of projectArgs) {
+    const [first] = p.columns;
+    const shared = p.columns.length > 1 ? first.split(/\s+/).slice(0, -1).join(" ") : first;
+    for (const name of [...p.columns, shared]) {
+      if (name && label.endsWith(` ${name}`)) return `${label.slice(0, -name.length)}${p.name}`;
+    }
+  }
+  return label;
+};
 const committed = uses.filter((u) => /^Preferred equity/.test(u.label)).reduce((sum, u) => sum + u.amount, 0);
 if (Math.abs(total.topcoPref - committed) > 1) fail(`${modelFile.name}: TopCo pref across the SPVs (${total.topcoPref}) isn't the ${committed} committed.`);
 
@@ -257,7 +352,7 @@ const cashRows = summary
   .between(yearRow)
   .filter((r) => text(summary.cell(r, "C")) === "$M")
   .map((r) => ({
-    label: summary.label(r),
+    label: renamed(summary.label(r)),
     total: totalCashCol ? maybe(summary.cell(r, totalCashCol)) : null,
     values: yearCols.map((col) => maybe(summary.cell(r, col)) ?? 0),
   }))
@@ -287,7 +382,7 @@ const topcoModel = {
     prepared: firstSentence(readme.label(readme.rowOf("Prepared"))),
   },
   raise,
-  uses,
+  uses: uses.map((u) => ({ ...u, label: renamed(u.label) })),
   projects,
   total,
   returns: {

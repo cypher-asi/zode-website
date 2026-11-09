@@ -6,12 +6,26 @@
  * fractions.
  */
 
-/** One project SPV's results, from the workbook's Summary tab. */
-export interface TopCoProject {
+/** One of a project's SPVs; `layer` tells it from the others, such as "site" or "compute", and is blank for a project's only SPV. */
+export interface TopCoSpv {
   /** The workbook's column for the SPV, e.g. "Retro 1 site". */
   name: string;
+  layer: string;
   /** "Site company", "GPU OpCos", ... */
   structure: string;
+}
+
+/**
+ * A project's results, from the workbook's Summary tab: the sum of its SPVs'
+ * amounts, and their rates side by side, since those don't add up. TopCo's
+ * IRR is on its yearly cash from all of them together.
+ */
+export interface TopCoProject {
+  /** "Calgary". */
+  name: string;
+  /** Whether the project owns its site or leases space in someone else's. */
+  tenure: "own" | "lease";
+  spvs: TopCoSpv[];
   /** The project's folder in the room, when it has one. */
   folderId: string | null;
   folderPath: string | null;
@@ -22,9 +36,9 @@ export interface TopCoProject {
   prefNeeded: number;
   topcoPref: number;
   thirdPartyPref: number;
-  projectIrr: number | null;
-  prefIrr: number | null;
-  prefMultiple: number | null;
+  /** By SPV. */
+  projectIrr: { layer: string; value: number | null }[];
+  pref: { layer: string; irr: number | null; multiple: number | null }[];
   /** TopCo's pref distributions, common share and fees. */
   cashToTopco: number;
   topcoIrr: number | null;
@@ -74,7 +88,7 @@ export interface TopCoModel {
     /** Cash TopCo keeps before distributing to its shareholders. */
     minCash: number;
   };
-  /** Where the raise goes: TopCo's operating budget, then pref into each SPV. */
+  /** Where the raise goes: TopCo's operating budget, then pref into each project. */
   uses: { label: string; amount: number; note: string }[];
   projects: TopCoProject[];
   total: TopCoTotal;
