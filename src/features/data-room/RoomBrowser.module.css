@@ -88,6 +88,23 @@
   stroke-linejoin: round;
 }
 
+/* Up a level, at the heading's right edge; kept in place but unseen at the top level. */
+.back {
+  flex: none;
+  justify-content: center;
+  width: 36px;
+  margin-left: auto;
+  padding: 0;
+}
+
+.back:disabled {
+  visibility: hidden;
+}
+
+.back + .tools {
+  margin-left: 0;
+}
+
 .progress {
   color: var(--color-text-secondary);
   font-size: var(--text-sm);

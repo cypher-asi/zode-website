@@ -21,10 +21,8 @@ import { MAX_ARCHIVE_BYTES, type RoomFile, type RoomTree } from "./types";
 import { UploadList } from "./UploadList";
 import { useUploads } from "./useUploads";
 import { FilePreview, SummaryPanel, type RoomSummaries } from "./Viewer";
-import viewer from "./Viewer.module.css";
 import { downloadRoomZip, postRoomArchive, type ZipProgress, type ZipSelection } from "./zipDownload";
 import styles from "./DataRoomApp.module.css";
-import ui from "./ui.module.css";
 
 const VIEW_KEY = "zode:data-room:view";
 
@@ -294,19 +292,15 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summaries, childr
   };
 
   const fileUrl = (fileId: string) => `/api/data-rooms/${roomId}/files/${fileId}`;
-  const backButton = (onBack: () => void) => (
-    <button type="button" className={`${ui.iconButton} ${viewer.back}`} onClick={onBack} aria-label="Back to files">
-      <Icon name="back" />
-    </button>
-  );
 
   const rootName = "All files";
   const rootCrumb = `${tree.files.length.toLocaleString()} ${tree.files.length === 1 ? "file" : "files"} · ${formatBytes(totalBytes)}`;
 
-  const toolbar = (trail: ReactNode) => (
+  const toolbar = (trail: ReactNode, back: ReactNode) => (
     <>
       <div className={browser.toolbar}>
         {trail}
+        {back}
         <div className={browser.tools}>
           <label className={browser.search}>
             <Icon name="search" />
@@ -461,20 +455,18 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summaries, childr
                 ? {
                     name: openFile.name,
                     folderId: openFile.folderId && index.folders.has(openFile.folderId) ? openFile.folderId : null,
-                    content: (
-                      <FilePreview key={openFile.id} url={fileUrl(openFile.id)} file={openFile} showBack leading={backButton(closePreview)} />
-                    ),
+                    content: <FilePreview key={openFile.id} url={fileUrl(openFile.id)} file={openFile} />,
+                    onClose: closePreview,
                   }
                 : summary && summaryOpen
                   ? {
                       name: "Summary",
                       folderId,
+                      onClose: () => openFolder(folderId),
                       content: (
                         <SummaryPanel
                           key={summaryKey(folderId)}
                           summary={summary}
-                          showBack
-                          onBack={() => openFolder(folderId)}
                           onOpenFile={openById}
                           onOpenFolder={(id, withSummary) => go({ folderId: id, fileId: null, summary: withSummary })}
                         />

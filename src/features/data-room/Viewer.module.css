@@ -18,15 +18,6 @@
   display: none;
 }
 
-/* A room's browser has no file list beside the preview, so Back stays in the title bar. */
-.viewer[data-show-back] .back {
-  display: inline-grid;
-}
-
-.viewer[data-show-back] .summaryHeader {
-  display: flex;
-}
-
 .glyph {
   flex: none;
   width: 20px;
@@ -632,20 +623,9 @@
   padding: 24px 0;
 }
 
-/* The summary has no title bar; narrow screens keep only its way back to the files. */
-.summaryHeader {
-  display: none;
-}
-
 @media (max-width: 700px) {
   .back {
     display: inline-grid;
-  }
-
-  .summaryHeader {
-    display: flex;
-    min-height: 0;
-    border-bottom: 0;
   }
 
   .downloadLabel {

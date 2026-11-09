@@ -12,10 +12,8 @@ import { useShareVisit } from "./shareTracker";
 import { indexTree, summaryKey } from "./tree";
 import { MAX_ARCHIVE_BYTES, sharedFilePath, sharedRoomPath, type RoomTree } from "./types";
 import { FilePreview, SummaryPanel, type RoomSummaries } from "./Viewer";
-import viewer from "./Viewer.module.css";
 import { downloadRoomZip, postRoomArchive, type ZipProgress, type ZipSelection } from "./zipDownload";
 import styles from "./SharedRoom.module.css";
-import ui from "./ui.module.css";
 
 const VIEW_KEY = "zode:shared-room:view";
 
@@ -133,7 +131,7 @@ export function SharedRoom({
     go({ folder: parent });
   };
 
-  const toolbar = (trail: ReactNode) => (
+  const toolbar = (trail: ReactNode, back: ReactNode) => (
     <>
       <header className={browser.toolbar}>
         <a className={styles.mark} href={osHref} aria-label="Open in ZODE">
@@ -142,6 +140,7 @@ export function SharedRoom({
           <img src="/wordmark.png" alt="" />
         </a>
         <div className={styles.trail}>{trail}</div>
+        {back}
         <div className={browser.tools}>
           <label className={browser.search}>
             <Icon name="search" />
@@ -246,30 +245,18 @@ export function SharedRoom({
             ? {
                 name: openFile.name,
                 folderId: openFolderId,
-                content: (
-                  <FilePreview
-                    key={openFile.id}
-                    url={sharedFilePath(token, openFile.id)}
-                    file={openFile}
-                    showBack
-                    leading={
-                      <button type="button" className={`${ui.iconButton} ${viewer.back}`} onClick={closePreview} aria-label="Back to files">
-                        <Icon name="back" />
-                      </button>
-                    }
-                  />
-                ),
+                content: <FilePreview key={openFile.id} url={sharedFilePath(token, openFile.id)} file={openFile} />,
+                onClose: closePreview,
               }
             : summary && summaryOpen
               ? {
                   name: "Summary",
                   folderId,
+                  onClose: () => go({}),
                   content: (
                     <SummaryPanel
                       key={summaryKey(folderId)}
                       summary={summary}
-                      showBack
-                      onBack={() => go({})}
                       onOpenFile={(fileId) => go({ file: fileId })}
                       onOpenFolder={(id, withSummary) => go({ folder: id, summary: withSummary })}
                     />

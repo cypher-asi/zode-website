@@ -455,10 +455,13 @@ export interface RoomBrowserProps {
   onOpenFile: (file: RoomFile) => void;
   onOpenSummary: () => void;
   admin?: BrowserAdmin;
-  /** The toolbar over the files, given where you are to show in it. */
-  toolbar: (trail: ReactNode) => ReactNode;
+  /**
+   * The toolbar over the files, given where you are and the way back up to show
+   * in it. `back` keeps its space at the top level too, so the toolbar doesn't shift.
+   */
+  toolbar: (trail: ReactNode, back: ReactNode) => ReactNode;
   /** A file or the summary open in the files' place, under the same toolbar so its search keeps focus. */
-  open?: { name: string; folderId: string | null; content: ReactNode };
+  open?: { name: string; folderId: string | null; content: ReactNode; onClose: () => void };
   /** Beside the files and under the toolbar, which then runs across both, e.g. a folder tree. */
   pane?: ReactNode;
 }
@@ -725,6 +728,22 @@ export function RoomBrowser({
     );
   };
 
+  /** Out of what's open to its folder, or up a folder; nowhere at the top level. */
+  const backTo = open ? open.folderId : folderId ? (index.folders.get(folderId)?.parentId ?? null) : undefined;
+  const backName = backTo ? (index.folders.get(backTo)?.name ?? rootName) : rootName;
+  const back = (
+    <button
+      type="button"
+      className={`${styles.tool} ${styles.back}`}
+      onClick={open ? open.onClose : () => onOpenFolder(backTo ?? null)}
+      disabled={backTo === undefined}
+      aria-label={`Back to ${backName}`}
+      title={`Back to ${backName}`}
+    >
+      <Icon name="back" />
+    </button>
+  );
+
   const glyphThumb = showsThumb(view) ? thumbUrl : null;
   const empty = searching
     ? "Nothing matches that search."
@@ -750,6 +769,7 @@ export function RoomBrowser({
           onOpenFolder={onOpenFolder}
           stepProps={open ? undefined : dropProps}
         />,
+        back,
       )}
       <div className={styles.body}>
         {pane}

@@ -76,17 +76,12 @@ export type RoomSummaries = Readonly<Record<string, RoomSummary>>;
  */
 export function SummaryPanel({
   summary,
-  onBack,
   onOpenFile,
   onOpenFolder,
-  showBack = false,
 }: {
   summary: RoomSummary;
-  onBack: () => void;
   onOpenFile: (fileId: string) => void;
   onOpenFolder: (folderId: string, summary: boolean) => void;
-  /** A room's browser replaces the file list with this panel, so the way back stays visible. */
-  showBack?: boolean;
 }): ReactElement {
   const scrollId = useId();
   const onClick = (event: MouseEvent<HTMLDivElement>) => {
@@ -102,12 +97,7 @@ export function SummaryPanel({
   };
 
   return (
-    <div className={styles.viewer} data-show-back={showBack ? "" : undefined}>
-      <header className={`${styles.header} ${styles.summaryHeader}`}>
-        <button type="button" className={`${ui.iconButton} ${styles.back}`} onClick={onBack} aria-label="Back to files">
-          <Icon name="back" />
-        </button>
-      </header>
+    <div className={styles.viewer}>
       <div className={styles.summaryFrame}>
         <div id={scrollId} className={styles.summary} onClickCapture={onClick}>
           {summary.content}
@@ -129,7 +119,6 @@ export function FilePreview({
   meta,
   leading,
   trailing,
-  showBack = false,
 }: {
   url: string;
   file: PreviewFile;
@@ -137,8 +126,6 @@ export function FilePreview({
   meta?: ReactNode;
   leading?: ReactNode;
   trailing?: ReactNode;
-  /** A room's browser replaces the file list with the preview, so the way back stays visible. */
-  showBack?: boolean;
 }): ReactElement {
   const kind = fileKind(file.name);
   const Preview = VIEWERS[kind];
@@ -154,7 +141,6 @@ export function FilePreview({
       zoomable={Boolean(Preview) && ZOOMABLE.has(kind)}
       leading={leading}
       trailing={trailing}
-      showBack={showBack}
     >
       {(zoom, onFitScale) =>
         Preview ? (
@@ -190,7 +176,6 @@ export function PreviewFrame({
   zoomable,
   leading,
   trailing,
-  showBack = false,
   children,
 }: {
   name: string;
@@ -205,8 +190,6 @@ export function PreviewFrame({
   leading?: ReactNode;
   /** After Download, e.g. a close button. */
   trailing?: ReactNode;
-  /** Shows `leading` when the file list isn't beside the preview. */
-  showBack?: boolean;
   children: (zoom: Zoom, onFitScale: (scale: number) => void) => ReactNode;
 }): ReactElement {
   const [zoom, setZoom] = useState<Zoom>("fit");
@@ -281,7 +264,6 @@ export function PreviewFrame({
     <div
       ref={rootRef}
       className={styles.viewer}
-      data-show-back={showBack ? "" : undefined}
       popover={expanded ? "manual" : undefined}
       data-expanded={expanded ? "" : undefined}
       onKeyDown={(event) => {
