@@ -527,12 +527,17 @@ years.forEach((year, t) => {
   if (!close(netCash[t], cashChange[t])) fail(`${modelFile.name}: the group's net cash in ${year} is ${netCash[t]}, not the change in TopCo's cash of ${cashChange[t]}.`);
 });
 
-const statementRow = ({ label, values }, kind) => ({ label, values, total: sumOf(values), ...(kind ? { kind } : {}) });
+/** The statement shows the first five years, its total theirs alone. */
+const SHOWN_YEARS = 5;
+const statementRow = ({ label, values }, kind) => {
+  const shown = values.slice(0, SHOWN_YEARS);
+  return { label, values: shown, total: sumOf(shown), ...(kind ? { kind } : {}) };
+};
 const subtotal = (label, values) => statementRow({ label, values }, "subtotal");
 /** A group's lines, less any that never move. */
-const moving = (rows) => rows.filter((r) => r.values.some((v) => Math.abs(v) >= 0.5)).map((r) => statementRow(r));
+const moving = (rows) => rows.filter((r) => r.values.slice(0, SHOWN_YEARS).some((v) => Math.abs(v) >= 0.5)).map((r) => statementRow(r));
 const statement = {
-  years,
+  years: years.slice(0, SHOWN_YEARS),
   groups: [
     { title: "Revenue", rows: [...moving(revenue), subtotal("Total revenue", totalRevenue)] },
     { title: "Operating costs", rows: [...moving(costs), subtotal("Total operating costs", totalCosts), subtotal("EBITDA", ebitda)] },
@@ -583,7 +588,7 @@ const topcoModel = {
 console.log(
   `[topco] "${room.name}" from ${modelFile.name}: $${raise.amount / 1e6}M raise at $${raise.preMoney / 1e6}M pre-money; ` +
     projects.map((p) => `${p.name} $${p.topcoPref / 1e6}M${p.folderPath ? ` (${p.folderPath})` : ""}`).join(", ") +
-    `; consolidated ${years[0]}-${years.at(-1)}.`,
+    `; consolidated ${statement.years[0]}-${statement.years.at(-1)}.`,
 );
 if (args.out) {
   await writeFile(args.out.replace(/^~(?=$|\/)/, process.env.HOME ?? "~"), `${JSON.stringify(topcoModel, null, 2)}\n`);
