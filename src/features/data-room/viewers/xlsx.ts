@@ -1,12 +1,13 @@
 import { unzipSync, type UnzipFileInfo } from "fflate";
 import { builtinFormat, compileFormat, formatGeneral, formatNumber, type NumberFormat } from "./numberFormat";
-import { ALIGN_CENTER, ALIGN_MASK, ALIGN_RIGHT, BOLD, type SheetGrid } from "./sheetGrid";
+import { ALIGN_CENTER, ALIGN_MASK, ALIGN_RIGHT, BOLD, ROW_HEIGHT, type SheetDrawing, type SheetGrid } from "./sheetGrid";
 
 /**
  * A minimal .xlsx reader for previews: cached values formatted with their
- * number formats, bold, alignment, column widths, and hidden rows, columns
- * and sheets. Unzips synchronously (fflate's async unzip spawns blob: workers,
- * which the site's CSP forbids) and decompresses each sheet only when read.
+ * number formats, bold, alignment, column widths, hidden rows, columns and
+ * sheets, and the pictures floating over each sheet. Unzips synchronously
+ * (fflate's async unzip spawns blob: workers, which the site's CSP forbids)
+ * and decompresses each sheet only when read.
  */
 
 const MAX_COLUMNS = 1_000;
@@ -15,6 +16,30 @@ const MAX_XML_BYTES = 256 * 1024 * 1024;
 const MAX_SPILL = 255;
 /** Excel's default column width, in characters. */
 const DEFAULT_WIDTH = 8.43;
+/** Excel's last row and column, 0-based. */
+const LAST_ROW = 1_048_575;
+const LAST_COLUMN = 16_383;
+const EMU_PER_PX = 9525;
+/** Pictures are inlined as data: URLs (the CSP forbids blob: images), so their size is capped. */
+const MAX_PICTURE_BYTES = 32 * 1024 * 1024;
+const MAX_SHEET_PICTURE_BYTES = 96 * 1024 * 1024;
+/** Picture formats browsers draw. Excel also embeds EMF and WMF, which they don't. */
+const IMAGE_TYPES: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  jpe: "image/jpeg",
+  gif: "image/gif",
+  bmp: "image/bmp",
+  webp: "image/webp",
+  svg: "image/svg+xml",
+  ico: "image/x-icon",
+};
+/** A picture's `srcRect` attributes, in the order of `crop`. */
+const CROP_EDGES = ["l", "t", "r", "b"];
+
+type Picture = Extract<SheetDrawing, { kind: "picture" }>;
+type Chart = Extract<SheetDrawing, { kind: "chart" }>;
 
 interface CellStyle {
   format: NumberFormat | null;
@@ -97,6 +122,78 @@ function resolve(base: string, target: string): string {
   return parts.join("/");
 }
 
+type Relationships = Map<string, { path: string; type: string }>;
+
+/** Where the relationships of the part at `path` are kept. */
+function relsPath(path: string): string {
+  const slash = path.lastIndexOf("/");
+  return `${path.slice(0, slash + 1)}_rels/${path.slice(slash + 1)}.rels`;
+}
+
+/** A part's relationships by id, resolved to paths in the zip; links outside the file are left out. */
+function parseRels(xml: string, partPath: string): Relationships {
+  const base = partPath.slice(0, Math.max(0, partPath.lastIndexOf("/")));
+  const rels: Relationships = new Map();
+  for (const [, , attrs] of xml.matchAll(tags("Relationship"))) {
+    const id = attr(attrs, "Id");
+    const target = attr(attrs, "Target");
+    if (id && target && attr(attrs, "TargetMode") !== "External") {
+      rels.set(id, { path: resolve(base, target), type: attr(attrs, "Type") ?? "" });
+    }
+  }
+  return rels;
+}
+
+/** The contents of each `names` element (a regex alternation) in `xml`, in order. Elements of one name mustn't nest. */
+function* elements(xml: string, names: string): Generator<{ name: string; body: string }> {
+  const start = new RegExp(`<([\\w.-]+:)?(${names})\\b[^>]*?(/?)>`, "g");
+  for (let match = start.exec(xml); match; match = start.exec(xml)) {
+    if (match[3]) continue;
+    const end = xml.indexOf(`</${match[1] ?? ""}${match[2]}>`, start.lastIndex);
+    if (end === -1) return;
+    yield { name: match[2], body: xml.slice(start.lastIndex, end) };
+    start.lastIndex = end;
+  }
+}
+
+/** The first `name` element in `xml` with both numeric attributes, such as an offset or a size in EMUs. */
+function point(xml: string, name: string, x = "x", y = "y"): { x: number; y: number } | null {
+  for (const [, , attrs] of xml.matchAll(tags(name))) {
+    const px = Number(attr(attrs, x));
+    const py = Number(attr(attrs, y));
+    if (Number.isFinite(px) && Number.isFinite(py)) return { x: px, y: py };
+  }
+  return null;
+}
+
+/** A drawing anchor's cell, 0-based, and the offset into it in px. */
+function marker(xml: string): { column: number; left: number; row: number; top: number } {
+  const read = (name: string) => Number(new RegExp(`<(?:[\\w.-]+:)?${name}>\\s*(-?\\d+)`).exec(xml)?.[1] ?? 0);
+  return { column: read("col"), left: read("colOff") / EMU_PER_PX, row: read("row"), top: read("rowOff") / EMU_PER_PX };
+}
+
+/** A chart's own title, or the series name Excel titles it with. */
+function chartTitle(xml: string): string {
+  const plot = xml.search(/<([\w.-]+:)?plotArea\b/);
+  const title = section(plot === -1 ? xml : xml.slice(0, plot), "title");
+  return (richText(title) || decode(/<(?:[\w.-]+:)?v>([^<]*)</.exec(title)?.[1] ?? "")).trim();
+}
+
+function dataUrl(bytes: Uint8Array, type: string): string {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return `data:${type};base64,${btoa(binary)}`;
+}
+
+/** A drawing placed by its anchor: a workbook cell, 0-based, and px into it. Its own x and y are filled in once the grid is laid out. */
+interface Anchored {
+  row: number;
+  column: number;
+  top: number;
+  left: number;
+  drawing: SheetDrawing;
+}
+
 export class Workbook {
   /** Visible worksheets in tab order. */
   readonly sheets: { name: string; path: string }[];
@@ -109,23 +206,11 @@ export class Workbook {
 
   private constructor(zip: Uint8Array) {
     this.zip = zip;
-    const decoder = new TextDecoder();
-    const read = (paths: string[]): Record<string, string> => {
-      const wanted = new Set(paths);
-      const files = this.unzip((file) => wanted.has(file.name));
-      return Object.fromEntries(Object.entries(files).map(([path, bytes]) => [path, decoder.decode(bytes)]));
-    };
-
-    const meta = read(["xl/workbook.xml", "xl/_rels/workbook.xml.rels"]);
+    const meta = this.readText(["xl/workbook.xml", "xl/_rels/workbook.xml.rels"]);
     const workbook = meta["xl/workbook.xml"];
     if (!workbook) throw new Error("Not an Excel workbook");
 
-    const targets = new Map<string, { path: string; type: string }>();
-    for (const [, , attrs] of (meta["xl/_rels/workbook.xml.rels"] ?? "").matchAll(tags("Relationship"))) {
-      const id = attr(attrs, "Id");
-      const target = attr(attrs, "Target");
-      if (id && target) targets.set(id, { path: resolve("xl", target), type: attr(attrs, "Type") ?? "" });
-    }
+    const targets = parseRels(meta["xl/_rels/workbook.xml.rels"] ?? "", "xl/workbook.xml");
     const byType = (suffix: string) => [...targets.values()].find((t) => t.type.endsWith(suffix))?.path;
     const sharedStringsPath = byType("/sharedStrings") ?? "xl/sharedStrings.xml";
     const stylesPath = byType("/styles") ?? "xl/styles.xml";
@@ -146,7 +231,7 @@ export class Workbook {
     this.active = Math.min(active, Math.max(0, sheets.length - 1));
     this.date1904 = truthy(attr(/<(?:[\w.-]+:)?workbookPr\b([^>]*)>/.exec(workbook)?.[1] ?? "", "date1904"));
 
-    const shared = read([sharedStringsPath, stylesPath]);
+    const shared = this.readText([sharedStringsPath, stylesPath]);
     this.sharedStrings = [];
     const sst = shared[sharedStringsPath] ?? "";
     const items = tags("si");
@@ -174,6 +259,130 @@ export class Workbook {
         return true;
       },
     });
+  }
+
+  private readText(paths: string[]): Record<string, string> {
+    const wanted = new Set(paths);
+    const decoder = new TextDecoder();
+    const files = this.unzip((file) => wanted.has(file.name));
+    return Object.fromEntries(Object.entries(files).map(([path, bytes]) => [path, decoder.decode(bytes)]));
+  }
+
+  /**
+   * The pictures and charts in a sheet's drawing, bottom first. Sizes are
+   * Excel's, so pictures keep their proportions; `columnPx` and `rowPx` size
+   * anchors that only give their corner cells.
+   */
+  private readDrawings(sheetPath: string, sheetXml: string, columnPx: (c: number) => number, rowPx: (r: number) => number): Anchored[] {
+    const dataEnd = sheetXml.lastIndexOf("sheetData>");
+    const drawingId = attr(tags("drawing").exec(dataEnd === -1 ? sheetXml : sheetXml.slice(dataEnd))?.[2] ?? "", "r:id");
+    if (!drawingId) return [];
+    const sheetRels = relsPath(sheetPath);
+    const drawingPath = parseRels(this.readText([sheetRels])[sheetRels] ?? "", sheetPath).get(drawingId)?.path;
+    if (!drawingPath) return [];
+    const files = this.readText([drawingPath, relsPath(drawingPath)]);
+    const rels = parseRels(files[relsPath(drawingPath)] ?? "", drawingPath);
+    // Fallbacks repeat a shape for older Excels; drawing both would double it.
+    const xml = (files[drawingPath] ?? "").replace(/<([\w.-]+:)?Fallback\b[\s\S]*?<\/\1Fallback>/g, "");
+
+    const anchored: Anchored[] = [];
+    const pictures = new Map<Picture, string>();
+    const charts = new Map<Chart, string>();
+    for (const anchor of elements(xml, "twoCellAnchor|oneCellAnchor|absoluteAnchor")) {
+      const body = anchor.body;
+      let row = 0;
+      let column = 0;
+      let top = 0;
+      let left = 0;
+      if (anchor.name === "absoluteAnchor") {
+        const pos = point(body, "pos");
+        left = (pos?.x ?? 0) / EMU_PER_PX;
+        top = (pos?.y ?? 0) / EMU_PER_PX;
+      } else {
+        ({ row, column, top, left } = marker(section(body, "from")));
+      }
+      // The anchor's own size, or else the size of the shape or group it holds.
+      const ext = point(body, "ext", "cx", "cy");
+      let width = (ext?.x ?? 0) / EMU_PER_PX;
+      let height = (ext?.y ?? 0) / EMU_PER_PX;
+      if (!ext && anchor.name === "twoCellAnchor") {
+        const to = marker(section(body, "to"));
+        width = to.left - left;
+        height = to.top - top;
+        for (let c = column; c < to.column; c++) width += columnPx(c);
+        for (let r = row; r < to.row; r++) height += rowPx(r);
+      }
+      if (!(width > 0 && height > 0)) continue;
+
+      const group = /<(?:[\w.-]+:)?grpSpPr\b/.test(body) ? section(section(body, "grpSpPr"), "xfrm") : null;
+      const childOrigin = group ? point(group, "chOff") : null;
+      const childSize = group ? point(group, "chExt", "cx", "cy") : null;
+      for (const element of elements(body, "pic|graphicFrame")) {
+        const nv = tags("cNvPr").exec(element.body)?.[2] ?? "";
+        if (truthy(attr(nv, "hidden"))) continue;
+        const box = { x: left, y: top, width, height };
+        if (childOrigin && childSize && childSize.x > 0 && childSize.y > 0) {
+          const xfrm = section(element.body, "xfrm");
+          const off = point(xfrm, "off");
+          const size = point(xfrm, "ext", "cx", "cy");
+          if (!off || !size) continue;
+          const sx = width / childSize.x;
+          const sy = height / childSize.y;
+          box.x = left + (off.x - childOrigin.x) * sx;
+          box.y = top + (off.y - childOrigin.y) * sy;
+          box.width = size.x * sx;
+          box.height = size.y * sy;
+        }
+
+        let drawing: SheetDrawing;
+        if (element.name === "pic") {
+          const media = rels.get(attr(tags("blip").exec(element.body)?.[2] ?? "", "r:embed") ?? "")?.path;
+          const crop = tags("srcRect").exec(element.body)?.[2] ?? "";
+          const xfrm = tags("xfrm").exec(element.body)?.[2] ?? "";
+          const picture: Picture = {
+            kind: "picture",
+            ...box,
+            src: null,
+            alt: attr(nv, "descr") ?? "",
+            crop: CROP_EDGES.map((edge) => (Number(attr(crop, edge)) || 0) / 100_000) as Picture["crop"],
+            rotation: (Number(attr(xfrm, "rot")) || 0) / 60_000,
+            flipH: truthy(attr(xfrm, "flipH")),
+            flipV: truthy(attr(xfrm, "flipV")),
+          };
+          if (media) pictures.set(picture, media);
+          drawing = picture;
+        } else {
+          const chart = tags("chart").exec(element.body)?.[2];
+          if (chart === undefined) continue;
+          const chartDrawing: Chart = { kind: "chart", ...box, title: "" };
+          const chartPath = rels.get(attr(chart, "r:id") ?? "")?.path;
+          if (chartPath) charts.set(chartDrawing, chartPath);
+          drawing = chartDrawing;
+        }
+        anchored.push({ row, column, top: drawing.y, left: drawing.x, drawing });
+      }
+    }
+
+    const type = (path: string) => IMAGE_TYPES[path.slice(path.lastIndexOf(".") + 1).toLowerCase()];
+    const wanted = new Set([...[...pictures.values()].filter(type), ...charts.values()]);
+    let budget = MAX_SHEET_PICTURE_BYTES;
+    const parts = this.unzip((file) => {
+      if (!wanted.has(file.name)) return false;
+      if (!type(file.name)) return true;
+      if (file.originalSize > MAX_PICTURE_BYTES || file.originalSize > budget) return false;
+      budget -= file.originalSize;
+      return true;
+    });
+    const urls = new Map<string, string>();
+    for (const [picture, path] of pictures) {
+      const bytes = parts[path];
+      if (!bytes || !type(path)) continue;
+      if (!urls.has(path)) urls.set(path, dataUrl(bytes, type(path)));
+      picture.src = urls.get(path)!;
+    }
+    const decoder = new TextDecoder();
+    for (const [chart, path] of charts) if (parts[path]) chart.title = chartTitle(decoder.decode(parts[path]));
+    return anchored;
   }
 
   readSheet(index: number): SheetGrid {
@@ -273,6 +482,19 @@ export class Workbook {
       if (column > maxColumn) maxColumn = column;
     }
 
+    // The grid reaches far enough to hold every drawing, as Excel's does.
+    const columnPx = (c: number) => (hiddenColumns.has(c) ? 0 : widthPx(columnWidths.get(c) ?? defaultWidth));
+    const rowPx = (r: number) => (hiddenRows.has(r) ? 0 : ROW_HEIGHT);
+    const anchored = this.readDrawings(path, xml, columnPx, rowPx);
+    for (const { row, column, top, left, drawing } of anchored) {
+      let lastRow = row;
+      for (let room = top + drawing.height - rowPx(lastRow); room > 0 && lastRow < LAST_ROW; ) room -= rowPx(++lastRow);
+      let lastColumn = column;
+      for (let room = left + drawing.width - columnPx(lastColumn); room > 0 && lastColumn < LAST_COLUMN; ) room -= columnPx(++lastColumn);
+      maxRow = Math.max(maxRow, Math.min(lastRow, LAST_ROW));
+      maxColumn = Math.max(maxColumn, Math.min(lastColumn, LAST_COLUMN));
+    }
+
     const rowNumbers: number[] = [];
     const rowAt = new Int32Array(maxRow + 1).fill(-1);
     for (let r = 0; r <= maxRow; r++) {
@@ -319,6 +541,24 @@ export class Workbook {
       }
     }
 
+    const widths = columnIndexes.map((c) => widthPx(columnWidths.get(c) ?? defaultWidth));
+    const columnLeft = [0];
+    for (const width of widths) columnLeft.push(columnLeft[columnLeft.length - 1] + width);
+    const drawings: SheetDrawing[] = [];
+    for (const { row, column, top, left, drawing } of anchored) {
+      // An anchor in a hidden row or column starts at the next one shown.
+      let r = row;
+      while (r <= maxRow && rowAt[r] === -1) r++;
+      let c = column;
+      while (c <= maxColumn && columnAt[c] === -1) c++;
+      if (r > maxRow || c > maxColumn || rowAt[r] >= rows || columnAt[c] >= columns) continue;
+      drawing.x = Math.max(0, columnLeft[columnAt[c]] + (c === column ? left : 0));
+      drawing.y = Math.max(0, rowAt[r] * ROW_HEIGHT + (r === row ? top : 0));
+      drawings.push(drawing);
+    }
+    const view = /<(?:[\w.-]+:)?sheetView\b([^>]*)>/.exec(head)?.[1] ?? "";
+    const showGridLines = attr(view, "showGridLines");
+
     return {
       rows,
       columns,
@@ -327,9 +567,11 @@ export class Workbook {
       spill,
       rowNumbers,
       columnIndexes,
-      widths: columnIndexes.map((c) => widthPx(columnWidths.get(c) ?? defaultWidth)),
+      widths,
       totalRows,
       totalColumns,
+      drawings,
+      gridLines: showGridLines !== "0" && showGridLines !== "false",
     };
   }
 }

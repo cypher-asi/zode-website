@@ -3,11 +3,10 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement } from "react";
 import { Scrollbars } from "./Scrollbars";
 import type { ViewerProps } from "./types";
-import { ALIGN_CENTER, ALIGN_MASK, ALIGN_RIGHT, BOLD, type SheetGrid } from "./sheetGrid";
+import { ALIGN_CENTER, ALIGN_MASK, ALIGN_RIGHT, BOLD, ROW_HEIGHT, type SheetDrawing, type SheetGrid } from "./sheetGrid";
 import { rememberScroll, selectSheet, sheetScroll, useWorkbook } from "./sheetCache";
 import styles from "../Viewer.module.css";
 
-const ROW_HEIGHT = 22;
 const HEADER_WIDTH = 48;
 const FONT_SIZE = 13;
 /** Rows and columns drawn past each edge of the view, so fast scrolls don't flash blank. */
@@ -38,11 +37,61 @@ function alignClass(flags: number): string {
   return align === ALIGN_RIGHT ? styles.right : align === ALIGN_CENTER ? styles.center : "";
 }
 
+/** A picture or chart over the cells, at `left` and `top` in the grid's canvas. */
+function Drawing({ drawing, left, top, scale }: { drawing: SheetDrawing; left: number; top: number; scale: number }): ReactElement {
+  const box: CSSProperties = { left, top, width: drawing.width * scale, height: drawing.height * scale };
+  if (drawing.kind === "chart" || !drawing.src) {
+    return (
+      <div className={`${styles.drawing} ${styles.drawingStand}`} style={box}>
+        {drawing.kind === "chart" ? (
+          <>
+            <strong>{drawing.title || "Chart"}</strong>
+            <span>Download the workbook to see this chart.</span>
+          </>
+        ) : (
+          <span>This picture can&apos;t be previewed. Download the workbook to see it.</span>
+        )}
+      </div>
+    );
+  }
+  const [cropLeft, cropTop, cropRight, cropBottom] = drawing.crop;
+  const shownWidth = 1 - cropLeft - cropRight;
+  const shownHeight = 1 - cropTop - cropBottom;
+  const cropped = shownWidth > 0 && shownHeight > 0;
+  const transform = [
+    drawing.rotation ? `rotate(${drawing.rotation}deg)` : "",
+    drawing.flipH ? "scaleX(-1)" : "",
+    drawing.flipV ? "scaleY(-1)" : "",
+  ].join(" ");
+  return (
+    <div className={styles.drawing} style={{ ...box, transform: transform.trim() || undefined }}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- a data: URL read from the workbook */}
+      <img
+        src={drawing.src}
+        alt={drawing.alt}
+        draggable={false}
+        decoding="async"
+        style={
+          cropped
+            ? {
+                left: `${(-cropLeft / shownWidth) * 100}%`,
+                top: `${(-cropTop / shownHeight) * 100}%`,
+                width: `${100 / shownWidth}%`,
+                height: `${100 / shownHeight}%`,
+              }
+            : undefined
+        }
+      />
+    </div>
+  );
+}
+
 /**
  * Excel workbooks as grids, one tab per sheet, with Excel's number formats,
- * column widths and bold text. The workbook is read in a worker and only the
- * cells in view are drawn, so large models stay responsive. Read workbooks are
- * kept for the session, so going back to one shows it where it was left.
+ * column widths, bold text and the pictures over each sheet. The workbook is
+ * read in a worker and only the cells in view are drawn, so large models stay
+ * responsive. Read workbooks are kept for the session, so going back to one
+ * shows it where it was left.
  */
 export default function SheetViewer({ url, zoom, onFitScale }: ViewerProps): ReactElement {
   const { book, error, active } = useWorkbook(url);
@@ -62,7 +111,7 @@ export default function SheetViewer({ url, zoom, onFitScale }: ViewerProps): Rea
     : !grid
       ? "Loading sheet…"
       : grid.rows === 0
-        ? "This sheet has no cells to show. It may hold only charts or pictures; download the workbook to see them."
+        ? "This sheet is empty."
         : null;
   const capped = grid && (grid.rows < grid.totalRows || grid.columns < grid.totalColumns);
 
@@ -234,7 +283,12 @@ function Grid({
   }
 
   return (
-    <div ref={ref} id={scrollId} className={styles.sheetGrid} style={style}>
+    <div
+      ref={ref}
+      id={scrollId}
+      className={`${styles.sheetGrid} ${grid.gridLines ? "" : styles.noGridLines}`}
+      style={style}
+    >
       <div className={styles.gridCanvas} style={{ width: headerWidth + offsets[grid.columns], height: rowHeight * (grid.rows + 1) }}>
         <div className={styles.gridHead} style={{ gridTemplateColumns: template }}>
           <div className={styles.corner} />
@@ -247,6 +301,15 @@ function Grid({
         </div>
         <div style={{ height: firstRow * rowHeight }} />
         {rows}
+        {grid.drawings.map((drawing, i) => (
+          <Drawing
+            key={i}
+            drawing={drawing}
+            left={headerWidth + drawing.x * scale}
+            top={rowHeight + drawing.y * scale}
+            scale={scale}
+          />
+        ))}
       </div>
     </div>
   );

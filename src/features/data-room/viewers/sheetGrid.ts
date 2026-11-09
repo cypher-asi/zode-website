@@ -4,6 +4,31 @@ export const ALIGN_RIGHT = 2;
 export const ALIGN_MASK = 3;
 export const BOLD = 4;
 
+/** Height of every row at 100%, in px. */
+export const ROW_HEIGHT = 22;
+
+/** A picture or chart floating over the cells, placed in px at 100% from the top-left of the first cell. */
+export type SheetDrawing = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+} & (
+  | {
+      kind: "picture";
+      /** A data: URL, or null when the format can't be shown in a browser or the picture is too large. */
+      src: string | null;
+      alt: string;
+      /** Fractions trimmed off each edge: left, top, right, bottom. */
+      crop: [number, number, number, number];
+      /** Clockwise, in degrees. */
+      rotation: number;
+      flipH: boolean;
+      flipV: boolean;
+    }
+  | { kind: "chart"; title: string }
+);
+
 /** One sheet, ready to draw. */
 export interface SheetGrid {
   rows: number;
@@ -22,4 +47,8 @@ export interface SheetGrid {
   /** Rows and columns with content before the preview's cap. */
   totalRows: number;
   totalColumns: number;
+  /** In the order Excel stacks them, bottom first. */
+  drawings: SheetDrawing[];
+  /** False when the sheet is set to hide its gridlines. */
+  gridLines: boolean;
 }
