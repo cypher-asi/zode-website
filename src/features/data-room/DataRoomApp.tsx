@@ -293,14 +293,14 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summaries, childr
 
   const fileUrl = (fileId: string) => `/api/data-rooms/${roomId}/files/${fileId}`;
 
-  const rootName = "All files";
+  const rootName = "Root";
   const rootCrumb = `${tree.files.length.toLocaleString()} ${tree.files.length === 1 ? "file" : "files"} · ${formatBytes(totalBytes)}`;
 
   const toolbar = (trail: ReactNode, back: ReactNode) => (
     <>
       <div className={browser.toolbar}>
-        {trail}
         {back}
+        {trail}
         <div className={browser.tools}>
           <label className={browser.search}>
             <Icon name="search" />

@@ -139,8 +139,8 @@ export function SharedRoom({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/wordmark.png" alt="" />
         </a>
-        <div className={styles.trail}>{trail}</div>
         {back}
+        <div className={styles.trail}>{trail}</div>
         <div className={browser.tools}>
           <label className={browser.search}>
             <Icon name="search" />

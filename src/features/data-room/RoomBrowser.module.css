@@ -88,21 +88,16 @@
   stroke-linejoin: round;
 }
 
-/* Up a level, at the heading's right edge; kept in place but unseen at the top level. */
+/* Up a level, before the trail; kept in place but unseen at the top level, so the trail doesn't shift. */
 .back {
   flex: none;
   justify-content: center;
   width: 36px;
-  margin-left: auto;
   padding: 0;
 }
 
 .back:disabled {
   visibility: hidden;
-}
-
-.back + .tools {
-  margin-left: 0;
 }
 
 .progress {
@@ -237,30 +232,48 @@
   min-width: 0;
 }
 
-/* The trail and title, in the toolbar's free space before its tools. */
+/* The trail, in the toolbar's free space after Back and before its tools. */
 .heading {
+  display: flex;
   flex: 1;
+  align-items: baseline;
+  gap: 10px;
   min-width: 0;
 }
 
-.crumb {
+.path {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 6px;
-  margin: 0 0 2px;
+  min-width: 0;
+  margin: 0;
   overflow: hidden;
   color: var(--color-text-secondary);
-  font-size: var(--text-xs);
+  font-size: var(--text-md);
+  font-weight: 400;
   white-space: nowrap;
 }
 
-.crumb > span {
+/* Steps up give way before where you are, which keeps at least a few letters. */
+.step {
   display: inline-flex;
-  flex: none;
+  flex: 0 100 auto;
   gap: 6px;
+  min-width: 0;
 }
 
-.crumb button {
+.step > span {
+  flex: none;
+}
+
+.step button,
+.here {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.step button {
+  min-width: 2ch;
   padding: 0;
   border: 0;
   border-radius: var(--radius-control);
@@ -270,16 +283,23 @@
   cursor: pointer;
 }
 
-.crumb button:hover {
+.step button:hover {
   color: var(--color-text-primary);
 }
 
-.title {
-  margin: 0;
-  overflow: hidden;
-  font-size: 18px;
+.here {
+  flex: 0 1 auto;
+  min-width: 6ch;
+  color: var(--color-text-primary);
   font-weight: 600;
-  letter-spacing: -0.01em;
+}
+
+.note {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -298,7 +318,7 @@
 }
 
 .scroller [data-drop],
-.crumb button[data-drop] {
+.step button[data-drop] {
   background: color-mix(in srgb, var(--color-focus-ring) 14%, transparent);
 }
 

@@ -24,38 +24,6 @@
   min-width: 0;
 }
 
-.crumb {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  align-self: flex-start;
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  text-decoration: none;
-  transition: color var(--duration-base) ease;
-}
-
-.crumb:hover {
-  color: var(--color-text-primary);
-}
-
-.crumb:focus-visible {
-  border-radius: var(--radius-control);
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: 2px;
-}
-
-.crumb svg {
-  width: 12px;
-  height: 12px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
 .titleRow {
   display: flex;
   align-items: center;

@@ -249,7 +249,10 @@ export interface TrailProps {
   stepProps?: (key: string, target: string | null) => object;
 }
 
-/** Where you are, for the toolbar: the trail back up, then the folder's, file's or search's title. */
+/**
+ * Where you are, for the toolbar: one line from the top level down, each step
+ * up a button and the folder, file or search on show last and in bold.
+ */
 export function Trail({
   index,
   rootName,
@@ -261,37 +264,32 @@ export function Trail({
   onOpenFolder,
   stepProps = () => ({}),
 }: TrailProps): ReactElement {
-  const steps = folderId ? [...ancestorsOf(index, folderId), folderId] : [];
-  const title = status ? "Search" : (leaf ?? (folderId ? (index.folders.get(folderId)?.name ?? rootName) : rootName));
+  const folders = folderId ? [...ancestorsOf(index, folderId), folderId] : [];
+  const steps: { key: string; target: string | null; name: string }[] = status
+    ? []
+    : [
+        { key: "crumb:", target: null, name: rootName },
+        ...folders.map((id) => ({ key: `crumb:${id}`, target: id, name: index.folders.get(id)?.name ?? "" })),
+      ];
+  const here = status ? "Search" : (leaf ?? steps.pop()?.name ?? rootName);
+  const note = status ?? (!folderId && !leaf ? rootCrumb : null);
   return (
-    <div className={styles.heading}>
-      {status ? (
-        <p className={styles.crumb}>{status}</p>
-      ) : steps.length || leaf ? (
-        <nav className={styles.crumb} aria-label="Folder">
-          <button type="button" onClick={() => onOpenFolder(null)} {...stepProps("crumb:", null)}>
-            {rootName}
-          </button>
-          {steps.map((id, i) => (
-            <span key={id}>
-              <span aria-hidden="true">/</span>
-              {i === steps.length - 1 && !leaf ? (
-                <span aria-current="location">{index.folders.get(id)?.name}</span>
-              ) : (
-                <button type="button" onClick={() => onOpenFolder(id)} {...stepProps(`crumb:${id}`, id)}>
-                  {index.folders.get(id)?.name}
-                </button>
-              )}
-            </span>
-          ))}
-        </nav>
-      ) : (
-        <p className={styles.crumb}>{rootCrumb}</p>
-      )}
-      <Title className={styles.title} title={title}>
-        {title}
+    <nav className={styles.heading} aria-label="Folder">
+      <Title className={styles.path}>
+        {steps.map((step) => (
+          <span key={step.key} className={styles.step}>
+            <button type="button" title={step.name} onClick={() => onOpenFolder(step.target)} {...stepProps(step.key, step.target)}>
+              {step.name}
+            </button>
+            <span aria-hidden="true">/</span>
+          </span>
+        ))}
+        <span className={styles.here} aria-current="location" title={here}>
+          {here}
+        </span>
       </Title>
-    </div>
+      {note ? <span className={styles.note}>{note}</span> : null}
+    </nav>
   );
 }
 

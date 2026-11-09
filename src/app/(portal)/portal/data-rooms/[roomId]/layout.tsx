@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
-import Link from "next/link";
 import { DataRoomApp } from "@/features/data-room/DataRoomApp";
 import { RoomTabs } from "@/features/data-room/RoomTabs";
 import { ShareButton } from "@/features/data-room/ShareDialog";
@@ -41,12 +40,6 @@ export default async function DataRoomLayout({
     <div className={styles.frame}>
       <header className={styles.bar}>
         <div className={styles.titleGroup}>
-          <Link href="/portal/data-rooms" className={styles.crumb}>
-            Data Rooms
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M6 3.5 10.5 8 6 12.5" />
-            </svg>
-          </Link>
           <div className={styles.titleRow}>
             <h1 className={styles.title}>{room.name}</h1>
             <span className={styles.role}>{roleLabel(role)}</span>
