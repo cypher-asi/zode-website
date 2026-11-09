@@ -9,7 +9,7 @@
  *     --create "ZODE ASCENT" --owner-user-id <ZOS user id> \
  *     --from "<room id>:<file name>,<file name>=01 ZODE Models" \
  *     --folder "02 ZODE TORONTO" \
- *     --from "<room id>=03 ZODE CALGARY/Olds - 6102-6402 48 Avenue" [--as n3o@zero.tech] [--dry-run]
+ *     --from "<room id>=03 ZODE CALGARY/A Olds - 6102-6402 48 Avenue" [--as n3o@zero.tech] [--dry-run]
  *
  * `--from <room id>=<path>` copies the whole room under <path>; listing file
  * names after a colon copies only those root-level files into it. `--folder`

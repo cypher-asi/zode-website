@@ -4,8 +4,8 @@
  *
  *   node --env-file=.env.production.local scripts/write-portfolio-summary.mjs \
  *     --room <portfolio room id> --model "02 PROJECT DEAL/ZODE_Retro_I_Model_26.10.22.xlsx" \
- *     --site "Olds=<site room id>:03 ZODE CALGARY/Olds - 6102-6402 48 Avenue" \
- *     --site "Calgary=<site room id>:03 ZODE CALGARY/Calgary - 5430 30 Street SE" \
+ *     --site "Olds=<site room id>:03 ZODE CALGARY/A Olds - 6102-6402 48 Avenue" \
+ *     --site "Calgary=<site room id>:03 ZODE CALGARY/B Calgary - 5430 30 Street SE" \
  *     [--as n3o@zero.tech] [--out portfolio.json] [--dry-run]
  *
  * The workbook is a ZODE Retro model: Summary, Inputs and one sheet per site,
