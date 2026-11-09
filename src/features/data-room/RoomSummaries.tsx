@@ -1,3 +1,4 @@
+import { ColoSummaryView } from "./ColoSummaryView";
 import { PortfolioSummaryView } from "./PortfolioSummaryView";
 import type { LoadedSummary } from "./summary";
 import { SummaryView } from "./SummaryView";
@@ -29,6 +30,8 @@ export function renderSummaries(
             <TopCoSummaryView roomId={roomId} summary={summary} />
           ) : summary.layout === "portfolio" ? (
             <PortfolioSummaryView roomId={roomId} summary={summary} />
+          ) : summary.layout === "colo" ? (
+            <ColoSummaryView roomId={roomId} summary={summary} />
           ) : (
             <SummaryView
               roomId={roomId}
