@@ -344,26 +344,56 @@
   min-width: 12rem;
 }
 
-/* Membership invites, folded under the links that are the usual way to share. */
-.memberSummary {
-  width: fit-content;
-  color: var(--color-text-secondary);
+/* Members or public links, as a quiet segmented control like the room's tabs: the chosen one lifts out as a white chip. */
+.modes {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: 10px;
+  background: var(--color-surface-tint);
+}
+
+.mode {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--color-text-tertiary);
+  font: inherit;
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
+  transition:
+    background-color var(--duration-base) ease,
+    box-shadow var(--duration-base) ease,
+    color var(--duration-base) ease;
 }
 
-.memberSummary:hover {
+@media (hover: hover) {
+  .mode:hover {
+    color: var(--color-text-primary);
+  }
+}
+
+.mode:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
+.mode[aria-pressed="true"] {
+  background: var(--color-bg);
   color: var(--color-text-primary);
-}
-
-.member[open] > .memberSummary {
-  margin-bottom: 12px;
-}
-
-.member[open] > .publicText,
-.member[open] > .roles {
-  margin-bottom: 12px;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    0 1px 1px rgba(0, 0, 0, 0.04),
+    0 0 0 0.5px rgba(0, 0, 0, 0.06);
 }
 
 .link {
@@ -584,7 +614,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .chipField,
-  .roleOption {
+  .roleOption,
+  .mode {
     transition: none;
   }
 

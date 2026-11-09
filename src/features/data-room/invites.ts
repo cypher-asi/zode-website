@@ -200,6 +200,15 @@ export async function shareWithAccount(
   return result.ok ? result : null;
 }
 
+/** Which of the (normalized) `emails` some account has signed up with. */
+export async function accountEmails(emails: string[]): Promise<Set<string>> {
+  if (!emails.length) return new Set();
+  const rows = await db()`
+    select distinct lower(email) as email from account_directory where lower(email) = any(${emails}::text[])
+  `;
+  return new Set(rows.map((row) => String(row.email)));
+}
+
 /** Unexpired invites to the account's email, for rooms it isn't in yet, oldest first. */
 async function pendingInvitesFor(account: Account): Promise<InviteDetails[]> {
   const rows = await db()`

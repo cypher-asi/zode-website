@@ -279,11 +279,12 @@ export function ShareButton(props: ShareProps): ReactElement {
 }
 
 /**
- * Shares the room by email: each address gets its own link, opened without an
- * account, or with "Invite as member" a membership they sign in to. The email
- * field turns addresses into chips and suggests people as you type: everyone
- * ZODE knows for ZODE admins, otherwise people you've invited before (see
- * `searchPeople`).
+ * Shares the room by email: by default a membership each address signs in to,
+ * or toggled to public links, each address its own link opened without an
+ * account. Either way an address with a ZODE account becomes a member at once,
+ * and the room joins its portal. The email field turns addresses into chips
+ * and suggests people as you type: everyone ZODE knows for ZODE admins,
+ * otherwise people you've invited before (see `searchPeople`).
  */
 function ShareDialog({
   roomId,
@@ -309,6 +310,7 @@ function ShareDialog({
   const [results, setResults] = useState<PersonSuggestion[]>([]);
   const [result, setResult] = useState<ActionState>({});
   const [sending, startSending] = useTransition();
+  const [mode, setMode] = useState<"member" | "link">("member");
   const [sendEmail, setSendEmail] = useState(true);
   const [linkResult, setLinkResult] = useState<ActionState>({});
   const [confirm, setConfirm] = useState<Omit<DialogProps, "onClose"> | null>(null);
@@ -328,6 +330,16 @@ function ShareDialog({
   const emails = [...new Set([...chips, ...splitEmails(text)])];
   // Only committed chips are checked, so a name being typed isn't flagged.
   const invalid = chips.filter((email) => !isEmail(email));
+  const submitLabel =
+    mode === "member"
+      ? sending
+        ? "Sending…"
+        : "Send invites"
+      : sending
+        ? "Sharing…"
+        : sendEmail
+          ? "Create and send links"
+          : "Create links";
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -460,9 +472,8 @@ function ShareDialog({
         className={ui.dialogForm}
         onSubmit={(event) => {
           event.preventDefault();
-          const submitter = (event.nativeEvent as SubmitEvent).submitter;
-          const form = new FormData(event.currentTarget, submitter);
-          const action = form.get("intent") === "member" ? inviteMembersAction : createShareLinksAction;
+          const form = new FormData(event.currentTarget);
+          const action = mode === "member" ? inviteMembersAction : createShareLinksAction;
           startSending(async () => {
             const outcome = await action(roomId, {}, form);
             setResult(outcome);
@@ -486,9 +497,32 @@ function ShareDialog({
             <Icon name="close" />
           </button>
         </div>
+        <div className={styles.modes} role="group" aria-label="Share as">
+          {(
+            [
+              ["member", "Members", null],
+              ["link", "Public links", links.length],
+            ] as const
+          ).map(([value, label, count]) => (
+            <button
+              key={value}
+              type="button"
+              className={styles.mode}
+              aria-pressed={mode === value}
+              onClick={() => {
+                setMode(value);
+                setResult({});
+              }}
+            >
+              {label}
+              {count ? <span className={styles.count}>{count}</span> : null}
+            </button>
+          ))}
+        </div>
         <p className={ui.dialogText}>
-          Each person gets their own link to browse and download, without a ZODE account. You&apos;ll see when they open
-          it, how long they spend on each file and what they download.
+          {mode === "member"
+            ? "Each person gets a personal link and signs in, or creates a ZODE account, with that address. Anyone who already has an account is added now and sees the room in their portal."
+            : "Each person gets their own link to browse and download, without a ZODE account. You'll see when they open it, how long they spend on each file and what they download. Anyone who already has a ZODE account is added as a member instead."}
         </p>
 
         <div className={ui.field}>
@@ -576,110 +610,90 @@ function ShareDialog({
           ) : null}
         </div>
 
+        <fieldset className={styles.roles}>
+          <legend className={ui.label}>{mode === "member" ? "Access" : "Access for ZODE accounts"}</legend>
+          {ROLES.map((role) => (
+            <label key={role.id} className={styles.roleOption}>
+              <input type="radio" name="role" value={role.id} defaultChecked={role.id === "viewer"} />
+              <span>
+                <strong>{role.label}</strong>
+                <span>{role.detail}</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
         <label className={styles.roleOption}>
-          <input
-            type="checkbox"
-            name="sendEmail"
-            checked={sendEmail}
-            onChange={(event) => setSendEmail(event.target.checked)}
-          />
+          <input type="checkbox" name="requireMnda" defaultChecked />
           <span>
-            <strong>Email each person their link</strong>
-            <span>Otherwise copy the links below and send them yourself.</span>
+            <strong>Require the mutual NDA</strong>
+            <span>
+              {mode === "member" ? "Invitees" : "People with a ZODE account"} sign ZODE&apos;s MNDA before they can open
+              the room. Anyone who already signed one isn&apos;t asked again.
+            </span>
           </span>
         </label>
+
+        {mode === "link" ? (
+          <label className={styles.roleOption}>
+            <input
+              type="checkbox"
+              name="sendEmail"
+              checked={sendEmail}
+              onChange={(event) => setSendEmail(event.target.checked)}
+            />
+            <span>
+              <strong>Email each person their link</strong>
+              <span>Otherwise copy the links below and send them yourself.</span>
+            </span>
+          </label>
+        ) : null}
 
         <div className={styles.footer}>
           {result.error ? <p className={ui.error}>{result.error}</p> : null}
           {result.ok ? <p className={ui.ok}>{result.ok}</p> : null}
-          <button
-            type="submit"
-            name="intent"
-            value="link"
-            className={ui.primary}
-            disabled={sending || !emails.length || invalid.length > 0}
-          >
-            {sending ? "Sharing…" : sendEmail ? "Create and send links" : "Create links"}
+          <button type="submit" className={ui.primary} disabled={sending || !emails.length || invalid.length > 0}>
+            {submitLabel}
           </button>
         </div>
 
-        <details className={styles.member}>
-          <summary className={styles.memberSummary}>Invite as member instead</summary>
-          <p className={styles.publicText}>
-            Members sign in, or create a ZODE account, with the invited address. The room joins their portal, and admins
-            can upload, organize and share it.
-          </p>
-          <fieldset className={styles.roles}>
-            <legend className={ui.label}>Access</legend>
-            {ROLES.map((role) => (
-              <label key={role.id} className={styles.roleOption}>
-                <input type="radio" name="role" value={role.id} defaultChecked={role.id === "viewer"} />
-                <span>
-                  <strong>{role.label}</strong>
-                  <span>{role.detail}</span>
-                </span>
-              </label>
-            ))}
-          </fieldset>
-          <label className={styles.roleOption}>
-            <input type="checkbox" name="requireMnda" defaultChecked />
-            <span>
-              <strong>Require the mutual NDA</strong>
-              <span>
-                Invitees sign ZODE&apos;s MNDA before they can open the room. Anyone who already signed one isn&apos;t
-                asked again.
-              </span>
-            </span>
-          </label>
-          <div className={styles.footer}>
-            <button
-              type="submit"
-              name="intent"
-              value="member"
-              className={ui.button}
-              disabled={sending || !emails.length || invalid.length > 0}
-            >
-              Send member invites
-            </button>
-          </div>
-        </details>
-
-        <section className={styles.public} aria-labelledby={`${id}-links`}>
-          <h3 id={`${id}-links`} className={styles.peopleHeading}>
-            Links <span className={styles.count}>{links.length}</span>
-          </h3>
-          {linkResult.error ? <p className={ui.error}>{linkResult.error}</p> : null}
-          {linkResult.ok ? <p className={ui.ok}>{linkResult.ok}</p> : null}
-          {links.length ? (
-            <ul className={styles.peopleList}>
-              {links.map((link) => (
-                <LinkRow
-                  key={link.id}
-                  roomId={roomId}
-                  link={link}
-                  origin={origin}
-                  now={now}
-                  onResult={setLinkResult}
-                  onRevoke={(target) =>
-                    setConfirm({
-                      title: "Revoke link?",
-                      description: `${target.email ? `${target.email}'s link` : "The link"} stops opening ${roomName} immediately. What they did with it stays in the activity.`,
-                      confirmLabel: "Revoke",
-                      danger: true,
-                      onConfirm: async () => {
-                        const outcome = await revokeShareLinkAction(roomId, target.id);
-                        setLinkResult(outcome);
-                        return outcome.error;
-                      },
-                    })
-                  }
-                />
-              ))}
-            </ul>
-          ) : (
-            <p className={styles.publicText}>No links yet. Add an email above to create one.</p>
-          )}
-        </section>
+        {mode === "link" ? (
+          <section className={styles.public} aria-labelledby={`${id}-links`}>
+            <h3 id={`${id}-links`} className={styles.peopleHeading}>
+              Links <span className={styles.count}>{links.length}</span>
+            </h3>
+            {linkResult.error ? <p className={ui.error}>{linkResult.error}</p> : null}
+            {linkResult.ok ? <p className={ui.ok}>{linkResult.ok}</p> : null}
+            {links.length ? (
+              <ul className={styles.peopleList}>
+                {links.map((link) => (
+                  <LinkRow
+                    key={link.id}
+                    roomId={roomId}
+                    link={link}
+                    origin={origin}
+                    now={now}
+                    onResult={setLinkResult}
+                    onRevoke={(target) =>
+                      setConfirm({
+                        title: "Revoke link?",
+                        description: `${target.email ? `${target.email}'s link` : "The link"} stops opening ${roomName} immediately. What they did with it stays in the activity.`,
+                        confirmLabel: "Revoke",
+                        danger: true,
+                        onConfirm: async () => {
+                          const outcome = await revokeShareLinkAction(roomId, target.id);
+                          setLinkResult(outcome);
+                          return outcome.error;
+                        },
+                      })
+                    }
+                  />
+                ))}
+              </ul>
+            ) : (
+              <p className={styles.publicText}>No links yet. Add an email above to create one.</p>
+            )}
+          </section>
+        ) : null}
 
         <section className={styles.people} aria-labelledby={`${id}-people`}>
           <div className={styles.peopleHeader}>

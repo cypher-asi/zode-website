@@ -17,6 +17,7 @@ import { recordEvent, recordEvents } from "./audit";
 import { blobInfo, deleteBlobs, deleteRoomBlobs, roomBlobPrefix } from "./blob";
 import {
   acceptInvite,
+  accountEmails,
   claimPendingInvites,
   findInvite,
   inviteUrl,
@@ -203,18 +204,33 @@ function emailShareLink(access: RoomAccess, link: { id: string; email: string; t
 
 /**
  * Gives each address its own link to the room, opened without an account, and
- * with `sendEmail` emails it to them. An address that already has a link keeps it.
+ * with `sendEmail` emails it to them. An address that already has a link keeps
+ * it. Addresses with a ZODE account are made members instead, with the form's
+ * role and MNDA requirement, so the room joins their portal.
  */
 export async function createShareLinksAction(roomId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
   const access = await roomAccess(roomId, "admin");
   if (!access) return NO_ACCESS;
   const emails = parseEmails(formData);
   if (!Array.isArray(emails)) return emails;
+  const role = formData.get("role");
+  if (!isRole(role)) return { error: "Choose a role." };
+  const requiresMnda = formData.get("requireMnda") === "on";
   const sendEmail = formData.get("sendEmail") === "on";
   if (sendEmail && !(await withinInviteLimits(roomId, access, emails.length))) return { error: RATE_LIMITED };
 
+  const accounts = await accountEmails(emails);
+  const members = await inviteMembers(
+    access,
+    emails.filter((email) => accounts.has(email)),
+    role,
+    requiresMnda,
+    sendEmail,
+  );
+  const linkEmails = emails.filter((email) => !accounts.has(email));
+
   const by = access.account.email.toLowerCase();
-  const links = await issueShareLinks(roomId, emails, by);
+  const links = await issueShareLinks(roomId, linkEmails, by);
   const emailed: string[] = [];
   for (const link of links) {
     const sent = sendEmail ? await countSend(roomId, link.id) : null;
@@ -235,13 +251,14 @@ export async function createShareLinksAction(roomId: string, _prev: ActionState,
   refresh();
   const created = links.filter((link) => link.created).map((link) => link.email);
   const existing = links.filter((link) => !link.created).map((link) => link.email);
-  const parts = [];
+  const parts = memberSummary(members);
   if (created.length) parts.push(`Created ${created.length === 1 ? "a link" : "links"} for ${list(created)}.`);
   if (existing.length) {
     parts.push(`${list(existing)} already ${existing.length === 1 ? "has a link" : "have links"}${sendEmail ? ", sent again" : ""}.`);
   }
-  if (sendEmail && emailed.length) parts.push(emailed.length === 1 ? "Emailed it." : "Emailed each person theirs.");
-  return parts.length ? { ok: parts.join(" ") } : { error: "No links were created. Try again." };
+  if (sendEmail && emailed.length) parts.push(emailed.length === 1 ? "Emailed the link." : "Emailed each person their link.");
+  const done = created.length || existing.length || members.shared.length || members.invited.length;
+  return done ? { ok: parts.join(" ") } : { error: parts.join(" ") || "No links were created. Try again." };
 }
 
 export async function resendShareLinkAction(roomId: string, linkId: string): Promise<ActionState> {
@@ -534,6 +551,51 @@ const withinInviteLimits = (roomId: string, access: RoomAccess, count: number): 
     { key: `invite:room:${roomId}`, max: 50, windowSeconds: DAY, cost: count },
   ]);
 
+interface MemberInvites {
+  /** Joined at once: their account was already signed up with the address. */
+  shared: string[];
+  /** Left pending, for an account yet to sign up or to sign a required MNDA. */
+  invited: string[];
+  existing: string[];
+}
+
+/** Invites each address as a member, sharing the room at once with any account signed up with it. */
+async function inviteMembers(
+  access: RoomAccess,
+  emails: string[],
+  role: RoomRole,
+  requiresMnda: boolean,
+  sendEmail: boolean,
+): Promise<MemberInvites> {
+  const roomId = access.room.id;
+  const result: MemberInvites = { shared: [], invited: [], existing: [] };
+  for (const email of emails) {
+    const invite = await issueInvite(roomId, email, role, access.account.email.toLowerCase(), requiresMnda);
+    const joined = invite && (await shareWithAccount(roomId, invite));
+    if (!invite || joined?.alreadyMember) {
+      result.existing.push(email);
+      continue;
+    }
+    (joined ? result.shared : result.invited).push(email);
+    if (sendEmail) emailInvite(access, invite, Boolean(joined));
+    await recordEvent({
+      roomId,
+      account: access.account,
+      action: "invite",
+      detail: { email, role, requiresMnda, ...(joined ? { shared: true } : {}) },
+    });
+  }
+  return result;
+}
+
+function memberSummary({ shared, invited, existing }: MemberInvites): string[] {
+  const parts = [];
+  if (shared.length) parts.push(`Shared with ${list(shared)}.`);
+  if (invited.length) parts.push(`Invited ${list(invited)}.`);
+  if (existing.length) parts.push(`${list(existing)} already ${existing.length === 1 ? "has" : "have"} access.`);
+  return parts;
+}
+
 export async function inviteMembersAction(roomId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
   const access = await roomAccess(roomId, "admin");
   if (!access) return NO_ACCESS;
@@ -545,32 +607,10 @@ export async function inviteMembersAction(roomId: string, _prev: ActionState, fo
   if (!Array.isArray(emails)) return emails;
   if (!(await withinInviteLimits(roomId, access, emails.length))) return { error: RATE_LIMITED };
 
-  const shared: string[] = [];
-  const invited: string[] = [];
-  const existing: string[] = [];
-  for (const email of emails) {
-    const invite = await issueInvite(roomId, email, role, access.account.email.toLowerCase(), requiresMnda);
-    const joined = invite && (await shareWithAccount(roomId, invite));
-    if (!invite || joined?.alreadyMember) {
-      existing.push(email);
-      continue;
-    }
-    (joined ? shared : invited).push(email);
-    emailInvite(access, invite, Boolean(joined));
-    await recordEvent({
-      roomId,
-      account: access.account,
-      action: "invite",
-      detail: { email, role, requiresMnda, ...(joined ? { shared: true } : {}) },
-    });
-  }
-
+  const result = await inviteMembers(access, emails, role, requiresMnda, true);
   refresh();
-  const parts = [];
-  if (shared.length) parts.push(`Shared with ${shared.join(", ")}.`);
-  if (invited.length) parts.push(`Invited ${invited.join(", ")}.`);
-  if (existing.length) parts.push(`${existing.join(", ")} already ${existing.length === 1 ? "has" : "have"} access.`);
-  return shared.length || invited.length ? { ok: parts.join(" ") } : { error: parts.join(" ") };
+  const parts = memberSummary(result).join(" ");
+  return result.shared.length || result.invited.length ? { ok: parts } : { error: parts };
 }
 
 export async function resendInviteAction(roomId: string, memberId: string): Promise<ActionState> {
