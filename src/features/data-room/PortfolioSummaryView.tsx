@@ -349,7 +349,7 @@ export function Table({
   groups,
 }: {
   head: string[];
-  groups: { title?: string; rows: { label: string; values: string[] }[] }[];
+  groups: { title?: string; rows: { label: string; values: string[]; kind?: "subtotal" }[] }[];
 }): ReactElement {
   return (
     <div className={p.scroll}>
@@ -374,7 +374,7 @@ export function Table({
               </tr>
             ) : null}
             {group.rows.map((row) => (
-              <tr key={row.label}>
+              <tr key={row.label} className={row.kind === "subtotal" ? p.subtotal : undefined}>
                 <th scope="row">{row.label}</th>
                 {row.values.map((v, i) => (
                   <td key={i}>{v}</td>

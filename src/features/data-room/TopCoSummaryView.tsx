@@ -3,7 +3,7 @@ import Link from "next/link";
 import { multiple, pct, usdShort } from "@/features/compute-model/format";
 import { Icon } from "./icons";
 import { FolderLink, Section, Table } from "./PortfolioSummaryView";
-import type { TopCoModel, TopCoProject, TopCoTotal } from "./topco";
+import type { TopCoCapital, TopCoModel, TopCoProject, TopCoTotal } from "./topco";
 import type { TopCoSummary } from "./summary";
 import { KeyFigures, plural, Prose, TermGroup, type KeyFigure } from "./SummaryParts";
 import styles from "./Summary.module.css";
@@ -36,6 +36,20 @@ interface ProjectRow {
   value: (m: TopCoProject) => ReactNode;
   /** The Total column's value; blank where the workbook adds nothing up. */
   total?: (t: TopCoTotal) => string;
+  /** Part of the row above it. */
+  indent?: boolean;
+}
+
+type Amounts = TopCoProject | TopCoTotal;
+
+/** A use of capital, then its pref and debt under it. */
+function phaseRows(label: string, phase: keyof TopCoCapital): ProjectRow[] {
+  const rows: { label: string; amount: (m: Amounts) => number; indent?: boolean }[] = [
+    { label, amount: (m) => m.capital[phase].pref + m.capital[phase].debt },
+    { label: "Preferred equity", amount: (m) => m.capital[phase].pref, indent: true },
+    { label: "Debt", amount: (m) => m.capital[phase].debt, indent: true },
+  ];
+  return rows.map((r) => ({ label: r.label, value: (m) => usdShort(r.amount(m)), total: (t) => usdShort(r.amount(t)), indent: r.indent }));
 }
 
 const projectGroups: { title: string; rows: ProjectRow[] }[] = [
@@ -43,11 +57,17 @@ const projectGroups: { title: string; rows: ProjectRow[] }[] = [
     title: "Capital",
     rows: [
       { label: "Critical IT at full build", value: (m) => mw(m.criticalItMw), total: (t) => mw(t.criticalItMw) },
-      { label: "Project cost, GPU refreshes included", value: (m) => usdShort(m.projectCost), total: (t) => usdShort(t.projectCost) },
-      { label: "Debt drawn", value: (m) => usdShort(m.debt), total: (t) => usdShort(t.debt) },
-      { label: "Preferred equity", value: (m) => usdShort(m.prefNeeded), total: (t) => usdShort(t.prefNeeded) },
-      { label: "From ZODE TopCo", value: (m) => usdShort(m.topcoPref), total: (t) => usdShort(t.topcoPref) },
-      { label: "From third parties", value: (m) => usdShort(m.thirdPartyPref), total: (t) => usdShort(t.thirdPartyPref) },
+      ...phaseRows("Site acquisition", "site"),
+      ...phaseRows("Conversion", "conversion"),
+      ...phaseRows("GPU financing", "gpu"),
+      { label: "Total capital requirements", value: (m) => usdShort(m.prefNeeded + m.debt), total: (t) => usdShort(t.prefNeeded + t.debt) },
+      { label: "From ZODE TopCo", value: (m) => usdShort(m.topcoPref), total: (t) => usdShort(t.topcoPref), indent: true },
+      {
+        label: "From investors",
+        value: (m) => usdShort(m.thirdPartyPref + m.debt),
+        total: (t) => usdShort(t.thirdPartyPref + t.debt),
+        indent: true,
+      },
     ],
   },
   {
@@ -110,8 +130,8 @@ function ProjectsTable({ roomId, m, summaries }: { roomId: string; m: TopCoModel
                 {group.title}
               </th>
             </tr>
-            {group.rows.map((row) => (
-              <tr key={row.label}>
+            {group.rows.map((row, i) => (
+              <tr key={i} className={row.indent ? p.indent : undefined}>
                 <th scope="row">{row.label}</th>
                 {m.projects.map((s) => (
                   <td key={s.name}>{row.value(s)}</td>
@@ -128,8 +148,8 @@ function ProjectsTable({ roomId, m, summaries }: { roomId: string; m: TopCoModel
 
 /**
  * A company room's summary, from the TopCo workbook: the pre-seed raise and
- * where it goes, the project SPVs it funds side by side, TopCo's cash year by
- * year and what the pre-seed investors take out. Each project's own model
+ * where it goes, the project SPVs it funds side by side, the group's
+ * consolidated statement year by year and what the pre-seed investors take out. Each project's own model
  * stays in its folder's summary, which opens from the projects table.
  */
 export function TopCoSummaryView({ roomId, summary }: { roomId: string; summary: TopCoSummary }): ReactElement {
@@ -138,7 +158,7 @@ export function TopCoSummaryView({ roomId, summary }: { roomId: string; summary:
   const modelName = summary.sourceNames.get(m.model.fileId);
   const funded = m.projects.filter((s) => s.topcoPref > 0);
   const budget = m.uses.find((u) => !/pref/i.test(u.label));
-  const lastYear = m.cash.years.at(-1);
+  const { statement } = m;
 
   const lede =
     `ZODE raises ${usdShort(raise.amount)} of pre-seed equity at TopCo, ${usdShort(raise.preMoney, 0)} pre-money, ` +
@@ -211,17 +231,13 @@ export function TopCoSummaryView({ roomId, summary }: { roomId: string; summary:
         <ProjectsTable roomId={roomId} m={m} summaries={summary.projectSummaries} />
       </Section>
 
-      <Section id="topco-cash" title={`TopCo cash, ${m.cash.years[0]} to ${lastYear}`}>
+      <Section id="consolidated" title={`Consolidated, ${statement.years[0]} to ${statement.years.at(-1)}`}>
         <Table
-          head={[...m.cash.years.map(String), "Total"]}
-          groups={[
-            {
-              rows: m.cash.rows.map((r) => ({
-                label: r.label,
-                values: [...r.values.map(cash), r.total === null ? "" : cash(r.total)],
-              })),
-            },
-          ]}
+          head={[...statement.years.map(String), "Total"]}
+          groups={statement.groups.map((g) => ({
+            title: g.title,
+            rows: g.rows.map((r) => ({ label: r.label, values: [...r.values.map(cash), cash(r.total)], kind: r.kind })),
+          }))}
         />
       </Section>
 

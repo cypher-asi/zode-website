@@ -39,6 +39,27 @@
   border-top: 1px solid var(--color-border);
 }
 
+/* A part of the row above it, such as its debt and equity. */
+.table .indent th[scope="row"] {
+  padding-left: 16px;
+  color: var(--color-text-tertiary);
+}
+
+.table .indent td {
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+/* A sum of the rows above it. */
+.table tbody tr.subtotal {
+  border-top-color: var(--color-border-strong);
+}
+
+.table .subtotal th[scope="row"] {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
 .siteHead,
 .colHead {
   min-width: 8em;

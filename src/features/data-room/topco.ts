@@ -16,6 +16,17 @@ export interface TopCoSpv {
 }
 
 /**
+ * Debt and pref by what they pay for. The workbook sizes debt on each year's
+ * cost, so the script splits each year's draws and equity by that year's mix
+ * of site acquisition, conversion and GPU costs.
+ */
+export interface TopCoCapital {
+  site: { pref: number; debt: number };
+  conversion: { pref: number; debt: number };
+  gpu: { pref: number; debt: number };
+}
+
+/**
  * A project's results, from the workbook's Summary tab: the sum of its SPVs'
  * amounts, and their rates side by side, since those don't add up. TopCo's
  * IRR is on its yearly cash from all of them together.
@@ -43,6 +54,7 @@ export interface TopCoProject {
   cashToTopco: number;
   topcoIrr: number | null;
   topcoMultiple: number | null;
+  capital: TopCoCapital;
 }
 
 export interface TopCoTotal {
@@ -53,13 +65,24 @@ export interface TopCoTotal {
   topcoPref: number;
   thirdPartyPref: number;
   cashToTopco: number;
+  capital: TopCoCapital;
 }
 
-/** A row of the yearly TopCo cash table, in USD; `total` is null where the workbook sums nothing. */
-export interface TopCoCashRow {
+/** A row of the consolidated statement, in USD, inflows positive. */
+export interface TopCoStatementRow {
   label: string;
-  total: number | null;
   values: number[];
+  total: number;
+  kind?: "subtotal";
+}
+
+/**
+ * The SPVs at 100% and TopCo as one, year by year, with fees to TopCo and rent
+ * between a project's own companies left out. A cash model: no depreciation or tax.
+ */
+export interface TopCoStatement {
+  years: number[];
+  groups: { title: string; rows: TopCoStatementRow[] }[];
 }
 
 export interface TopCoHire {
@@ -100,7 +123,7 @@ export interface TopCoModel {
     /** The model's last year, through which distributions count. */
     through: number;
   };
-  cash: { years: number[]; rows: TopCoCashRow[] };
+  statement: TopCoStatement;
   team: TopCoHire[];
   /** The workbook's account of itself, as paragraphs and "- " list lines. */
   overview: string;
