@@ -527,7 +527,7 @@ export const SLIDES: readonly Slide[] = [
             years: "2020–Present",
             role: "Co-founder, CEO & Executive Chairman",
             description: "Persistent simulation with Samsung, NVIDIA and Epic Games.",
-            outcome: "$2 billion+ EV",
+            outcome: "$4 billion peak EV",
           },
           {
             company: "Factory ZERO",
@@ -541,7 +541,7 @@ export const SLIDES: readonly Slide[] = [
             years: "2004–2011",
             role: "Founder & CEO",
             description: "The #1 cloud-based dental EMR system.",
-            outcome: "$1 billion+ EV",
+            outcome: "$1 billion current EV",
           },
         ],
       },
