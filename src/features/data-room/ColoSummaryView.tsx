@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import Link from "next/link";
 import { multiple, pct, usdShort } from "@/features/compute-model/format";
+import { CapitalStack, type CapitalSource } from "./CapitalStack";
 import type { ColoMetrics, ColoModel } from "./colo";
 import { Icon } from "./icons";
 import { Section, Table } from "./PortfolioSummaryView";
@@ -25,6 +26,33 @@ const andList = (names: string[]) =>
 const cash = (n: number) => (Math.abs(n) < 500 ? "–" : usdShort(n));
 const caseValue = (format: ColoModel["cases"]["head"][number]["format"], n: number | null) =>
   n === null ? "n.m." : format === "mw" ? mw(n) : format === "usd" ? usdShort(n) : format === "pct" ? pct(n, 1) : multiple(n);
+
+/** The deployment's sources of capital on its own, before pooling: equity at its peak, then what the clusters bring in. */
+function capitalStack(m: ColoModel): CapitalSource[] {
+  const d = m.deployment;
+  const k = d.metrics;
+  return [
+    {
+      key: "equity",
+      label: "Equity",
+      amount: k.peakEquity,
+      cost: `Peak need, ${monthYear(k.peakEquityDate)}; ${m.model.title} investors, term set ${m.program.investors.termSet}`,
+    },
+    {
+      key: "prepayment",
+      label: "Customer prepayment",
+      amount: k.prepayments,
+      cost: `${pct(k.prepayments / k.contractValue, 1)} of contract value`,
+    },
+    {
+      key: "gpu",
+      label: "GPU debt",
+      amount: k.gpuDebt,
+      cost: `${pct(d.gpu.rate, 1)}, sized to ${multiple(d.gpu.dscr)} DSCR, up to ${pct(d.gpu.maxLtc, 0)} of cost`,
+    },
+    { key: "projectDebt", label: "Receivable loan", amount: k.receivablePeak, cost: "Against a signed prepayment, peak balance" },
+  ];
+}
 
 function capitalTerms(m: ColoMetrics, lease: ColoModel["deployment"]["lease"]): Term[] {
   return [
@@ -110,6 +138,7 @@ export function ColoSummaryView({ roomId, summary }: { roomId: string; summary: 
       >
         <p className={styles.lede}>{lede}</p>
         <KeyFigures figures={keyFigures} />
+        <CapitalStack sources={capitalStack(m)} />
         <div className={styles.dealGroups}>
           <TermGroup title="Capital" terms={capitalTerms(k, d.lease)} />
           <TermGroup
