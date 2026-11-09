@@ -233,7 +233,7 @@ export const VOICE = {
     "ZODE sounds like an engineer who is certain: short, declarative, concrete. It states what the product does and lets the numbers carry the weight.",
   principles: [
     "Declare, don't sell. Headlines are short statements that end with a period: \"Reclaim your sovereignty.\"",
-    "Concrete over superlative. Use the real figure (90 days, N+1, 1 GW) instead of an adjective.",
+    "Concrete over superlative. Use the real figure (120 days, N+1, 1 GW) instead of an adjective.",
     "One idea per sentence, one point per paragraph. Body copy rarely runs past three sentences.",
     "Name the physical thing: power, cooling, networking, land. ZODE is infrastructure, not magic.",
     "Calm confidence. No exclamation marks, no emoji, no rhetorical questions.",
@@ -241,7 +241,7 @@ export const VOICE = {
   examples: [
     "Sovereign Superintelligence.",
     "The fastest deployable AI data center.",
-    "From order to tokens in 90 days.",
+    "From order to tokens in 120 days.",
     "Vertically integrated, from dirt to tokens.",
     "Built by robots in North America.",
   ],
@@ -408,10 +408,10 @@ export const PRESS_KIT_ZIP = "/brand/zode-press-kit.zip";
 
 export const PRESS = {
   boilerplate:
-    "ZODE builds factory-made AI data centers that ship complete and come online in 90 days from order, anywhere in the world. Each ZODE is built to Tier III standards with N+1 redundancy on NVIDIA reference architecture, and the stack is vertically integrated from land and power to compute, routing and network, so customers own sovereign AI capacity instead of renting it. ZODEs are built by robots in North America.",
-  shortBoilerplate: "ZODE builds the fastest deployable AI data centers: factory-made, sovereign, and online in 90 days.",
+    "ZODE builds factory-made AI data centers that ship complete and come online in 120 days from order, anywhere in the world. Each ZODE is built to Tier III standards with N+1 redundancy on NVIDIA reference architecture, and the stack is vertically integrated from land and power to compute, routing and network, so customers own sovereign AI capacity instead of renting it. ZODEs are built by robots in North America.",
+  shortBoilerplate: "ZODE builds the fastest deployable AI data centers: factory-made, sovereign, and online in 120 days.",
   facts: [
-    { label: "Order to production", value: "90 days" },
+    { label: "Order to production", value: "120 days" },
     { label: "Standard", value: "Tier III, N+1 power and cooling" },
     { label: "Architecture", value: "NVIDIA reference" },
     { label: "Active build-out", value: "1 GW by 2027, 10 GW by 2028" },

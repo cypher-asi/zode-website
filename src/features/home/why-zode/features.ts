@@ -12,7 +12,7 @@ export const FEATURES: readonly Feature[] = [
   {
     id: "rapid",
     title: ["Rapid", "Deployment"],
-    body: "Production in 90 days from order, anywhere in the world. Factory-built ZODEs ship complete and come online on arrival.",
+    body: "Production in 120 days from order, anywhere in the world. Factory-built ZODEs ship complete and come online on arrival.",
   },
   {
     id: "redundant",

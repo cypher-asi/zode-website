@@ -286,7 +286,7 @@ export function Styleguide(): ReactElement {
             </ul>
             <div className={styles.specimen}>
               <p className={styles.eyebrow}>Eyebrow label</p>
-              <p className={styles.specimenH1}>From order to tokens in 90 days.</p>
+              <p className={styles.specimenH1}>From order to tokens in 120 days.</p>
               <p className={styles.specimenH2}>Vertically integrated, from dirt to tokens.</p>
               <p className={styles.specimenBody}>
                 Power, cooling, and networking delivered all the way to the GPU. Bring your workload and start producing

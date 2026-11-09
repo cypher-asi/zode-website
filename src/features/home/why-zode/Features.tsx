@@ -57,7 +57,7 @@ export function Features(): ReactElement {
         ))}
 
         <div className={styles.cta} style={area("cta")}>
-          <h1 className={styles.ctaTitle}>From order to tokens in 90 days.</h1>
+          <h1 className={styles.ctaTitle}>From order to tokens in 120 days.</h1>
           <TerminalMenu items={ACTIONS} label="Get started" />
         </div>
       </div>

@@ -57,7 +57,7 @@ function snowflake(s: Sketch, cx: number, cy: number): void {
   }
 }
 
-/** A factory-built pod on a trailer over a 13-week, 90-day ruler. */
+/** A factory-built pod on a trailer over a 120-day ruler ticked every 10 days. */
 function rapid(s: Sketch): void {
   for (const [y, z, len] of [
     [18, 72, 34],
@@ -98,9 +98,9 @@ function rapid(s: Sketch): void {
 
   const Y = 58;
   s.line([[-100, Y], [100, Y]], styles.edge);
-  for (let k = 0; k <= 13; k++) {
-    const x = -100 + (200 * k) / 13;
-    const end = k === 0 || k === 13;
+  for (let k = 0; k <= 12; k++) {
+    const x = -100 + (200 * k) / 12;
+    const end = k === 0 || k === 12;
     s.group(anim(styles.ripple, k), () =>
       s.line([[x, Y], [x, Y + (end ? 10 : 5)]], end ? styles.edge : styles.fine),
     );
@@ -109,7 +109,7 @@ function rapid(s: Sketch): void {
   const [ax, ay] = project([-100, Y + 14]);
   note(s, ax, ay + FONT, "DAY 0");
   const [bx, by] = project([100, Y + 14]);
-  note(s, bx, by + FONT, "DAY 90");
+  note(s, bx, by + FONT, "DAY 120");
 }
 
 /** N cooling units plus a dashed standby unit, each fed from both A and B buses. */

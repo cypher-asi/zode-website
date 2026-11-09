@@ -5,7 +5,7 @@ import { getPolicyMap } from "@/features/deck/policy";
 import { SLIDES } from "@/features/deck/slides";
 
 const DESCRIPTION =
-  "ZODE's investor presentation: factory-made AI data centers, online in 90 days and sold on take-or-pay compute contracts.";
+  "ZODE's investor presentation: factory-made AI data centers, online in 120 days and selling compute through offtake, merchant and token sales.";
 
 export const metadata: Metadata = {
   title: "Investor deck | ZODE",
