@@ -71,7 +71,7 @@ const tiersLine = (t: TermSet) =>
     : `Then ${pct(t.tier1Share, 0)} of the cash to ${multiple(t.tier1Until, 1)}, then ${pct(t.tier2Share, 0)}`;
 
 /** Links that open in the room's browser: a folder, or the summary in it. */
-function FolderLink({
+export function FolderLink({
   roomId,
   folderId,
   summary = false,
@@ -344,7 +344,7 @@ function investorTerms(r: InvestorReturns, title: string, extra: Term[] = []): {
 }
 
 /** Rows of values under shared column headings. */
-function Table({
+export function Table({
   head,
   groups,
 }: {
@@ -388,7 +388,7 @@ function Table({
   );
 }
 
-function Section({ id, title, action, children }: { id: string; title: string; action?: ReactNode; children: ReactNode }) {
+export function Section({ id, title, action, children }: { id: string; title: string; action?: ReactNode; children: ReactNode }) {
   return (
     <section className={styles.section} aria-labelledby={`${id}-heading`}>
       <div className={styles.sectionHead}>

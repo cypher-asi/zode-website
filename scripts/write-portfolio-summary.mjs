@@ -1,12 +1,17 @@
 /**
- * Writes a portfolio room's summary from the model workbook in the room, and
- * gives each site's folder the summary of the room it was copied from:
+ * Writes a portfolio summary from the model workbook in the room, and gives
+ * each site's folder the summary of the room it was copied from:
  *
  *   node --env-file=.env.production.local scripts/write-portfolio-summary.mjs \
  *     --room <portfolio room id> --model "02 PROJECT DEAL/ZODE_Retro_I_Model_26.10.22.xlsx" \
+ *     --folder "02 PROJECT DEAL" \
  *     --site "Olds=<site room id>:03 ZODE CALGARY/01 Olds - 6102-6402 48 Avenue" \
  *     --site "Calgary=<site room id>:03 ZODE CALGARY/02 Calgary - 5430 30 Street SE" \
  *     [--as n3o@zero.tech] [--out portfolio.json] [--dry-run]
+ *
+ * `--folder` puts the summary on a project's folder rather than at the top of
+ * the room, where a company room keeps its TopCo summary
+ * (scripts/write-topco-summary.mjs).
  *
  * The workbook is a ZODE Retro model: Summary, Inputs and one sheet per site,
  * the sites as columns C to F and the total in G. Its cached values are read
@@ -32,6 +37,7 @@ const { values: args } = parseArgs({
   options: {
     room: { type: "string" },
     model: { type: "string" },
+    folder: { type: "string" },
     site: { type: "string", multiple: true, default: [] },
     as: { type: "string", default: "n3o@zero.tech" },
     out: { type: "string" },
@@ -91,6 +97,9 @@ const here = await roomPaths(args.room);
 const modelPath = args.model.replace(/^\/+/, "");
 const modelFile = here.fileByPath.get(modelPath);
 if (!modelFile) fail(`No file "${modelPath}" in "${room.name}".`);
+const folderPath = args.folder?.replace(/^\/+|\/+$/g, "") || null;
+const folderId = folderPath ? here.folderByPath.get(folderPath) : null;
+if (folderPath && !folderId) fail(`No folder "${folderPath}" in "${room.name}".`);
 
 // The workbook's cached values, by sheet and cell.
 const blob = await get(modelFile.blob, { access: "private" });
@@ -490,7 +499,7 @@ for (const s of siteArgs) {
 
 const t = portfolio.total;
 console.log(
-  `[portfolio] "${room.name}" from ${modelFile.name}: ${sites.map((s) => `${s.name} ${s.metrics.facilityMw} MW`).join(", ")}, ` +
+  `[portfolio] "${room.name}"${folderPath ? `, ${folderPath}` : ""} from ${modelFile.name}: ${sites.map((s) => `${s.name} ${s.metrics.facilityMw} MW`).join(", ")}, ` +
     `${t.facilityMw} MW facility power in total; ${cases.facilityMw} MW stored cases; sources and uses balance at $${(totalSources / 1e6).toFixed(1)}M.`,
 );
 for (const f of folderSummaries) console.log(`[portfolio] ${f.folderPath}: the ${f.kind} summary from "${f.from}", every source resolved.`);
@@ -508,7 +517,7 @@ const by = args.as.trim().toLowerCase();
 await sql.transaction([
   sql`
     insert into data_room_summaries (room_id, folder_id, layout, kind, diligence, economics, updated_by_email)
-    values (${args.room}, null, 'portfolio', null, '{}'::jsonb, ${JSON.stringify(portfolio)}::jsonb, ${by})
+    values (${args.room}, ${folderId}, 'portfolio', null, '{}'::jsonb, ${JSON.stringify(portfolio)}::jsonb, ${by})
     on conflict (room_id, folder_id) do update
       set layout = excluded.layout, kind = excluded.kind, diligence = excluded.diligence, economics = excluded.economics,
           updated_at = now(), updated_by_email = excluded.updated_by_email

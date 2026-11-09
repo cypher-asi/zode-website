@@ -11,6 +11,7 @@ import { DEFAULT_INPUTS, type ModelInputs } from "@/features/compute-model/model
 import { writeInputParams } from "@/features/compute-model/model/url";
 import type { PortfolioModel, PortfolioSite } from "./portfolio";
 import { toRoomSite } from "./rooms";
+import type { TopCoModel } from "./topco";
 import type { RoomSite } from "./types";
 
 /** The diligence questions every room's summary answers, in display order. */
@@ -314,7 +315,19 @@ export interface PortfolioSummary {
   sourceNames: Map<string, string>;
 }
 
-export type LoadedSummary = SiteSummary | PortfolioSummary;
+/** The company's raise and its project SPVs, each beside its folder when that has a summary of its own. */
+export interface TopCoSummary {
+  layout: "topco";
+  folderId: string | null;
+  model: TopCoModel;
+  /** Project folders in the room with a summary. */
+  projectSummaries: Set<string>;
+  updatedAt: string;
+  updatedBy: string;
+  sourceNames: Map<string, string>;
+}
+
+export type LoadedSummary = SiteSummary | PortfolioSummary | TopCoSummary;
 
 /**
  * Every summary in the room: its own, at the top level, and any in its folders,
@@ -333,12 +346,15 @@ export async function listSummaries(roomId: string): Promise<LoadedSummary[]> {
 
   const sites: (DiligenceSummary & { folderId: string | null; site: RoomSite | null })[] = [];
   const portfolios: { folderId: string | null; model: PortfolioModel; updatedAt: string; updatedBy: string }[] = [];
+  const topcos: { folderId: string | null; model: TopCoModel; updatedAt: string; updatedBy: string }[] = [];
   for (const row of rows) {
     const folderId = row.folder_id == null ? null : String(row.folder_id);
     const updatedAt = new Date(row.updated_at as string).toISOString();
     const updatedBy = String(row.updated_by_email);
     if (row.layout === "portfolio") {
       portfolios.push({ folderId, model: row.economics as PortfolioModel, updatedAt, updatedBy });
+    } else if (row.layout === "topco") {
+      topcos.push({ folderId, model: row.economics as TopCoModel, updatedAt, updatedBy });
     } else {
       sites.push({
         kind: row.kind,
@@ -354,7 +370,7 @@ export async function listSummaries(roomId: string): Promise<LoadedSummary[]> {
 
   const ids = [
     ...sites.flatMap((s) => [...Object.values(s.diligence).flatMap((item) => item.sources), ...economicsSources(s)]),
-    ...portfolios.map((p) => ({ fileId: p.model.model.fileId })),
+    ...[...portfolios, ...topcos].map((p) => ({ fileId: p.model.model.fileId })),
   ].map((source) => source.fileId);
   const files = ids.length
     ? await sql`
@@ -373,6 +389,14 @@ export async function listSummaries(roomId: string): Promise<LoadedSummary[]> {
         ...p,
         layout: "portfolio",
         sites: p.model.sites.map((site) => ({ site, summary: site.folderId ? (byFolder.get(site.folderId) ?? null) : null })),
+        sourceNames,
+      }),
+    ),
+    ...topcos.map(
+      (t): TopCoSummary => ({
+        ...t,
+        layout: "topco",
+        projectSummaries: new Set(rows.flatMap((row) => (row.folder_id == null ? [] : [String(row.folder_id)]))),
         sourceNames,
       }),
     ),

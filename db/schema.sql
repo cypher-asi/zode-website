@@ -278,12 +278,13 @@ create table if not exists data_room_summaries (
 -- set, is the site's own kind rather than the room's. A portfolio summary
 -- holds a model's results across sites in `economics`, read from the workbook
 -- by scripts/write-portfolio-summary.mjs, and leaves `diligence` to the sites'
--- folder summaries.
+-- folder summaries. A TopCo summary holds the company's raise and its project
+-- SPVs, read from the TopCo workbook by scripts/write-topco-summary.mjs.
 alter table data_room_summaries add column if not exists folder_id uuid references data_room_folders (id) on delete cascade;
 alter table data_room_summaries add column if not exists kind text check (kind in ('purchase', 'lease', 'colo'));
 alter table data_room_summaries add column if not exists layout text not null default 'site';
 alter table data_room_summaries drop constraint if exists data_room_summaries_layout_check;
-alter table data_room_summaries add constraint data_room_summaries_layout_check check (layout in ('site', 'portfolio'));
+alter table data_room_summaries add constraint data_room_summaries_layout_check check (layout in ('site', 'portfolio', 'topco'));
 alter table data_room_summaries drop constraint if exists data_room_summaries_pkey;
 create unique index if not exists data_room_summaries_place_idx on data_room_summaries (room_id, folder_id) nulls not distinct;
 
