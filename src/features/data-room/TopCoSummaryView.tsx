@@ -162,7 +162,7 @@ export function TopCoSummaryView({ roomId, summary }: { roomId: string; summary:
   const { statement } = m;
 
   const lede =
-    `ZODE raises ${usdShort(raise.amount)} of pre-seed equity at TopCo, ${usdShort(raise.preMoney, 0)} pre-money, ` +
+    `ZODE raises ${usdShort(raise.amount)} of pre-seed equity at TopCo, ${usdShort(raise.postMoney, 0)} post-money, ` +
     `for ${pct(raise.ownership, 1)} of the company. ` +
     `${budget ? `${usdShort(budget.amount)} runs TopCo and ` : ""}${usdShort(total.topcoPref)} goes into ` +
     `${andList(funded.map((s) => `${s.name} (${usdShort(s.topcoPref, 0)})`))} as preferred equity, ` +
@@ -171,7 +171,7 @@ export function TopCoSummaryView({ roomId, summary }: { roomId: string; summary:
 
   const keyFigures: KeyFigure[] = [
     { label: "Pre-seed raise", value: usdShort(raise.amount, 0) },
-    { label: `Pre-money, ${usdShort(raise.postMoney, 0)} post`, value: usdShort(raise.preMoney, 0) },
+    { label: "Post-money valuation", value: usdShort(raise.postMoney, 0) },
     { label: "Pre-seed ownership", value: pct(raise.ownership, 1) },
     { label: `Pre-seed IRR · multiple, to ${m.returns.through}`, value: returns(m.returns.preSeedIrr, m.returns.preSeedMultiple) },
     { label: `Critical IT, ${plural(m.projects.length, "project", "projects")}`, value: mw(total.criticalItMw) },
@@ -206,7 +206,6 @@ export function TopCoSummaryView({ roomId, summary }: { roomId: string; summary:
             title="Raise"
             terms={[
               { label: "Pre-seed equity", value: usdShort(raise.amount, 0), note: `Closing ${raise.closeYear}` },
-              { label: "Pre-money valuation", value: usdShort(raise.preMoney, 0) },
               { label: "Post-money valuation", value: usdShort(raise.postMoney, 0) },
               { label: "Pre-seed ownership", value: pct(raise.ownership, 1), note: "Fully diluted, no option pool" },
               { label: "Cash kept before distributions", value: usdShort(raise.minCash, 0) },
