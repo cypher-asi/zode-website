@@ -77,16 +77,28 @@
   font-weight: 500;
 }
 
+/* Value columns share the width left after the row labels; the table scrolls before they squeeze. */
+.even {
+  table-layout: fixed;
+  min-width: 48em;
+}
+
+.labelColumn {
+  width: 16em;
+}
+
 /* A value given layer by layer, such as a site company's and its compute companies'. */
 .layer {
   display: block;
 }
 
 .layer + .layer {
-  margin-top: 4px;
+  margin-top: 8px;
 }
 
 .layerName {
+  display: block;
+  font-size: var(--text-xs);
   font-weight: 400;
   color: var(--color-text-tertiary);
 }

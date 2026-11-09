@@ -25,7 +25,8 @@ function byLayer<T extends { layer: string }>(values: T[], format: (v: T) => str
   if (values.length === 1) return format(values[0]);
   return values.map((v) => (
     <span key={v.layer} className={p.layer}>
-      {format(v)} <span className={p.layerName}>{v.layer}</span>
+      {format(v)}
+      <span className={p.layerName}>{v.layer}</span>
     </span>
   ));
 }
@@ -64,7 +65,14 @@ const projectGroups: { title: string; rows: ProjectRow[] }[] = [
 function ProjectsTable({ roomId, m, summaries }: { roomId: string; m: TopCoModel; summaries: Set<string> }): ReactElement {
   return (
     <div className={p.scroll}>
-      <table className={p.table}>
+      <table className={`${p.table} ${p.even}`}>
+        <colgroup>
+          <col className={p.labelColumn} />
+          {m.projects.map((s) => (
+            <col key={s.name} />
+          ))}
+          <col />
+        </colgroup>
         <thead>
           <tr>
             <td />
