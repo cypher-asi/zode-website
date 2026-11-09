@@ -434,7 +434,7 @@ export const SLIDES: readonly Slide[] = [
     },
     statement: [
       "We acquire, build and equitize ahead of the buyer,",
-      "then sell for the most we can: tokens, merchant compute and offtake, close to RFS.",
+      "then sell close to RFS, for the most we can.",
     ],
   },
   {

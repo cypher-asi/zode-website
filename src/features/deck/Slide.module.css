@@ -2021,7 +2021,9 @@ a.measureTitle:focus-visible {
   font-size: calc(1.5 * var(--u));
 }
 
+/* Two lines held, so the titles line up across the cards. */
 .phase .body {
+  min-height: 3em;
   font-size: calc(0.85 * var(--u));
 }
 
@@ -4788,6 +4790,7 @@ a.measureTitle:focus-visible {
 
 .slide[data-compact] .phase .body {
   grid-area: body;
+  min-height: 0;
   font-size: 13px;
   line-height: 1.4;
 }
@@ -4825,6 +4828,15 @@ a.measureTitle:focus-visible {
 
 .slide[data-compact] .channelBody {
   font-size: 12px;
+}
+
+/* The pipeline's bars and the statement's last line drop on a phone; here the bars are the ranking and the statement one sentence. */
+.slide[data-compact] .channel .planBar {
+  display: block;
+}
+
+.slide[data-compact] .statsBody > .timeline + .statement > :last-child {
+  display: block;
 }
 
 .slide[data-compact] .statsBody > .statement {
