@@ -125,8 +125,14 @@ export type Slide =
   | (Base & { kind: "principles" })
   | (Base & { kind: "stack"; lede: readonly string[] })
   | (Base & {
-      kind: "steps";
-      steps: readonly { title: string; body: string; art: MacroArtId }[];
+      kind: "timeline";
+      /** Ahead of the milestone, while the compute is held unsold; a drawing over each. */
+      phases: readonly { title: string; body: string; art: MacroArtId }[];
+      /** Set on the band under the phases, which runs up to the milestone. */
+      position: string;
+      milestone: { label: string; detail: string };
+      /** The last card, past the milestone: its channels in place of a drawing, highest price first. */
+      sale: { title: string; body: string; channels: readonly { title: string; body: string }[] };
       /** Each entry starts its own line. */
       statement: readonly string[];
     })
@@ -332,7 +338,7 @@ export const SLIDES: readonly Slide[] = [
     title: "Sovereign AI capacity, factory-made.",
     ground: "white",
     facts: [
-      { value: "90 days", label: "Order to production" },
+      { value: "120 days", label: "Order to production" },
       { value: "Tier III", label: "N+1 power and cooling" },
       { value: "NVIDIA", label: "Reference architecture" },
     ],
@@ -405,26 +411,31 @@ export const SLIDES: readonly Slide[] = [
   },
   {
     id: "how",
-    kind: "steps",
+    kind: "timeline",
     section: "How we scale",
     eyebrow: "How we scale",
-    title: "Contract first. Build second.",
+    title: "Maximally long compute.",
     ground: "white",
-    steps: [
-      {
-        title: "Sign offtake",
-        body: "Take-or-pay GPU-hour contracts, 3–5 years, with 25–30% prepaid.",
-        art: "signature",
-      },
-      { title: "Secure power", body: "Lease colocation or convert existing powered buildings.", art: "interconnect" },
-      {
-        title: "Finance the project",
-        body: "One SPV per cluster: prepayment, GPU debt and preferred equity.",
-        art: "capitalStack",
-      },
-      { title: "Produce tokens", body: "Deploy, accept and operate the cluster for the term.", art: "tokenMaze" },
+    phases: [
+      { title: "Acquire", body: "Powered buildings and colocation, already energized.", art: "interconnect" },
+      { title: "Build", body: "Factory-made ZODEs, in production 120 days from order.", art: "compute" },
+      { title: "Equitize", body: "One SPV per cluster: preferred equity and GPU debt.", art: "capitalStack" },
     ],
-    statement: ["No megawatt is built without a buyer.", "Every dollar of capex sits behind a signed contract."],
+    position: "Long compute: held unsold until RFS",
+    milestone: { label: "RFS", detail: "Ready for service" },
+    sale: {
+      title: "Sell",
+      body: "Close to RFS, for the most each GPU-hour will fetch.",
+      channels: [
+        { title: "Tokens", body: "Inference sold by the token, the highest yield." },
+        { title: "Merchant compute", body: "GPU-hours at market rates." },
+        { title: "Offtake", body: "Take-or-pay contracts, the floor." },
+      ],
+    },
+    statement: [
+      "We acquire, build and equitize ahead of the buyer,",
+      "then sell for the most we can: tokens, merchant compute and offtake, close to RFS.",
+    ],
   },
   {
     id: "unit",
@@ -439,9 +450,9 @@ export const SLIDES: readonly Slide[] = [
       { value: "4 MW", label: "Critical IT load, direct liquid cooling", icon: "power" },
       { value: "800G", label: "Quantum-X800 InfiniBand fabric", icon: "fabric" },
       { value: "2 PB", label: "High-performance storage", icon: "storage" },
-      { value: "$4.20", label: "Contracted price per GPU-hour, 5-year term", icon: "rate" },
-      { value: "$12.5M", label: "Year 1 net profit, after depreciation and interest", icon: "profit" },
-      { value: "$75M", label: "Annual contracted revenue at $4.20/GPU-hr", icon: "revenue" },
+      { value: "$5.00", label: "Contracted price per GPU-hour, 5-year term", icon: "rate" },
+      { value: "$26.3M", label: "Year 1 net profit, after depreciation and interest", icon: "profit" },
+      { value: "$89.7M", label: "Annual contracted revenue at $5/GPU-hr", icon: "revenue" },
     ],
     highlight: 7,
     image: "/images/deck/cluster-2048.png",
@@ -615,7 +626,7 @@ export const SLIDES: readonly Slide[] = [
       { year: "2029", value: "100 GW" },
       { year: "2030", value: "Singularity" },
     ],
-    planNote: ["Every MW is worth $18.8M in annual revenue", "and $50–75M in enterprise value (2.7–4.0× revenue)."],
+    planNote: ["Every MW is worth $22.4M in annual revenue", "and $50–75M in enterprise value (2.2–3.3× revenue)."],
     planBasis: "Enterprise value per MW as CoreWeave, Nebius and IREN traded on October 13, 2026.",
     sources: ["evPerMw"],
   },
@@ -634,9 +645,9 @@ export const SLIDES: readonly Slide[] = [
         us: { value: "Compute", label: "Sold by the GPU-hour, dirt to tokens" },
       },
       {
-        label: "Sequencing",
-        them: { value: "Build, then lease", label: "Speculative capex ahead of tenants" },
-        us: { value: "Contract, then build", label: "Take-or-pay offtake, 25–30% prepaid" },
+        label: "Sales",
+        them: { value: "Build, then lease", label: "One tenant on one long lease" },
+        us: { value: "Build, then sell", label: "Tokens, merchant and offtake, at the best price" },
       },
       {
         label: "Power",
@@ -656,12 +667,12 @@ export const SLIDES: readonly Slide[] = [
       {
         label: "Community",
         them: { value: "71% oppose", label: "Loud, water-cooled, no local upside" },
-        us: { value: "Community-owned", label: "Quiet, no evaporative water" },
+        us: { value: "Community benefits", label: "Quiet, no evaporative water, beautiful, profit share" },
       },
       {
         label: "Time to tokens",
         them: { value: "3–5 years", label: "Land, permits, substation, then the build" },
-        us: { value: "90–180 days", label: "From order to production" },
+        us: { value: "120 days", label: "From order to production" },
       },
     ],
     highlight: 6,
@@ -831,9 +842,9 @@ export const SLIDES: readonly Slide[] = [
     kind: "close",
     section: "Contact",
     eyebrow: "ZODE",
-    title: "From order to tokens in 90 days.",
+    title: "The industrialization of intelligence.",
     ground: "ink",
-    lede: "Raising preferred equity in ZODE Colo I and ZODE Retro I.",
+    lede: "Raising pre-seed plus initial project preferred equity.",
     contact: "hello@zode.org · zode.org",
   },
   {

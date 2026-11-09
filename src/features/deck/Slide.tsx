@@ -1142,39 +1142,86 @@ function Stack({
   );
 }
 
-/** Numbered cards as the design principles slide's: a drawing over each step, its description always out. */
-function Steps({
+/**
+ * Numbered cards as the design principles slide's, a drawing over each phase.
+ * Under the phases an ink band, the compute held unsold, draws out to the
+ * milestone; past it the last card sells, its channels ranked by price with
+ * the highest set on ink.
+ */
+function Timeline({
   slide,
   playing,
 }: {
-  slide: Of<"steps">;
+  slide: Of<"timeline">;
   playing: boolean;
 }): ReactElement {
+  const { phases, sale } = slide;
+  const channels = sale.channels.length;
   return (
     <div className={styles.statsBody}>
-      <ol className={styles.steps}>
-        {slide.steps.map((step, i) => (
-          <li
-            key={step.title}
+      <div className={styles.timeline}>
+        {phases.map((phase, i) => (
+          <section
+            key={phase.title}
             {...rise(2 + i)}
-            className={`${styles.rise} ${styles.step}`}
+            className={`${styles.rise} ${styles.phase}`}
           >
-            <span className={styles.stepIndex}>
-              {String(i + 1).padStart(2, "0")}
-            </span>
-            <div className={styles.stepFigure}>
+            <span className={styles.phaseIndex}>{pad(i + 1)}</span>
+            <div className={styles.phaseFigure}>
               <MacroArt
-                id={step.art}
+                id={phase.art}
                 light={slide.ground !== "ink"}
                 playing={playing}
               />
             </div>
-            <h3 className={`${styles.h3} ${styles.stepTitle}`}>{step.title}</h3>
-            <p className={styles.body}>{step.body}</p>
-          </li>
+            <h3 className={`${styles.h3} ${styles.phaseTitle}`}>{phase.title}</h3>
+            <p className={styles.body}>{phase.body}</p>
+          </section>
         ))}
-      </ol>
-      <p {...rise(6)} className={`${styles.rise} ${styles.statement}`}>
+        <div className={styles.position}>
+          <span
+            {...rise(2 + phases.length)}
+            className={`${styles.rise} ${styles.positionLabel}`}
+          >
+            {slide.position}
+          </span>
+        </div>
+        <p
+          {...rise(3 + phases.length)}
+          className={`${styles.rise} ${styles.milestone}`}
+        >
+          <strong>{slide.milestone.label}</strong> {slide.milestone.detail}
+        </p>
+        <section
+          {...rise(3.5 + phases.length)}
+          className={`${styles.rise} ${styles.phase}`}
+          data-sale
+        >
+          <span className={styles.phaseIndex}>{pad(phases.length + 1)}</span>
+          <ol className={styles.channels} aria-label="Highest price first">
+            {sale.channels.map((channel, i) => (
+              <li
+                key={channel.title}
+                className={styles.channel}
+                data-ink={i === 0 || undefined}
+              >
+                <span className={styles.channelTitle}>{channel.title}</span>
+                <span
+                  className={styles.planBar}
+                  style={{ "--share": (channels - i) / channels } as CSSProperties}
+                />
+                <span className={styles.channelBody}>{channel.body}</span>
+              </li>
+            ))}
+          </ol>
+          <h3 className={`${styles.h3} ${styles.phaseTitle}`}>{sale.title}</h3>
+          <p className={styles.body}>{sale.body}</p>
+        </section>
+      </div>
+      <p
+        {...rise(5 + phases.length)}
+        className={`${styles.rise} ${styles.statement}`}
+      >
         {slide.statement.map((line) => (
           <span key={line} className={styles.statementLine}>
             {line}
@@ -2394,8 +2441,8 @@ function Body({
       return <DesignPrinciples active={active} />;
     case "stack":
       return <Stack slide={slide} active={active} />;
-    case "steps":
-      return <Steps slide={slide} playing={playing} />;
+    case "timeline":
+      return <Timeline slide={slide} playing={playing} />;
     case "unit":
       return <Unit slide={slide} playing={playing} near={near} />;
     case "traction":

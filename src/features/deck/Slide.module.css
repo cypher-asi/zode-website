@@ -1714,7 +1714,7 @@ a.measureTitle:focus-visible {
 /* The problem: its drawing, then its name over one figure. */
 .psProblem {
   display: grid;
-  grid-template-columns: calc(9 * var(--u)) minmax(0, max-content);
+  grid-template-columns: calc(9 * var(--u)) minmax(0, calc(23 * var(--u)));
   justify-content: center;
   align-items: center;
   gap: calc(2.4 * var(--u));
@@ -1775,7 +1775,7 @@ a.measureTitle:focus-visible {
 }
 
 .psSolution .body {
-  max-width: calc(36 * var(--u));
+  max-width: calc(28 * var(--u));
 }
 
 /* An open arrow in the strong rule colour, centred in the empty column. */
@@ -1973,20 +1973,22 @@ a.measureTitle:focus-visible {
   translate: 0 -1.8%;
 }
 
-/* Steps: numbered figure cards in one panel, as the design principles slide's. */
-.steps {
+/*
+ * Timeline: numbered figure cards in one panel, as the design principles
+ * slide's, the sale card wider. Under the phases an ink band runs to the
+ * milestone, which is set at the sale card's edge.
+ */
+.timeline {
   display: grid;
   flex: 1;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-template-rows: minmax(0, 1fr);
-  gap: 1px;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.5fr);
+  grid-template-rows: minmax(0, 1fr) calc(2.2 * var(--u));
+  gap: calc(0.8 * var(--u)) 1px;
   min-height: 0;
-  margin: 0;
   padding: 1px;
-  list-style: none;
 }
 
-.step {
+.phase {
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -1996,27 +1998,129 @@ a.measureTitle:focus-visible {
   box-shadow: 0 0 0 1px var(--rule);
 }
 
-.stepIndex {
+.phase[data-sale] {
+  grid-area: 1 / 4;
+}
+
+.phaseIndex {
   font-size: calc(0.64 * var(--u));
   font-weight: 500;
   letter-spacing: var(--eyebrow-tracking);
   color: var(--fg-2);
 }
 
-.stepFigure {
+.phaseFigure {
   display: flex;
   flex: 1;
   min-height: 0;
   padding: calc(1.4 * var(--u)) calc(0.6 * var(--u));
 }
 
-.stepTitle {
+.phaseTitle {
   margin-bottom: calc(0.7 * var(--u));
   font-size: calc(1.5 * var(--u));
 }
 
-.step .body {
+.phase .body {
   font-size: calc(0.85 * var(--u));
+}
+
+/* The compute held unsold: an ink band under the phases, its end square on the sale card's edge. */
+.position {
+  position: relative;
+  display: flex;
+  grid-area: 2 / 1 / 3 / 4;
+  align-items: center;
+  padding: 0 calc(1.6 * var(--u));
+}
+
+.position::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--color-ink);
+  transform-origin: left;
+}
+
+.positionLabel {
+  position: relative;
+  font-family: var(--font-mono);
+  font-size: calc(0.64 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-inverse);
+}
+
+/* The milestone, where the band ends: its name in the foreground, then what it stands for. */
+.milestone {
+  display: flex;
+  grid-area: 2 / 4;
+  align-items: center;
+  gap: calc(0.6 * var(--u));
+  margin: 0;
+  padding: 0 calc(1.6 * var(--u));
+  font-family: var(--font-mono);
+  font-size: calc(0.64 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+.milestone strong {
+  font-weight: 500;
+  color: var(--fg);
+}
+
+/* The channels in the sale card's figure: a row each, its bar as long as its rank by price. */
+.channels {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  min-height: 0;
+  margin: 0;
+  padding: calc(1.4 * var(--u)) 1px;
+  list-style: none;
+}
+
+.channel {
+  display: grid;
+  grid-template-columns: calc(9.4 * var(--u)) minmax(0, 1fr);
+  align-items: center;
+  gap: calc(0.35 * var(--u)) calc(1.2 * var(--u));
+  padding: calc(0.75 * var(--u)) calc(1.2 * var(--u));
+  color: var(--fg);
+  box-shadow: 0 0 0 1px var(--rule);
+}
+
+.channelTitle {
+  font-family: var(--font-display);
+  font-size: calc(1.1 * var(--u));
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+
+.channelBody {
+  grid-column: 1 / -1;
+  font-size: calc(0.72 * var(--u));
+  line-height: 1.4;
+  color: var(--fg-2);
+}
+
+@media screen and (prefers-reduced-motion: no-preference) {
+  .position::before {
+    transition: scale 900ms var(--ease-out) 300ms;
+  }
+
+  .slide:not([data-active]) .position::before {
+    scale: 0 1;
+    transition-duration: 0ms;
+    transition-delay: 0ms;
+  }
 }
 
 /* Unit: the cluster's figures as mini-cards, then the builder's render of it. */
@@ -2245,7 +2349,8 @@ a.measureTitle:focus-visible {
 }
 
 /* The last year on ink, as the unit slide's highlighted card. */
-.planRow[data-ink] {
+.planRow[data-ink],
+.channel[data-ink] {
   --fg: var(--color-text-inverse);
   --fg-2: var(--color-text-inverse-secondary);
   --rule: color-mix(in srgb, var(--color-text-inverse) 16%, var(--color-ink));
@@ -4636,13 +4741,14 @@ a.measureTitle:focus-visible {
   gap: 28px;
 }
 
-/* Steps: the cards stacked, each drawing beside its number, title and description. */
-.slide[data-compact] .steps {
+/* Timeline: the cards stacked, each drawing beside its number, title and description; the band and milestone, then the sale card, its channels under its text. */
+.slide[data-compact] .timeline {
   flex: none;
   grid-template: none / minmax(0, 1fr);
+  gap: 1px;
 }
 
-.slide[data-compact] .step {
+.slide[data-compact] .phase {
   display: grid;
   grid-template:
     "figure index" auto
@@ -4652,28 +4758,73 @@ a.measureTitle:focus-visible {
   padding: 10px 14px 12px 10px;
 }
 
-.slide[data-compact] .stepIndex {
+.slide[data-compact] .phase[data-sale] {
+  grid-area: auto;
+  grid-template:
+    "index" auto
+    "title" auto
+    "body" auto
+    "channels" auto / minmax(0, 1fr);
+  padding-left: 14px;
+}
+
+.slide[data-compact] .phaseIndex {
   grid-area: index;
   font-size: var(--text-2xs);
 }
 
-.slide[data-compact] .stepFigure {
+.slide[data-compact] .phaseFigure {
   grid-area: figure;
   align-self: center;
   height: 60px;
   padding: 0;
 }
 
-.slide[data-compact] .stepTitle {
+.slide[data-compact] .phaseTitle {
   grid-area: title;
   margin: 2px 0 4px;
   font-size: 18px;
 }
 
-.slide[data-compact] .step .body {
+.slide[data-compact] .phase .body {
   grid-area: body;
   font-size: 13px;
   line-height: 1.4;
+}
+
+.slide[data-compact] .position {
+  grid-area: auto;
+  height: 32px;
+  margin-top: 8px;
+  padding: 0 14px;
+}
+
+.slide[data-compact] :is(.positionLabel, .milestone) {
+  font-size: var(--text-2xs);
+}
+
+.slide[data-compact] .milestone {
+  grid-area: auto;
+  padding: 8px 0 8px 14px;
+}
+
+.slide[data-compact] .channels {
+  grid-area: channels;
+  padding: 10px 1px 1px;
+}
+
+.slide[data-compact] .channel {
+  grid-template-columns: 128px minmax(0, 1fr);
+  gap: 4px 12px;
+  padding: 8px 12px;
+}
+
+.slide[data-compact] .channelTitle {
+  font-size: 15px;
+}
+
+.slide[data-compact] .channelBody {
+  font-size: 12px;
 }
 
 .slide[data-compact] .statsBody > .statement {
