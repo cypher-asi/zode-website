@@ -246,9 +246,7 @@ function SitesTable({
               <tr key={row.label}>
                 <th scope="row">{row.label}</th>
                 {columns.map((m, i) => (
-                  <td key={i} data-total={i === columns.length - 1 ? "" : undefined}>
-                    {row.value(m)}
-                  </td>
+                  <td key={i}>{row.value(m)}</td>
                 ))}
               </tr>
             ))}

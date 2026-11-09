@@ -39,11 +39,6 @@
   border-top: 1px solid var(--color-border);
 }
 
-.table td[data-total] {
-  background: var(--color-surface-tint);
-  padding-right: 10px;
-}
-
 .siteHead,
 .colHead {
   min-width: 8em;
