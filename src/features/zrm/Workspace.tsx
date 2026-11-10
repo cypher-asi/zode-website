@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type DragEvent,
   type KeyboardEvent,
   type MouseEvent,
   type ReactElement,
@@ -20,14 +21,14 @@ import { useSelectedLayoutSegments } from "next/navigation";
 import { Select } from "@/components/ui/Select";
 import { Splitter } from "@/components/ui/Splitter";
 import { PortalLoading } from "@/features/portal/PortalLoading";
-import { deleteRecordAction, setActiveAction, setSiteFieldAction } from "./actions";
+import { deleteRecordAction, setActiveAction, setSiteFieldAction, setStageAction } from "./actions";
 import { Icon } from "./bits";
 import { companiesConfig, opportunitiesConfig, peopleConfig, sitesConfig, type ListConfig } from "./columns";
 import { DealTypeNav } from "./DealTypeNav";
 import { clearedColumns } from "./fields";
 import { SiteMenu } from "./SiteMenu";
 import { StatusNav } from "./StatusNav";
-import { KIND_LABELS, recordHref, type RecordKind, type SiteRow } from "./types";
+import { KIND_LABELS, recordHref, type OpportunityKind, type OpportunityRow, type RecordKind, type SiteRow } from "./types";
 import { TypeNav } from "./TypeNav";
 import { goOnClick, useZrmData, useZrmNavigate, useZrmRoute } from "./ZrmProvider";
 import styles from "./zrm.module.css";
@@ -41,6 +42,9 @@ interface ListRow {
   id: string;
   active: boolean;
 }
+
+/** A dragged list row. Same-document only; the id is also on the row's `data-id`. */
+const DRAG_TYPE = "application/x-zode-zrm-row";
 
 function compare(a: string | number | null, b: string | number | null): number {
   if (a === b) return 0;
@@ -60,6 +64,9 @@ interface RowProps<T> {
   /** Opens the row's menu at a point in the window, on right-click or the keyboard's menu key. */
   onMenu?: (row: T, x: number, y: number) => void;
   menuOpen?: boolean;
+  /** The row can be dragged onto a section. */
+  draggable?: boolean;
+  onDragEnd?: () => void;
 }
 
 /**
@@ -77,17 +84,49 @@ const Row = memo(function Row<T extends ListRow>({
   prefetch,
   onMenu,
   menuOpen,
+  draggable,
+  onDragEnd,
 }: RowProps<T>): ReactElement {
   const href = recordHref(kind, row.id);
+  const dragged = useRef(false);
   return (
     <Link
       data-id={row.id}
       href={href}
       scroll={false}
       prefetch={false}
+      draggable={Boolean(draggable)}
       onMouseEnter={() => prefetch(href)}
       onFocus={() => prefetch(href)}
-      onClick={goOnClick(go, href)}
+      onClick={(event) => {
+        if (dragged.current) {
+          dragged.current = false;
+          event.preventDefault();
+          return;
+        }
+        goOnClick(go, href)(event);
+      }}
+      onDragStart={
+        draggable
+          ? (event) => {
+              dragged.current = true;
+              event.currentTarget.setAttribute("data-dragging", "");
+              event.dataTransfer.setData(DRAG_TYPE, row.id);
+              event.dataTransfer.effectAllowed = "move";
+            }
+          : undefined
+      }
+      onDragEnd={
+        draggable
+          ? (event) => {
+              event.currentTarget.removeAttribute("data-dragging");
+              onDragEnd?.();
+              window.setTimeout(() => {
+                dragged.current = false;
+              }, 0);
+            }
+          : undefined
+      }
       onContextMenu={
         onMenu
           ? (event: MouseEvent<HTMLAnchorElement>) => {
@@ -141,6 +180,7 @@ function RecordList<T extends ListRow>({
   onFilterChange,
   onRowMenu,
   menuRowId,
+  onMove,
 }: {
   kind: RecordKind;
   rows: readonly T[];
@@ -150,13 +190,17 @@ function RecordList<T extends ListRow>({
   onFilterChange: (key: string, value: string) => void;
   onRowMenu?: (row: T, x: number, y: number) => void;
   menuRowId?: string | null;
+  /** Drops a row onto a section. Set for lists whose sections declare every group. */
+  onMove?: (row: T, sectionKey: string) => void;
 }): ReactElement {
   const { go, prefetch } = useZrmNavigate();
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
   const deferredFilterValues = useDeferredValue(filterValues);
   const [sort, setSort] = useState<Sort | null>(null);
+  const [dropKey, setDropKey] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const endDrag = useCallback(() => setDropKey(null), []);
 
   const searchTexts = useMemo(() => rows.map((row) => config.searchText(row)), [rows, config]);
 
@@ -193,15 +237,37 @@ function RecordList<T extends ListRow>({
       .map(({ row }) => row);
   }, [rows, searchTexts, deferredQuery, deferredFilterValues, sort, sections, config]);
 
-  /** The shown rows split at each change of section, or one untitled run without sections. */
+  /**
+   * The shown rows split at each change of section, or one untitled run without
+   * sections. A list that declares every section keeps the empty ones, in order,
+   * and any row whose section is no longer declared.
+   */
   const runs = useMemo(() => {
-    if (!sections) return [{ key: "", label: null, rows: shown }];
-    const out: { key: string; label: string | null; rows: T[] }[] = [];
+    if (!sections) return [{ key: "", label: null as string | null, rows: shown }];
+    if (!sections.all) {
+      const out: { key: string; label: string | null; rows: T[] }[] = [];
+      for (const row of shown) {
+        const section = sections.of(row);
+        const last = out.at(-1);
+        if (last?.key === section.key) last.rows.push(row);
+        else out.push({ key: section.key, label: section.label, rows: [row] });
+      }
+      return out;
+    }
+    const out = [...sections.all]
+      .sort((a, b) => a.order - b.order)
+      .map((section) => ({ key: section.key, label: section.label as string | null, rows: [] as T[] }));
+    const byKey = new Map(out.map((run) => [run.key, run]));
     for (const row of shown) {
       const section = sections.of(row);
-      const last = out.at(-1);
-      if (last?.key === section.key) last.rows.push(row);
-      else out.push({ key: section.key, label: section.label, rows: [row] });
+      const run = byKey.get(section.key);
+      if (run) {
+        run.rows.push(row);
+        continue;
+      }
+      const extra = { key: section.key, label: section.label, rows: [row] };
+      byKey.set(section.key, extra);
+      out.push(extra);
     }
     return out;
   }, [shown, sections]);
@@ -286,45 +352,79 @@ function RecordList<T extends ListRow>({
       </div>
 
       <div ref={listRef} className={styles.rows} onKeyDown={onKeyDown}>
-        {shown.length === 0 ? (
+        {shown.length === 0 && !sections?.all?.length ? (
           <p className={styles.empty}>
             {rows.length === 0 ? `No ${plural} yet.` : `No ${plural} match.`}
           </p>
         ) : (
-          runs.map((run) => (
-            <Fragment key={run.key}>
-              {run.label !== null ? <div className={styles.sectionRow}>{run.label}</div> : null}
-              {run.rows.map((row) => (
-                <Row
-                  key={row.id}
-                  kind={kind}
-                  row={row}
-                  config={config}
-                  style={columnsStyle}
-                  selected={row.id === selectedId}
-                  go={go}
-                  prefetch={prefetch}
-                  onMenu={onRowMenu}
-                  menuOpen={row.id === menuRowId}
-                />
-              ))}
-              {totaled ? (
-                <div className={`${styles.row} ${styles.totalRow}`} style={columnsStyle}>
-                  {config.columns.map((column) => (
-                    <span
-                      key={column.key}
-                      className={column.key === config.columns[0]!.key ? styles.lead : styles.cell}
-                      data-align={column.align}
-                      data-numeric={column.align === "end" ? "" : undefined}
-                      data-wide-only={column.wideOnly ? "" : undefined}
-                    >
-                      {column.total?.(run.rows)}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-            </Fragment>
-          ))
+          runs.map((run) => {
+            const droppable = Boolean(onMove) && run.label !== null;
+            const body = (
+              <>
+                {run.label !== null ? <div className={styles.sectionRow}>{run.label}</div> : null}
+                {run.rows.map((row) => (
+                  <Row
+                    key={row.id}
+                    kind={kind}
+                    row={row}
+                    config={config}
+                    style={columnsStyle}
+                    selected={row.id === selectedId}
+                    go={go}
+                    prefetch={prefetch}
+                    onMenu={onRowMenu}
+                    menuOpen={row.id === menuRowId}
+                    draggable={droppable}
+                    onDragEnd={endDrag}
+                  />
+                ))}
+                {run.rows.length === 0 && run.label !== null ? <div className={styles.sectionEmpty} /> : null}
+                {totaled && run.rows.length > 0 ? (
+                  <div className={`${styles.row} ${styles.totalRow}`} style={columnsStyle}>
+                    {config.columns.map((column) => (
+                      <span
+                        key={column.key}
+                        className={column.key === config.columns[0]!.key ? styles.lead : styles.cell}
+                        data-align={column.align}
+                        data-numeric={column.align === "end" ? "" : undefined}
+                        data-wide-only={column.wideOnly ? "" : undefined}
+                      >
+                        {column.total?.(run.rows)}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+              </>
+            );
+            if (!droppable) return <Fragment key={run.key}>{body}</Fragment>;
+            return (
+              <div
+                key={run.key}
+                className={styles.section}
+                data-drop={dropKey === run.key ? "" : undefined}
+                onDragOver={(event: DragEvent<HTMLDivElement>) => {
+                  if (!event.dataTransfer.types.includes(DRAG_TYPE)) return;
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = "move";
+                  setDropKey(run.key);
+                }}
+                onDragLeave={(event: DragEvent<HTMLDivElement>) => {
+                  if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                    setDropKey((current) => (current === run.key ? null : current));
+                  }
+                }}
+                onDrop={(event: DragEvent<HTMLDivElement>) => {
+                  event.preventDefault();
+                  setDropKey(null);
+                  const id = event.dataTransfer.getData(DRAG_TYPE);
+                  const row = shown.find((item) => item.id === id);
+                  if (row) onMove?.(row, run.key);
+                }}
+              >
+                {body}
+              </div>
+            );
+          })
         )}
       </div>
 
@@ -360,11 +460,11 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
     return {
       people: peopleConfig(typeMap),
       companies: companiesConfig(typeMap),
-      sales: opportunitiesConfig(typeMap, "sales"),
-      fundraising: opportunitiesConfig(typeMap, "fundraising"),
+      sales: opportunitiesConfig(typeMap, "sales", data.stages),
+      fundraising: opportunitiesConfig(typeMap, "fundraising", data.stages),
       sites: sitesConfig(data.statuses),
     };
-  }, [data.types, data.statuses]);
+  }, [data.types, data.statuses, data.stages]);
 
   const kind = kinds.find((k) => k === segment);
   /** The open list's filters, shared by its toolbar and the sidebar's types, and cleared on switching lists. */
@@ -375,6 +475,13 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
     setFilters((current) => ({ ...current, values: { ...current.values, [key]: value } }));
 
   const { go, editRow } = useZrmNavigate();
+  const moveOpportunity = (pipeline: OpportunityKind, row: OpportunityRow, stageId: string) => {
+    if (row.stage_id === stageId) return;
+    startTransition(async () => {
+      editRow({ kind: pipeline, id: row.id, patch: { stage_id: stageId } });
+      await setStageAction(pipeline, row.id, stageId);
+    });
+  };
   const sites = data.sites;
   const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const openSiteMenu = useCallback((row: SiteRow, x: number, y: number) => setMenu({ id: row.id, x, y }), []);
@@ -420,7 +527,16 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
       break;
     case "sales":
     case "fundraising":
-      list = <RecordList key={kind} kind={kind} rows={data[kind]} config={configs[kind]} {...common} />;
+      list = (
+        <RecordList
+          key={kind}
+          kind={kind}
+          rows={data[kind]}
+          config={configs[kind]}
+          onMove={(row, stageId) => moveOpportunity(kind, row, stageId)}
+          {...common}
+        />
+      );
       types = (
         <DealTypeNav kind={kind} value={filterValues.deal_type ?? ""} onChange={(value) => setFilter("deal_type", value)} />
       );

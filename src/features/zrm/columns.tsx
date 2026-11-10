@@ -14,6 +14,7 @@ import {
   type RecordKind,
   type SiteRow,
   type SiteStatus,
+  type Stage,
   type ZrmType,
 } from "./types";
 import styles from "./zrm.module.css";
@@ -44,12 +45,20 @@ export interface ListFilter<T> {
   sidebar?: boolean;
 }
 
+interface SectionRef {
+  key: string;
+  label: string;
+  order: number;
+}
+
 /**
  * Headed groups of rows, in `order`, shown while the list isn't sorted by a
- * column. Each ends in a total row when some column has a `total`.
+ * column. Each ends in a total row when some column has a `total`. `all`,
+ * when set, is every group to show, including ones with no rows.
  */
 export interface ListSections<T> {
-  of: (row: T) => { key: string; label: string; order: number };
+  of: (row: T) => SectionRef;
+  all?: readonly SectionRef[];
 }
 
 export interface ListConfig<T> {
@@ -163,9 +172,12 @@ export function companiesConfig(types: Types): ListConfig<CompanyRow> {
 
 const totalValue = (rows: readonly OpportunityRow[]): number => rows.reduce((sum, o) => sum + (o.value ?? 0), 0);
 
-/** A pipeline's list: its deal types in the sidebar, its company's types in the toolbar. */
-export function opportunitiesConfig(types: Types, kind: OpportunityKind): ListConfig<OpportunityRow> {
+/** A pipeline's list: its deal types in the sidebar, its company's types in the toolbar, every stage of the pipeline as a group. */
+export function opportunitiesConfig(types: Types, kind: OpportunityKind, stages: readonly Stage[]): ListConfig<OpportunityRow> {
   const dealTypes = OPPORTUNITY_DEAL_TYPES[kind];
+  const pipelineStages = stages
+    .filter((stage) => stage.pipeline === kind)
+    .map((stage) => ({ key: stage.id, label: stage.name, order: stage.position }));
   return {
     noun: ["opportunity", "opportunities"],
     searchText: (o) => lower(o.title, o.person_name, o.company_name, o.stage_name, o.deal_type),
@@ -186,6 +198,7 @@ export function opportunitiesConfig(types: Types, kind: OpportunityKind): ListCo
     summary: (rows) => `${formatMoney(totalValue(rows))} total`,
     sections: {
       of: (o) => ({ key: o.stage_id, label: o.stage_name, order: o.stage_position }),
+      all: pipelineStages,
     },
     columns: [
       {

@@ -167,8 +167,28 @@
   text-transform: uppercase;
 }
 
-.sectionRow:first-child {
+.rows > .sectionRow:first-child,
+.rows > .section:first-child .sectionRow {
   padding-top: 6px;
+}
+
+/* Where a dragged row will land. The empty band keeps a stage with no rows droppable. */
+.section[data-drop] {
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-focus-ring) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-focus-ring) 50%, transparent);
+}
+
+.sectionEmpty {
+  min-height: 28px;
+}
+
+.row[draggable="true"] {
+  cursor: grab;
+}
+
+.row[data-dragging] {
+  opacity: 0.45;
 }
 
 /* A group's total, under its last row, its figures in their columns. */
