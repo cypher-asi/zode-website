@@ -34,8 +34,9 @@
   color: var(--color-text-primary);
 }
 
-/* Rules only between sections, not between their rows. */
-.table tbody + tbody {
+/* Rules between sections and over each subtotal, not between the other rows. */
+.table tbody + tbody,
+.table tbody tr.subtotal {
   border-top: 1px solid var(--color-border);
 }
 
@@ -49,7 +50,7 @@
   color: var(--color-text-secondary);
 }
 
-/* A sum of the rows above it, the only bold row in its section. */
+/* A sum of the rows above it, bold and ruled off from them. */
 .table .subtotal th[scope="row"],
 .table .subtotal td {
   font-weight: 600;
