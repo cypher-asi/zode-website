@@ -105,6 +105,20 @@ export async function zosLogin(email: string, password: string): Promise<Account
   return toAccount(await fetchUser(accessToken), normalized);
 }
 
+/** Has ZOS email a one-time login code to the address. */
+export async function zosRequestLoginCode(email: string): Promise<void> {
+  await zos("/api/otp/request", { body: { email: normalizeEmail(email) } });
+}
+
+/** Signs in with a code from `zosRequestLoginCode`. */
+export async function zosLoginWithCode(email: string, code: string): Promise<Account> {
+  const normalized = normalizeEmail(email);
+  const { accessToken } = await zos<{ accessToken: string }>("/api/otp/verify", {
+    body: { email: normalized, code },
+  });
+  return toAccount(await fetchUser(accessToken), normalized);
+}
+
 /**
  * Creates a ZOS account, then finalizes its profile with the display name.
  * A blank invite code falls back to the configured default.
@@ -142,9 +156,19 @@ export async function zosRegister(input: {
  * have accounts; registration passes ZOS's reason through (bad invite, weak
  * password), since the user can't fix it otherwise.
  */
-export function describeZosError(error: unknown, form: "login" | "register", fallback: string): string {
+export function describeZosError(error: unknown, form: "login" | "code" | "register", fallback: string): string {
   if (!(error instanceof ZosError) || error.status < 400 || error.status >= 500) return fallback;
   if (error.status === 429) return "Too many attempts. Please wait a while and try again.";
   if (form === "login") return "Incorrect email or password.";
+  if (form === "code") return "That code is invalid or expired.";
   return error.message.slice(0, 200) || fallback;
+}
+
+/**
+ * Whether a failed code request should still read as sent: ZOS refusing an
+ * address it has no account for mustn't tell the form which emails exist.
+ * Only a rate limit or a server or network failure is worth reporting.
+ */
+export function isZosRejection(error: unknown): boolean {
+  return error instanceof ZosError && error.status >= 400 && error.status < 500 && error.status !== 429;
 }

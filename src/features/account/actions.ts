@@ -9,7 +9,15 @@ import { RATE_LIMITED, clientIp, withinLimits } from "@/lib/rateLimit";
 import { isEmail, singleLine } from "@/lib/validation";
 import { MIN_PASSWORD_LENGTH } from "./password";
 import { createAccountSession, deleteAccountSession, safeNext } from "./session";
-import { describeZosError, zosLogin, zosRegister, type Account } from "./zos";
+import {
+  describeZosError,
+  isZosRejection,
+  zosLogin,
+  zosLoginWithCode,
+  zosRegister,
+  zosRequestLoginCode,
+  type Account,
+} from "./zos";
 
 const MINUTE = 60;
 const HOUR = 60 * MINUTE;
@@ -18,21 +26,39 @@ export interface AuthFormState {
   readonly error?: string;
   /** Echoed back so the form keeps the address after a failed attempt. */
   readonly email?: string;
+  /** Set once a login code is on its way, so the form asks for it. */
+  readonly codeSentTo?: string;
 }
 
+/**
+ * The login form's submit buttons pick the `intent`: a password, emailing a
+ * one-time code, or entering that code.
+ */
 export async function login(_prevState: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
+  switch (formData.get("intent")) {
+    case "send-code":
+      return sendLoginCode(email);
+    case "verify-code":
+      return loginWithCode(email, String(formData.get("code") ?? "").trim(), formData);
+    default:
+      return loginWithPassword(email, String(formData.get("password") ?? ""), formData);
+  }
+}
+
+/** Shared by password and code logins, so guessing either draws on one budget. */
+async function withinLoginLimits(email: string): Promise<boolean> {
+  return withinLimits([
+    { key: `login:ip:${await clientIp()}`, max: 10, windowSeconds: 15 * MINUTE },
+    { key: `login:email:${email.toLowerCase()}`, max: 5, windowSeconds: 15 * MINUTE },
+  ]);
+}
+
+async function loginWithPassword(email: string, password: string, formData: FormData): Promise<AuthFormState> {
   if (!email || !password) {
     return { error: "Enter your email and password.", email };
   }
-
-  const ip = await clientIp();
-  const allowed = await withinLimits([
-    { key: `login:ip:${ip}`, max: 10, windowSeconds: 15 * MINUTE },
-    { key: `login:email:${email.toLowerCase()}`, max: 5, windowSeconds: 15 * MINUTE },
-  ]);
-  if (!allowed) return { error: RATE_LIMITED, email };
+  if (!(await withinLoginLimits(email))) return { error: RATE_LIMITED, email };
 
   let account: Account;
   try {
@@ -40,7 +66,48 @@ export async function login(_prevState: AuthFormState, formData: FormData): Prom
   } catch (error) {
     return { error: describeZosError(error, "login", "Couldn't log in right now. Please try again."), email };
   }
+  return signIn(account, formData);
+}
 
+async function sendLoginCode(email: string): Promise<AuthFormState> {
+  if (!isEmail(email)) return { error: "Enter your email to get a login code.", email };
+
+  // Tighter than logins: each one sends someone an email.
+  const allowed = await withinLimits([
+    { key: `login-code:ip:${await clientIp()}`, max: 5, windowSeconds: 15 * MINUTE },
+    { key: `login-code:email:${email.toLowerCase()}`, max: 3, windowSeconds: 15 * MINUTE },
+  ]);
+  if (!allowed) return { error: RATE_LIMITED, email };
+
+  try {
+    await zosRequestLoginCode(email);
+  } catch (error) {
+    if (!isZosRejection(error)) {
+      return { error: describeZosError(error, "code", "Couldn't send a code right now. Please try again."), email };
+    }
+  }
+  return { email, codeSentTo: email };
+}
+
+async function loginWithCode(email: string, code: string, formData: FormData): Promise<AuthFormState> {
+  if (!email) return { error: "Enter your email to get a login code.", email };
+  if (!code) return { error: "Enter the code from your email.", email, codeSentTo: email };
+  if (!(await withinLoginLimits(email))) return { error: RATE_LIMITED, email, codeSentTo: email };
+
+  let account: Account;
+  try {
+    account = await zosLoginWithCode(email, code);
+  } catch (error) {
+    return {
+      error: describeZosError(error, "code", "Couldn't log in right now. Please try again."),
+      email,
+      codeSentTo: email,
+    };
+  }
+  return signIn(account, formData);
+}
+
+async function signIn(account: Account, formData: FormData): Promise<never> {
   const next = safeNext(formData.get("next"));
   await createAccountSession(account);
   await joinInvitedRooms(account, next);

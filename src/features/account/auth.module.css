@@ -161,6 +161,24 @@
   border-radius: 2px;
 }
 
+.labelAction:disabled {
+  color: var(--color-text-secondary);
+  cursor: default;
+}
+
+/* Where the login code went, above the field that asks for it. */
+.hint {
+  margin: 0 0 4px;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.hint strong {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
 /* Saved account chooser on the login form, in place of the email field. */
 .picker {
   position: relative;
