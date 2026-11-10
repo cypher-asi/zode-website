@@ -1,0 +1,294 @@
+@page {
+  size: letter;
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  font-family: "Liberation Serif", "Times New Roman", serif;
+  font-size: 8.3pt;
+  line-height: 1.32;
+  color: #111;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.page {
+  width: 8.5in;
+  height: 11in;
+  padding: 0.42in 0.55in 0.3in;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  break-after: page;
+}
+
+.page:last-child {
+  break-after: auto;
+}
+
+.body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 6pt;
+}
+
+.sans,
+h1,
+h2,
+table,
+.strip,
+.running,
+.foot {
+  font-family: "Liberation Sans", Arial, sans-serif;
+}
+
+h1 {
+  font-size: 11pt;
+  letter-spacing: 0.06em;
+  text-align: center;
+  margin-bottom: 4pt;
+}
+
+h2 {
+  font-size: 9.2pt;
+  margin-bottom: 2pt;
+}
+
+h2 .n {
+  color: #2347e0;
+  margin-right: 4pt;
+}
+
+p + p {
+  margin-top: 3pt;
+}
+
+sup {
+  font-size: 5.6pt;
+  line-height: 0;
+}
+
+.running {
+  display: flex;
+  justify-content: space-between;
+  font-size: 7pt;
+  color: #555;
+  border-bottom: 0.5pt solid #999;
+  padding-bottom: 3pt;
+  margin-bottom: 6pt;
+}
+
+.memo-head {
+  display: grid;
+  grid-template-columns: 0.6in 1fr;
+  row-gap: 0.5pt;
+  font-size: 8.3pt;
+  padding-bottom: 4pt;
+  border-bottom: 1.2pt solid #111;
+}
+
+.memo-head b {
+  font-family: "Liberation Sans", Arial, sans-serif;
+}
+
+.strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1pt 12pt;
+  font-size: 7.1pt;
+  padding: 3pt 0 4pt;
+  border-bottom: 0.5pt solid #999;
+}
+
+.strip span {
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 6.2pt;
+  margin-right: 4pt;
+}
+
+.lede {
+  font-size: 8.6pt;
+}
+
+.lede b {
+  font-family: "Liberation Sans", Arial, sans-serif;
+  font-size: 8.2pt;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 7.05pt;
+  line-height: 1.22;
+  break-inside: avoid;
+}
+
+caption {
+  text-align: left;
+  font-weight: bold;
+  font-size: 7.6pt;
+  padding-bottom: 2pt;
+}
+
+thead th {
+  text-align: left;
+  font-weight: bold;
+  border-top: 1pt solid #111;
+  border-bottom: 0.6pt solid #111;
+  padding: 2pt 4pt;
+  vertical-align: bottom;
+}
+
+tbody td {
+  padding: 1.6pt 4pt;
+  border-bottom: 0.35pt solid #ccc;
+  vertical-align: top;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0.8pt solid #111;
+}
+
+td.r,
+th.r {
+  text-align: right;
+  white-space: nowrap;
+}
+
+td.rt {
+  text-align: right;
+}
+
+td.c,
+th.c {
+  text-align: center;
+}
+
+tr.key td {
+  background: #eef1fd;
+  font-weight: bold;
+}
+
+tr.total td {
+  font-weight: bold;
+  border-top: 0.6pt solid #111;
+}
+
+td.label {
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.hl {
+  background: #2347e0;
+  color: #fff;
+  font-weight: bold;
+}
+
+.yes {
+  color: #0a7a3a;
+  font-weight: bold;
+}
+
+.no {
+  color: #b3261e;
+  font-weight: bold;
+}
+
+.muted {
+  color: #666;
+}
+
+.bar-cell {
+  width: 1.15in;
+}
+
+.bar {
+  display: inline-block;
+  height: 5.5pt;
+  background: #2347e0;
+  vertical-align: middle;
+}
+
+.bar.debt {
+  background: #b3261e;
+}
+
+.take {
+  font-size: 8.1pt;
+  border-left: 2pt solid #2347e0;
+  padding-left: 6pt;
+}
+
+.take b {
+  font-family: "Liberation Sans", Arial, sans-serif;
+  font-size: 7.8pt;
+}
+
+.cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10pt;
+}
+
+.notes {
+  margin-top: auto;
+  font-size: 6.15pt;
+  line-height: 1.26;
+  color: #333;
+  columns: 2;
+  column-gap: 14pt;
+  border-top: 0.5pt solid #999;
+  padding-top: 3pt;
+}
+
+.notes h3 {
+  font-family: "Liberation Sans", Arial, sans-serif;
+  font-size: 6.8pt;
+  column-span: all;
+  margin-bottom: 1pt;
+}
+
+.notes ol {
+  padding-left: 9pt;
+}
+
+.notes li {
+  break-inside: avoid;
+}
+
+.foot {
+  margin-top: 5pt;
+  border-top: 1.2pt solid #111;
+  padding-top: 3pt;
+}
+
+.brands {
+  text-align: center;
+  font-weight: bold;
+  font-size: 7.4pt;
+  letter-spacing: 0.32em;
+  word-spacing: 1.2em;
+}
+
+.fine {
+  display: flex;
+  justify-content: space-between;
+  font-family: "Liberation Serif", "Times New Roman", serif;
+  font-size: 6.6pt;
+  color: #555;
+  border-top: 0.4pt solid #bbb;
+  margin-top: 3pt;
+  padding-top: 2pt;
+}

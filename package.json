@@ -15,6 +15,7 @@
     "policy:import": "node --env-file-if-exists=.env.local scripts/import-policy.mjs",
     "deck:maps": "node scripts/fetch-site-maps.mjs",
     "deck:chicago": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/make-chicago-deck.mjs",
+    "memo:long-compute": "node scripts/make-long-compute-memo.mjs",
     "prebuild": "npm run fonts && npm run db:migrate",
     "build": "next build",
     "start": "next start",

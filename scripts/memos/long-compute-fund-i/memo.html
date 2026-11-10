@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Long Compute Fund I · Investment Memo</title>
+    <link rel="stylesheet" href="memo.css" />
+  </head>
+  <body>
+    <section class="page">
+      <div class="body">
+        <div>
+          <h1>LONG COMPUTE FUND I · INVESTMENT MEMO</h1>
+          <div class="memo-head">
+            <b>To:</b><span>Prospective investors (qualified purchasers)</span>
+            <b>From:</b><span>ZODE, with Ezra and Keyframe</span>
+            <b>Subject:</b><span>The other side of the trade: own the compute, sell it high in the stack</span>
+            <b>Date:</b><span>November 10, 2026 · Confidential</span>
+          </div>
+          <div class="strip">
+            <div><span>Size</span>First close ~$50M, to $1B+</div>
+            <div><span>Structure</span>Evergreen, open-ended</div>
+            <div><span>Exposure</span>Merchant compute, tokens</div>
+            <div><span>Target</span>2–3x merchant; more with tokens</div>
+            <div><span>Per MW</span>{{GPUS}} B300s, {{CAPEX}}</div>
+            <div><span>Minimum</span>[$__M]</div>
+            <div><span>Fees</span>[__% mgmt / __% carry]</div>
+            <div><span>Liquidity</span>[Quarterly, gated]</div>
+          </div>
+        </div>
+
+        <div class="lede">
+          <p>
+            <b>Thesis.</b> GPU and neocloud debt is not repricing because investors have stopped believing in AI
+            demand. Demand is still ahead of supply: the B300 rents for $7.68/GPU-hr, up 15% in a month, and NVIDIA
+            guides to roughly 70% growth next year.<sup>4, 5</sup> The debt is repricing because its holders are on the
+            wrong side of the trade. Neoclouds and their lenders have been structurally long compute: they own the
+            hardware, carry the debt and keep the residual, then sell the output at a fixed rate. The value of the
+            infrastructure is externalized to Anthropic, OpenAI, NVIDIA and the hyperscalers. CoreWeave’s 2031 notes
+            trade at 81 cents to yield 15.4%; Meta sold 2031 notes the same week at 5.85%.<sup>1, 2</sup> Even
+            hyperscaler-leased SPV paper is marked down: Meta’s Hyperion bonds fell from above 109 to about 92.<sup>3</sup>
+            Long Compute Fund I takes the other side. It owns the cluster and sells the output as high up the stack as
+            the market pays.
+          </p>
+        </div>
+
+        <div>
+          <h2><span class="n">1</span>The value sits with whoever is long the compute without carrying it</h2>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 12%">Party</th>
+                <th style="width: 19%">Value, Nov 2026<sup>6</sup></th>
+                <th style="width: 31%">How it is long compute</th>
+                <th style="width: 18%">How it is paid</th>
+                <th class="c" style="width: 10%">Carries the hardware</th>
+                <th class="c" style="width: 10%">Keeps the token upside</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="label">NVIDIA</td>
+                <td>$4.3T market cap</td>
+                <td>Every buildout; up to $100B committed to OpenAI, $10B into Anthropic’s IPO<sup>5, 8</sup></td>
+                <td>Cash at delivery; 74% gross margin<sup>5</sup></td>
+                <td class="c no">No</td>
+                <td class="c yes">Via stakes</td>
+              </tr>
+              <tr>
+                <td class="label">Hyperscalers</td>
+                <td>$12.0T (MSFT, GOOG, AMZN, META)</td>
+                <td>~$735B of 2026 capex guided;<sup>9</sup> leases moved off balance sheet (Hyperion: 4-year lease, bonds to 2049)<sup>3</sup></td>
+                <td>Cloud and token revenue</td>
+                <td class="c">Shifted to SPVs</td>
+                <td class="c yes">Yes</td>
+              </tr>
+              <tr>
+                <td class="label">OpenAI</td>
+                <td>$1.25T (Nov 6 round)<sup>7</sup></td>
+                <td>~$720B of disclosed compute contracts, <b>58% of its valuation</b>, on ~$50B revenue run-rate<sup>7</sup></td>
+                <td>Tokens and subscriptions</td>
+                <td class="c no">No</td>
+                <td class="c yes">Yes</td>
+              </tr>
+              <tr>
+                <td class="label">Anthropic</td>
+                <td>Up to $1.40T at IPO<sup>8</sup></td>
+                <td>$900.9B of compute and infrastructure commitments, <b>64% of its valuation</b><sup>8</sup></td>
+                <td>Tokens; $17B Q3 revenue</td>
+                <td class="c no">No</td>
+                <td class="c yes">Yes</td>
+              </tr>
+              <tr>
+                <td class="label">Neoclouds</td>
+                <td>CoreWeave $27.2B, about half lost in a month<sup>1, 6</sup></td>
+                <td>Owns the GPUs; CoreWeave carries $35B of debt<sup>1</sup></td>
+                <td>Fixed $/GPU-hr contracts</td>
+                <td class="c yes">Yes</td>
+                <td class="c no">No</td>
+              </tr>
+              <tr>
+                <td class="label">GPU and SPV lenders</td>
+                <td>CoreWeave 2031s at 81c; Hyperion ~92c; QTS Excalibur &lt;88c<sup>1, 3</sup></td>
+                <td>Collateral and contract cash flow</td>
+                <td>Fixed coupon</td>
+                <td class="c yes">Yes</td>
+                <td class="c no">No</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="take">
+          <b>A large share of the top rows’ ~$19T is the compute they are net long, not only their growth.</b> The two
+          labs’ commitments alone equal 58–64% of their valuations. The bottom two rows own the hardware and the debt,
+          and are paid a fixed rate for it.
+        </p>
+
+        <div>
+          <h2><span class="n">2</span>Three ways to sell one B300 MW today</h2>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 27%">Per MW: {{GPUS}} B300 GPUs, {{CAPEX}} installed<sup>11</sup></th>
+                <th class="r">Contracted offtake</th>
+                <th class="r">Merchant</th>
+                <th class="r">Inference $20</th>
+                <th class="r">Inference $30</th>
+                <th class="r">Inference $40</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="label">Rate, year 1 ($/GPU-hr)</td>
+                <td class="r">{{OFFTAKE_PRICE}}, {{OFFTAKE_YEARS}} yrs</td>
+                <td class="r">{{MERCHANT_PRICE}}</td>
+                <td class="r">$20.00</td>
+                <td class="r">$30.00</td>
+                <td class="r">$40.00</td>
+              </tr>
+              <tr>
+                <td class="label">Utilization (billed)</td>
+                <td class="r">100%</td>
+                <td class="r">{{MERCHANT_UTIL}}</td>
+                <td class="r">{{INFERENCE_UTIL}}</td>
+                <td class="r">{{INFERENCE_UTIL}}</td>
+                <td class="r">{{INFERENCE_UTIL}}</td>
+              </tr>
+              <tr>
+                <td class="label">Market reference</td>
+                <td class="rt muted">Reserved B300 median $5.02–5.75<sup>4</sup></td>
+                <td class="rt muted">Index $7.68; on demand $9.50<sup>4</sup></td>
+                <td class="rt muted" colspan="3">Open models on 8×B300 earn $21/GPU-hr at full load; tuned racks $32–65<sup>10</sup></td>
+              </tr>
+              <tr>
+                <td class="label">Year-1 revenue</td>
+                <td class="r">{{OFF_REV}}</td>
+                <td class="r">{{MER_REV}}</td>
+                <td class="r">{{I20_REV}}</td>
+                <td class="r">{{I30_REV}}</td>
+                <td class="r">{{I40_REV}}</td>
+              </tr>
+              <tr>
+                <td class="label">Year-1 cash margin, after fees and opex</td>
+                <td class="r">{{OFF_MARGIN}}</td>
+                <td class="r">{{MER_MARGIN}}</td>
+                <td class="r">{{I20_MARGIN}}</td>
+                <td class="r">{{I30_MARGIN}}</td>
+                <td class="r">{{I40_MARGIN}}</td>
+              </tr>
+              <tr>
+                <td class="label">Prepaid by the buyer ({{OFFTAKE_PREPAY}})</td>
+                <td class="r">{{OFF_PREPAY}}</td>
+                <td class="r">{{MER_PREPAY}}</td>
+                <td class="r">{{I20_PREPAY}}</td>
+                <td class="r">{{I30_PREPAY}}</td>
+                <td class="r">{{I40_PREPAY}}</td>
+              </tr>
+              <tr class="key">
+                <td>Payback of installed cost (months)</td>
+                <td class="r">{{OFF_PAYBACK}}</td>
+                <td class="r">{{MER_PAYBACK}}</td>
+                <td class="r">{{I20_PAYBACK}}</td>
+                <td class="r">{{I30_PAYBACK}}</td>
+                <td class="r">{{I40_PAYBACK}}</td>
+              </tr>
+              <tr>
+                <td class="label">Months the capital is at risk</td>
+                <td class="r"><span class="bar debt" style="width: {{OFF_BAR}}%"></span></td>
+                <td class="r"><span class="bar" style="width: {{MER_BAR}}%"></span></td>
+                <td class="r"><span class="bar" style="width: {{I20_BAR}}%"></span></td>
+                <td class="r"><span class="bar" style="width: {{I30_BAR}}%"></span></td>
+                <td class="r"><span class="bar" style="width: {{I40_BAR}}%"></span></td>
+              </tr>
+              <tr class="key">
+                <td>{{DEBT}} of GPU debt repaid from cash (months)</td>
+                <td class="r">{{OFF_DEBTFREE}}</td>
+                <td class="r">{{MER_DEBTFREE}}</td>
+                <td class="r">{{I20_DEBTFREE}}</td>
+                <td class="r">{{I30_DEBTFREE}}</td>
+                <td class="r">{{I40_DEBTFREE}}</td>
+              </tr>
+              <tr>
+                <td class="label">Year-1 debt service coverage</td>
+                <td class="r">{{OFF_DSCR}}</td>
+                <td class="r">{{MER_DSCR}}</td>
+                <td class="r">{{I20_DSCR}}</td>
+                <td class="r">{{I30_DSCR}}</td>
+                <td class="r">{{I40_DSCR}}</td>
+              </tr>
+              <tr>
+                <td class="label">Rate that just covers opex and debt</td>
+                <td class="rt">{{OFF_BREAKEVEN}} merchant if the buyer fails</td>
+                <td class="r">{{MER_BREAKEVEN}}</td>
+                <td class="r">{{I20_BREAKEVEN}}</td>
+                <td class="r">{{I30_BREAKEVEN}}</td>
+                <td class="r">{{I40_BREAKEVEN}}</td>
+              </tr>
+              <tr>
+                <td class="label">Price fall the debt can absorb</td>
+                <td class="r">{{OFF_CUSHION}}</td>
+                <td class="r">{{MER_CUSHION}}</td>
+                <td class="r">{{I20_CUSHION}}</td>
+                <td class="r">{{I30_CUSHION}}</td>
+                <td class="r">{{I40_CUSHION}}</td>
+              </tr>
+              <tr>
+                <td class="label">{{LIFE_YEARS}}-year cash on installed cost</td>
+                <td class="r">{{OFF_MULTIPLE}}</td>
+                <td class="r">{{MER_MULTIPLE}}</td>
+                <td class="r">{{I20_MULTIPLE}}</td>
+                <td class="r">{{I30_MULTIPLE}}</td>
+                <td class="r">{{I40_MULTIPLE}}</td>
+              </tr>
+              <tr>
+                <td class="label">Upside above the rate goes to</td>
+                <td class="r no">The buyer</td>
+                <td class="r yes">The owner</td>
+                <td class="r yes">The owner</td>
+                <td class="r yes">The owner</td>
+                <td class="r yes">The owner</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="take">
+          <b>Higher up the stack, the capital comes back faster, and that lowers risk for every party.</b> Contracted
+          offtake needs {{OFF_PAYBACK}} months to return its capital and {{OFF_DEBTFREE}} to clear its debt from cash, and
+          if the buyer fails the owner is selling merchant anyway. Inference at $30 returns the capital in
+          {{I30_PAYBACK}} months and the debt in {{I30_DEBTFREE}}; after that, a price collapse costs upside, not
+          principal. The lender is protected by how fast the asset pays, not by the paper, and the buyer gets a supplier
+          that is not one bad quarter from default.
+        </p>
+      </div>
+      <div class="foot">
+        <div class="brands">ZODE EZRA KEYFRAME</div>
+        <div class="fine"><span>Confidential. For qualified purchasers only. Not an offer to sell securities.</span><span>1</span></div>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="running"><span>Long Compute Fund I · Investment Memo</span><span>November 10, 2026</span></div>
+      <div class="body">
+        <div>
+          <h2><span class="n">3</span>A contract does not take you out of the compute market</h2>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 22%">Protection (market-standard terms)</th>
+                <th style="width: 23%">What it appears to give</th>
+                <th>What happens if compute prices collapse</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="label">Take-or-pay, 3–5 yrs at $3.85–4.50</td>
+                <td>Fixed revenue whatever the market does</td>
+                <td>The buyer is usually a reseller or lab whose own revenue is spot-priced; it renegotiates or defaults exactly when spot falls</td>
+              </tr>
+              <tr>
+                <td class="label">25–30% prepaid</td>
+                <td>Credit support</td>
+                <td>Credited evenly against invoices: about 10 months of a 3-year term, refundable if terminated for cause</td>
+              </tr>
+              <tr>
+                <td class="label">SLA and acceptance terms</td>
+                <td>Routine service credits</td>
+                <td>Credits, take-or-pay reductions and acceptance tests become the buyer’s route out</td>
+              </tr>
+              <tr>
+                <td class="label">Tenor</td>
+                <td>Revenue matched to the debt</td>
+                <td>GPUs last {{LIFE_YEARS}} years and debt amortizes over {{AMORT}} months, so years 4–5 are merchant anyway; Hyperion pairs a 4-year lease with bonds to 2049<sup>3</sup></td>
+              </tr>
+              <tr>
+                <td class="label">Collateral: the GPUs</td>
+                <td>Recovery if the buyer fails</td>
+                <td>Resale value tracks the same spot price that caused the default</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="take">
+          <b>In the stress that matters, the spot price, the buyer’s credit and the collateral fall together.</b>
+          Contracted owners and lenders stay exposed to the compute market whatever the paper says. What they gave up
+          is the upside.
+        </p>
+
+        <div>
+          <h2><span class="n">4</span>Who gets what from one MW of tokens at {{TOKEN_PRICE}}/GPU-hr</h2>
+          <p style="margin-bottom: 3pt">
+            At {{TOKEN_PRICE}} a GPU-hour and {{INFERENCE_UTIL}} utilization, one MW produces {{TOKEN_HOURS}} GPU-hours
+            of tokens, worth <b>{{TOKEN_VALUE}} a year</b>. Under today’s contracted structure, a {{OFFTAKE_PRICE}}
+            take-or-pay with {{OFFTAKE_PREPAY}} prepaid and GPU debt at {{DEBT_HW_PCT}} of hardware, year 1 splits as
+            follows.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 19%">Party</th>
+                <th style="width: 19%">Capital provided</th>
+                <th class="r">$M a year</th>
+                <th class="r">Per GPU-hr</th>
+                <th class="r">Share</th>
+                <th class="bar-cell"></th>
+                <th style="width: 27%">Risk carried</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="label">Buyer (lab, hyperscaler, reseller)</td>
+                <td>{{PREPAY}} prepay ({{PREPAY_PCT}}), credited back over {{OFFTAKE_YEARS}} yrs</td>
+                <td class="r">{{OFFTAKER_YR}}</td>
+                <td class="r">{{OFFTAKER_HR}}</td>
+                <td class="r">{{OFFTAKER_SHARE}}</td>
+                <td class="bar-cell"><span class="bar" style="width: {{OFFTAKER_BAR}}%"></span></td>
+                <td>The contract rate; can resell or walk</td>
+              </tr>
+              <tr>
+                <td class="label">NVIDIA and server OEMs</td>
+                <td>None</td>
+                <td class="r">{{NVIDIA_YR}}</td>
+                <td class="r">{{NVIDIA_HR}}</td>
+                <td class="r">{{NVIDIA_SHARE}}</td>
+                <td class="bar-cell"><span class="bar" style="width: {{NVIDIA_BAR}}%"></span></td>
+                <td>None: {{HARDWARE}} paid at delivery (shown over {{LIFE_YEARS}} years, net of resale)</td>
+              </tr>
+              <tr>
+                <td class="label">Site and power</td>
+                <td>None</td>
+                <td class="r">{{SITE_YR}}</td>
+                <td class="r">{{SITE_HR}}</td>
+                <td class="r">{{SITE_SHARE}}</td>
+                <td class="bar-cell"><span class="bar" style="width: {{SITE_BAR}}%"></span></td>
+                <td>Lease, with a deposit</td>
+              </tr>
+              <tr>
+                <td class="label">Insurance, support, software</td>
+                <td>None</td>
+                <td class="r">{{OTHER_YR}}</td>
+                <td class="r">{{OTHER_HR}}</td>
+                <td class="r">{{OTHER_SHARE}}</td>
+                <td class="bar-cell"><span class="bar" style="width: {{OTHER_BAR}}%"></span></td>
+                <td>None</td>
+              </tr>
+              <tr class="key">
+                <td>Debt investor</td>
+                <td>{{DEBT}} ({{DEBT_PCT}}), the largest share</td>
+                <td class="r">{{DEBT_YR}}</td>
+                <td class="r">{{DEBT_HR}}</td>
+                <td class="r">{{DEBT_SHARE}}</td>
+                <td class="bar-cell"><span class="bar debt" style="width: {{DEBT_BAR}}%"></span></td>
+                <td>The asset and the buyer’s credit for {{AMORT}} months</td>
+              </tr>
+              <tr>
+                <td class="label">Owner equity (neocloud)</td>
+                <td>{{EQUITY_IN}} ({{EQUITY_PCT}})</td>
+                <td class="r">{{EQUITY_YR}}</td>
+                <td class="r">{{EQUITY_HR}}</td>
+                <td class="r">{{EQUITY_SHARE}}</td>
+                <td class="bar-cell"><span class="bar" style="width: {{EQUITY_BAR}}%"></span></td>
+                <td>First loss; years 4–5 at merchant</td>
+              </tr>
+              <tr class="total">
+                <td>Total</td>
+                <td>{{CAPEX}}</td>
+                <td class="r">{{TOKEN_VALUE}}</td>
+                <td class="r">{{TOKEN_PRICE}}.00</td>
+                <td class="r">100%</td>
+                <td></td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="take">
+          <b>The debt investor provides the largest share of the capital and receives {{DEBT_HR}} of every
+          {{TOKEN_PRICE}} GPU-hour, {{DEBT_SHARE}} of the value</b> ({{INTEREST_LIFE}} of interest over the loan’s
+          life), for carrying the asset and the buyer’s credit. The buyer keeps {{OFFTAKER_SHARE}} on capital it gets
+          back as invoice credits. That is the trade the market is now repricing.
+        </p>
+
+        <div>
+          <h2><span class="n">5</span>What the fund does</h2>
+          <p>
+            Long Compute Fund I owns ZODE clusters outright and sells their hours merchant and as inference, choosing
+            whichever pays more, so the buyer’s spread in section 4 stays with the capital that funds the hardware. Because the
+            GPU-hour can always be sold instead, tokens are an option for the fund, not a risk. ZODE converts
+            already-powered industrial buildings at a low basis, which is what lets the fund carry merchant exposure.
+            The fund is evergreen because sites outlive GPUs and re-host each new generation. Target: 2–3x on equity
+            from merchant compute, a multiple of that from tokens.
+          </p>
+        </div>
+
+        <div>
+          <h2><span class="n">6</span>Risks</h2>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 17%">Risk</th>
+                <th style="width: 41%">What we see</th>
+                <th>How it is handled</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="label">GPU-hour prices</td>
+                <td>H100 fell from $7+ (2024) to ~$2 before recovering to ~$3; B300 $6.65 to $7.68 in a month<sup>4</sup></td>
+                <td>Payback in {{I40_PAYBACK}}–{{MER_PAYBACK}} months; debt covered down to {{MER_BREAKEVEN}}/GPU-hr</td>
+              </tr>
+              <tr>
+                <td class="label">Token prices</td>
+                <td>Per-token prices at constant capability fall ~10x a year<sup>12</sup></td>
+                <td>Inference down {{DECLINE}} a year with a {{FLOOR}} floor; hours resold merchant</td>
+              </tr>
+              <tr>
+                <td class="label">Utilization</td>
+                <td>Merchant hours can sit idle between short contracts</td>
+                <td>{{MERCHANT_UTIL}} merchant and {{INFERENCE_UTIL}} inference; idle inference hours sell merchant</td>
+              </tr>
+              <tr>
+                <td class="label">Delivery and power</td>
+                <td>B300 nodes 12–18 weeks; InfiniBand 24–30; powered colocation scarce</td>
+                <td>Owned, already-powered buildings; network ordered at signing</td>
+              </tr>
+              <tr>
+                <td class="label">Obsolescence</td>
+                <td>A new NVIDIA generation roughly every two years; Vera Rubin now shipping<sup>5</sup></td>
+                <td>{{LIFE_YEARS}}-year life, {{RESALE}} resale; sites re-host the next generation</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="notes">
+          <h3>Notes</h3>
+          <ol>
+            <li>FINRA TRACE via Kilambi, Nov 10, 2026: CoreWeave 9.75% notes due 2031 at 81.0, 15.41% yield, +1,064bp. CNBC, Nov 6 and 9, 2026: CDS ~1,155bp; $35B of debt; CoreWeave and Nebius down about half in a month.</li>
+            <li>Meta pricing term sheet, Nov 3, 2026: 5.85% notes due 2031 at +110bp (FourWeekMBA, Nov 7).</li>
+            <li>Private Credit Prep, Oct 6, 2026 (Hyperion: $27.3B, 6.581% to 2049, 4-year initial lease); FT via Dealroom (Hyperion under 92c, QTS Excalibur under 88c, Oracle Michigan 87c).</li>
+            <li>Silicon Data B300 Rental Price Index, $7.68 on Nov 10, 2026 ($6.65 on Oct 12). Ancapex, Nov 9: getdeploying medians $9.50 on demand, $5.75 reserved; AIMultiple reserved $5.02.</li>
+            <li>NVIDIA Q2 FY2027 results and Q3 outlook: 74.0% gross margin, ~70% FY2028 revenue growth; up to $100B committed to OpenAI.</li>
+            <li>Market caps on Nov 10, 2026 (Motley Fool): NVIDIA $4.3T, Microsoft $4.0T, Alphabet $3.5T, Amazon $2.9T, Meta $1.6T. CoreWeave $27.2B (TrainEarn.ai).</li>
+            <li>Bloomberg, Nov 6, 2026 ($1.25T). Disclosed contracts with Oracle, Microsoft, AWS, CoreWeave and Cerebras (Zan Digital, Oct 25, 2026). Run-rate per FT, Oct 8.</li>
+            <li>Anthropic S-1 via TechCrunch, Nov 10, 2026: $1.404T at the top of the range; $900.9B of commitments; $26B placement incl. $10B from NVIDIA.</li>
+            <li>Guidance as of Oct 22, 2026: Amazon ~$220B, Alphabet $195–205B, Microsoft ~$175B, Meta $135–145B.</li>
+            <li>Recurrence, Oct 26, 2026: 8×B300 at OpenRouter realized prices, $21.4/GPU-hr at full load; GB300 NVL72 $32–65.</li>
+            <li>ZODE cluster model, Nov 2026. Per MW of critical IT: {{GPUS}} GPUs at {{HW_PER_GPU}} all-in ({{NODE}} per 8-GPU node + {{NETWORK_PCT}} network and storage), {{SETUP}} setup, {{NRC}} site NRC and legal. Colocation {{RENT}}/kW-month; power {{POWER}}/kWh at {{LOAD}} load and {{PUE}} PUE; insurance and support {{INSURANCE}} of hardware; software {{SOFTWARE}}; contingency {{CONTINGENCY}}; fees {{MERCHANT_FEE}} and SLA credits {{SLA}}; inference team {{INFERENCE_TEAM}} a year. Merchant and inference rates fall {{DECLINE}} a year; offtake turns merchant after year {{OFFTAKE_YEARS}}. Debt {{BANK_PCT}} at {{BANK_RATE}} + {{MEZZ_PCT}} at {{MEZZ_RATE}} of hardware over {{AMORT}} months. Costs flat; before taxes and fund fees.</li>
+            <li>a16z, “LLMflation” (constant-capability token prices).</li>
+          </ol>
+        </div>
+      </div>
+      <div class="foot">
+        <div class="brands">ZODE EZRA KEYFRAME</div>
+        <div class="fine"><span>Projections are illustrative, not guarantees. Bracketed items are to be confirmed.</span><span>2</span></div>
+      </div>
+    </section>
+  </body>
+</html>
