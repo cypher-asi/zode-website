@@ -115,7 +115,7 @@ export const TEAM: Extract<Slide, { kind: "team" }> = {
       },
       {
         name: "Emal Alwis",
-        company: { name: "Tesla", src: `${LOGO_DIR}/tesla.svg`, aspect: 993.047 / 100, scale: 0.95 },
+        company: { name: "Tesla", src: `${LOGO_DIR}/tesla.svg`, aspect: 993.047 / 100, scale: 1.25 },
         feat: "Third engineer on Tesla FSD",
       },
       {

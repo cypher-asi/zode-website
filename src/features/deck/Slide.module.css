@@ -4015,6 +4015,11 @@ a.measureTitle:focus-visible {
   object-position: left center;
 }
 
+/* The members' marks, a quarter smaller than the partner's scale, so the partner leads its column. */
+.networkArea ul.logos img {
+  height: calc(0.8625 * var(--h) * var(--u));
+}
+
 /* The advisors under the split, over a rule the split's own stops on: a row of cards joined as one panel. */
 .main > .advisors {
   display: flex;
