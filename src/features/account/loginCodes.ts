@@ -87,7 +87,7 @@ export async function redeemLoginCode(email: string, code: string): Promise<Logi
   if (!row) return { status: "none" };
 
   const expected = Buffer.from(String(row.code_hash), "hex");
-  const given = hashCode(address, code.replace(/\s+/g, ""));
+  const given = hashCode(address, code);
   if (Number(row.attempts) > MAX_ATTEMPTS || !timingSafeEqual(expected, given)) return { status: "invalid" };
 
   const [used] = await sql`update login_codes set used_at = now() where id = ${row.id} and used_at is null returning id`;

@@ -23,6 +23,7 @@ import {
 
 const MINUTE = 60;
 const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
 
 export interface AuthFormState {
   readonly error?: string;
@@ -42,7 +43,7 @@ export async function login(_prevState: AuthFormState, formData: FormData): Prom
     case "send-code":
       return sendLoginCode(email);
     case "verify-code":
-      return loginWithCode(email, String(formData.get("code") ?? "").trim(), formData);
+      return loginWithCode(email, String(formData.get("code") ?? "").replace(/\s+/g, ""), formData);
     default:
       return loginWithPassword(email, String(formData.get("password") ?? ""), formData);
   }
@@ -75,9 +76,11 @@ async function sendLoginCode(email: string): Promise<AuthFormState> {
   if (!isEmail(email)) return { error: "Enter your email to get a login code.", email };
 
   // Tighter than logins: each one sends someone an email.
+  const address = email.toLowerCase();
   const allowed = await withinLimits([
     { key: `login-code:ip:${await clientIp()}`, max: 5, windowSeconds: 15 * MINUTE },
-    { key: `login-code:email:${email.toLowerCase()}`, max: 3, windowSeconds: 15 * MINUTE },
+    { key: `login-code:email:${address}`, max: 3, windowSeconds: 15 * MINUTE },
+    { key: `login-code:email-day:${address}`, max: 10, windowSeconds: DAY },
   ]);
   if (!allowed) return { error: RATE_LIMITED, email };
 
@@ -106,13 +109,21 @@ async function sendLoginCode(email: string): Promise<AuthFormState> {
 async function loginWithCode(email: string, code: string, formData: FormData): Promise<AuthFormState> {
   if (!email) return { error: "Enter your email to get a login code.", email };
   if (!code) return { error: "Enter the code from your email.", email, codeSentTo: email };
-  if (!(await withinLoginLimits(email))) return { error: RATE_LIMITED, email, codeSentTo: email };
-
   const failed = { error: "Couldn't log in right now. Please try again.", email, codeSentTo: email };
+  const invalid = { ...failed, error: "That code is invalid or expired." };
+  // Both this site's codes and ZOS's are six digits.
+  if (!/^\d{6}$/.test(code)) return invalid;
+
+  // A daily cap on top, so guessing six digits stays hopeless however long it runs.
+  const allowed =
+    (await withinLoginLimits(email)) &&
+    (await withinLimits([{ key: `login-code:guess:${email.toLowerCase()}`, max: 20, windowSeconds: DAY }]));
+  if (!allowed) return { ...failed, error: RATE_LIMITED };
+
   let account: Account;
   try {
     const result = await redeemLoginCode(email, code);
-    if (result.status === "invalid") return { ...failed, error: "That code is invalid or expired." };
+    if (result.status === "invalid") return invalid;
     account = result.status === "ok" ? result.account : await zosLoginWithCode(email, code);
   } catch (error) {
     if (!(error instanceof ZosError)) console.error("[account] couldn't check a login code", error);
