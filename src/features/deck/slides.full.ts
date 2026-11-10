@@ -1,16 +1,218 @@
 import "server-only";
+import { BUILD_OUT_PLAN } from "./plan";
 import { REVENUE_RAMP } from "./revenueRamp";
 import { DEMAND_DETAILS, LOGO_DIR, PUBLIC_SLIDES, type Slide } from "./slides";
 
 /**
- * The deck past project finance, for readers with data room access: the team,
- * the raise, the close and the sources. Server-only, so the public deck's
+ * The deck past the competitive advantage, for readers with data room access:
+ * unit economics, traction, the pipeline, project finance, the team, the
+ * raise, the close and the sources. Server-only, so the public deck's
  * bundle never carries it; see `deckSlides` in ./access.
  */
 
 const quarterRevenue = ({ revenue }: (typeof REVENUE_RAMP.quarters)[number]) =>
   revenue.inference + revenue.merchant + revenue.offtake;
 const PEAK = REVENUE_RAMP.quarters.reduce((best, q) => (quarterRevenue(q) > quarterRevenue(best) ? q : best));
+
+/** One standard cluster's specs and economics, by how its compute is sold. */
+const UNIT: Slide = {
+  id: "unit",
+  kind: "unit",
+  section: "Unit economics",
+  eyebrow: "Unit economics",
+  title: "One standard cluster: 2,048 GPUs in 4 MW.",
+  ground: "paper",
+  specs: [
+    { value: "256", label: "Nodes · 8× NVIDIA B300 each", icon: "node" },
+    { value: "2,048", label: "NVIDIA B300 GPUs, Blackwell Ultra", icon: "gpu" },
+    { value: "4 MW", label: "Critical IT load, direct liquid cooling", icon: "power" },
+    { value: "800G", label: "Quantum-X800 InfiniBand fabric", icon: "fabric" },
+    { value: "2 PB", label: "High-performance storage", icon: "storage" },
+    {
+      icon: "rate",
+      byMode: {
+        offtake: { value: "$5.00", label: "Contracted price per GPU-hour, 5-year term" },
+        merchant: { value: "$6.50", label: "Merchant price per GPU-hour, 100% utilized" },
+        inference: { value: "$16.90", label: "Inference net revenue per GPU-hour" },
+      },
+    },
+    {
+      icon: "profit",
+      byMode: {
+        offtake: { value: "$26.3M", label: "Year 1 net profit, after all costs" },
+        merchant: { value: "$37.8M", label: "Year 1 net profit, after all costs" },
+        inference: { value: "$209.3M", label: "Year 1 net profit, after all costs" },
+      },
+    },
+    {
+      icon: "revenue",
+      byMode: {
+        offtake: { value: "$89.7M", label: "Annual contracted revenue at $5/GPU-hr" },
+        merchant: { value: "$116.6M", label: "Annual merchant revenue at $6.50/GPU-hr" },
+        inference: { value: "$303.2M", label: "Annual inference revenue at $16.90/GPU-hr" },
+      },
+    },
+  ],
+  modes: [
+    { id: "offtake", label: "Offtake" },
+    { id: "merchant", label: "Merchant" },
+    { id: "inference", label: "Inference" },
+  ],
+  highlight: 7,
+  image: "/images/deck/cluster-2048.png",
+  links: [
+    { label: "Cluster builder", href: "/cluster-builder?nodes=256&tb=8" },
+    { label: "Compute model", href: "/compute-model" },
+  ],
+};
+
+/** Contracted revenue and LOIs; also read by the company profile (features/profile). */
+export const TRACTION: Extract<Slide, { kind: "traction" }> = {
+  id: "traction",
+  kind: "traction",
+  section: "Traction",
+  eyebrow: "Traction",
+  title: "Revenue is scaling vertically.",
+  ground: "paper",
+  block: { usd: 375e6, note: "Each block is one 4 MW cluster, about $375M of contract value." },
+  contracted: { value: "$485M", label: "Contracted revenue, signed", usd: 485e6 },
+  loi: { value: "$20B", label: "In letters of intent", usd: 20e9 },
+  demand: {
+    title: "Real life demand-side contract",
+    rows: [
+      { label: "Contract value", value: "$376.8M" },
+      { label: "Capacity", value: "2,048 B300 · 256 nodes · ~4 MW" },
+      { label: "Price and term", value: "$4.20 per GPU-hour · 5 years" },
+      { label: "Prepayment", value: "$103.6M (27.5%)" },
+      { label: "Delivery", value: "February 2027" },
+    ],
+  },
+  supply: {
+    title: "Real life supply-side contract",
+    rows: [
+      { label: "Colocation lease", value: "$170/kW-mo · ~$8.2M/yr per 4 MW + NNN and electricity" },
+      { label: "Building conversion", value: "$5M per MW · ~$20M per 4 MW" },
+    ],
+  },
+  customers: [
+    {
+      label: "LOI",
+      logos: [
+        { name: "Crusoe", src: `${LOGO_DIR}/crusoe.svg`, aspect: 119 / 29, scale: 1.1 },
+        { name: "Thinking Machines", src: `${LOGO_DIR}/thinking-machines.svg`, aspect: 1114.8 / 70, scale: 1.1 },
+        { name: "Together AI", src: `${LOGO_DIR}/together-ai.svg`, aspect: 119 / 26, scale: 1.12 },
+        { name: "San Francisco Compute Company", src: `${LOGO_DIR}/sf-compute.svg`, aspect: 2000 / 336, scale: 1.05 },
+      ],
+    },
+    {
+      label: "Pipeline",
+      logos: [
+        { name: "Anthropic", src: `${LOGO_DIR}/anthropic.svg`, aspect: 1024.2 / 115, scale: 0.88 },
+        { name: "OpenAI", src: `${LOGO_DIR}/openai.svg`, aspect: 288 / 78, center: 31 / 78 },
+      ],
+    },
+  ],
+};
+
+const PIPELINE: Slide = {
+  id: "pipeline",
+  kind: "pipeline",
+  section: "Pipeline",
+  eyebrow: "Pipeline",
+  title: "72.8 MW ready to close.",
+  ground: "paper",
+  groups: [
+    {
+      label: "Imminent",
+      mw: "36.2",
+      sites: [
+        { site: "Mississauga", map: "mississauga", path: "Colocation", mw: "1.2", status: "In diligence" },
+        { site: "Calgary", map: "calgary", path: "Purchase", mw: "22.0", status: "LOI" },
+        { site: "Calgary", map: "calgary", path: "Purchase", mw: "13.0", status: "LOI" },
+      ],
+    },
+    {
+      label: "Soon",
+      mw: "36.6",
+      sites: [
+        { site: "Illinois", map: "chicago", path: "Lease", mw: "30.0", status: "Contracted" },
+        { site: "Ontario", map: "milton", path: "Joint venture", mw: "6.6", status: "In diligence" },
+      ],
+    },
+  ],
+  total: "72.8",
+  capacity: [
+    { value: "~925 MW", label: "Under LOI" },
+    { value: "1 GW+", label: "In active negotiations" },
+  ],
+  plan: BUILD_OUT_PLAN,
+  planNote: [
+    "Every MW earns $22.4M a year contracted, $29.2–75.8M",
+    "as merchant or inference, and is valued at $50–75M.",
+  ],
+  planBasis:
+    "Annual revenue per MW of IT load at $5.00 contracted, $6.50 merchant and $16.90 inference per GPU-hour. Value per MW as CoreWeave, Nebius and IREN traded on October 13, 2026.",
+  sources: ["evPerMw"],
+};
+
+/** One MW's project finance, per cluster SPV. */
+const FINANCE: Slide = {
+  id: "finance",
+  kind: "finance",
+  section: "Project finance",
+  eyebrow: "Project finance",
+  title: "Every cluster is its own financeable project.",
+  ground: "paper",
+  basis: "One MW of critical IT load · 64 nodes · 512 GPUs",
+  rows: [
+    {
+      icon: "revenue",
+      title: "Compute",
+      kind: "revenue",
+      purpose: "Revenue per year",
+      total: "$49.1M",
+      parts: [
+        { label: "Offtake", value: "$11.2M", share: 0.5, detail: "32 nodes · 256 GPUs at $5.00/GPU-hr" },
+        { label: "Inference", value: "$37.9M", share: 0.5, detail: "32 nodes · 256 GPUs at $16.90/GPU-hr" },
+      ],
+    },
+    {
+      icon: "gpu",
+      title: "GPU",
+      kind: "cost",
+      purpose: "64 nodes · 512 B300 GPUs",
+      total: "$35.2M",
+      parts: [
+        { label: "Equity", value: "$17.6M", share: 0.5, detail: "50% of cost" },
+        { label: "Debt", value: "$17.6M", share: 0.5, detail: "Secured on the GPUs" },
+      ],
+    },
+    {
+      icon: "building",
+      title: "Data Center",
+      kind: "cost",
+      purpose: "Building conversion",
+      total: "$5.0M",
+      parts: [
+        { label: "Equity", value: "$2.5M", share: 0.5, detail: "50% of cost" },
+        { label: "Debt", value: "$2.5M", share: 0.5, detail: "Secured on the building" },
+      ],
+    },
+    {
+      icon: "power",
+      title: "Land + Power",
+      kind: "cost",
+      purpose: "Powered site purchase",
+      total: "$1.0M",
+      parts: [
+        { label: "Equity", value: "$0.5M", share: 0.5, detail: "50% of cost" },
+        { label: "Debt", value: "$0.5M", share: 0.5, detail: "Secured on the land" },
+      ],
+    },
+  ],
+  total: { label: "Total cost", value: "$41.2M", detail: "$20.6M equity · $20.6M debt" },
+  note: "Preliminary, fully utilized: half on a 5-year offtake at $5.00/GPU-hr, half as inference at $16.90 net. GPUs at $550K per node before tax and setup; data center at the ~$5M/MW target; land and power at $1M/MW.",
+};
 
 /** The founder, the team's network and the key advisors; also read by the company profile (features/profile). */
 export const TEAM: Extract<Slide, { kind: "team" }> = {
@@ -248,10 +450,14 @@ const CLOSE: Slide = {
   contact: "hello@zode.org · zode.org",
 };
 
-const CITED = [...PUBLIC_SLIDES, TEAM, RAISE, ...DEMAND_DETAILS].flatMap((slide) => slide.sources ?? []);
+const CITED = [...PUBLIC_SLIDES, UNIT, TRACTION, PIPELINE, FINANCE, TEAM, RAISE, ...DEMAND_DETAILS].flatMap((slide) => slide.sources ?? []);
 
 export const FULL_SLIDES: readonly Slide[] = [
   ...PUBLIC_SLIDES,
+  UNIT,
+  TRACTION,
+  PIPELINE,
+  FINANCE,
   TEAM,
   RAMP,
   RAISE,

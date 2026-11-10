@@ -1,4 +1,5 @@
 import { PUBLIC_SLIDES, type Slide } from "@/features/deck/slides";
+import { TRACTION } from "@/features/deck/slides.full";
 import type { PrincipleId } from "@/features/home/principles/principles";
 
 /**
@@ -17,8 +18,7 @@ function slide<K extends Slide["kind"]>(kind: K): Of<K> {
 }
 
 export const SOLUTION = slide("solution");
-export const TRACTION = slide("traction");
-export { TEAM } from "@/features/deck/slides.full";
+export { TEAM, TRACTION } from "@/features/deck/slides.full";
 
 /** The deck's customer logos under LOI, without its prospective pipeline. */
 export const CUSTOMERS = TRACTION.customers.filter((group) => group.label !== "Pipeline");
