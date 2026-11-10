@@ -32,9 +32,8 @@ const RAMP: Slide = {
 
 /**
  * From the ZODE ASCENT data room: ZODE_MasterModel_26.11.09.xlsx, base case to
- * December 2030 as the room's summaries cut it, and Alaska's term sheet, which
- * the model doesn't include yet. Debt is what the site build and the first GPU
- * generation draw. Update with each new model.
+ * December 2030 as the room's summaries cut it. Debt is what the site build and
+ * the first GPU generation draw. Update with each new model.
  */
 const RAISE: Slide = {
   id: "raise",
@@ -67,12 +66,6 @@ const RAISE: Slide = {
       tenure: "lease",
       computeCo: { detail: "15,360 GPUs · 30 MW", value: "$390M", basis: "Pref · + $10M ZODE" },
     },
-    {
-      name: "ZODE Alaska",
-      tenure: "own",
-      propCo: { detail: "Buys and builds 20 MW", value: "$120M", basis: "$20M + $5M per MW" },
-      computeCo: { detail: "B300 clusters", value: "$15M", basis: "Sub. loan · equity TBD" },
-    },
   ],
   stacks: [
     {
@@ -100,13 +93,12 @@ const RAISE: Slide = {
         { label: "ZODE equity", kind: "equity", source: "zode", amount: 19.3e6, terms: "Toronto" },
         { label: "ZODE pref", kind: "equity", source: "zode", amount: 10e6, terms: "Big Watt" },
         { label: "Pref equity", kind: "equity", amount: 813e6, terms: "Calgary 15% · Big Watt 10%" },
-        { label: "Subordinated loan", kind: "debt", amount: 15e6, terms: "Alaska · ADC · 15%" },
         { label: "Customer prepayments", kind: "debt", amount: 605e6, terms: "Big Watt offtake · 30%" },
         { label: "GPU debt", kind: "debt", amount: 1.21e9, terms: "30% bank + 20% mezz" },
       ],
     },
   ],
-  note: "Preliminary, from ZODE's master model of November 9, 2026, base case to December 2030. Amounts are what third parties put in; ZODE Inc.'s equity in each project comes from the seed. Debt is what the site build and the first GPU generation draw; GPU debt and prepayments together are capped at 85% of hardware. Alaska is from the October 7, 2026 term sheet with Alaska Data Corporation and is not yet in the model; its site company is 20 MW at $20M plus $5M per MW, and how it's financed is not yet set, so it isn't in the Prop Cos stack.",
+  note: "Preliminary, from ZODE's master model of November 9, 2026, base case to December 2030. Amounts are what third parties put in; ZODE Inc.'s equity in each project comes from the seed. Debt is what the site build and the first GPU generation draw; GPU debt and prepayments together are capped at 85% of hardware.",
 };
 
 const CLOSE: Slide = {
