@@ -23,7 +23,7 @@ const RAMP: Slide = {
   quarters: REVENUE_RAMP.quarters,
   caption:
     "Revenue by quarter, ZODE Inc. consolidated with every project at 100%. Hover a bar for its revenue by inference, merchant and offtake, and where it goes.",
-  note: `Preliminary, from ZODE's master model of November 9, 2026 (${REVENUE_RAMP.model}, ZODE ASCENT data room), base case to December 2030, including 250 MW of generic future sites from 2029. Op costs are colocation rent and site and cluster operations. Debt service is interest and principal repaid; Q2 2027's includes the $10M Calgary acquisition loan the construction loan refinances. TopCo is ZODE Inc.'s staffing and G&A. Left over is before GPU hardware, refresh and site capital spending.`,
+  note: `Preliminary, from ZODE's master model of November 9, 2026 (${REVENUE_RAMP.model}, ZODE ASCENT data room), base case to December 2030, with Big Watt adding 30 MW a quarter from June 2027 to 570 MW, and 250 MW of generic future sites added in 2029, growing 20% a year. Op costs are colocation rent and site and cluster operations. Debt service is interest and principal repaid; Q2 2027's includes the $10M Calgary acquisition loan the construction loan refinances. TopCo is ZODE Inc.'s staffing and G&A. Left over is before GPU hardware, refresh and site capital spending.`,
 };
 
 /**
