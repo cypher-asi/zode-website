@@ -4,7 +4,7 @@ import { Icon } from "./icons";
 import type { MasterSpv } from "./master";
 import { findRow, monthYear, yearRows } from "./masterFormat";
 import type { MasterSummary } from "./summary";
-import { FolderLink, KeyFigures, ModelLink, plural, Section, Table, TermGroup, type KeyFigure, type TableRow } from "./SummaryParts";
+import { FolderLink, KeyFigures, ModelLink, Section, Table, TermGroup, type KeyFigure, type TableRow } from "./SummaryParts";
 import styles from "./Summary.module.css";
 import t from "./Tables.module.css";
 
@@ -47,7 +47,7 @@ function SpvTable({ roomId, spvs, summaries }: { roomId: string; spvs: MasterSpv
                     s.name
                   )}
                 </span>
-                <span className={t.siteAddress}>{s.business.split(":")[0]}</span>
+                {s.business.includes(":") ? <span className={t.siteAddress}>{s.business.split(":")[0]}</span> : null}
                 {s.folderId && summaries.has(s.folderId) ? (
                   <span className={t.siteLink}>
                     <FolderLink roomId={roomId} folderId={s.folderId} summary>
@@ -59,7 +59,6 @@ function SpvTable({ roomId, spvs, summaries }: { roomId: string; spvs: MasterSpv
             ))}
             <th scope="col" className={t.siteHead}>
               <span className={t.siteName}>Total</span>
-              <span className={t.siteAddress}>{plural(spvs.length, "SPV", "SPVs")}</span>
             </th>
           </tr>
         </thead>
