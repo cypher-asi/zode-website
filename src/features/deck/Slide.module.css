@@ -3516,6 +3516,7 @@ a.measureTitle:focus-visible {
   align-items: baseline;
   gap: calc(0.5 * var(--u));
   min-width: 0;
+  white-space: nowrap;
 }
 
 .raiseDetailRow > dd {
@@ -3538,7 +3539,11 @@ a.measureTitle:focus-visible {
   opacity: 0.4;
 }
 
-.raiseDetailRow:is([data-head], [data-sum], [data-raising]) {
+.raiseDetailHead {
+  margin: 0;
+}
+
+.raiseDetailRow:is([data-sum], [data-raising], [data-total]) {
   align-items: center;
 }
 
@@ -3575,7 +3580,12 @@ a.measureTitle:focus-visible {
   white-space: nowrap;
 }
 
-.raiseDetailRow[data-head] .raiseDetailValue {
+.raiseDetailRow[data-total] {
+  padding-top: calc(0.6 * var(--u));
+  border-top: 1px solid var(--rule-strong);
+}
+
+.raiseDetailRow[data-total] .raiseDetailValue {
   font-size: calc(1.5 * var(--u));
 }
 
@@ -4062,6 +4072,62 @@ a.measureTitle:focus-visible {
     padding: 0;
     background: none;
     box-shadow: none;
+  }
+
+  /* Each row's layers set out beside its total. */
+  .raiseChart {
+    grid-template-columns:
+      repeat(var(--projects), minmax(0, 1fr))
+      calc(2.4 * var(--u))
+      calc(34 * var(--u));
+  }
+
+  .raiseStackBody {
+    flex: none;
+    border-right: 1px solid var(--rule);
+  }
+
+  .raiseDetail {
+    position: static;
+    flex: 1;
+    width: auto;
+    padding: 0;
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .raiseDetailBox {
+    gap: calc(0.35 * var(--u));
+    padding: calc(0.5 * var(--u)) calc(1 * var(--u));
+    box-shadow: none;
+  }
+
+  .raiseDetailHead,
+  .raiseDetailRow[data-total] {
+    display: none;
+  }
+
+  .raiseDetailGroup {
+    gap: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .raiseDetailRow {
+    font-size: calc(0.78 * var(--u));
+    line-height: 1.25;
+  }
+
+  .raiseDetailValue {
+    font-size: calc(0.9 * var(--u));
+  }
+
+  .raiseDetailRow[data-sum] > dd {
+    font-size: calc(0.6 * var(--u));
+  }
+
+  .raiseDetailRow[data-raising] {
+    padding-top: calc(0.35 * var(--u));
   }
 }
 
@@ -5960,7 +6026,8 @@ a.measureTitle:focus-visible {
   font-size: 14px;
 }
 
-.slide[data-compact] .raiseDetailRow[data-head] {
+.slide[data-compact] .raiseDetailHead,
+.slide[data-compact] .raiseDetailRow[data-total] {
   display: none;
 }
 

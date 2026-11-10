@@ -1943,10 +1943,7 @@ function RaiseCapital({ stack, delay }: { stack: RaiseStack; delay: number }): R
       </div>
       <div id={id} className={styles.raiseDetail} role="tooltip">
         <div className={styles.raiseDetailBox}>
-          <p className={styles.raiseDetailRow} data-head>
-            <span className={styles.label}>{stack.label}</span>
-            <span className={styles.raiseDetailValue}>{capital(total)}</span>
-          </p>
+          <p className={`${styles.label} ${styles.raiseDetailHead}`}>{stack.label}</p>
           {CAPITAL_KINDS.map(({ kind, label }) => {
             const layers = stack.layers.filter((layer) => layer.kind === kind);
             if (!layers.length) return null;
@@ -1986,6 +1983,10 @@ function RaiseCapital({ stack, delay }: { stack: RaiseStack; delay: number }): R
           <p className={styles.raiseDetailRow} data-raising>
             <span className={styles.label}>Raising · {stack.raising.label}</span>
             <span className={styles.raiseDetailValue}>{stack.raising.value}</span>
+          </p>
+          <p className={styles.raiseDetailRow} data-total>
+            <span className={styles.label}>Total</span>
+            <span className={styles.raiseDetailValue}>{capital(total)}</span>
           </p>
         </div>
       </div>
