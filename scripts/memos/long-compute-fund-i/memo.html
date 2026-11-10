@@ -23,8 +23,8 @@
             <div><span>Size</span>{{C1_SIZE}} first close, to {{C3_MW}} MW</div>
             <div><span>Structure</span>Evergreen, open-ended</div>
             <div><span>Exposure</span>GPU financing, no offtaker</div>
-            <div><span>Target</span>2–3x; more with tokens</div>
-            <div><span>Per MW</span>{{GPUS}} B300s, {{CAPEX}}</div>
+            <div><span>Return</span>{{COUPON}} coupon + {{KICKER}} kicker</div>
+            <div><span>Per MW</span>{{GPUS}} B300s, {{HARDWARE}} loan</div>
             <div><span>Minimum</span>[$1M]</div>
             <div><span>Fees</span>[1.5% / 20% over 8%]</div>
             <div><span>Liquidity</span>[Quarterly, 5% gate]</div>
@@ -403,12 +403,12 @@
         <div>
           <h2><span class="n">5</span>What the fund does</h2>
           <p>
-            Long Compute Fund I finances GPU clusters, starting with ZODE’s, in a way that does not require an offtaker.
-            Instead of a fixed coupon behind a take-or-pay contract, it prices the merchant risk it takes and participates
-            in the cluster’s merchant and inference cash flow, so more of the buyer’s spread in section 4 goes to its
-            LPs. Fast payback (section 2) and ZODE’s low basis in already-powered buildings protect the downside; the
-            upside rises with what the hours sell for. The fund is evergreen: sites outlive GPUs, so repaid capital
-            rolls into each new generation. Target: 2–3x for LPs from merchant compute, more from tokens.
+            Long Compute Fund I finances GPUs (nodes, network, storage), starting with ZODE’s clusters, without
+            requiring an offtaker; ZODE and its site partners fund the buildings, deployment and operations. Each loan
+            earns a standard return, a {{COUPON}} coupon over {{TERM}} months with recourse, plus a {{KICKER}} kicker
+            on the cluster’s cash after the loan payment. The kicker prices the merchant risk, so more of the buyer’s
+            spread in section 4 goes to LPs. The fund is evergreen: repaid capital rolls into each new generation.
+            Target: {{MER_FUND_X}} ({{MER_FUND_IRR}} IRR) on merchant compute, more from tokens.
           </p>
         </div>
 
@@ -482,9 +482,9 @@
         <div>
           <h2><span class="n">7</span>Fund plan: the first MW, then 30 MW, then 100 MW</h2>
           <p style="margin-bottom: 3pt">
-            The fund finances 100% of each cluster at {{CAPEX}} per MW. Each close is sized to the MW it funds. From
-            the second close on, a year of cash from the clusters already in service is reinvested before new LP
-            capital is called.
+            The fund finances the GPUs, {{HARDWARE}} per MW; ZODE funds the site build-out and deployment
+            ({{SITE_CAPEX}} per MW). Each close is sized to the GPUs it finances. From the second close on, a year of
+            loan payments and kicker from the fleet is reinvested before new LP capital is called.
           </p>
           <table>
             <thead>
@@ -515,7 +515,7 @@
                 <td class="r">{{C3_MW}}</td>
               </tr>
               <tr>
-                <td class="label">Installed cost of the new clusters</td>
+                <td class="label">GPU cost of the new clusters</td>
                 <td class="r">{{C1_NEEDED}}</td>
                 <td class="r">{{C2_NEEDED}}</td>
                 <td class="r">{{C3_NEEDED}}</td>
@@ -527,7 +527,7 @@
                 <td class="r">{{C3_SIZE}}</td>
               </tr>
               <tr>
-                <td class="label">Less a year of fleet cash, reinvested</td>
+                <td class="label">Less a year of fund receipts, reinvested</td>
                 <td class="r">{{C1_REINVEST}}</td>
                 <td class="r">{{C2_REINVEST}}</td>
                 <td class="r">{{C3_REINVEST}}</td>
@@ -545,13 +545,13 @@
                 <td class="r">{{C3_CUM}}</td>
               </tr>
               <tr>
-                <td class="label">Fleet cash a year after the close (merchant, year 1)</td>
-                <td class="r">{{C1_FLEET}}</td>
-                <td class="r">{{C2_FLEET}}</td>
-                <td class="r">{{C3_FLEET}}</td>
+                <td class="label">Fund receipts a year from the fleet (merchant, year 1)</td>
+                <td class="r">{{C1_RECEIPTS}}</td>
+                <td class="r">{{C2_RECEIPTS}}</td>
+                <td class="r">{{C3_RECEIPTS}}</td>
               </tr>
               <tr>
-                <td class="label">New MW that cash funds a year, without new LP capital</td>
+                <td class="label">New MW those receipts finance a year, without new LP capital</td>
                 <td class="r">{{C1_FUNDS_MW}}</td>
                 <td class="r">{{C2_FUNDS_MW}}</td>
                 <td class="r">{{C3_FUNDS_MW}}</td>
@@ -560,38 +560,38 @@
           </table>
         </div>
         <p class="take">
-          <b>LP capital builds the base; cluster cash compounds it.</b> At {{C2_MW}} MW the fleet’s merchant cash funds
-          about {{C2_FUNDS_MW}} MW a year on its own, and at {{C3_MW}} MW about {{C3_FUNDS_MW}}. Sites outlive GPUs, so the
-          same powered buildings re-host each new generation. That is why the fund is evergreen rather than a
-          fixed-life vehicle that must sell its clusters on a date.
+          <b>LP capital builds the base; loan payments compound it.</b> At {{C2_MW}} MW the fleet’s merchant payments
+          and kicker finance about {{C2_FUNDS_MW}} MW a year on their own, and at {{C3_MW}} MW about {{C3_FUNDS_MW}}. Loans
+          repay in {{TERM}} months and sites outlive GPUs, so each new generation is refinanced from the last. That is
+          why the fund is evergreen rather than a fixed-life vehicle that must sell its loans on a date.
         </p>
 
         <div>
-          <h2><span class="n">8</span>How each cluster is financed (proposed)</h2>
+          <h2><span class="n">8</span>How each cluster is financed (proposed): GPU loans with a kicker</h2>
           <div class="cols">
             <table>
               <thead>
                 <tr>
-                  <th style="width: 8%">Step</th>
-                  <th>Cash waterfall, per cluster</th>
+                  <th style="width: 19%">Term</th>
+                  <th>Per cluster</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td class="label">1</td>
-                  <td>The fund pays 100% of installed cost. No offtaker is required; the fund holds a first lien on the GPUs and the cluster’s accounts.</td>
+                  <td class="label">Advance</td>
+                  <td>[100%] of the GPU cost: {{HARDWARE}} per MW of B300 nodes, network and storage. No offtaker required. Buildings, power, deployment and operations are ZODE’s.</td>
                 </tr>
                 <tr>
-                  <td class="label">2</td>
-                  <td>All cluster cash after operating costs goes to the fund until it has its capital back plus a [{{PREF}}] preferred return.</td>
+                  <td class="label">Standard return</td>
+                  <td>[{{COUPON}}] fixed coupon, amortizing over [{{TERM}}] months: {{LOAN_SERVICE}} a year per MW, paid after site costs and ahead of ZODE.</td>
                 </tr>
                 <tr>
-                  <td class="label">3</td>
-                  <td>Then cash splits [{{FUND_SHARE}}] to the fund and [{{ZODE_SHARE}}] to ZODE for the cluster’s life, resale included.</td>
+                  <td class="label">Kicker</td>
+                  <td>[{{KICKER}}] of the cluster’s cash after operating costs and the loan payment, for the GPUs’ {{LIFE_YEARS}}-year life, resale included.</td>
                 </tr>
                 <tr>
-                  <td class="label">4</td>
-                  <td>ZODE operates the cluster and sells the hours merchant or as tokens, at cost; it is paid only through its share.</td>
+                  <td class="label">Recourse</td>
+                  <td>First lien on the GPUs; pledge of the cluster’s accounts and contracts; cash sweep below [1.5x] coverage; cross-default across clusters; [ZODE Inc.] guarantee of principal and interest.</td>
                 </tr>
               </tbody>
             </table>
@@ -607,21 +607,46 @@
               </thead>
               <tbody>
                 <tr>
-                  <td class="label">Cluster payback (months)</td>
-                  <td class="r">{{MER_PAYBACK}}</td>
-                  <td class="r">{{I20_PAYBACK}}</td>
-                  <td class="r">{{I30_PAYBACK}}</td>
-                  <td class="r">{{I40_PAYBACK}}</td>
+                  <td class="label">Year-1 loan coverage</td>
+                  <td class="r">{{MER_FUND_COVER}}</td>
+                  <td class="r">{{I20_FUND_COVER}}</td>
+                  <td class="r">{{I30_FUND_COVER}}</td>
+                  <td class="r">{{I40_FUND_COVER}}</td>
+                </tr>
+                <tr>
+                  <td class="label">Price fall the loan absorbs</td>
+                  <td class="r">{{MER_FUND_CUSHION}}</td>
+                  <td class="r">{{I20_FUND_CUSHION}}</td>
+                  <td class="r">{{I30_FUND_CUSHION}}</td>
+                  <td class="r">{{I40_FUND_CUSHION}}</td>
+                </tr>
+                <tr>
+                  <td class="label">Kicker paid</td>
+                  <td class="r">{{MER_KICK}}</td>
+                  <td class="r">{{I20_KICK}}</td>
+                  <td class="r">{{I30_KICK}}</td>
+                  <td class="r">{{I40_KICK}}</td>
+                </tr>
+                <tr>
+                  <td class="label">Fund IRR</td>
+                  <td class="r">{{MER_FUND_IRR}}</td>
+                  <td class="r">{{I20_FUND_IRR}}</td>
+                  <td class="r">{{I30_FUND_IRR}}</td>
+                  <td class="r">{{I40_FUND_IRR}}</td>
                 </tr>
                 <tr class="key">
-                  <td>Fund multiple, before fund fees</td>
+                  <td>Fund multiple, before fees</td>
                   <td class="r">{{MER_FUND_X}}</td>
                   <td class="r">{{I20_FUND_X}}</td>
                   <td class="r">{{I30_FUND_X}}</td>
                   <td class="r">{{I40_FUND_X}}</td>
                 </tr>
                 <tr>
-                  <td class="label">GPU lender behind a contract</td>
+                  <td class="label">Coupon alone</td>
+                  <td class="r" colspan="4">{{LOAN_X}} at {{COUPON}}, with recourse</td>
+                </tr>
+                <tr>
+                  <td class="label">Lender behind a contract</td>
                   <td class="r" colspan="4">{{DEBT_X}} ({{INTEREST_LIFE}} of interest on {{DEBT}})</td>
                 </tr>
               </tbody>
@@ -629,9 +654,9 @@
           </div>
         </div>
         <p class="take">
-          <b>The fund prices the risk a lender is told to avoid, and is paid for it.</b> It takes merchant exposure with
-          no offtaker, but recovers its capital first and fastest, then keeps most of the upside: {{MER_FUND_X}} on
-          merchant and up to {{I40_FUND_X}} on inference, against {{DEBT_X}} for a lender behind a contract.
+          <b>The fund prices the risk a lender is told to avoid, and is paid for it.</b> The coupon alone returns
+          {{LOAN_X}} with recourse, near the {{DEBT_X}} of a lender behind a contract, and merchant cash covers it
+          {{MER_FUND_COVER}} in year 1. The kicker lifts the return to {{MER_FUND_X}} on merchant and {{I40_FUND_X}} on inference.
         </p>
 
         <div>
@@ -662,7 +687,7 @@
               </tr>
               <tr>
                 <td class="label">Strategy</td>
-                <td>GPU financing with no offtaker requirement, under the per-cluster waterfall in section 8</td>
+                <td>Senior secured GPU loans with a kicker and recourse, no offtaker required (section 8); no buildings or site capex</td>
               </tr>
               <tr>
                 <td class="label">Management fee</td>
@@ -682,11 +707,11 @@
               </tr>
               <tr>
                 <td class="label">Valuation</td>
-                <td>Quarterly NAV from an independent valuation agent: cluster cash flows at merchant rates, checked against GPU resale prices</td>
+                <td>Quarterly NAV from an independent valuation agent: loans at par less expected loss; kickers on merchant-rate cash flows</td>
               </tr>
               <tr>
                 <td class="label">Leverage</td>
-                <td>Fund credit line up to [25%] of NAV, for timing only; senior debt only on seasoned clusters, up to [30%] of hardware</td>
+                <td>Fund credit line up to [25%] of NAV, for timing only; no debt ranks ahead of the fund’s lien on its GPUs</td>
               </tr>
               <tr>
                 <td class="label">Concentration</td>
@@ -694,7 +719,7 @@
               </tr>
               <tr>
                 <td class="label">Alignment</td>
-                <td>ZODE and partners commit [2%] of each close; ZODE’s [{{ZODE_SHARE}}] share is paid only after the fund’s preferred return</td>
+                <td>ZODE and partners commit [2%] of each close; ZODE funds the site, guarantees the loans and keeps cluster cash only after the loan payment</td>
               </tr>
               <tr>
                 <td class="label">Governance</td>
@@ -706,7 +731,7 @@
 
         <div class="notes" style="columns: 1">
           <ol start="13">
-            <li>Merchant case from section 2, per MW: {{MERCHANT_PRICE}}/GPU-hr at {{MERCHANT_UTIL}}, {{FLEET_CASH_MW}} of cash in year 1 after fees and operating costs, with rates down {{DECLINE}} a year. Reinvestment assumes the fleet has been in service a year at each later close. Costs flat; before fund fees and taxes. Waterfall, fees and terms are proposals for discussion.</li>
+            <li>Cluster cash flows from section 2, per MW, with rates down {{DECLINE}} a year; merchant at {{MERCHANT_PRICE}}/GPU-hr and {{MERCHANT_UTIL}}. Fund receipts are the loan payment plus the kicker; IRR is monthly, annualized. Reinvestment assumes the fleet has been in service a year at each later close. Costs flat; before fund fees and taxes. Loan terms, fees and fund terms are proposals for discussion.</li>
           </ol>
         </div>
       </div>

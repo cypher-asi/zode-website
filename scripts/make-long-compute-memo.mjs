@@ -8,8 +8,8 @@
  * One MW of critical IT is costed from the model's Toronto and Zode Inc. inputs,
  * read by their labels in column B (a missing label fails the run), and sold
  * three ways: a contracted offtake, merchant and inference, at the memo's rates
- * below. The fund plan sizes each close to the MW it funds, and the proposed
- * cluster waterfall gives the fund's multiple per scenario. `--dry-run` prints the
+ * below. The fund plan sizes each close to the GPUs it finances, and the proposed
+ * loan (coupon, kicker) gives the fund's return per scenario. `--dry-run` prints the
  * figures without opening a browser. Needs a local Chrome, Chromium or Brave; set
  * CHROME to its path if it isn't found. Fails if a page overflows or the PDF has
  * the wrong page count.
@@ -258,43 +258,74 @@ const split = [
 const splitTotal = split.reduce((a, s) => a + s.value, 0);
 if (Math.abs(splitTotal - tokenValue) > 1) fail(`The token split adds to ${splitTotal}, not ${tokenValue}.`);
 
-/* ---------- The fund: closes and the proposed cluster waterfall ---------- */
+/* ---------- The fund: closes and the proposed GPU financing ---------- */
 
-// The fund finances 100% of each cluster; its cash goes to the fund until the fund has its capital back with a
-// preferred return, then splits with ZODE for the cluster's life.
-const PREF = 0.12;
-const FUND_SHARE = 0.7;
+// The fund lends against the GPUs only (nodes, network, storage); ZODE and its site partners fund the data
+// center, deployment and operations. The loan amortizes at a fixed coupon with recourse, and earns a kicker on
+// the cluster's cash after operating costs and the loan payment, resale included.
+const COUPON = 0.12;
+const TERM_MONTHS = 36;
+const KICKER = 0.3;
 const CLOSES = [
   { mw: 1, size: 50e6 },
   { mw: 30 },
   { mw: 100 },
 ];
 
-function waterfall(s) {
-  let owed = capex;
-  let fund = 0;
-  const flows = [...s.cash];
-  flows[flows.length - 1] += M.resale * hardware;
-  for (const c of flows) {
-    owed *= 1 + PREF / 12;
-    const first = Math.max(0, Math.min(c, owed));
-    owed -= first;
-    fund += first + (c - first) * FUND_SHARE;
+const loanPayment = (hardware * (COUPON / 12)) / (1 - (1 + COUPON / 12) ** -TERM_MONTHS);
+const loanTotal = loanPayment * TERM_MONTHS;
+
+/** Annualized IRR of monthly flows, the first at month 0. */
+function irr(flows) {
+  const npv = (r) => flows.reduce((a, f, m) => a + f / (1 + r) ** m, 0);
+  let lo = 0;
+  let hi = 1;
+  for (let i = 0; i < 200; i++) {
+    const mid = (lo + hi) / 2;
+    if (npv(mid) > 0) lo = mid;
+    else hi = mid;
   }
-  return fund / capex;
+  return (1 + lo) ** 12 - 1;
 }
 
-const fleetCash1 = scenarios[1].margin1;
+function financing(s, rate, kind) {
+  const flows = [-hardware];
+  let coverage = Infinity;
+  let kicker = 0;
+  s.cash.forEach((c, m) => {
+    const resale = m === s.cash.length - 1 ? M.resale * hardware : 0;
+    const service = m < TERM_MONTHS ? loanPayment : 0;
+    if (service) coverage = Math.min(coverage, c / service);
+    const kick = KICKER * Math.max(0, c + resale - service);
+    kicker += kick;
+    flows.push(service + kick);
+  });
+  if (coverage < 1) fail(`The ${kind} cluster's cash falls short of the fund's loan payment; it would rest on recourse.`);
+  const util = kind === "inference" ? INFERENCE.utilization : M.merchantUtil;
+  const fees = kind === "inference" ? inferenceFees : merchantFees;
+  const breakeven = (opexFor(kind === "inference") + 12 * loanPayment) / (util * gpuHours * (1 - fees));
+  return {
+    cover1: s.cash.slice(0, 12).reduce((a, b) => a + b, 0) / (12 * loanPayment),
+    cushion: 1 - breakeven / rate,
+    kicker,
+    receipts1: flows.slice(1, 13).reduce((a, b) => a + b, 0),
+    irr: irr(flows),
+    multiple: flows.slice(1).reduce((a, b) => a + b, 0) / hardware,
+  };
+}
+const funded = scenarios.slice(1).map((s) => financing(s, s.rate, s.kind));
+
+const receipts1 = funded[0].receipts1;
 let priorMw = 0;
 let cumulative = 0;
 const closes = CLOSES.map((close) => {
   const newMw = close.mw - priorMw;
-  const needed = newMw * capex;
+  const needed = newMw * hardware;
   const size = close.size ?? needed;
-  if (size < needed) fail(`Close to ${close.mw} MW raises ${size}, short of the ${needed} its clusters cost.`);
-  const reinvested = Math.min(needed, priorMw * fleetCash1);
+  if (size < needed) fail(`Close to ${close.mw} MW raises ${size}, short of the ${needed} its GPUs cost.`);
+  const reinvested = Math.min(needed, priorMw * receipts1);
   cumulative += size;
-  const row = { mw: close.mw, newMw, needed, size, cumulative, reinvested, lp: size - reinvested, fleetCash: close.mw * fleetCash1 };
+  const row = { mw: close.mw, newMw, needed, size, cumulative, reinvested, lp: size - reinvested, receipts: close.mw * receipts1 };
   priorMw = close.mw;
   return row;
 });
@@ -375,12 +406,15 @@ scenarios.forEach((s, i) => {
   F[`${n}_MULTIPLE`] = `${s.multiple.toFixed(1)}x`;
 });
 const bn = (v) => (v >= 1e9 ? `$${(v / 1e9).toFixed(2)}B` : mm(v, 1));
-F.PREF = pct(PREF);
-F.FUND_SHARE = pct(FUND_SHARE);
-F.ZODE_SHARE = pct(1 - FUND_SHARE);
-F.FLEET_CASH_MW = mm(fleetCash1);
-F.RESERVE = mm(CLOSES[0].size - capex);
-F.DEBT_X = `${((debt + interestOver(M.amortMonths)) / debt).toFixed(2)}x`;
+const times = (v, digits = 1) => `${v.toFixed(digits)}x`;
+F.COUPON = pct(COUPON);
+F.TERM = String(TERM_MONTHS);
+F.KICKER = pct(KICKER);
+F.LOAN_SERVICE = mm(12 * loanPayment);
+F.LOAN_X = times(loanTotal / hardware, 2);
+F.SITE_CAPEX = mm(M.setup + M.nrc, 2);
+F.RESERVE = mm(CLOSES[0].size - hardware);
+F.DEBT_X = times((debt + interestOver(M.amortMonths)) / debt, 2);
 closes.forEach((c, i) => {
   const n = `C${i + 1}`;
   F[`${n}_MW`] = String(c.mw);
@@ -390,11 +424,16 @@ closes.forEach((c, i) => {
   F[`${n}_CUM`] = bn(c.cumulative);
   F[`${n}_REINVEST`] = c.reinvested ? bn(c.reinvested) : "None";
   F[`${n}_LP`] = bn(c.lp);
-  F[`${n}_FLEET`] = bn(c.fleetCash);
-  F[`${n}_FUNDS_MW`] = (c.fleetCash / capex).toFixed(0);
+  F[`${n}_RECEIPTS`] = bn(c.receipts);
+  F[`${n}_FUNDS_MW`] = (c.receipts / hardware).toFixed(0);
 });
 ["MER", "I20", "I30", "I40"].forEach((n, i) => {
-  F[`${n}_FUND_X`] = `${waterfall(scenarios[i + 1]).toFixed(1)}x`;
+  const f = funded[i];
+  F[`${n}_FUND_COVER`] = times(f.cover1);
+  F[`${n}_FUND_CUSHION`] = pct(f.cushion);
+  F[`${n}_KICK`] = mm(f.kicker);
+  F[`${n}_FUND_IRR`] = f.irr > 1 ? ">100%" : pct(f.irr);
+  F[`${n}_FUND_X`] = times(f.multiple);
 });
 
 for (const s of split) {
@@ -406,6 +445,7 @@ for (const s of split) {
 
 if (args["dry-run"]) {
   console.table(scenarios.map(({ cash, ...s }) => ({ ...s, revenue1: s.revenue1 / 1e6, margin1: s.margin1 / 1e6, atRisk: s.atRisk / 1e6, prepay: s.prepay / 1e6 })));
+  console.table(funded);
   console.table(closes);
   console.log(F);
   process.exit(0);
