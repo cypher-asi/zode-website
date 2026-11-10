@@ -30,36 +30,28 @@
 }
 
 .table tbody td {
-  font-weight: 600;
   white-space: nowrap;
   color: var(--color-text-primary);
 }
 
-.table tbody tr + tr {
+/* Rules only between sections, not between their rows. */
+.table tbody + tbody {
   border-top: 1px solid var(--color-border);
 }
 
-/* A part of the row above it, such as its debt and equity, ruled off with it as one block. */
-.table tbody tr.indent {
-  border-top: 0;
-}
-
+/* A part of the row above it, such as its debt and equity. */
 .table .indent th[scope="row"] {
   padding-left: 16px;
   color: var(--color-text-tertiary);
 }
 
 .table .indent td {
-  font-weight: 400;
   color: var(--color-text-secondary);
 }
 
-/* A sum of the rows above it. */
-.table tbody tr.subtotal {
-  border-top-color: var(--color-border-strong);
-}
-
-.table .subtotal th[scope="row"] {
+/* A sum of the rows above it, the only bold row in its section. */
+.table .subtotal th[scope="row"],
+.table .subtotal td {
   font-weight: 600;
   color: var(--color-text-primary);
 }
@@ -126,7 +118,6 @@
 
 .table .groupRow th {
   padding-top: 20px;
-  border-bottom: 1px solid var(--color-border);
   font-size: var(--text-sm);
   font-weight: 600;
   text-align: left;

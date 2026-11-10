@@ -147,10 +147,6 @@
   padding: 8px 0;
 }
 
-.payout + .payout {
-  border-top: 1px solid var(--color-border);
-}
-
 .payoutLabel {
   display: flex;
   flex-direction: column;
@@ -175,7 +171,6 @@
 .payoutValue {
   margin: 0;
   font-size: var(--text-base);
-  font-weight: 600;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   color: var(--color-text-primary);
