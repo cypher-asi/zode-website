@@ -70,7 +70,6 @@ const RAISE: Slide = {
         { label: "Class B pref", kind: "equity", value: "$102M", terms: "12%" },
         { label: "Construction loan", kind: "debt", value: "$85M", terms: "40% LTC · 10%" },
       ],
-      note: "Calgary's site company; Alaska's is not yet modelled.",
     },
     {
       row: "computeco",

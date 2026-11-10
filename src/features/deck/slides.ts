@@ -131,7 +131,6 @@ export interface RaiseStack {
     value: string;
     terms: string;
   }[];
-  readonly note?: string;
 }
 
 export type Slide =

@@ -1828,13 +1828,13 @@ function Raise({ slide }: { slide: Of<"raise"> }): ReactElement {
             className={`${styles.rise} ${styles.raiseProject}`}
           >
             <header className={styles.raiseProjectHead}>
-              <span className={styles.raiseProjectTitle}>
-                <h3 className={styles.raiseProjectName}>{project.name}</h3>
+              <h3 className={styles.raiseProjectName}>{project.name}</h3>
+              <span className={styles.raiseProjectMeta}>
                 <span className={styles.raiseTenure} data-tenure={project.tenure}>
                   {project.tenure === "own" ? "Own" : "Lease"}
                 </span>
+                <span className={styles.raiseNodeDetail}>{project.detail}</span>
               </span>
-              <span className={styles.raiseNodeDetail}>{project.detail}</span>
             </header>
             <div className={styles.raiseSlot}>
               {project.propCo ? <RaiseNode label="Prop Co" entity={project.propCo} /> : null}
@@ -1873,7 +1873,6 @@ function Raise({ slide }: { slide: Of<"raise"> }): ReactElement {
                   </li>
                 ))}
               </ol>
-              {stack.note ? <p className={styles.fine}>{stack.note}</p> : null}
             </section>
           </Fragment>
         ))}
