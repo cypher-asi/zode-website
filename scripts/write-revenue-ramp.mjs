@@ -8,8 +8,8 @@
  *     --room <room id> --model "02 MODEL/ZODE_MasterModel_26.11.09.xlsx" \
  *     [--through 2030] [--file <local .xlsx>] [--dry-run]
  *
- * Each period is its critical IT live (MW of GPU clusters in service, on
- * average over its months) and its revenue by how it's sold and where the cash
+ * Each period is its critical IT live (MW of GPU clusters in service in its
+ * last month) and its revenue by how it's sold and where the cash
  * goes: power; op costs (colocation rent, site and cluster operations); TopCo
  * (staffing and G&A); interest paid; debt repaid; and the cash left, the
  * model's EBITDA less its debt service, before capex. Depreciation isn't cash,
@@ -203,11 +203,11 @@ const add = (periods, period, i) => {
       revenue: { inference: 0, merchant: 0, offtake: 0 },
       costs: { power: 0, opCosts: 0, topco: 0, interest: 0, principal: 0 },
       net: { cash: 0 },
-      mwMonths: [],
+      mw: 0,
     });
   }
   const p = periods.at(-1);
-  p.mwMonths.push(liveMw[i]);
+  p.mw = liveMw[i];
   p.revenue.inference += S.inference[i];
   p.revenue.merchant += S.merchant[i];
   p.revenue.offtake += S.offtake[i];
@@ -228,8 +228,7 @@ for (const p of [...quarters, ...monthly, ...yearly]) {
   for (const group of [p.revenue, p.costs, p.net]) {
     for (const key of Object.keys(group)) group[key] = Math.round(group[key]) || 0;
   }
-  // Critical IT live on average over the period's months, as the data room's summaries give a year's.
-  p.mw = Math.round((p.mwMonths.reduce((a, b) => a + b, 0) / p.mwMonths.length) * 10) / 10 || 0;
+  p.mw = Math.round(p.mw * 10) / 10 || 0;
 }
 
 const usdM = (n) => `$${(n / 1e6).toFixed(1)}M`;
@@ -241,7 +240,7 @@ for (const q of quarters) {
 console.log(`[ramp] ${monthly.length} months, ${monthly[0].period} to ${monthly.at(-1).period}.`);
 for (const y of yearly) {
   const total = y.revenue.inference + y.revenue.merchant + y.revenue.offtake;
-  console.log(`[ramp] ${y.period}: ${y.mw} MW live on average, revenue ${usdM(total)}, cash after debt service ${usdM(y.net.cash)}`);
+  console.log(`[ramp] ${y.period}: ${y.mw} MW live in December, revenue ${usdM(total)}, cash after debt service ${usdM(y.net.cash)}`);
 }
 
 const periodsOut = (periods) =>

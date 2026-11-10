@@ -1888,6 +1888,9 @@ function RaiseNode({
   );
 }
 
+/** Project columns the chart is sized for; fewer projects leave the rest empty, before the capital. */
+const RAISE_SLOTS = 4;
+
 /**
  * The raise as an org chart: ZODE Inc. across the top, then a column per
  * project, its site company over its compute company, each joined up the
@@ -1900,7 +1903,12 @@ function Raise({ slide }: { slide: Of<"raise"> }): ReactElement {
     <div className={styles.raise}>
       <div
         className={styles.raiseChart}
-        style={{ "--projects": slide.projects.length } as CSSProperties}
+        style={
+          {
+            "--projects": slide.projects.length,
+            "--slots": Math.max(slide.projects.length, RAISE_SLOTS),
+          } as CSSProperties
+        }
       >
         <section {...rise(1.6)} className={`${styles.rise} ${styles.raiseTopco}`}>
           <h3 className={`${styles.label} ${styles.raiseBand}`}>Top Co</h3>

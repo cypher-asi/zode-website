@@ -209,7 +209,7 @@ export function RampChart({
             </p>
             <dl className={styles.rampTipRows}>
               <div>
-                <dt>{view === "months" ? "Live critical IT" : "Live critical IT, avg."}</dt>
+                <dt>Live critical IT</dt>
                 <dd>{mw(q.mw)}</dd>
               </div>
             </dl>

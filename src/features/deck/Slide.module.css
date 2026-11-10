@@ -3154,8 +3154,8 @@ a.measureTitle:focus-visible {
 
 /*
  * Raise: an org chart with each row's capital beside it, in one grid. Its
- * columns are a project each, a gutter the rows' links cross, then the
- * capital; its rows ZODE Inc., the projects' heads, their site companies and
+ * columns are a slot each for --slots projects, the ones past --projects left
+ * empty, a gutter the rows' links cross, then the capital; its rows ZODE Inc., the projects' heads, their site companies and
  * their compute companies. Every connector meets a node or block at --hook,
  * the middle of its top band.
  */
@@ -3182,7 +3182,7 @@ a.measureTitle:focus-visible {
 
   display: grid;
   grid-template-columns:
-    repeat(var(--projects), minmax(0, 1fr))
+    repeat(var(--slots), minmax(0, 1fr))
     calc(2.4 * var(--u))
     calc(13 * var(--u));
   grid-template-rows: repeat(4, auto);
@@ -3216,7 +3216,7 @@ a.measureTitle:focus-visible {
 
 .raiseTopco {
   grid-row: 1;
-  grid-column: 1 / -3;
+  grid-column: 1 / span var(--projects);
 }
 
 .raiseTopcoBody {
@@ -3361,10 +3361,10 @@ a.measureTitle:focus-visible {
   color: var(--fg-2);
 }
 
-/* Across the gutter from the chart's last column to the row's stack, with a pip where it lands. */
+/* From the last project across any empty slots and the gutter to the row's stack, with a pip where it lands. */
 .raiseLink {
   position: relative;
-  grid-column: -3;
+  grid-column: calc(var(--projects) + 1) / -2;
   margin-inline: calc(-1 * var(--col-gap));
 }
 
@@ -4100,7 +4100,7 @@ a.measureTitle:focus-visible {
   /* Each row's layers set out beside its total. */
   .raiseChart {
     grid-template-columns:
-      repeat(var(--projects), minmax(0, 1fr))
+      repeat(var(--slots), minmax(0, 1fr))
       calc(2.4 * var(--u))
       calc(34 * var(--u));
   }

@@ -143,7 +143,7 @@ export interface RaiseStack {
 export interface RampPeriod {
   /** "Q3 2027", "Aug 2027" or "2027"; ends in its year. */
   readonly period: string;
-  /** Critical IT live, MW, on average over the period's months. */
+  /** Critical IT live, MW, in the period's last month. */
   readonly mw: number;
   readonly revenue: { readonly inference: number; readonly merchant: number; readonly offtake: number };
   readonly costs: {
@@ -716,11 +716,10 @@ export const PUBLIC_SLIDES: readonly Slide[] = [
       { value: "1 GW+", label: "In active negotiations" },
     ],
     plan: [
-      { year: "2026", value: "1 MW", mw: 1 },
       { year: "2027", value: "100 MW", mw: 100 },
-      { year: "2028", value: "1 GW", mw: 1_000 },
-      { year: "2029", value: "10 GW", mw: 10_000 },
-      { year: "2030", value: "Singularity" },
+      { year: "2028", value: "250 MW", mw: 250 },
+      { year: "2029", value: "600 MW", mw: 600 },
+      { year: "2030", value: "1,000 MW", mw: 1_000 },
     ],
     planNote: [
       "Every MW earns $22.4M a year contracted, $29.2–75.8M",
