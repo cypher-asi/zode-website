@@ -9,12 +9,21 @@
   padding: 0;
 }
 
+:root {
+  --ink: #141414;
+  --gold: #a8863f;
+  --gold-deep: #7a5f2c;
+  --champagne: #f4eddd;
+  --hairline: #e2d8c3;
+  --stone: #77736b;
+}
+
 html,
 body {
   font-family: "Liberation Serif", "Times New Roman", serif;
   font-size: 8.3pt;
   line-height: 1.32;
-  color: #111;
+  color: var(--ink);
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
@@ -54,9 +63,9 @@ table,
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 5pt;
-  margin-bottom: 4pt;
-  border-bottom: 0.5pt solid #999;
+  padding-bottom: 4pt;
+  margin-bottom: 3pt;
+  border-bottom: 2.4pt double var(--gold);
 }
 
 .masthead img {
@@ -72,12 +81,14 @@ table,
 }
 
 h2 {
-  font-size: 9.2pt;
+  font-size: 8.6pt;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   margin-bottom: 2pt;
 }
 
 h2 .n {
-  color: #2347e0;
+  color: var(--gold);
   margin-right: 4pt;
 }
 
@@ -94,8 +105,9 @@ sup {
   display: flex;
   justify-content: space-between;
   font-size: 7pt;
-  color: #555;
-  border-bottom: 0.5pt solid #999;
+  color: var(--stone);
+  letter-spacing: 0.04em;
+  border-bottom: 0.6pt solid var(--gold);
   padding-bottom: 3pt;
   margin-bottom: 6pt;
 }
@@ -106,7 +118,7 @@ sup {
   row-gap: 0.5pt;
   font-size: 8.3pt;
   padding-bottom: 4pt;
-  border-bottom: 1.2pt solid #111;
+  border-bottom: 1.2pt solid var(--ink);
 }
 
 .memo-head b {
@@ -119,11 +131,11 @@ sup {
   gap: 1pt 12pt;
   font-size: 7.1pt;
   padding: 3pt 0 4pt;
-  border-bottom: 0.5pt solid #999;
+  border-bottom: 0.6pt solid var(--gold);
 }
 
 .strip span {
-  color: #666;
+  color: var(--gold-deep);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-size: 6.2pt;
@@ -157,20 +169,20 @@ caption {
 thead th {
   text-align: left;
   font-weight: bold;
-  border-top: 1pt solid #111;
-  border-bottom: 0.6pt solid #111;
+  border-top: 1pt solid var(--ink);
+  border-bottom: 0.8pt solid var(--gold);
   padding: 2pt 4pt;
   vertical-align: bottom;
 }
 
 tbody td {
   padding: 1.6pt 4pt;
-  border-bottom: 0.35pt solid #ccc;
+  border-bottom: 0.35pt solid var(--hairline);
   vertical-align: top;
 }
 
 tbody tr:last-child td {
-  border-bottom: 0.8pt solid #111;
+  border-bottom: 0.8pt solid var(--ink);
 }
 
 td.r,
@@ -189,13 +201,13 @@ th.c {
 }
 
 tr.key td {
-  background: #eef1fd;
+  background: var(--champagne);
   font-weight: bold;
 }
 
 tr.total td {
   font-weight: bold;
-  border-top: 0.6pt solid #111;
+  border-top: 0.6pt solid var(--gold);
 }
 
 td.label {
@@ -204,23 +216,23 @@ td.label {
 }
 
 .hl {
-  background: #2347e0;
-  color: #fff;
+  background: var(--ink);
+  color: var(--gold);
   font-weight: bold;
 }
 
 .yes {
-  color: #0a7a3a;
+  color: var(--gold-deep);
   font-weight: bold;
 }
 
 .no {
-  color: #b3261e;
+  color: var(--stone);
   font-weight: bold;
 }
 
 .muted {
-  color: #666;
+  color: var(--stone);
 }
 
 .bar-cell {
@@ -230,17 +242,17 @@ td.label {
 .bar {
   display: inline-block;
   height: 5.5pt;
-  background: #2347e0;
+  background: var(--gold);
   vertical-align: middle;
 }
 
 .bar.debt {
-  background: #b3261e;
+  background: var(--ink);
 }
 
 .take {
   font-size: 8.1pt;
-  border-left: 2pt solid #2347e0;
+  border-left: 2pt solid var(--gold);
   padding-left: 6pt;
 }
 
@@ -262,7 +274,7 @@ td.label {
   color: #333;
   columns: 2;
   column-gap: 14pt;
-  border-top: 0.5pt solid #999;
+  border-top: 0.6pt solid var(--gold);
   padding-top: 3pt;
 }
 
@@ -283,7 +295,7 @@ td.label {
 
 .foot {
   margin-top: 5pt;
-  border-top: 1.2pt solid #111;
+  border-top: 2.4pt double var(--gold);
   padding-top: 3pt;
 }
 
@@ -300,8 +312,8 @@ td.label {
   justify-content: space-between;
   font-family: "Liberation Serif", "Times New Roman", serif;
   font-size: 6.6pt;
-  color: #555;
-  border-top: 0.4pt solid #bbb;
+  color: var(--stone);
+  border-top: 0.4pt solid var(--hairline);
   margin-top: 3pt;
   padding-top: 2pt;
 }
