@@ -1688,12 +1688,11 @@ function Comparison({ slide }: { slide: Of<"comparison"> }): ReactElement {
 }
 
 /**
- * The deals as one panel of cards across the top, each headed by its icon in
- * a square cell ruled off from its title, as the unit slide's mini-cards, then
- * what it funds and its capital stack, equity over debt, as blocks at its foot
- * so the stacks stand on one line. Under them the example: one stacked bar, each
- * layer as wide as its share of the total, shaded by its deal and bracketed
- * under the deal's name, the deals in the cards' order.
+ * One MW's stack as rows of equal height, read top to bottom: the compute
+ * revenue on ink, then the costs it pays for. Each row is headed by its icon
+ * and title, its two halves side by side, each as wide as its share (how the
+ * revenue is earned, or how the cost is funded), and its total at the right.
+ * The costs' sum closes the stack, the basis in fine print under it.
  */
 function Finance({
   slide,
@@ -1702,100 +1701,82 @@ function Finance({
   slide: Of<"finance">;
   playing: boolean;
 }): ReactElement {
-  const { example } = slide;
-  const groups = slide.deals
-    .map((deal) => {
-      const layers = example.layers.filter((layer) => layer.deal === deal.id);
-      return {
-        deal,
-        layers,
-        usd: layers.reduce((sum, layer) => sum + layer.usd, 0),
-      };
-    })
-    .filter((group) => group.layers.length);
+  const firstCost = slide.rows.findIndex((row) => row.kind === "cost");
   return (
     <div className={styles.finance}>
-      <ul className={styles.deals}>
-        {slide.deals.map((deal, i) => (
-          <li
-            key={deal.id}
-            {...rise(2 + i * 0.4)}
-            className={`${styles.rise} ${styles.deal}`}
-          >
-            <div className={styles.dealHead}>
-              <div className={styles.dealFigure}>
-                <UnitIcon id={deal.icon} light playing={playing} />
-              </div>
-              <div className={styles.dealHeading}>
-                <h3 className={styles.dealTitle}>{deal.title}</h3>
-                <span className={styles.statLabel}>{deal.purpose}</span>
-              </div>
-            </div>
-            <p className={`${styles.body} ${styles.dealBody}`}>{deal.body}</p>
-            <ol
-              className={styles.dealStack}
-              aria-label={`${deal.title} capital stack`}
-            >
-              {deal.layers.map((layer) => (
-                <li
-                  key={layer.label}
-                  className={styles.dealLayer}
-                  data-kind={layer.kind}
-                >
-                  <span className={styles.dealLayerLabel}>{layer.label}</span>
-                  {layer.terms ? (
-                    <span className={styles.dealLayerTerms}>
-                      {layer.terms.map((term) => (
-                        <span key={term}>{term}</span>
-                      ))}
-                    </span>
-                  ) : null}
-                </li>
-              ))}
-            </ol>
-          </li>
-        ))}
-      </ul>
-      <section
-        {...rise(3.5)}
-        className={`${styles.rise} ${styles.stackExample}`}
-      >
-        <h3 className={styles.label}>{example.title}</h3>
-        <div className={styles.stackRow}>
-          <ol className={styles.stackBar}>
-            {groups.map(({ deal, layers, usd }) => (
+      <h3 {...rise(1.5)} className={`${styles.rise} ${styles.label}`}>
+        {slide.basis}
+      </h3>
+      <ol className={styles.financeStack} aria-label="Capital stack">
+        {slide.rows.map((row, i) => (
+          <Fragment key={row.title}>
+            {i === firstCost ? (
               <li
-                key={deal.id}
-                className={styles.stackGroup}
-                style={{ "--usd": usd } as CSSProperties}
+                aria-hidden
+                {...rise(2 + i * 0.4)}
+                className={`${styles.rise} ${styles.financeJoin}`}
               >
-                <span className={styles.stackGroupName}>{deal.title}</span>
-                <ol className={styles.stackGroupLayers}>
-                  {layers.map((layer) => (
-                    <li
-                      key={layer.label}
-                      className={styles.stackSegment}
-                      data-deal={layer.deal}
-                      style={{ "--usd": layer.usd } as CSSProperties}
-                    >
-                      <span className={styles.stackTag}>
-                        {layer.kind === "debt" ? "Debt" : "Equity"}
-                      </span>
-                      <span className={styles.stackValue}>{layer.value}</span>
-                      <span className={styles.stackLabel}>{layer.label}</span>
-                    </li>
-                  ))}
-                </ol>
+                Pays for
               </li>
-            ))}
-          </ol>
-          <p className={styles.stackTotal}>
-            <span className={styles.stackValue}>{example.total}</span>
-            <span className={styles.label}>Total</span>
-          </p>
-        </div>
-        <p className={styles.fine}>{example.note}</p>
-      </section>
+            ) : null}
+            <li
+              {...rise(2 + i * 0.4)}
+              className={`${styles.rise} ${styles.financeRow}`}
+              data-kind={row.kind}
+            >
+              <div className={styles.financeHead}>
+                <div className={styles.financeFigure}>
+                  <UnitIcon
+                    id={row.icon}
+                    light={row.kind === "cost"}
+                    playing={playing}
+                  />
+                </div>
+                <div className={styles.financeHeading}>
+                  <h4 className={styles.dealTitle}>{row.title}</h4>
+                  <span className={styles.statLabel}>{row.purpose}</span>
+                </div>
+              </div>
+              <ol className={styles.financeParts}>
+                {row.parts.map((part) => (
+                  <li
+                    key={part.label}
+                    className={styles.financePart}
+                    data-part={part.label.toLowerCase()}
+                    style={{ "--share": part.share } as CSSProperties}
+                  >
+                    <span className={styles.financeTag}>
+                      {part.label} · {Math.round(part.share * 100)}%
+                    </span>
+                    <span className={styles.financeValue}>{part.value}</span>
+                    <span className={styles.financeDetail}>{part.detail}</span>
+                  </li>
+                ))}
+              </ol>
+              <p className={styles.financeTotal}>
+                <span className={styles.financeValue}>{row.total}</span>
+                <span className={styles.financeTag}>
+                  {row.kind === "revenue" ? "Per year" : "Cost"}
+                </span>
+              </p>
+            </li>
+          </Fragment>
+        ))}
+      </ol>
+      <div
+        {...rise(2 + slide.rows.length * 0.4 + 0.4)}
+        className={`${styles.rise} ${styles.financeSum}`}
+      >
+        <span className={styles.label}>{slide.total.label}</span>
+        <span className={styles.financeDetail}>{slide.total.detail}</span>
+        <span className={styles.financeValue}>{slide.total.value}</span>
+      </div>
+      <p
+        {...rise(2 + slide.rows.length * 0.4 + 0.8)}
+        className={`${styles.rise} ${styles.fine}`}
+      >
+        {slide.note}
+      </p>
     </div>
   );
 }

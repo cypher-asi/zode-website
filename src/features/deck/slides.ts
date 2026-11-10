@@ -81,8 +81,14 @@ export interface ContractSide {
 /** How a cluster's output is sold; the unit slide switches its price figures between them. */
 export type SaleModeId = "offtake" | "merchant" | "inference";
 
-/** A project's capital comes in up to three deals, each its own financing. */
-export type DealId = "compute" | "realEstate" | "gpu";
+/** Half of a finance row: how its revenue is earned, or how its cost is funded. */
+export interface FinancePart {
+  label: string;
+  value: string;
+  /** Of the row, 0 to 1. */
+  share: number;
+  detail: string;
+}
 
 interface Base {
   readonly id: string;
@@ -191,25 +197,24 @@ export type Slide =
     })
   | (Base & {
       kind: "finance";
-      /** One card per deal, in the row across the top. */
-      deals: readonly {
-        id: DealId;
+      /** What the figures are per, over the stack. */
+      basis: string;
+      /**
+       * One MW's stack, top to bottom: the revenue, then the costs it pays for, the largest first.
+       * Each row's two parts sit side by side, each as wide as its `share`; a row's `total` must be the sum of its parts.
+       */
+      rows: readonly {
         icon: UnitIconId;
         title: string;
+        kind: "revenue" | "cost";
+        /** What the row is, under its title. */
         purpose: string;
-        /** What the deal funds and what backs it, in a sentence. */
-        body: string;
-        /** Its capital stack, top to bottom: equity over debt, the most senior last. */
-        layers: readonly { label: string; kind: "equity" | "debt"; terms?: readonly string[] }[];
-      }[];
-      /** Drawn as one stacked bar, each layer as wide as its share of `usd` and shaded by its deal. */
-      example: {
-        title: string;
-        /** Grouped under their deals in the deals' order; `total` must be the sum of the values as shown. */
-        layers: readonly { label: string; deal: DealId; kind: "equity" | "debt"; value: string; usd: number }[];
         total: string;
-        note: string;
-      };
+        parts: readonly [FinancePart, FinancePart];
+      }[];
+      /** The costs summed, under the stack. */
+      total: { label: string; value: string; detail: string };
+      note: string;
     })
   | (Base & {
       kind: "raise";
@@ -738,58 +743,55 @@ export const SLIDES: readonly Slide[] = [
     eyebrow: "Project finance",
     title: "Every cluster is its own financeable project.",
     ground: "paper",
-    deals: [
+    basis: "One MW of critical IT load · 512 GPUs",
+    rows: [
       {
-        id: "compute",
-        icon: "prepay",
-        title: "Compute deal",
-        purpose: "Equity and debt for compute delivery",
-        body: "The customer's take-or-pay contract funds delivery: part prepaid, the rest preferred equity and debt.",
-        layers: [
-          { label: "Preferred equity", kind: "equity", terms: ["18% pref · 1.5x minimum"] },
-          { label: "Customer prepayment", kind: "debt", terms: ["25–30% of contract value"] },
-          { label: "Project debt", kind: "debt", terms: ["8–15% interest"] },
+        icon: "revenue",
+        title: "Compute",
+        kind: "revenue",
+        purpose: "Revenue per year",
+        total: "$49.1M",
+        parts: [
+          { label: "Offtake", value: "$11.2M", share: 0.5, detail: "256 GPUs · $5.00/GPU-hr" },
+          { label: "Inference", value: "$37.9M", share: 0.5, detail: "256 GPUs · $16.90/GPU-hr" },
         ],
       },
       {
-        id: "realEstate",
+        icon: "gpu",
+        title: "GPU",
+        kind: "cost",
+        purpose: "64 nodes · 8× B300 each",
+        total: "$35.2M",
+        parts: [
+          { label: "Equity", value: "$17.6M", share: 0.5, detail: "50% of cost" },
+          { label: "Debt", value: "$17.6M", share: 0.5, detail: "Secured on the GPUs" },
+        ],
+      },
+      {
         icon: "building",
-        title: "Real estate deal",
-        purpose: "Equity and debt for site acquisition",
-        body: "Buys the powered building the cluster runs in, and pays for its conversion.",
-        layers: [
-          { label: "Real estate equity", kind: "equity", terms: ["Purchase · $1M per MW"] },
-          { label: "Conversion debt", kind: "debt", terms: ["Conversion · $5M per MW"] },
-          { label: "Mortgage debt", kind: "debt", terms: ["20-year amortizing"] },
+        title: "Data Center",
+        kind: "cost",
+        purpose: "Building conversion",
+        total: "$5.0M",
+        parts: [
+          { label: "Equity", value: "$2.5M", share: 0.5, detail: "50% of cost" },
+          { label: "Debt", value: "$2.5M", share: 0.5, detail: "Secured on the building" },
         ],
       },
       {
-        id: "gpu",
-        icon: "gpuDebt",
-        title: "GPU deal",
-        purpose: "Debt for GPUs",
-        body: "Senior debt secured on the GPUs, repaid from the contracted compute revenue.",
-        layers: [
-          {
-            label: "Senior GPU debt",
-            kind: "debt",
-            terms: ["Sized to 1.15x DSCR", "8–15% interest", "80% LTV", "3-year term", "10% capital reserve"],
-          },
+        icon: "power",
+        title: "Land + Power",
+        kind: "cost",
+        purpose: "Powered site purchase",
+        total: "$1.0M",
+        parts: [
+          { label: "Equity", value: "$0.5M", share: 0.5, detail: "50% of cost" },
+          { label: "Debt", value: "$0.5M", share: 0.5, detail: "Secured on the land" },
         ],
       },
     ],
-    example: {
-      title: "Example · All three deals together: Alberta, 22 MW, with a purchased building",
-      layers: [
-        { label: "Preferred equity", deal: "compute", kind: "equity", value: "$83.2M", usd: 83.2e6 },
-        { label: "Customer prepayment", deal: "compute", kind: "debt", value: "$622.3M", usd: 622.3e6 },
-        { label: "Real estate equity", deal: "realEstate", kind: "equity", value: "$22.0M", usd: 22e6 },
-        { label: "Conversion debt", deal: "realEstate", kind: "debt", value: "$110.0M", usd: 110e6 },
-        { label: "Senior GPU debt", deal: "gpu", kind: "debt", value: "$302.3M", usd: 302.3e6 },
-      ],
-      total: "$1,139.8M",
-      note: "Preliminary, per the project model: 11,264 GPUs at $4.20 per GPU-hour over 5 years, 30% prepaid; $1M per MW to buy, $5M to convert. Project and mortgage debt not shown.",
-    },
+    total: { label: "Total cost", value: "$41.2M", detail: "$20.6M equity · $20.6M debt" },
+    note: "Preliminary, fully utilized: half on a 5-year offtake at $5.00/GPU-hr, half as inference at $16.90 net. GPUs at $550K per node before tax and setup; data center at the ~$5M/MW target; land and power at $1M/MW.",
   },
   {
     id: "raise",

@@ -51,16 +51,13 @@
  * Their titles take the display face in Light.
  */
 .facts,
-.deals,
-.stackBar {
+.financeStack {
   gap: 1px;
   padding: 1px;
 }
 
 .newsCard,
-.fact,
-.deal,
-.stackSegment {
+.fact {
   padding: calc(1 * var(--u)) calc(1.3 * var(--u)) calc(1.2 * var(--u));
   background: var(--card);
   box-shadow: 0 0 0 1px var(--rule);
@@ -69,7 +66,7 @@
 .newsCard .h3,
 .factValue,
 .dealTitle,
-.stackValue {
+.financeValue {
   font-family: var(--font-display);
   font-weight: 300;
 }
@@ -2940,11 +2937,11 @@ a.measureTitle:focus-visible {
   font-size: calc(0.6 * var(--u));
 }
 
-/* Finance: the deals in a row, then the example's capital stack as one bar under them. */
+/* Finance: one MW's stack as rows, the revenue over the costs, their sum and basis under them. */
 .finance {
   display: flex;
   flex-direction: column;
-  gap: calc(1.5 * var(--u));
+  gap: calc(0.7 * var(--u));
 }
 
 .main > .finance {
@@ -2953,21 +2950,156 @@ a.measureTitle:focus-visible {
   padding-bottom: calc(0.8 * var(--u));
 }
 
-.deals {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+/* `--head` and `--total`: the title and total columns, shared by the rows and the sum under them so they line up. */
+.financeStack {
+  --head: calc(24 * var(--u));
+  --total: calc(10 * var(--u));
+
+  display: flex;
+  flex-direction: column;
   margin: 0;
   list-style: none;
 }
 
-/* Head, body and stack on rows shared across the cards, so the stacks start level and match in height. */
-.deal {
+.financeRow {
   display: grid;
-  grid-row: span 3;
-  grid-template-rows: subgrid;
-  gap: calc(1.2 * var(--u));
-  padding-top: 0;
-  padding-bottom: calc(1.4 * var(--u));
+  grid-template-columns: var(--head) minmax(0, 1fr) var(--total);
+  min-height: calc(6 * var(--u));
+  background: var(--card);
+  box-shadow: 0 0 0 1px var(--rule);
+}
+
+/* The revenue on ink, as the deck's highlighted cards. */
+.financeRow[data-kind="revenue"] {
+  --fg: var(--color-text-inverse);
+  --fg-2: var(--color-text-inverse-secondary);
+  --rule: #2e2e2f;
+
+  background: var(--color-ink);
+  color: var(--fg);
+  box-shadow: 0 0 0 1px var(--color-ink);
+}
+
+/* Between the revenue and the costs, a caption on the paper. */
+.financeJoin {
+  padding: calc(0.5 * var(--u)) calc(1.3 * var(--u)) calc(0.4 * var(--u));
+  font-family: var(--font-mono);
+  font-size: calc(0.6 * var(--u));
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+/* A square cell for the icon, ruled off from the title, as the unit slide's mini-cards. */
+.financeHead {
+  display: grid;
+  grid-template-columns: calc(6.4 * var(--u)) minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.financeFigure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.financeFigure > svg {
+  width: calc(4.2 * var(--u));
+  height: calc(4.2 * var(--u));
+}
+
+.financeHeading {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: calc(0.5 * var(--u));
+  min-width: 0;
+  padding-inline: calc(1.3 * var(--u));
+  border-left: 1px solid var(--rule);
+}
+
+.financeParts {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-left: 1px solid var(--rule);
+}
+
+/* As wide as its share of the row; debt tinted, as the raise's stacks. */
+.financePart {
+  display: flex;
+  flex: var(--share) 1 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: calc(0.3 * var(--u));
+  min-width: 0;
+  padding: calc(0.7 * var(--u)) calc(1.3 * var(--u));
+}
+
+.financePart + .financePart {
+  border-left: 1px solid var(--rule);
+}
+
+.financePart[data-part="debt"] {
+  background: var(--color-surface-tint);
+}
+
+.financeTag {
+  font-family: var(--font-mono);
+  font-size: calc(0.6 * var(--u));
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--fg-2);
+}
+
+.financeValue {
+  font-size: calc(1.9 * var(--u));
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.financeDetail {
+  font-size: calc(0.95 * var(--u));
+  line-height: 1.3;
+  color: var(--fg-2);
+}
+
+.financeTotal {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: calc(0.3 * var(--u));
+  margin: 0;
+  padding-inline: calc(1.3 * var(--u));
+  border-left: 1px solid var(--rule);
+}
+
+/* The costs' sum, in the rows' columns: label under the titles, split under the halves, figure under the totals. */
+.financeSum {
+  display: grid;
+  grid-template-columns: calc(24 * var(--u) + 1px) minmax(0, 1fr) calc(10 * var(--u) + 1px);
+  align-items: baseline;
+  padding-top: calc(0.2 * var(--u));
+}
+
+.financeSum > .label {
+  padding-inline: calc(1.3 * var(--u));
+}
+
+.financeSum > .financeDetail {
+  padding-inline: calc(1.3 * var(--u));
+}
+
+.financeSum > .financeValue {
+  padding-inline: calc(1.3 * var(--u));
+  text-align: right;
 }
 
 /*
@@ -3007,11 +3139,6 @@ a.measureTitle:focus-visible {
   border-left: 1px solid var(--rule);
 }
 
-.dealBody {
-  max-width: calc(28 * var(--u));
-  text-wrap: pretty;
-}
-
 .dealTitle {
   margin: 0;
   font-size: calc(1.9 * var(--u));
@@ -3021,8 +3148,7 @@ a.measureTitle:focus-visible {
 
 /*
  * The capital stack as blocks joined by hairlines, as the cards are, pushed to
- * the card's foot so the stacks stand on one line across the row; debt tinted
- * on the finance slide's cards, and on the raise's set as one ground.
+ * the card's foot so the stacks stand on one line across the row.
  */
 .dealStack {
   display: flex;
@@ -3045,12 +3171,6 @@ a.measureTitle:focus-visible {
   box-shadow: 0 0 0 1px var(--rule);
 }
 
-.deal .dealLayer[data-kind="debt"] {
-  background:
-    linear-gradient(var(--color-surface-tint), var(--color-surface-tint)),
-    var(--card);
-}
-
 .dealLayerLabel {
   font-size: calc(1 * var(--u));
   line-height: 1.4;
@@ -3070,138 +3190,6 @@ a.measureTitle:focus-visible {
   text-transform: uppercase;
   text-wrap: balance;
   color: var(--fg-2);
-}
-
-/* The bar's layers shaded by deal, over the card ground: compute in ink, GPU debt, then real estate. */
-.stackSegment[data-deal="compute"] {
-  --fg-2: var(--color-text-inverse-secondary);
-  --rule: #2e2e2f;
-
-  background: var(--color-ink);
-  color: var(--color-text-inverse);
-  box-shadow: 0 0 0 1px var(--color-ink);
-}
-
-/* Ink on ink: a hairline of its own between them. */
-.stackSegment[data-deal="compute"] + .stackSegment[data-deal="compute"] {
-  border-left: 1px solid var(--rule);
-}
-
-.stackSegment[data-deal="gpu"] {
-  background:
-    linear-gradient(var(--color-surface-active), var(--color-surface-active)),
-    var(--card);
-}
-
-.stackSegment[data-deal="realEstate"] {
-  background:
-    linear-gradient(var(--color-surface-tint), var(--color-surface-tint)),
-    var(--card);
-}
-
-/* `--brace` and `--brace-gap`: the deals' names and brackets under the bar, which the total clears to stand level with its blocks. */
-.stackExample {
-  --brace: calc(1.5 * var(--u));
-  --brace-gap: calc(0.35 * var(--u));
-
-  display: flex;
-  flex-direction: column;
-  gap: calc(0.7 * var(--u));
-}
-
-.stackRow {
-  display: flex;
-  align-items: stretch;
-}
-
-.stackBar {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-  list-style: none;
-}
-
-/* Each deal's layers over a bracket spanning them and its name, as wide as their share of the total. */
-.stackGroup {
-  display: flex;
-  flex: var(--usd) 1 0;
-  flex-direction: column;
-  gap: var(--brace-gap);
-}
-
-.stackGroupName {
-  order: 1;
-  height: var(--brace);
-  font-family: var(--font-mono);
-  font-size: calc(0.6 * var(--u));
-  font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: var(--eyebrow-tracking);
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--fg);
-}
-
-.stackGroupName::before {
-  content: "";
-  display: block;
-  height: calc(0.4 * var(--u));
-  margin: 0 calc(0.2 * var(--u)) calc(0.25 * var(--u));
-  border: 1px solid var(--fg-2);
-  border-top: 0;
-}
-
-.stackGroupLayers {
-  display: flex;
-  flex: 1;
-  gap: 1px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-/* As wide as its share of its deal, but never too narrow to read. */
-.stackSegment {
-  display: flex;
-  flex: var(--usd) 1 0;
-  flex-direction: column;
-  gap: calc(0.3 * var(--u));
-  min-width: calc(11.5 * var(--u));
-  padding-block: calc(0.8 * var(--u)) calc(1 * var(--u));
-}
-
-.stackTag {
-  font-family: var(--font-mono);
-  font-size: calc(0.6 * var(--u));
-  font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: var(--eyebrow-tracking);
-  text-transform: uppercase;
-  color: var(--fg-2);
-}
-
-.stackValue {
-  font-size: calc(1.9 * var(--u));
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-}
-
-.stackLabel {
-  font-size: calc(0.95 * var(--u));
-  color: var(--fg-2);
-}
-
-.stackTotal {
-  display: flex;
-  flex: none;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: calc(0.3 * var(--u));
-  margin: 0;
-  padding: calc(1 * var(--u)) 0
-    calc(1.2 * var(--u) + var(--brace) + var(--brace-gap)) calc(1.6 * var(--u));
-  text-align: right;
 }
 
 /* Raise: two deals filling the body, each opening its model summary, the basis in fine print under them. */
@@ -4660,7 +4648,7 @@ a.measureTitle:focus-visible {
   max-width: none;
 }
 
-.slide[data-compact] :is(.newsCard, .fact, .deal, .stackSegment) {
+.slide[data-compact] :is(.newsCard, .fact) {
   padding: 14px 16px 16px;
 }
 
@@ -5874,12 +5862,11 @@ a.measureTitle:focus-visible {
 }
 
 /*
- * Finance: each deal's icon, title and purpose in a row, without its body or
- * terms; then the example's layers as rows of name and figure, in the bar's
- * shading, over the total and the note.
+ * Finance: each row its icon and title with its total beside them, its two
+ * halves side by side under them; then the costs' sum and the note.
  */
 .slide[data-compact] .finance {
-  gap: 16px;
+  gap: 8px;
 }
 
 .slide[data-compact] .main > .finance {
@@ -5887,112 +5874,102 @@ a.measureTitle:focus-visible {
   padding-bottom: 0;
 }
 
-.slide[data-compact] .deals {
-  grid-template-columns: minmax(0, 1fr);
+.slide[data-compact] .finance > .label,
+.slide[data-compact] .finance > .fine {
+  font-size: 9px;
 }
 
-.slide[data-compact] .deal {
-  display: block;
-  padding: 0;
+.slide[data-compact] .financeRow {
+  grid-template-areas:
+    "head total"
+    "parts parts";
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 0;
 }
 
-.slide[data-compact] .dealBody,
-.slide[data-compact] .deal > .dealStack,
-.slide[data-compact] .stackGroupName,
-.slide[data-compact] .stackTag {
-  display: none;
+.slide[data-compact] .financeHead {
+  grid-area: head;
+  grid-template-columns: 44px minmax(0, 1fr);
 }
 
-.slide[data-compact] .deal > .dealHead {
-  --fig: 52px;
-
-  margin-inline: 0;
-  border-bottom: 0;
+.slide[data-compact] .financeFigure > svg {
+  width: 30px;
+  height: 30px;
 }
 
-.slide[data-compact] .deal .dealFigure > svg {
-  width: 34px;
-  height: 34px;
+.slide[data-compact] .financeHeading {
+  gap: 3px;
+  padding: 8px 12px;
 }
 
-.slide[data-compact] .deal .dealHeading {
-  gap: 4px;
-  padding-inline: 12px;
-}
-
-.slide[data-compact] .dealTitle {
+.slide[data-compact] .financeRow .dealTitle {
   font-size: 17px;
 }
 
-.slide[data-compact] .deal .dealHeading .statLabel {
+.slide[data-compact] .financeHeading .statLabel {
   font-size: 9px;
 }
 
-.slide[data-compact] .stackExample {
-  gap: 8px;
-}
-
-.slide[data-compact] .stackExample > .label {
-  font-size: 9px;
-}
-
-.slide[data-compact] .stackRow,
-.slide[data-compact] .stackBar,
-.slide[data-compact] .stackGroupLayers {
-  flex-direction: column;
-}
-
-.slide[data-compact] .stackBar {
-  gap: 1px;
-}
-
-.slide[data-compact] .stackGroup {
-  flex: none;
-  gap: 0;
-}
-
-.slide[data-compact] .stackGroupLayers {
-  gap: 1px;
-}
-
-.slide[data-compact]
-  .stackSegment[data-deal="compute"]
-  + .stackSegment[data-deal="compute"] {
+.slide[data-compact] .financeParts {
+  grid-area: parts;
   border-top: 1px solid var(--rule);
   border-left: 0;
 }
 
-.slide[data-compact] .stackSegment {
-  flex: none;
-  flex-direction: row-reverse;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-width: 0;
+.slide[data-compact] .financePart {
+  gap: 2px;
   padding: 7px 12px;
 }
 
-.slide[data-compact] .stackValue {
+.slide[data-compact] .financeTotal {
+  grid-area: total;
+  gap: 2px;
+  padding-inline: 12px;
+  border-left: 0;
+}
+
+.slide[data-compact] .financeTag {
+  font-size: 8px;
+}
+
+.slide[data-compact] .financeValue {
   font-size: 17px;
 }
 
-.slide[data-compact] .stackLabel {
-  font-size: 13px;
+.slide[data-compact] .financeDetail {
+  font-size: 11px;
 }
 
-.slide[data-compact] .stackTotal {
-  flex-direction: row-reverse;
-  align-items: baseline;
-  justify-content: space-between;
-  padding: 6px 12px 0;
+.slide[data-compact] .financeJoin {
+  padding: 4px 12px 3px;
+  font-size: 8px;
 }
 
-.slide[data-compact] .stackTotal .stackValue {
-  font-size: 22px;
+.slide[data-compact] .financeSum {
+  grid-template-areas:
+    "label value"
+    "detail value";
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  row-gap: 2px;
+  padding-top: 4px;
 }
 
-.slide[data-compact] .stackExample > .fine {
+.slide[data-compact] .financeSum > .label {
+  grid-area: label;
+  padding-inline: 12px;
   font-size: 9px;
+}
+
+.slide[data-compact] .financeSum > .financeDetail {
+  grid-area: detail;
+  padding-inline: 12px;
+}
+
+.slide[data-compact] .financeSum > .financeValue {
+  grid-area: value;
+  padding-inline: 12px;
+  font-size: 22px;
 }
 
 /*
