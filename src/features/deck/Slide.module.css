@@ -4825,8 +4825,9 @@ a.measureTitle:focus-visible {
 /*
  * Timeline: the three phases side by side, each its number, drawing and
  * title, without its description; the band, without the milestone, then the
- * sale out of its card, its title over its channels ranked by their bars,
- * without their descriptions.
+ * sale out of its card, its number and title over its channels ranked by
+ * their bars, without their descriptions; then the statement as one
+ * balanced paragraph.
  */
 .slide[data-compact] .timeline {
   flex: none;
@@ -4842,14 +4843,16 @@ a.measureTitle:focus-visible {
   display: grid;
   grid-area: auto / 1 / auto / -1;
   grid-template:
-    "title" auto
-    "channels" auto / minmax(0, 1fr);
+    "index title" auto
+    "channels channels" auto / auto minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 10px;
   padding: 16px 0 0;
   background: none;
   box-shadow: none;
 }
 
-.slide[data-compact] :is(.phase[data-sale] .phaseIndex, .milestone) {
+.slide[data-compact] .milestone {
   display: none;
 }
 
@@ -4907,7 +4910,7 @@ a.measureTitle:focus-visible {
 }
 
 .slide[data-compact] .statsBody > .timeline + .statement > :last-child {
-  display: block;
+  display: inline;
 }
 
 .slide[data-compact] .statsBody > .statement {
@@ -4920,6 +4923,10 @@ a.measureTitle:focus-visible {
 
 .slide[data-compact] .statsBody > .timeline + .statement {
   font-size: 16px;
+}
+
+.slide[data-compact] .timeline + .statement > .statementLine {
+  display: inline;
 }
 
 /* Macro: the three figures in a row, then the statement and the supply chain's rows; the token chart stays on the stage. */

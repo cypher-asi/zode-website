@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
+  Fragment,
   memo,
   useEffect,
   useId,
@@ -1223,10 +1224,11 @@ function Timeline({
         {...rise(5 + phases.length)}
         className={`${styles.rise} ${styles.statement}`}
       >
-        {slide.statement.map((line) => (
-          <span key={line} className={styles.statementLine}>
-            {line}
-          </span>
+        {slide.statement.map((line, i) => (
+          <Fragment key={line}>
+            {i ? " " : null}
+            <span className={styles.statementLine}>{line}</span>
+          </Fragment>
         ))}
       </p>
     </div>
