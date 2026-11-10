@@ -24,7 +24,7 @@ import { VIEW as STACK_VIEW } from "@/features/home/stack/StackArt";
 import { MacroArt } from "./art/MacroArt";
 import { MemeTV } from "./art/MemeTV";
 import { SiteMap } from "./art/SiteMap";
-import { UnitIcon, type UnitIconId } from "./art/UnitIcon";
+import { UnitIcon } from "./art/UnitIcon";
 import { DEMAND_GAP, DemandChart } from "./charts/DemandChart";
 import { ShortfallByYear, ShortfallChart } from "./charts/ShortfallChart";
 import { StateTileMap } from "./charts/StateTileMap";

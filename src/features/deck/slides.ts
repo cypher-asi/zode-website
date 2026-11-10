@@ -675,12 +675,11 @@ export const SLIDES: readonly Slide[] = [
       { year: "2030", value: "Singularity" },
     ],
     planNote: [
-      "Every MW earns $22.4M a year on contract,",
-      "$29.2–75.8M sold as merchant compute or inference,",
-      "and is valued at $50–75M by public comparables.",
+      "Every MW earns $22.4M a year contracted, $29.2–75.8M",
+      "as merchant or inference, and is valued at $50–75M.",
     ],
     planBasis:
-      "Annual revenue per MW of IT load, from the unit economics: $5.00 contracted, $6.50 merchant and $16.90 inference per GPU-hour. Enterprise value per MW as CoreWeave, Nebius and IREN traded on October 13, 2026.",
+      "Annual revenue per MW of IT load at $5.00 contracted, $6.50 merchant and $16.90 inference per GPU-hour. Value per MW as CoreWeave, Nebius and IREN traded on October 13, 2026.",
     sources: ["evPerMw"],
   },
   {
