@@ -20,7 +20,12 @@ async function hasDataRoomAccess(roomToken: string | undefined): Promise<boolean
   return (await isTeam(account)) || (await isAnyRoomMember(account.userId));
 }
 
-const GATED: readonly Slide[] = [...PUBLIC_SLIDES, GATE];
+/** Only the sections behind the gate leave the server: their titles carry figures of their own. */
+const LOCKED = FULL_SLIDES.slice(PUBLIC_SLIDES.length)
+  .filter((slide) => slide.kind !== "close" && slide.kind !== "sources")
+  .map((slide) => slide.section);
+
+const GATED: readonly Slide[] = [...PUBLIC_SLIDES, { ...GATE, locked: LOCKED }];
 
 /**
  * The whole deck for readers with data room access; for everyone else, the

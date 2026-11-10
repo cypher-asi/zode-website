@@ -4520,6 +4520,35 @@ a.measureTitle:focus-visible {
   margin-inline: auto;
 }
 
+/* The gate's sections behind it, one row of cells joined by hairlines, each under a lock. */
+.locked {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: calc(2.4 * var(--u)) 0 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--rule);
+}
+
+.lockedPage {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  padding: calc(0.7 * var(--u)) calc(1 * var(--u));
+  font-family: var(--font-mono);
+  font-size: calc(0.72 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+.lockedPage + .lockedPage {
+  border-left: 1px solid var(--rule);
+}
+
 .actions {
   display: flex;
   gap: calc(1 * var(--u));
@@ -6383,6 +6412,22 @@ a.measureTitle:focus-visible {
 }
 
 /* Close: the calls to action full width, at a thumb's height. */
+.slide[data-compact] .locked {
+  flex-direction: column;
+  align-self: stretch;
+  margin-top: 24px;
+}
+
+.slide[data-compact] .lockedPage {
+  padding: 10px 12px;
+  font-size: var(--text-2xs);
+}
+
+.slide[data-compact] .lockedPage + .lockedPage {
+  border-top: 1px solid var(--rule);
+  border-left: 0;
+}
+
 .slide[data-compact] .actions {
   flex-direction: column;
   align-self: stretch;

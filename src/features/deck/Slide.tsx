@@ -2399,8 +2399,22 @@ function Close({ slide }: { slide: Of<"close"> }): ReactElement {
   );
 }
 
-/** Ends the public deck, laid out as the close: a request for data room access, or a way in for those who have it. */
+function LockIcon(): ReactElement {
+  return (
+    <svg className={styles.lock} viewBox="0 0 10 12" aria-hidden="true">
+      <rect x="1" y="5.5" width="8" height="5.75" rx="1" />
+      <path d="M3 5.5V3.75a2 2 0 0 1 4 0V5.5" />
+    </svg>
+  );
+}
+
+/**
+ * Ends the public deck, laid out as the close: the sections behind it, each
+ * under a lock, then a request for data room access, or a way in for those
+ * who have it.
+ */
 function Gate({ slide }: { slide: Of<"gate"> }): ReactElement {
+  const after = 3 + slide.locked.length * 0.25;
   return (
     <div className={styles.close}>
       <h2
@@ -2412,7 +2426,21 @@ function Gate({ slide }: { slide: Of<"gate"> }): ReactElement {
       <p {...rise(2)} className={`${styles.rise} ${styles.coverLede}`}>
         {slide.lede}
       </p>
-      <div {...rise(3)} className={`${styles.rise} ${styles.actions}`}>
+      {slide.locked.length ? (
+        <ol className={styles.locked} aria-label="In the data room">
+          {slide.locked.map((section, i) => (
+            <li
+              key={section}
+              {...rise(2.5 + i * 0.25)}
+              className={`${styles.rise} ${styles.lockedPage}`}
+            >
+              <LockIcon />
+              {section}
+            </li>
+          ))}
+        </ol>
+      ) : null}
+      <div {...rise(after)} className={`${styles.rise} ${styles.actions}`}>
         <Link className={styles.primary} href="/invest" scroll={false}>
           Request VDR access
         </Link>
@@ -2813,14 +2841,7 @@ export const SlideView = memo(function SlideView({
             {slide.sources ? <FootSources ids={slide.sources} /> : null}
             {confidential ? (
               <span className={styles.confidential}>
-                <svg
-                  className={styles.lock}
-                  viewBox="0 0 10 12"
-                  aria-hidden="true"
-                >
-                  <rect x="1" y="5.5" width="8" height="5.75" rx="1" />
-                  <path d="M3 5.5V3.75a2 2 0 0 1 4 0V5.5" />
-                </svg>
+                <LockIcon />
                 Confidential
               </span>
             ) : null}

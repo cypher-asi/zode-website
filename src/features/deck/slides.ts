@@ -338,7 +338,8 @@ export type Slide =
     })
   | (Base & { kind: "close"; lede: string; contact: string })
   /** Ends the public deck, in place of the slides kept for the data room. */
-  | (Base & { kind: "gate"; lede: string; loginHref: string })
+  /** `locked` names the sections behind it, listed under the lede; ./access fills it from the full deck. */
+  | (Base & { kind: "gate"; lede: string; loginHref: string; locked: readonly string[] })
   /** `cited` is every source a slide in the full deck cites. */
   | (Base & { kind: "sources"; cited: readonly SourceId[] });
 
@@ -552,15 +553,16 @@ export const PUBLIC_SLIDES: readonly Slide[] = [
 ];
 
 /** The public deck's last slide. Logging in comes back to it, which a member then reads as the first of the data room's slides. */
-export const GATE: Slide = {
+export const GATE: Extract<Slide, { kind: "gate" }> = {
   id: "gate",
   kind: "gate",
   section: "Data room",
   eyebrow: "Data room",
   title: "The raise is in the data room.",
-  lede: "Unit economics, traction, the pipeline, project finance, the team and the capital raise are shared with investors who have VDR access.",
+  lede: "These pages are shared with investors who have VDR access.",
   ground: "ink",
   loginHref: `/login?next=${encodeURIComponent(`/deck?slide=${PUBLIC_SLIDES.length + 1}`)}`,
+  locked: [],
 };
 
 /**
