@@ -56,6 +56,7 @@ import {
   type ContractSide,
   type Logo,
   type RaiseEntity,
+  type RaiseStack,
   type SaleModeId,
   type Slide,
   type Stat,
@@ -1837,9 +1838,9 @@ function RaiseNode({
 /**
  * The raise as an org chart: ZODE Inc. across the top, then a column per
  * project, its site company over its compute company, each joined up the
- * column's side to ZODE Inc. On the far right, each row's capital stack. The
- * chart and the stacks share the grid's rows, so each stack stands level with
- * its row.
+ * column's side to ZODE Inc. On the far right, each row's capital. The chart
+ * and the capital share the grid's rows, so each block stands level with its
+ * row.
  */
 function Raise({ slide }: { slide: Of<"raise"> }): ReactElement {
   return (
@@ -1884,38 +1885,111 @@ function Raise({ slide }: { slide: Of<"raise"> }): ReactElement {
         {slide.stacks.map((stack, i) => (
           <Fragment key={stack.row}>
             <span className={styles.raiseLink} data-row={stack.row} aria-hidden="true" />
-            <section
-              {...rise(2.8 + i * 0.2)}
-              className={`${styles.rise} ${styles.raiseStack}`}
-              data-row={stack.row}
-            >
-              <h3 className={styles.raiseBand}>
-                <span className={styles.label}>{stack.label}</span>
-                <span className={styles.raiseRaising}>
-                  <span className={styles.fine}>{stack.raising.label}</span>
-                  <span className={styles.raiseValue}>{stack.raising.value}</span>
-                </span>
-              </h3>
-              <ol className={styles.dealStack} aria-label="Capital stack">
-                {stack.layers.map((layer) => (
-                  <li
-                    key={layer.label}
-                    className={`${styles.dealLayer} ${styles.raiseLayer}`}
-                    data-kind={layer.kind}
-                    data-source={layer.source}
-                  >
-                    <span className={styles.dealLayerLabel}>{layer.label}</span>
-                    <span className={styles.dealLayerTerms}>{layer.terms}</span>
-                    <span className={styles.raiseLayerValue}>{layer.value}</span>
-                  </li>
-                ))}
-              </ol>
-            </section>
+            <RaiseCapital stack={stack} delay={2.8 + i * 0.2} />
           </Fragment>
         ))}
       </div>
       <RaiseDisclaimer note={slide.note} />
     </div>
+  );
+}
+
+/** $2.67B, $207M, $29.3M. */
+function capital(usd: number): string {
+  return usd >= 1e9 ? `$${+(usd / 1e9).toFixed(2)}B` : `$${+(usd / 1e6).toFixed(1)}M`;
+}
+
+const CAPITAL_KINDS = [
+  { kind: "equity", label: "Equity" },
+  { kind: "debt", label: "Debt" },
+] as const;
+
+/**
+ * A row's capital as one block: a bar split by each layer's share beside the
+ * total. Hovering, focusing or tapping it opens its layers, equity then debt,
+ * and what the row raises; hovering a part of the bar marks its layer.
+ */
+function RaiseCapital({ stack, delay }: { stack: RaiseStack; delay: number }): ReactElement {
+  const id = useId();
+  const [shown, setShown] = useState<number | null>(null);
+  const total = stack.layers.reduce((sum, layer) => sum + layer.amount, 0);
+  const show = (i: number) => () => setShown(i);
+  return (
+    <section
+      {...rise(delay)}
+      className={`${styles.rise} ${styles.raiseStack}`}
+      data-row={stack.row}
+      data-shown={shown === null ? undefined : true}
+      tabIndex={0}
+      aria-describedby={id}
+      onPointerLeave={() => setShown(null)}
+    >
+      <ol className={styles.raiseBar} aria-hidden="true">
+        {stack.layers.map((layer, i) => (
+          <li
+            key={layer.label}
+            className={styles.raiseBarPart}
+            data-kind={layer.kind}
+            data-source={layer.source}
+            data-shown={shown === i || undefined}
+            style={{ "--share": layer.amount } as CSSProperties}
+            onPointerEnter={show(i)}
+          />
+        ))}
+      </ol>
+      <div className={styles.raiseStackBody}>
+        <h3 className={`${styles.label} ${styles.raiseBand}`}>{stack.label}</h3>
+        <span className={styles.raiseValue}>{capital(total)}</span>
+      </div>
+      <div id={id} className={styles.raiseDetail} role="tooltip">
+        <div className={styles.raiseDetailBox}>
+          <p className={styles.raiseDetailRow} data-head>
+            <span className={styles.label}>{stack.label}</span>
+            <span className={styles.raiseDetailValue}>{capital(total)}</span>
+          </p>
+          {CAPITAL_KINDS.map(({ kind, label }) => {
+            const layers = stack.layers.filter((layer) => layer.kind === kind);
+            if (!layers.length) return null;
+            return (
+              <dl key={kind} className={styles.raiseDetailGroup}>
+                <div className={styles.raiseDetailRow} data-sum>
+                  <dt className={styles.label}>{label}</dt>
+                  <dd>{capital(layers.reduce((sum, layer) => sum + layer.amount, 0))}</dd>
+                </div>
+                {layers.map((layer) => {
+                  const i = stack.layers.indexOf(layer);
+                  return (
+                    <div
+                      key={layer.label}
+                      className={styles.raiseDetailRow}
+                      data-source={layer.source}
+                      data-shown={shown === i || undefined}
+                      onPointerEnter={show(i)}
+                    >
+                      <dt>
+                        <span
+                          className={styles.raiseBarPart}
+                          data-kind={layer.kind}
+                          data-source={layer.source}
+                          aria-hidden="true"
+                        />
+                        <span>{layer.label}</span>
+                        <span className={styles.raiseDetailTerms}>{layer.terms}</span>
+                      </dt>
+                      <dd className={styles.raiseDetailValue}>{capital(layer.amount)}</dd>
+                    </div>
+                  );
+                })}
+              </dl>
+            );
+          })}
+          <p className={styles.raiseDetailRow} data-raising>
+            <span className={styles.label}>Raising · {stack.raising.label}</span>
+            <span className={styles.raiseDetailValue}>{stack.raising.value}</span>
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }
 

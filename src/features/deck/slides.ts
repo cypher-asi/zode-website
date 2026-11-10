@@ -118,17 +118,19 @@ export interface RaiseEntity {
 export interface RaiseStack {
   readonly row: "topco" | "propco" | "computeco";
   readonly label: string;
-  /** What the row raises, over the stack. */
+  /** What the row raises, in its details. */
   readonly raising: Stat;
   /**
-   * Top to bottom: equity over debt, the most senior last. `zode` layers are
-   * ZODE Inc.'s equity, paid from the seed, so not raised here.
+   * Top to bottom: equity over debt, the most senior last; the stack's total
+   * is their sum. `zode` layers are ZODE Inc.'s equity, paid from the seed, so
+   * not raised here.
    */
   readonly layers: readonly {
     label: string;
     kind: "equity" | "debt";
     source?: "zode";
-    value: string;
+    /** In whole USD. */
+    amount: number;
     terms: string;
   }[];
 }

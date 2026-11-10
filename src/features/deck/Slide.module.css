@@ -3131,54 +3131,11 @@ a.measureTitle:focus-visible {
   letter-spacing: -0.015em;
 }
 
-/* The capital stack as blocks joined by hairlines, as the cards are. */
-.dealStack {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  margin: 0;
-  padding: 1px;
-  list-style: none;
-}
-
-/* The label level with the first of its terms, so a block with several reads from the top. */
-.dealLayer {
-  display: flex;
-  flex: 1;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: calc(1.2 * var(--u));
-  padding: calc(0.4 * var(--u)) calc(1 * var(--u));
-  background: var(--card);
-  box-shadow: 0 0 0 1px var(--rule);
-}
-
-.dealLayerLabel {
-  font-size: calc(1 * var(--u));
-  line-height: 1.4;
-  white-space: nowrap;
-}
-
-/* One term to a line, right-aligned. */
-.dealLayerTerms {
-  display: flex;
-  flex-direction: column;
-  gap: calc(0.2 * var(--u));
-  font-family: var(--font-mono);
-  font-size: calc(0.62 * var(--u));
-  line-height: 1.4;
-  letter-spacing: var(--caps-tracking);
-  text-align: right;
-  text-transform: uppercase;
-  text-wrap: balance;
-  color: var(--fg-2);
-}
-
 /*
- * Raise: an org chart with the capital stacks beside it, in one grid. Its
+ * Raise: an org chart with each row's capital beside it, in one grid. Its
  * columns are a project each, a gutter the rows' links cross, then the
- * stacks; its rows ZODE Inc., the projects' heads, their site companies and
- * their compute companies. Every connector meets a node or stack at --hook,
+ * capital; its rows ZODE Inc., the projects' heads, their site companies and
+ * their compute companies. Every connector meets a node or block at --hook,
  * the middle of its top band.
  */
 .raise {
@@ -3200,7 +3157,7 @@ a.measureTitle:focus-visible {
   grid-template-columns:
     repeat(var(--projects), minmax(0, 1fr))
     calc(2.4 * var(--u))
-    calc(33 * var(--u));
+    calc(13 * var(--u));
   grid-template-rows: repeat(4, auto);
   align-content: start;
   gap: var(--row-gap) var(--col-gap);
@@ -3409,8 +3366,21 @@ a.measureTitle:focus-visible {
   background: var(--rule-strong);
 }
 
+/* The bar down its left edge, where the link lands, beside its label over the total. */
 .raiseStack {
+  --part-raised: var(--fg);
+  --part-zode: color-mix(in srgb, var(--fg) 42%, var(--bg));
+  --part-debt: color-mix(in srgb, var(--fg) 20%, var(--bg));
+
+  position: relative;
+  flex-direction: row;
   grid-column: -2;
+  outline: none;
+  cursor: default;
+}
+
+.raiseStack:focus-visible {
+  box-shadow: 0 0 0 1px var(--fg);
 }
 
 :is(.raiseLink, .raiseStack)[data-row="topco"] {
@@ -3425,66 +3395,188 @@ a.measureTitle:focus-visible {
   grid-row: 4;
 }
 
-.raiseRaising {
+/*
+ * Each layer as tall as its share, equity over debt. Raised equity is solid,
+ * ZODE's own muted, as it isn't raised here; debt is lighter. The smallest
+ * keep a sliver, so every layer can be found.
+ */
+.raiseBar {
   display: flex;
-  align-items: baseline;
-  gap: calc(0.6 * var(--u));
-}
-
-.raiseStack .dealStack {
-  flex: 1;
-  gap: 0;
+  flex: none;
+  flex-direction: column;
+  gap: 1px;
+  width: calc(1.6 * var(--u));
+  margin: 0;
   padding: 0;
+  list-style: none;
+  border-right: 1px solid var(--rule);
+  background: var(--card);
 }
 
-/* A line each: its name, its terms, then the amount. ZODE's own equity is muted, as it isn't raised here; debt is tinted. */
-.raiseLayer {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: baseline;
-  gap: calc(1 * var(--u));
-  padding: calc(0.22 * var(--u)) calc(1 * var(--u));
-  box-shadow: none;
+.raiseBarPart {
+  flex: var(--share) 1 0;
+  min-height: calc(0.22 * var(--u));
+  background: var(--part-raised);
+  transition: opacity var(--duration-fast) ease;
 }
 
-.raiseLayer + .raiseLayer {
-  border-top: 1px solid var(--rule);
+.raiseBarPart[data-source="zode"] {
+  background: var(--part-zode);
 }
 
-.raiseLayer[data-kind="debt"] {
-  background: var(--tint);
+.raiseBarPart[data-kind="debt"] {
+  background: var(--part-debt);
 }
 
-.raiseLayer[data-source="zode"] {
-  color: var(--fg-2);
+.raiseStack[data-shown] .raiseBar > :not([data-shown]) {
+  opacity: 0.35;
 }
 
-.raiseLayer .dealLayerTerms {
-  display: block;
-  overflow: hidden;
-  text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.raiseStackBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
 }
 
-.raiseLayerValue {
-  font-family: var(--font-display);
-  font-size: calc(1.2 * var(--u));
-  font-weight: 300;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+.raiseStackBody > .raiseValue {
+  padding: calc(0.5 * var(--u)) calc(1 * var(--u));
 }
 
 .raiseValue {
   font-family: var(--font-display);
-  font-size: calc(1.55 * var(--u));
+  font-size: calc(2 * var(--u));
   font-weight: 300;
   line-height: 1;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* Opens to the block's left, over the chart: from its top, or for the last row from its foot. */
+.raiseDetail {
+  position: absolute;
+  top: 0;
+  right: 100%;
+  z-index: 3;
+  width: calc(30 * var(--u));
+  padding-right: calc(0.8 * var(--u));
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    opacity var(--duration-fast) ease,
+    visibility 0s linear var(--duration-fast);
+}
+
+.raiseStack[data-row="computeco"] .raiseDetail {
+  top: auto;
+  bottom: 0;
+}
+
+.raiseStack:is(:hover, :focus) .raiseDetail {
+  visibility: visible;
+  opacity: 1;
+  transition-delay: 0s;
+}
+
+.raiseDetailBox {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.6 * var(--u));
+  padding: calc(0.9 * var(--u)) calc(1.1 * var(--u)) calc(1 * var(--u));
+  background: var(--card);
+  box-shadow:
+    0 0 0 1px var(--rule-strong),
+    0 calc(0.6 * var(--u)) calc(2 * var(--u)) rgb(0 0 0 / 0.08);
+}
+
+.raiseDetailGroup {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.25 * var(--u));
+  margin: 0;
+  padding-top: calc(0.6 * var(--u));
+  border-top: 1px solid var(--rule);
+}
+
+/* Its name and terms, the amount on the right. */
+.raiseDetailRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: calc(1 * var(--u));
+  margin: 0;
+  font-size: calc(0.9 * var(--u));
+  line-height: 1.35;
+  transition: opacity var(--duration-fast) ease;
+}
+
+.raiseDetailRow > dt {
+  display: flex;
+  align-items: baseline;
+  gap: calc(0.5 * var(--u));
+  min-width: 0;
+}
+
+.raiseDetailRow > dd {
+  margin: 0;
+}
+
+.raiseDetailRow .raiseBarPart {
+  flex: none;
+  align-self: center;
+  width: calc(0.6 * var(--u));
+  height: calc(0.6 * var(--u));
+  min-height: 0;
+}
+
+.raiseDetailRow[data-source="zode"] {
+  color: var(--fg-2);
+}
+
+.raiseStack[data-shown] .raiseDetailGroup > .raiseDetailRow:not([data-shown], [data-sum]) {
+  opacity: 0.4;
+}
+
+.raiseDetailRow:is([data-head], [data-sum], [data-raising]) {
+  align-items: center;
+}
+
+.raiseDetailRow[data-sum] > dd {
+  font-family: var(--font-mono);
+  font-size: calc(0.72 * var(--u));
+  letter-spacing: var(--caps-tracking);
+  color: var(--fg-2);
+}
+
+.raiseDetailRow[data-raising] {
+  padding-top: calc(0.6 * var(--u));
+  border-top: 1px solid var(--rule);
+}
+
+.raiseDetailTerms {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: calc(0.6 * var(--u));
+  letter-spacing: var(--caps-tracking);
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--fg-2);
+}
+
+.raiseDetailValue {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: calc(1.1 * var(--u));
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.raiseDetailRow[data-head] .raiseDetailValue {
+  font-size: calc(1.5 * var(--u));
 }
 
 /* Set as the foot's sources label, its panel opening above it from its left edge. */
@@ -5783,9 +5875,9 @@ a.measureTitle:focus-visible {
 
 /*
  * Raise: ZODE Inc. across the top, the projects two to a row, each its head
- * over its companies, then the stacks across the width. The connectors, the
- * empty site slots of leased projects and the layers' terms are left to the
- * 16:9 page.
+ * over its companies, then each row's capital across the width, a tap opening
+ * its layers beneath it. The connectors and the empty site slots of leased
+ * projects are left to the 16:9 page.
  */
 .slide[data-compact] .raise {
   gap: 12px;
@@ -5815,9 +5907,66 @@ a.measureTitle:focus-visible {
 
 .slide[data-compact] :is(.raiseProjectHead, .raiseSlot, .raiseNode)::before,
 .slide[data-compact] .raiseSlot:empty,
-.slide[data-compact] .raiseLink,
-.slide[data-compact] .raiseLayer .dealLayerTerms {
+.slide[data-compact] .raiseLink {
   display: none;
+}
+
+.slide[data-compact] .raiseStack {
+  flex-wrap: wrap;
+}
+
+.slide[data-compact] .raiseBar {
+  width: 14px;
+}
+
+.slide[data-compact] .raiseDetail {
+  position: static;
+  display: none;
+  flex-basis: 100%;
+  width: auto;
+  padding: 0;
+}
+
+.slide[data-compact] .raiseStack:focus .raiseDetail {
+  display: block;
+}
+
+.slide[data-compact] .raiseDetailBox {
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid var(--rule);
+  box-shadow: none;
+}
+
+.slide[data-compact] .raiseDetailGroup {
+  gap: 4px;
+  padding-top: 8px;
+}
+
+.slide[data-compact] .raiseDetailRow {
+  font-size: 12px;
+}
+
+.slide[data-compact] .raiseDetailRow .raiseBarPart {
+  width: 8px;
+  height: 8px;
+}
+
+.slide[data-compact] .raiseDetailTerms {
+  display: none;
+}
+
+.slide[data-compact] .raiseDetailValue {
+  font-size: 14px;
+}
+
+.slide[data-compact] .raiseDetailRow[data-head] {
+  display: none;
+}
+
+.slide[data-compact] .raiseDetailGroup:first-of-type {
+  padding-top: 0;
+  border-top: 0;
 }
 
 .slide[data-compact] .raiseTopcoBody {
@@ -5834,7 +5983,7 @@ a.measureTitle:focus-visible {
 
 .slide[data-compact] .raiseBand,
 .slide[data-compact] .raiseNodeBody,
-.slide[data-compact] .raiseLayer {
+.slide[data-compact] .raiseStackBody > .raiseValue {
   padding-inline: 10px;
 }
 
@@ -5858,21 +6007,8 @@ a.measureTitle:focus-visible {
   font-size: 11px;
 }
 
-.slide[data-compact] .raiseLayer {
-  grid-template-columns: minmax(0, 1fr) auto;
-  padding-block: 6px;
-}
-
-.slide[data-compact] .raiseLayer .dealLayerLabel {
-  font-size: 12px;
-}
-
-.slide[data-compact] .raiseLayerValue {
-  font-size: 14px;
-}
-
 .slide[data-compact] .raiseValue {
-  font-size: 16px;
+  font-size: 20px;
 }
 
 .slide[data-compact] .raiseDisclaimer {
