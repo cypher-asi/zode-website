@@ -108,11 +108,10 @@ export function MasterSummaryView({ roomId, summary }: { roomId: string; summary
     `It puts ${usdShort(zodeEquity)} of equity into ${andList(funded.map((s) => `${s.name} (${usdShort(s.zodeEquity)})`))}, ` +
     `beside ${usdShort(sum(m.spvs, (s) => s.thirdPartyPref))} of third-party preferred equity in the SPVs.`;
 
+  // Revenue across the first row, each year's profit under it.
   const keyFigures: KeyFigure[] = [
-    { label: "Pre-seed raise", value: usdShort(raise.amount, 0) },
-    { label: "Post-money valuation cap", value: usdShort(raise.postMoneyCap, 0) },
-    { label: "Pre-seed ownership", value: pct(raise.ownership, 1) },
-    { label: "ZODE Inc. equity into SPVs", value: usdShort(zodeEquity) },
+    ...fullYears.map((y) => ({ label: `Revenue, ${y.year}`, value: usdShort(y.revenue) })),
+    ...fullYears.map((y) => ({ label: `Net income (pre-tax), ${y.year}`, value: usdShort(y.profit) })),
   ];
   const table = yearRows(statement);
 
@@ -124,20 +123,7 @@ export function MasterSummaryView({ roomId, summary }: { roomId: string; summary
         action={<ModelLink roomId={roomId} fileId={m.model.fileId} path={m.model.path} live={summary.sourceNames.has(m.model.fileId)} />}
       >
         <p className={styles.lede}>{lede}</p>
-        <KeyFigures figures={keyFigures} columns={4} />
-        {fullYears.length ? (
-          <ul className={styles.yearFigures}>
-            {fullYears.map((y) => (
-              <li key={y.year} className={styles.yearFigure}>
-                <span className={styles.yearName}>{y.year}</span>
-                <span className={styles.keyValue}>{usdShort(y.revenue)}</span>
-                <span className={styles.keyLabel}>Revenue</span>
-                <span className={styles.yearProfit}>{usdShort(y.profit)}</span>
-                <span className={styles.keyLabel}>Net income, pre-tax</span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
+        {keyFigures.length ? <KeyFigures figures={keyFigures} /> : null}
         <div className={styles.dealGroups}>
           <TermGroup
             title="Raise"

@@ -260,9 +260,9 @@ export interface KeyFigure {
 }
 
 /** Headline numbers in a grid, largest type on the page after the headings. */
-export function KeyFigures({ figures, columns }: { figures: KeyFigure[]; columns?: 4 }) {
+export function KeyFigures({ figures }: { figures: KeyFigure[] }) {
   return (
-    <ul className={styles.keyFigures} data-count={figures.length} data-columns={columns}>
+    <ul className={styles.keyFigures} data-count={figures.length}>
       {figures.map((f) => (
         <li key={f.label} className={styles.keyFigure}>
           <span className={styles.keyValue}>{f.value}</span>
