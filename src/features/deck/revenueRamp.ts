@@ -3,13 +3,14 @@ import type { RampPeriod } from "./slides";
 
 /**
  * Written by scripts/write-revenue-ramp.mjs from 02 MODEL/ZODE_MasterModel_26.11.09_v2.xlsx in ZODE ASCENT:
- * the consolidated monthly P&L on its Zode Inc. tab, by quarter and by month to Dec 2030.
+ * the consolidated monthly P&L on its Zode Inc. tab, by quarter, month and year to Dec 2030.
  * Whole USD; costs are positive. Rerun the script with each new model.
  */
 export const REVENUE_RAMP: {
   readonly model: string;
   readonly quarters: readonly RampPeriod[];
   readonly months: readonly RampPeriod[];
+  readonly years: readonly RampPeriod[];
 } = {
   model: "ZODE_MasterModel_26.11.09_v2.xlsx",
   quarters: [
@@ -422,6 +423,38 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1959277304, merchant: 839377111, offtake: 630720000 },
       costs: { power: 74271865, opCosts: 440521371, topco: 9135263, depreciation: 814201291, interest: 150951051 },
       netIncome: 1940293573,
+    },
+  ],
+  years: [
+    {
+      period: "2026",
+      revenue: { inference: 0, merchant: 0, offtake: 0 },
+      costs: { power: 0, opCosts: 0, topco: 0, depreciation: 0, interest: 0 },
+      netIncome: 0,
+    },
+    {
+      period: "2027",
+      revenue: { inference: 823553968, merchant: 177181862, offtake: 504576000 },
+      costs: { power: 31704192, opCosts: 191000038, topco: 6442254, depreciation: 367859608, interest: 65068068 },
+      netIncome: 843237670,
+    },
+    {
+      period: "2028",
+      revenue: { inference: 3562644810, merchant: 677138469, offtake: 2438784000 },
+      costs: { power: 149986907, opCosts: 868698223, topco: 23657135, depreciation: 1704537454, interest: 325514847 },
+      netIncome: 3606172714,
+    },
+    {
+      period: "2029",
+      revenue: { inference: 9167160730, merchant: 2967548196, offtake: 4457088000 },
+      costs: { power: 354798268, opCosts: 2124301563, topco: 53075469, depreciation: 4012644075, interest: 750473524 },
+      netIncome: 9296504027,
+    },
+    {
+      period: "2030",
+      revenue: { inference: 18760356680, merchant: 7702361117, offtake: 6475392000 },
+      costs: { power: 705909374, opCosts: 4207400524, topco: 93194395, depreciation: 7754208765, interest: 1454249716 },
+      netIncome: 18723147023,
     },
   ],
 };

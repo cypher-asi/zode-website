@@ -1,8 +1,8 @@
 /**
  * Writes the deck's revenue ramp (src/features/deck/revenueRamp.ts) from ZODE's
  * master model in a room: the consolidated monthly P&L on its Zode Inc. tab,
- * every SPV at 100% with future sites, by month and summed by quarter from the
- * model's first month to December of `--through`:
+ * every SPV at 100% with future sites, by month and summed by quarter and by
+ * year from the model's first month to December of `--through`:
  *
  *   node --env-file=.env.production.local scripts/write-revenue-ramp.mjs \
  *     --room <room id> --model "02 MODEL/ZODE_MasterModel_26.11.09.xlsx" \
@@ -191,6 +191,7 @@ months.forEach((month, i) => {
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const quarters = [];
 const monthly = [];
+const yearly = [];
 const add = (periods, period, i) => {
   if (periods.at(-1)?.period !== period) {
     periods.push({
@@ -215,8 +216,9 @@ for (let i = 0; i <= last; i += 1) {
   const [year, month] = months[i].split("-").map(Number);
   add(quarters, `Q${Math.floor((month - 1) / 3) + 1} ${year}`, i);
   add(monthly, `${MONTH_NAMES[month - 1]} ${year}`, i);
+  add(yearly, String(year), i);
 }
-for (const p of [...quarters, ...monthly]) {
+for (const p of [...quarters, ...monthly, ...yearly]) {
   for (const group of [p.revenue, p.costs, p.net]) {
     for (const key of Object.keys(group)) group[key] = Math.round(group[key]) || 0;
   }
@@ -229,6 +231,10 @@ for (const q of quarters) {
   console.log(`[ramp] ${q.period}: revenue ${usdM(total)}, costs ${usdM(costs)}, net income ${usdM(q.net.netIncome)}`);
 }
 console.log(`[ramp] ${monthly.length} months, ${monthly[0].period} to ${monthly.at(-1).period}.`);
+for (const y of yearly) {
+  const total = y.revenue.inference + y.revenue.merchant + y.revenue.offtake;
+  console.log(`[ramp] ${y.period}: revenue ${usdM(total)}, net income ${usdM(y.net.netIncome)}`);
+}
 
 const periodsOut = (periods) =>
   periods
@@ -244,13 +250,14 @@ import type { RampPeriod } from "./slides";
 
 /**
  * Written by scripts/write-revenue-ramp.mjs from ${source}:
- * the consolidated monthly P&L on its Zode Inc. tab, by quarter and by month to Dec ${THROUGH}.
+ * the consolidated monthly P&L on its Zode Inc. tab, by quarter, month and year to Dec ${THROUGH}.
  * Whole USD; costs are positive. Rerun the script with each new model.
  */
 export const REVENUE_RAMP: {
   readonly model: string;
   readonly quarters: readonly RampPeriod[];
   readonly months: readonly RampPeriod[];
+  readonly years: readonly RampPeriod[];
 } = {
   model: ${JSON.stringify(modelName)},
   quarters: [
@@ -258,6 +265,9 @@ ${periodsOut(quarters)}
   ],
   months: [
 ${periodsOut(monthly)}
+  ],
+  years: [
+${periodsOut(yearly)}
   ],
 };
 `;
@@ -268,4 +278,4 @@ if (args["dry-run"]) {
 }
 const target = new URL("../src/features/deck/revenueRamp.ts", import.meta.url);
 await writeFile(target, out);
-console.log(`[ramp] wrote ${quarters.length} quarters and ${monthly.length} months from ${source} to src/features/deck/revenueRamp.ts.`);
+console.log(`[ramp] wrote ${quarters.length} quarters, ${monthly.length} months and ${yearly.length} years from ${source} to src/features/deck/revenueRamp.ts.`);

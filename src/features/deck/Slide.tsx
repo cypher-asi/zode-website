@@ -702,11 +702,12 @@ function Shortfall({
 const RAMP_VIEWS = [
   { id: "quarters", label: "Quarterly" },
   { id: "months", label: "Monthly" },
+  { id: "years", label: "Annual" },
 ] as const;
 
 /**
- * The consolidated model as stacked bars, by quarter or by month as its toggle
- * says, over a key to their parts and the model's note.
+ * The consolidated model as stacked bars, by quarter, month or year as its
+ * toggle says, over a key to their parts, with the model's note behind a label.
  */
 function Ramp({
   slide,
@@ -737,7 +738,7 @@ function Ramp({
         <RampChart
           key={view}
           periods={slide[view]}
-          monthly={view === "months"}
+          view={view}
           active={active}
           compact={compact}
         />
@@ -755,9 +756,7 @@ function Ramp({
         </figcaption>
         <p className={styles.caption}>{slide.caption}</p>
       </figure>
-      <p {...rise(3)} className={`${styles.rise} ${styles.fine}`}>
-        {slide.note}
-      </p>
+      <HoverNote label="Notes" notes={[slide.note]} delay={3} />
     </div>
   );
 }
@@ -1921,7 +1920,7 @@ function Raise({ slide }: { slide: Of<"raise"> }): ReactElement {
           </Fragment>
         ))}
       </div>
-      <RaiseDisclaimer note={slide.note} />
+      <HoverNote label="Disclaimer" notes={[slide.note, RAISE_NOTE]} delay={3.2} />
     </div>
   );
 }
@@ -2027,10 +2026,18 @@ function RaiseCapital({ stack, delay }: { stack: RaiseStack; delay: number }): R
 }
 
 /**
- * The raise's basis and securities legend behind one label, opened as the
- * foot's sources are. Set out in full on paper.
+ * Fine print behind one label, opened on hover or a tap as the foot's sources
+ * are. Set out in full on paper.
  */
-function RaiseDisclaimer({ note }: { note: string }): ReactElement {
+function HoverNote({
+  label,
+  notes,
+  delay,
+}: {
+  label: string;
+  notes: readonly string[];
+  delay: number;
+}): ReactElement {
   const id = useId();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -2052,8 +2059,8 @@ function RaiseDisclaimer({ note }: { note: string }): ReactElement {
   return (
     <div
       ref={ref}
-      {...rise(3.2)}
-      className={`${styles.rise} ${styles.raiseDisclaimer}`}
+      {...rise(delay)}
+      className={`${styles.rise} ${styles.hoverNote}`}
       data-open={open || undefined}
     >
       <button
@@ -2063,12 +2070,15 @@ function RaiseDisclaimer({ note }: { note: string }): ReactElement {
         aria-controls={id}
         onClick={() => setOpen((value) => !value)}
       >
-        Disclaimer
+        {label}
       </button>
-      <div id={id} className={styles.raisePanel}>
-        <div className={styles.raisePanelBox}>
-          <p className={styles.fine}>{note}</p>
-          <p className={styles.fine}>{RAISE_NOTE}</p>
+      <div id={id} className={styles.hoverNotePanel}>
+        <div className={styles.hoverNoteBox}>
+          {notes.map((note) => (
+            <p key={note} className={styles.fine}>
+              {note}
+            </p>
+          ))}
         </div>
       </div>
     </div>

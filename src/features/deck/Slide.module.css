@@ -3609,7 +3609,7 @@ a.measureTitle:focus-visible {
 }
 
 /* Set as the foot's sources label, its panel opening above it from its left edge. */
-.raiseDisclaimer {
+.hoverNote {
   position: relative;
   flex: none;
   align-self: flex-start;
@@ -3618,7 +3618,7 @@ a.measureTitle:focus-visible {
   letter-spacing: 0.04em;
 }
 
-.raisePanel {
+.hoverNotePanel {
   position: absolute;
   bottom: 100%;
   left: 0;
@@ -3632,7 +3632,7 @@ a.measureTitle:focus-visible {
     visibility 0s linear var(--duration-fast);
 }
 
-.raisePanelBox {
+.hoverNoteBox {
   display: flex;
   flex-direction: column;
   gap: calc(0.5 * var(--u));
@@ -3641,7 +3641,7 @@ a.measureTitle:focus-visible {
   box-shadow: 0 0 0 1px var(--rule);
 }
 
-.raiseDisclaimer:is(:hover, [data-open]) .raisePanel {
+.hoverNote:is(:hover, [data-open]) .hoverNotePanel {
   visibility: visible;
   opacity: 1;
   transition-delay: 0s;
@@ -4079,7 +4079,7 @@ a.measureTitle:focus-visible {
     box-shadow: none;
   }
 
-  .raisePanel {
+  .hoverNotePanel {
     position: static;
     width: auto;
     padding: calc(0.4 * var(--u)) 0 0;
@@ -4087,7 +4087,7 @@ a.measureTitle:focus-visible {
     opacity: 1;
   }
 
-  .raisePanelBox {
+  .hoverNoteBox {
     padding: 0;
     background: none;
     box-shadow: none;
@@ -6101,7 +6101,7 @@ a.measureTitle:focus-visible {
   font-size: 20px;
 }
 
-.slide[data-compact] .raiseDisclaimer {
+.slide[data-compact] .hoverNote {
   font-size: var(--text-2xs);
 }
 

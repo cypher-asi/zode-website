@@ -140,7 +140,7 @@ export interface RaiseStack {
  * whole USD; costs are positive. Revenue less the costs is the net income.
  */
 export interface RampPeriod {
-  /** "Q3 2027" or "Aug 2027"; ends in its year. */
+  /** "Q3 2027", "Aug 2027" or "2027"; ends in its year. */
   readonly period: string;
   readonly revenue: { readonly inference: number; readonly merchant: number; readonly offtake: number };
   readonly costs: {
@@ -272,8 +272,9 @@ export type Slide =
       kind: "ramp";
       /** One stacked bar each: the quarter's revenue, split into where it goes. */
       quarters: readonly RampPeriod[];
-      /** The same by month, behind the chart's toggle. */
+      /** The same by month and by year, behind the chart's toggle. */
       months: readonly RampPeriod[];
+      years: readonly RampPeriod[];
       /** Under the chart, beside its key. */
       caption: string;
       note: string;
