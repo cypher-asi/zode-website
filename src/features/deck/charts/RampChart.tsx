@@ -2,19 +2,19 @@ import { useState, type CSSProperties, type PointerEvent, type ReactElement } fr
 import type { RampPeriod } from "../slides";
 import styles from "./charts.module.css";
 
-/** The model's P&L costs, in its order. */
+/** The model's cash costs, then its debt service. */
 const COSTS = [
   { key: "power", label: "Power" },
   { key: "opCosts", label: "Op costs" },
   { key: "topco", label: "TopCo" },
-  { key: "depreciation", label: "Depreciation" },
   { key: "interest", label: "Interest" },
+  { key: "principal", label: "Debt repaid" },
 ] as const;
 
-const NET_INCOME = { key: "netIncome", label: "Net income (pre-tax)" } as const;
+const CASH = { key: "cash", label: "Cash after debt service" } as const;
 
-/** Where a period's revenue goes, from the bar's foot up: down the P&L to net income on top. */
-export const RAMP_PARTS = [...COSTS, NET_INCOME] as const;
+/** Where a period's revenue goes, from the bar's foot up: costs and debt service, then the cash left on top. */
+export const RAMP_PARTS = [...COSTS, CASH] as const;
 
 type PartKey = (typeof RAMP_PARTS)[number]["key"];
 
@@ -26,8 +26,8 @@ const REVENUE = [
 
 /** The slide's wide chart, and a squarer one for the deck's scroll mode, where only the years are labelled. */
 const LAYOUTS = {
-  wide: { W: 1000, H: 440, pad: { top: 12, right: 4, bottom: 52, left: 52 }, tip: { w: 250, h: 280 } },
-  compact: { W: 520, H: 420, pad: { top: 12, right: 2, bottom: 36, left: 46 }, tip: { w: 300, h: 356 } },
+  wide: { W: 1000, H: 440, pad: { top: 12, right: 4, bottom: 52, left: 52 }, tip: { w: 290, h: 290 } },
+  compact: { W: 520, H: 420, pad: { top: 12, right: 2, bottom: 36, left: 46 }, tip: { w: 340, h: 372 } },
 } as const;
 
 /** $3.92B, $98.1M, −$1.1M. */
@@ -40,8 +40,11 @@ export function usd(n: number): string {
   return a ? `${sign}$${Math.round(a)}` : "$0";
 }
 
+/** 248 MW, 12.5 MW. */
+const mw = (n: number) => `${n.toLocaleString("en-US", { maximumFractionDigits: 1 })} MW`;
+
 const totalOf = (q: RampPeriod) => q.revenue.inference + q.revenue.merchant + q.revenue.offtake;
-const amountOf = (q: RampPeriod, key: PartKey) => (key === "netIncome" ? q.netIncome : q.costs[key]);
+const amountOf = (q: RampPeriod, key: PartKey) => (key === "cash" ? q.cash : q.costs[key]);
 
 /** The scale's top and its gridlines: no more than five steps of 1, 2 or 5 times a power of ten. */
 function scale(max: number): { top: number; ticks: number[] } {
@@ -61,9 +64,8 @@ const VIEWS = {
 
 /**
  * The consolidated model by quarter, month or year, one bar each: its height
- * the period's revenue, stacked down the model's P&L from power at the foot
- * through op costs, TopCo, depreciation and interest to its net income at the
- * top. Hovering, focusing or tapping a bar shows its revenue by how it's sold
+ * the period's revenue, stacked from power at the foot through op costs,
+ * TopCo, interest and debt repaid to the cash it spins off at the top. Hovering, focusing or tapping a bar shows its revenue by how it's sold
  * and where it went.
  */
 export function RampChart({
@@ -206,6 +208,12 @@ export function RampChart({
               <span className={styles.rampTipTotal}>{usd(totalOf(q))}</span>
             </p>
             <dl className={styles.rampTipRows}>
+              <div>
+                <dt>{view === "months" ? "Live critical IT" : "Live critical IT, avg."}</dt>
+                <dd>{mw(q.mw)}</dd>
+              </div>
+            </dl>
+            <dl className={styles.rampTipRows}>
               {REVENUE.map(({ key, label }) => (
                 <div key={key}>
                   <dt>{label}</dt>
@@ -227,10 +235,10 @@ export function RampChart({
             <dl className={styles.rampTipRows} data-net>
               <div>
                 <dt>
-                  <span className={styles.rampSwatch} data-part={NET_INCOME.key} aria-hidden="true" />
-                  {NET_INCOME.label}
+                  <span className={styles.rampSwatch} data-part={CASH.key} aria-hidden="true" />
+                  {CASH.label}
                 </dt>
-                <dd>{usd(q.netIncome)}</dd>
+                <dd>{usd(q.cash)}</dd>
               </div>
             </dl>
           </div>

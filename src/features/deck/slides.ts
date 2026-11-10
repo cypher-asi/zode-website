@@ -136,12 +136,15 @@ export interface RaiseStack {
 }
 
 /**
- * A quarter or month of the consolidated model's P&L on the revenue ramp, in
- * whole USD; costs are positive. Revenue less the costs is the net income.
+ * A quarter, month or year of the consolidated model on the revenue ramp, in
+ * whole USD; costs are positive. Revenue less its cash costs and debt service
+ * is the cash it spins off.
  */
 export interface RampPeriod {
   /** "Q3 2027", "Aug 2027" or "2027"; ends in its year. */
   readonly period: string;
+  /** Critical IT live, MW, on average over the period's months. */
+  readonly mw: number;
   readonly revenue: { readonly inference: number; readonly merchant: number; readonly offtake: number };
   readonly costs: {
     readonly power: number;
@@ -149,11 +152,13 @@ export interface RampPeriod {
     readonly opCosts: number;
     /** ZODE Inc.'s staffing and G&A. */
     readonly topco: number;
-    readonly depreciation: number;
+    /** Interest paid on project debt. */
     readonly interest: number;
+    /** Project debt repaid. */
+    readonly principal: number;
   };
-  /** The model's "Net income (pre-tax)"; negative for a loss. */
-  readonly netIncome: number;
+  /** The model's EBITDA less interest paid and debt repaid, before capex; negative when short. */
+  readonly cash: number;
 }
 
 export type Slide =

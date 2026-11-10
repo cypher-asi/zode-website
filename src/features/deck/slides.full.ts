@@ -27,7 +27,7 @@ const RAMP: Slide = {
   quarters: fromFirstYear(REVENUE_RAMP.quarters),
   months: fromFirstYear(REVENUE_RAMP.months),
   years: fromFirstYear(REVENUE_RAMP.years),
-  note: `Preliminary, from ZODE's master model of November 9, 2026 (${REVENUE_RAMP.model}, ZODE ASCENT data room), base case to December 2030, with Big Watt adding 30 MW a quarter from June 2027 to 570 MW, and 250 MW of generic future sites added in 2029, growing 20% a year. Each bar follows the model's consolidated P&L down to its net income, pre-tax. Op costs are colocation rent and site and cluster operations. TopCo is ZODE Inc.'s staffing and G&A.`,
+  note: `Preliminary, from ZODE's master model of November 9, 2026 (${REVENUE_RAMP.model}, ZODE ASCENT data room), base case to December 2030, with Big Watt adding 30 MW a quarter from June 2027 to 570 MW, and 250 MW of generic future sites added in 2029, growing 20% a year. Each bar is the period's consolidated revenue, split into its cash costs, its debt service and the cash left: the model's EBITDA less interest paid and debt repaid, before spending on new sites and GPUs, which project debt and equity fund. Depreciation isn't cash, so it isn't shown. Op costs are colocation rent and site and cluster operations. TopCo is ZODE Inc.'s staffing and G&A.`,
 };
 
 /**

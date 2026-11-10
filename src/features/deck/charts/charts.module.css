@@ -340,9 +340,9 @@
 }
 
 /*
- * Revenue ramp (RampChart.tsx): each bar steps down the P&L from the costs, in
- * tints of the foreground mixed into the ground, up to net income in the
- * foreground.
+ * Revenue ramp (RampChart.tsx): each bar steps up from the cash costs and debt
+ * service, in tints of the foreground mixed into the ground, to the cash it
+ * spins off in the foreground.
  */
 /* The legend's swatches sit outside the chart, so its wrapper takes the same tints. */
 .ramp,
@@ -350,9 +350,9 @@
   --part-power: color-mix(in srgb, var(--fg) 12%, var(--bg));
   --part-opCosts: color-mix(in srgb, var(--fg) 25%, var(--bg));
   --part-topco: color-mix(in srgb, var(--fg) 38%, var(--bg));
-  --part-depreciation: color-mix(in srgb, var(--fg) 52%, var(--bg));
-  --part-interest: color-mix(in srgb, var(--fg) 67%, var(--bg));
-  --part-netIncome: var(--fg);
+  --part-interest: color-mix(in srgb, var(--fg) 52%, var(--bg));
+  --part-principal: color-mix(in srgb, var(--fg) 67%, var(--bg));
+  --part-cash: var(--fg);
 }
 
 .rampPart[data-part="power"],
@@ -373,22 +373,22 @@
   background: var(--part-topco);
 }
 
-.rampPart[data-part="depreciation"],
-.rampSwatch[data-part="depreciation"] {
-  fill: var(--part-depreciation);
-  background: var(--part-depreciation);
-}
-
 .rampPart[data-part="interest"],
 .rampSwatch[data-part="interest"] {
   fill: var(--part-interest);
   background: var(--part-interest);
 }
 
-.rampPart[data-part="netIncome"],
-.rampSwatch[data-part="netIncome"] {
-  fill: var(--part-netIncome);
-  background: var(--part-netIncome);
+.rampPart[data-part="principal"],
+.rampSwatch[data-part="principal"] {
+  fill: var(--part-principal);
+  background: var(--part-principal);
+}
+
+.rampPart[data-part="cash"],
+.rampSwatch[data-part="cash"] {
+  fill: var(--part-cash);
+  background: var(--part-cash);
 }
 
 /* A hairline of the ground between parts, so neighbouring tints stay apart. */
@@ -481,6 +481,7 @@
 
 .rampTipRows dd {
   margin: 0;
+  white-space: nowrap;
   color: var(--fg);
   font-variant-numeric: tabular-nums;
 }
