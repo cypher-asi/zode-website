@@ -102,7 +102,7 @@ interface Base {
   readonly sources?: readonly SourceId[];
 }
 
-const LOGO_DIR = "/images/deck/logos";
+export const LOGO_DIR = "/images/deck/logos";
 
 /** A project's site company or compute company on the raise slide. */
 export interface RaiseEntity {
@@ -332,7 +332,7 @@ export type Slide =
       /** A card each in a row along the foot, the initials in the circle until a `photo` is set. */
       advisors: {
         title: string;
-        people: readonly { name: string; company: string; feat: string; photo?: string }[];
+        people: readonly { name: string; company: Logo; feat: string; photo?: string }[];
       };
     })
   | (Base & { kind: "close"; lede: string; contact: string })
@@ -596,110 +596,6 @@ export const PUBLIC_SLIDES: readonly Slide[] = [
     ],
   },
   {
-    id: "team",
-    kind: "team",
-    section: "Team",
-    eyebrow: "Team",
-    title: "Led by a three-time founder.",
-    ground: "paper",
-    founder: {
-      role: "Founder & CEO",
-      name: "Matthew J. Dorey",
-      social: [{ network: "linkedin", label: "LinkedIn", href: "https://www.linkedin.com/in/frank-wilder/" }],
-      main: {
-        title: "Main quests",
-        ventures: [
-          {
-            company: "Wilder World",
-            href: "https://www.wilderworld.com",
-            years: "2020–Present",
-            role: "Co-founder, CEO & Executive Chairman",
-            description: "Persistent simulation with Samsung, NVIDIA and Epic Games.",
-            outcome: "$4 billion+ peak EV",
-          },
-          {
-            company: "F0",
-            years: "2011–2020",
-            role: "Co-founder & CEO",
-            description: "Venture studio for Apple, Nike, Google and the Fortune 100.",
-            outcome: "Now HF0",
-          },
-          {
-            company: "Curve Dental",
-            href: "https://www.curvedental.com",
-            years: "2004–2011",
-            role: "Founder & CEO",
-            description: "The #1 cloud-based dental EMR system.",
-            outcome: "$1 billion+ current EV",
-          },
-        ],
-      },
-      side: {
-        title: "Side quests",
-        links: [
-          { label: "cypher.net", href: "https://cypher.net" },
-          { label: "zero.tech", href: "https://zero.tech" },
-          { label: "zchain.org", href: "https://zchain.org" },
-          { label: "aura.ai", href: "https://aura.ai" },
-          { label: "zine.live", href: "https://zine.live" },
-        ],
-      },
-    },
-    network: {
-      title: "Team members from",
-      partnerLabel: "Key partnership",
-      areas: [
-        {
-          label: "Compute",
-          partner: { name: "San Francisco Compute Company", src: `${LOGO_DIR}/sf-compute.svg`, aspect: 2000 / 336, scale: 0.91 },
-          logos: [
-            { name: "OpenAI", src: `${LOGO_DIR}/openai.svg`, aspect: 288 / 78, scale: 0.91, center: 31 / 78 },
-            { name: "Lambda", src: `${LOGO_DIR}/lambda.svg`, aspect: 196 / 42, scale: 0.95 },
-            { name: "Voltage Park", src: `${LOGO_DIR}/voltage-park.svg`, aspect: 2542 / 350, scale: 0.95 },
-          ],
-        },
-        {
-          label: "Capital markets",
-          partner: { name: "Ezra", src: `${LOGO_DIR}/ezra.svg`, aspect: 299 / 92, scale: 0.89 },
-          logos: [
-            { name: "Goldman Sachs", src: `${LOGO_DIR}/goldman-sachs.svg`, aspect: 192.76 / 85.04, scale: 0.94 },
-            { name: "Brookfield", src: `${LOGO_DIR}/brookfield.svg`, aspect: 240 / 35.933, scale: 0.84 },
-            { name: "Merrill", src: `${LOGO_DIR}/merrill.svg`, aspect: 150 / 43, scale: 1.04 },
-            { name: "Crusoe", src: `${LOGO_DIR}/crusoe.svg`, aspect: 119 / 29, scale: 1.04 },
-          ],
-        },
-        {
-          label: "Data centers",
-          partner: { name: "Inovi", src: `${LOGO_DIR}/inovi.webp`, aspect: 900 / 212, scale: 0.82 },
-          logos: [
-            { name: "AWS", src: `${LOGO_DIR}/aws.svg`, aspect: 188.726 / 125.89, scale: 0.89 },
-            { name: "Meta", src: `${LOGO_DIR}/meta.svg`, aspect: 948 / 191, scale: 0.87 },
-            { name: "Google Cloud", src: `${LOGO_DIR}/google-cloud.svg`, aspect: 181 / 28, scale: 0.99 },
-          ],
-        },
-        {
-          label: "Manufacturing",
-          partner: { name: "Foundry Robotics", src: `${LOGO_DIR}/foundry-robotics.svg`, aspect: 154 / 46, scale: 0.91 },
-          logos: [
-            { name: "SpaceX", src: `${LOGO_DIR}/spacex.svg`, aspect: 400 / 50, scale: 1.03 },
-            { name: "Tesla", src: `${LOGO_DIR}/tesla.svg`, aspect: 993.047 / 100, scale: 0.95 },
-            { name: "Blue Origin", src: `${LOGO_DIR}/blue-origin.svg`, aspect: 945 / 160, scale: 0.83 },
-          ],
-        },
-      ],
-    },
-    advisors: {
-      title: "Advisors",
-      people: [
-        { name: "Ian Finder", company: "NVIDIA", feat: "Designed the Vera chip" },
-        { name: "Nick Sammut", company: "Crusoe", feat: "$50B in compute deals" },
-        { name: "Dan Rosen", company: "Ezra", feat: "$15B in distributed energy" },
-        { name: "Jaspar Weir", company: "TaskUs", feat: "Built a 20,000-person company" },
-        { name: "Steven Lacy", company: "Apple", feat: "Cybersecurity task force" },
-      ],
-    },
-  },
-  {
     id: "pipeline",
     kind: "pipeline",
     section: "Pipeline",
@@ -859,7 +755,7 @@ export const GATE: Slide = {
   section: "Data room",
   eyebrow: "Data room",
   title: "The raise is in the data room.",
-  lede: "The capital raise, its SPV models and the rest of the deck are shared with investors who have VDR access.",
+  lede: "The team, the capital raise, its SPV models and the rest of the deck are shared with investors who have VDR access.",
   ground: "ink",
   loginHref: `/login?next=${encodeURIComponent(`/deck?slide=${PUBLIC_SLIDES.length + 1}`)}`,
 };

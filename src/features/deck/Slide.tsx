@@ -2341,7 +2341,9 @@ function Team({ slide }: { slide: Of<"team"> }): ReactElement {
                 )}
               </span>
               <p className={styles.advisorName}>{person.name}</p>
-              <p className={styles.advisorCompany}>{person.company}</p>
+              <div className={`${styles.logos} ${styles.advisorLogo}`}>
+                <LogoMark logo={person.company} size={0.5} />
+              </div>
               <p className={styles.advisorFeat}>{person.feat}</p>
             </li>
           ))}

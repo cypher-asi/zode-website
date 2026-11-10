@@ -18,7 +18,7 @@ function slide<K extends Slide["kind"]>(kind: K): Of<K> {
 
 export const SOLUTION = slide("solution");
 export const TRACTION = slide("traction");
-export const TEAM = slide("team");
+export { TEAM } from "@/features/deck/slides.full";
 
 /** The deck's customer logos under LOI, without its prospective pipeline. */
 export const CUSTOMERS = TRACTION.customers.filter((group) => group.label !== "Pipeline");

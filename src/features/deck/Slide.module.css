@@ -4050,11 +4050,11 @@ a.measureTitle:focus-visible {
   align-content: center;
   column-gap: calc(0.9 * var(--u));
   padding: calc(0.8 * var(--u)) calc(1 * var(--u));
-  background: var(--card);
+  background: var(--bg);
   box-shadow: 0 0 0 1px var(--rule);
 }
 
-.advisor p {
+.advisor > :not(.advisorPhoto) {
   grid-column: 2;
 }
 
@@ -4092,16 +4092,10 @@ a.measureTitle:focus-visible {
   color: var(--fg);
 }
 
-/* Set as `.years`. */
-.advisorCompany {
-  margin: calc(0.15 * var(--u)) 0 0;
-  font-family: var(--font-mono);
-  font-size: calc(0.58 * var(--u));
-  font-weight: 500;
-  letter-spacing: var(--eyebrow-tracking);
-  line-height: 1.4;
-  text-transform: uppercase;
-  color: var(--fg-2);
+/* As tall as the tallest mark, so the lines under it fall level from card to card. */
+.advisorLogo {
+  min-height: calc(1.2 * var(--u));
+  margin-top: calc(0.3 * var(--u));
 }
 
 .advisorFeat {
@@ -6337,8 +6331,13 @@ a.measureTitle:focus-visible {
   font-size: 14px;
 }
 
-.slide[data-compact] .advisorCompany {
-  font-size: 9px;
+.slide[data-compact] .advisorLogo {
+  min-height: 16px;
+  margin-top: 3px;
+}
+
+.slide[data-compact] .advisorLogo img {
+  height: calc(var(--h) * 11px);
 }
 
 .slide[data-compact] .advisorFeat {

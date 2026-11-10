@@ -1,16 +1,141 @@
 import "server-only";
 import { REVENUE_RAMP } from "./revenueRamp";
-import { DEMAND_DETAILS, PUBLIC_SLIDES, type Slide } from "./slides";
+import { DEMAND_DETAILS, LOGO_DIR, PUBLIC_SLIDES, type Slide } from "./slides";
 
 /**
- * The deck past project finance, for readers with data room access: the raise,
- * the close and the sources. Server-only, so the public deck's bundle never
- * carries it; see `deckSlides` in ./access.
+ * The deck past project finance, for readers with data room access: the team,
+ * the raise, the close and the sources. Server-only, so the public deck's
+ * bundle never carries it; see `deckSlides` in ./access.
  */
 
 const quarterRevenue = ({ revenue }: (typeof REVENUE_RAMP.quarters)[number]) =>
   revenue.inference + revenue.merchant + revenue.offtake;
 const PEAK = REVENUE_RAMP.quarters.reduce((best, q) => (quarterRevenue(q) > quarterRevenue(best) ? q : best));
+
+/** The founder, the team's network and the key advisors; also read by the company profile (features/profile). */
+export const TEAM: Extract<Slide, { kind: "team" }> = {
+  id: "team",
+  kind: "team",
+  section: "Team",
+  eyebrow: "Team",
+  title: "Led by a three-time founder.",
+  ground: "paper",
+  founder: {
+    role: "Founder & CEO",
+    name: "Matthew J. Dorey",
+    social: [{ network: "linkedin", label: "LinkedIn", href: "https://www.linkedin.com/in/frank-wilder/" }],
+    main: {
+      title: "Main quests",
+      ventures: [
+        {
+          company: "Wilder World",
+          href: "https://www.wilderworld.com",
+          years: "2020–Present",
+          role: "Co-founder, CEO & Executive Chairman",
+          description: "Persistent simulation with Samsung, NVIDIA and Epic Games.",
+          outcome: "$4 billion+ peak EV",
+        },
+        {
+          company: "F0",
+          years: "2011–2020",
+          role: "Co-founder & CEO",
+          description: "Venture studio for Apple, Nike, Google and the Fortune 100.",
+          outcome: "Now HF0",
+        },
+        {
+          company: "Curve Dental",
+          href: "https://www.curvedental.com",
+          years: "2004–2011",
+          role: "Founder & CEO",
+          description: "The #1 cloud-based dental EMR system.",
+          outcome: "$1 billion+ current EV",
+        },
+      ],
+    },
+    side: {
+      title: "Side quests",
+      links: [
+        { label: "cypher.net", href: "https://cypher.net" },
+        { label: "zero.tech", href: "https://zero.tech" },
+        { label: "zchain.org", href: "https://zchain.org" },
+        { label: "aura.ai", href: "https://aura.ai" },
+        { label: "zine.live", href: "https://zine.live" },
+      ],
+    },
+  },
+  network: {
+    title: "Team members from",
+    partnerLabel: "Key partnership",
+    areas: [
+      {
+        label: "Compute",
+        partner: { name: "San Francisco Compute Company", src: `${LOGO_DIR}/sf-compute.svg`, aspect: 2000 / 336, scale: 0.91 },
+        logos: [
+          { name: "OpenAI", src: `${LOGO_DIR}/openai.svg`, aspect: 288 / 78, scale: 0.91, center: 31 / 78 },
+          { name: "Lambda", src: `${LOGO_DIR}/lambda.svg`, aspect: 196 / 42, scale: 0.95 },
+          { name: "Voltage Park", src: `${LOGO_DIR}/voltage-park.svg`, aspect: 2542 / 350, scale: 0.95 },
+        ],
+      },
+      {
+        label: "Capital markets",
+        partner: { name: "Ezra", src: `${LOGO_DIR}/ezra.svg`, aspect: 299 / 92, scale: 0.89 },
+        logos: [
+          { name: "Goldman Sachs", src: `${LOGO_DIR}/goldman-sachs.svg`, aspect: 192.76 / 85.04, scale: 0.94 },
+          { name: "Brookfield", src: `${LOGO_DIR}/brookfield.svg`, aspect: 240 / 35.933, scale: 0.84 },
+          { name: "Merrill", src: `${LOGO_DIR}/merrill.svg`, aspect: 150 / 43, scale: 1.04 },
+        ],
+      },
+      {
+        label: "Data centers",
+        partner: { name: "Inovi", src: `${LOGO_DIR}/inovi.webp`, aspect: 900 / 212, scale: 0.82 },
+        logos: [
+          { name: "AWS", src: `${LOGO_DIR}/aws.svg`, aspect: 188.726 / 125.89, scale: 0.89 },
+          { name: "Meta", src: `${LOGO_DIR}/meta.svg`, aspect: 948 / 191, scale: 0.87 },
+          { name: "Google Cloud", src: `${LOGO_DIR}/google-cloud.svg`, aspect: 181 / 28, scale: 0.99 },
+        ],
+      },
+      {
+        label: "Manufacturing",
+        partner: { name: "Foundry Robotics", src: `${LOGO_DIR}/foundry-robotics.svg`, aspect: 154 / 46, scale: 0.91 },
+        logos: [
+          { name: "SpaceX", src: `${LOGO_DIR}/spacex.svg`, aspect: 400 / 50, scale: 1.03 },
+          { name: "Tesla", src: `${LOGO_DIR}/tesla.svg`, aspect: 993.047 / 100, scale: 0.95 },
+          { name: "Blue Origin", src: `${LOGO_DIR}/blue-origin.svg`, aspect: 945 / 160, scale: 0.83 },
+        ],
+      },
+    ],
+  },
+  advisors: {
+    title: "Key advisors",
+    people: [
+      {
+        name: "Ian Finder",
+        company: { name: "NVIDIA", src: `${LOGO_DIR}/nvidia.svg`, aspect: 630.2 / 118.2 },
+        feat: "Designed the Vera chip",
+      },
+      {
+        name: "Nick Sammut",
+        company: { name: "Crusoe", src: `${LOGO_DIR}/crusoe.svg`, aspect: 119 / 29, scale: 1.04 },
+        feat: "$50B in compute deals",
+      },
+      {
+        name: "Dan Rosen",
+        company: { name: "Ezra", src: `${LOGO_DIR}/ezra.svg`, aspect: 299 / 92, scale: 0.89 },
+        feat: "$15B in distributed energy",
+      },
+      {
+        name: "Jaspar Weir",
+        company: { name: "TaskUs", src: `${LOGO_DIR}/taskus.svg`, aspect: 4581 / 944 },
+        feat: "Built a 20,000-person company",
+      },
+      {
+        name: "Steven Lacy",
+        company: { name: "Apple", src: `${LOGO_DIR}/apple.svg`, aspect: 1, scale: 0.6 },
+        feat: "Cybersecurity task force",
+      },
+    ],
+  },
+};
 
 /** The model's months before 2027 earn nothing, so the ramp starts with 2027. */
 const fromFirstYear = (periods: (typeof REVENUE_RAMP)["quarters"]) =>
@@ -112,10 +237,11 @@ const CLOSE: Slide = {
   contact: "hello@zode.org · zode.org",
 };
 
-const CITED = [...PUBLIC_SLIDES, RAISE, ...DEMAND_DETAILS].flatMap((slide) => slide.sources ?? []);
+const CITED = [...PUBLIC_SLIDES, TEAM, RAISE, ...DEMAND_DETAILS].flatMap((slide) => slide.sources ?? []);
 
 export const FULL_SLIDES: readonly Slide[] = [
   ...PUBLIC_SLIDES,
+  TEAM,
   RAMP,
   RAISE,
   CLOSE,
