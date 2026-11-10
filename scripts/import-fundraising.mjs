@@ -383,7 +383,7 @@ for (const [type, dealType, firm, contact = null, notes = null] of FIRMS) {
   if (opportunity) continue;
   await sql`
     insert into zrm_opportunities (pipeline, title, deal_type, stage_id, company_id, person_id, owner_notes)
-    values ('fundraising', ${`${firm.name} - Capital raise`}, ${dealType}, ${target.id}, ${companyId}, ${personId}, ${notes})
+    values ('fundraising', ${firm.name}, ${dealType}, ${target.id}, ${companyId}, ${personId}, ${notes})
   `;
   counts.opportunities++;
 }

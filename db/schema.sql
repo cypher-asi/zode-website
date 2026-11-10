@@ -988,6 +988,12 @@ alter table zrm_opportunities drop constraint if exists zrm_opportunities_stage_
 alter table zrm_opportunities add constraint zrm_opportunities_stage_pipeline_fkey
   foreign key (stage_id, pipeline) references zrm_stages (id, pipeline);
 
+-- The fundraising import titled each firm's opportunity "<firm> - Capital
+-- raise"; it's titled with the firm's name alone. Titles edited since are left alone.
+update zrm_opportunities o set title = c.name, updated_at = now()
+from zrm_companies c
+where c.id = o.company_id and o.pipeline = 'fundraising' and o.title = c.name || ' - Capital raise';
+
 -- Compute contracts are compute deals: a closed Compute opportunity's executed
 -- MSA and order forms, where a ZODE entity (the provider) runs a GPU cluster
 -- for the counterparty at a GPU-hour rate over a term. They replace the
