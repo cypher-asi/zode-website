@@ -466,6 +466,16 @@ alter table account_directory add column if not exists signed_in_at timestamptz;
 alter table account_directory add column if not exists profile_image text;
 alter table account_directory add column if not exists primary_zid text;
 
+-- Rows a sign-in wrote before signed_in_at existed. A sign-in starts its
+-- session in the same instant it writes the row, which no backfilled row's
+-- form timestamp lands beside.
+update account_directory d set signed_in_at = d.last_seen_at
+where d.signed_in_at is null and exists (
+  select 1 from account_sessions s
+  where s.user_id = d.user_id
+    and s.created_at between d.last_seen_at - interval '5 seconds' and d.last_seen_at + interval '5 seconds'
+);
+
 -- One-time login codes this site emails, since ZOS's own aren't delivered.
 -- Only an HMAC of the code is kept. A code dies after its first use, after
 -- MAX_ATTEMPTS wrong tries, when it expires, or when a newer one is sent.
