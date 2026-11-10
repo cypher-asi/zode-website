@@ -1979,7 +1979,7 @@ a.measureTitle:focus-visible {
 .stack {
   --art: calc(100cqh * var(--ratio));
   --px: calc(var(--art) / 352);
-  --text-w: calc(400 * var(--px));
+  --text-w: calc(460 * var(--px));
 
   display: grid;
   grid-template: minmax(0, 1fr) / minmax(0, 1fr);
@@ -2009,7 +2009,7 @@ a.measureTitle:focus-visible {
 
 .lede > p {
   margin: 0;
-  text-wrap: pretty;
+  text-wrap: balance;
 }
 
 /*
