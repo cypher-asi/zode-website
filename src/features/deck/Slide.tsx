@@ -1579,7 +1579,7 @@ function Pipeline({ slide }: { slide: Of<"pipeline"> }): ReactElement {
         </section>
         <section className={styles.planSection}>
           <h3 {...rise(4)} className={`${styles.rise} ${styles.label}`}>
-            Master Plan
+            Master Plan · Contracted MW
           </h3>
           <ol className={styles.plan}>
             {slide.plan.map((row, i) => (

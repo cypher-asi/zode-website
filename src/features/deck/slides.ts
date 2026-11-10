@@ -179,7 +179,7 @@ export type Slide =
       }[];
       total: string;
       capacity: readonly Stat[];
-      /** Capacity online by year, drawn to a linear scale from `mw`; a row without it is drawn full, as the end of the scale. */
+      /** MW contracted by year, not yet live, drawn to a linear scale from `mw`; a row without it is drawn full, as the end of the scale. */
       plan: readonly { year: string; value: string; mw?: number }[];
       /** A statement under the plan, each entry on its own line; its dollar figures are set in the foreground. */
       planNote: readonly string[];
