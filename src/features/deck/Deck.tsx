@@ -573,9 +573,7 @@ export function Deck({
                 {/* Detail slides open in a modal on screen; printed, they follow their slide as pages. */}
                 {(printing && entry.kind === "demand"
                   ? DEMAND_DETAILS
-                  : printing && entry.kind === "raise"
-                    ? entry.deals.map((deal) => deal.detail)
-                    : []
+                  : []
                 ).map((detail) => (
                   <section
                     key={detail.id}

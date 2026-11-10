@@ -104,31 +104,35 @@ interface Base {
 
 const LOGO_DIR = "/images/deck/logos";
 
-/** An SPV's model summary, opened over the raise slide from its deal. */
-export type ModelSlide = Base & {
-  kind: "model";
-  /** The sites in the program. */
-  sites: readonly { name: string; figure: string; detail: string }[];
-  sitesNote: string;
-  /** Capital stack, top to bottom: equity over debt, the most senior last. */
-  layers: readonly { label: string; kind: "equity" | "debt"; value: string; terms: readonly string[] }[];
-  /** Under the stack, where a dollar figure was not kept in the run. */
-  stackNote?: string;
-  /** Uses, equity calls and residual. */
-  facts: readonly Stat[];
-  /** Downside, base and upside. One group per investor class. */
-  cases: {
+/** A project's site company or compute company on the raise slide. */
+export interface RaiseEntity {
+  /** What it holds, such as its GPUs. */
+  readonly detail: string;
+  /** What third parties put in; a figure ZODE funds alone is `source: "zode"`. */
+  readonly value: string;
+  readonly basis: string;
+  readonly source?: "zode";
+}
+
+/** One row's capital stack on the raise slide. */
+export interface RaiseStack {
+  readonly row: "topco" | "propco" | "computeco";
+  readonly label: string;
+  /** What the row raises, over the stack. */
+  readonly raising: Stat;
+  /**
+   * Top to bottom: equity over debt, the most senior last. `zode` layers are
+   * ZODE Inc.'s equity, paid from the seed, so not raised here.
+   */
+  readonly layers: readonly {
     label: string;
-    columns: readonly string[];
-    groups: readonly {
-      label: string;
-      rows: readonly { label: string; cells: readonly string[] }[];
-    }[];
-  };
-  /** A short comparison under the cases, such as other exits. */
-  aside?: { label: string; rows: readonly Stat[] };
-  note: string;
-};
+    kind: "equity" | "debt";
+    source?: "zode";
+    value: string;
+    terms: string;
+  }[];
+  readonly note?: string;
+}
 
 export type Slide =
   | (Base & { kind: "cover"; lede: string; meta: string; image: string })
@@ -244,30 +248,21 @@ export type Slide =
     })
   | (Base & {
       kind: "raise";
-      /** One SPV per half. Clicking it opens its `detail` over the deck. */
-      deals: readonly {
-        id: string;
-        icon: UnitIconId;
-        title: string;
-        /** What the SPV does, in one line. */
-        overview: string;
-        /** Nodes, GPUs and power. */
-        fleet: readonly Stat[];
-        /** Capital stack, top to bottom: equity over debt, the most senior last. `returns` is that layer's investor IRR and multiple. */
-        layers: readonly {
-          label: string;
-          kind: "equity" | "debt";
-          value: string;
-          terms: readonly string[];
-          returns?: string;
-        }[];
-        /** Its model summary, opened over the deck; printed, it follows the slide as a page. */
-        detail: ModelSlide;
+      /** Across the top of the chart, over every project. */
+      topco: { name: string; detail: string; uses: string };
+      /** One column each. A leased site has no site company, so no `propCo`. */
+      projects: readonly {
+        name: string;
+        detail: string;
+        tenure: "lease" | "own";
+        propCo?: RaiseEntity;
+        computeCo: RaiseEntity;
       }[];
-      /** Where the figures come from, behind the disclaimer under the deals. */
+      /** On the far right, each beside its row of the chart. */
+      stacks: readonly RaiseStack[];
+      /** Where the figures come from, behind the disclaimer under the chart. */
       note: string;
     })
-  | ModelSlide
   | (Base & {
       kind: "team";
       founder: {

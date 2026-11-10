@@ -53,6 +53,7 @@ import {
   DEMAND_DETAILS,
   type ContractSide,
   type Logo,
+  type RaiseEntity,
   type SaleModeId,
   type Slide,
   type Stat,
@@ -1776,120 +1777,108 @@ function Finance({
   );
 }
 
-/**
- * The two raises, one SPV a side. Each side opens its model summary in the
- * same modal as the demand slide's details, and Up and Down step between
- * them. Turning the slide shuts it.
- */
-function Raise({
-  slide,
-  playing,
-  active,
-  compact,
-  policy,
+/** A project's site or compute company, hung off its column's spine. */
+function RaiseNode({
+  label,
+  entity,
 }: {
-  slide: Of<"raise">;
-  playing: boolean;
-  active: boolean;
-  compact: boolean;
-  policy: PolicyMap | null;
+  label: string;
+  entity: RaiseEntity;
 }): ReactElement {
-  const [detail, setDetail] = useState<Slide | null>(null);
-  const [shown, setShown] = useState(active);
-  if (shown !== active) {
-    setShown(active);
-    if (!active) setDetail(null);
-  }
-  const details = slide.deals.map((deal) => deal.detail);
-  const step = (delta: number) =>
-    setDetail((open) => {
-      if (!open) return open;
-      const at = details.findIndex((item) => item.id === open.id);
-      return details[Math.min(Math.max(at + delta, 0), details.length - 1)];
-    });
+  return (
+    <div className={styles.raiseNode} data-source={entity.source}>
+      <span className={`${styles.label} ${styles.raiseBand}`}>{label}</span>
+      <span className={styles.raiseNodeBody}>
+        <span className={styles.raiseNodeValue}>{entity.value}</span>
+        <span className={styles.fine}>{entity.basis}</span>
+        <span className={styles.raiseNodeDetail}>{entity.detail}</span>
+      </span>
+    </div>
+  );
+}
+
+/**
+ * The raise as an org chart: ZODE Inc. across the top, then a column per
+ * project, its site company over its compute company, each joined up the
+ * column's side to ZODE Inc. On the far right, each row's capital stack. The
+ * chart and the stacks share the grid's rows, so each stack stands level with
+ * its row.
+ */
+function Raise({ slide }: { slide: Of<"raise"> }): ReactElement {
   return (
     <div className={styles.raise}>
-      <ul className={styles.raiseDeals}>
-        {slide.deals.map((deal, i) => (
-          <li key={deal.id} {...rise(2 + i * 0.4)}>
-            <button
-              type="button"
-              className={styles.raiseDeal}
-              aria-haspopup="dialog"
-              onClick={() => setDetail(deal.detail)}
+      <div
+        className={styles.raiseChart}
+        style={{ "--projects": slide.projects.length } as CSSProperties}
+      >
+        <section {...rise(1.6)} className={`${styles.rise} ${styles.raiseTopco}`}>
+          <h3 className={`${styles.label} ${styles.raiseBand}`}>Top Co</h3>
+          <div className={styles.raiseTopcoBody}>
+            <span className={styles.raiseTopcoName}>{slide.topco.name}</span>
+            <span className={styles.raiseTopcoText}>
+              <span className={styles.raiseNodeDetail}>{slide.topco.detail}</span>
+              <span className={styles.fine}>{slide.topco.uses}</span>
+            </span>
+          </div>
+        </section>
+        {slide.projects.map((project, i) => (
+          <section
+            key={project.name}
+            {...rise(2 + i * 0.2)}
+            className={`${styles.rise} ${styles.raiseProject}`}
+          >
+            <header className={styles.raiseProjectHead}>
+              <span className={styles.raiseProjectTitle}>
+                <h3 className={styles.raiseProjectName}>{project.name}</h3>
+                <span className={styles.raiseTenure} data-tenure={project.tenure}>
+                  {project.tenure === "own" ? "Own" : "Lease"}
+                </span>
+              </span>
+              <span className={styles.raiseNodeDetail}>{project.detail}</span>
+            </header>
+            <div className={styles.raiseSlot}>
+              {project.propCo ? <RaiseNode label="Prop Co" entity={project.propCo} /> : null}
+            </div>
+            <div className={styles.raiseSlot}>
+              <RaiseNode label="Compute Co" entity={project.computeCo} />
+            </div>
+          </section>
+        ))}
+        {slide.stacks.map((stack, i) => (
+          <Fragment key={stack.row}>
+            <span className={styles.raiseLink} data-row={stack.row} aria-hidden="true" />
+            <section
+              {...rise(2.8 + i * 0.2)}
+              className={`${styles.rise} ${styles.raiseStack}`}
+              data-row={stack.row}
             >
-              <span className={styles.dealHead}>
-                <span className={styles.dealFigure}>
-                  <UnitIcon id={deal.icon} light playing={playing} />
+              <h3 className={styles.raiseBand}>
+                <span className={styles.label}>{stack.label}</span>
+                <span className={styles.raiseRaising}>
+                  <span className={styles.fine}>{stack.raising.label}</span>
+                  <span className={styles.raiseValue}>{stack.raising.value}</span>
                 </span>
-                <span className={styles.dealHeading}>
-                  <span className={styles.raiseTitle}>
-                    <span className={styles.dealTitle}>{deal.title}</span>
-                    <span className={styles.raiseOpen}>
-                      Summary
-                      <svg
-                        className={styles.raisePlus}
-                        viewBox="0 0 12 12"
-                        aria-hidden="true"
-                      >
-                        <path d="M6 1v10M1 6h10" />
-                      </svg>
-                    </span>
-                  </span>
-                  <span className={styles.raiseOverview}>{deal.overview}</span>
-                </span>
-              </span>
-              <span className={styles.raiseFleet}>
-                {deal.fleet.map((stat) => (
-                  <span key={stat.label} className={styles.stat}>
-                    <span className={styles.statValue}>{stat.value}</span>
-                    <span className={styles.statLabel}>{stat.label}</span>
-                  </span>
-                ))}
-              </span>
-              <span className={styles.dealStack} role="list" aria-label="Capital stack">
-                {deal.layers.map((layer) => (
-                  <span
+              </h3>
+              <ol className={styles.dealStack} aria-label="Capital stack">
+                {stack.layers.map((layer) => (
+                  <li
                     key={layer.label}
                     className={`${styles.dealLayer} ${styles.raiseLayer}`}
-                    role="listitem"
                     data-kind={layer.kind}
+                    data-source={layer.source}
                   >
-                    <span className={styles.raiseLayerText}>
-                      <span className={styles.dealLayerLabel}>
-                        {layer.label}
-                      </span>
-                      {layer.terms.length > 0 ? (
-                        <span className={styles.dealLayerTerms}>
-                          {layer.terms.map((term) => (
-                            <span key={term}>{term}</span>
-                          ))}
-                        </span>
-                      ) : null}
-                    </span>
-                    <span className={`${styles.raiseCell} ${styles.raiseValue}`}>
-                      {layer.value}
-                    </span>
-                    <span className={`${styles.raiseCell} ${styles.raiseReturns}`}>
-                      {layer.returns}
-                    </span>
-                  </span>
+                    <span className={styles.dealLayerLabel}>{layer.label}</span>
+                    <span className={styles.dealLayerTerms}>{layer.terms}</span>
+                    <span className={styles.raiseLayerValue}>{layer.value}</span>
+                  </li>
                 ))}
-              </span>
-            </button>
-          </li>
+              </ol>
+              {stack.note ? <p className={styles.fine}>{stack.note}</p> : null}
+            </section>
+          </Fragment>
         ))}
-      </ul>
+      </div>
       <RaiseDisclaimer note={slide.note} />
-      {detail ? (
-        <DetailModal
-          slide={detail}
-          compact={compact}
-          policy={policy}
-          onStep={step}
-          onClose={() => setDetail(null)}
-        />
-      ) : null}
     </div>
   );
 }
@@ -1939,136 +1928,6 @@ function RaiseDisclaimer({ note }: { note: string }): ReactElement {
           <p className={styles.fine}>{RAISE_NOTE}</p>
         </div>
       </div>
-    </div>
-  );
-}
-
-/**
- * One SPV's model: its sites, capital stack and the stored case range.
- * Opened from the raise slide, and printed after it.
- */
-function ModelSummary({ slide }: { slide: Of<"model"> }): ReactElement {
-  const { cases, aside } = slide;
-  return (
-    <div className={styles.model}>
-      <div {...rise(1.4)} className={`${styles.rise} ${styles.modelGrid}`}>
-        <section className={`${styles.modelCell} ${styles.modelSites}`}>
-          <div className={styles.modelHead}>
-            <h3 className={styles.label}>Sites</h3>
-            <p {...rise(2.6)} className={`${styles.rise} ${styles.fine}`}>
-              {slide.sitesNote}
-            </p>
-          </div>
-          <ul>
-            {slide.sites.map((site, i) => (
-              <li key={site.name} {...rise(1.8 + i * 0.15)} className={styles.rise}>
-                <span className={styles.modelSiteName}>{site.name}</span>
-                <span className={styles.modelSiteFigure}>{site.figure}</span>
-                <span className={styles.modelSiteDetail}>{site.detail}</span>
-              </li>
-            ))}
-          </ul>
-          {slide.facts.length > 0 ? (
-            <dl {...rise(2.6)} className={`${styles.rise} ${styles.modelFacts}`}>
-              {slide.facts.map((fact) => (
-                <div key={fact.label}>
-                  <dt>{fact.label}</dt>
-                  <dd>{fact.value}</dd>
-                </div>
-              ))}
-            </dl>
-          ) : null}
-        </section>
-        <section className={`${styles.modelCell} ${styles.modelCapital}`}>
-          <h3 className={`${styles.label} ${styles.modelHead}`}>Capital</h3>
-          <ol
-            {...rise(2)}
-            className={`${styles.rise} ${styles.dealStack}`}
-            aria-label="Capital stack"
-          >
-            {slide.layers.map((layer) => (
-              <li
-                key={layer.label}
-                className={styles.dealLayer}
-                data-kind={layer.kind}
-              >
-                <span className={styles.raiseLayerText}>
-                  <span className={styles.dealLayerLabel}>{layer.label}</span>
-                  {layer.terms.length > 0 ? (
-                    <span className={styles.dealLayerTerms}>
-                      {layer.terms.map((term) => (
-                        <span key={term}>{term}</span>
-                      ))}
-                    </span>
-                  ) : null}
-                </span>
-                <span className={styles.raiseValue}>{layer.value}</span>
-              </li>
-            ))}
-          </ol>
-          {slide.stackNote ? (
-            <p {...rise(2.4)} className={`${styles.rise} ${styles.fine} ${styles.modelNote}`}>
-              {slide.stackNote}
-            </p>
-          ) : null}
-        </section>
-        <section className={`${styles.modelCell} ${styles.modelWide}`}>
-          <table className={styles.modelCases}>
-            <colgroup>
-              <col className={styles.modelGroupCol} />
-              <col className={styles.modelRowCol} />
-              {cases.columns.map((column) => (
-                <col key={column} />
-              ))}
-            </colgroup>
-            <thead>
-              <tr>
-                <th scope="col" colSpan={2}>
-                  {cases.label}
-                </th>
-                {cases.columns.map((column) => (
-                  <th key={column} scope="col">
-                    {column}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            {cases.groups.map((group, g) => (
-              <tbody key={group.label} {...rise(3 + g * 0.3)} className={styles.rise}>
-                {group.rows.map((row, i) => (
-                  <tr key={row.label}>
-                    {i === 0 ? (
-                      <th scope="rowgroup" rowSpan={group.rows.length}>
-                        {group.label}
-                      </th>
-                    ) : null}
-                    <th scope="row">{row.label}</th>
-                    {row.cells.map((cell, c) => (
-                      <td key={cases.columns[c]}>{cell}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            ))}
-          </table>
-        </section>
-        {aside ? (
-          <section className={`${styles.modelCell} ${styles.modelWide}`}>
-            <h3 className={`${styles.label} ${styles.modelHead}`}>{aside.label}</h3>
-            <dl {...rise(3.6)} className={`${styles.rise} ${styles.modelAside}`}>
-              {aside.rows.map((row) => (
-                <div key={row.label}>
-                  <dd>{row.value}</dd>
-                  <dt>{row.label}</dt>
-                </div>
-              ))}
-            </dl>
-          </section>
-        ) : null}
-      </div>
-      <p {...rise(3.8)} className={`${styles.rise} ${styles.fine}`}>
-        {slide.note}
-      </p>
     </div>
   );
 }
@@ -2492,17 +2351,7 @@ function Body({
     case "finance":
       return <Finance slide={slide} playing={playing} />;
     case "raise":
-      return (
-        <Raise
-          slide={slide}
-          playing={playing}
-          active={active}
-          compact={compact}
-          policy={policy}
-        />
-      );
-    case "model":
-      return <ModelSummary slide={slide} />;
+      return <Raise slide={slide} />;
     case "team":
       return <Team slide={slide} />;
     case "close":
