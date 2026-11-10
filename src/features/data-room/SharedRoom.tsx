@@ -23,12 +23,15 @@ export function SharedRoom({
   tree,
   osHref,
   summaries,
+  banking,
 }: {
   token: string;
   roomName: string;
   tree: RoomTree;
   osHref: string;
   summaries: RoomSummaries;
+  /** The room's Banking Info, pinned at the top level when it has one. */
+  banking: ReactNode | null;
 }): ReactElement {
   const router = useRouter();
   const pathname = usePathname();
@@ -39,6 +42,8 @@ export function SharedRoom({
   const openFile = tree.files.find((file) => file.id === searchParams.get("file")) ?? null;
   const summary = summaries[summaryKey(folderId)] ?? null;
   const summaryOpen = Boolean(summary) && !openFile && searchParams.get("summary") === "1";
+  const bankingOpen =
+    Boolean(banking) && folderId === null && !openFile && !summaryOpen && searchParams.get("banking") === "1";
   const summaryFolders = useMemo(() => new Set(Object.keys(summaries)), [summaries]);
   useShareVisit(token, openFile?.id ?? null);
 
@@ -56,7 +61,7 @@ export function SharedRoom({
     return () => window.clearTimeout(timer);
   }, [copied]);
 
-  const go = (next: { folder?: string | null; file?: string | null; summary?: boolean }) => {
+  const go = (next: { folder?: string | null; file?: string | null; summary?: boolean; banking?: boolean }) => {
     setChecked(new Set());
     setQuery("");
     const folder = next.folder === undefined ? folderId : next.folder;
@@ -64,6 +69,7 @@ export function SharedRoom({
     if (folder) params.set("folder", folder);
     if (next.file) params.set("file", next.file);
     if (next.summary) params.set("summary", "1");
+    if (next.banking) params.set("banking", "1");
     const search = params.toString();
     router.push(search ? `${pathname}?${search}` : pathname, { scroll: false });
   };
@@ -219,6 +225,7 @@ export function SharedRoom({
                     }
                   : null
               }
+              banking={banking ? { open: bankingOpen, onOpen: () => go({ folder: null, banking: true }) } : null}
               onOpenFolder={(id) => go({ folder: id })}
               onOpenFile={(file) => go({ folder: file.folderId && index.folders.has(file.folderId) ? file.folderId : null, file: file.id })}
             />
@@ -233,6 +240,8 @@ export function SharedRoom({
         view={view}
         hasSummary={Boolean(summary)}
         links={summary?.links}
+        hasBanking={Boolean(banking) && folderId === null}
+        onOpenBanking={() => go({ folder: null, banking: true })}
         checked={checked}
         onCheckedChange={setChecked}
         thumbUrl={(fileId) => `${sharedFilePath(token, fileId)}?thumb=1`}
@@ -262,7 +271,20 @@ export function SharedRoom({
                     />
                   ),
                 }
-              : undefined
+              : bankingOpen
+                ? {
+                    name: "Banking Info",
+                    folderId: null,
+                    onClose: () => go({ folder: null }),
+                    content: (
+                      <SummaryPanel
+                        summary={{ content: banking }}
+                        onOpenFile={(fileId) => go({ file: fileId })}
+                        onOpenFolder={(id) => go({ folder: id })}
+                      />
+                    ),
+                  }
+                : undefined
         }
       />
     </div>

@@ -301,6 +301,17 @@ alter table data_room_summaries add constraint data_room_summaries_layout_check 
 alter table data_room_summaries drop constraint if exists data_room_summaries_pkey;
 create unique index if not exists data_room_summaries_place_idx on data_room_summaries (room_id, folder_id) nulls not distinct;
 
+-- Where to send a room's funds: the account's wire details at home and abroad
+-- and its stablecoin deposit address, shown as Banking Info at the top of the
+-- room, to members and public links alike. The shape is `RoomBanking` in
+-- src/features/data-room/banking.ts. Written by scripts/write-room-banking.mjs.
+create table if not exists data_room_banking (
+  room_id uuid primary key references data_rooms (id) on delete cascade,
+  details jsonb not null,
+  updated_at timestamptz not null default now(),
+  updated_by_email text not null
+);
+
 -- Public links to a room, one per recipient email (/shared/data-rooms/<token>),
 -- opened without a ZODE account. `email` is null only for the room-wide link
 -- that came before them. The token is the secret; revoking makes it 404.

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
+import { getRoomBanking } from "@/features/data-room/banking";
+import { BankingView } from "@/features/data-room/BankingView";
 import { DataRoomApp } from "@/features/data-room/DataRoomApp";
 import { RoomTabs } from "@/features/data-room/RoomTabs";
 import { ShareButton } from "@/features/data-room/ShareDialog";
@@ -29,11 +31,12 @@ export default async function DataRoomLayout({
   const { roomId } = await params;
   const { room, role, account } = await requireRoomRole(roomId);
   const isAdmin = role === "admin";
-  const [members, tree, summaries, links] = await Promise.all([
+  const [members, tree, summaries, links, banking] = await Promise.all([
     isAdmin ? listMembers(roomId) : [],
     getRoomTree(roomId),
     listSummaries(roomId),
     isAdmin ? listShareLinks(roomId) : [],
+    getRoomBanking(roomId),
   ]);
 
   return (
@@ -65,6 +68,7 @@ export default async function DataRoomLayout({
           isAdmin={isAdmin}
           tree={tree}
           summaries={renderSummaries(roomId, summaries)}
+          banking={banking ? <BankingView banking={banking} /> : null}
         >
           {children}
         </DataRoomApp>

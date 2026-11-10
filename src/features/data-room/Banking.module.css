@@ -1,0 +1,178 @@
+/* The room's Banking Info: one card with the account, a deposit method toggle and that method's details. */
+.banking {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 22px 24px 24px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-bg-elevated);
+}
+
+.account {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.eyebrow,
+.groupHeading {
+  margin: 0;
+  font-size: var(--caps-size);
+  font-weight: 600;
+  letter-spacing: var(--caps-tracking);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+}
+
+.accountName {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.accountNumber {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+}
+
+/* The deposit methods, as the share dialog's segmented control: the chosen one lifts out as a chip. */
+.modes {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: 10px;
+  background: var(--color-surface-tint);
+}
+
+.mode {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--color-text-tertiary);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-base) ease,
+    box-shadow var(--duration-base) ease,
+    color var(--duration-base) ease;
+}
+
+@media (hover: hover) {
+  .mode:hover {
+    color: var(--color-text-primary);
+  }
+}
+
+.mode:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
+.mode[aria-pressed="true"] {
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    0 1px 1px rgba(0, 0, 0, 0.04),
+    0 0 0 0.5px rgba(0, 0, 0, 0.06);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.groupHeading {
+  padding-bottom: 4px;
+}
+
+.fields {
+  margin: 0;
+}
+
+/* The label over its value, with the copy button level with them on the right. */
+.field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "label copy"
+    "value copy";
+  align-items: center;
+  column-gap: 16px;
+  row-gap: 2px;
+  padding: 10px 0;
+}
+
+.field + .field {
+  border-top: 1px solid var(--color-border);
+}
+
+.label {
+  grid-area: label;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.value {
+  grid-area: value;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--color-text-primary);
+}
+
+.value[data-mono] {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.copy {
+  grid-area: copy;
+  margin: 0;
+}
+
+.warning {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-control);
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.warning strong {
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mode {
+    transition: none;
+  }
+}

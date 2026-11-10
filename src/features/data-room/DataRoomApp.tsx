@@ -33,15 +33,18 @@ interface DataRoomAppProps {
   isAdmin: boolean;
   tree: RoomTree;
   summaries: RoomSummaries;
+  /** The room's Banking Info, pinned at the top level when it has one. */
+  banking: ReactNode | null;
   /** The open tab's page; every tab but Files shows it in the browser's place. */
   children: ReactNode;
 }
 
-/** Where the Files tab is: a folder, and maybe a file or the summary open over it. */
+/** Where the Files tab is: a folder, and maybe a file, the summary or Banking Info open over it. */
 interface Place {
   folderId: string | null;
   fileId: string | null;
   summary: boolean;
+  banking: boolean;
 }
 
 const placeHref = (base: string, place: Place): string => {
@@ -49,6 +52,7 @@ const placeHref = (base: string, place: Place): string => {
   if (place.folderId) params.set("folder", place.folderId);
   if (place.fileId) params.set("file", place.fileId);
   if (place.summary) params.set("summary", "1");
+  if (place.banking) params.set("banking", "1");
   const search = params.toString();
   return search ? `${base}?${search}` : base;
 };
@@ -57,22 +61,34 @@ const placeHref = (base: string, place: Place): string => {
 function placeOf(params: URLSearchParams, index: TreeIndex, files: Map<string, RoomFile>): Place {
   const file = files.get(params.get("file") ?? "");
   const folder = params.get("folder") ?? file?.folderId ?? null;
+  const summary = !file && params.get("summary") === "1";
   return {
     folderId: folder && index.folders.has(folder) ? folder : null,
     fileId: file?.id ?? null,
-    summary: !file && params.get("summary") === "1",
+    summary,
+    banking: !file && !summary && params.get("banking") === "1",
   };
 }
 
+const AT_ROOT: Place = { folderId: null, fileId: null, summary: false, banking: false };
+
 /**
  * The data room itself, as the public link shows it: a toolbar over the open
- * folder's files and folders, in Explorer's views, with a file or the summary
- * opening in their place. The place rides in the address (`?folder=`,
- * `?file=`, `?summary=1`) so Back steps out again; the other tabs show their
+ * folder's files and folders, in Explorer's views, with a file, the summary or
+ * Banking Info opening in their place. The place rides in the address (`?folder=`,
+ * `?file=`, `?summary=1`, `?banking=1`) so Back steps out again; the other tabs show their
  * page instead, and the place is kept for coming back to Files. Admins upload,
  * add folders, and rename, move or delete from here.
  */
-export function DataRoomApp({ roomId, roomName, isAdmin, tree, summaries, children }: DataRoomAppProps): ReactElement {
+export function DataRoomApp({
+  roomId,
+  roomName,
+  isAdmin,
+  tree,
+  summaries,
+  banking,
+  children,
+}: DataRoomAppProps): ReactElement {
   const index = useMemo(() => indexTree(tree), [tree]);
   const filesById = useMemo(() => new Map(tree.files.map((file) => [file.id, file])), [tree]);
 
@@ -83,7 +99,7 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summaries, childr
   const search = searchParams.toString();
 
   const [place, setPlace] = useState<Place>(() =>
-    onFiles ? placeOf(searchParams, index, filesById) : { folderId: null, fileId: null, summary: false },
+    onFiles ? placeOf(searchParams, index, filesById) : AT_ROOT,
   );
   const [checkedRaw, setChecked] = useState<Set<string>>(() => new Set());
   const [query, setQuery] = useState("");
@@ -125,6 +141,7 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summaries, childr
   const openFile = place.fileId ? (filesById.get(place.fileId) ?? null) : null;
   const summary = summaries[summaryKey(folderId)] ?? null;
   const summaryOpen = Boolean(summary) && !openFile && place.summary;
+  const bankingOpen = Boolean(banking) && folderId === null && !openFile && place.banking;
   const summaryFolders = useMemo(() => new Set(Object.keys(summaries)), [summaries]);
 
   // Drop selections whose items were deleted or moved out from under us.
@@ -158,9 +175,13 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summaries, childr
     else router.push(href);
   };
 
-  const openFolder = (id: string | null) => go({ folderId: id, fileId: null, summary: false });
+  const openFolder = (id: string | null) => go({ ...AT_ROOT, folderId: id });
 
-  const open = (file: RoomFile) => go({ folderId: file.folderId, fileId: file.id, summary: false });
+  const open = (file: RoomFile) => go({ ...AT_ROOT, folderId: file.folderId, fileId: file.id });
+
+  const openSummary = (id: string | null) => go({ ...AT_ROOT, folderId: id, summary: true });
+
+  const openBanking = () => go({ ...AT_ROOT, banking: true });
 
   const openById = (fileId: string) => {
     const file = filesById.get(fileId);
@@ -317,7 +338,7 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summaries, childr
               onChange={(event) => {
                 setQuery(event.target.value);
                 setChecked(new Set());
-                if (openFile || summaryOpen) go({ folderId, fileId: null, summary: false }, { keepQuery: true });
+                if (openFile || summaryOpen || bankingOpen) go({ ...AT_ROOT, folderId }, { keepQuery: true });
               }}
             />
           </label>
@@ -382,7 +403,7 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summaries, childr
         </p>
       ) : null}
 
-      {checked.size && !openFile && !summaryOpen ? (
+      {checked.size && !openFile && !summaryOpen && !bankingOpen ? (
         <div className={styles.selection}>
           <span className={styles.count}>
             {checked.size.toLocaleString()} selected · {formatBytes(checkedBytes(tree, index, checked))}
@@ -421,10 +442,11 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summaries, childr
                       folders: summaryFolders,
                       links: (key) => summaries[key]?.links ?? [],
                       open: onFiles && summaryOpen,
-                      onOpen: (id) => go({ folderId: id, fileId: null, summary: true }),
+                      onOpen: openSummary,
                     }
                   : null
               }
+              banking={banking ? { open: onFiles && bankingOpen, onOpen: openBanking } : null}
               onOpenFolder={openFolder}
               onOpenFile={open}
               admin={isAdmin ? { onAction: runAction, onDropFiles: startUpload, onMove: move } : undefined}
@@ -446,12 +468,14 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summaries, childr
             view={view}
             hasSummary={Boolean(summary)}
             links={summary?.links}
+            hasBanking={Boolean(banking) && folderId === null}
+            onOpenBanking={openBanking}
             checked={checked}
             onCheckedChange={setChecked}
             thumbUrl={(fileId) => `${fileUrl(fileId)}?thumb=1`}
             onOpenFolder={openFolder}
             onOpenFile={open}
-            onOpenSummary={() => go({ folderId, fileId: null, summary: true })}
+            onOpenSummary={() => openSummary(folderId)}
             admin={
               isAdmin
                 ? { onAction: runAction, onDropFiles: startUpload, onMove: move }
@@ -476,11 +500,18 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summaries, childr
                           key={summaryKey(folderId)}
                           summary={summary}
                           onOpenFile={openById}
-                          onOpenFolder={(id, withSummary) => go({ folderId: id, fileId: null, summary: withSummary })}
+                          onOpenFolder={(id, withSummary) => go({ ...AT_ROOT, folderId: id, summary: withSummary })}
                         />
                       ),
                     }
-                  : undefined
+                  : bankingOpen
+                    ? {
+                        name: "Banking Info",
+                        folderId: null,
+                        onClose: () => openFolder(null),
+                        content: <SummaryPanel summary={{ content: banking }} onOpenFile={openById} onOpenFolder={openFolder} />,
+                      }
+                    : undefined
             }
           />
 

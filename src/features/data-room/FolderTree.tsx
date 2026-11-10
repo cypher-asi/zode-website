@@ -20,6 +20,7 @@ import type { RoomLink } from "./Viewer";
 import styles from "./FolderTree.module.css";
 
 const ROOT_KEY = "root";
+const BANKING_KEY = "banking";
 const summaryRowKey = (folderId: string | null) => (folderId ? `summary:${folderId}` : "summary");
 const INDENT = 16;
 
@@ -27,6 +28,7 @@ type Row =
   | { kind: "root"; key: string; depth: number }
   | { kind: "summary"; key: string; depth: number; folderId: string | null }
   | { kind: "link"; key: string; depth: number; folderId: string | null; link: RoomLink }
+  | { kind: "banking"; key: string; depth: number; folderId: null }
   | { kind: "folder"; key: string; depth: number; id: string; name: string; parentId: string | null; hasChildren: boolean }
   | { kind: "file"; key: string; depth: number; file: RoomFile };
 
@@ -47,6 +49,8 @@ export interface FolderTreeProps {
     open: boolean;
     onOpen: (folderId: string | null) => void;
   } | null;
+  /** Pins a Banking Info row at the top level, after the summary's links; `open` when it's on show. */
+  banking?: { open: boolean; onOpen: () => void } | null;
   onOpenFolder: (folderId: string | null) => void;
   onOpenFile: (file: RoomFile) => void;
   /** Lets admins drag folders and files between folders, drop files in, and right-click to rename, move or delete. */
@@ -65,6 +69,7 @@ export function FolderTree({
   folderId,
   openFileId,
   summaries,
+  banking = null,
   onOpenFolder,
   onOpenFile,
   admin,
@@ -76,13 +81,15 @@ export function FolderTree({
   const [context, setContext] = useState<ItemContext | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const currentKey = summaries?.open
-    ? summaryRowKey(folderId)
-    : openFileId
-      ? fileKey(openFileId)
-      : folderId
-        ? folderKey(folderId)
-        : ROOT_KEY;
+  const currentKey = banking?.open
+    ? BANKING_KEY
+    : summaries?.open
+      ? summaryRowKey(folderId)
+      : openFileId
+        ? fileKey(openFileId)
+        : folderId
+          ? folderKey(folderId)
+          : ROOT_KEY;
 
   // Whatever opens in the browser, from here or anywhere else, has its folders unfolded.
   const [seen, setSeen] = useState({ currentKey, chain });
@@ -95,6 +102,7 @@ export function FolderTree({
     listRef.current?.querySelector(`[data-key="${currentKey}"]`)?.scrollIntoView({ block: "nearest" });
   }, [currentKey]);
 
+  const hasBanking = Boolean(banking);
   const rows = useMemo(() => {
     const list: Row[] = [{ kind: "root", key: ROOT_KEY, depth: 0 }];
     const walk = (parent: string | null, depth: number) => {
@@ -104,6 +112,7 @@ export function FolderTree({
           list.push({ kind: "link", key: `link:${summaryKey(parent)}:${link.href}`, depth, folderId: parent, link });
         }
       }
+      if (parent === null && hasBanking) list.push({ kind: "banking", key: BANKING_KEY, depth, folderId: null });
       for (const folder of index.childFolders.get(parent) ?? []) {
         list.push({
           kind: "folder",
@@ -124,7 +133,7 @@ export function FolderTree({
     };
     walk(null, 1);
     return list;
-  }, [index, expanded, summaries]);
+  }, [index, expanded, summaries, hasBanking]);
 
   const fileParents = useMemo(
     () => new Map([...index.childFiles].flatMap(([parent, files]) => files.map((file) => [file.id, parent] as const))),
@@ -143,6 +152,7 @@ export function FolderTree({
   const activate = (row: Row) => {
     if (row.kind === "root") onOpenFolder(null);
     else if (row.kind === "summary") summaries?.onOpen(row.folderId);
+    else if (row.kind === "banking") banking?.onOpen();
     else if (row.kind === "link") window.open(row.link.href, "_blank", "noopener");
     else if (row.kind === "folder") onOpenFolder(row.id);
     else onOpenFile(row.file);
@@ -265,7 +275,9 @@ export function FolderTree({
             ? rootName
             : row.kind === "summary"
               ? "Summary"
-              : row.kind === "link"
+              : row.kind === "banking"
+                ? "Banking Info"
+                : row.kind === "link"
                 ? row.link.name
                 : row.kind === "folder"
                   ? row.name
@@ -311,6 +323,8 @@ export function FolderTree({
               <FileGlyph kind="pptx" className={styles.fileGlyph} />
             ) : row.kind === "summary" ? (
               <Icon name="summary" className={styles.summaryGlyph} />
+            ) : row.kind === "banking" ? (
+              <Icon name="bank" className={styles.summaryGlyph} />
             ) : (
               <Icon name="folder" className={styles.folder} />
             )}

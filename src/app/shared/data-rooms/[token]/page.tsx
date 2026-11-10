@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Suspense, type ReactElement } from "react";
 import { notFound } from "next/navigation";
 import { getAccount } from "@/features/account/session";
+import { getRoomBanking } from "@/features/data-room/banking";
+import { BankingView } from "@/features/data-room/BankingView";
 import { getRoomTree, osHrefFor, sharedMapSrc } from "@/features/data-room/rooms";
 import { roomByShareToken } from "@/features/data-room/shareLinks";
 import { SharedRoom } from "@/features/data-room/SharedRoom";
@@ -34,14 +36,25 @@ async function Room({
   const { token } = await params;
   const room = await roomByShareToken(token);
   if (!room) notFound();
-  const [tree, summaries, account] = await Promise.all([getRoomTree(room.id), listSummaries(room.id), getAccount()]);
+  const [tree, summaries, account, banking] = await Promise.all([
+    getRoomTree(room.id),
+    listSummaries(room.id),
+    getAccount(),
+    getRoomBanking(room.id),
+  ]);
   return (
     <SharedRoom
       token={token}
       roomName={room.name}
       tree={tree}
       osHref={await osHrefFor(room.id, account?.userId ?? null)}
-      summaries={renderSummaries(room.id, summaries, (site) => sharedMapSrc(token, site))}
+      summaries={renderSummaries(
+        room.id,
+        summaries,
+        (site) => sharedMapSrc(token, site),
+        `/deck?room=${encodeURIComponent(token)}`,
+      )}
+      banking={banking ? <BankingView banking={banking} /> : null}
     />
   );
 }
