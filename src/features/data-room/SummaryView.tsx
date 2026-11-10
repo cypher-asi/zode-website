@@ -18,6 +18,8 @@ import {
 } from "./summary";
 import { CapitalStack, type CapitalSource, type Payout } from "./CapitalStack";
 import { Icon } from "./icons";
+import type { MasterSite } from "./master";
+import { monthYear as isoMonth } from "./masterFormat";
 import { siteMapSrc } from "./rooms";
 import { SiteMap } from "./SiteMap";
 import {
@@ -25,10 +27,14 @@ import {
   DiligenceList,
   diligenceLede,
   diligenceRows,
+  FolderLink,
   KeyFigures,
+  ModelLink,
   plural,
   Prose,
+  Section,
   Sources,
+  TermGroup,
   TermGroups,
   type Figure,
   type KeyFigure,
@@ -702,12 +708,162 @@ function Site({ roomId, site, mapSrc }: { roomId: string; site: RoomSite; mapSrc
   );
 }
 
+const andList = (names: string[]) =>
+  names.length < 3 ? names.join(" and ") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+
+/** The site's facility power by diligence, then what it could grow to. */
+function diligencePower(summary: Summary): KeyFigure[] {
+  const e = summary.economics;
+  const deal = summary.kind === "purchase" ? summary.economics.deal : undefined;
+  return [
+    ...(deal ? [{ label: "Facility power, by diligence", value: mw(deal.facilityPower.mw), estimate: deal.facilityPower.estimate }] : []),
+    ...(e.futurePower ? [{ label: "Future potential", value: mw(e.futurePower.mw), estimate: e.futurePower.estimate }] : []),
+  ];
+}
+
+/**
+ * An owned site's summary when the room has a master model: the site's own
+ * costs, capacity and rent from its SPV's tab beside the diligence answers.
+ * The model gives revenue, debt, equity and returns for the SPV as a whole,
+ * so those are its figures, for every site in it together.
+ */
+function MasterSiteSummary({
+  roomId,
+  summary,
+  master: s,
+  mapSrc,
+}: {
+  roomId: string;
+  summary: Summary;
+  master: MasterSite;
+  mapSrc?: string | null;
+}): ReactElement {
+  const { spv, blocks, purchasePrice: price } = s;
+  const conversion = s.conversionPerMw * s.mw;
+  const rentPerYear = s.rentPerKwMonth * s.mw * 1000 * 12;
+  const others = spv.sites.filter((name) => name !== s.name);
+  const local = price.local !== null && price.currency ? usdShort(price.local).replace("$", price.currency) : undefined;
+  const inService =
+    blocks.length > 1
+      ? `${isoMonth(blocks[0].inService)} to ${isoMonth(blocks.at(-1)!.inService)}`
+      : blocks.length
+        ? isoMonth(blocks[0].inService)
+        : "";
+  const together = `${spv.name} SPV, ${andList(spv.sites)} together`;
+  const spvLink = spv.folderId ? (
+    <FolderLink roomId={roomId} folderId={spv.folderId} summary>
+      {spv.name} deployment summary
+    </FolderLink>
+  ) : null;
+
+  const keyFigures: KeyFigure[] = [
+    { label: "Critical IT", value: mw(s.mw) },
+    { label: "Purchase price", value: usdShort(price.usd) },
+    { label: "Conversion", value: usdShort(conversion) },
+    { label: "Site cost", value: usdShort(s.siteCost) },
+    { label: "First block in service", value: blocks.length ? isoMonth(blocks[0].inService) : "n.a." },
+    { label: "Rent at full build", value: `${usdShort(rentPerYear)} / yr` },
+    { label: `${spv.name} SPV unlevered IRR`, value: irr(spv.unleveredIrr) },
+    { label: `${spv.name} SPV peak equity`, value: usdShort(spv.peakEquity) },
+  ];
+  const items = diligenceRows(summary.diligence);
+
+  return (
+    <div className={styles.summary}>
+      {summary.site ? <Site roomId={roomId} site={summary.site} mapSrc={mapSrc} /> : null}
+      <div className={styles.columns}>
+        <Section
+          id="economics"
+          title="Economics"
+          action={<ModelLink roomId={roomId} fileId={s.model.fileId} path={s.model.path} live={summary.sourceNames.has(s.model.fileId)} />}
+        >
+          <p className={styles.lede}>
+            {s.name} is bought for {usdShort(price.usd)}
+            {local ? ` (${local})` : ""}, closing {isoMonth(s.closes)}, and converted to {mw(s.mw)} of critical IT in{" "}
+            {plural(blocks.length, "block", "blocks")}, in service {inService}. It&apos;s part of the {spv.name} SPV
+            {others.length ? ` with ${andList(others)}` : ""}, whose revenue, debt, equity and returns the model gives for{" "}
+            {others.length ? "its sites together" : "the SPV"}
+            {spvLink ? <>; see the {spvLink}</> : null}.
+          </p>
+          <KeyFigures figures={keyFigures} />
+        </Section>
+
+        <div className={styles.stack}>
+          <Section id="power" title="Power">
+            <KeyFigures figures={[{ label: "Critical IT in the model", value: mw(s.mw) }, ...diligencePower(summary)]} />
+          </Section>
+
+          <section className={styles.section} aria-labelledby="diligence-heading">
+            <DiligenceHead id="diligence-heading" title="Diligence" items={items} names={summary.sourceNames} />
+            <p className={styles.lede}>{diligenceLede(items.map(({ item }) => item.status))}</p>
+            <DiligenceList roomId={roomId} items={items} names={summary.sourceNames} />
+          </section>
+        </div>
+      </div>
+
+      <Section id="site-figures" title="Site figures">
+        <div className={styles.dealGroups}>
+          <TermGroup
+            title="Acquisition"
+            terms={[
+              { label: "Purchase price", value: usdShort(price.usd, 2), note: local },
+              { label: "Deposit", value: usdShort(s.deposit, 2), note: "Credited to the price" },
+              {
+                label: "Price balance and closing",
+                value: usdShort(s.balanceAndClosing, 2),
+                note: "The price after the deposit, with the site's share of closing and transaction costs",
+              },
+              { label: "Closing", value: isoMonth(s.closes) },
+              ...(s.reEnergization !== null ? [{ label: "Re-energization", value: usdShort(s.reEnergization, 2) }] : []),
+            ]}
+          />
+          <TermGroup
+            title="Conversion and rent"
+            terms={[
+              { label: "Conversion", value: usdShort(conversion), note: `${usdShort(s.conversionPerMw, 2)} / MW of critical IT` },
+              { label: "Rent", value: perKwMonth(s.rentPerKwMonth), note: "Paid by the compute companies to the site company" },
+              { label: "Rent at full build", value: `${usdShort(rentPerYear)} / yr`, note: "Before escalation" },
+              { label: "Site cost", value: usdShort(s.siteCost), note: "Deposit, price balance and closing, re-energization and conversion" },
+            ]}
+          />
+          <TermGroup
+            title="Blocks"
+            terms={blocks.map((b) => ({ label: b.name, value: mw(b.mw), note: `In service ${isoMonth(b.inService)}` }))}
+          />
+          <TermGroup
+            title={together}
+            terms={[
+              { label: "Critical IT", value: mw(spv.mw) },
+              { label: "Total site cost", value: usdShort(spv.siteCost), note: `With ${usdShort(spv.preDevelopment, 2)} of shared pre-development` },
+              { label: "Revenue, every year modelled", value: usdShort(spv.revenue) },
+              { label: "EBITDA, every year modelled", value: usdShort(spv.ebitda) },
+              {
+                label: "Peak equity",
+                value: usdShort(spv.peakEquity),
+                note: `${usdShort(spv.zodeEquity)} ZODE Inc., ${usdShort(spv.thirdPartyPref)} third-party preferred`,
+              },
+              { label: "Peak debt", value: usdShort(spv.peakDebt) },
+              { label: "Unlevered project IRR", value: irr(spv.unleveredIrr), note: "Including book value at the end of the model" },
+              { label: "First month in service", value: isoMonth(spv.firstInService) },
+            ]}
+          />
+        </div>
+      </Section>
+
+      <p className={styles.assumptions}>
+        {s.model.name}. {s.model.prepared} Planning estimates, not an offer or investment advice.
+      </p>
+    </div>
+  );
+}
+
 /**
  * The deal at a glance: a line and four numbers from the standard compute
  * model, or eight summarizing the deal terms when the room has them, beside the
  * diligence answers, confirmed first; the deal terms follow in full. Every
  * figure's reasoning, the model's assumptions and each answer's sources sit
- * behind a disclosure.
+ * behind a disclosure. With the room's master model, the site's figures come
+ * from it instead.
  */
 export function SummaryView({
   roomId,
@@ -719,6 +875,7 @@ export function SummaryView({
   /** The public browser passes its own map URL. Unset, the member map route. */
   mapSrc?: string | null;
 }): ReactElement {
+  if (summary.master) return <MasterSiteSummary roomId={roomId} summary={summary} master={summary.master} mapSrc={mapSrc} />;
   const e = summary.economics;
   const deal = summary.kind === "purchase" ? summary.economics.deal : undefined;
   const lease = summary.kind !== "purchase" ? summary.economics : undefined;

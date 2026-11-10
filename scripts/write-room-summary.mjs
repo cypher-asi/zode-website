@@ -59,6 +59,10 @@
  * Sources are paths inside the room, such as "05 Power and Electrical/04 .../file.pdf";
  * each must name one live file, and is stored with that file's id so later
  * renames and moves keep the link.
+ *
+ * A rewrite keeps the site's figures from a master model
+ * (scripts/write-master-summary.mjs), which the summary shows in place of
+ * the compute model's.
  */
 import { readFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
@@ -386,7 +390,13 @@ await sql`
   insert into data_room_summaries (room_id, diligence, economics, updated_by_email)
   values (${args.room}, ${JSON.stringify(diligence)}::jsonb, ${JSON.stringify(economics)}::jsonb, ${args.as.trim().toLowerCase()})
   on conflict (room_id, folder_id) do update
-    set diligence = excluded.diligence, economics = excluded.economics, layout = 'site', kind = null,
+    set diligence = excluded.diligence,
+        economics = case
+          when data_room_summaries.economics ? 'master'
+            then jsonb_set(excluded.economics, '{master}', data_room_summaries.economics -> 'master')
+          else excluded.economics
+        end,
+        layout = 'site', kind = null,
         updated_at = now(), updated_by_email = excluded.updated_by_email
 `;
 console.log(`[summary] wrote the summary for "${room.name}" to ${new URL(databaseUrl).hostname}.`);

@@ -275,18 +275,19 @@ create table if not exists data_room_summaries (
 
 -- A summary can also sit in a folder, such as a site's room copied into a
 -- portfolio room, where it opens first among the folder's items. `kind`, when
--- set, is the site's own kind rather than the room's. A portfolio summary
--- holds a model's results across sites in `economics`, read from the workbook
--- by scripts/write-portfolio-summary.mjs, and leaves `diligence` to the sites'
--- folder summaries. A TopCo summary holds the company's raise and its project
--- SPVs, read from the TopCo workbook by scripts/write-topco-summary.mjs. A colo
--- summary holds one deployment of a Colo workbook, read by
--- scripts/write-colo-summary.mjs.
+-- set, is the site's own kind rather than the room's. A master summary, at the
+-- top of the room, holds the company's raise, its project SPVs and the
+-- consolidated statement from ZODE's master model, and a deployment summary
+-- one SPV's tab of it, in that project's folder; both leave `diligence` empty.
+-- A site summary's `economics.master` holds the site's own figures from the
+-- model. All three are read from the workbook by scripts/write-master-summary.mjs,
+-- which replaced the per-project workbooks' portfolio, TopCo and colo summaries.
 alter table data_room_summaries add column if not exists folder_id uuid references data_room_folders (id) on delete cascade;
 alter table data_room_summaries add column if not exists kind text check (kind in ('purchase', 'lease', 'colo'));
 alter table data_room_summaries add column if not exists layout text not null default 'site';
 alter table data_room_summaries drop constraint if exists data_room_summaries_layout_check;
-alter table data_room_summaries add constraint data_room_summaries_layout_check check (layout in ('site', 'portfolio', 'topco', 'colo'));
+delete from data_room_summaries where layout not in ('site', 'master', 'deployment');
+alter table data_room_summaries add constraint data_room_summaries_layout_check check (layout in ('site', 'master', 'deployment'));
 alter table data_room_summaries drop constraint if exists data_room_summaries_pkey;
 create unique index if not exists data_room_summaries_place_idx on data_room_summaries (room_id, folder_id) nulls not distinct;
 

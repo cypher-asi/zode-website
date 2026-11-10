@@ -11,8 +11,104 @@ import {
   type DiligenceStatus,
 } from "./summary";
 import styles from "./Summary.module.css";
+import t from "./Tables.module.css";
 
 export const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+export function Section({ id, title, action, children }: { id: string; title: string; action?: ReactNode; children: ReactNode }) {
+  return (
+    <section className={styles.section} aria-labelledby={`${id}-heading`}>
+      <div className={styles.sectionHead}>
+        <h2 id={`${id}-heading`} className={styles.heading}>
+          {title}
+        </h2>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/** Links that open in the room's browser: a folder, or the summary in it. */
+export function FolderLink({
+  roomId,
+  folderId,
+  summary = false,
+  children,
+}: {
+  roomId: string;
+  folderId: string;
+  summary?: boolean;
+  children: ReactNode;
+}): ReactElement {
+  return (
+    <Link
+      href={`/portal/data-rooms/${roomId}?folder=${folderId}${summary ? "&summary=1" : ""}`}
+      data-folder-id={folderId}
+      data-summary={summary ? "" : undefined}
+    >
+      {children}
+    </Link>
+  );
+}
+
+/** A section's link to the workbook its figures come from, when it's still in the room. */
+export function ModelLink({ roomId, fileId, path, live }: { roomId: string; fileId: string; path: string; live: boolean }) {
+  if (!live) return null;
+  return (
+    <Link href={`/portal/data-rooms/${roomId}?file=${fileId}`} data-file-id={fileId} className={styles.modelLink} title={path}>
+      Model
+      <Icon name="external" />
+    </Link>
+  );
+}
+
+export interface TableRow {
+  label: string;
+  values: ReactNode[];
+  kind?: "subtotal";
+  /** Part of the row above it. */
+  indent?: boolean;
+}
+
+/** Rows of values under shared column headings. */
+export function Table({ head, groups }: { head: string[]; groups: { title?: string; rows: TableRow[] }[] }): ReactElement {
+  return (
+    <div className={t.scroll}>
+      <table className={t.table}>
+        <thead>
+          <tr>
+            <td />
+            {head.map((h) => (
+              <th key={h} scope="col" className={t.colHead}>
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        {groups.map((group, g) => (
+          <tbody key={group.title || g}>
+            {group.title ? (
+              <tr className={t.groupRow}>
+                <th scope="colgroup" colSpan={head.length + 1}>
+                  {group.title}
+                </th>
+              </tr>
+            ) : null}
+            {group.rows.map((row) => (
+              <tr key={row.label} className={row.kind === "subtotal" ? t.subtotal : row.indent ? t.indent : undefined}>
+                <th scope="row">{row.label}</th>
+                {row.values.map((v, i) => (
+                  <td key={i}>{v}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        ))}
+      </table>
+    </div>
+  );
+}
 
 /** Diligence rows lead with what the room confirms. */
 const STATUS_ORDER: DiligenceStatus[] = ["confirmed", "claimed", "gap", "risk"];

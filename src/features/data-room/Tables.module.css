@@ -1,4 +1,4 @@
-/* A portfolio summary's tables: sites side by side, and the model's stored runs. */
+/* A summary's tables: SPVs side by side, and the model's figures year by year. */
 .scroll {
   overflow-x: auto;
 }
@@ -110,22 +110,6 @@
 
 .labelColumn {
   width: 16em;
-}
-
-/* A value given layer by layer, such as a site company's and its compute companies'. */
-.layer {
-  display: block;
-}
-
-.layer + .layer {
-  margin-top: 8px;
-}
-
-.layerName {
-  display: block;
-  font-size: var(--text-xs);
-  font-weight: 400;
-  color: var(--color-text-tertiary);
 }
 
 .table a {

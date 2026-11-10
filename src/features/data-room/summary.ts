@@ -9,10 +9,8 @@ import {
 } from "@/features/compute-model/model/engine";
 import { DEFAULT_INPUTS, type ModelInputs } from "@/features/compute-model/model/inputs";
 import { writeInputParams } from "@/features/compute-model/model/url";
-import type { ColoModel } from "./colo";
-import type { PortfolioModel, PortfolioSite } from "./portfolio";
+import type { DeploymentModel, MasterModel, MasterSite } from "./master";
 import { toRoomSite } from "./rooms";
-import type { TopCoModel } from "./topco";
 import type { RoomSite } from "./types";
 
 /** The diligence questions every room's summary answers, in display order. */
@@ -296,49 +294,40 @@ export async function hasDiligenceSummary(roomId: string): Promise<boolean> {
 /**
  * A site's summary. `sourceNames` maps each cited file that is still live to
  * its current name; `site` is the room's address, when it has one, for the
- * room's own summary.
+ * room's own summary. `master` is the site's own figures from the room's
+ * master model, which take the place of the compute model's.
  */
 export type SiteSummary = DiligenceSummary & {
   layout: "site";
   folderId: string | null;
   sourceNames: Map<string, string>;
   site: RoomSite | null;
+  master: MasterSite | null;
 };
 
-/** A model's results across sites, each beside its folder's site summary when it has one. */
-export interface PortfolioSummary {
-  layout: "portfolio";
+/** The company's raise, its project SPVs and the consolidated statement, from the room's master model. */
+export interface MasterSummary {
+  layout: "master";
   folderId: string | null;
-  model: PortfolioModel;
-  sites: { site: PortfolioSite; summary: SiteSummary | null }[];
+  model: MasterModel;
+  /** Folders in the room with a deployment summary. */
+  deploymentSummaries: Set<string>;
   updatedAt: string;
   updatedBy: string;
   sourceNames: Map<string, string>;
 }
 
-/** The company's raise and its project SPVs, each beside its folder when that has a summary of its own. */
-export interface TopCoSummary {
-  layout: "topco";
+/** One project SPV's tab of the room's master model. */
+export interface DeploymentSummary {
+  layout: "deployment";
   folderId: string | null;
-  model: TopCoModel;
-  /** Project folders in the room with a summary. */
-  projectSummaries: Set<string>;
+  model: DeploymentModel;
   updatedAt: string;
   updatedBy: string;
   sourceNames: Map<string, string>;
 }
 
-/** One deployment of a colo model: GPU compute companies in leased colocation space, beside the program it's pooled in. */
-export interface ColoSummary {
-  layout: "colo";
-  folderId: string | null;
-  model: ColoModel;
-  updatedAt: string;
-  updatedBy: string;
-  sourceNames: Map<string, string>;
-}
-
-export type LoadedSummary = SiteSummary | PortfolioSummary | TopCoSummary | ColoSummary;
+export type LoadedSummary = SiteSummary | MasterSummary | DeploymentSummary;
 
 /**
  * Every summary in the room: its own, at the top level, and any in its folders,
@@ -355,20 +344,17 @@ export async function listSummaries(roomId: string): Promise<LoadedSummary[]> {
   `;
   if (!rows.length) return [];
 
-  const sites: (DiligenceSummary & { folderId: string | null; site: RoomSite | null })[] = [];
-  const portfolios: { folderId: string | null; model: PortfolioModel; updatedAt: string; updatedBy: string }[] = [];
-  const topcos: { folderId: string | null; model: TopCoModel; updatedAt: string; updatedBy: string }[] = [];
-  const colos: { folderId: string | null; model: ColoModel; updatedAt: string; updatedBy: string }[] = [];
+  const sites: (DiligenceSummary & { folderId: string | null; site: RoomSite | null; master: MasterSite | null })[] = [];
+  const masters: { folderId: string | null; model: MasterModel; updatedAt: string; updatedBy: string }[] = [];
+  const deployments: { folderId: string | null; model: DeploymentModel; updatedAt: string; updatedBy: string }[] = [];
   for (const row of rows) {
     const folderId = row.folder_id == null ? null : String(row.folder_id);
     const updatedAt = new Date(row.updated_at as string).toISOString();
     const updatedBy = String(row.updated_by_email);
-    if (row.layout === "portfolio") {
-      portfolios.push({ folderId, model: row.economics as PortfolioModel, updatedAt, updatedBy });
-    } else if (row.layout === "topco") {
-      topcos.push({ folderId, model: row.economics as TopCoModel, updatedAt, updatedBy });
-    } else if (row.layout === "colo") {
-      colos.push({ folderId, model: row.economics as ColoModel, updatedAt, updatedBy });
+    if (row.layout === "master") {
+      masters.push({ folderId, model: row.economics as MasterModel, updatedAt, updatedBy });
+    } else if (row.layout === "deployment") {
+      deployments.push({ folderId, model: row.economics as DeploymentModel, updatedAt, updatedBy });
     } else {
       sites.push({
         kind: row.kind,
@@ -378,13 +364,18 @@ export async function listSummaries(roomId: string): Promise<LoadedSummary[]> {
         updatedBy,
         folderId,
         site: folderId ? null : toRoomSite(row),
-      } as DiligenceSummary & { folderId: string | null; site: RoomSite | null });
+        master: (row.economics as { master?: MasterSite }).master ?? null,
+      } as DiligenceSummary & { folderId: string | null; site: RoomSite | null; master: MasterSite | null });
     }
   }
 
   const ids = [
-    ...sites.flatMap((s) => [...Object.values(s.diligence).flatMap((item) => item.sources), ...economicsSources(s)]),
-    ...[...portfolios, ...topcos, ...colos].map((p) => ({ fileId: p.model.model.fileId })),
+    ...sites.flatMap((s) => [
+      ...Object.values(s.diligence).flatMap((item) => item.sources),
+      ...economicsSources(s),
+      ...(s.master ? [{ fileId: s.master.model.fileId }] : []),
+    ]),
+    ...[...masters, ...deployments].map((p) => ({ fileId: p.model.model.fileId })),
   ].map((source) => source.fileId);
   const files = ids.length
     ? await sql`
@@ -394,27 +385,11 @@ export async function listSummaries(roomId: string): Promise<LoadedSummary[]> {
     : [];
   const sourceNames = new Map(files.map((f) => [String(f.id), String(f.name)]));
 
-  const siteSummaries: SiteSummary[] = sites.map((s) => ({ ...s, layout: "site", sourceNames }));
-  const byFolder = new Map(siteSummaries.map((s) => [s.folderId, s]));
+  const deploymentSummaries = new Set(deployments.flatMap((d) => (d.folderId ? [d.folderId] : [])));
   return [
-    ...siteSummaries,
-    ...portfolios.map(
-      (p): PortfolioSummary => ({
-        ...p,
-        layout: "portfolio",
-        sites: p.model.sites.map((site) => ({ site, summary: site.folderId ? (byFolder.get(site.folderId) ?? null) : null })),
-        sourceNames,
-      }),
-    ),
-    ...topcos.map(
-      (t): TopCoSummary => ({
-        ...t,
-        layout: "topco",
-        projectSummaries: new Set(rows.flatMap((row) => (row.folder_id == null ? [] : [String(row.folder_id)]))),
-        sourceNames,
-      }),
-    ),
-    ...colos.map((c): ColoSummary => ({ ...c, layout: "colo", sourceNames })),
+    ...sites.map((s): SiteSummary => ({ ...s, layout: "site", sourceNames })),
+    ...masters.map((m): MasterSummary => ({ ...m, layout: "master", deploymentSummaries, sourceNames })),
+    ...deployments.map((d): DeploymentSummary => ({ ...d, layout: "deployment", sourceNames })),
   ];
 }
 

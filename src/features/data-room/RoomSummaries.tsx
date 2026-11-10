@@ -1,8 +1,7 @@
-import { ColoSummaryView } from "./ColoSummaryView";
-import { PortfolioSummaryView } from "./PortfolioSummaryView";
+import { DeploymentSummaryView } from "./DeploymentSummaryView";
+import { MasterSummaryView } from "./MasterSummaryView";
 import type { LoadedSummary } from "./summary";
 import { SummaryView } from "./SummaryView";
-import { TopCoSummaryView } from "./TopCoSummaryView";
 import { summaryKey } from "./tree";
 import type { RoomSite } from "./types";
 import type { RoomLink, RoomSummaries } from "./Viewer";
@@ -12,9 +11,9 @@ const DECK: RoomLink = { name: "Deck", href: "/deck" };
 
 /**
  * A room's summaries rendered for its browser, by the folder each sits in.
- * A company or portfolio summary at the top of the room is followed by the
- * investor deck. `mapSrc` serves a site's satellite preview where the
- * portal's own route can't.
+ * A company summary at the top of the room is followed by the investor deck.
+ * `mapSrc` serves a site's satellite preview where the portal's own route
+ * can't.
  */
 export function renderSummaries(
   roomId: string,
@@ -26,12 +25,10 @@ export function renderSummaries(
       summaryKey(summary.folderId),
       {
         content:
-          summary.layout === "topco" ? (
-            <TopCoSummaryView roomId={roomId} summary={summary} />
-          ) : summary.layout === "portfolio" ? (
-            <PortfolioSummaryView roomId={roomId} summary={summary} />
-          ) : summary.layout === "colo" ? (
-            <ColoSummaryView roomId={roomId} summary={summary} />
+          summary.layout === "master" ? (
+            <MasterSummaryView roomId={roomId} summary={summary} />
+          ) : summary.layout === "deployment" ? (
+            <DeploymentSummaryView roomId={roomId} summary={summary} />
           ) : (
             <SummaryView
               roomId={roomId}
@@ -39,7 +36,7 @@ export function renderSummaries(
               mapSrc={summary.site && mapSrc ? mapSrc(summary.site) : undefined}
             />
           ),
-        links: summary.layout !== "site" && summary.folderId === null ? [DECK] : [],
+        links: summary.layout === "master" && summary.folderId === null ? [DECK] : [],
       },
     ]),
   );
