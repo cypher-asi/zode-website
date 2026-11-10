@@ -25,6 +25,14 @@
  * from the older per-project workbooks (TopCo, portfolio, colo) are replaced.
  * `--file` reads the workbook from disk instead of the room, for a dry run
  * before it's uploaded.
+ *
+ * The summaries stop at December of `--through` (2030 unless given), though
+ * the model runs further: its yearly tables keep the years to then and add up
+ * only those, and each SPV's peak debt and unlevered IRR are worked out from
+ * its monthly build to then, the IRR taking book value at that month the way
+ * the model takes it at its last. Each is checked against the workbook's own
+ * figure over the whole build first, and equity raised after the cut fails
+ * the run, since peak equity is the workbook's.
  */
 import { readFile, writeFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
@@ -39,6 +47,7 @@ const { values: args } = parseArgs({
     deployment: { type: "string", multiple: true, default: [] },
     site: { type: "string", multiple: true, default: [] },
     file: { type: "string" },
+    through: { type: "string", default: "2030" },
     as: { type: "string", default: "n3o@zero.tech" },
     out: { type: "string" },
     "dry-run": { type: "boolean", default: false },
@@ -53,6 +62,8 @@ const fail = (message) => {
 if (!args.room) fail("--room is required.");
 if (!args.model) fail("--model is required (the workbook's path in the room).");
 if (args.file && !args["dry-run"]) fail("--file is for a dry run; upload the workbook to the room to write from it.");
+if (!/^\d{4}$/.test(args.through)) fail(`--through ${args.through}: expected a year, such as 2030.`);
+const THROUGH = Number(args.through);
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) fail("DATABASE_URL is not set.");
 if (!args.file && !process.env.BLOB_READ_WRITE_TOKEN) fail("BLOB_READ_WRITE_TOKEN is not set.");
@@ -261,9 +272,22 @@ const openItems = section("Open items");
  */
 const SUBTOTALS = new Set(["Total revenue", "Gross profit", "EBITDA", "Net income (pre-tax)", "Operating cash flow", "Free cash flow", "Net cash flow"]);
 function yearTable(sheet, header, end, titles) {
-  const columns = sheet.columnsOf(header).filter((col) => !["A", "B", "C", "D"].includes(col));
+  const allColumns = sheet.columnsOf(header).filter((col) => !["A", "B", "C", "D"].includes(col));
   if (text(sheet.cell(header, "D")) !== "Total") fail(`${sheet.name}: expected "Total" in D${header}.`);
+  const yearOf = (col) => Number(/(\d{4})$/.exec(text(sheet.cell(header, col)))?.[1]);
+  const columns = allColumns.filter((col) => yearOf(col) <= THROUGH);
+  if (!columns.length || yearOf(columns.at(-1)) !== THROUGH) fail(`${sheet.name}: no ${THROUGH} column in the yearly table at row ${header}.`);
   const years = columns.map((col) => text(sheet.cell(header, col)));
+  const sumOf = (r, cols) => cols.reduce((total, col) => total + (maybe(sheet.cell(r, col)) ?? 0), 0);
+  /** The row's total over the years kept, once the workbook's total is seen to be the sum of all of them. */
+  const totalOf = (r) => {
+    const total = maybe(sheet.cell(r, "D"));
+    if (total === null) return null;
+    if (Math.abs(sumOf(r, allColumns) - total) > Math.max(1, Math.abs(total) * 1e-6)) {
+      fail(`${sheet.name}: "${sheet.label(r)}" totals ${total}, not the sum of its years, so it can't be cut at ${THROUGH}.`);
+    }
+    return sumOf(r, columns);
+  };
   const runs = [];
   let previous = header;
   for (const r of sheet.rowsBetween(header, end)) {
@@ -286,7 +310,7 @@ function yearTable(sheet, header, end, titles) {
           return {
             label: label.replace(/\s*\(Dec\)$/, ", December"),
             values: columns.map((col) => maybe(sheet.cell(r, col)) ?? 0),
-            total: maybe(sheet.cell(r, "D")),
+            total: totalOf(r),
             unit,
             ...(SUBTOTALS.has(label) ? { kind: "subtotal" } : {}),
             ...(indent ? { indent: true } : {}),
@@ -320,30 +344,89 @@ const statement = yearTable(summarySheet, summarySheet.rowOf("Year", consolidate
   "Cash flow and balances",
 ]);
 
+/** An annualized IRR of monthly cash flows, by bisection on the monthly rate. */
+function annualIrr(flows) {
+  const npv = (rate) => flows.reduce((total, flow, i) => total + flow / (1 + rate) ** i, 0);
+  let [low, high] = [-0.99, 1];
+  if (npv(low) * npv(high) > 0) return null;
+  for (let i = 0; i < 200; i += 1) {
+    const mid = (low + high) / 2;
+    if (npv(mid) * npv(low) > 0) low = mid;
+    else high = mid;
+  }
+  return (1 + (low + high) / 2) ** 12 - 1;
+}
+
+/**
+ * An SPV tab's peak debt and unlevered IRR to December of `THROUGH`, from its
+ * monthly build: the last "debt outstanding" row, and the last unlevered cash
+ * flow with the book value of its assets added at the cut. Both are first
+ * worked out over the whole build and checked against the tab's key figures.
+ */
+function cutAt(sheet) {
+  const build = sheet.rowOf("MONTHLY BUILD");
+  const header = sheet.rowOf("Month", build);
+  const columns = sheet.columnsOf(header).filter((col) => !["A", "B", "C", "D"].includes(col));
+  const months = columns.map((col) => isoDate(num(sheet.cell(header, col), `${sheet.name} month heading ${col}${header}`)).slice(0, 7));
+  const last = months.indexOf(`${THROUGH}-12`);
+  if (last < 0) fail(`${sheet.name}: the monthly build has no Dec ${THROUGH}.`);
+  const rows = sheet.between(build);
+  const lastRow = (pattern, what) => rows.filter((r) => pattern.test(sheet.label(r))).at(-1) ?? fail(`${sheet.name}: no ${what} row in the monthly build.`);
+  const values = (r) => columns.map((col) => maybe(sheet.cell(r, col)) ?? 0);
+  const debt = values(lastRow(/debt outstanding$/i, "debt outstanding"));
+  const flows = values(lastRow(/^Unlevered cash flow/, "unlevered cash flow"));
+  const books = rows.filter((r) => /^Book value/.test(sheet.label(r))).map(values);
+  const bookAt = (i) => books.reduce((total, book) => total + book[i], 0);
+
+  const keyPeak = num(sheet.cell(sheet.rowOf("Peak debt"), "D"), `${sheet.name} peak debt`);
+  const keyIrr = maybe(sheet.cell(sheet.rowOf("Unlevered project IRR"), "D"));
+  if (Math.abs(Math.max(...debt) - keyPeak) > 1) fail(`${sheet.name}: its monthly debt peaks at ${Math.max(...debt)}, not its key figure's ${keyPeak}.`);
+  const fullIrr = annualIrr(flows);
+  if (keyIrr !== null && (fullIrr === null || Math.abs(fullIrr - keyIrr) > 1e-6)) {
+    fail(`${sheet.name}: its monthly unlevered cash flow gives an IRR of ${fullIrr}, not its key figure's ${keyIrr}.`);
+  }
+  for (const r of rows.filter((r) => /^Equity contributed/.test(sheet.label(r)))) {
+    if (values(r).slice(last + 1).some((v) => Math.abs(v) > 1)) fail(`${sheet.name}: equity goes in after Dec ${THROUGH}, so its peak equity would need cutting too.`);
+  }
+
+  const cut = flows.slice(0, last + 1);
+  if (last < flows.length - 1) cut[last] += bookAt(last);
+  return { peakDebt: Math.max(...debt.slice(0, last + 1)), unleveredIrr: keyIrr === null ? null : annualIrr(cut), modelEnds: months.at(-1) };
+}
+
 // The SPVs, each matched to its tab by name.
 const spvTabs = [...sheetPaths.keys()].filter((name) => !["Summary", "Structure", "Zode Inc.", "Notes"].includes(name));
 const deploymentFolders = new Map(deploymentArgs.map((d) => [d.name, folderOf("deployment", d)]));
 for (const d of deploymentArgs) {
   if (!spvTabs.includes(d.name)) fail(`--deployment ${d.name}: no such SPV tab; the workbook's are ${spvTabs.join(", ")}.`);
 }
+const cuts = new Map();
 const spvHeader = structure.rowOf("SPV");
 const spvs = structure.between(spvHeader, structure.rowOf("Notes")).map((r) => {
   const entity = structure.label(r);
   const name = spvTabs.find((tab) => entity.toLowerCase().startsWith(tab.toLowerCase()));
   if (!name) fail(`${modelName}: Structure row "${entity}" matches no SPV tab (${spvTabs.join(", ")}).`);
+  cuts.set(name, cutAt(readSheet(name)));
   return {
     name,
     entity,
     business: text(structure.cell(r, "C")),
     zodeEquity: num(structure.cell(r, "D"), `${entity} ZODE Inc. equity`),
     thirdPartyPref: num(structure.cell(r, "E"), `${entity} third-party pref`),
-    peakDebt: num(structure.cell(r, "F"), `${entity} peak debt`),
+    peakDebt: cuts.get(name).peakDebt,
     firstInService: isoDate(num(structure.cell(r, "G"), `${entity} first month in service`)),
     capitalStack: text(structure.cell(r, "H")),
     folderId: deploymentFolders.get(name) ?? null,
   };
 });
 const structureNotes = structure.between(structure.rowOf("Notes")).map((r) => numbered(structure.label(r)));
+const modelEnds = [...cuts.values()][0].modelEnds;
+const monthName = (yyyyMm) => new Date(`${yyyyMm}-01T00:00:00Z`).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
+const cutConventions = [
+  `These summaries run to Dec ${THROUGH}; the model runs to ${monthName(modelEnds)}. Totals, peak debt and each unlevered IRR here are to Dec ${THROUGH}, the IRR taking the book value of the SPV's assets at Dec ${THROUGH}.`,
+  ...conventions,
+];
+const cutSimplifications = simplifications.map((line) => line.replace(/(IRR includes book value at )Dec \d{4}/, `$1Dec ${THROUGH}`));
 
 const masterModel = {
   model,
@@ -354,8 +437,8 @@ const masterModel = {
   structureNotes,
   statement,
   overview,
-  conventions,
-  simplifications,
+  conventions: cutConventions,
+  simplifications: cutSimplifications,
   openItems,
 };
 
@@ -371,11 +454,17 @@ function readSpv(name) {
   const inputsRow = sheet.rowOf("INPUTS");
   const buildRow = sheet.rowOf("MONTHLY BUILD");
   const summary = yearTable(sheet, sheet.rowOf("Year", sheet.rowOf("SUMMARY")), keyRow, [""]);
-  const keyFigures = sheet.between(keyRow, inputsRow).map((r) => ({
-    label: sheet.label(r),
-    value: sheet.formatted(r, "D") ?? fail(`${name}: key figure "${sheet.label(r)}" has no value.`),
-    ...(/^\s/.test(sheet.raw(r)) ? { indent: true } : {}),
-  }));
+  const cut = cuts.get(name);
+  const keyFigures = sheet.between(keyRow, inputsRow).map((r) => {
+    const label = sheet.label(r);
+    const value = sheet.formatted(r, "D") ?? fail(`${name}: key figure "${label}" has no value.`);
+    const indent = /^\s/.test(sheet.raw(r)) ? { indent: true } : {};
+    if (label === "Peak debt") return { label, value: { ...value, value: cut.peakDebt }, ...indent };
+    if (label.startsWith("Unlevered project IRR") && cut.unleveredIrr !== null) {
+      return { label: label.replace(/\bDec \d{4}\b/, `Dec ${THROUGH}`), value: { ...value, value: cut.unleveredIrr }, ...indent };
+    }
+    return { label, value, ...indent };
+  });
 
   const blockHeader = sheet.rowOf("Block", inputsRow);
   const totalRow = sheet.rowOf("Total", blockHeader);
@@ -468,7 +557,9 @@ function readSite(arg) {
   const conversionPerMw = at(sheet, "Conversion cost ($ per MW");
   const key = (label, from = 0) => sheet.rowOf(label, Math.max(from, sheet.rowOf("Key figures")));
   const equityRow = key("Equity required");
-  const irrRow = key("Unlevered project IRR");
+  const cut = cuts.get(d.spv.name);
+  const yearly = (label) =>
+    d.summary.groups.flatMap((g) => g.rows).find((row) => row.label === label)?.total ?? fail(`${d.spv.name}: no yearly "${label}" total.`);
   return {
     model,
     name: arg.name,
@@ -489,13 +580,14 @@ function readSite(arg) {
       mw: d.capacity.totalMw,
       preDevelopment: at(sheet, "Pre-development"),
       siteCost: at(sheet, "Site company: total site cost", "D", sheet.rowOf("Key figures")),
-      revenue: num(sheet.cell(sheet.rowOf("Revenue", sheet.rowOf("SUMMARY")), "D"), `${d.spv.name} revenue`),
-      ebitda: num(sheet.cell(sheet.rowOf("EBITDA", sheet.rowOf("SUMMARY")), "D"), `${d.spv.name} EBITDA`),
+      years: { from: d.summary.years[0], to: d.summary.years.at(-1) },
+      revenue: yearly("Revenue"),
+      ebitda: yearly("EBITDA"),
       peakEquity: num(sheet.cell(equityRow, "D"), `${d.spv.name} peak equity`),
       zodeEquity: num(sheet.cell(sheet.rowOf("ZODE Inc.", equityRow), "D"), `${d.spv.name} ZODE equity`),
       thirdPartyPref: num(sheet.cell(sheet.rowOf("Third-party pref", equityRow), "D"), `${d.spv.name} third-party pref`),
-      peakDebt: num(sheet.cell(key("Peak debt"), "D"), `${d.spv.name} peak debt`),
-      unleveredIrr: maybe(sheet.cell(irrRow, "D")),
+      peakDebt: cut.peakDebt,
+      unleveredIrr: cut.unleveredIrr,
       firstInService: dateAt(sheet, "First month in service", sheet.rowOf("Key figures")),
     },
   };

@@ -835,15 +835,15 @@ function MasterSiteSummary({
             terms={[
               { label: "Critical IT", value: mw(spv.mw) },
               { label: "Total site cost", value: usdShort(spv.siteCost), note: `With ${usdShort(spv.preDevelopment, 2)} of shared pre-development` },
-              { label: "Revenue, every year modelled", value: usdShort(spv.revenue) },
-              { label: "EBITDA, every year modelled", value: usdShort(spv.ebitda) },
+              { label: `Revenue, ${spv.years.from} to ${spv.years.to}`, value: usdShort(spv.revenue) },
+              { label: `EBITDA, ${spv.years.from} to ${spv.years.to}`, value: usdShort(spv.ebitda) },
               {
                 label: "Peak equity",
                 value: usdShort(spv.peakEquity),
                 note: `${usdShort(spv.zodeEquity)} ZODE Inc., ${usdShort(spv.thirdPartyPref)} third-party preferred`,
               },
-              { label: "Peak debt", value: usdShort(spv.peakDebt) },
-              { label: "Unlevered project IRR", value: irr(spv.unleveredIrr), note: "Including book value at the end of the model" },
+              { label: "Peak debt", value: usdShort(spv.peakDebt), note: `To Dec ${spv.years.to}` },
+              { label: "Unlevered project IRR", value: irr(spv.unleveredIrr), note: `To Dec ${spv.years.to}, with book value then` },
               { label: "First month in service", value: isoMonth(spv.firstInService) },
             ]}
           />

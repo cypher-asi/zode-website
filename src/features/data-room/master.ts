@@ -153,12 +153,15 @@ export interface MasterSite {
     mw: number;
     preDevelopment: number;
     siteCost: number;
+    /** The years the summaries show, "Q4 2026" to "2030"; revenue, EBITDA, peak debt and the IRR are over them. */
+    years: { from: string; to: string };
     revenue: number;
     ebitda: number;
     peakEquity: number;
     zodeEquity: number;
     thirdPartyPref: number;
     peakDebt: number;
+    /** With the book value of the SPV's assets at the end of `years`. */
     unleveredIrr: number | null;
     firstInService: string;
   };
