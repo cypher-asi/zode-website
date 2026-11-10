@@ -103,6 +103,9 @@ export interface RoomMember {
   sends: number;
   /** The invite asks for a signed MNDA before joining. */
   requiresMnda: boolean;
+  /** When they first and last opened the room in the portal; null until they have. */
+  firstOpenedAt: string | null;
+  lastOpenedAt: string | null;
 }
 
 /** A member's invite history, for its info tip. The room's creator joined without one. */
@@ -115,6 +118,10 @@ export function memberHistory(member: RoomMember): InfoTipRow[] {
     { label: resent ? "Last sent" : "Sent", date: member.invitedAt },
     resent ? { label: "Times sent", value: String(member.sends) } : null,
     member.acceptedAt ? { label: "Accepted", date: member.acceptedAt } : null,
+    member.firstOpenedAt ? { label: "First opened", date: member.firstOpenedAt } : null,
+    member.lastOpenedAt && member.lastOpenedAt !== member.firstOpenedAt
+      ? { label: "Last opened", date: member.lastOpenedAt }
+      : null,
     member.status !== "active" && member.expiresAt
       ? { label: member.status === "expired" ? "Expired" : "Expires", date: member.expiresAt }
       : null,

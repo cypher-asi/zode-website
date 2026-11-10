@@ -264,15 +264,28 @@ export async function claimPendingInvites(account: Account): Promise<void> {
   );
 }
 
-/** Changes whenever the account's rooms or pending invites do, so an open portal knows to refresh. */
+/**
+ * Changes whenever the account's rooms or pending invites do, or someone joins
+ * or first opens a room it's an admin of, so an open portal knows to refresh.
+ */
 export async function roomsVersion(account: Account): Promise<string> {
-  const rows = await db()`
-    select m.id, m.role, m.accepted_at is not null as active, m.requires_mnda, r.name
-    from data_room_members m
-    join data_rooms r on r.id = m.room_id
-    where (m.user_id = ${account.userId} and m.accepted_at is not null)
-      or (m.email = ${normalizeEmail(account.email)} and m.accepted_at is null and m.invite_expires_at > now())
-    order by m.id
-  `;
-  return createHash("sha256").update(JSON.stringify(rows)).digest("base64url").slice(0, 16);
+  const sql = db();
+  const [rows, members] = await Promise.all([
+    sql`
+      select m.id, m.role, m.accepted_at is not null as active, m.requires_mnda, r.name
+      from data_room_members m
+      join data_rooms r on r.id = m.room_id
+      where (m.user_id = ${account.userId} and m.accepted_at is not null)
+        or (m.email = ${normalizeEmail(account.email)} and m.accepted_at is null and m.invite_expires_at > now())
+      order by m.id
+    `,
+    sql`
+      select o.id, o.accepted_at is not null as active, o.first_opened_at is not null as opened
+      from data_room_members a
+      join data_room_members o on o.room_id = a.room_id
+      where a.user_id = ${account.userId} and a.role = 'admin' and a.accepted_at is not null
+      order by o.id
+    `,
+  ]);
+  return createHash("sha256").update(JSON.stringify([rows, members])).digest("base64url").slice(0, 16);
 }

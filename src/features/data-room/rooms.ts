@@ -374,7 +374,7 @@ export const listMembers = cache(async (roomId: string): Promise<RoomMember[]> =
       group by h.email
     )
     select m.id, m.email, m.role, m.invited_by_email, m.invited_at, m.accepted_at, m.invite_expires_at, m.requires_mnda,
-      s.first_sent_at, coalesce(s.sends, 0) as sends
+      m.first_opened_at, m.last_opened_at, s.first_sent_at, coalesce(s.sends, 0) as sends
     from data_room_members m
     left join sends s on s.email = m.email
     where m.room_id = ${roomId}
@@ -397,8 +397,20 @@ export const listMembers = cache(async (roomId: string): Promise<RoomMember[]> =
     firstSentAt: row.first_sent_at == null ? null : iso(row.first_sent_at),
     sends: Number(row.sends),
     requiresMnda: Boolean(row.requires_mnda),
+    firstOpenedAt: row.first_opened_at == null ? null : iso(row.first_opened_at),
+    lastOpenedAt: row.last_opened_at == null ? null : iso(row.last_opened_at),
   }));
 });
+
+/** Notes that the member has the room open; the last time moves at most every five minutes. */
+export async function markRoomOpened(roomId: string, userId: string): Promise<void> {
+  await db()`
+    update data_room_members
+    set first_opened_at = coalesce(first_opened_at, now()), last_opened_at = now()
+    where room_id = ${roomId} and user_id = ${userId} and accepted_at is not null
+      and (last_opened_at is null or last_opened_at < now() - interval '5 minutes')
+  `;
+}
 
 export async function getMember(
   roomId: string,

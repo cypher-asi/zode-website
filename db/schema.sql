@@ -152,8 +152,9 @@ create index if not exists data_room_members_pending_email_idx on data_room_memb
 
 -- Tells open portals whose rooms or invites just changed, by account and by
 -- email, on the `data_room_access` channel (see src/features/data-room/live.ts).
--- A room's name, kind or address changing tells each of its members; deleting
--- a room cascades to its member rows, which tell them.
+-- A member row changing also tells the room's admins, whose member lists show
+-- who has joined and opened it. A room's name, kind or address changing tells
+-- each of its members; deleting a room cascades to its member rows, which tell them.
 create or replace function notify_data_room_access() returns trigger language plpgsql as $$
 begin
   if tg_table_name = 'data_room_members' then
@@ -163,6 +164,10 @@ begin
     if tg_op in ('INSERT', 'UPDATE') then
       perform pg_notify('data_room_access', json_build_object('u', new.user_id, 'e', new.email)::text);
     end if;
+    perform pg_notify('data_room_access', json_build_object('u', a.user_id)::text)
+    from data_room_members a
+    where a.room_id = coalesce(new.room_id, old.room_id)
+      and a.role = 'admin' and a.accepted_at is not null and a.user_id is not null;
   else
     perform pg_notify('data_room_access', json_build_object('u', m.user_id, 'e', m.email)::text)
     from data_room_members m
@@ -260,6 +265,11 @@ create index if not exists mndas_signed_at_idx on mndas (signed_at desc);
 
 -- Invites that require the invitee to sign the MNDA before they can join.
 alter table data_room_members add column if not exists requires_mnda boolean not null default false;
+
+-- When the member first and last opened the room in the portal, so admins see
+-- who has been in; the last is moved at most every few minutes.
+alter table data_room_members add column if not exists first_opened_at timestamptz;
+alter table data_room_members add column if not exists last_opened_at timestamptz;
 
 -- A room's diligence summary, its landing page. `diligence` answers the fixed
 -- questions in src/features/data-room/summary.ts and `economics` holds only the

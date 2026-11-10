@@ -49,9 +49,9 @@ const plural = (count: number, one: string, many = `${one}s`): string => `${coun
 const relative = new Intl.RelativeTimeFormat("en-US", { numeric: "auto" });
 const when = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" });
 
-/** "just now", "5 minutes ago", "yesterday", "3 weeks ago". */
+/** "just now", "5 minutes ago", "yesterday", "3 weeks ago". Times after `now`, arriving live, read "just now". */
 function ago(iso: string, now: number): string {
-  const seconds = Math.round((new Date(iso).getTime() - now) / 1000);
+  const seconds = Math.min(Math.round((new Date(iso).getTime() - now) / 1000), 0);
   const steps: [Intl.RelativeTimeFormatUnit, number][] = [
     ["year", 365 * 86400],
     ["month", 30 * 86400],
@@ -723,7 +723,13 @@ function ShareDialog({
                   <span className={styles.status} data-status={member.status}>
                     {STATUS_LABELS[member.status]}
                   </span>
-                ) : null}
+                ) : member.email === selfEmail ? null : member.lastOpenedAt ? (
+                  <span className={styles.opened}>Opened {ago(member.lastOpenedAt, now)}</span>
+                ) : (
+                  <span className={styles.status} data-status="unopened">
+                    Not opened yet
+                  </span>
+                )}
                 <span className={styles.personRole}>{roleLabel(member.role)}</span>
               </li>
             ))}

@@ -105,14 +105,14 @@
 }
 
 .you {
-  padding: 0 6px;
+  padding: 0 5px;
   border-radius: var(--radius-pill);
   background: var(--color-text-primary);
   color: var(--color-bg);
-  font-size: var(--text-2xs);
+  font-size: 9px;
   font-weight: 600;
   letter-spacing: var(--caps-tracking);
-  line-height: 16px;
+  line-height: 14px;
   text-transform: uppercase;
 }
 
@@ -150,6 +150,11 @@
 .status[data-status="mnda"] {
   background: var(--color-info-bg);
   color: var(--color-info);
+}
+
+.status[data-status="unopened"] {
+  background: var(--color-surface-tint);
+  color: var(--color-text-secondary);
 }
 
 .roleSelect {

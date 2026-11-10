@@ -41,6 +41,7 @@ import {
   getMember,
   getRoomSite,
   isUuid,
+  markRoomOpened,
   normalizeEmail,
   renameRoom,
   roomAccess,
@@ -678,6 +679,12 @@ export async function removeMemberAction(roomId: string, memberId: string): Prom
   if (member.userId === access.account.userId) redirect("/portal/data-rooms");
   refresh();
   return {};
+}
+
+/** Called from the browser once the room is open, so a prefetch of its page isn't counted as a visit. */
+export async function markRoomOpenedAction(roomId: string): Promise<void> {
+  const access = await roomAccess(roomId);
+  if (access) await markRoomOpened(roomId, access.account.userId);
 }
 
 /**

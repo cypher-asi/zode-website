@@ -6,6 +6,7 @@ import { SidebarDock, useDocked } from "@/features/portal/PortalFrame";
 import {
   createFolderAction,
   deleteItemsAction,
+  markRoomOpenedAction,
   moveItemsAction,
   renameItemAction,
   type ItemRef,
@@ -95,6 +96,10 @@ export function DataRoomApp({ roomId, roomName, isAdmin, tree, summaries, childr
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploads = useUploads(roomId);
   const docked = useDocked();
+
+  useEffect(() => {
+    void markRoomOpenedAction(roomId);
+  }, [roomId]);
 
   // Follow the address on Files, e.g. Back or Activity's "Open". Coming back
   // from another tab by its bare link keeps the place you left.

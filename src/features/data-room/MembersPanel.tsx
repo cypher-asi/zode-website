@@ -64,8 +64,15 @@ export function MembersPanel({ roomId, roomName, members, selfEmail }: MembersPa
                 MNDA required
               </span>
             ) : null}
+            {member.status === "active" && !self && !member.lastOpenedAt ? (
+              <span className={styles.status} data-status="unopened">
+                Not opened yet
+              </span>
+            ) : null}
             {member.status === "active" && member.acceptedAt
-              ? `Joined ${date.format(new Date(member.acceptedAt))}`
+              ? `Joined ${date.format(new Date(member.acceptedAt))}${
+                  member.lastOpenedAt && !self ? ` · last opened ${date.format(new Date(member.lastOpenedAt))}` : ""
+                }`
               : `Invited ${date.format(new Date(member.invitedAt))}${member.invitedBy ? ` by ${member.invitedBy}` : ""}`}
             <InfoTip rows={memberHistory(member)} label={`Invite details for ${member.email}`} />
           </span>
