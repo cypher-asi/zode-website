@@ -12,6 +12,9 @@ const andList = (names: string[]) =>
   names.length < 3 ? names.join(" and ") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
 const sum = (spvs: MasterSpv[], amount: (s: MasterSpv) => number) => spvs.reduce((total, s) => total + amount(s), 0);
 
+/** How many full years of the statement lead the summary, from the first. */
+const YEAR_FIGURES = 4;
+
 /** The SPVs side by side with their total, each opening its folder and the deployment summary there. */
 function SpvTable({ roomId, spvs, summaries }: { roomId: string; spvs: MasterSpv[]; summaries: Set<string> }): ReactElement {
   const rows: (TableRow & { total?: string })[] = [
@@ -91,9 +94,13 @@ export function MasterSummaryView({ roomId, summary }: { roomId: string; summary
   const last = statement.years.at(-1);
   const span = `${first} to ${last}`;
   const revenue = findRow(statement, "Total revenue");
-  const ebitda = findRow(statement, "EBITDA");
-  const capacity = statement.groups[0]?.rows[0];
-  const attributable = findRow(statement, "Cash attributable to ZODE Inc.");
+  const profit = findRow(statement, "Net income");
+  const fullYears = statement.years
+    .flatMap((year, i) => {
+      const [r, p] = [revenue?.values[i], profit?.values[i]];
+      return /^\d{4}$/.test(year) && r != null && p != null ? [{ year, revenue: r, profit: p }] : [];
+    })
+    .slice(0, YEAR_FIGURES);
 
   const lede =
     `ZODE Inc. raises ${usdShort(raise.amount, 0)} of pre-seed equity, a ${raise.terms.replace(/^\$[\d.]+[MK]?\s*/, "")}, ` +
@@ -106,10 +113,6 @@ export function MasterSummaryView({ roomId, summary }: { roomId: string; summary
     { label: "Post-money valuation cap", value: usdShort(raise.postMoneyCap, 0) },
     { label: "Pre-seed ownership", value: pct(raise.ownership, 1) },
     { label: "ZODE Inc. equity into SPVs", value: usdShort(zodeEquity) },
-    ...(capacity ? [{ label: `GPU clusters in service, Dec ${last}`, value: `${Number(capacity.values.at(-1)?.toFixed(0))} MW` }] : []),
-    ...(revenue?.total != null ? [{ label: `Revenue, ${span}`, value: usdShort(revenue.total) }] : []),
-    ...(ebitda?.total != null ? [{ label: `EBITDA, ${span}`, value: usdShort(ebitda.total) }] : []),
-    ...(attributable ? [{ label: `Cash attributable to ZODE Inc., Dec ${last}`, value: usdShort(attributable.values.at(-1) ?? 0) }] : []),
   ];
   const table = yearRows(statement);
 
@@ -121,7 +124,20 @@ export function MasterSummaryView({ roomId, summary }: { roomId: string; summary
         action={<ModelLink roomId={roomId} fileId={m.model.fileId} path={m.model.path} live={summary.sourceNames.has(m.model.fileId)} />}
       >
         <p className={styles.lede}>{lede}</p>
-        <KeyFigures figures={keyFigures} />
+        <KeyFigures figures={keyFigures} columns={4} />
+        {fullYears.length ? (
+          <ul className={styles.yearFigures}>
+            {fullYears.map((y) => (
+              <li key={y.year} className={styles.yearFigure}>
+                <span className={styles.yearName}>{y.year}</span>
+                <span className={styles.keyValue}>{usdShort(y.revenue)}</span>
+                <span className={styles.keyLabel}>Revenue</span>
+                <span className={styles.yearProfit}>{usdShort(y.profit)}</span>
+                <span className={styles.keyLabel}>Net income, pre-tax</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         <div className={styles.dealGroups}>
           <TermGroup
             title="Raise"
