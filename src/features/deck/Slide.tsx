@@ -1639,6 +1639,7 @@ function CompareCell({ stat }: { stat: Stat }): ReactElement {
  * The rows fade in one by one, their lines too.
  */
 function Comparison({ slide }: { slide: Of<"comparison"> }): ReactElement {
+  const [lead, ...rest] = slide.note.split(/(?<=\.) /);
   return (
     <div className={styles.compareBody}>
       <table className={styles.compare}>
@@ -1678,7 +1679,7 @@ function Comparison({ slide }: { slide: Of<"comparison"> }): ReactElement {
         {...rise(2 + slide.rows.length * 0.35)}
         className={`${styles.rise} ${styles.fine}`}
       >
-        {slide.note}
+        {lead} <span className={styles.noteRest}>{rest.join(" ")}</span>
       </p>
     </div>
   );
@@ -2559,13 +2560,14 @@ const PHONE_W = 390;
 const MAX_FIT = 1.6;
 
 /**
- * Scales a phone page (`compact`) to fit its slide: as wide as the screen,
- * unless its bands would then run past the header band or the deck's
- * controls (the frame's padding), when it shrinks to their height and
- * centres. A band marked `data-deck-scroll` takes what room is left and
- * scrolls, so it isn't counted. Sets `--fit` on the slide, which
- * Slide.module.css scales by. A parked slide has no layout, so it's
- * measured as it opens.
+ * Scales a phone page (`compact`) to fit its slide, every page as wide as
+ * the screen (`--fit-wide`), so the rails hold still from page to page.
+ * Where its bands would then run past the header band or the foot (the
+ * frame's padding), it shrinks to their height (`--fit`) and is laid out
+ * wider by as much, so it still spans the screen. A band marked
+ * `data-deck-scroll` takes what room is left and scrolls, so it isn't
+ * counted. Slide.module.css scales by both. A parked slide has no layout, so
+ * it's measured as it opens.
  */
 function useFit(on: boolean) {
   const slideRef = useRef<HTMLDivElement>(null);
@@ -2575,23 +2577,45 @@ function useFit(on: boolean) {
     const fit = fitRef.current;
     const frame = fit?.parentElement;
     if (!on || !slide || !fit || !frame) return;
-    const measure = () => {
-      const bands = [...fit.children] as HTMLElement[];
-      const height = bands.reduce(
+    const bands = () => [...fit.children] as HTMLElement[];
+    // Sizes as last laid out, so the observer passes over the resize the widening itself makes.
+    const sizes = () =>
+      [slide.clientWidth, slide.clientHeight]
+        .concat(bands().map((band) => band.offsetHeight))
+        .join();
+    const height = () =>
+      bands().reduce(
         (sum, band) =>
           band.hasAttribute("data-deck-scroll") ? sum : sum + band.offsetHeight,
         0,
       );
-      if (!height || !slide.clientWidth) return;
+    const lay = (scale: number, wide: number) => {
+      slide.style.setProperty("--fit", scale.toFixed(4));
+      if (scale < wide)
+        fit.style.width = `${((PHONE_W * wide) / scale).toFixed(2)}px`;
+      else fit.style.removeProperty("width");
+    };
+    let laidOut = "";
+    const measure = () => {
+      if (sizes() === laidOut) return;
+      const wide = Math.min(slide.clientWidth / PHONE_W, MAX_FIT);
+      if (!wide) return;
+      slide.style.setProperty("--fit-wide", wide.toFixed(4));
+      lay(wide, wide);
       const { paddingTop, paddingBottom } = getComputedStyle(frame);
       const room =
         slide.clientHeight - parseFloat(paddingTop) - parseFloat(paddingBottom);
-      const scale = Math.min(
-        slide.clientWidth / PHONE_W,
-        room / height,
-        MAX_FIT,
-      );
-      slide.style.setProperty("--fit", scale.toFixed(4));
+      let tall = height();
+      if (!tall) return;
+      let scale = Math.min(wide, room / tall);
+      // A page's drawings and some type grow with its width, so widening can leave it taller; it shrinks again until it fits.
+      for (let pass = 0; scale < wide; pass++) {
+        lay(scale, wide);
+        tall = height();
+        if (tall * scale <= room + 0.5 || pass === 5) break;
+        scale *= room / (tall * scale);
+      }
+      laidOut = sizes();
     };
     measure();
     const observer = new ResizeObserver(measure);
@@ -2599,7 +2623,9 @@ function useFit(on: boolean) {
     for (const band of fit.children) observer.observe(band);
     return () => {
       observer.disconnect();
+      fit.style.removeProperty("width");
       slide.style.removeProperty("--fit");
+      slide.style.removeProperty("--fit-wide");
     };
   }, [on]);
   return { slideRef, fitRef };

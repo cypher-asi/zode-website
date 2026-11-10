@@ -4513,14 +4513,16 @@ a.measureTitle:focus-visible {
  * portrait screens and landscape phones), and its details' modal: a portrait
  * page, everything stacked into one column at the site's mobile type sizes.
  * The page (`.fit`) is laid out `PHONE_W` (390px) wide and scaled by
- * `--fit` (Slide.tsx) so it fills the screen's width, or, where its bands
- * would run past the header band or the controls (the frame's padding),
- * their height. The ground runs to every edge; the rails run down the page.
- * Lengths in the page are in its own pixels, so the stage's insets are
+ * `--fit` (Slide.tsx) so it fills the screen's width (`--fit-wide`), or,
+ * where its bands would run past the header band or the foot (the frame's
+ * padding), their height, laid out wider to keep the screen's width. The
+ * ground runs to every edge; the rails run down the page. Lengths in the
+ * page are in its own pixels, so the stage's insets and the rails are
  * divided by `--fit` to land where they would unscaled.
  */
 .slide[data-compact] {
   --fit: 1;
+  --fit-wide: 1;
 }
 
 .slide[data-compact] .frame {
@@ -4534,8 +4536,10 @@ a.measureTitle:focus-visible {
 
 .fit {
   --u: 8px;
-  --rail: 8px;
-  --inset-x: calc(max(var(--slide-edge, 0px), 24px * var(--fit)) / var(--fit));
+  --rail: calc(8px * var(--fit-wide) / var(--fit));
+  --inset-x: calc(
+    max(var(--slide-edge, 0px), 24px * var(--fit-wide)) / var(--fit)
+  );
 
   position: absolute;
   top: 0;
@@ -4660,7 +4664,7 @@ a.measureTitle:focus-visible {
   padding: 14px 16px 16px;
 }
 
-/* The foot closes the page: the section name, then the sources folded behind their label; the bar carries the page number. */
+/* The foot closes the page: the section name, then the sources folded behind their label, and the page number. */
 .slide[data-compact] .foot {
   gap: 12px 16px;
   min-height: 44px;
@@ -4677,10 +4681,6 @@ a.measureTitle:focus-visible {
   height: 28px;
   padding-right: 12px;
   font-size: var(--text-2xs);
-}
-
-.slide[data-compact] .number {
-  display: none;
 }
 
 /* A tap's target, as tall as a thumb. */
@@ -4822,31 +4822,29 @@ a.measureTitle:focus-visible {
   gap: 28px;
 }
 
-/* Timeline: the cards stacked, each drawing beside its number, title and description; the band and milestone, then the sale card, its channels under its text. */
+/*
+ * Timeline: the three phases side by side, each its number, drawing and
+ * title, without its description; the band and milestone, then the sale
+ * card, its channels ranked by their bars, without their descriptions.
+ */
 .slide[data-compact] .timeline {
   flex: none;
-  grid-template: none / minmax(0, 1fr);
+  grid-template: none / repeat(3, minmax(0, 1fr));
   gap: 1px;
 }
 
 .slide[data-compact] .phase {
-  display: grid;
-  grid-template:
-    "figure index" auto
-    "figure title" auto
-    "figure body" auto / 64px minmax(0, 1fr);
-  column-gap: 14px;
-  padding: 10px 14px 12px 10px;
+  padding: 8px 10px 10px;
 }
 
 .slide[data-compact] .phase[data-sale] {
-  grid-area: auto;
+  display: grid;
+  grid-area: auto / 1 / auto / -1;
   grid-template:
     "index" auto
     "title" auto
-    "body" auto
     "channels" auto / minmax(0, 1fr);
-  padding-left: 14px;
+  padding: 8px 14px 12px;
 }
 
 .slide[data-compact] .phaseIndex {
@@ -4855,27 +4853,24 @@ a.measureTitle:focus-visible {
 }
 
 .slide[data-compact] .phaseFigure {
-  grid-area: figure;
-  align-self: center;
-  height: 60px;
-  padding: 0;
+  flex: none;
+  height: 56px;
+  padding: 6px 0;
 }
 
 .slide[data-compact] .phaseTitle {
   grid-area: title;
-  margin: 2px 0 4px;
-  font-size: 18px;
+  margin: 0;
+  font-size: 17px;
 }
 
-.slide[data-compact] .phase .body {
-  grid-area: body;
-  min-height: 0;
-  font-size: 13px;
-  line-height: 1.4;
+.slide[data-compact] .phase .body,
+.slide[data-compact] .channelBody {
+  display: none;
 }
 
 .slide[data-compact] .position {
-  grid-area: auto;
+  grid-area: auto / 1 / auto / -1;
   height: 32px;
   margin-top: 8px;
   padding: 0 14px;
@@ -4886,7 +4881,7 @@ a.measureTitle:focus-visible {
 }
 
 .slide[data-compact] .milestone {
-  grid-area: auto;
+  grid-area: auto / 1 / auto / -1;
   padding: 8px 0 8px 14px;
 }
 
@@ -4897,16 +4892,12 @@ a.measureTitle:focus-visible {
 
 .slide[data-compact] .channel {
   grid-template-columns: 128px minmax(0, 1fr);
-  gap: 4px 12px;
-  padding: 8px 12px;
+  gap: 12px;
+  padding: 9px 12px;
 }
 
 .slide[data-compact] .channelTitle {
   font-size: 15px;
-}
-
-.slide[data-compact] .channelBody {
-  font-size: 12px;
 }
 
 /* The pipeline's bars and the statement's last line drop on a phone; here the bars are the ranking and the statement one sentence. */
@@ -4924,6 +4915,10 @@ a.measureTitle:focus-visible {
 
 .slide[data-compact] .statsBody > .statement > :last-child {
   display: none;
+}
+
+.slide[data-compact] .statsBody > .timeline + .statement {
+  font-size: 16px;
 }
 
 /* Macro: the three figures in a row, then the statement and the supply chain's rows; the token chart stays on the stage. */
@@ -5621,22 +5616,22 @@ a.measureTitle:focus-visible {
 
 /*
  * Pipeline: the sites as rows of text (the city maps dropped), the total,
- * the capacity, the plan's years across one row, then the statement without
- * its basis.
+ * the capacity and the plan's years across one row; the statement under the
+ * plan drops.
  */
 .slide[data-compact] .split[data-split="sites"] {
   gap: 16px;
 }
 
 .slide[data-compact] .siteCard {
-  --card-h: 40px;
+  --card-h: 36px;
 
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .slide[data-compact] .siteMap,
 .slide[data-compact] .planBar,
-.slide[data-compact] .planNote .fine {
+.slide[data-compact] .planNote {
   display: none;
 }
 
@@ -5711,16 +5706,6 @@ a.measureTitle:focus-visible {
 .slide[data-compact] .planValue {
   font-size: 12px;
   text-align: left;
-}
-
-.slide[data-compact] .planNote {
-  margin-top: 0;
-}
-
-.slide[data-compact] .planStatement {
-  max-width: none;
-  font-size: 16px;
-  text-wrap: wrap;
 }
 
 /*
@@ -5873,6 +5858,11 @@ a.measureTitle:focus-visible {
 
 .slide[data-compact] .compareBody > .fine {
   font-size: 9px;
+}
+
+/* The note keeps its first sentence. */
+.slide[data-compact] .noteRest {
+  display: none;
 }
 
 /*

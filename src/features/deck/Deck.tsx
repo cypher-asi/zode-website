@@ -115,8 +115,8 @@ function ArrowIcon({ flip = false }: { flip?: boolean }): ReactElement {
  * screen or a landscape phone (`phone`) each slide is instead a portrait
  * page, reflowed to one column and scaled to fit the screen (Slide.tsx).
  * The pages slide up and down; a tap goes on (or back, on the left), and so
- * does a swipe up (or down). The controls stay up, and the overview is a
- * list there.
+ * does a swipe up (or down). The pages run to the bottom edge there, with no
+ * controls or overview.
  */
 /** The cover's ground, standing in while the page reads which slide to open. */
 export function DeckGround(): ReactElement {
@@ -177,8 +177,13 @@ export function Deck({
   const phone = phoneScreen && !printing;
   const [nearBottom, setNearBottom] = useState(false);
   const [touched, setTouched] = useState(false);
+  // A phone deck has no controls, so turning the screen upright closes any they left open.
+  if (phone && (overview || shareOpen)) {
+    setOverview(false);
+    setShareOpen(false);
+  }
   const slide = SLIDES[index];
-  const controls = phone || nearBottom || touched || overview || shareOpen;
+  const controls = nearBottom || touched || overview || shareOpen;
 
   const go = useCallback(
     (target: number) => {
@@ -294,7 +299,7 @@ export function Deck({
       }
       if (ownedByControl(event)) return;
       const key = event.key.toLowerCase();
-      if (key === "g" || key === "o") {
+      if ((key === "g" || key === "o") && !phone) {
         setOverview((open) => !open);
         setShareOpen(false);
         return;
@@ -622,131 +627,107 @@ export function Deck({
         )}
       </div>
 
-      <nav className={styles.bar} aria-label="Deck controls">
-        <div className={styles.barStart}>
-          <button
-            type="button"
-            className={styles.iconButton}
-            aria-label="Previous slide"
-            disabled={index === 0}
-            onClick={() => go(index - 1)}
-          >
-            <ArrowIcon flip />
-          </button>
-          <button
-            type="button"
-            className={styles.iconButton}
-            aria-label="Next slide"
-            disabled={index === TOTAL - 1}
-            onClick={() => go(index + 1)}
-          >
-            <ArrowIcon />
-          </button>
-          <span className={styles.counter}>
-            {pad(index + 1)} / {pad(TOTAL)}
-          </span>
-          <span className={styles.section}>{slide.section}</span>
-        </div>
+      {phone ? null : (
+        <nav className={styles.bar} aria-label="Deck controls">
+          <div className={styles.barStart}>
+            <button
+              type="button"
+              className={styles.iconButton}
+              aria-label="Previous slide"
+              disabled={index === 0}
+              onClick={() => go(index - 1)}
+            >
+              <ArrowIcon flip />
+            </button>
+            <button
+              type="button"
+              className={styles.iconButton}
+              aria-label="Next slide"
+              disabled={index === TOTAL - 1}
+              onClick={() => go(index + 1)}
+            >
+              <ArrowIcon />
+            </button>
+            <span className={styles.counter}>
+              {pad(index + 1)} / {pad(TOTAL)}
+            </span>
+            <span className={styles.section}>{slide.section}</span>
+          </div>
 
-        <ol className={styles.progress}>
-          {SLIDES.map((entry, i) => (
-            <li key={entry.id}>
-              <button
-                type="button"
-                className={styles.tick}
-                data-state={
-                  i === index ? "current" : i < index ? "past" : "future"
-                }
-                data-title={`${pad(i + 1)} ${entry.section}`}
-                aria-label={`Slide ${i + 1}: ${entry.section}`}
-                aria-current={i === index ? "step" : undefined}
-                onClick={() => go(i)}
-              />
-            </li>
-          ))}
-        </ol>
+          <ol className={styles.progress}>
+            {SLIDES.map((entry, i) => (
+              <li key={entry.id}>
+                <button
+                  type="button"
+                  className={styles.tick}
+                  data-state={
+                    i === index ? "current" : i < index ? "past" : "future"
+                  }
+                  data-title={`${pad(i + 1)} ${entry.section}`}
+                  aria-label={`Slide ${i + 1}: ${entry.section}`}
+                  aria-current={i === index ? "step" : undefined}
+                  onClick={() => go(i)}
+                />
+              </li>
+            ))}
+          </ol>
 
-        <div className={styles.barEnd}>
-          <button
-            type="button"
-            className={styles.textButton}
-            aria-pressed={overview}
-            onClick={() => {
-              setOverview((open) => !open);
-              setShareOpen(false);
-            }}
-          >
-            <svg className={styles.icon} viewBox="0 0 12 12" aria-hidden="true">
-              <rect x="1.5" y="1.5" width="3.5" height="3.5" />
-              <rect x="7" y="1.5" width="3.5" height="3.5" />
-              <rect x="1.5" y="7" width="3.5" height="3.5" />
-              <rect x="7" y="7" width="3.5" height="3.5" />
-            </svg>
-            Slides
-          </button>
-          <ShareMenu
-            open={shareOpen}
-            onOpenChange={setShareOpen}
-            slideNumber={index + 1}
-            slideTitle={slide.title}
-            buttonClassName={styles.textButton}
-            iconClassName={styles.icon}
-          />
-          {canFullscreen && !phone ? (
+          <div className={styles.barEnd}>
             <button
               type="button"
               className={styles.textButton}
-              aria-pressed={fullscreen}
-              onClick={toggleFullscreen}
+              aria-pressed={overview}
+              onClick={() => {
+                setOverview((open) => !open);
+                setShareOpen(false);
+              }}
             >
               <svg
                 className={styles.icon}
                 viewBox="0 0 12 12"
                 aria-hidden="true"
               >
-                {fullscreen ? (
-                  <path d="M4.5 1.5v3h-3M7.5 1.5v3h3M4.5 10.5v-3h-3M7.5 10.5v-3h3" />
-                ) : (
-                  <path d="M1.5 4.5v-3h3M10.5 4.5v-3h-3M1.5 7.5v3h3M10.5 7.5v3h-3" />
-                )}
+                <rect x="1.5" y="1.5" width="3.5" height="3.5" />
+                <rect x="7" y="1.5" width="3.5" height="3.5" />
+                <rect x="1.5" y="7" width="3.5" height="3.5" />
+                <rect x="7" y="7" width="3.5" height="3.5" />
               </svg>
-              {fullscreen ? "Exit" : "Present"}
+              Slides
             </button>
-          ) : null}
-        </div>
-      </nav>
-
-      {phone ? (
-        overview ? (
-          <div
-            ref={overviewRef}
-            className={styles.overview}
-            data-open=""
-            role="dialog"
-            aria-modal="true"
-            aria-label="All slides"
-          >
-            <ol className={styles.toc}>
-              {SLIDES.map((entry, i) => (
-                <li key={entry.id} className={styles.tocItem}>
-                  <button
-                    type="button"
-                    className={styles.tocRow}
-                    aria-current={i === index}
-                    onClick={() => choose(i)}
-                  >
-                    <span className={styles.tocNumber}>{pad(i + 1)}</span>
-                    <span className={styles.tocText}>
-                      <span className={styles.tocSection}>{entry.section}</span>
-                      <span className={styles.tocTitle}>{entry.title}</span>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ol>
+            <ShareMenu
+              open={shareOpen}
+              onOpenChange={setShareOpen}
+              slideNumber={index + 1}
+              slideTitle={slide.title}
+              buttonClassName={styles.textButton}
+              iconClassName={styles.icon}
+            />
+            {canFullscreen ? (
+              <button
+                type="button"
+                className={styles.textButton}
+                aria-pressed={fullscreen}
+                onClick={toggleFullscreen}
+              >
+                <svg
+                  className={styles.icon}
+                  viewBox="0 0 12 12"
+                  aria-hidden="true"
+                >
+                  {fullscreen ? (
+                    <path d="M4.5 1.5v3h-3M7.5 1.5v3h3M4.5 10.5v-3h-3M7.5 10.5v-3h3" />
+                  ) : (
+                    <path d="M1.5 4.5v-3h3M10.5 4.5v-3h-3M1.5 7.5v3h3M10.5 7.5v3h-3" />
+                  )}
+                </svg>
+                {fullscreen ? "Exit" : "Present"}
+              </button>
+            ) : null}
           </div>
-        ) : null
-      ) : overview || overviewDrawn ? (
+        </nav>
+      )}
+
+      {!phone && (overview || overviewDrawn) ? (
         <div
           ref={overviewRef}
           className={styles.overview}

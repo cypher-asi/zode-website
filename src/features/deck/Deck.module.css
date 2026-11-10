@@ -445,7 +445,6 @@
 .textButton:focus-visible,
 .tick:focus-visible,
 .thumbButton:focus-visible,
-.tocRow:focus-visible,
 .menuItem:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
@@ -607,18 +606,16 @@
  * scaled to fit (Slide.module.css), drawing its own grid, so the shared one
  * goes. The pages slide up as the deck goes on and down as it goes back. A
  * swipe or a tap turns them, so the stage takes every touch but a pinch, and
- * the page never scrolls or pulls to refresh. The controls stay pinned to
- * the window's foot, with thumb-sized targets under the segmented progress.
+ * the page never scrolls or pulls to refresh. There are no controls, so each
+ * page runs to the window's foot, clearing only the home indicator.
  */
-.root[data-phone] {
-  --bar-h: 56px;
-}
-
 :global(html):has(.root[data-phone]) {
   overscroll-behavior: none;
 }
 
 .root[data-phone] .stage {
+  --slide-bottom: env(safe-area-inset-bottom, 0px);
+
   touch-action: pinch-zoom;
   user-select: none;
   -webkit-touch-callout: none;
@@ -679,126 +676,6 @@
     text-align: center;
     color: var(--deck-fg);
   }
-}
-
-.root[data-phone] .bar {
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-}
-
-.root[data-phone] .barStart,
-.root[data-phone] .barEnd {
-  gap: 4px;
-}
-
-.root[data-phone] :is(.iconButton, .textButton) {
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  gap: 0;
-  font-size: 0;
-}
-
-.root[data-phone] .icon {
-  width: 14px;
-  height: 14px;
-}
-
-.root[data-phone] .counter {
-  margin-left: 6px;
-}
-
-.root[data-phone] .section {
-  display: block;
-  min-width: 0;
-  margin-left: 4px;
-  padding-left: 12px;
-}
-
-.root[data-phone] .progress {
-  position: absolute;
-  top: 0;
-  right: max(var(--content-edge), env(safe-area-inset-right, 0px));
-  left: max(var(--content-edge), env(safe-area-inset-left, 0px));
-  gap: 3px;
-  height: 8px;
-}
-
-.root[data-phone] .tick {
-  height: 12px;
-  margin-top: -2px;
-}
-
-.root[data-phone] .tick::after {
-  display: none;
-}
-
-/* The slides as a list, between the header band and the bar, each row jumping to its slide. */
-.root[data-phone] .overview {
-  padding-inline: max(var(--content-edge), env(safe-area-inset-left, 0px));
-}
-
-.toc {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 0;
-  list-style: none;
-}
-
-.overview[data-open] .tocItem {
-  animation: overviewIn var(--duration-slow) var(--ease-out) backwards;
-}
-
-.tocRow {
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
-  gap: 12px;
-  align-items: baseline;
-  width: 100%;
-  padding: 14px 0;
-  border: 0;
-  border-bottom: 1px solid var(--deck-rule);
-  background: transparent;
-  color: var(--deck-fg);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: background-color var(--duration-fast) var(--ease-out);
-}
-
-.tocRow:active {
-  background: var(--deck-hover);
-}
-
-.tocNumber,
-.tocSection {
-  font-family: var(--font-mono);
-  font-size: var(--text-2xs);
-  letter-spacing: var(--caps-tracking);
-  text-transform: uppercase;
-  color: var(--deck-fg-2);
-}
-
-.tocNumber {
-  font-variant-numeric: tabular-nums;
-}
-
-.tocText {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.tocTitle {
-  font-family: var(--font-display);
-  font-size: 19px;
-  font-weight: 300;
-  line-height: 1.25;
-}
-
-.tocRow[aria-current="true"] :is(.tocNumber, .tocSection) {
-  color: var(--deck-accent);
 }
 
 /* ---------- Share menu ---------- */
