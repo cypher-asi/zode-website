@@ -1510,19 +1510,16 @@ function Traction({ slide }: { slide: Of<"traction"> }): ReactElement {
  * The sites as mini-cards down the left, as the unit slide's, grouped under
  * how soon they close: a line map of each city filling a square cell, ruled
  * off from its name, path, status and facility MW, the total under them. On the right the capacity contracted beyond
- * them, then the plan by year, its bars on a log scale so each tenfold
- * adds one step; the last year is set on ink.
+ * them, then the plan by year, its bars to a linear scale of the largest
+ * year's MW; the last year is set on ink.
  */
 /** A dollar figure or range, e.g. "$18.8M" or "$50–75M"; split out with its capture so it alternates with the text. */
 const FIGURE = /(\$[\d.]+(?:–[\d.]+)?[MB])/;
 
 function Pipeline({ slide }: { slide: Of<"pipeline"> }): ReactElement {
   const steps = slide.plan.length;
-  // Decades from a tenth of a MW, over the largest's and one more for the end of the scale.
-  const decades =
-    Math.log10(Math.max(...slide.plan.map((row) => row.mw ?? 0))) + 2;
-  const share = (mw?: number) =>
-    mw === undefined ? 1 : (Math.log10(mw) + 1) / decades;
+  const largest = Math.max(...slide.plan.map((row) => row.mw ?? 0));
+  const share = (mw?: number) => (mw === undefined ? 1 : mw / largest);
   return (
     <div className={styles.split} data-split="sites">
       <div className={styles.sites}>

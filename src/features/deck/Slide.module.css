@@ -2444,12 +2444,12 @@ a.measureTitle:focus-visible {
   color: var(--fg-2);
 }
 
-/* A track in the rule's tone, filled to the year's step. */
+/* A track in the rule's tone, filled to the year's share; a hairline at the least, so a small year still reads as nonzero. */
 .planBar {
   height: calc(0.5 * var(--u));
   background:
-    linear-gradient(var(--fg), var(--fg)) left / calc(var(--share) * 100%) 100%
-      no-repeat,
+    linear-gradient(var(--fg), var(--fg)) left /
+      max(calc(var(--share) * 100%), 2px) 100% no-repeat,
     var(--rule);
 }
 
