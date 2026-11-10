@@ -66,9 +66,11 @@ export function ModelLink({ roomId, fileId, path, live }: { roomId: string; file
 export interface TableRow {
   label: string;
   values: ReactNode[];
-  kind?: "subtotal";
+  /** A `heading` names the `nested` rows under it and has no values. */
+  kind?: "subtotal" | "heading";
   /** Part of the row above it. */
   indent?: boolean;
+  nested?: boolean;
 }
 
 /** Rows of values under shared column headings. */
@@ -95,14 +97,29 @@ export function Table({ head, groups }: { head: string[]; groups: { title?: stri
                 </th>
               </tr>
             ) : null}
-            {group.rows.map((row) => (
-              <tr key={row.label} className={row.kind === "subtotal" ? t.subtotal : row.indent ? t.indent : undefined}>
-                <th scope="row">{row.label}</th>
-                {row.values.map((v, i) => (
-                  <td key={i}>{v}</td>
-                ))}
-              </tr>
-            ))}
+            {group.rows.map((row, r) =>
+              row.kind === "heading" ? (
+                <tr key={`${r}:${row.label}`} className={t.heading}>
+                  <th scope="rowgroup" colSpan={head.length + 1}>
+                    {row.label}
+                  </th>
+                </tr>
+              ) : (
+                <tr
+                  key={`${r}:${row.label}`}
+                  className={
+                    [row.kind === "subtotal" ? t.subtotal : row.indent ? t.indent : null, row.nested ? t.nested : null]
+                      .filter(Boolean)
+                      .join(" ") || undefined
+                  }
+                >
+                  <th scope="row">{row.label}</th>
+                  {row.values.map((v, i) => (
+                    <td key={i}>{v}</td>
+                  ))}
+                </tr>
+              ),
+            )}
           </tbody>
         ))}
       </table>

@@ -41,18 +41,35 @@ export function yearValue(n: number, unit: YearRow["unit"]): string {
   return Math.abs(n) < 500 ? "–" : usdShort(n);
 }
 
-/** A yearly table's head and rows, each row's total last; blank where the workbook adds nothing up. */
+/** "Revenue" for "Revenue: Toronto"; null for a row that isn't one of a kind, such as a subtotal or a part of the row above. */
+const prefixOf = (row: YearRow): string | null =>
+  row.kind || row.indent ? null : (/^([^:]+):\s+\S/.exec(row.label)?.[1] ?? null);
+
+/**
+ * A yearly table's head and rows, each row's total last; blank where the
+ * workbook adds nothing up. Neighboring rows that share a prefix, such as
+ * "Revenue: Toronto" and "Revenue: Calgary", sit under it as a heading, named
+ * by what follows it.
+ */
 export function yearRows(table: YearTable): { head: string[]; groups: { title: string; rows: TableRow[] }[] } {
   return {
     head: [...table.years, "Total"],
     groups: table.groups.map((g) => ({
       title: g.title,
-      rows: g.rows.map((r) => ({
-        label: r.label,
-        values: [...r.values.map((v) => yearValue(v, r.unit)), r.total === null ? "" : yearValue(r.total, r.unit)],
-        kind: r.kind,
-        indent: r.indent,
-      })),
+      rows: g.rows.flatMap((r, i, rows): TableRow[] => {
+        const prefix = prefixOf(r);
+        const before = i > 0 ? prefixOf(rows[i - 1]) : null;
+        const after = i + 1 < rows.length ? prefixOf(rows[i + 1]) : null;
+        const nested = prefix !== null && (prefix === before || prefix === after);
+        const row: TableRow = {
+          label: nested ? r.label.slice(prefix.length + 1).trim() : r.label,
+          values: [...r.values.map((v) => yearValue(v, r.unit)), r.total === null ? "" : yearValue(r.total, r.unit)],
+          kind: r.kind,
+          indent: r.indent,
+          nested,
+        };
+        return nested && prefix !== before ? [{ label: prefix, values: [], kind: "heading" }, row] : [row];
+      }),
     })),
   };
 }

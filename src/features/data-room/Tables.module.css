@@ -50,6 +50,17 @@
   color: var(--color-text-secondary);
 }
 
+/* A heading over rows that shared its prefix in the workbook, such as each site's revenue. */
+.table .heading th {
+  font-weight: 400;
+  text-align: left;
+  color: var(--color-text-secondary);
+}
+
+.table .nested th[scope="row"] {
+  padding-left: 16px;
+}
+
 /* A sum of the rows above it, bold and ruled off from them. */
 .table .subtotal th[scope="row"],
 .table .subtotal td {
