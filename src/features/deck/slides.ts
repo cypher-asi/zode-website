@@ -329,6 +329,11 @@ export type Slide =
         partnerLabel: string;
         areas: readonly { label: string; partner: Logo; logos: readonly Logo[] }[];
       };
+      /** A card each in a row along the foot, the initials in the circle until a `photo` is set. */
+      advisors: {
+        title: string;
+        people: readonly { name: string; company: string; feat: string; photo?: string }[];
+      };
     })
   | (Base & { kind: "close"; lede: string; contact: string })
   /** Ends the public deck, in place of the slides kept for the data room. */
@@ -681,6 +686,16 @@ export const PUBLIC_SLIDES: readonly Slide[] = [
             { name: "Blue Origin", src: `${LOGO_DIR}/blue-origin.svg`, aspect: 945 / 160, scale: 0.83 },
           ],
         },
+      ],
+    },
+    advisors: {
+      title: "Advisors",
+      people: [
+        { name: "Ian Finder", company: "NVIDIA", feat: "Designed the Vera chip" },
+        { name: "Nick Sammut", company: "Crusoe", feat: "$50B in compute deals" },
+        { name: "Dan Rosen", company: "Ezra", feat: "$15B in distributed energy" },
+        { name: "Jaspar Weir", company: "TaskUs", feat: "Built a 20,000-person company" },
+        { name: "Steven Lacy", company: "Apple", feat: "Cybersecurity task force" },
       ],
     },
   },

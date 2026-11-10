@@ -2228,96 +2228,126 @@ function ContributionGraph({ data }: { data: Contributions }): ReactElement {
  * The founder in the left third, the ventures ruled under the name as main
  * quests, each company's years beside it and its outcome under its role; in
  * the right two thirds a column per area, its key partner over the
- * team and advisors from it.
+ * team from it. The advisors run in a row of cards under both.
  */
 function Team({ slide }: { slide: Of<"team"> }): ReactElement {
-  const { founder, network } = slide;
+  const { founder, network, advisors } = slide;
   return (
-    <div className={styles.split} data-split="team">
-      <div className={styles.founder}>
-        <div {...rise(2)} className={styles.rise}>
-          <div className={styles.founderRole}>
-            <p className={styles.label}>{founder.role}</p>
-            <ul className={styles.social}>
-              {founder.social.map((link) => (
-                <li key={link.network}>
-                  <a
-                    href={link.href}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    aria-label={`${founder.name} on ${link.label}`}
-                  >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d={SOCIAL_MARKS[link.network]} />
-                    </svg>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <h3 className={`${styles.h3} ${styles.person}`}>{founder.name}</h3>
-        </div>
-        <section className={styles.quests}>
-          <h4 {...rise(2.6)} className={`${styles.rise} ${styles.figLabel}`}>
-            {founder.main.title}
-          </h4>
-          <ul className={styles.ventures}>
-            {founder.main.ventures.map((venture, i) => (
-              <li
-                key={venture.company}
-                {...rise(3 + i * 0.4)}
-                className={`${styles.rise} ${styles.venture}`}
-              >
-                <span className={styles.ventureName}>
-                  <OutLink href={venture.href}>{venture.company}</OutLink>
-                </span>
-                <span className={styles.years}>{venture.years}</span>
-                <p className={styles.ventureRole}>{venture.role}</p>
-                {venture.outcome && (
-                  <p
-                    className={`${styles.ventureText} ${styles.ventureOutcome}`}
-                  >
-                    {venture.outcome}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-        {founder.contributions && (
-          <div {...rise(4.6)} className={styles.rise}>
-            <ContributionGraph data={founder.contributions} />
-          </div>
-        )}
-      </div>
-      <section className={styles.network}>
-        {network.areas.map((area, i) => (
-          <div
-            key={area.label}
-            {...rise(3.5 + i * 0.4)}
-            className={`${styles.rise} ${styles.networkArea}`}
-          >
-            <h3 className={styles.networkLabel}>{area.label}</h3>
-            <div className={styles.partner}>
-              <span className={styles.label}>{network.partnerLabel}</span>
-              <div className={`${styles.logos} ${styles.partnerMark}`}>
-                <LogoMark logo={area.partner} size={1.6} />
-              </div>
+    <>
+      <div className={styles.split} data-split="team">
+        <div className={styles.founder}>
+          <div {...rise(2)} className={styles.rise}>
+            <div className={styles.founderRole}>
+              <p className={styles.label}>{founder.role}</p>
+              <ul className={styles.social}>
+                {founder.social.map((link) => (
+                  <li key={link.network}>
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      aria-label={`${founder.name} on ${link.label}`}
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d={SOCIAL_MARKS[link.network]} />
+                      </svg>
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <span className={`${styles.label} ${styles.networkTitle}`}>
-              {network.title}
-            </span>
-            <ul className={styles.logos}>
-              {area.logos.map((logo) => (
-                <li key={logo.name}>
-                  <LogoMark logo={logo} />
+            <h3 className={`${styles.h3} ${styles.person}`}>{founder.name}</h3>
+          </div>
+          <section className={styles.quests}>
+            <h4 {...rise(2.6)} className={`${styles.rise} ${styles.figLabel}`}>
+              {founder.main.title}
+            </h4>
+            <ul className={styles.ventures}>
+              {founder.main.ventures.map((venture, i) => (
+                <li
+                  key={venture.company}
+                  {...rise(3 + i * 0.4)}
+                  className={`${styles.rise} ${styles.venture}`}
+                >
+                  <span className={styles.ventureName}>
+                    <OutLink href={venture.href}>{venture.company}</OutLink>
+                  </span>
+                  <span className={styles.years}>{venture.years}</span>
+                  <p className={styles.ventureRole}>{venture.role}</p>
+                  {venture.outcome && (
+                    <p
+                      className={`${styles.ventureText} ${styles.ventureOutcome}`}
+                    >
+                      {venture.outcome}
+                    </p>
+                  )}
                 </li>
               ))}
             </ul>
-          </div>
-        ))}
+          </section>
+          {founder.contributions && (
+            <div {...rise(4.6)} className={styles.rise}>
+              <ContributionGraph data={founder.contributions} />
+            </div>
+          )}
+        </div>
+        <section className={styles.network}>
+          {network.areas.map((area, i) => (
+            <div
+              key={area.label}
+              {...rise(3.5 + i * 0.4)}
+              className={`${styles.rise} ${styles.networkArea}`}
+            >
+              <h3 className={styles.networkLabel}>{area.label}</h3>
+              <div className={styles.partner}>
+                <span className={styles.label}>{network.partnerLabel}</span>
+                <div className={`${styles.logos} ${styles.partnerMark}`}>
+                  <LogoMark logo={area.partner} size={1.6} />
+                </div>
+              </div>
+              <span className={`${styles.label} ${styles.networkTitle}`}>
+                {network.title}
+              </span>
+              <ul className={styles.logos}>
+                {area.logos.map((logo) => (
+                  <li key={logo.name}>
+                    <LogoMark logo={logo} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      </div>
+      <section className={styles.advisors}>
+        <h3 {...rise(5)} className={`${styles.rise} ${styles.figLabel}`}>
+          {advisors.title}
+        </h3>
+        <ul className={styles.advisorCards}>
+          {advisors.people.map((person, i) => (
+            <li
+              key={person.name}
+              {...rise(5.2 + i * 0.2)}
+              className={`${styles.rise} ${styles.advisor}`}
+            >
+              <span className={styles.advisorPhoto} aria-hidden="true">
+                {person.photo ? (
+                  <Image src={person.photo} alt="" fill sizes="80px" />
+                ) : (
+                  person.name
+                    .split(" ")
+                    .map((word) => word[0])
+                    .join("")
+                )}
+              </span>
+              <p className={styles.advisorName}>{person.name}</p>
+              <p className={styles.advisorCompany}>{person.company}</p>
+              <p className={styles.advisorFeat}>{person.feat}</p>
+            </li>
+          ))}
+        </ul>
       </section>
-    </div>
+    </>
   );
 }
 

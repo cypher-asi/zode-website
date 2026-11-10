@@ -4015,6 +4015,102 @@ a.measureTitle:focus-visible {
   object-position: left center;
 }
 
+/* The advisors under the split, over a rule the split's own stops on: a row of cards joined as one panel. */
+.main > .advisors {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: calc(0.7 * var(--u));
+  margin-top: calc(1.4 * var(--u));
+  padding-top: calc(1.1 * var(--u));
+  border-top: 1px solid var(--rule);
+}
+
+.main > .split[data-split="team"]:has(+ .advisors)::after {
+  bottom: calc(-1.4 * var(--u) - var(--pip) / 2);
+}
+
+.advisors .figLabel {
+  margin: 0;
+}
+
+.advisorCards {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  padding: 1px;
+  list-style: none;
+}
+
+/* The photo, then name, company and what they did beside it. */
+.advisor {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: center;
+  column-gap: calc(0.9 * var(--u));
+  padding: calc(0.8 * var(--u)) calc(1 * var(--u));
+  background: var(--card);
+  box-shadow: 0 0 0 1px var(--rule);
+}
+
+.advisor p {
+  grid-column: 2;
+}
+
+.advisorPhoto {
+  position: relative;
+  display: grid;
+  grid-row: 1 / span 3;
+  align-self: center;
+  place-items: center;
+  width: calc(3.2 * var(--u));
+  height: calc(3.2 * var(--u));
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--tint);
+  box-shadow: inset 0 0 0 1px var(--rule);
+  font-family: var(--font-mono);
+  font-size: calc(0.7 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  color: var(--fg-2);
+}
+
+.advisorPhoto img {
+  object-fit: cover;
+}
+
+/* Set as `.ventureName`, smaller. */
+.advisorName {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: calc(1.05 * var(--u));
+  font-weight: 300;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+}
+
+/* Set as `.years`. */
+.advisorCompany {
+  margin: calc(0.15 * var(--u)) 0 0;
+  font-family: var(--font-mono);
+  font-size: calc(0.58 * var(--u));
+  font-weight: 500;
+  letter-spacing: var(--eyebrow-tracking);
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+.advisorFeat {
+  margin: calc(0.2 * var(--u)) 0 0;
+  font-size: calc(0.78 * var(--u));
+  line-height: 1.3;
+  color: var(--fg);
+}
+
 /* Cover: the title left, a render bleeding off the right. */
 .slide[data-kind="cover"] .main,
 .slide[data-kind="close"] .main,
@@ -6214,6 +6310,39 @@ a.measureTitle:focus-visible {
 
 .slide[data-compact] .networkArea .logos img {
   height: calc(var(--h) * 10px);
+}
+
+.slide[data-compact] .main > .advisors {
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+}
+
+.slide[data-compact] .advisorCards {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.slide[data-compact] .advisor {
+  column-gap: 8px;
+  padding: 8px 10px;
+}
+
+.slide[data-compact] .advisorPhoto {
+  width: 30px;
+  height: 30px;
+  font-size: 9px;
+}
+
+.slide[data-compact] .advisorName {
+  font-size: 14px;
+}
+
+.slide[data-compact] .advisorCompany {
+  font-size: 9px;
+}
+
+.slide[data-compact] .advisorFeat {
+  font-size: 11px;
 }
 
 /* Close: the calls to action full width, at a thumb's height. */
