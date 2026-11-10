@@ -135,20 +135,25 @@ export interface RaiseStack {
   }[];
 }
 
-/** A quarter of the consolidated model on the revenue ramp, in whole USD; costs are positive. */
-export interface RampQuarter {
-  /** "Q3 2027". */
-  readonly quarter: string;
+/**
+ * A quarter or month of the consolidated model's P&L on the revenue ramp, in
+ * whole USD; costs are positive. Revenue less the costs is the net income.
+ */
+export interface RampPeriod {
+  /** "Q3 2027" or "Aug 2027"; ends in its year. */
+  readonly period: string;
   readonly revenue: { readonly inference: number; readonly merchant: number; readonly offtake: number };
   readonly costs: {
+    readonly power: number;
     /** Colocation rent, site and cluster operations. */
     readonly opCosts: number;
-    readonly power: number;
-    /** Interest and principal repaid. */
-    readonly debtService: number;
     /** ZODE Inc.'s staffing and G&A. */
     readonly topco: number;
+    readonly depreciation: number;
+    readonly interest: number;
   };
+  /** The model's "Net income (pre-tax)"; negative for a loss. */
+  readonly netIncome: number;
 }
 
 export type Slide =
@@ -266,7 +271,9 @@ export type Slide =
   | (Base & {
       kind: "ramp";
       /** One stacked bar each: the quarter's revenue, split into where it goes. */
-      quarters: readonly RampQuarter[];
+      quarters: readonly RampPeriod[];
+      /** The same by month, behind the chart's toggle. */
+      months: readonly RampPeriod[];
       /** Under the chart, beside its key. */
       caption: string;
       note: string;
@@ -274,7 +281,7 @@ export type Slide =
   | (Base & {
       kind: "raise";
       /** Across the top of the chart, over every project. */
-      topco: { name: string; detail: string; uses: string };
+      topco: { name: string; value: string; basis: string; detail: string; uses: string };
       /** One column each. A leased site has no site company, so no `propCo`. */
       projects: readonly {
         name: string;

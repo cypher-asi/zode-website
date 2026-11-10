@@ -699,7 +699,15 @@ function Shortfall({
   );
 }
 
-/** The consolidated model's quarters as stacked bars, over a key to their parts and the model's note. */
+const RAMP_VIEWS = [
+  { id: "quarters", label: "Quarterly" },
+  { id: "months", label: "Monthly" },
+] as const;
+
+/**
+ * The consolidated model as stacked bars, by quarter or by month as its toggle
+ * says, over a key to their parts and the model's note.
+ */
 function Ramp({
   slide,
   active,
@@ -709,10 +717,30 @@ function Ramp({
   active: boolean;
   compact: boolean;
 }): ReactElement {
+  const [view, setView] = useState<(typeof RAMP_VIEWS)[number]["id"]>("quarters");
   return (
     <div className={styles.rampBody}>
       <figure {...rise(2)} className={`${styles.rise} ${styles.figure}`}>
-        <RampChart quarters={slide.quarters} active={active} compact={compact} />
+        <div className={styles.modes} role="group" aria-label="Revenue by">
+          {RAMP_VIEWS.map((v) => (
+            <button
+              key={v.id}
+              type="button"
+              className={styles.mode}
+              aria-pressed={v.id === view}
+              onClick={() => setView(v.id)}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+        <RampChart
+          key={view}
+          periods={slide[view]}
+          monthly={view === "months"}
+          active={active}
+          compact={compact}
+        />
         <figcaption className={`${styles.legend} ${chartStyles.rampKey}`}>
           {[...RAMP_PARTS].reverse().map((part) => (
             <span key={part.key} className={styles.rampKeyItem}>
@@ -1852,10 +1880,14 @@ function Raise({ slide }: { slide: Of<"raise"> }): ReactElement {
         <section {...rise(1.6)} className={`${styles.rise} ${styles.raiseTopco}`}>
           <h3 className={`${styles.label} ${styles.raiseBand}`}>Top Co</h3>
           <div className={styles.raiseTopcoBody}>
-            <span className={styles.raiseTopcoName}>{slide.topco.name}</span>
-            <span className={styles.raiseTopcoText}>
+            <span className={styles.raiseTopcoMain}>
+              <span className={styles.raiseTopcoName}>{slide.topco.name}</span>
               <span className={styles.raiseNodeDetail}>{slide.topco.detail}</span>
               <span className={styles.fine}>{slide.topco.uses}</span>
+            </span>
+            <span className={styles.raiseTopcoText}>
+              <span className={styles.raiseNodeValue}>{slide.topco.value}</span>
+              <span className={styles.fine}>{slide.topco.basis}</span>
             </span>
           </div>
         </section>

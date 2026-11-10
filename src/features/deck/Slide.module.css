@@ -875,6 +875,10 @@
   flex: 1;
 }
 
+.rampBody .modes {
+  margin-bottom: calc(0.8 * var(--u));
+}
+
 .rampKeyItem {
   display: inline-flex;
   align-items: center;
@@ -3145,6 +3149,12 @@ a.measureTitle:focus-visible {
   min-height: 0;
 }
 
+.main > .raise {
+  flex: none;
+  margin-block: auto;
+  padding-bottom: calc(0.8 * var(--u));
+}
+
 .raiseChart {
   --row-gap: calc(0.9 * var(--u));
   --col-gap: calc(0.6 * var(--u));
@@ -3195,13 +3205,21 @@ a.measureTitle:focus-visible {
 .raiseTopcoBody {
   display: flex;
   flex: 1;
-  align-items: center;
+  align-items: stretch;
   gap: calc(1.6 * var(--u));
-  padding: calc(0.5 * var(--u)) calc(1 * var(--u));
+  padding: calc(0.45 * var(--u)) calc(1 * var(--u)) calc(0.55 * var(--u));
+}
+
+/* Its name over what it does, as a node's value over its detail. */
+.raiseTopcoMain {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.2 * var(--u));
+  min-width: 0;
 }
 
 .raiseTopcoName {
-  flex: none;
+  margin-bottom: calc(0.15 * var(--u));
   font-family: var(--font-display);
   font-size: calc(1.7 * var(--u));
   font-weight: 300;
@@ -3212,6 +3230,7 @@ a.measureTitle:focus-visible {
 .raiseTopcoText {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: calc(0.2 * var(--u));
   min-width: 0;
   padding-left: calc(1.6 * var(--u));
@@ -5073,6 +5092,10 @@ a.measureTitle:focus-visible {
 
 .slide[data-compact] .rampBody {
   gap: 12px;
+}
+
+.slide[data-compact] .rampBody .modes {
+  margin-bottom: 12px;
 }
 
 .slide[data-compact] .rampKeySwatch {

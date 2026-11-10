@@ -12,18 +12,19 @@ const quarterRevenue = ({ revenue }: (typeof REVENUE_RAMP.quarters)[number]) =>
   revenue.inference + revenue.merchant + revenue.offtake;
 const PEAK = REVENUE_RAMP.quarters.reduce((best, q) => (quarterRevenue(q) > quarterRevenue(best) ? q : best));
 
-/** The consolidated model by quarter, from ./revenueRamp, which scripts/write-revenue-ramp.mjs writes. */
+/** The consolidated model by quarter and by month, from ./revenueRamp, which scripts/write-revenue-ramp.mjs writes. */
 const RAMP: Slide = {
   id: "revenue-ramp",
   kind: "ramp",
   section: "Revenue ramp",
   eyebrow: "Revenue ramp",
-  title: `Revenue ramps to $${(quarterRevenue(PEAK) / 1e9).toFixed(1)}B a quarter by ${PEAK.quarter}.`,
+  title: `Revenue ramps to $${(quarterRevenue(PEAK) / 1e9).toFixed(1)}B a quarter by ${PEAK.period}.`,
   ground: "paper",
   quarters: REVENUE_RAMP.quarters,
+  months: REVENUE_RAMP.months,
   caption:
-    "Revenue by quarter, ZODE Inc. consolidated with every project at 100%. Hover a bar for its revenue by inference, merchant and offtake, and where it goes.",
-  note: `Preliminary, from ZODE's master model of November 9, 2026 (${REVENUE_RAMP.model}, ZODE ASCENT data room), base case to December 2030, with Big Watt adding 30 MW a quarter from June 2027 to 570 MW, and 250 MW of generic future sites added in 2029, growing 20% a year. Op costs are colocation rent and site and cluster operations. Debt service is interest and principal repaid; Q2 2027's includes the $10M Calgary acquisition loan the construction loan refinances. TopCo is ZODE Inc.'s staffing and G&A. Left over is before GPU hardware, refresh and site capital spending.`,
+    "Revenue by quarter or month, ZODE Inc. consolidated with every project at 100%. Hover a bar for its revenue by inference, merchant and offtake, and where it goes.",
+  note: `Preliminary, from ZODE's master model of November 9, 2026 (${REVENUE_RAMP.model}, ZODE ASCENT data room), base case to December 2030, with Big Watt adding 30 MW a quarter from June 2027 to 570 MW, and 250 MW of generic future sites added in 2029, growing 20% a year. Each bar follows the model's consolidated P&L down to its net income, pre-tax. Op costs are colocation rent and site and cluster operations. TopCo is ZODE Inc.'s staffing and G&A.`,
 };
 
 /**
@@ -41,6 +42,8 @@ const RAISE: Slide = {
   ground: "paper",
   topco: {
     name: "ZODE Inc.",
+    value: "$55M",
+    basis: "Seed SAFE · $300M post-money cap",
     detail: "Team, development and the common equity of each project",
     uses: "$39.3M into the projects · $21.5M team and G&A through 2028",
   },

@@ -1,15 +1,20 @@
 import { useState, type CSSProperties, type PointerEvent, type ReactElement } from "react";
-import type { RampQuarter } from "../slides";
+import type { RampPeriod } from "../slides";
 import styles from "./charts.module.css";
 
-/** Where a quarter's revenue goes, from the bar's foot up: costs, then what's left over on top. */
-export const RAMP_PARTS = [
+/** The model's P&L costs, in its order. */
+const COSTS = [
   { key: "power", label: "Power" },
   { key: "opCosts", label: "Op costs" },
-  { key: "debtService", label: "Debt service" },
   { key: "topco", label: "TopCo" },
-  { key: "left", label: "Left over" },
+  { key: "depreciation", label: "Depreciation" },
+  { key: "interest", label: "Interest" },
 ] as const;
+
+const NET_INCOME = { key: "netIncome", label: "Net income (pre-tax)" } as const;
+
+/** Where a period's revenue goes, from the bar's foot up: down the P&L to net income on top. */
+export const RAMP_PARTS = [...COSTS, NET_INCOME] as const;
 
 type PartKey = (typeof RAMP_PARTS)[number]["key"];
 
@@ -19,17 +24,10 @@ const REVENUE = [
   { key: "offtake", label: "Offtake" },
 ] as const;
 
-const COSTS = [
-  { key: "opCosts", label: "Op costs" },
-  { key: "power", label: "Power" },
-  { key: "debtService", label: "Debt service" },
-  { key: "topco", label: "TopCo" },
-] as const;
-
 /** The slide's wide chart, and a squarer one for the deck's scroll mode, where only the years are labelled. */
 const LAYOUTS = {
-  wide: { W: 1000, H: 440, pad: { top: 12, right: 4, bottom: 52, left: 52 }, tip: { w: 250, h: 262 } },
-  compact: { W: 520, H: 420, pad: { top: 12, right: 2, bottom: 36, left: 46 }, tip: { w: 300, h: 330 } },
+  wide: { W: 1000, H: 440, pad: { top: 12, right: 4, bottom: 52, left: 52 }, tip: { w: 250, h: 280 } },
+  compact: { W: 520, H: 420, pad: { top: 12, right: 2, bottom: 36, left: 46 }, tip: { w: 300, h: 356 } },
 } as const;
 
 /** $3.92B, $98.1M, −$1.1M. */
@@ -42,9 +40,8 @@ export function usd(n: number): string {
   return a ? `${sign}$${Math.round(a)}` : "$0";
 }
 
-const totalOf = (q: RampQuarter) => q.revenue.inference + q.revenue.merchant + q.revenue.offtake;
-const costOf = (q: RampQuarter) => q.costs.opCosts + q.costs.power + q.costs.debtService + q.costs.topco;
-const amountOf = (q: RampQuarter, key: PartKey) => (key === "left" ? totalOf(q) - costOf(q) : q.costs[key]);
+const totalOf = (q: RampPeriod) => q.revenue.inference + q.revenue.merchant + q.revenue.offtake;
+const amountOf = (q: RampPeriod, key: PartKey) => (key === "netIncome" ? q.netIncome : q.costs[key]);
 
 /** The scale's top and its gridlines: no more than five steps of 1, 2 or 5 times a power of ten. */
 function scale(max: number): { top: number; ticks: number[] } {
@@ -56,39 +53,44 @@ function scale(max: number): { top: number; ticks: number[] } {
 }
 
 /**
- * The consolidated model by quarter, one bar each: its height the quarter's
- * revenue, stacked from power at the foot through op costs, debt service and
- * TopCo to what's left over at the top. Hovering, focusing or tapping a bar
- * shows its revenue by how it's sold and where it went.
+ * The consolidated model by quarter or by month, one bar each: its height the
+ * period's revenue, stacked down the model's P&L from power at the foot
+ * through op costs, TopCo, depreciation and interest to its net income at the
+ * top. Hovering, focusing or tapping a bar shows its revenue by how it's sold
+ * and where it went.
  */
 export function RampChart({
-  quarters,
+  periods,
+  monthly = false,
   active,
   compact = false,
 }: {
-  quarters: readonly RampQuarter[];
+  periods: readonly RampPeriod[];
+  monthly?: boolean;
   active: boolean;
   compact?: boolean;
 }): ReactElement {
   const [shown, setShown] = useState<number | null>(null);
   const { W, H, pad: PAD, tip: TIP } = LAYOUTS[compact ? "compact" : "wide"];
-  const { top, ticks } = scale(Math.max(...quarters.map(totalOf)));
-  const SLOT = (W - PAD.left - PAD.right) / quarters.length;
+  const { top, ticks } = scale(Math.max(...periods.map(totalOf)));
+  const SLOT = (W - PAD.left - PAD.right) / periods.length;
   const BAR = SLOT * 0.62;
   const y = (usd: number) => H - PAD.bottom - (usd / top) * (H - PAD.top - PAD.bottom);
   const cx = (i: number) => PAD.left + SLOT * (i + 0.5);
-  const years = quarters.reduce<{ year: string; from: number; to: number }[]>((runs, q, i) => {
-    const year = q.quarter.slice(-4);
+  const years = periods.reduce<{ year: string; from: number; to: number }[]>((runs, p, i) => {
+    const year = p.period.slice(-4);
     if (runs.at(-1)?.year === year) runs[runs.length - 1].to = i;
     else runs.push({ year, from: i, to: i });
     return runs;
   }, []);
-  const peak = quarters.reduce((best, q, i) => (totalOf(q) > totalOf(quarters[best]) ? i : best), 0);
+  const peak = periods.reduce((best, p, i) => (totalOf(p) > totalOf(periods[best]) ? i : best), 0);
+  /** "Q3" under a quarter, "A" under August. */
+  const tick = (p: RampPeriod) => (monthly ? p.period.charAt(0) : p.period.slice(0, 2));
   const leave = (event: PointerEvent) => {
     if (event.pointerType === "mouse") setShown(null);
   };
 
-  const q = shown === null ? null : quarters[shown];
+  const q = shown === null ? null : periods[shown];
   const tipX = shown === null ? 0 : cx(shown) < W / 2 ? cx(shown) + BAR / 2 + 10 : cx(shown) - BAR / 2 - 10 - TIP.w;
 
   return (
@@ -99,7 +101,7 @@ export function RampChart({
       data-compact={compact || undefined}
       data-shown={shown === null ? undefined : true}
       role="group"
-      aria-label={`Quarterly revenue, ${quarters[0].quarter} to ${quarters.at(-1)?.quarter}, peaking at ${usd(totalOf(quarters[peak]))} in ${quarters[peak].quarter}.`}
+      aria-label={`${monthly ? "Monthly" : "Quarterly"} revenue, ${periods[0].period} to ${periods.at(-1)?.period}, peaking at ${usd(totalOf(periods[peak]))} in ${periods[peak].period}.`}
       onPointerLeave={leave}
     >
       {ticks.map((tick) => (
@@ -112,19 +114,19 @@ export function RampChart({
       ))}
       <line className={styles.baseline} x1={PAD.left} x2={W - PAD.right} y1={y(0)} y2={y(0)} />
 
-      {quarters.map((quarter, i) => {
-        const total = totalOf(quarter);
+      {periods.map((period, i) => {
+        const total = totalOf(period);
         let base = 0;
         return (
           <g
-            key={quarter.quarter}
+            key={period.period}
             className={styles.rampBar}
             data-shown={shown === i || undefined}
-            style={{ "--d": i } as CSSProperties}
+            style={{ "--d": monthly ? i / 3 : i } as CSSProperties}
           >
             {RAMP_PARTS.map(({ key }) => {
               const from = Math.min(base, total);
-              base += Math.max(amountOf(quarter, key), 0);
+              base += Math.max(amountOf(period, key), 0);
               const to = Math.min(base, total);
               return to > from ? (
                 <rect
@@ -144,16 +146,16 @@ export function RampChart({
 
       {compact
         ? null
-        : quarters.map((quarter, i) => (
+        : periods.map((period, i) => (
             <text
-              key={quarter.quarter}
-              className={styles.rampQuarter}
+              key={period.period}
+              className={styles.rampTick}
               data-shown={shown === i || undefined}
               x={cx(i)}
               y={H - PAD.bottom + 20}
               textAnchor="middle"
             >
-              {quarter.quarter.slice(0, 2)}
+              {tick(period)}
             </text>
           ))}
 
@@ -169,9 +171,9 @@ export function RampChart({
         </text>
       ))}
 
-      {quarters.map((quarter, i) => (
+      {periods.map((period, i) => (
         <rect
-          key={quarter.quarter}
+          key={period.period}
           className={styles.rampHit}
           x={cx(i) - SLOT / 2}
           y={PAD.top}
@@ -179,7 +181,7 @@ export function RampChart({
           height={H - PAD.top}
           tabIndex={0}
           role="button"
-          aria-label={`${quarter.quarter}: revenue ${usd(totalOf(quarter))}`}
+          aria-label={`${period.period}: revenue ${usd(totalOf(period))}`}
           aria-pressed={shown === i}
           onPointerEnter={() => setShown(i)}
           onClick={() => setShown(i)}
@@ -192,7 +194,7 @@ export function RampChart({
         <foreignObject x={tipX} y={PAD.top} width={TIP.w} height={TIP.h} className={styles.rampTipFrame}>
           <div className={styles.rampTip}>
             <p className={styles.rampTipHead}>
-              <span>{q.quarter}</span>
+              <span>{q.period}</span>
               <span className={styles.rampTipTotal}>{usd(totalOf(q))}</span>
             </p>
             <dl className={styles.rampTipRows}>
@@ -214,13 +216,13 @@ export function RampChart({
                 </div>
               ))}
             </dl>
-            <dl className={styles.rampTipRows} data-left>
+            <dl className={styles.rampTipRows} data-net>
               <div>
                 <dt>
-                  <span className={styles.rampSwatch} data-part="left" aria-hidden="true" />
-                  Left over
+                  <span className={styles.rampSwatch} data-part={NET_INCOME.key} aria-hidden="true" />
+                  {NET_INCOME.label}
                 </dt>
-                <dd>{usd(totalOf(q) - costOf(q))}</dd>
+                <dd>{usd(q.netIncome)}</dd>
               </div>
             </dl>
           </div>

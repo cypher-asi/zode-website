@@ -1,20 +1,22 @@
 /**
  * Writes the deck's revenue ramp (src/features/deck/revenueRamp.ts) from ZODE's
  * master model in a room: the consolidated monthly P&L on its Zode Inc. tab,
- * every SPV at 100% with future sites, summed by quarter from the model's
- * first month to December of `--through`:
+ * every SPV at 100% with future sites, by month and summed by quarter from the
+ * model's first month to December of `--through`:
  *
  *   node --env-file=.env.production.local scripts/write-revenue-ramp.mjs \
  *     --room <room id> --model "02 MODEL/ZODE_MasterModel_26.11.09.xlsx" \
  *     [--through 2030] [--file <local .xlsx>] [--dry-run]
  *
- * Each quarter is its revenue by how it's sold and where it goes: power; op
- * costs (colocation rent, site and cluster operations); debt service (interest
- * and principal repaid); and TopCo (staffing and G&A). Rows are read by their
- * labels in column B under the monthly header, as write-master-summary.mjs
- * reads them; a missing label, a row whose months don't add up to its total,
- * or revenue that isn't the sum of its three kinds fails the run. `--file`
- * reads the workbook from disk instead of the room, without the database.
+ * Each period is its revenue by how it's sold and where it goes down the P&L:
+ * power; op costs (colocation rent, site and cluster operations); TopCo
+ * (staffing and G&A); depreciation; interest; and the model's net income
+ * (pre-tax). Rows are read by their labels in column B under the monthly
+ * header, as write-master-summary.mjs reads them; a missing label, a row whose
+ * months don't add up to its total, revenue that isn't the sum of its three
+ * kinds, or revenue less those costs that isn't the month's net income fails
+ * the run. `--file` reads the workbook from disk instead of the room, without
+ * the database.
  */
 import { readFile, writeFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
@@ -171,39 +173,51 @@ const S = {
   rent: series("Colocation rent"),
   siteOps: series("Site operations"),
   clusterOps: series("Cluster operations"),
-  interest: series("Interest"),
-  repaid: series("Debt repaid"),
   staffing: series("Staffing:"),
   ga: series("G&A"),
+  depreciation: series("Depreciation"),
+  interest: series("Interest"),
+  netIncome: series("Net income"),
 };
+const COSTS = ["power", "rent", "siteOps", "clusterOps", "staffing", "ga", "depreciation", "interest"];
 months.forEach((month, i) => {
   const kinds = S.offtake[i] + S.merchant[i] + S.inference[i];
   if (Math.abs(kinds - revenue[i]) > 1) fail(`${modelName}: ${month} offtake, merchant and inference add up to ${kinds}, not its revenue of ${revenue[i]}.`);
+  const net = COSTS.reduce((total, key) => total + S[key][i], revenue[i]);
+  if (Math.abs(net - S.netIncome[i]) > 1) fail(`${modelName}: ${month} revenue less its costs is ${net}, not its net income of ${S.netIncome[i]}.`);
 });
 
 // Costs are negative in the workbook; the ramp carries them as positive amounts.
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const quarters = [];
-for (let i = 0; i <= last; i += 1) {
-  const [year, month] = months[i].split("-").map(Number);
-  const quarter = `Q${Math.floor((month - 1) / 3) + 1} ${year}`;
-  if (quarters.at(-1)?.quarter !== quarter) {
-    quarters.push({
-      quarter,
+const monthly = [];
+const add = (periods, period, i) => {
+  if (periods.at(-1)?.period !== period) {
+    periods.push({
+      period,
       revenue: { inference: 0, merchant: 0, offtake: 0 },
-      costs: { opCosts: 0, power: 0, debtService: 0, topco: 0 },
+      costs: { power: 0, opCosts: 0, topco: 0, depreciation: 0, interest: 0 },
+      net: { netIncome: 0 },
     });
   }
-  const q = quarters.at(-1);
-  q.revenue.inference += S.inference[i];
-  q.revenue.merchant += S.merchant[i];
-  q.revenue.offtake += S.offtake[i];
-  q.costs.opCosts -= S.rent[i] + S.siteOps[i] + S.clusterOps[i];
-  q.costs.power -= S.power[i];
-  q.costs.debtService -= S.interest[i] + S.repaid[i];
-  q.costs.topco -= S.staffing[i] + S.ga[i];
+  const p = periods.at(-1);
+  p.revenue.inference += S.inference[i];
+  p.revenue.merchant += S.merchant[i];
+  p.revenue.offtake += S.offtake[i];
+  p.costs.power -= S.power[i];
+  p.costs.opCosts -= S.rent[i] + S.siteOps[i] + S.clusterOps[i];
+  p.costs.topco -= S.staffing[i] + S.ga[i];
+  p.costs.depreciation -= S.depreciation[i];
+  p.costs.interest -= S.interest[i];
+  p.net.netIncome += S.netIncome[i];
+};
+for (let i = 0; i <= last; i += 1) {
+  const [year, month] = months[i].split("-").map(Number);
+  add(quarters, `Q${Math.floor((month - 1) / 3) + 1} ${year}`, i);
+  add(monthly, `${MONTH_NAMES[month - 1]} ${year}`, i);
 }
-for (const q of quarters) {
-  for (const group of [q.revenue, q.costs]) {
+for (const p of [...quarters, ...monthly]) {
+  for (const group of [p.revenue, p.costs, p.net]) {
     for (const key of Object.keys(group)) group[key] = Math.round(group[key]) || 0;
   }
 }
@@ -211,28 +225,39 @@ for (const q of quarters) {
 const usdM = (n) => `$${(n / 1e6).toFixed(1)}M`;
 for (const q of quarters) {
   const total = q.revenue.inference + q.revenue.merchant + q.revenue.offtake;
-  const costs = q.costs.opCosts + q.costs.power + q.costs.debtService + q.costs.topco;
-  console.log(`[ramp] ${q.quarter}: revenue ${usdM(total)}, costs ${usdM(costs)}, left ${usdM(total - costs)}`);
+  const costs = Object.values(q.costs).reduce((a, b) => a + b, 0);
+  console.log(`[ramp] ${q.period}: revenue ${usdM(total)}, costs ${usdM(costs)}, net income ${usdM(q.net.netIncome)}`);
 }
+console.log(`[ramp] ${monthly.length} months, ${monthly[0].period} to ${monthly.at(-1).period}.`);
+
+const periodsOut = (periods) =>
+  periods
+    .map(
+      (p) =>
+        `    {\n      period: "${p.period}",\n      revenue: { inference: ${p.revenue.inference}, merchant: ${p.revenue.merchant}, offtake: ${p.revenue.offtake} },\n      costs: { power: ${p.costs.power}, opCosts: ${p.costs.opCosts}, topco: ${p.costs.topco}, depreciation: ${p.costs.depreciation}, interest: ${p.costs.interest} },\n      netIncome: ${p.net.netIncome},\n    },`,
+    )
+    .join("\n");
 
 const source = roomName ? `${modelPath} in ${roomName}` : modelName;
 const out = `import "server-only";
-import type { RampQuarter } from "./slides";
+import type { RampPeriod } from "./slides";
 
 /**
  * Written by scripts/write-revenue-ramp.mjs from ${source}:
- * the consolidated monthly P&L on its Zode Inc. tab, by quarter to Dec ${THROUGH}.
+ * the consolidated monthly P&L on its Zode Inc. tab, by quarter and by month to Dec ${THROUGH}.
  * Whole USD; costs are positive. Rerun the script with each new model.
  */
-export const REVENUE_RAMP: { readonly model: string; readonly quarters: readonly RampQuarter[] } = {
+export const REVENUE_RAMP: {
+  readonly model: string;
+  readonly quarters: readonly RampPeriod[];
+  readonly months: readonly RampPeriod[];
+} = {
   model: ${JSON.stringify(modelName)},
   quarters: [
-${quarters
-  .map(
-    (q) =>
-      `    {\n      quarter: "${q.quarter}",\n      revenue: { inference: ${q.revenue.inference}, merchant: ${q.revenue.merchant}, offtake: ${q.revenue.offtake} },\n      costs: { opCosts: ${q.costs.opCosts}, power: ${q.costs.power}, debtService: ${q.costs.debtService}, topco: ${q.costs.topco} },\n    },`,
-  )
-  .join("\n")}
+${periodsOut(quarters)}
+  ],
+  months: [
+${periodsOut(monthly)}
   ],
 };
 `;
@@ -243,4 +268,4 @@ if (args["dry-run"]) {
 }
 const target = new URL("../src/features/deck/revenueRamp.ts", import.meta.url);
 await writeFile(target, out);
-console.log(`[ramp] wrote ${quarters.length} quarters from ${source} to src/features/deck/revenueRamp.ts.`);
+console.log(`[ramp] wrote ${quarters.length} quarters and ${monthly.length} months from ${source} to src/features/deck/revenueRamp.ts.`);
