@@ -4824,8 +4824,9 @@ a.measureTitle:focus-visible {
 
 /*
  * Timeline: the three phases side by side, each its number, drawing and
- * title, without its description; the band and milestone, then the sale
- * card, its channels ranked by their bars, without their descriptions.
+ * title, without its description; the band, without the milestone, then the
+ * sale out of its card, its title over its channels ranked by their bars,
+ * without their descriptions.
  */
 .slide[data-compact] .timeline {
   flex: none;
@@ -4841,10 +4842,15 @@ a.measureTitle:focus-visible {
   display: grid;
   grid-area: auto / 1 / auto / -1;
   grid-template:
-    "index" auto
     "title" auto
     "channels" auto / minmax(0, 1fr);
-  padding: 8px 14px 12px;
+  padding: 16px 0 0;
+  background: none;
+  box-shadow: none;
+}
+
+.slide[data-compact] :is(.phase[data-sale] .phaseIndex, .milestone) {
+  display: none;
 }
 
 .slide[data-compact] .phaseIndex {
@@ -4876,13 +4882,8 @@ a.measureTitle:focus-visible {
   padding: 0 14px;
 }
 
-.slide[data-compact] :is(.positionLabel, .milestone) {
+.slide[data-compact] .positionLabel {
   font-size: var(--text-2xs);
-}
-
-.slide[data-compact] .milestone {
-  grid-area: auto / 1 / auto / -1;
-  padding: 8px 0 8px 14px;
 }
 
 .slide[data-compact] .channels {
