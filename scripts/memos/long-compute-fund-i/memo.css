@@ -42,7 +42,6 @@ body {
 }
 
 .sans,
-h1,
 h2,
 table,
 .strip,
@@ -51,11 +50,25 @@ table,
   font-family: "Liberation Sans", Arial, sans-serif;
 }
 
-h1 {
-  font-size: 11pt;
-  letter-spacing: 0.06em;
-  text-align: center;
+.masthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 5pt;
   margin-bottom: 4pt;
+  border-bottom: 0.5pt solid #999;
+}
+
+.masthead img {
+  height: 0.4in;
+  display: block;
+}
+
+.masthead span {
+  font-family: "Liberation Sans", Arial, sans-serif;
+  font-weight: bold;
+  font-size: 8.4pt;
+  letter-spacing: 0.14em;
 }
 
 h2 {

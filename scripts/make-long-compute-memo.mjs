@@ -14,7 +14,7 @@
  */
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -373,6 +373,7 @@ try {
     return F[key];
   });
   await writeFile(join(work, "memo.css"), await readFile(join(MEMO, "memo.css"), "utf8"));
+  await copyFile(join(MEMO, "logo.png"), join(work, "logo.png"));
   await writeFile(join(work, "index.html"), html);
 
   browser = spawn(
@@ -426,9 +427,11 @@ try {
   let ready = false;
   for (let i = 0; i < 100 && !ready; i++) {
     await sleep(100);
-    ready = await evaluate("document.readyState === 'complete'").catch(() => false);
+    ready = await evaluate(
+      "document.readyState === 'complete' && [...document.images].every((img) => img.complete && img.naturalWidth > 0)",
+    ).catch(() => false);
   }
-  if (!ready) throw new Error("The memo didn't finish loading.");
+  if (!ready) throw new Error("The memo didn't finish loading; the logo may be missing.");
   await evaluate("document.fonts.ready.then(() => true)");
 
   await send("Emulation.setEmulatedMedia", { media: "print" });
