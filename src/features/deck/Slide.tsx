@@ -51,8 +51,6 @@ import {
 } from "./research";
 import {
   DEMAND_DETAILS,
-  RAISE_DETAILS,
-  SLIDES,
   type ContractSide,
   type Logo,
   type SaleModeId,
@@ -1802,15 +1800,12 @@ function Raise({
     setShown(active);
     if (!active) setDetail(null);
   }
+  const details = slide.deals.map((deal) => deal.detail);
   const step = (delta: number) =>
     setDetail((open) => {
       if (!open) return open;
-      const at = RAISE_DETAILS.findIndex((item) => item.id === open.id);
-      const next = Math.min(
-        Math.max(at + delta, 0),
-        RAISE_DETAILS.length - 1,
-      );
-      return RAISE_DETAILS[next];
+      const at = details.findIndex((item) => item.id === open.id);
+      return details[Math.min(Math.max(at + delta, 0), details.length - 1)];
     });
   return (
     <div className={styles.raise}>
@@ -1821,11 +1816,7 @@ function Raise({
               type="button"
               className={styles.raiseDeal}
               aria-haspopup="dialog"
-              onClick={() =>
-                setDetail(
-                  RAISE_DETAILS.find((item) => item.id === deal.id) ?? null,
-                )
-              }
+              onClick={() => setDetail(deal.detail)}
             >
               <span className={styles.dealHead}>
                 <span className={styles.dealFigure}>
@@ -2318,6 +2309,31 @@ function Close({ slide }: { slide: Of<"close"> }): ReactElement {
   );
 }
 
+/** Ends the public deck, laid out as the close: a request for data room access, or a way in for those who have it. */
+function Gate({ slide }: { slide: Of<"gate"> }): ReactElement {
+  return (
+    <div className={styles.close}>
+      <h2
+        {...rise(1)}
+        className={`${styles.rise} ${styles.display} ${styles.closeTitle}`}
+      >
+        {slide.title}
+      </h2>
+      <p {...rise(2)} className={`${styles.rise} ${styles.coverLede}`}>
+        {slide.lede}
+      </p>
+      <div {...rise(3)} className={`${styles.rise} ${styles.actions}`}>
+        <Link className={styles.primary} href="/invest" scroll={false}>
+          Request VDR access
+        </Link>
+        <Link className={styles.secondary} href={slide.loginHref} scroll={false}>
+          Have access? Log in
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 type SourceGroup = "Demand and supply" | "Policy" | "Cost and valuation";
 
 /** Every source's heading on the sources slide, which lists it once a slide cites it. */
@@ -2346,14 +2362,10 @@ const SOURCE_GROUP: Readonly<Record<SourceId, SourceGroup>> = {
   evPerMw: "Cost and valuation",
 };
 
-const CITED = new Set(
-  [...SLIDES, ...DEMAND_DETAILS].flatMap((slide) => slide.sources ?? []),
-);
-
 /** A group's cited sources, in the order SOURCE_GROUP lists them. */
-const citedIn = (group: SourceGroup): SourceId[] =>
+const citedIn = (cited: readonly SourceId[], group: SourceGroup): SourceId[] =>
   (Object.keys(SOURCE_GROUP) as SourceId[]).filter(
-    (id) => CITED.has(id) && SOURCE_GROUP[id] === group,
+    (id) => cited.includes(id) && SOURCE_GROUP[id] === group,
   );
 
 function Citations({ ids }: { ids: readonly SourceId[] }): ReactElement {
@@ -2380,16 +2392,16 @@ function Citations({ ids }: { ids: readonly SourceId[] }): ReactElement {
   );
 }
 
-function Sources(): ReactElement {
+function Sources({ slide }: { slide: Of<"sources"> }): ReactElement {
   return (
     <div className={styles.sourcesBody}>
       <div {...rise(2)} className={styles.rise}>
         <h3 className={styles.label}>Demand and supply</h3>
-        <Citations ids={citedIn("Demand and supply")} />
+        <Citations ids={citedIn(slide.cited, "Demand and supply")} />
       </div>
       <div {...rise(3)} className={styles.rise}>
         <h3 className={styles.label}>Policy</h3>
-        <Citations ids={citedIn("Policy")} />
+        <Citations ids={citedIn(slide.cited, "Policy")} />
         <p className={styles.fine}>
           As of {AS_OF}. Each state and local measure on the policy map links to
           its own source. The dashed grid line on the demand chart is
@@ -2414,7 +2426,7 @@ function Sources(): ReactElement {
         <h3 className={`${styles.label} ${styles.citationsNext}`}>
           Cost and valuation
         </h3>
-        <Citations ids={citedIn("Cost and valuation")} />
+        <Citations ids={citedIn(slide.cited, "Cost and valuation")} />
       </div>
     </div>
   );
@@ -2495,15 +2507,17 @@ function Body({
       return <Team slide={slide} />;
     case "close":
       return <Close slide={slide} />;
+    case "gate":
+      return <Gate slide={slide} />;
     case "sources":
-      return <Sources />;
+      return <Sources slide={slide} />;
   }
 }
 
 /** Slides that lay out their own title, without the head band. */
-const NO_HEAD = new Set<Slide["kind"]>(["cover", "close"]);
-/** And the close runs full bleed with the rails alone; the cover keeps its foot band for the company line. */
-const NO_FOOT = new Set<Slide["kind"]>(["close"]);
+const NO_HEAD = new Set<Slide["kind"]>(["cover", "close", "gate"]);
+/** And the close and gate run full bleed with the rails alone; the cover keeps its foot band for the company line. */
+const NO_FOOT = new Set<Slide["kind"]>(["close", "gate"]);
 
 export const hasHead = (slide: Slide): boolean => !NO_HEAD.has(slide.kind);
 

@@ -208,6 +208,14 @@ export async function isRoomMember(roomId: string, userId: string): Promise<bool
   return Boolean(await loadAccess(roomId, userId));
 }
 
+/** Whether the account is an active member of any room. */
+export async function isAnyRoomMember(userId: string): Promise<boolean> {
+  const [row] = await db()`
+    select 1 from data_room_members where user_id = ${userId} and accepted_at is not null limit 1
+  `;
+  return Boolean(row);
+}
+
 /** The portal room for a member of it; everyone else lands on the portal, which asks them to log in. */
 export async function osHrefFor(roomId: string, userId: string | null): Promise<string> {
   if (!userId) return "/portal";

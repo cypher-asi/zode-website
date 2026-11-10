@@ -5,6 +5,7 @@ import {
   startTransition,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -16,21 +17,21 @@ import { flushSync } from "react-dom";
 import type { PolicyMap } from "./policyTypes";
 import { ShareMenu } from "./ShareMenu";
 import { PAGING_KEYS, SlideView, hasHead } from "./Slide";
-import { DEMAND_DETAILS, RAISE_DETAILS, SLIDES } from "./slides";
+import { DEMAND_DETAILS, PUBLIC_SLIDES, type Slide } from "./slides";
 import styles from "./Deck.module.css";
 
-const TOTAL = SLIDES.length;
 /**
  * The slide whose section name shows on each slide. One without a name (the
- * cover and close, which have no head band) borrows its neighbour's (the
+ * cover, close and gate, which have no head band) borrows its neighbour's (the
  * close the one before, the cover the one after), so the name fades out and
  * in rather than also changing size.
  */
-const NAMED = SLIDES.map((slide, i) => {
-  if (hasHead(slide)) return i;
-  const before = SLIDES.slice(0, i).findLastIndex(hasHead);
-  return before >= 0 ? before : SLIDES.findIndex(hasHead);
-});
+const namedFor = (slides: readonly Slide[]): number[] =>
+  slides.map((slide, i) => {
+    if (hasHead(slide)) return i;
+    const before = slides.slice(0, i).findLastIndex(hasHead);
+    return before >= 0 ? before : slides.findIndex(hasHead);
+  });
 /** How long a slide that's leaving keeps its content, so it fades with the slide rather than before it. */
 const LEAVE_MS = 450;
 /** Wheel travel that turns one slide, and the pause after, so one fling doesn't skip several. */
@@ -67,11 +68,10 @@ const subscribePhone = (onChange: () => void) => {
   query.addEventListener("change", onChange);
   return () => query.removeEventListener("change", onChange);
 };
-const clamp = (n: number) => Math.min(Math.max(n, 0), TOTAL - 1);
-const EVERY_SLOT: ReadonlySet<number> = new Set(SLIDES.keys());
+const clamp = (n: number, total: number) => Math.min(Math.max(n, 0), total - 1);
 /** A slide and its neighbours, kept drawn so the usual step to either one starts without laying it out first. */
-const around = (i: number): ReadonlySet<number> =>
-  new Set([clamp(i - 1), i, clamp(i + 1)]);
+const around = (i: number, total: number): ReadonlySet<number> =>
+  new Set([clamp(i - 1, total), i, clamp(i + 1, total)]);
 
 /** Whether a key press belongs to a control rather than the deck: text fields, menus, modals, and Space on buttons. */
 function ownedByControl(event: KeyboardEvent): boolean {
@@ -120,7 +120,7 @@ function ArrowIcon({ flip = false }: { flip?: boolean }): ReactElement {
  */
 /** The cover's ground, standing in while the page reads which slide to open. */
 export function DeckGround(): ReactElement {
-  const { ground } = SLIDES[0];
+  const { ground } = PUBLIC_SLIDES[0];
   return (
     <main
       className={styles.root}
@@ -131,13 +131,18 @@ export function DeckGround(): ReactElement {
 }
 
 export function Deck({
+  slides,
   initialSlide,
   policy,
 }: {
+  /** The whole deck for readers with data room access; for everyone else, the public slides and the gate. */
+  slides: readonly Slide[];
   initialSlide: number;
   /** The policy slide's map, or null when the tracker couldn't be read. */
   policy: PolicyMap | null;
 }): ReactElement {
+  const total = slides.length;
+  const named = useMemo(() => namedFor(slides), [slides]);
   const rootRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -150,12 +155,12 @@ export function Deck({
     tap: boolean;
   } | null>(null);
   const wheel = useRef({ travel: 0, lockedUntil: 0 });
-  const [index, setIndex] = useState(() => clamp(initialSlide));
+  const [index, setIndex] = useState(() => clamp(initialSlide, total));
   const [leaving, setLeaving] = useState<number | null>(null);
   // The slots drawn; every other one is parked. A transition needs a style to start from, and a parked slot's content
   // keeps the last one it had, so a slot opens and is styled at rest before it plays, and is put at rest before it parks.
   const [open, setOpen] = useState<ReadonlySet<number>>(() =>
-    around(clamp(initialSlide)),
+    around(clamp(initialSlide, total), total),
   );
   const [overview, setOverview] = useState(false);
   // Its thumbnails are whole slides, so they're drawn while the page is idle and kept, rather than on opening.
@@ -182,12 +187,12 @@ export function Deck({
     setOverview(false);
     setShareOpen(false);
   }
-  const slide = SLIDES[index];
+  const slide = slides[index];
   const controls = nearBottom || touched || overview || shareOpen;
 
   const go = useCallback(
     (target: number) => {
-      const next = clamp(target);
+      const next = clamp(target, total);
       if (next === index) return;
       if (!open.has(next)) {
         flushSync(() => setOpen((slots) => new Set(slots).add(next)));
@@ -196,7 +201,7 @@ export function Deck({
       setLeaving(index);
       setIndex(next);
     },
-    [index, open],
+    [index, open, total],
   );
 
   const toggleFullscreen = useCallback(() => {
@@ -210,10 +215,10 @@ export function Deck({
     const timer = window.setTimeout(() => {
       flushSync(() => setLeaving(null));
       stageRef.current?.getBoundingClientRect();
-      setOpen(around(index));
+      setOpen(around(index, total));
     }, LEAVE_MS);
     return () => window.clearTimeout(timer);
-  }, [leaving, index]);
+  }, [leaving, index, total]);
 
   // One page grid for the whole deck: its rules follow the open slide's bands, so they glide from slide to slide.
   // Phone pages each draw their own.
@@ -225,7 +230,7 @@ export function Deck({
     const head = frame.querySelector<HTMLElement>("[data-band=head]");
     const foot = frame.querySelector<HTMLElement>("[data-band=foot]");
     const name =
-      slots[NAMED[index]]?.querySelector<HTMLElement>("[data-band=name]");
+      slots[named[index]]?.querySelector<HTMLElement>("[data-band=name]");
     const nameFoot = name?.closest<HTMLElement>("[data-band=foot]");
     // A slide without a head (the cover) folds the head rule into the top one; without a foot (the close) the foot rules go.
     grid.toggleAttribute("data-head", head !== null);
@@ -272,7 +277,7 @@ export function Deck({
       cancelAnimationFrame(ready);
       observer.disconnect();
     };
-  }, [index, phone]);
+  }, [index, phone, named]);
 
   // The address bar holds the open slide, so reloading or copying it lands here.
   useEffect(() => {
@@ -325,7 +330,7 @@ export function Deck({
         go(0);
       } else if (event.key === "End") {
         event.preventDefault();
-        go(TOTAL - 1);
+        go(total - 1);
       } else if (step) {
         event.preventDefault();
         go(index + step);
@@ -333,7 +338,7 @@ export function Deck({
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [index, overview, shareOpen, canFullscreen, phone, go, toggleFullscreen]);
+  }, [index, overview, shareOpen, canFullscreen, phone, go, toggleFullscreen, total]);
 
   // A trackpad or wheel turns slides one at a time; the overview scrolls instead.
   useEffect(() => {
@@ -374,7 +379,7 @@ export function Deck({
     const onBeforePrint = () =>
       flushSync(() => {
         setPrinting(true);
-        setOpen(EVERY_SLOT);
+        setOpen(new Set(slides.keys()));
       });
     const onAfterPrint = () => setPrinting(false);
     document.addEventListener("fullscreenchange", onChange);
@@ -385,7 +390,7 @@ export function Deck({
       window.removeEventListener("beforeprint", onBeforePrint);
       window.removeEventListener("afterprint", onAfterPrint);
     };
-  }, []);
+  }, [slides]);
 
   // The controls follow a mouse to the bottom edge; a touch brings them up for a while.
   useEffect(() => {
@@ -533,7 +538,7 @@ export function Deck({
           onPointerUp={onPointerUp}
           onPointerCancel={() => (swipe.current = null)}
         >
-          {SLIDES.map((entry, i) => {
+          {slides.map((entry, i) => {
             const current = i === index;
             const shown = current || printing;
             return (
@@ -549,14 +554,14 @@ export function Deck({
                   }
                   data-parked={!open.has(i) || undefined}
                   aria-roledescription="slide"
-                  aria-label={`${i + 1} of ${TOTAL}: ${entry.title}`}
+                  aria-label={`${i + 1} of ${total}: ${entry.title}`}
                   aria-hidden={!shown}
                   inert={!shown}
                 >
                   <SlideView
                     slide={entry}
                     index={i}
-                    total={TOTAL}
+                    total={total}
                     active={current || i === leaving || printing}
                     near={printing || Math.abs(i - index) <= 1}
                     branded={printing}
@@ -569,7 +574,7 @@ export function Deck({
                 {(printing && entry.kind === "demand"
                   ? DEMAND_DETAILS
                   : printing && entry.kind === "raise"
-                    ? RAISE_DETAILS
+                    ? entry.deals.map((deal) => deal.detail)
                     : []
                 ).map((detail) => (
                   <section
@@ -581,7 +586,7 @@ export function Deck({
                     <SlideView
                       slide={detail}
                       index={i}
-                      total={TOTAL}
+                      total={total}
                       active
                       near
                       branded
@@ -608,16 +613,16 @@ export function Deck({
               <span className={styles.rule} data-rule="bottom" />
               <span className={styles.name}>
                 <span
-                  key={`${SLIDES[NAMED[index]].eyebrow}:${NAMED[index] === index ? "shown" : "borrowed"}`}
+                  key={`${slides[named[index]].eyebrow}:${named[index] === index ? "shown" : "borrowed"}`}
                   className={styles.nameLine}
                   style={
                     {
-                      "--chars": SLIDES[NAMED[index]].eyebrow.length,
+                      "--chars": slides[named[index]].eyebrow.length,
                     } as CSSProperties
                   }
                 >
                   <span className={styles.nameText}>
-                    {SLIDES[NAMED[index]].eyebrow}
+                    {slides[named[index]].eyebrow}
                   </span>
                   <span className={styles.nameCursor} />
                 </span>
@@ -643,19 +648,19 @@ export function Deck({
               type="button"
               className={styles.iconButton}
               aria-label="Next slide"
-              disabled={index === TOTAL - 1}
+              disabled={index === total - 1}
               onClick={() => go(index + 1)}
             >
               <ArrowIcon />
             </button>
             <span className={styles.counter}>
-              {pad(index + 1)} / {pad(TOTAL)}
+              {pad(index + 1)} / {pad(total)}
             </span>
             <span className={styles.section}>{slide.section}</span>
           </div>
 
           <ol className={styles.progress}>
-            {SLIDES.map((entry, i) => (
+            {slides.map((entry, i) => (
               <li key={entry.id}>
                 <button
                   type="button"
@@ -738,7 +743,7 @@ export function Deck({
           aria-label="All slides"
         >
           <ol className={styles.overviewGrid}>
-            {SLIDES.map((entry, i) => (
+            {slides.map((entry, i) => (
               <li
                 key={entry.id}
                 className={styles.thumb}
@@ -748,7 +753,7 @@ export function Deck({
                   <SlideView
                     slide={entry}
                     index={i}
-                    total={TOTAL}
+                    total={total}
                     active
                     still
                     policy={policy}
@@ -772,7 +777,7 @@ export function Deck({
       ) : null}
 
       <p className={styles.srOnly} aria-live="polite">
-        Slide {index + 1} of {TOTAL}: {slide.title}
+        Slide {index + 1} of {total}: {slide.title}
       </p>
 
       {phone ? (

@@ -1,4 +1,4 @@
-import { SLIDES, type Slide } from "@/features/deck/slides";
+import { PUBLIC_SLIDES, type Slide } from "@/features/deck/slides";
 import type { PrincipleId } from "@/features/home/principles/principles";
 
 /**
@@ -11,7 +11,7 @@ import type { PrincipleId } from "@/features/home/principles/principles";
 type Of<K extends Slide["kind"]> = Extract<Slide, { kind: K }>;
 
 function slide<K extends Slide["kind"]>(kind: K): Of<K> {
-  const found = SLIDES.find((s): s is Of<K> => s.kind === kind);
+  const found = PUBLIC_SLIDES.find((s): s is Of<K> => s.kind === kind);
   if (!found) throw new Error(`The deck has no ${kind} slide`);
   return found;
 }

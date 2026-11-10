@@ -4093,7 +4093,8 @@ a.measureTitle:focus-visible {
 
 /* Cover: the title left, a render bleeding off the right. */
 .slide[data-kind="cover"] .main,
-.slide[data-kind="close"] .main {
+.slide[data-kind="close"] .main,
+.slide[data-kind="gate"] .main {
   padding-top: 0;
 }
 
@@ -4573,7 +4574,7 @@ a.measureTitle:focus-visible {
 
 /* The page's top band clears the header's by this much; the bands' heights are all `useFit` measures, so it's padding. */
 .slide[data-compact] .head,
-.slide[data-compact]:is([data-kind="cover"], [data-kind="close"]) .main {
+.slide[data-compact]:is([data-kind="cover"], [data-kind="close"], [data-kind="gate"]) .main {
   padding-top: 20px;
 }
 

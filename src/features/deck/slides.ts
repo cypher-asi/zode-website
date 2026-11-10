@@ -104,6 +104,32 @@ interface Base {
 
 const LOGO_DIR = "/images/deck/logos";
 
+/** An SPV's model summary, opened over the raise slide from its deal. */
+export type ModelSlide = Base & {
+  kind: "model";
+  /** The sites in the program. */
+  sites: readonly { name: string; figure: string; detail: string }[];
+  sitesNote: string;
+  /** Capital stack, top to bottom: equity over debt, the most senior last. */
+  layers: readonly { label: string; kind: "equity" | "debt"; value: string; terms: readonly string[] }[];
+  /** Under the stack, where a dollar figure was not kept in the run. */
+  stackNote?: string;
+  /** Uses, equity calls and residual. */
+  facts: readonly Stat[];
+  /** Downside, base and upside. One group per investor class. */
+  cases: {
+    label: string;
+    columns: readonly string[];
+    groups: readonly {
+      label: string;
+      rows: readonly { label: string; cells: readonly string[] }[];
+    }[];
+  };
+  /** A short comparison under the cases, such as other exits. */
+  aside?: { label: string; rows: readonly Stat[] };
+  note: string;
+};
+
 export type Slide =
   | (Base & { kind: "cover"; lede: string; meta: string; image: string })
   | (Base & {
@@ -218,7 +244,7 @@ export type Slide =
     })
   | (Base & {
       kind: "raise";
-      /** One SPV per half. Clicking it opens the matching summary in `RAISE_DETAILS`. */
+      /** One SPV per half. Clicking it opens its `detail` over the deck. */
       deals: readonly {
         id: string;
         icon: UnitIconId;
@@ -235,34 +261,13 @@ export type Slide =
           terms: readonly string[];
           returns?: string;
         }[];
+        /** Its model summary, opened over the deck; printed, it follows the slide as a page. */
+        detail: ModelSlide;
       }[];
       /** Where the figures come from, behind the disclaimer under the deals. */
       note: string;
     })
-  | (Base & {
-      kind: "model";
-      /** The sites in the program. */
-      sites: readonly { name: string; figure: string; detail: string }[];
-      sitesNote: string;
-      /** Capital stack, top to bottom: equity over debt, the most senior last. */
-      layers: readonly { label: string; kind: "equity" | "debt"; value: string; terms: readonly string[] }[];
-      /** Under the stack, where a dollar figure was not kept in the run. */
-      stackNote?: string;
-      /** Uses, equity calls and residual. */
-      facts: readonly Stat[];
-      /** Downside, base and upside. One group per investor class. */
-      cases: {
-        label: string;
-        columns: readonly string[];
-        groups: readonly {
-          label: string;
-          rows: readonly { label: string; cells: readonly string[] }[];
-        }[];
-      };
-      /** A short comparison under the cases, such as other exits. */
-      aside?: { label: string; rows: readonly Stat[] };
-      note: string;
-    })
+  | ModelSlide
   | (Base & {
       kind: "team";
       founder: {
@@ -296,11 +301,19 @@ export type Slide =
       };
     })
   | (Base & { kind: "close"; lede: string; contact: string })
-  | (Base & { kind: "sources" });
+  /** Ends the public deck, in place of the slides kept for the data room. */
+  | (Base & { kind: "gate"; lede: string; loginHref: string })
+  /** `cited` is every source a slide in the full deck cites. */
+  | (Base & { kind: "sources"; cited: readonly SourceId[] });
 
 export type SlideKind = Slide["kind"];
 
-export const SLIDES: readonly Slide[] = [
+/**
+ * The slides anyone can read, up to project finance. The rest of the deck
+ * (slides.full.ts) is sent only to readers with data room access; everyone
+ * else gets `GATE` after these.
+ */
+export const PUBLIC_SLIDES: readonly Slide[] = [
   {
     id: "cover",
     kind: "cover",
@@ -793,222 +806,19 @@ export const SLIDES: readonly Slide[] = [
     total: { label: "Total cost", value: "$41.2M", detail: "$20.6M equity · $20.6M debt" },
     note: "Preliminary, fully utilized: half on a 5-year offtake at $5.00/GPU-hr, half as inference at $16.90 net. GPUs at $550K per node before tax and setup; data center at the ~$5M/MW target; land and power at $1M/MW.",
   },
-  {
-    id: "raise",
-    kind: "raise",
-    section: "Capital raise",
-    eyebrow: "Capital raise",
-    title: "Raising equity for ZODE Colo I and ZODE Retro I.",
-    ground: "paper",
-    deals: [
-      {
-        id: "colo",
-        icon: "node",
-        title: "ZODE Colo I",
-        overview: "Leasing 50 MW of data center space.",
-        fleet: [
-          { value: "50", label: "MW" },
-          { value: "$3.69B", label: "Contract value" },
-          { value: "3,200", label: "Nodes" },
-          { value: "25,600", label: "GPUs" },
-        ],
-        layers: [
-          {
-            label: "Site acquisition equity",
-            kind: "equity",
-            value: "$20.5M",
-            terms: ["Lease NRCs and deposits"],
-            returns: "17% IRR · 1.71x",
-          },
-          {
-            label: "Compute equity",
-            kind: "equity",
-            value: "$336M",
-            terms: ["15% simple · 1.5x minimum"],
-            returns: "17% IRR · 1.71x",
-          },
-          { label: "Conversion debt", kind: "debt", value: "None", terms: ["Leased, built space"] },
-          {
-            label: "Customer prepayment",
-            kind: "debt",
-            value: "$935M",
-            terms: ["25–30% of contract value"],
-          },
-          {
-            label: "GPU financing",
-            kind: "debt",
-            value: "$817M",
-            terms: ["12% · 1.15x DSCR · up to 80% LTV"],
-          },
-        ],
-      },
-      {
-        id: "retro",
-        icon: "building",
-        title: "ZODE Retro I",
-        overview: "Acquiring and converting 50 MW of data center space.",
-        fleet: [
-          { value: "51", label: "MW" },
-          { value: "$3.41B", label: "Contract value" },
-          { value: "3,072", label: "Nodes" },
-          { value: "24,576", label: "GPUs" },
-        ],
-        layers: [
-          {
-            label: "Site acquisition equity",
-            kind: "equity",
-            value: "$193M",
-            terms: ["12% pref · 95/5 co-invest"],
-            returns: "39% IRR · 2.84x",
-          },
-          {
-            label: "Compute equity",
-            kind: "equity",
-            value: "$373M",
-            terms: ["15% simple · 1.5x minimum"],
-            returns: "18% IRR · 2.51x",
-          },
-          {
-            label: "Conversion debt",
-            kind: "debt",
-            value: "$255M",
-            terms: ["55% of price · 60% of conversion · 11%"],
-          },
-          {
-            label: "Customer prepayment",
-            kind: "debt",
-            value: "$853M",
-            terms: ["25% of contract value"],
-          },
-          {
-            label: "GPU financing",
-            kind: "debt",
-            value: "$874M",
-            terms: ["12% · 1.15x DSCR · up to 80% LTV"],
-          },
-        ],
-      },
-    ],
-    note: "Preliminary, from the October 2026 models: Colo I is the live base case, held through repayment, and Retro I the stored 51 MW sale case. Unsigned contracts assume 25% prepaid; GPU debt is sized to 1.15x DSCR, below its 80% LTV cap.",
-  },
-  {
-    id: "close",
-    kind: "close",
-    section: "Contact",
-    eyebrow: "ZODE",
-    title: "The industrialization of intelligence.",
-    ground: "ink",
-    lede: "Raising pre-seed plus initial project preferred equity.",
-    contact: "hello@zode.org · zode.org",
-  },
-  {
-    id: "sources",
-    kind: "sources",
-    section: "Sources",
-    eyebrow: "Sources",
-    title: "All sources.",
-    ground: "paper",
-  },
 ];
 
-/**
- * Off the sequence: the raise slide opens each over the deck, from its two
- * deals. Printed, they follow that slide as pages.
- */
-export const RAISE_DETAILS: readonly Extract<Slide, { kind: "model" }>[] = [
-  {
-    id: "colo",
-    kind: "model",
-    section: "ZODE Colo I",
-    eyebrow: "ZODE Colo I",
-    title: "Leasing 50 MW.",
-    ground: "paper",
-    sites: [
-      { name: "Mississauga", figure: "2 MW", detail: "128 nodes" },
-      { name: "Chicago", figure: "24 MW", detail: "1,536 nodes · one phase signed" },
-      { name: "Next colo", figure: "24 MW", detail: "1,536 nodes · site unidentified" },
-    ],
-    sitesNote: "14 clusters, 2 with a signed contract. 3,200 nodes and 25,600 GPUs.",
-    layers: [
-      { label: "Site acquisition equity", kind: "equity", value: "$20.5M", terms: ["Lease NRCs"] },
-      { label: "Compute equity", kind: "equity", value: "$336M", terms: ["15% simple · 1.5x"] },
-      { label: "Conversion debt", kind: "debt", value: "None", terms: ["Leased space"] },
-      { label: "Customer prepayment", kind: "debt", value: "$935M", terms: ["25–30%"] },
-      { label: "GPU financing", kind: "debt", value: "$817M", terms: ["12% · 1.15x DSCR"] },
-    ],
-    facts: [
-      { value: "$2.14B", label: "GPU hardware" },
-      { value: "$3.69B", label: "Contract value" },
-      { value: "$11M", label: "Equity by Jan 2027" },
-      { value: "$75M", label: "Equity by Oct 2027" },
-      { value: "$17M", label: "Receivable loan, peak" },
-      { value: "$206M", label: "ZODE residual" },
-    ],
-    cases: {
-      label: "Investor returns, hold",
-      columns: ["Downside", "Base", "Upside"],
-      groups: [
-        {
-          label: "Colo I investors",
-          rows: [
-            { label: "Capital", cells: ["$505M", "$356M", "$209M"] },
-            { label: "IRR · multiple", cells: ["10% · 1.44x", "17% · 1.71x", "26% · 2.07x"] },
-          ],
-        },
-      ],
-    },
-    note: "Live base case, held to repayment. One raise funds both equity layers. The Chicago lease is unsigned and the next colo is not yet a named site.",
-  },
-  {
-    id: "retro",
-    kind: "model",
-    section: "ZODE Retro I",
-    eyebrow: "ZODE Retro I",
-    title: "Converting 50 MW with ZODE modules.",
-    ground: "paper",
-    sites: [
-      { name: "Calgary I", figure: "22 MW", detail: "Five clusters · 2 MW third party" },
-      { name: "Calgary II", figure: "13 MW", detail: "Three clusters · 1 MW third party" },
-      { name: "Next 1", figure: "8 MW", detail: "Two clusters · not yet identified" },
-      { name: "Next 2", figure: "8 MW", detail: "Two clusters · not yet identified" },
-    ],
-    sitesNote: "3,072 nodes · 24,576 GPUs.",
-    layers: [
-      { label: "Site acquisition equity", kind: "equity", value: "$193M", terms: ["12% pref · then 70/30"] },
-      { label: "Compute equity", kind: "equity", value: "$373M", terms: ["15% simple · 1.5x"] },
-      { label: "Conversion debt", kind: "debt", value: "$255M", terms: ["55% of price · 11%"] },
-      { label: "Customer prepayment", kind: "debt", value: "$853M", terms: ["25%"] },
-      { label: "GPU financing", kind: "debt", value: "$874M", terms: ["12% · 1.15x DSCR"] },
-    ],
-    facts: [
-      { value: "$1.98B", label: "GPU hardware" },
-      { value: "17% · 6.31x", label: "Site exit: hold to 2046" },
-      { value: "39% · 2.84x", label: "Site exit: sale" },
-      { value: "22% · 5.58x", label: "Site exit: refinancing" },
-    ],
-    cases: {
-      label: "Investor returns, sale",
-      columns: ["Downside", "Base", "Upside"],
-      groups: [
-        {
-          label: "Site investors",
-          rows: [
-            { label: "Capital", cells: ["$271M", "$193M", "$148M"] },
-            { label: "IRR · multiple", cells: ["13% · 1.48x", "39% · 2.84x", "55% · 4.01x"] },
-          ],
-        },
-        {
-          label: "Compute investors",
-          rows: [
-            { label: "Capital", cells: ["$677M", "$373M", "$271M"] },
-            { label: "IRR · multiple", cells: ["12% · 2.51x", "18% · 2.51x", "25% · 2.68x"] },
-          ],
-        },
-      ],
-    },
-    note: "October 20, 2026 sale case, with two sites not yet identified. Contract value, prepayment and GPU debt are the first GPU generation, from the workbook recalculated with those sites.",
-  },
-];
+/** The public deck's last slide. Logging in comes back to it, which a member then reads as the raise. */
+export const GATE: Slide = {
+  id: "gate",
+  kind: "gate",
+  section: "Data room",
+  eyebrow: "Data room",
+  title: "The raise is in the data room.",
+  lede: "The capital raise, its SPV models and the rest of the deck are shared with investors who have VDR access.",
+  ground: "ink",
+  loginHref: `/login?next=${encodeURIComponent(`/deck?slide=${PUBLIC_SLIDES.length + 1}`)}`,
+};
 
 /**
  * Off the sequence: the demand slide opens each over the deck, from the
