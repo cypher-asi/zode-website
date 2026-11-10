@@ -110,7 +110,7 @@ export const TEAM: Extract<Slide, { kind: "team" }> = {
     people: [
       {
         name: "Ian Finder",
-        company: { name: "NVIDIA", src: `${LOGO_DIR}/nvidia.svg`, aspect: 630.2 / 118.2 },
+        company: { name: "NVIDIA", src: `${LOGO_DIR}/nvidia.svg`, aspect: 630.2 / 118.2, scale: 0.95 },
         feat: "Designed the Vera chip",
       },
       {
@@ -120,22 +120,22 @@ export const TEAM: Extract<Slide, { kind: "team" }> = {
       },
       {
         name: "Nick Sammut",
-        company: { name: "Crusoe", src: `${LOGO_DIR}/crusoe.svg`, aspect: 119 / 29, scale: 1.04 },
+        company: { name: "Crusoe", src: `${LOGO_DIR}/crusoe.svg`, aspect: 119 / 29, scale: 1.35 },
         feat: "$50B in compute deals",
       },
       {
         name: "Dan Rosen",
-        company: { name: "Ezra", src: `${LOGO_DIR}/ezra.svg`, aspect: 299 / 92, scale: 0.89 },
+        company: { name: "Ezra", src: `${LOGO_DIR}/ezra.svg`, aspect: 299 / 92, scale: 1.3 },
         feat: "$15B in distributed energy",
       },
       {
         name: "Jaspar Weir",
-        company: { name: "TaskUs", src: `${LOGO_DIR}/taskus.svg`, aspect: 4581 / 944 },
+        company: { name: "TaskUs", src: `${LOGO_DIR}/taskus.svg`, aspect: 4581 / 944, scale: 1.35 },
         feat: "Built a 20,000-person company",
       },
       {
         name: "Steven Lacy",
-        company: { name: "Apple", src: `${LOGO_DIR}/apple.svg`, aspect: 1, scale: 0.6 },
+        company: { name: "Apple", src: `${LOGO_DIR}/apple.svg`, aspect: 1, scale: 1.35 },
         feat: "Cybersecurity task force",
       },
     ],

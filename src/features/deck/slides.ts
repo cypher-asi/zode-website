@@ -1,6 +1,7 @@
 import type { SiteMapId } from "./art/siteMaps";
 import type { UnitIconId } from "./art/UnitIcon";
 import type { Contributions } from "./github";
+import { BUILD_OUT_PLAN } from "./plan";
 import type { SourceId } from "./research";
 
 /** A slide's background; ink is the one dark ground. */
@@ -329,10 +330,10 @@ export type Slide =
         partnerLabel: string;
         areas: readonly { label: string; partner: Logo; logos: readonly Logo[] }[];
       };
-      /** A card each in a row along the foot, the initials in the circle until a `photo` is set. */
+      /** A card each in a row along the foot. */
       advisors: {
         title: string;
-        people: readonly { name: string; company: Logo; feat: string; photo?: string }[];
+        people: readonly { name: string; company: Logo; feat: string }[];
       };
     })
   | (Base & { kind: "close"; lede: string; contact: string })
@@ -626,12 +627,7 @@ export const PUBLIC_SLIDES: readonly Slide[] = [
       { value: "~925 MW", label: "Under LOI" },
       { value: "1 GW+", label: "In active negotiations" },
     ],
-    plan: [
-      { year: "2027", value: "100 MW", mw: 100 },
-      { year: "2028", value: "250 MW", mw: 250 },
-      { year: "2029", value: "600 MW", mw: 600 },
-      { year: "2030", value: "1,000 MW", mw: 1_000 },
-    ],
+    plan: BUILD_OUT_PLAN,
     planNote: [
       "Every MW earns $22.4M a year contracted, $29.2–75.8M",
       "as merchant or inference, and is valued at $50–75M.",

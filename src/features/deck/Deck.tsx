@@ -32,6 +32,9 @@ const namedFor = (slides: readonly Slide[]): number[] =>
     const before = slides.slice(0, i).findLastIndex(hasHead);
     return before >= 0 ? before : slides.findIndex(hasHead);
   });
+const PUBLIC_IDS: ReadonlySet<string> = new Set(PUBLIC_SLIDES.map((slide) => slide.id));
+/** Past the gate: only readers with data room access are sent these. */
+const isConfidential = (slide: Slide) => !PUBLIC_IDS.has(slide.id) && slide.kind !== "gate";
 /** How long a slide that's leaving keeps its content, so it fades with the slide rather than before it. */
 const LEAVE_MS = 450;
 /** Wheel travel that turns one slide, and the pause after, so one fling doesn't skip several. */
@@ -189,6 +192,14 @@ export function Deck({
   }
   const slide = slides[index];
   const controls = nearBottom || touched || overview || shareOpen;
+  const confidential = isConfidential(slide);
+
+  // Flags `<html>` for the header's Confidential tag (PinnedHeader), which sits outside the deck.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.toggleAttribute("data-confidential", confidential);
+    return () => root.removeAttribute("data-confidential");
+  }, [confidential]);
 
   const go = useCallback(
     (target: number) => {

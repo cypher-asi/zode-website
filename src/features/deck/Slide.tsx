@@ -2330,20 +2330,20 @@ function Team({ slide }: { slide: Of<"team"> }): ReactElement {
               {...rise(5.2 + i * 0.2)}
               className={`${styles.rise} ${styles.advisor}`}
             >
-              <span className={styles.advisorPhoto} aria-hidden="true">
-                {person.photo ? (
-                  <Image src={person.photo} alt="" fill sizes="80px" />
-                ) : (
-                  person.name
-                    .split(" ")
-                    .map((word) => word[0])
-                    .join("")
-                )}
-              </span>
               <p className={styles.advisorName}>{person.name}</p>
-              <div className={`${styles.logos} ${styles.advisorLogo}`}>
-                <LogoMark logo={person.company} size={0.5} />
-              </div>
+              <span className={`${styles.logos} ${styles.advisorLogo}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element -- the SVG logos scale with the slide */}
+                <img
+                  src={person.company.src}
+                  alt={person.company.name}
+                  style={
+                    {
+                      "--aspect": person.company.aspect,
+                      "--scale": person.company.scale ?? 1,
+                    } as CSSProperties
+                  }
+                />
+              </span>
               <p className={styles.advisorFeat}>{person.feat}</p>
             </li>
           ))}

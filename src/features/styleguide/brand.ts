@@ -414,7 +414,7 @@ export const PRESS = {
     { label: "Order to production", value: "120 days" },
     { label: "Standard", value: "Tier III, N+1 power and cooling" },
     { label: "Architecture", value: "NVIDIA reference" },
-    { label: "Active build-out", value: "1 GW by 2027, 10 GW by 2028" },
+    { label: "Active build-out", value: "100 MW in 2027, 250 MW in 2028, 600 MW in 2029, 1,000 MW in 2030" },
     { label: "Built in", value: "North America" },
   ],
   terms:

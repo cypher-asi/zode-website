@@ -1,3 +1,5 @@
+import { BUILD_OUT_PLAN } from "@/features/deck/plan";
+
 /** Mock deployment sites for the network map. */
 export type SiteStatus = "live" | "pipeline";
 
@@ -18,10 +20,12 @@ export type Site = {
 /** A site after projection, in map viewBox units. */
 export type PlacedSite = Site & { x: number; y: number };
 
-export const STATS = [
-  { status: "live", value: "1", unit: "GW", label: "2027" },
-  { status: "pipeline", value: "10", unit: "GW", label: "2028" },
-] as const satisfies readonly { status: SiteStatus; value: string; unit: string; label: string }[];
+/** The deck's build-out plan, a year each; the first year is marked as live, the rest as pipeline. */
+export const STATS: readonly { status: SiteStatus; value: string; unit: string; label: string }[] =
+  BUILD_OUT_PLAN.map(({ year, value }, i) => {
+    const [figure, unit] = value.split(" ");
+    return { status: i === 0 ? "live" : "pipeline", value: figure, unit, label: year };
+  });
 
 export const SITES: readonly Site[] = [
   { id: "JNU-01", city: "Juneau, AK", lat: 58.3, lng: -134.42, mw: 4, latencyMs: 4, status: "live" },
