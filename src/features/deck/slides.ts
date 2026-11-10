@@ -743,28 +743,28 @@ export const SLIDES: readonly Slide[] = [
     eyebrow: "Project finance",
     title: "Every cluster is its own financeable project.",
     ground: "paper",
-    basis: "One MW of critical IT load · 32 nodes · 256 GPUs",
+    basis: "One MW of critical IT load · 64 nodes · 512 GPUs",
     rows: [
       {
         icon: "revenue",
         title: "Compute",
         kind: "revenue",
         purpose: "Revenue per year",
-        total: "$24.6M",
+        total: "$49.1M",
         parts: [
-          { label: "Offtake", value: "$5.6M", share: 0.5, detail: "16 nodes · 128 GPUs at $5.00/GPU-hr" },
-          { label: "Inference", value: "$18.9M", share: 0.5, detail: "16 nodes · 128 GPUs at $16.90/GPU-hr" },
+          { label: "Offtake", value: "$11.2M", share: 0.5, detail: "32 nodes · 256 GPUs at $5.00/GPU-hr" },
+          { label: "Inference", value: "$37.9M", share: 0.5, detail: "32 nodes · 256 GPUs at $16.90/GPU-hr" },
         ],
       },
       {
         icon: "gpu",
         title: "GPU",
         kind: "cost",
-        purpose: "32 nodes · 256 B300 GPUs",
-        total: "$17.6M",
+        purpose: "64 nodes · 512 B300 GPUs",
+        total: "$35.2M",
         parts: [
-          { label: "Equity", value: "$8.8M", share: 0.5, detail: "50% of cost" },
-          { label: "Debt", value: "$8.8M", share: 0.5, detail: "Secured on the GPUs" },
+          { label: "Equity", value: "$17.6M", share: 0.5, detail: "50% of cost" },
+          { label: "Debt", value: "$17.6M", share: 0.5, detail: "Secured on the GPUs" },
         ],
       },
       {
@@ -790,7 +790,7 @@ export const SLIDES: readonly Slide[] = [
         ],
       },
     ],
-    total: { label: "Total cost", value: "$23.6M", detail: "$11.8M equity · $11.8M debt" },
+    total: { label: "Total cost", value: "$41.2M", detail: "$20.6M equity · $20.6M debt" },
     note: "Preliminary, fully utilized: half on a 5-year offtake at $5.00/GPU-hr, half as inference at $16.90 net. GPUs at $550K per node before tax and setup; data center at the ~$5M/MW target; land and power at $1M/MW.",
   },
   {
