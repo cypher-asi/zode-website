@@ -422,7 +422,7 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
     case "fundraising":
       list = <RecordList key={kind} kind={kind} rows={data[kind]} config={configs[kind]} {...common} />;
       types = (
-        <DealTypeNav kind={kind} rows={data[kind]} value={filterValues.deal_type ?? ""} onChange={(value) => setFilter("deal_type", value)} />
+        <DealTypeNav kind={kind} value={filterValues.deal_type ?? ""} onChange={(value) => setFilter("deal_type", value)} />
       );
       break;
     case "sites":
