@@ -106,18 +106,36 @@ export interface RoomMember {
   /** When they first and last opened the room in the portal; null until they have. */
   firstOpenedAt: string | null;
   lastOpenedAt: string | null;
+  /** A ZODE account is signed up with the address; always so once they've joined. */
+  hasAccount: boolean;
+  /**
+   * How they joined, from the audit trail: `shared` at once, as their account
+   * already existed; `invite` from its link or their portal; `signin` when
+   * they signed in or up with the invite pending. Null before they join, or
+   * for joins older than the trail's detail.
+   */
+  joinedVia: "shared" | "invite" | "signin" | null;
 }
+
+const JOINED_VIA: Record<NonNullable<RoomMember["joinedVia"]>, { how: string; when: string }> = {
+  shared: { how: "Added at once", when: "Added" },
+  invite: { how: "Accepted invite", when: "Accepted" },
+  signin: { how: "On signing in", when: "Joined" },
+};
 
 /** A member's invite history, for its info tip. The room's creator joined without one. */
 export function memberHistory(member: RoomMember): InfoTipRow[] {
   if (member.invitedBy === member.email && member.acceptedAt) return [{ label: "Created room", date: member.acceptedAt }];
   const resent = member.sends > 1;
+  const via = member.joinedVia ? JOINED_VIA[member.joinedVia] : null;
   const rows: (InfoTipRow | null)[] = [
+    { label: "ZODE account", value: member.hasAccount ? "Yes" : "No" },
     member.invitedBy ? { label: resent ? "Last sent by" : "Invited by", value: member.invitedBy } : null,
     resent && member.firstSentAt ? { label: "First sent", date: member.firstSentAt } : null,
     { label: resent ? "Last sent" : "Sent", date: member.invitedAt },
     resent ? { label: "Times sent", value: String(member.sends) } : null,
-    member.acceptedAt ? { label: "Accepted", date: member.acceptedAt } : null,
+    member.acceptedAt && via ? { label: "Joined", value: via.how } : null,
+    member.acceptedAt ? { label: via?.when ?? "Accepted", date: member.acceptedAt } : null,
     member.firstOpenedAt ? { label: "First opened", date: member.firstOpenedAt } : null,
     member.lastOpenedAt && member.lastOpenedAt !== member.firstOpenedAt
       ? { label: "Last opened", date: member.lastOpenedAt }

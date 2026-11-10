@@ -360,31 +360,44 @@ export async function folderSubtree(roomId: string, folderId: string): Promise<s
 
 /**
  * Active members by role, then invites oldest first. A member row only keeps
- * its latest send, so the first send and the count come from the audit trail,
- * since the address was last revoked or removed. Cached per request, since a
- * room's layout and its Members tab both list them.
+ * its latest send, so the first send, the count and how they joined come from
+ * the audit trail, since the address was last revoked or removed. Cached per
+ * request, since a room's layout and its Members tab both list them.
  */
 export const listMembers = cache(async (roomId: string): Promise<RoomMember[]> => {
   const rows = await db()`
     with history as materialized (
-      select detail->>'email' as email, action, created_at
-      from data_room_events
-      where room_id = ${roomId} and action in ('invite', 'invite_resend', 'invite_revoke', 'remove')
+      select h.detail->>'email' as email, h.action, h.created_at,
+        h.detail->>'shared' = 'true' as shared, h.detail->>'auto' = 'true' as auto
+      from data_room_events h
+      where h.room_id = ${roomId} and h.action in ('invite', 'invite_resend', 'accept', 'invite_revoke', 'remove')
+    ),
+    live as (
+      select h.* from history h
+      where h.created_at > coalesce(
+        (select max(r.created_at) from history r where r.email = h.email and r.action in ('invite_revoke', 'remove')),
+        '-infinity'::timestamptz
+      )
     ),
     sends as (
-      select h.email, min(h.created_at) as first_sent_at, count(*)::int as sends
-      from history h
-      where h.action in ('invite', 'invite_resend')
-        and h.created_at > coalesce(
-          (select max(r.created_at) from history r where r.email = h.email and r.action in ('invite_revoke', 'remove')),
-          '-infinity'::timestamptz
-        )
-      group by h.email
+      select email, min(created_at) as first_sent_at, count(*)::int as sends
+      from live
+      where action in ('invite', 'invite_resend')
+      group by email
+    ),
+    joins as (
+      select distinct on (email) email,
+        case when action <> 'accept' then 'shared' when auto then 'signin' else 'invite' end as joined_via
+      from live
+      where action = 'accept' or shared
+      order by email, created_at desc
     )
     select m.id, m.email, m.role, m.invited_by_email, m.invited_at, m.accepted_at, m.invite_expires_at, m.requires_mnda,
-      m.first_opened_at, m.last_opened_at, s.first_sent_at, coalesce(s.sends, 0) as sends
+      m.first_opened_at, m.last_opened_at, s.first_sent_at, coalesce(s.sends, 0) as sends, j.joined_via,
+      m.accepted_at is not null or exists (select 1 from account_directory d where lower(d.email) = m.email) as has_account
     from data_room_members m
     left join sends s on s.email = m.email
+    left join joins j on j.email = m.email
     where m.room_id = ${roomId}
     order by m.accepted_at is null, case when m.accepted_at is null then m.invited_at end, m.role, m.email
   `;
@@ -407,6 +420,8 @@ export const listMembers = cache(async (roomId: string): Promise<RoomMember[]> =
     requiresMnda: Boolean(row.requires_mnda),
     firstOpenedAt: row.first_opened_at == null ? null : iso(row.first_opened_at),
     lastOpenedAt: row.last_opened_at == null ? null : iso(row.last_opened_at),
+    hasAccount: Boolean(row.has_account),
+    joinedVia: row.accepted_at == null ? null : ((row.joined_via as RoomMember["joinedVia"]) ?? null),
   }));
 });
 
