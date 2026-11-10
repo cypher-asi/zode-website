@@ -16,13 +16,13 @@
           <div class="memo-head">
             <b>To:</b><span>Prospective investors (qualified purchasers)</span>
             <b>From:</b><span>ZODE, with Ezra and Keyframe</span>
-            <b>Subject:</b><span>The other side of the trade: own the compute, sell it high in the stack</span>
+            <b>Subject:</b><span>The other side of the trade: finance GPUs without an offtaker, priced to capture the upside</span>
             <b>Date:</b><span>November 10, 2026 · Confidential</span>
           </div>
           <div class="strip">
             <div><span>Size</span>First close ~$50M, to $1B+</div>
             <div><span>Structure</span>Evergreen, open-ended</div>
-            <div><span>Exposure</span>Merchant compute, tokens</div>
+            <div><span>Exposure</span>GPU financing, no offtaker</div>
             <div><span>Target</span>2–3x; more with tokens</div>
             <div><span>Per MW</span>{{GPUS}} B300s, {{CAPEX}}</div>
             <div><span>Minimum</span>[$__M]</div>
@@ -41,8 +41,8 @@
             NVIDIA and the hyperscalers are long, and the value of the infrastructure is externalized to them. CoreWeave’s 2031 notes
             trade at 81 cents to yield 15.4%; Meta sold 2031 notes the same week at 5.85%.<sup>1, 2</sup> Even
             hyperscaler-leased SPV paper is marked down: Meta’s Hyperion bonds fell from above 109 to about 92.<sup>3</sup>
-            Long Compute Fund I takes the other side. It owns the cluster and sells the output as high up the stack as
-            the market pays.
+            Long Compute Fund I takes the other side. It finances GPUs without requiring an offtaker, prices the merchant
+            risk accordingly, and shares in the upside a fixed-rate contract gives away.
           </p>
         </div>
 
@@ -236,10 +236,10 @@
               <tr>
                 <td class="label">Upside above the rate goes to</td>
                 <td class="r no">The buyer</td>
-                <td class="r yes">The owner</td>
-                <td class="r yes">The owner</td>
-                <td class="r yes">The owner</td>
-                <td class="r yes">The owner</td>
+                <td class="r yes">Cluster capital</td>
+                <td class="r yes">Cluster capital</td>
+                <td class="r yes">Cluster capital</td>
+                <td class="r yes">Cluster capital</td>
               </tr>
             </tbody>
           </table>
@@ -397,18 +397,18 @@
           <b>The debt investor provides the largest share of the capital and receives {{DEBT_HR}} of every
           {{TOKEN_PRICE}} GPU-hour, {{DEBT_SHARE}} of the value</b> ({{INTEREST_LIFE}} of interest over the loan’s
           life), for carrying the asset and the buyer’s credit. The buyer keeps {{OFFTAKER_SHARE}} on capital it gets
-          back as invoice credits. That is the trade the market is now repricing.
+          back as invoice credits. That gap is what the market is repricing, and what the fund captures.
         </p>
 
         <div>
           <h2><span class="n">5</span>What the fund does</h2>
           <p>
-            Long Compute Fund I owns ZODE clusters outright and sells their hours merchant and as inference, choosing
-            whichever pays more, so the buyer’s spread in section 4 stays with the capital that funds the hardware. Because the
-            GPU-hour can always be sold instead, tokens are an option for the fund, not a risk. ZODE converts
-            already-powered industrial buildings at a low basis, which is what lets the fund carry merchant exposure.
-            The fund is evergreen because sites outlive GPUs and re-host each new generation. Target: 2–3x on equity
-            from merchant compute, a multiple of that from tokens.
+            Long Compute Fund I finances GPU clusters, starting with ZODE’s, in a way that does not require an offtaker.
+            Instead of a fixed coupon behind a take-or-pay contract, it prices the merchant risk it takes and participates
+            in the cluster’s merchant and inference cash flow, so more of the buyer’s spread in section 4 goes to its
+            LPs. Fast payback (section 2) and ZODE’s low basis in already-powered buildings protect the downside; the
+            upside rises with what the hours sell for. The fund is evergreen: sites outlive GPUs, so repaid capital
+            rolls into each new generation. Target: 2–3x for LPs from merchant compute, more from tokens.
           </p>
         </div>
 
@@ -441,7 +441,7 @@
               <tr>
                 <td class="label">Delivery and power</td>
                 <td>B300 nodes 12–18 weeks; InfiniBand 24–30; powered colocation scarce</td>
-                <td>Owned, already-powered buildings; network ordered at signing</td>
+                <td>ZODE’s already-powered buildings; network ordered at signing</td>
               </tr>
               <tr>
                 <td class="label">Obsolescence</td>
