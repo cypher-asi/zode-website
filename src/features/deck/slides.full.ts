@@ -124,6 +124,7 @@ export const TEAM: Extract<Slide, { kind: "team" }> = {
         name: "Nick Sammut",
         company: { name: "Crusoe", src: `${LOGO_DIR}/crusoe.svg`, aspect: 119 / 29, scale: 1.35 },
         feat: "$50B in compute deals",
+        linkedin: "https://www.linkedin.com/in/nicholassammut/",
       },
       {
         name: "Dan Rosen",
