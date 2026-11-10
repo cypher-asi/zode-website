@@ -86,12 +86,11 @@ async function sendLoginCode(email: string): Promise<AuthFormState> {
 
   const failed = { error: "Couldn't send a code right now. Please try again.", email };
   // This site sends the code for an address that has signed in here; ZOS for any other.
-  let issued: Awaited<ReturnType<typeof issueLoginCode>>;
+  let issued: boolean;
   try {
-    issued = await issueLoginCode(email);
-    if (issued) {
-      await sendLoginCodeEmail(email, { code: issued.code, minutes: LOGIN_CODE_TTL_MINUTES }, issued.id);
-    }
+    issued = await issueLoginCode(email, (code, id) =>
+      sendLoginCodeEmail(email, { code, minutes: LOGIN_CODE_TTL_MINUTES }, id),
+    );
   } catch (error) {
     console.error("[account] couldn't send a login code", error);
     return failed;
@@ -121,20 +120,22 @@ async function loginWithCode(email: string, code: string, formData: FormData): P
   if (!allowed) return { ...failed, error: RATE_LIMITED };
 
   let account: Account;
+  let via: "zos" | "code";
   try {
     const result = await redeemLoginCode(email, code);
     if (result.status === "invalid") return invalid;
+    via = result.status === "ok" ? "code" : "zos";
     account = result.status === "ok" ? result.account : await zosLoginWithCode(email, code);
   } catch (error) {
     if (!(error instanceof ZosError)) console.error("[account] couldn't check a login code", error);
     return { ...failed, error: describeZosError(error, "code", failed.error) };
   }
-  return signIn(account, formData);
+  return signIn(account, formData, via);
 }
 
-async function signIn(account: Account, formData: FormData): Promise<never> {
+async function signIn(account: Account, formData: FormData, via: "zos" | "code" = "zos"): Promise<never> {
   const next = safeNext(formData.get("next"));
-  await createAccountSession(account);
+  await createAccountSession(account, via);
   await joinInvitedRooms(account, next);
   redirect(next);
 }

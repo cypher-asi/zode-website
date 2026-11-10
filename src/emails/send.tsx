@@ -61,9 +61,11 @@ interface Message {
   email: ReactElement;
   idempotencyKey: string;
   attachments?: { filename: string; content: Buffer }[];
+  /** Throw when mail isn't configured, rather than log the message as skipped. */
+  required?: boolean;
 }
 
-async function send({ to, replyTo, subject, email, idempotencyKey, attachments = [] }: Message): Promise<void> {
+async function send({ to, replyTo, subject, email, idempotencyKey, attachments = [], required }: Message): Promise<void> {
   const redirect = devRecipient();
   if (redirect) {
     subject = `[to ${to}] ${subject}`;
@@ -72,6 +74,7 @@ async function send({ to, replyTo, subject, email, idempotencyKey, attachments =
 
   const mailer = resend();
   if (!mailer) {
+    if (required) throw new Error("RESEND_API_KEY is not set");
     console.warn(`[email] RESEND_API_KEY is not set; not sending "${subject}" to ${to}.`);
     return;
   }
@@ -278,7 +281,10 @@ export async function sendMailingListConfirmation(
   }
 }
 
-/** Throws, unlike the others: the login form has to say when the code didn't go. */
+/**
+ * Throws, unlike the others, even when mail isn't configured: the login form
+ * has to say when the code didn't go, and the skipped-send log would carry it.
+ */
 export async function sendLoginCodeEmail(to: string, props: LoginCodeProps, key: string): Promise<void> {
   await send({
     to,
@@ -286,6 +292,7 @@ export async function sendLoginCodeEmail(to: string, props: LoginCodeProps, key:
     subject: loginCodeSubject(props.code),
     email: <LoginCode {...props} />,
     idempotencyKey: `login-code-${key}`,
+    required: true,
   });
 }
 

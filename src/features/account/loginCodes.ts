@@ -42,18 +42,21 @@ async function directoryAccount(where: { email: string } | { userId: string }): 
 }
 
 /**
- * A fresh code for an address that has signed in here before, superseding any
- * earlier one; `null` for an address this site doesn't know, which ZOS handles.
+ * Has `deliver` email a fresh code to an address that has signed in here
+ * before, which then supersedes any earlier one; a failed delivery leaves the
+ * earlier one working. False for an address this site doesn't know, which ZOS handles.
  */
-export async function issueLoginCode(email: string): Promise<{ id: string; code: string } | null> {
+export async function issueLoginCode(
+  email: string,
+  deliver: (code: string, id: string) => Promise<void>,
+): Promise<boolean> {
   const address = normalizeEmail(email);
   const account = await directoryAccount({ email: address });
-  if (!account) return null;
+  if (!account) return false;
 
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
   const sql = homeDb();
   await sql`delete from login_codes where expires_at < now() - interval '1 day'`;
-  await sql`update login_codes set used_at = now() where email = ${address} and used_at is null`;
   const [row] = await sql`
     insert into login_codes (email, user_id, code_hash, expires_at)
     values (
@@ -62,7 +65,15 @@ export async function issueLoginCode(email: string): Promise<{ id: string; code:
     )
     returning id
   `;
-  return { id: String(row.id), code };
+  const id = String(row.id);
+  try {
+    await deliver(code, id);
+  } catch (error) {
+    await sql`delete from login_codes where id = ${id}`;
+    throw error;
+  }
+  await sql`update login_codes set used_at = now() where email = ${address} and used_at is null and id <> ${id}`;
+  return true;
 }
 
 export type LoginCodeResult = { status: "ok"; account: Account } | { status: "invalid" } | { status: "none" };

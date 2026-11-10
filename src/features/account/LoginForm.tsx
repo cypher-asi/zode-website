@@ -162,7 +162,7 @@ export function LoginForm({ next }: { next?: string }): ReactElement {
               autoComplete="current-password"
               required
               className={styles.input}
-              aria-invalid={state.error ? "true" : undefined}
+              aria-invalid={state.error && !sendingCode ? "true" : undefined}
               aria-describedby={errorId}
             />
           </div>

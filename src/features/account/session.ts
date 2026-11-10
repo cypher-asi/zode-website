@@ -74,14 +74,15 @@ function decode(token: string | undefined): Session | null {
   }
 }
 
-export async function createAccountSession(account: Account): Promise<void> {
+/** `via` is "code" for this site's login codes, which ZOS never saw. */
+export async function createAccountSession(account: Account, via: "zos" | "code" = "zos"): Promise<void> {
   const exp = Math.floor(Date.now() / 1000) + ACCOUNT_MAX_AGE_SECONDS;
   const [[row]] = await Promise.all([
     homeDb()`
       insert into account_sessions (user_id, expires_at) values (${account.userId}, ${new Date(exp * 1000)})
       returning id
     `,
-    recordAccount(account),
+    recordAccount(account, via),
   ]);
 
   const cookieStore = await cookies();
