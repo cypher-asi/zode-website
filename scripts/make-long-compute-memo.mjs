@@ -1,6 +1,6 @@
 /**
  * Prints the Long Compute Fund I investment memo (scripts/memos/long-compute-fund-i)
- * to a two-page letter PDF, its figures computed from ZODE's master model:
+ * to a three-page letter PDF, its figures computed from ZODE's master model:
  *
  *   npm run memo:long-compute -- [--model ~/Downloads/CORE/ZODE_MasterModel_26.11.09_v2.xlsx] \
  *     [--out ~/Downloads/CORE/Long_Compute_Fund_I_Memo_v2.pdf] [--dry-run]
@@ -8,9 +8,11 @@
  * One MW of critical IT is costed from the model's Toronto and Zode Inc. inputs,
  * read by their labels in column B (a missing label fails the run), and sold
  * three ways: a contracted offtake, merchant and inference, at the memo's rates
- * below. `--dry-run` prints the figures without opening a browser. Needs a local
- * Chrome, Chromium or Brave; set CHROME to its path if it isn't found. Fails if a
- * page overflows or the PDF isn't two pages.
+ * below. The fund plan sizes each close to the MW it funds, and the proposed
+ * cluster waterfall gives the fund's multiple per scenario. `--dry-run` prints the
+ * figures without opening a browser. Needs a local Chrome, Chromium or Brave; set
+ * CHROME to its path if it isn't found. Fails if a page overflows or the PDF has
+ * the wrong page count.
  */
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -25,7 +27,7 @@ import { PDFDocument } from "pdf-lib";
 const ROOT = new URL("../", import.meta.url).pathname.replace(/\/$/, "");
 const MEMO = join(ROOT, "scripts/memos/long-compute-fund-i");
 const PORT = 9335;
-const PAGES = 2;
+const PAGES = 3;
 
 const { values: args } = parseArgs({
   options: {
@@ -211,6 +213,7 @@ function scenario(kind, price) {
   const lifetime = prepay + cash.reduce((a, b) => a + b, 0) + M.resale * hardware;
   return {
     kind,
+    cash,
     rate,
     prepay,
     revenue1,
@@ -254,6 +257,47 @@ const split = [
 ];
 const splitTotal = split.reduce((a, s) => a + s.value, 0);
 if (Math.abs(splitTotal - tokenValue) > 1) fail(`The token split adds to ${splitTotal}, not ${tokenValue}.`);
+
+/* ---------- The fund: closes and the proposed cluster waterfall ---------- */
+
+// The fund finances 100% of each cluster; its cash goes to the fund until the fund has its capital back with a
+// preferred return, then splits with ZODE for the cluster's life.
+const PREF = 0.12;
+const FUND_SHARE = 0.7;
+const CLOSES = [
+  { mw: 1, size: 50e6 },
+  { mw: 30 },
+  { mw: 100 },
+];
+
+function waterfall(s) {
+  let owed = capex;
+  let fund = 0;
+  const flows = [...s.cash];
+  flows[flows.length - 1] += M.resale * hardware;
+  for (const c of flows) {
+    owed *= 1 + PREF / 12;
+    const first = Math.max(0, Math.min(c, owed));
+    owed -= first;
+    fund += first + (c - first) * FUND_SHARE;
+  }
+  return fund / capex;
+}
+
+const fleetCash1 = scenarios[1].margin1;
+let priorMw = 0;
+let cumulative = 0;
+const closes = CLOSES.map((close) => {
+  const newMw = close.mw - priorMw;
+  const needed = newMw * capex;
+  const size = close.size ?? needed;
+  if (size < needed) fail(`Close to ${close.mw} MW raises ${size}, short of the ${needed} its clusters cost.`);
+  const reinvested = Math.min(needed, priorMw * fleetCash1);
+  cumulative += size;
+  const row = { mw: close.mw, newMw, needed, size, cumulative, reinvested, lp: size - reinvested, fleetCash: close.mw * fleetCash1 };
+  priorMw = close.mw;
+  return row;
+});
 
 /* ---------- Figures for the page ---------- */
 
@@ -330,6 +374,29 @@ scenarios.forEach((s, i) => {
   F[`${n}_CUSHION`] = pct(s.cushion);
   F[`${n}_MULTIPLE`] = `${s.multiple.toFixed(1)}x`;
 });
+const bn = (v) => (v >= 1e9 ? `$${(v / 1e9).toFixed(2)}B` : mm(v, 1));
+F.PREF = pct(PREF);
+F.FUND_SHARE = pct(FUND_SHARE);
+F.ZODE_SHARE = pct(1 - FUND_SHARE);
+F.FLEET_CASH_MW = mm(fleetCash1);
+F.RESERVE = mm(CLOSES[0].size - capex);
+F.DEBT_X = `${((debt + interestOver(M.amortMonths)) / debt).toFixed(2)}x`;
+closes.forEach((c, i) => {
+  const n = `C${i + 1}`;
+  F[`${n}_MW`] = String(c.mw);
+  F[`${n}_NEW`] = String(c.newMw);
+  F[`${n}_NEEDED`] = bn(c.needed);
+  F[`${n}_SIZE`] = bn(c.size);
+  F[`${n}_CUM`] = bn(c.cumulative);
+  F[`${n}_REINVEST`] = c.reinvested ? bn(c.reinvested) : "None";
+  F[`${n}_LP`] = bn(c.lp);
+  F[`${n}_FLEET`] = bn(c.fleetCash);
+  F[`${n}_FUNDS_MW`] = (c.fleetCash / capex).toFixed(0);
+});
+["MER", "I20", "I30", "I40"].forEach((n, i) => {
+  F[`${n}_FUND_X`] = `${waterfall(scenarios[i + 1]).toFixed(1)}x`;
+});
+
 for (const s of split) {
   F[`${s.key}_YR`] = mm(s.value);
   F[`${s.key}_HR`] = usd(s.value / tokenHours, 2);
@@ -338,7 +405,8 @@ for (const s of split) {
 }
 
 if (args["dry-run"]) {
-  console.table(scenarios.map((s) => ({ ...s, revenue1: s.revenue1 / 1e6, margin1: s.margin1 / 1e6, atRisk: s.atRisk / 1e6, prepay: s.prepay / 1e6 })));
+  console.table(scenarios.map(({ cash, ...s }) => ({ ...s, revenue1: s.revenue1 / 1e6, margin1: s.margin1 / 1e6, atRisk: s.atRisk / 1e6, prepay: s.prepay / 1e6 })));
+  console.table(closes);
   console.log(F);
   process.exit(0);
 }
