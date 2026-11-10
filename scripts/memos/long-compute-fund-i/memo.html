@@ -36,9 +36,9 @@
             <b>Thesis.</b> GPU and neocloud debt is not repricing because investors have stopped believing in AI
             demand. Demand is still ahead of supply: the B300 rents for $7.68/GPU-hr, up 15% in a month, and NVIDIA
             guides to roughly 70% growth next year.<sup>4, 5</sup> The debt is repricing because its holders are on the
-            wrong side of the trade. Neoclouds and their lenders have been structurally long compute: they own the
-            hardware, carry the debt and keep the residual, then sell the output at a fixed rate. The value of the
-            infrastructure is externalized to Anthropic, OpenAI, NVIDIA and the hyperscalers. CoreWeave’s 2031 notes
+            wrong side of the trade. Neoclouds and their lenders have been structurally short compute: they sell the
+            hours forward at a fixed rate while carrying the hardware, the debt and the residual. Anthropic, OpenAI,
+            NVIDIA and the hyperscalers are long, and the value of the infrastructure is externalized to them. CoreWeave’s 2031 notes
             trade at 81 cents to yield 15.4%; Meta sold 2031 notes the same week at 5.85%.<sup>1, 2</sup> Even
             hyperscaler-leased SPV paper is marked down: Meta’s Hyperion bonds fell from above 109 to about 92.<sup>3</sup>
             Long Compute Fund I takes the other side. It owns the cluster and sells the output as high up the stack as
@@ -47,13 +47,13 @@
         </div>
 
         <div>
-          <h2><span class="n">1</span>The value sits with whoever is long the compute without carrying it</h2>
+          <h2><span class="n">1</span>Who is long compute, and who is short it</h2>
           <table>
             <thead>
               <tr>
                 <th style="width: 12%">Party</th>
                 <th style="width: 19%">Value, Nov 2026<sup>6</sup></th>
-                <th style="width: 31%">How it is long compute</th>
+                <th style="width: 31%">Position in compute</th>
                 <th style="width: 18%">How it is paid</th>
                 <th class="c" style="width: 10%">Carries the hardware</th>
                 <th class="c" style="width: 10%">Keeps the token upside</th>
@@ -63,7 +63,7 @@
               <tr>
                 <td class="label">NVIDIA</td>
                 <td>$4.3T market cap</td>
-                <td>Every buildout; up to $100B committed to OpenAI, $10B into Anthropic’s IPO<sup>5, 8</sup></td>
+                <td><b class="yes">Long:</b> every buildout; up to $100B committed to OpenAI, $10B into Anthropic’s IPO<sup>5, 8</sup></td>
                 <td>Cash at delivery; 74% gross margin<sup>5</sup></td>
                 <td class="c no">No</td>
                 <td class="c yes">Via stakes</td>
@@ -71,7 +71,7 @@
               <tr>
                 <td class="label">Hyperscalers</td>
                 <td>$12.0T (MSFT, GOOG, AMZN, META)</td>
-                <td>~$735B of 2026 capex guided;<sup>9</sup> leases moved off balance sheet (Hyperion: 4-year lease, bonds to 2049)<sup>3</sup></td>
+                <td><b class="yes">Long:</b> ~$735B of 2026 capex guided;<sup>9</sup> leases moved off balance sheet (Hyperion: 4-year lease, bonds to 2049)<sup>3</sup></td>
                 <td>Cloud and token revenue</td>
                 <td class="c">Shifted to SPVs</td>
                 <td class="c yes">Yes</td>
@@ -79,7 +79,7 @@
               <tr>
                 <td class="label">OpenAI</td>
                 <td>$1.25T (Nov 6 round)<sup>7</sup></td>
-                <td>~$720B of disclosed compute contracts, <b>58% of its valuation</b>, on ~$50B revenue run-rate<sup>7</sup></td>
+                <td><b class="yes">Long:</b> ~$720B of disclosed compute contracts, <b>58% of its valuation</b>, on ~$50B run-rate<sup>7</sup></td>
                 <td>Tokens and subscriptions</td>
                 <td class="c no">No</td>
                 <td class="c yes">Yes</td>
@@ -87,7 +87,7 @@
               <tr>
                 <td class="label">Anthropic</td>
                 <td>Up to $1.40T at IPO<sup>8</sup></td>
-                <td>$900.9B of compute and infrastructure commitments, <b>64% of its valuation</b><sup>8</sup></td>
+                <td><b class="yes">Long:</b> $900.9B of compute and infrastructure commitments, <b>64% of its valuation</b><sup>8</sup></td>
                 <td>Tokens; $17B Q3 revenue</td>
                 <td class="c no">No</td>
                 <td class="c yes">Yes</td>
@@ -95,7 +95,7 @@
               <tr>
                 <td class="label">Neoclouds</td>
                 <td>CoreWeave $27.2B, about half lost in a month<sup>1, 6</sup></td>
-                <td>Owns the GPUs; CoreWeave carries $35B of debt<sup>1</sup></td>
+                <td><b class="no">Short:</b> sold the hours forward at fixed rates, yet owns the GPUs; CoreWeave carries $35B of debt<sup>1</sup></td>
                 <td>Fixed $/GPU-hr contracts</td>
                 <td class="c yes">Yes</td>
                 <td class="c no">No</td>
@@ -103,7 +103,7 @@
               <tr>
                 <td class="label">GPU and SPV lenders</td>
                 <td>CoreWeave 2031s at 81c; Hyperion ~92c; QTS Excalibur &lt;88c<sup>1, 3</sup></td>
-                <td>Collateral and contract cash flow</td>
+                <td><b class="no">Short:</b> lent against fixed-rate contracts; par at best, collateral that falls with spot</td>
                 <td>Fixed coupon</td>
                 <td class="c yes">Yes</td>
                 <td class="c no">No</td>
@@ -112,9 +112,9 @@
           </table>
         </div>
         <p class="take">
-          <b>A large share of the top rows’ ~$19T is the compute they are net long, not only their growth.</b> The two
-          labs’ commitments alone equal 58–64% of their valuations. The bottom two rows own the hardware and the debt,
-          and are paid a fixed rate for it.
+          <b>A large share of the long side’s ~$19T is the compute it is net long, not only its growth.</b> The two
+          labs’ commitments alone equal 58–64% of their valuations. The short side owns the hardware and the debt, is
+          paid a fixed rate for it, and has sold the upside while keeping the downside.
         </p>
 
         <div>
