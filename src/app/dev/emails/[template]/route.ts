@@ -4,6 +4,7 @@ import DataRoomInvite from "@/emails/DataRoomInvite";
 import DataRoomLink from "@/emails/DataRoomLink";
 import EngineerRequestNotification from "@/emails/EngineerRequestNotification";
 import InvestorRequestNotification from "@/emails/InvestorRequestNotification";
+import LoginCode from "@/emails/LoginCode";
 import MailingListConfirm from "@/emails/MailingListConfirm";
 import MndaExecuted from "@/emails/MndaExecuted";
 import OrderConfirmation from "@/emails/OrderConfirmation";
@@ -53,6 +54,7 @@ const TEMPLATES: Record<string, (search: URLSearchParams) => ReactElement> = {
       confirmUrl: "http://localhost:3000/mailing-list/confirm/preview-token",
       logoSrc: PREVIEW_LOGO,
     }),
+  "login-code": () => createElement(LoginCode, { code: "482913", minutes: 10, logoSrc: PREVIEW_LOGO }),
   mnda: (search) =>
     createElement(MndaExecuted, {
       ...PREVIEW_MNDA,
@@ -65,7 +67,7 @@ const TEMPLATES: Record<string, (search: URLSearchParams) => ReactElement> = {
  * Development only: an email rendered with sample data, e.g.
  * /dev/emails/confirmation, /dev/emails/notification?mode=rent,
  * /dev/emails/engineer, /dev/emails/investor, /dev/emails/welcome, /dev/emails/registration,
- * /dev/emails/data-room-invite?shared, /dev/emails/data-room-link, /dev/emails/team-invite?role=member, /dev/emails/mailing-list-confirm?list=changelog, /dev/emails/mnda?audience=team,
+ * /dev/emails/data-room-invite?shared, /dev/emails/data-room-link, /dev/emails/team-invite?role=member, /dev/emails/mailing-list-confirm?list=changelog, /dev/emails/login-code, /dev/emails/mnda?audience=team,
  * or add `&text` for the plain-text part.
  */
 export async function GET(request: Request, { params }: { params: Promise<{ template: string }> }): Promise<Response> {

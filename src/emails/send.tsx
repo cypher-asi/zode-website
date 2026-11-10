@@ -16,6 +16,7 @@ import EngineerRequestNotification, { engineerRequestSubject } from "./EngineerR
 import MailingListConfirm, { mailingListConfirmSubject, type MailingListConfirmProps } from "./MailingListConfirm";
 import { engineerRequestEmailProps } from "./engineerRequestEmailProps";
 import InvestorRequestNotification, { investorRequestSubject } from "./InvestorRequestNotification";
+import LoginCode, { loginCodeSubject, type LoginCodeProps } from "./LoginCode";
 import { investorRequestEmailProps } from "./investorRequestEmailProps";
 import MndaExecuted, { mndaExecutedSubject, type MndaExecutedProps } from "./MndaExecuted";
 import OrderConfirmation, { confirmationSubject } from "./OrderConfirmation";
@@ -275,6 +276,17 @@ export async function sendMailingListConfirmation(
   } catch (err) {
     console.error(`[email] mailing list confirmation to ${to} failed:`, err);
   }
+}
+
+/** Throws, unlike the others: the login form has to say when the code didn't go. */
+export async function sendLoginCodeEmail(to: string, props: LoginCodeProps, key: string): Promise<void> {
+  await send({
+    to,
+    replyTo: teamInbox(),
+    subject: loginCodeSubject(props.code),
+    email: <LoginCode {...props} />,
+    idempotencyKey: `login-code-${key}`,
+  });
 }
 
 const mndaInbox = (): string => process.env.MNDA_NOTIFY_EMAIL || teamInbox();

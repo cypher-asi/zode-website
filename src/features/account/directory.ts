@@ -11,10 +11,15 @@ export async function recordAccount(account: Account): Promise<void> {
   try {
     await Promise.all([
       sql`
-        insert into account_directory (user_id, email, display_name, last_seen_at)
-        values (${account.userId}, ${account.email.trim().toLowerCase()}, ${account.displayName}, now())
+        insert into account_directory
+          (user_id, email, display_name, profile_image, primary_zid, last_seen_at, signed_in_at)
+        values (
+          ${account.userId}, ${account.email.trim().toLowerCase()}, ${account.displayName},
+          ${account.profileImage}, ${account.primaryZid}, now(), now()
+        )
         on conflict (user_id) do update
-          set email = excluded.email, display_name = excluded.display_name, last_seen_at = excluded.last_seen_at
+          set email = excluded.email, display_name = excluded.display_name, profile_image = excluded.profile_image,
+            primary_zid = excluded.primary_zid, last_seen_at = excluded.last_seen_at, signed_in_at = excluded.signed_in_at
       `,
       // `not exists` first, so a returning account doesn't spend an id; `on conflict` covers concurrent sign-ins.
       sql`

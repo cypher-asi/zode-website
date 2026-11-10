@@ -459,6 +459,29 @@ create table if not exists account_directory (
 
 create index if not exists account_directory_email_idx on account_directory (lower(email));
 
+-- Set by each sign-in through ZOS, along with the rest of what ZOS returned,
+-- so a login code is only emailed to an address ZOS gave for the account,
+-- never to one backfilled from a typed-in form below.
+alter table account_directory add column if not exists signed_in_at timestamptz;
+alter table account_directory add column if not exists profile_image text;
+alter table account_directory add column if not exists primary_zid text;
+
+-- One-time login codes this site emails, since ZOS's own aren't delivered.
+-- Only an HMAC of the code is kept. A code dies after its first use, after
+-- MAX_ATTEMPTS wrong tries, when it expires, or when a newer one is sent.
+create table if not exists login_codes (
+  id uuid primary key default gen_random_uuid(),
+  email text not null,
+  user_id text not null,
+  code_hash text not null,
+  attempts int not null default 0,
+  expires_at timestamptz not null,
+  used_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists login_codes_email_idx on login_codes (email, created_at desc);
+
 -- Backfill from accounts that left a record before the directory existed; each
 -- source takes its latest row per account, and earlier sources win.
 insert into account_directory (user_id, email, display_name, last_seen_at)

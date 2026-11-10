@@ -13,7 +13,7 @@ export interface Account {
   primaryZid: string;
 }
 
-class ZosError extends Error {
+export class ZosError extends Error {
   constructor(
     readonly status: number,
     readonly code: string,

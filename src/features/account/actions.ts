@@ -2,14 +2,16 @@
 
 import { redirect } from "next/navigation";
 import { after } from "next/server";
-import { sendRegistrationEmails } from "@/emails/send";
+import { sendLoginCodeEmail, sendRegistrationEmails } from "@/emails/send";
 import { trackServerEvent } from "@/features/analytics/server";
 import { claimPendingInvites } from "@/features/data-room/invites";
 import { RATE_LIMITED, clientIp, withinLimits } from "@/lib/rateLimit";
 import { isEmail, singleLine } from "@/lib/validation";
+import { LOGIN_CODE_TTL_MINUTES, issueLoginCode, redeemLoginCode } from "./loginCodes";
 import { MIN_PASSWORD_LENGTH } from "./password";
 import { createAccountSession, deleteAccountSession, safeNext } from "./session";
 import {
+  ZosError,
   describeZosError,
   isZosRejection,
   zosLogin,
@@ -79,11 +81,23 @@ async function sendLoginCode(email: string): Promise<AuthFormState> {
   ]);
   if (!allowed) return { error: RATE_LIMITED, email };
 
+  const failed = { error: "Couldn't send a code right now. Please try again.", email };
+  // This site sends the code for an address that has signed in here; ZOS for any other.
+  let issued: Awaited<ReturnType<typeof issueLoginCode>>;
   try {
-    await zosRequestLoginCode(email);
+    issued = await issueLoginCode(email);
+    if (issued) {
+      await sendLoginCodeEmail(email, { code: issued.code, minutes: LOGIN_CODE_TTL_MINUTES }, issued.id);
+    }
   } catch (error) {
-    if (!isZosRejection(error)) {
-      return { error: describeZosError(error, "code", "Couldn't send a code right now. Please try again."), email };
+    console.error("[account] couldn't send a login code", error);
+    return failed;
+  }
+  if (!issued) {
+    try {
+      await zosRequestLoginCode(email);
+    } catch (error) {
+      if (!isZosRejection(error)) return { ...failed, error: describeZosError(error, "code", failed.error) };
     }
   }
   return { email, codeSentTo: email };
@@ -94,15 +108,15 @@ async function loginWithCode(email: string, code: string, formData: FormData): P
   if (!code) return { error: "Enter the code from your email.", email, codeSentTo: email };
   if (!(await withinLoginLimits(email))) return { error: RATE_LIMITED, email, codeSentTo: email };
 
+  const failed = { error: "Couldn't log in right now. Please try again.", email, codeSentTo: email };
   let account: Account;
   try {
-    account = await zosLoginWithCode(email, code);
+    const result = await redeemLoginCode(email, code);
+    if (result.status === "invalid") return { ...failed, error: "That code is invalid or expired." };
+    account = result.status === "ok" ? result.account : await zosLoginWithCode(email, code);
   } catch (error) {
-    return {
-      error: describeZosError(error, "code", "Couldn't log in right now. Please try again."),
-      email,
-      codeSentTo: email,
-    };
+    if (!(error instanceof ZosError)) console.error("[account] couldn't check a login code", error);
+    return { ...failed, error: describeZosError(error, "code", failed.error) };
   }
   return signIn(account, formData);
 }
