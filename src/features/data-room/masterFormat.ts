@@ -49,21 +49,30 @@ const prefixOf = (row: YearRow): string | null =>
  * A yearly table's head and rows, each row's total last; blank where the
  * workbook adds nothing up. Neighboring rows that share a prefix, such as
  * "Revenue: Toronto" and "Revenue: Calgary", sit under it as a heading, named
- * by what follows it.
+ * by what follows it. A row the workbook gives above its indented parts heads
+ * them instead, its figures totalling them below, as a statement reads.
  */
 export function yearRows(table: YearTable): { head: string[]; groups: { title: string; rows: TableRow[] }[] } {
+  const cells = (r: YearRow) => [...r.values.map((v) => yearValue(v, r.unit)), r.total === null ? "" : yearValue(r.total, r.unit)];
   return {
     head: [...table.years, "Total"],
     groups: table.groups.map((g) => ({
       title: g.title,
       rows: g.rows.flatMap((r, i, rows): TableRow[] => {
+        const next = rows[i + 1];
+        if (!r.indent && next?.indent) return [{ label: r.label, values: [], kind: "heading" }];
+        const parent = r.indent ? rows.slice(0, i).findLast((p) => !p.indent) : undefined;
+        if (parent) {
+          const part: TableRow = { label: r.label, values: cells(r), nested: true };
+          return next?.indent ? [part] : [part, { label: "Total", values: cells(parent), kind: "subtotal" }];
+        }
         const prefix = prefixOf(r);
         const before = i > 0 ? prefixOf(rows[i - 1]) : null;
         const after = i + 1 < rows.length ? prefixOf(rows[i + 1]) : null;
         const nested = prefix !== null && (prefix === before || prefix === after);
         const row: TableRow = {
           label: nested ? r.label.slice(prefix.length + 1).trim() : r.label,
-          values: [...r.values.map((v) => yearValue(v, r.unit)), r.total === null ? "" : yearValue(r.total, r.unit)],
+          values: cells(r),
           kind: r.kind,
           indent: r.indent,
           nested,
