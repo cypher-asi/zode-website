@@ -391,7 +391,51 @@ function cutAt(sheet) {
 
   const cut = flows.slice(0, last + 1);
   if (last < flows.length - 1) cut[last] += bookAt(last);
-  return { peakDebt: Math.max(...debt.slice(0, last + 1)), unleveredIrr: keyIrr === null ? null : annualIrr(cut), modelEnds: months.at(-1) };
+
+  // Critical IT live each month, as revenue is earned on it.
+  const live = values(lastRow(/^MW of GPU clusters in service/, "MW of GPU clusters in service"));
+  const monthsOf = (year) => {
+    const y = /(\d{4})$/.exec(year)?.[1] ?? fail(`${sheet.name}: "${year}" isn't a year.`);
+    const from = /^Q(\d)\b/.exec(year) ? (Number(/^Q(\d)/.exec(year)[1]) - 1) * 3 + 1 : 1;
+    const indices = months.flatMap((m, i) => (m.startsWith(`${y}-`) && Number(m.slice(5)) >= from ? [i] : []));
+    return indices.length ? indices : fail(`${sheet.name}: the monthly build has no months in ${year}.`);
+  };
+  return {
+    peakDebt: Math.max(...debt.slice(0, last + 1)),
+    unleveredIrr: keyIrr === null ? null : annualIrr(cut),
+    modelEnds: months.at(-1),
+    /** MW live at the year's last month, as the workbook's yearly tables give it. */
+    liveAtEnd: (year) => live[monthsOf(year).at(-1)],
+    /** MW live on average over the year's months. */
+    liveAverage: (year) => {
+      const indices = monthsOf(year);
+      return indices.reduce((total, i) => total + live[i], 0) / indices.length;
+    },
+  };
+}
+
+const LIVE_MW = "Critical IT live, MW (average over the year)";
+/**
+ * A yearly table's MW rows as critical IT live on average over each year, in
+ * place of the workbook's December figures, so a year's MW is what its revenue
+ * was earned on. `spvOf` names the SPV whose tab a row is, or null for the
+ * total of the rows under it; each December figure is checked against the tab's
+ * monthly build first.
+ */
+function averageLiveMw(table, where, spvOf) {
+  const group = table.groups.find((g) => g.rows.some((r) => r.unit === "mw")) ?? fail(`${where}: no MW rows in its yearly table.`);
+  const spvRows = group.rows.filter((r) => r.unit === "mw" && spvOf(r) !== null);
+  for (const row of group.rows.filter((r) => r.unit === "mw")) {
+    const tabs = spvOf(row) === null ? spvRows.map(spvOf) : [spvOf(row)];
+    if (!tabs.length) fail(`${where}: "${row.label}" names no SPV and has none under it.`);
+    table.years.forEach((year, i) => {
+      const december = tabs.reduce((total, tab) => total + cuts.get(tab).liveAtEnd(year), 0);
+      if (Math.abs(december - row.values[i]) > 1e-6) fail(`${where}: "${row.label}" ${year} is ${row.values[i]} MW, but its monthly build ends the year at ${december} MW.`);
+    });
+    row.values = table.years.map((year) => tabs.reduce((total, tab) => total + cuts.get(tab).liveAverage(year), 0));
+    if (!row.indent) row.label = LIVE_MW;
+  }
+  if (group.title) group.title = "Critical IT live";
 }
 
 // The SPVs, each matched to its tab by name.
@@ -419,11 +463,14 @@ const spvs = structure.between(spvHeader, structure.rowOf("Notes")).map((r) => {
     folderId: deploymentFolders.get(name) ?? null,
   };
 });
+averageLiveMw(statement, "Summary", (row) =>
+  row.indent ? (spvs.find((s) => s.name.toLowerCase() === row.label.toLowerCase())?.name ?? fail(`Summary: MW row "${row.label}" matches no SPV.`)) : null,
+);
 const structureNotes = structure.between(structure.rowOf("Notes")).map((r) => numbered(structure.label(r)));
 const modelEnds = [...cuts.values()][0].modelEnds;
 const monthName = (yyyyMm) => new Date(`${yyyyMm}-01T00:00:00Z`).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
 const cutConventions = [
-  `These summaries run to Dec ${THROUGH}; the model runs to ${monthName(modelEnds)}. Totals, peak debt and each unlevered IRR here are to Dec ${THROUGH}, the IRR taking the book value of the SPV's assets at Dec ${THROUGH}.`,
+  `These summaries run to Dec ${THROUGH}; the model runs to ${monthName(modelEnds)}. Totals, peak debt and each unlevered IRR here are to Dec ${THROUGH}, the IRR taking the book value of the SPV's assets at Dec ${THROUGH}. MW are critical IT live, averaged over each year's months, as the year's revenue is earned on them.`,
   ...conventions,
 ];
 const cutSimplifications = simplifications.map((line) => line.replace(/(IRR includes book value at )Dec \d{4}/, `$1Dec ${THROUGH}`));
@@ -454,6 +501,7 @@ function readSpv(name) {
   const inputsRow = sheet.rowOf("INPUTS");
   const buildRow = sheet.rowOf("MONTHLY BUILD");
   const summary = yearTable(sheet, sheet.rowOf("Year", sheet.rowOf("SUMMARY")), keyRow, [""]);
+  averageLiveMw(summary, name, () => name);
   const cut = cuts.get(name);
   const keyFigures = sheet.between(keyRow, inputsRow).map((r) => {
     const label = sheet.label(r);

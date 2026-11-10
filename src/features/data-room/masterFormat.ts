@@ -36,7 +36,7 @@ export function modelValue(v: ModelValue): string {
 
 /** A yearly cell, with a dash where nothing moves. */
 export function yearValue(n: number, unit: YearRow["unit"]): string {
-  if (unit === "mw") return n === 0 ? "–" : mw(n);
+  if (unit === "mw") return n === 0 ? "–" : `${Number(n.toFixed(1))} MW`;
   if (unit === "count") return n === 0 ? "–" : n.toLocaleString("en-US");
   return Math.abs(n) < 500 ? "–" : usdShort(n);
 }
