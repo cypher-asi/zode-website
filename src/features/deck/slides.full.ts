@@ -12,6 +12,10 @@ const quarterRevenue = ({ revenue }: (typeof REVENUE_RAMP.quarters)[number]) =>
   revenue.inference + revenue.merchant + revenue.offtake;
 const PEAK = REVENUE_RAMP.quarters.reduce((best, q) => (quarterRevenue(q) > quarterRevenue(best) ? q : best));
 
+/** The model's months before 2027 earn nothing, so the ramp starts with 2027. */
+const fromFirstYear = (periods: (typeof REVENUE_RAMP)["quarters"]) =>
+  periods.filter((p) => Number(p.period.slice(-4)) >= 2027);
+
 /** The consolidated model by quarter, month and year, from ./revenueRamp, which scripts/write-revenue-ramp.mjs writes. */
 const RAMP: Slide = {
   id: "revenue-ramp",
@@ -20,11 +24,9 @@ const RAMP: Slide = {
   eyebrow: "Revenue ramp",
   title: `Revenue ramps to $${(quarterRevenue(PEAK) / 1e9).toFixed(1)}B a quarter by ${PEAK.period}.`,
   ground: "paper",
-  quarters: REVENUE_RAMP.quarters,
-  months: REVENUE_RAMP.months,
-  years: REVENUE_RAMP.years,
-  caption:
-    "Revenue by quarter, month or year, ZODE Inc. consolidated with every project at 100%. Hover a bar for its revenue by inference, merchant and offtake, and where it goes.",
+  quarters: fromFirstYear(REVENUE_RAMP.quarters),
+  months: fromFirstYear(REVENUE_RAMP.months),
+  years: fromFirstYear(REVENUE_RAMP.years),
   note: `Preliminary, from ZODE's master model of November 9, 2026 (${REVENUE_RAMP.model}, ZODE ASCENT data room), base case to December 2030, with Big Watt adding 30 MW a quarter from June 2027 to 570 MW, and 250 MW of generic future sites added in 2029, growing 20% a year. Each bar follows the model's consolidated P&L down to its net income, pre-tax. Op costs are colocation rent and site and cluster operations. TopCo is ZODE Inc.'s staffing and G&A.`,
 };
 
@@ -51,28 +53,24 @@ const RAISE: Slide = {
   projects: [
     {
       name: "ZODE Toronto",
-      detail: "CORE, Mississauga",
       tenure: "lease",
       computeCo: { detail: "512 B300 GPUs · 1 MW", value: "$19.3M", basis: "ZODE-funded", source: "zode" },
     },
     {
       name: "ZODE Calgary",
-      detail: "Olds and Calgary",
       tenure: "own",
       propCo: { detail: "Buys and converts 30 MW", value: "$112M", basis: "Pref · + $10M ZODE" },
       computeCo: { detail: "18,420 GPUs · 30 MW", value: "$423M", basis: "Pref · 15%" },
     },
     {
       name: "ZODE Big Watt",
-      detail: "Pierre, South Dakota",
       tenure: "lease",
       computeCo: { detail: "15,360 GPUs · 30 MW", value: "$390M", basis: "Pref · + $10M ZODE" },
     },
     {
       name: "ZODE Alaska",
-      detail: "Sites in selection",
       tenure: "own",
-      propCo: { detail: "Alaska sites", value: "TBD", basis: "Not yet modelled" },
+      propCo: { detail: "Buys and builds 20 MW", value: "$120M", basis: "$20M + $5M per MW" },
       computeCo: { detail: "B300 clusters", value: "$15M", basis: "Sub. loan · equity TBD" },
     },
   ],
@@ -88,7 +86,7 @@ const RAISE: Slide = {
       label: "Prop Cos",
       raising: { value: "$112M", label: "Pref equity" },
       layers: [
-        { label: "Class A · ZODE", kind: "equity", source: "zode", amount: 10e6, terms: "From the seed" },
+        { label: "ZODE pref", kind: "equity", source: "zode", amount: 10e6, terms: "Calgary Class A · 12%" },
         { label: "Class A pref", kind: "equity", amount: 10e6, terms: "12%" },
         { label: "Class B pref", kind: "equity", amount: 102e6, terms: "12%" },
         { label: "Construction loan", kind: "debt", amount: 85e6, terms: "40% LTC · 10%" },
@@ -99,7 +97,8 @@ const RAISE: Slide = {
       label: "Compute Cos",
       raising: { value: "$813M", label: "Pref equity" },
       layers: [
-        { label: "ZODE equity", kind: "equity", source: "zode", amount: 29.3e6, terms: "Toronto · Big Watt" },
+        { label: "ZODE equity", kind: "equity", source: "zode", amount: 19.3e6, terms: "Toronto" },
+        { label: "ZODE pref", kind: "equity", source: "zode", amount: 10e6, terms: "Big Watt" },
         { label: "Pref equity", kind: "equity", amount: 813e6, terms: "Calgary 15% · Big Watt 10%" },
         { label: "Subordinated loan", kind: "debt", amount: 15e6, terms: "Alaska · ADC · 15%" },
         { label: "Customer prepayments", kind: "debt", amount: 605e6, terms: "Big Watt offtake · 30%" },
@@ -107,7 +106,7 @@ const RAISE: Slide = {
       ],
     },
   ],
-  note: "Preliminary, from ZODE's master model of November 9, 2026, base case to December 2030. Amounts are what third parties put in; ZODE Inc.'s equity in each project comes from the seed. Debt is what the site build and the first GPU generation draw; GPU debt and prepayments together are capped at 85% of hardware. Alaska is from the October 7, 2026 term sheet with Alaska Data Corporation and is not yet in the model.",
+  note: "Preliminary, from ZODE's master model of November 9, 2026, base case to December 2030. Amounts are what third parties put in; ZODE Inc.'s equity in each project comes from the seed. Debt is what the site build and the first GPU generation draw; GPU debt and prepayments together are capped at 85% of hardware. Alaska is from the October 7, 2026 term sheet with Alaska Data Corporation and is not yet in the model; its site company is 20 MW at $20M plus $5M per MW, and how it's financed is not yet set, so it isn't in the Prop Cos stack.",
 };
 
 const CLOSE: Slide = {

@@ -275,8 +275,6 @@ export type Slide =
       /** The same by month and by year, behind the chart's toggle. */
       months: readonly RampPeriod[];
       years: readonly RampPeriod[];
-      /** Under the chart, beside its key. */
-      caption: string;
       note: string;
     })
   | (Base & {
@@ -286,7 +284,6 @@ export type Slide =
       /** One column each. A leased site has no site company, so no `propCo`. */
       projects: readonly {
         name: string;
-        detail: string;
         tenure: "lease" | "own";
         propCo?: RaiseEntity;
         computeCo: RaiseEntity;
@@ -615,7 +612,7 @@ export const PUBLIC_SLIDES: readonly Slide[] = [
             years: "2011–2020",
             role: "Co-founder & CEO",
             description: "Venture studio for Apple, Nike, Google and the Fortune 100.",
-            outcome: "Converted to HF0",
+            outcome: "Now HF0",
           },
           {
             company: "Curve Dental",

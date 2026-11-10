@@ -875,8 +875,25 @@
   flex: 1;
 }
 
-.rampBody .modes {
+/* The view's toggle on the left, the years on the right. */
+.rampControls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: calc(0.8 * var(--u));
   margin-bottom: calc(0.8 * var(--u));
+}
+
+/* Each year switches on and off, so a pressed one can still be pressed. */
+.rampYears .mode[aria-pressed="true"] {
+  cursor: pointer;
+}
+
+/* A hairline between neighbouring years that are on, which would otherwise run together. */
+.rampYears .mode[aria-pressed="true"] + .mode[aria-pressed="true"] {
+  box-shadow:
+    0 0 0 1px var(--color-ink),
+    inset 1px 0 0 color-mix(in srgb, var(--color-text-inverse) 35%, transparent);
 }
 
 .rampKeyItem {
@@ -3268,11 +3285,11 @@ a.measureTitle:focus-visible {
   height: calc(var(--row-gap) + var(--hook));
 }
 
+/* Its name with its tenure beside it. */
 .raiseProjectHead {
   display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: calc(0.35 * var(--u));
+  align-items: center;
+  gap: calc(0.7 * var(--u));
 }
 
 .raiseProjectName {
@@ -3282,19 +3299,6 @@ a.measureTitle:focus-visible {
   font-weight: 300;
   line-height: 1.1;
   letter-spacing: -0.015em;
-  white-space: nowrap;
-}
-
-.raiseProjectMeta {
-  display: flex;
-  align-items: center;
-  gap: calc(0.5 * var(--u));
-  min-width: 0;
-}
-
-.raiseProjectMeta > .raiseNodeDetail {
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -5094,7 +5098,8 @@ a.measureTitle:focus-visible {
   gap: 12px;
 }
 
-.slide[data-compact] .rampBody .modes {
+.slide[data-compact] .rampControls {
+  gap: 8px;
   margin-bottom: 12px;
 }
 

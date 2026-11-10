@@ -81,7 +81,7 @@ export function RampChart({
   const { W, H, pad: PAD, tip: TIP } = LAYOUTS[compact ? "compact" : "wide"];
   const { top, ticks } = scale(Math.max(...periods.map(totalOf)));
   const SLOT = (W - PAD.left - PAD.right) / periods.length;
-  const BAR = SLOT * (view === "years" ? 0.5 : 0.62);
+  const BAR = Math.min(SLOT * (view === "years" ? 0.5 : 0.62), 120);
   const y = (usd: number) => H - PAD.bottom - (usd / top) * (H - PAD.top - PAD.bottom);
   const cx = (i: number) => PAD.left + SLOT * (i + 0.5);
   const years = periods.reduce<{ year: string; from: number; to: number }[]>((runs, p, i) => {

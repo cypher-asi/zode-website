@@ -705,9 +705,12 @@ const RAMP_VIEWS = [
   { id: "years", label: "Annual" },
 ] as const;
 
+const yearOf = (period: string) => period.slice(-4);
+
 /**
  * The consolidated model as stacked bars, by quarter, month or year as its
- * toggle says, over a key to their parts, with the model's note behind a label.
+ * toggle says, for the years switched on beside it, over a key to their parts,
+ * with the model's note behind a label.
  */
 function Ramp({
   slide,
@@ -719,25 +722,49 @@ function Ramp({
   compact: boolean;
 }): ReactElement {
   const [view, setView] = useState<(typeof RAMP_VIEWS)[number]["id"]>("quarters");
+  const years = slide.years.map((y) => yearOf(y.period));
+  const [hidden, setHidden] = useState<ReadonlySet<string>>(new Set());
+  const toggleYear = (year: string) =>
+    setHidden((was) => {
+      const next = new Set(was);
+      if (!next.delete(year)) next.add(year);
+      return next.size < years.length ? next : was;
+    });
+  const periods = slide[view].filter((p) => !hidden.has(yearOf(p.period)));
   return (
     <div className={styles.rampBody}>
       <figure {...rise(2)} className={`${styles.rise} ${styles.figure}`}>
-        <div className={styles.modes} role="group" aria-label="Revenue by">
-          {RAMP_VIEWS.map((v) => (
-            <button
-              key={v.id}
-              type="button"
-              className={styles.mode}
-              aria-pressed={v.id === view}
-              onClick={() => setView(v.id)}
-            >
-              {v.label}
-            </button>
-          ))}
+        <div className={styles.rampControls}>
+          <div className={styles.modes} role="group" aria-label="Revenue by">
+            {RAMP_VIEWS.map((v) => (
+              <button
+                key={v.id}
+                type="button"
+                className={styles.mode}
+                aria-pressed={v.id === view}
+                onClick={() => setView(v.id)}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+          <div className={`${styles.modes} ${styles.rampYears}`} role="group" aria-label="Years shown">
+            {years.map((year) => (
+              <button
+                key={year}
+                type="button"
+                className={styles.mode}
+                aria-pressed={!hidden.has(year)}
+                onClick={() => toggleYear(year)}
+              >
+                {year}
+              </button>
+            ))}
+          </div>
         </div>
         <RampChart
-          key={view}
-          periods={slide[view]}
+          key={`${view} ${[...hidden].sort().join(" ")}`}
+          periods={periods}
           view={view}
           active={active}
           compact={compact}
@@ -754,7 +781,6 @@ function Ramp({
             </span>
           ))}
         </figcaption>
-        <p className={styles.caption}>{slide.caption}</p>
       </figure>
       <HoverNote label="Notes" notes={[slide.note]} delay={3} />
     </div>
@@ -1898,11 +1924,8 @@ function Raise({ slide }: { slide: Of<"raise"> }): ReactElement {
           >
             <header className={styles.raiseProjectHead}>
               <h3 className={styles.raiseProjectName}>{project.name}</h3>
-              <span className={styles.raiseProjectMeta}>
-                <span className={styles.raiseTenure} data-tenure={project.tenure}>
-                  {project.tenure === "own" ? "Own" : "Lease"}
-                </span>
-                <span className={styles.raiseNodeDetail}>{project.detail}</span>
+              <span className={styles.raiseTenure} data-tenure={project.tenure}>
+                {project.tenure === "own" ? "Own" : "Lease"}
               </span>
             </header>
             <div className={styles.raiseSlot}>
