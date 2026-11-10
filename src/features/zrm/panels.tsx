@@ -10,6 +10,9 @@ import { ChildSection, FieldSection, RelatedSection, Section, TypeList, TypesSec
 import {
   formatMoney,
   formatMw,
+  KIND_LABELS,
+  listHref,
+  OPPORTUNITY_KINDS,
   personName,
   recordHref,
   type Activity,
@@ -18,6 +21,7 @@ import {
   type Education,
   type Note,
   type Opportunity,
+  type OpportunityKind,
   type Person,
   type RecordKind,
   type Related,
@@ -54,10 +58,29 @@ function CustomFields({ kind, id, items }: { kind: "people" | "companies"; id: s
   );
 }
 
-const newOpportunityHref = (params: Record<string, string | null>): string => {
+const newOpportunityHref = (kind: OpportunityKind, params: Record<string, string | null>): string => {
   const query = new URLSearchParams(Object.entries(params).filter((entry): entry is [string, string] => Boolean(entry[1])));
-  return `/portal/zrm/opportunities/new?${query}`;
+  return `${listHref(kind)}/new?${query}`;
 };
+
+/** A person's or company's opportunities, a section per pipeline, each adding one there with `params` filled in. */
+function OpportunitySections({
+  related,
+  params,
+}: {
+  related: Readonly<Record<OpportunityKind, Related[]>>;
+  params: Record<string, string | null>;
+}) {
+  return OPPORTUNITY_KINDS.map((kind) => (
+    <RelatedSection
+      key={kind}
+      title={KIND_LABELS[kind].plural}
+      kind={kind}
+      items={related[kind]}
+      addHref={newOpportunityHref(kind, params)}
+    />
+  ));
+}
 
 export function PersonPanel({
   person,
@@ -65,7 +88,8 @@ export function PersonPanel({
   work,
   education,
   custom,
-  opportunities,
+  sales,
+  fundraising,
   sites,
   notes,
 }: {
@@ -74,7 +98,8 @@ export function PersonPanel({
   work: WorkExperience[];
   education: Education[];
   custom: CustomField[];
-  opportunities: Related[];
+  sales: Related[];
+  fundraising: Related[];
   sites: Related[];
   notes: Note[];
 }): ReactElement {
@@ -136,12 +161,7 @@ export function PersonPanel({
         )}
       />
       <CustomFields kind="people" id={person.id} items={custom} />
-      <RelatedSection
-        title="Opportunities"
-        kind="opportunities"
-        items={opportunities}
-        addHref={newOpportunityHref({ person_id: person.id, company_id: person.company_id })}
-      />
+      <OpportunitySections related={{ sales, fundraising }} params={{ person_id: person.id, company_id: person.company_id }} />
       {sites.length > 0 ? <RelatedSection title="Sites" kind="sites" items={sites} /> : null}
     </DetailShell>
   );
@@ -152,7 +172,8 @@ export function CompanyPanel({
   types,
   custom,
   people,
-  opportunities,
+  sales,
+  fundraising,
   sites,
   notes,
 }: {
@@ -160,7 +181,8 @@ export function CompanyPanel({
   types: ZrmType[];
   custom: CustomField[];
   people: Related[];
-  opportunities: Related[];
+  sales: Related[];
+  fundraising: Related[];
   sites: Related[];
   notes: Note[];
 }): ReactElement {
@@ -177,18 +199,13 @@ export function CompanyPanel({
         items={people}
         addHref={`/portal/zrm/people/new?company_id=${company.id}`}
       />
-      <RelatedSection
-        title="Opportunities"
-        kind="opportunities"
-        items={opportunities}
-        addHref={newOpportunityHref({ company_id: company.id })}
-      />
+      <OpportunitySections related={{ sales, fundraising }} params={{ company_id: company.id }} />
       <RelatedSection title="Sites" kind="sites" items={sites} addHref={`/portal/capacity/sites/new?provider_company_id=${company.id}`} />
     </DetailShell>
   );
 }
 
-function StageSelect({ id, stageId }: { id: string; stageId: string }): ReactElement {
+function StageSelect({ kind, id, stageId }: { kind: OpportunityKind; id: string; stageId: string }): ReactElement {
   const { data, editRow } = useZrm();
   const [optimistic, setOptimistic] = useOptimistic(stageId);
   const [, startTransition] = useTransition();
@@ -198,13 +215,13 @@ function StageSelect({ id, stageId }: { id: string; stageId: string }): ReactEle
       className={styles.stage}
       aria-label="Stage"
       align="end"
-      options={data.stages.map((stage) => ({ value: stage.id, label: stage.name }))}
+      options={data.stages.filter((stage) => stage.pipeline === kind).map((stage) => ({ value: stage.id, label: stage.name }))}
       value={optimistic}
       onChange={(next) =>
         startTransition(async () => {
           setOptimistic(next);
-          editRow({ kind: "opportunities", id, patch: { stage_id: next } });
-          await setStageAction(id, next);
+          editRow({ kind, id, patch: { stage_id: next } });
+          await setStageAction(kind, id, next);
         })
       }
     />
@@ -225,12 +242,12 @@ export function OpportunityPanel({
   const o = opportunity;
   return (
     <DetailShell
-      kind="opportunities"
+      kind={o.pipeline}
       id={o.id}
       name={o.title}
       active={o.active}
       notes={notes}
-      actions={<StageSelect id={o.id} stageId={o.stage_id} />}
+      actions={<StageSelect kind={o.pipeline} id={o.id} stageId={o.stage_id} />}
       subtitle={
         <>
           {o.person_id ? <ZrmLink href={recordHref("people", o.person_id)}>{o.person_name}</ZrmLink> : null}
@@ -240,7 +257,7 @@ export function OpportunityPanel({
         </>
       }
     >
-      <Fields kind="opportunities" record={o} />
+      <Fields kind={o.pipeline} record={o} />
       {o.company_id ? (
         <Section title="Type">
           <TypeList types={types} />
@@ -249,7 +266,7 @@ export function OpportunityPanel({
       <ChildSection
         title="Activities"
         child="activity"
-        kind="opportunities"
+        kind={o.pipeline}
         parentId={o.id}
         items={activities}
         addLabel="Log activity"

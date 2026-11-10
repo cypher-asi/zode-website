@@ -275,7 +275,7 @@ export async function createComputeDeal(input: ComputeDealInput): Promise<string
     `,
     sql`
       update zrm_opportunities set
-        stage_id = (select id from zrm_stages order by position desc limit 1),
+        stage_id = (select id from zrm_stages where pipeline = 'sales' order by position desc limit 1),
         value = coalesce(${input.valueUsd}, value),
         updated_at = now()
       where id = ${input.opportunityId}

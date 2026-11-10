@@ -4,6 +4,7 @@ import { DB_TAG, db } from "@/lib/db";
 import { isUuid } from "./access";
 import type {
   RecordAppId,
+  OpportunityKind,
   Activity,
   Company,
   CompanyRow,
@@ -71,7 +72,7 @@ const companiesQuery = (sql: Sql) => sql`
 
 const opportunitiesQuery = (sql: Sql) => sql`
   with company_types as (select company_id, array_agg(type_id)::text[] as type_ids from zrm_company_types group by company_id)
-  select o.id, o.title, o.deal_type, o.person_id,
+  select o.id, o.pipeline, o.title, o.deal_type, o.person_id,
     nullif(concat_ws(' ', p.first_name, p.last_name), '') as person_name,
     o.company_id, c.name as company_name,
     o.stage_id, s.name as stage_name, s.position as stage_position,
@@ -87,7 +88,7 @@ const opportunitiesQuery = (sql: Sql) => sql`
 
 const typesQuery = (sql: Sql) => sql`select id, name, color from zrm_types order by lower(name)`;
 
-const stagesQuery = (sql: Sql) => sql`select id, name, position from zrm_stages order by position, name`;
+const stagesQuery = (sql: Sql) => sql`select id, pipeline, name, position from zrm_stages order by pipeline, position, name`;
 
 const sitesQuery = (sql: Sql) => sql`
   select s.id, s.name, s.address, s.status_id,
@@ -179,7 +180,15 @@ export async function loadZrmData(app: RecordAppId): Promise<ZrmData> {
     capacity ? listRooms() : [],
     listLookups(),
   ]);
-  return { people, companies, opportunities, sites, rooms, ...lookups };
+  return {
+    people,
+    companies,
+    sales: opportunities.filter((o) => o.pipeline === "sales"),
+    fundraising: opportunities.filter((o) => o.pipeline === "fundraising"),
+    sites,
+    rooms,
+    ...lookups,
+  };
 }
 
 const typesOfCompany = (sql: Sql, companyId: string) => sql`
@@ -210,11 +219,18 @@ const customFieldsOf = (sql: Sql, column: "person_id" | "company_id", id: string
 /** A person's or company's opportunities, with their stage and value as the detail. */
 const opportunitiesOf = (sql: Sql, column: "person_id" | "company_id", id: string) =>
   sql.query(
-    `select o.id, o.title as label, concat_ws(' · ', s.name, to_char(o.value, 'FM$999,999,999,990')) as detail
+    `select o.id, o.pipeline, o.title as label, concat_ws(' · ', s.name, to_char(o.value, 'FM$999,999,999,990')) as detail
      from zrm_opportunities o join zrm_stages s on s.id = o.stage_id
      where o.${column} = $1 order by o.updated_at desc`,
     [id],
   );
+
+/** `opportunitiesOf`'s rows, apart by pipeline. */
+function byPipeline(rows: Record<string, unknown>[]): Record<OpportunityKind, Related[]> {
+  const of = (pipeline: OpportunityKind) =>
+    rows.filter((row) => row.pipeline === pipeline).map(({ id, label, detail }) => ({ id, label, detail }) as Related);
+  return { sales: of("sales"), fundraising: of("fundraising") };
+}
 
 /** The sites a company is the provider, customer or broker's firm of, or a person brokers, with their role, MW and status. */
 const sitesOf = (sql: Sql, id: string, roles: readonly (readonly [column: string, label: string])[]) =>
@@ -244,7 +260,8 @@ export interface PersonDetail {
   work: WorkExperience[];
   education: Education[];
   custom: CustomField[];
-  opportunities: Related[];
+  sales: Related[];
+  fundraising: Related[];
   sites: Related[];
   notes: Note[];
 }
@@ -291,7 +308,7 @@ export async function getPersonDetail(id: string): Promise<PersonDetail | null> 
     work: work as WorkExperience[],
     education: education as Education[],
     custom: custom as CustomField[],
-    opportunities: opportunities as Related[],
+    ...byPipeline(opportunities),
     sites: sites as Related[],
     notes: notes as Note[],
   };
@@ -302,7 +319,8 @@ export interface CompanyDetail {
   types: ZrmType[];
   custom: CustomField[];
   people: Related[];
-  opportunities: Related[];
+  sales: Related[];
+  fundraising: Related[];
   sites: Related[];
   notes: Note[];
 }
@@ -335,7 +353,7 @@ export async function getCompanyDetail(id: string): Promise<CompanyDetail | null
     types: types as ZrmType[],
     custom: custom as CustomField[],
     people: people as Related[],
-    opportunities: opportunities as Related[],
+    ...byPipeline(opportunities),
     sites: sites as Related[],
     notes: notes as Note[],
   };
@@ -357,7 +375,7 @@ export async function getOpportunityDetail(id: string): Promise<OpportunityDetai
   const [[opportunity], types, activities, notes] = await sql.transaction(
     [
       sql`
-        select o.id, o.title, o.deal_type, o.person_id,
+        select o.id, o.pipeline, o.title, o.deal_type, o.person_id,
           nullif(concat_ws(' ', p.first_name, p.last_name), '') as person_name,
           o.company_id, c.name as company_name, o.stage_id, s.name as stage_name,
           o.value::float8 as value, o.owner_notes, o.active, o.created_at, o.updated_at

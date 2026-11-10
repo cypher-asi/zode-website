@@ -112,14 +112,15 @@ const laneNames = [...lanes].sort((a, b) => a.order - b.order).map((lane) => sta
 const extraStages = records("opportunity")
   .map((o) => stageName(o.stage))
   .filter((name) => name && !laneNames.includes(name));
-const [{ max }] = await sql`select coalesce(max(position), -1) as max from zrm_stages`;
+// OD3N's opportunities are all sales, so its stages join the Sales pipeline.
+const [{ max }] = await sql`select coalesce(max(position), -1) as max from zrm_stages where pipeline = 'sales'`;
 count(
   "stages",
   await insertSet(
     "zrm_stages",
     { name: "text", position: "integer" },
     [...new Set([...laneNames, ...extraStages])].filter(Boolean).map((name, i) => ({ name, position: max + 1 + i })),
-    { conflict: "on conflict (name) do nothing", returning: "returning id" },
+    { conflict: "on conflict (pipeline, name) do nothing", returning: "returning id" },
   ),
 );
 
@@ -391,8 +392,8 @@ count(
 // Opportunities and their activities.
 
 companyIds = await idMap("zrm_companies");
-const stageIds = await idMap("zrm_stages", "name");
-const firstStage = (await sql`select id from zrm_stages order by position limit 1`)[0]?.id;
+const stageIds = new Map((await sql`select id, name from zrm_stages where pipeline = 'sales'`).map((row) => [row.name, row.id]));
+const firstStage = (await sql`select id from zrm_stages where pipeline = 'sales' order by position limit 1`)[0]?.id;
 const opportunities = records("opportunity").filter((o) => str(o.title));
 
 const newOpportunities = await insertSet(

@@ -152,7 +152,7 @@ for (const deal of DEALS) {
   if (!opportunity) {
     [opportunity] = await sql`
       insert into zrm_opportunities (title, company_id, deal_type, stage_id)
-      values (${deal.opportunity}, ${company.id}, 'Compute', (select id from zrm_stages order by position desc limit 1))
+      values (${deal.opportunity}, ${company.id}, 'Compute', (select id from zrm_stages where pipeline = 'sales' order by position desc limit 1))
       returning id
     `;
     console.log(`[contracts:import] added the ${deal.opportunity} opportunity`);
@@ -202,7 +202,7 @@ for (const deal of DEALS) {
     sql`
       update zrm_opportunities set
         deal_type = 'Compute',
-        stage_id = (select id from zrm_stages order by position desc limit 1),
+        stage_id = (select id from zrm_stages where pipeline = 'sales' order by position desc limit 1),
         value = ${deal.value_usd},
         updated_at = now()
       where id = ${opportunity.id}

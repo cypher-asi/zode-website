@@ -7,7 +7,7 @@ import { deleteRecordAction, setActiveAction } from "./actions";
 import { Avatar, Icon } from "./bits";
 import { formatDate } from "./fieldUi";
 import { ChildSection } from "./sections";
-import { KIND_LABELS, listHref, type Note, type RecordKind } from "./types";
+import { isOpportunityKind, KIND_LABELS, listHref, type Note, type RecordKind } from "./types";
 import { ZrmLink } from "./ZrmProvider";
 import styles from "./zrm.module.css";
 
@@ -52,7 +52,7 @@ function DeleteButton({ kind, id, name }: { kind: RecordKind; id: string; name: 
         <Dialog
           title={`Delete ${name}?`}
           description={
-            kind === "opportunities"
+            isOpportunityKind(kind)
               ? "Its activities and notes go with it. This can't be undone."
               : kind === "sites"
                 ? "Its notes go with it. This can't be undone."

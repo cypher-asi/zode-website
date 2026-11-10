@@ -1,4 +1,4 @@
-import type { RecordKind } from "./types";
+import type { OpportunityKind, RecordKind } from "./types";
 
 /**
  * How a field is edited and shown. References (`company`, `person`, `stage`,
@@ -39,6 +39,8 @@ export interface FieldSpec {
   suggest?: "companies";
   /** Only shown and saved while another of the record's fields holds one of these values, and cleared as it stops holding one. */
   onlyWhen?: Condition;
+  /** For `stage`, the pipeline whose stages it picks from. */
+  pipeline?: OpportunityKind;
 }
 
 export interface Condition {
@@ -84,10 +86,19 @@ const dealTerm = (field: FieldSpec, values: readonly DealType[]): FieldSpec => (
   onlyWhen: { key: "deal_type", values },
 });
 
-/** What an opportunity sells or secures, compute first as the main kind. The database checks the same (`zrm_opportunities_deal_type_check`). */
-export const OPPORTUNITY_DEAL_TYPES = ["Compute", "Capacity", "Hardware", "Financing", "Partnership"] as const;
+/** What a sales opportunity sells, compute first as the main kind. */
+export const SALES_DEAL_TYPES = ["Compute", "Capacity", "Hardware", "Partnership"] as const;
 
-export type OpportunityDealType = (typeof OPPORTUNITY_DEAL_TYPES)[number];
+/** What a fundraising opportunity raises. */
+export const FUNDRAISING_DEAL_TYPES = ["Venture equity", "Growth equity", "Debt / Private credit", "Infrastructure"] as const;
+
+/** Each pipeline's deal types. The database checks the same (`zrm_opportunities_deal_type_check`). */
+export const OPPORTUNITY_DEAL_TYPES: Record<OpportunityKind, readonly OpportunityDealType[]> = {
+  sales: SALES_DEAL_TYPES,
+  fundraising: FUNDRAISING_DEAL_TYPES,
+};
+
+export type OpportunityDealType = (typeof SALES_DEAL_TYPES)[number] | (typeof FUNDRAISING_DEAL_TYPES)[number];
 
 /** A site's type, by how built out it is, furthest first. Stored as `site_stage`. */
 export const SITE_TYPES = ["Operational DC", "Retrofit", "Powered Shell", "Powered Land", "Land"] as const;
@@ -106,9 +117,34 @@ const site = {
 export const TABLES: Record<RecordKind, string> = {
   people: "zrm_people",
   companies: "zrm_companies",
-  opportunities: "zrm_opportunities",
+  sales: "zrm_opportunities",
+  fundraising: "zrm_opportunities",
   sites: "capacity_sites",
 };
+
+/**
+ * The columns every record of a kind holds, for kinds sharing a table: set as
+ * one is created, and matched as one is saved or deleted, so a record is only
+ * ever reached through its own kind.
+ */
+export const SCOPES: Partial<Record<RecordKind, Readonly<Record<string, string>>>> = {
+  sales: { pipeline: "sales" },
+  fundraising: { pipeline: "fundraising" },
+};
+
+const opportunityDetails = (pipeline: OpportunityKind): SectionSpec => ({
+  id: "details",
+  title: "Details",
+  fields: [
+    text("title", "Title", true),
+    { key: "deal_type", label: "Deal type", type: "choice", required: true, options: OPPORTUNITY_DEAL_TYPES[pipeline] },
+    { key: "stage_id", label: "Stage", type: "stage", required: true, display: "stage_name", pipeline },
+    { key: "value", label: pipeline === "fundraising" ? "Raise (USD)" : "Value (USD)", type: "money" },
+    { key: "person_id", label: pipeline === "fundraising" ? "Contact" : "Person", type: "person", display: "person_name" },
+    pipeline === "fundraising" ? { ...company, label: "Firm" } : company,
+    { key: "owner_notes", label: "Owner notes", type: "textarea" },
+  ],
+});
 
 export const SECTIONS: Record<RecordKind, readonly SectionSpec[]> = {
   people: [
@@ -197,21 +233,8 @@ export const SECTIONS: Record<RecordKind, readonly SectionSpec[]> = {
       fields: [list("technologies", "Technologies"), list("specialties", "Specialties"), list("tags", "Tags")],
     },
   ],
-  opportunities: [
-    {
-      id: "details",
-      title: "Details",
-      fields: [
-        text("title", "Title", true),
-        { key: "deal_type", label: "Deal type", type: "choice", required: true, options: OPPORTUNITY_DEAL_TYPES },
-        { key: "stage_id", label: "Stage", type: "stage", required: true, display: "stage_name" },
-        { key: "value", label: "Value (USD)", type: "money" },
-        { key: "person_id", label: "Person", type: "person", display: "person_name" },
-        company,
-        { key: "owner_notes", label: "Owner notes", type: "textarea" },
-      ],
-    },
-  ],
+  sales: [opportunityDetails("sales")],
+  fundraising: [opportunityDetails("fundraising")],
   sites: [
     {
       id: "site",
@@ -271,7 +294,8 @@ export const SECTIONS: Record<RecordKind, readonly SectionSpec[]> = {
 export const CREATE_FIELDS: Record<RecordKind, readonly FieldSpec[]> = {
   people: [text("first_name", "First name", true), text("last_name", "Last name"), text("title", "Title"), company, email("email", "Email")],
   companies: [text("name", "Name", true), text("domain", "Domain"), text("industry", "Industry"), url("website", "Website")],
-  opportunities: SECTIONS.opportunities[0]!.fields.filter((field) => field.key !== "owner_notes"),
+  sales: SECTIONS.sales[0]!.fields.filter((field) => field.key !== "owner_notes"),
+  fundraising: SECTIONS.fundraising[0]!.fields.filter((field) => field.key !== "owner_notes"),
   sites: [site.name, site.address, site.status, site.type, site.provider, site.dealType, site.initial, site.secondary],
 };
 
@@ -344,13 +368,13 @@ export const CHILDREN: Record<ChildKind, ChildSpec> = {
   },
   activity: {
     table: "zrm_activities",
-    parents: { opportunities: "opportunity_id" },
+    parents: { sales: "opportunity_id", fundraising: "opportunity_id" },
     fields: [text("kind", "Kind", true), { key: "at", label: "Date", type: "date" }, { key: "note", label: "Note", type: "textarea" }],
     ordered: false,
   },
   note: {
     table: "zrm_notes",
-    parents: { people: "person_id", companies: "company_id", opportunities: "opportunity_id", sites: "site_id" },
+    parents: { people: "person_id", companies: "company_id", sales: "opportunity_id", fundraising: "opportunity_id", sites: "site_id" },
     fields: [{ key: "body", label: "Note", type: "textarea", required: true }],
     ordered: false,
     touch: true,

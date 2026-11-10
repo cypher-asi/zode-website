@@ -156,7 +156,7 @@ export function useFieldChoices(field: FieldSpec): Option[] {
       : field.type === "person"
         ? options.people
         : field.type === "stage"
-          ? named(options.stages)
+          ? named(options.stages.filter((stage) => stage.pipeline === field.pipeline))
           : field.type === "status"
             ? named(options.statuses)
             : field.type === "room"

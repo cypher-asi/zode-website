@@ -5,11 +5,23 @@
 
 import type { DealType, OpportunityDealType } from "./fields";
 
-export type ZrmKind = "people" | "companies" | "opportunities";
+/**
+ * Opportunities, listed apart by pipeline: Sales, what ZODE sells, and
+ * Fundraising, the capital it raises. Each kind is named for its pipeline, the
+ * `pipeline` its records hold in the one table they share.
+ */
+export const OPPORTUNITY_KINDS = ["sales", "fundraising"] as const;
 
-export const KINDS: readonly ZrmKind[] = ["people", "companies", "opportunities"];
+export type OpportunityKind = (typeof OPPORTUNITY_KINDS)[number];
+
+export type ZrmKind = "people" | "companies" | OpportunityKind;
+
+export const KINDS: readonly ZrmKind[] = ["people", "companies", ...OPPORTUNITY_KINDS];
 
 export const isKind = (value: unknown): value is ZrmKind => KINDS.includes(value as ZrmKind);
+
+export const isOpportunityKind = (value: unknown): value is OpportunityKind =>
+  OPPORTUNITY_KINDS.includes(value as OpportunityKind);
 
 /**
  * Every kind of record the ZRM engine lists and edits: ZRM's own, and
@@ -32,7 +44,8 @@ const appOf = (kind: RecordKind): RecordAppId => (kind === "sites" ? "capacity" 
 export const KIND_LABELS: Record<RecordKind, { plural: string; singular: string }> = {
   people: { plural: "People", singular: "Person" },
   companies: { plural: "Companies", singular: "Company" },
-  opportunities: { plural: "Opportunities", singular: "Opportunity" },
+  sales: { plural: "Sales", singular: "Sales opportunity" },
+  fundraising: { plural: "Fundraising", singular: "Fundraising opportunity" },
   sites: { plural: "Sites", singular: "Site" },
 };
 
@@ -50,6 +63,7 @@ export interface ZrmType {
 
 export interface Stage {
   id: string;
+  pipeline: OpportunityKind;
   name: string;
   position: number;
 }
@@ -86,6 +100,7 @@ export interface CompanyRow {
 
 export interface OpportunityRow {
   id: string;
+  pipeline: OpportunityKind;
   title: string;
   deal_type: OpportunityDealType;
   person_id: string | null;
@@ -137,7 +152,8 @@ export interface SiteRoom {
 export interface ZrmData {
   people: PersonRow[];
   companies: CompanyRow[];
-  opportunities: OpportunityRow[];
+  sales: OpportunityRow[];
+  fundraising: OpportunityRow[];
   types: ZrmType[];
   stages: Stage[];
   sites: SiteRow[];
@@ -220,6 +236,7 @@ export interface Company {
 
 export interface Opportunity {
   id: string;
+  pipeline: OpportunityKind;
   title: string;
   deal_type: OpportunityDealType;
   person_id: string | null;

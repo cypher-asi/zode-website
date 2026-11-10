@@ -16,6 +16,7 @@ import {
 import Link from "next/link";
 import { useRouter, useSelectedLayoutSegments } from "next/navigation";
 import {
+  isOpportunityKind,
   RECORD_APPS,
   type Option,
   type RecordAppId,
@@ -56,7 +57,7 @@ function withEdit(data: ZrmData, { kind, id, patch }: RowEdit): ZrmData {
     if (row.id !== id) return row;
     const edited: Record<string, unknown> = { ...row, ...patch };
     if (kind === "sites") edited.total_it_mw = num(edited.initial_it_mw) + num(edited.secondary_it_mw);
-    if (kind === "opportunities" && "stage_id" in patch) {
+    if (isOpportunityKind(kind) && "stage_id" in patch) {
       const stage = data.stages.find((s) => s.id === patch.stage_id);
       if (stage) Object.assign(edited, { stage_name: stage.name, stage_position: stage.position });
     }

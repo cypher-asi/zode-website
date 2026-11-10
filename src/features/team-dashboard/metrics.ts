@@ -69,8 +69,8 @@ const capacityOn = (...statuses: string[]): string => `
 
 /**
  * Every metric computed now, as the CTE `m (metric, value)`. Capacity counts
- * Contracted and Closed sites as contracted and every site as pipeline; an
- * opportunity is open until it reaches the last pipeline stage.
+ * Contracted and Closed sites as contracted and every site as pipeline; a
+ * Sales opportunity is open until it reaches the last Sales stage.
  */
 const CURRENT = `
     m (metric, value) as (
@@ -80,10 +80,10 @@ const CURRENT = `
         ${CAPACITY_STATUSES.map(({ status, metric }) => `('${metric}', ${capacityOn(status)}),`).join("\n        ")}
         ('opportunities_open',
           (select count(*) from zrm_opportunities o join zrm_stages g on g.id = o.stage_id
-           where g.position < (select max(position) from zrm_stages))),
+           where o.pipeline = 'sales' and g.position < (select max(position) from zrm_stages where pipeline = 'sales'))),
         ('opportunities_pipeline_usd',
           (select coalesce(sum(o.value), 0) from zrm_opportunities o join zrm_stages g on g.id = o.stage_id
-           where g.position < (select max(position) from zrm_stages))),
+           where o.pipeline = 'sales' and g.position < (select max(position) from zrm_stages where pipeline = 'sales'))),
         ('contracts_total', (select count(*) from mndas) + (select count(*) from compute_contracts)),
         ('contracts_compute', (select count(*) from compute_contracts)),
         ('contracts_compute_mw', (select coalesce(sum(it_mw), 0) from compute_contracts)),

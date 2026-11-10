@@ -130,7 +130,8 @@ const ZRM: PortalApp = {
   links: [
     { href: "/portal/zrm/people", label: "People", icon: "person" },
     { href: "/portal/zrm/companies", label: "Companies", icon: "rooms" },
-    { href: "/portal/zrm/opportunities", label: "Opportunities", icon: "chart" },
+    { href: "/portal/zrm/sales", label: "Sales", icon: "chart" },
+    { href: "/portal/zrm/fundraising", label: "Fundraising", icon: "invest" },
   ],
 };
 

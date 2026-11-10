@@ -8,6 +8,7 @@ import {
   personName,
   type CompanyRow,
   type Option,
+  type OpportunityKind,
   type OpportunityRow,
   type PersonRow,
   type RecordKind,
@@ -162,21 +163,24 @@ export function companiesConfig(types: Types): ListConfig<CompanyRow> {
 
 const totalValue = (rows: readonly OpportunityRow[]): number => rows.reduce((sum, o) => sum + (o.value ?? 0), 0);
 
-export function opportunitiesConfig(types: Types): ListConfig<OpportunityRow> {
+/** A pipeline's list: its deal types in the sidebar, its company's types in the toolbar. */
+export function opportunitiesConfig(types: Types, kind: OpportunityKind): ListConfig<OpportunityRow> {
+  const dealTypes = OPPORTUNITY_DEAL_TYPES[kind];
   return {
     noun: ["opportunity", "opportunities"],
     searchText: (o) => lower(o.title, o.person_name, o.company_name, o.stage_name, o.deal_type),
     filters: [
-      typeFilter(types),
+      { ...typeFilter(types), sidebar: false },
       {
         key: "deal_type",
         label: "Filter by deal type",
         all: "All deal types",
         options: (rows) => {
           const used = new Set(rows.map((o) => o.deal_type));
-          return OPPORTUNITY_DEAL_TYPES.filter((type) => used.has(type)).map((type) => ({ value: type, label: type }));
+          return dealTypes.filter((type) => used.has(type)).map((type) => ({ value: type, label: type }));
         },
         test: (o, value) => o.deal_type === value,
+        sidebar: true,
       },
     ],
     summary: (rows) => `${formatMoney(totalValue(rows))} total`,
@@ -197,7 +201,7 @@ export function opportunitiesConfig(types: Types): ListConfig<OpportunityRow> {
         header: "Deal type",
         width: "minmax(0, 1fr)",
         wideOnly: true,
-        sortValue: (o) => OPPORTUNITY_DEAL_TYPES.indexOf(o.deal_type),
+        sortValue: (o) => dealTypes.indexOf(o.deal_type),
         render: (o) => <Badge>{o.deal_type}</Badge>,
       },
       {
@@ -209,7 +213,7 @@ export function opportunitiesConfig(types: Types): ListConfig<OpportunityRow> {
       },
       {
         key: "value",
-        header: "Value",
+        header: kind === "fundraising" ? "Raise" : "Value",
         width: "96px",
         align: "end",
         sortValue: (o) => o.value,
@@ -304,6 +308,7 @@ export function sitesConfig(statuses: readonly SiteStatus[]): ListConfig<SiteRow
 export const NEW_LABELS: Record<RecordKind, string> = {
   people: "New person",
   companies: "New company",
-  opportunities: "New opportunity",
+  sales: "New opportunity",
+  fundraising: "New opportunity",
   sites: "New site",
 };

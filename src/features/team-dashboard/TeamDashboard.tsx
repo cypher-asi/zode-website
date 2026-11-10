@@ -148,7 +148,7 @@ export async function TeamDashboard({
           <DashboardSection title="Sales Pipeline">
             <MetricCard
               label="Open opportunities"
-              href="/portal/zrm/opportunities"
+              href="/portal/zrm/sales"
               value={metrics.current.opportunities_open}
               format={count}
               detail={`${dollars(metrics.current.opportunities_pipeline_usd)} in open pipeline value`}

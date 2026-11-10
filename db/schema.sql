@@ -931,14 +931,62 @@ create table if not exists compute_contracts (
 create index if not exists compute_contracts_signed_at_idx on compute_contracts (signed_at desc);
 
 -- An opportunity's deal type: compute sold from ZODE's clusters (the main
--- kind, and the default), data center capacity, hardware, financing or a
--- partnership. Compute deals are recorded against Compute opportunities.
+-- kind, and the default), data center capacity, hardware or a partnership.
+-- Compute deals are recorded against Compute opportunities. Its check depends
+-- on the opportunity's pipeline, so it's added with that, below.
 alter table zrm_opportunities add column if not exists deal_type text not null default 'Compute';
+
+-- Opportunities sit in one of two pipelines, each with its own stages and
+-- deal types: Sales, what ZODE sells, and Fundraising, the capital it raises.
+-- Stage names are unique within a pipeline, as both have a Contacted.
+alter table zrm_stages add column if not exists pipeline text not null default 'sales';
+
+alter table zrm_stages drop constraint if exists zrm_stages_pipeline_check;
+
+alter table zrm_stages add constraint zrm_stages_pipeline_check check (pipeline in ('sales', 'fundraising'));
+
+alter table zrm_stages drop constraint if exists zrm_stages_name_key;
+
+create unique index if not exists zrm_stages_pipeline_name_idx on zrm_stages (pipeline, name);
+
+create unique index if not exists zrm_stages_id_pipeline_idx on zrm_stages (id, pipeline);
+
+insert into zrm_stages (pipeline, name, position)
+select 'fundraising', s.name, s.position
+from (values ('Target', 0), ('Contacted', 1), ('Meeting', 2), ('Diligence', 3), ('Term Sheet', 4), ('Committed / Closed', 5))
+  as s (name, position)
+where not exists (select 1 from zrm_stages where pipeline = 'fundraising');
+
+alter table zrm_opportunities add column if not exists pipeline text not null default 'sales';
 
 alter table zrm_opportunities drop constraint if exists zrm_opportunities_deal_type_check;
 
-alter table zrm_opportunities add constraint zrm_opportunities_deal_type_check
-  check (deal_type in ('Compute', 'Capacity', 'Hardware', 'Financing', 'Partnership'));
+-- Financing was a Sales deal type before Fundraising had its own pipeline;
+-- such opportunities move there as debt, at the matching stage.
+update zrm_opportunities o set
+  pipeline = 'fundraising',
+  deal_type = 'Debt / Private credit',
+  stage_id = coalesce(
+    (select f.id
+     from zrm_stages s
+     join (values ('Contacted', 'Contacted'), ('Meeting Scheduled', 'Meeting'), ('Proposal Sent', 'Diligence'),
+       ('Negotiating', 'Term Sheet'), ('Signed Contract', 'Committed / Closed')) as m (sales, fundraising) on m.sales = s.name
+     join zrm_stages f on f.pipeline = 'fundraising' and f.name = m.fundraising
+     where s.id = o.stage_id),
+    (select id from zrm_stages where pipeline = 'fundraising' order by position limit 1)),
+  updated_at = now()
+where o.deal_type = 'Financing';
+
+alter table zrm_opportunities add constraint zrm_opportunities_deal_type_check check (
+  (pipeline = 'sales' and deal_type in ('Compute', 'Capacity', 'Hardware', 'Partnership'))
+  or (pipeline = 'fundraising' and deal_type in ('Venture equity', 'Growth equity', 'Debt / Private credit', 'Infrastructure'))
+);
+
+-- An opportunity's stage is one of its own pipeline's.
+alter table zrm_opportunities drop constraint if exists zrm_opportunities_stage_pipeline_fkey;
+
+alter table zrm_opportunities add constraint zrm_opportunities_stage_pipeline_fkey
+  foreign key (stage_id, pipeline) references zrm_stages (id, pipeline);
 
 -- Compute contracts are compute deals: a closed Compute opportunity's executed
 -- MSA and order forms, where a ZODE entity (the provider) runs a GPU cluster
@@ -1035,10 +1083,12 @@ cross join lateral (
        where list = 'changelog' and confirmed_at < d.day + 1 and (status = 'subscribed' or unsubscribed_at >= d.day + 1))),
     ('opportunities_open',
       (select count(*) from zrm_opportunities o join zrm_stages g on g.id = o.stage_id
-       where o.created_at < d.day + 1 and g.position < (select max(position) from zrm_stages))),
+       where o.pipeline = 'sales' and o.created_at < d.day + 1
+         and g.position < (select max(position) from zrm_stages where pipeline = 'sales'))),
     ('opportunities_pipeline_usd',
       (select coalesce(sum(o.value), 0) from zrm_opportunities o join zrm_stages g on g.id = o.stage_id
-       where o.created_at < d.day + 1 and g.position < (select max(position) from zrm_stages)))
+       where o.pipeline = 'sales' and o.created_at < d.day + 1
+         and g.position < (select max(position) from zrm_stages where pipeline = 'sales')))
 ) as m (metric, value)
 on conflict (day, metric) do nothing;
 

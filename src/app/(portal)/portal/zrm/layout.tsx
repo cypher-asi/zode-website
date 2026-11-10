@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * ZRM, the team's CRM: its name, People, Companies and Opportunities tabs at
+ * ZRM, the team's CRM: its name, People, Companies, Sales and Fundraising tabs at
  * the top right, and the open tab's list. Every list loads here, once, from
  * the server's cache, so switching tabs or records never waits on them;
  * mutations update the tags of the lists they touch. The data is only

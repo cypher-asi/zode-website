@@ -7,6 +7,7 @@ import { isEmail, multiLine, singleLine } from "@/lib/validation";
 import { isUuid, teamAccount } from "./access";
 import {
   CHILDREN,
+  SCOPES,
   SITE_MENU_FIELDS,
   TABLES,
   clearedBy,
@@ -17,7 +18,16 @@ import {
   type FieldSpec,
 } from "./fields";
 import { ZRM_TAGS } from "./queries";
-import { isRecordKind, listHref, recordHref, type ActionState, type Option, type RecordKind } from "./types";
+import {
+  isOpportunityKind,
+  isRecordKind,
+  listHref,
+  recordHref,
+  type ActionState,
+  type OpportunityKind,
+  type Option,
+  type RecordKind,
+} from "./types";
 
 const NO_ACCESS: ActionState = { error: "You don't have access to this. Try reloading the page." };
 const MISSING: ActionState = { error: "That record no longer exists. Try reloading the page." };
@@ -96,11 +106,25 @@ function parseFields(fields: readonly FieldSpec[], formData: FormData): Map<stri
 const isStaleReference = (error: unknown): boolean =>
   typeof error === "object" && error !== null && "code" in error && (error.code === "23503" || error.code === "23514");
 
+/**
+ * The conditions holding a record to its kind's scope, e.g. a fundraising
+ * opportunity to its pipeline, appending their values to `params`.
+ */
+function scoped(kind: RecordKind, params: unknown[]): string {
+  return Object.entries(SCOPES[kind] ?? {})
+    .map(([column, value]) => {
+      params.push(value);
+      return ` and "${column}" = $${params.length}`;
+    })
+    .join("");
+}
+
 /** The lists that show a kind's columns: people and opportunities show their company's name and types, and so on. */
 const LISTS_SHOWING: Record<RecordKind | "types" | "stages", readonly string[]> = {
   people: [ZRM_TAGS.people, ZRM_TAGS.opportunities],
   companies: [ZRM_TAGS.companies, ZRM_TAGS.people, ZRM_TAGS.opportunities, ZRM_TAGS.sites],
-  opportunities: [ZRM_TAGS.opportunities],
+  sales: [ZRM_TAGS.opportunities],
+  fundraising: [ZRM_TAGS.opportunities],
   sites: [ZRM_TAGS.sites],
   types: [ZRM_TAGS.lookups, ZRM_TAGS.companies, ZRM_TAGS.people, ZRM_TAGS.opportunities],
   stages: [ZRM_TAGS.lookups, ZRM_TAGS.opportunities],
@@ -133,12 +157,13 @@ export async function saveFieldsAction(
 
   const values = parseFields(fields, formData);
   if ("error" in values) return values;
-  const columns = [...values.keys()];
-  const params = [...values.values()];
   const table = TABLES[kind];
   const sql = db();
 
   if (id === null) {
+    for (const [column, value] of Object.entries(SCOPES[kind] ?? {})) values.set(column, value);
+    const columns = [...values.keys()];
+    const params = [...values.values()];
     let createdId: string;
     try {
       const [row] = await sql.query(
@@ -155,11 +180,13 @@ export async function saveFieldsAction(
     redirect(recordHref(kind, createdId));
   }
 
+  const columns = [...values.keys()];
+  const params = [...values.values(), id];
   try {
     const result = await sql.query(
       `update ${table} set ${columns.map((c, i) => `"${c}" = $${i + 1}`).join(", ")}, updated_at = now()
-       where id = $${columns.length + 1} returning id`,
-      [...params, id],
+       where id = $${columns.length + 1}${scoped(kind, params)} returning id`,
+      params,
     );
     if (result.length === 0) return MISSING;
   } catch (error) {
@@ -173,7 +200,8 @@ export async function saveFieldsAction(
 export async function deleteRecordAction(kind: RecordKind, id: string): Promise<ActionState> {
   if (!(await teamAccount())) return NO_ACCESS;
   if (!isRecordKind(kind) || !isUuid(id)) return NO_ACCESS;
-  await db().query(`delete from ${TABLES[kind]} where id = $1`, [id]);
+  const params: Value[] = [id];
+  await db().query(`delete from ${TABLES[kind]} where id = $1${scoped(kind, params)}`, params);
   revalidate(kind);
   redirect(listHref(kind));
 }
@@ -182,21 +210,24 @@ export async function deleteRecordAction(kind: RecordKind, id: string): Promise<
 export async function setActiveAction(kind: RecordKind, id: string, active: boolean): Promise<ActionState> {
   if (!(await teamAccount())) return NO_ACCESS;
   if (!isRecordKind(kind) || !isUuid(id)) return NO_ACCESS;
-  await db().query(`update ${TABLES[kind]} set active = $1, updated_at = now() where id = $2`, [active === true, id]);
+  const params: unknown[] = [active === true, id];
+  await db().query(`update ${TABLES[kind]} set active = $1, updated_at = now() where id = $2${scoped(kind, params)}`, params);
   revalidate(kind);
   return { saved: true };
 }
 
-export async function setStageAction(id: string, stageId: string): Promise<ActionState> {
+/** Moves an opportunity to another of its pipeline's stages. */
+export async function setStageAction(kind: OpportunityKind, id: string, stageId: string): Promise<ActionState> {
   if (!(await teamAccount())) return NO_ACCESS;
-  if (!isUuid(id) || !isUuid(stageId)) return NO_ACCESS;
-  try {
-    await db()`update zrm_opportunities set stage_id = ${stageId}, updated_at = now() where id = ${id}`;
-  } catch (error) {
-    if (isStaleReference(error)) return { error: "That stage no longer exists. Reload and try again." };
-    throw error;
-  }
-  revalidate("opportunities");
+  if (!isOpportunityKind(kind) || !isUuid(id) || !isUuid(stageId)) return NO_ACCESS;
+  const result = await db()`
+    update zrm_opportunities set stage_id = ${stageId}, updated_at = now()
+    where id = ${id} and pipeline = ${kind}
+      and exists (select 1 from zrm_stages where id = ${stageId} and pipeline = ${kind})
+    returning id
+  `;
+  if (result.length === 0) return { error: "That stage or opportunity no longer exists. Reload and try again." };
+  revalidate(kind);
   return { saved: true };
 }
 
@@ -235,7 +266,7 @@ async function updateColumn(
   const sets = [`"${field.key}" = ${cleared ? "default" : "$2"}`];
   for (const dependent of kind ? clearedBy(kind, field.key, parsed.value) : []) sets.push(`"${dependent.key}" = null`);
   if (touch) sets.push("updated_at = now()");
-  let where = "id = $1";
+  let where = `id = $1${kind ? scoped(kind, params) : ""}`;
   if (field.onlyWhen) {
     params.push([...field.onlyWhen.values]);
     where += ` and "${field.onlyWhen.key}" = any($${params.length}::text[])`;

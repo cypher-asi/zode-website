@@ -23,6 +23,7 @@ import { PortalLoading } from "@/features/portal/PortalLoading";
 import { deleteRecordAction, setActiveAction, setSiteFieldAction } from "./actions";
 import { Icon } from "./bits";
 import { companiesConfig, opportunitiesConfig, peopleConfig, sitesConfig, type ListConfig } from "./columns";
+import { DealTypeNav } from "./DealTypeNav";
 import { clearedColumns } from "./fields";
 import { SiteMenu } from "./SiteMenu";
 import { StatusNav } from "./StatusNav";
@@ -359,7 +360,8 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
     return {
       people: peopleConfig(typeMap),
       companies: companiesConfig(typeMap),
-      opportunities: opportunitiesConfig(typeMap),
+      sales: opportunitiesConfig(typeMap, "sales"),
+      fundraising: opportunitiesConfig(typeMap, "fundraising"),
       sites: sitesConfig(data.statuses),
     };
   }, [data.types, data.statuses]);
@@ -416,9 +418,12 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
       list = <RecordList key={kind} kind={kind} rows={data.companies} config={configs.companies} {...common} />;
       types = typeNav(data.companies);
       break;
-    case "opportunities":
-      list = <RecordList key={kind} kind={kind} rows={data.opportunities} config={configs.opportunities} {...common} />;
-      types = typeNav(data.opportunities);
+    case "sales":
+    case "fundraising":
+      list = <RecordList key={kind} kind={kind} rows={data[kind]} config={configs[kind]} {...common} />;
+      types = (
+        <DealTypeNav kind={kind} rows={data[kind]} value={filterValues.deal_type ?? ""} onChange={(value) => setFilter("deal_type", value)} />
+      );
       break;
     case "sites":
       list = (

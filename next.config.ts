@@ -121,6 +121,8 @@ const nextConfig: NextConfig = {
       // dev performance track ("cannot have a negative time stamp").
       { source: "/portal/zrm", destination: "/portal/zrm/people", permanent: false },
       { source: "/portal/capacity", destination: "/portal/capacity/sites", permanent: false },
+      // Opportunities split into Sales and Fundraising; a fundraising record's page sends it on to Fundraising.
+      { source: "/portal/zrm/opportunities/:path*", destination: "/portal/zrm/sales/:path*", permanent: true },
       // All deployments moved to the app's root, ahead of the status tabs.
       { source: "/portal/deployments/all", destination: "/portal/deployments", permanent: true },
     ];
