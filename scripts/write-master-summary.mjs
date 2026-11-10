@@ -358,21 +358,37 @@ function annualIrr(flows) {
 }
 
 /**
+ * A tab's monthly section under the row labelled `title`: its months
+ * (YYYY-MM), each row's values month by month, and the months of a year as
+ * the yearly tables head it, "Q4 2026" or "2027".
+ */
+function monthlyOf(sheet, title) {
+  const section = sheet.rowOf(title);
+  const header = sheet.rowOf("Month", section);
+  const columns = sheet.columnsOf(header).filter((col) => !["A", "B", "C", "D"].includes(col));
+  const months = columns.map((col) => isoDate(num(sheet.cell(header, col), `${sheet.name} month heading ${col}${header}`)).slice(0, 7));
+  const values = (r) => columns.map((col) => maybe(sheet.cell(r, col)) ?? 0);
+  const monthsOf = (year) => {
+    const y = /(\d{4})$/.exec(year)?.[1] ?? fail(`${sheet.name}: "${year}" isn't a year.`);
+    const from = /^Q(\d)\b/.exec(year) ? (Number(/^Q(\d)/.exec(year)[1]) - 1) * 3 + 1 : 1;
+    const indices = months.flatMap((m, i) => (m.startsWith(`${y}-`) && Number(m.slice(5)) >= from ? [i] : []));
+    return indices.length ? indices : fail(`${sheet.name}: the monthly section has no months in ${year}.`);
+  };
+  return { section, months, values, monthsOf };
+}
+
+/**
  * An SPV tab's peak debt and unlevered IRR to December of `THROUGH`, from its
  * monthly build: the last "debt outstanding" row, and the last unlevered cash
  * flow with the book value of its assets added at the cut. Both are first
  * worked out over the whole build and checked against the tab's key figures.
  */
 function cutAt(sheet) {
-  const build = sheet.rowOf("MONTHLY BUILD");
-  const header = sheet.rowOf("Month", build);
-  const columns = sheet.columnsOf(header).filter((col) => !["A", "B", "C", "D"].includes(col));
-  const months = columns.map((col) => isoDate(num(sheet.cell(header, col), `${sheet.name} month heading ${col}${header}`)).slice(0, 7));
+  const { section: build, months, values, monthsOf } = monthlyOf(sheet, "MONTHLY BUILD");
   const last = months.indexOf(`${THROUGH}-12`);
   if (last < 0) fail(`${sheet.name}: the monthly build has no Dec ${THROUGH}.`);
   const rows = sheet.between(build);
   const lastRow = (pattern, what) => rows.filter((r) => pattern.test(sheet.label(r))).at(-1) ?? fail(`${sheet.name}: no ${what} row in the monthly build.`);
-  const values = (r) => columns.map((col) => maybe(sheet.cell(r, col)) ?? 0);
   const debt = values(lastRow(/debt outstanding$/i, "debt outstanding"));
   const flows = values(lastRow(/^Unlevered cash flow/, "unlevered cash flow"));
   const books = rows.filter((r) => /^Book value/.test(sheet.label(r))).map(values);
@@ -394,12 +410,6 @@ function cutAt(sheet) {
 
   // Critical IT live each month, as revenue is earned on it.
   const live = values(lastRow(/^MW of GPU clusters in service/, "MW of GPU clusters in service"));
-  const monthsOf = (year) => {
-    const y = /(\d{4})$/.exec(year)?.[1] ?? fail(`${sheet.name}: "${year}" isn't a year.`);
-    const from = /^Q(\d)\b/.exec(year) ? (Number(/^Q(\d)/.exec(year)[1]) - 1) * 3 + 1 : 1;
-    const indices = months.flatMap((m, i) => (m.startsWith(`${y}-`) && Number(m.slice(5)) >= from ? [i] : []));
-    return indices.length ? indices : fail(`${sheet.name}: the monthly build has no months in ${year}.`);
-  };
   return {
     peakDebt: Math.max(...debt.slice(0, last + 1)),
     unleveredIrr: keyIrr === null ? null : annualIrr(cut),
@@ -466,11 +476,67 @@ const spvs = structure.between(spvHeader, structure.rowOf("Notes")).map((r) => {
 averageLiveMw(statement, "Summary", (row) =>
   row.indent ? (spvs.find((s) => s.name.toLowerCase() === row.label.toLowerCase())?.name ?? fail(`Summary: MW row "${row.label}" matches no SPV.`)) : null,
 );
+
+/**
+ * The Summary tab rolls up gross profit without the costs between it and
+ * revenue, so the project SPVs' operating costs are added up by year from the
+ * Zode Inc. tab's monthly consolidation, and checked to take total revenue to
+ * gross profit. They and TopCo's own costs each go under a row that totals
+ * them, its parts hidden until it's opened.
+ */
+function splitCosts(table) {
+  const pnl = table.groups.find((g) => g.title === "Profit and loss") ?? fail("Summary: no profit and loss block.");
+  const indexOf = (label) => {
+    const i = pnl.rows.findIndex((r) => r.label === label);
+    return i >= 0 ? i : fail(`Summary: no "${label}" row in the profit and loss block.`);
+  };
+  const [revenue, profit] = [pnl.rows[indexOf("Total revenue")], pnl.rows[indexOf("Gross profit")]];
+
+  const monthly = monthlyOf(topcoSheet, "MONTHLY: ZODE INC. CONSOLIDATED");
+  const from = topcoSheet.rowOf("Total revenue", monthly.section);
+  const costRows = topcoSheet.between(from, topcoSheet.rowOf("Gross profit", from)).filter((r) => !/^\s/.test(topcoSheet.raw(r)));
+  if (!costRows.length) fail(`${topcoSheet.name}: no costs between total revenue and gross profit.`);
+  const costs = costRows.map((r) => {
+    const values = monthly.values(r);
+    const yearly = table.years.map((year) => monthly.monthsOf(year).reduce((total, i) => total + values[i], 0));
+    return {
+      label: topcoSheet.label(r).replace(/\s*\([^)]*\)\s*$/, ""),
+      values: yearly,
+      total: yearly.reduce((total, v) => total + v, 0),
+      unit: "usd",
+      indent: true,
+    };
+  });
+  const parent = (label, parts) => ({
+    label,
+    values: table.years.map((_, i) => parts.reduce((total, p) => total + p.values[i], 0)),
+    total: parts.reduce((total, p) => total + (p.total ?? 0), 0),
+    unit: "usd",
+    collapsed: true,
+  });
+  const operating = parent("Operating costs (project SPVs)", costs);
+
+  const close = (a, b) => Math.abs(a - b) <= Math.max(1, Math.abs(b) * 1e-6);
+  table.years.forEach((year, i) => {
+    if (!close(revenue.values[i] + operating.values[i], profit.values[i])) {
+      fail(`${topcoSheet.name}: ${year} revenue less operating costs is ${revenue.values[i] + operating.values[i]}, not the Summary's gross profit of ${profit.values[i]}.`);
+    }
+  });
+  if (!close(revenue.total + operating.total, profit.total)) fail(`${topcoSheet.name}: revenue less operating costs doesn't total the Summary's gross profit.`);
+
+  const topcoFrom = indexOf("Gross profit") + 1;
+  const topco = pnl.rows.slice(topcoFrom, indexOf("EBITDA")).map((r) => ({ ...r, indent: true }));
+  if (!topco.length) fail("Summary: no TopCo costs between gross profit and EBITDA.");
+  pnl.rows.splice(topcoFrom, topco.length, parent("ZODE Inc. (TopCo) costs", topco), ...topco);
+  pnl.rows.splice(indexOf("Total revenue") + 1, 0, operating, ...costs);
+}
+splitCosts(statement);
 const structureNotes = structure.between(structure.rowOf("Notes")).map((r) => numbered(structure.label(r)));
 const modelEnds = [...cuts.values()][0].modelEnds;
 const monthName = (yyyyMm) => new Date(`${yyyyMm}-01T00:00:00Z`).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
 const cutConventions = [
   `These summaries run to Dec ${THROUGH}; the model runs to ${monthName(modelEnds)}. Totals, peak debt and each unlevered IRR here are to Dec ${THROUGH}, the IRR taking the book value of the SPV's assets at Dec ${THROUGH}. MW are critical IT live, averaged over each year's months, as the year's revenue is earned on them.`,
+  "Operating costs are the project SPVs' power, rent, site and cluster operations, consolidated at 100% from the Zode Inc. tab; gross profit is revenue less them. ZODE Inc. (TopCo) costs are its own staffing and G&A, which take gross profit to EBITDA.",
   ...conventions,
 ];
 const cutSimplifications = simplifications.map((line) => line.replace(/(IRR includes book value at )Dec \d{4}/, `$1Dec ${THROUGH}`));

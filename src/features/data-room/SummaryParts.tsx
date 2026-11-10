@@ -1,6 +1,7 @@
 import { Fragment, type ReactElement, type ReactNode } from "react";
 import Link from "next/link";
 import { CopyButton } from "./CopyButton";
+import { ExpandableRows } from "./ExpandableRows";
 import { Icon } from "./icons";
 import {
   DILIGENCE_FIELDS,
@@ -66,11 +67,12 @@ export function ModelLink({ roomId, fileId, path, live }: { roomId: string; file
 export interface TableRow {
   label: string;
   values: ReactNode[];
-  /** A `heading` names the `nested` rows under it and has no values. */
-  kind?: "subtotal" | "heading";
+  /** A `heading` names the `nested` rows under it and has no values; a `toggle` keeps its values and opens to its `parts`. */
+  kind?: "subtotal" | "heading" | "toggle";
   /** Part of the row above it. */
   indent?: boolean;
   nested?: boolean;
+  parts?: TableRow[];
 }
 
 /** Rows of values under shared column headings. */
@@ -98,7 +100,9 @@ export function Table({ head, groups }: { head: string[]; groups: { title?: stri
               </tr>
             ) : null}
             {group.rows.map((row, r) =>
-              row.kind === "heading" ? (
+              row.kind === "toggle" ? (
+                <ExpandableRows key={`${r}:${row.label}`} row={row} />
+              ) : row.kind === "heading" ? (
                 <tr key={`${r}:${row.label}`} className={t.heading}>
                   <th scope="rowgroup" colSpan={head.length + 1}>
                     {row.label}

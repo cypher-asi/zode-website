@@ -36,6 +36,8 @@ export interface YearRow {
   kind?: "subtotal";
   /** Part of the row above it. */
   indent?: boolean;
+  /** Its indented parts stay hidden until it's opened. */
+  collapsed?: boolean;
 }
 
 export interface YearTable {
