@@ -1,17 +1,20 @@
 /**
- * Renames and deletes folders and files in a data room by their paths, the
- * way the app's own rename and delete write them, audit events included:
+ * Moves, renames and deletes folders and files in a data room by their paths,
+ * the way the app's own move, rename and delete write them, audit events included:
  *
  *   node --env-file=.env.production.local scripts/edit-data-room.mjs --room <room id> \
+ *     --move "03 ZODE CALGARY/01 Model/Loan Memo.pdf=03 ZODE CALGARY" \
  *     --delete "01 PRE-SEED/01 Model" \
  *     --rename "02 ZODE TORONTO=03 ZODE TORONTO" \
  *     --rename "02 ZODE TORONTO/02 Contracts=01 Contracts" \
  *     [--as n3o@zero.tech] [--dry-run]
  *
  * Every path is the item's path before the run, so a folder and the items in
- * it can be renamed together. A rename gives the item's new name, not a new
- * path; deletes run first, so a renamed item can take a deleted one's name.
- * A deleted folder goes with everything in it, and with any summary in its
+ * it can be renamed together. A move gives the folder to move into, empty for
+ * the top of the room; a rename gives the item's new name, not a new path.
+ * Moves run first, so an item can be saved from a folder being deleted, and
+ * deletes next, so a renamed item can take a deleted one's name. A deleted
+ * folder goes with everything left in it, and with any summary in its
  * folders; file rows are kept, marked deleted, and their blobs removed.
  */
 import { parseArgs } from "node:util";
@@ -24,6 +27,7 @@ const MAX_NAME_LENGTH = 200;
 const { values: args } = parseArgs({
   options: {
     room: { type: "string" },
+    move: { type: "string", multiple: true, default: [] },
     rename: { type: "string", multiple: true, default: [] },
     delete: { type: "string", multiple: true, default: [] },
     as: { type: "string", default: "n3o@zero.tech" },
@@ -37,7 +41,7 @@ const fail = (message) => {
 };
 
 if (!args.room) fail("--room is required.");
-if (!args.rename.length && !args.delete.length) fail("Nothing to do: pass --rename and/or --delete.");
+if (!args.move.length && !args.rename.length && !args.delete.length) fail("Nothing to do: pass --move, --rename and/or --delete.");
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) fail("DATABASE_URL is not set.");
 if (!process.env.BLOB_READ_WRITE_TOKEN && args.delete.length) fail("BLOB_READ_WRITE_TOKEN is not set.");
@@ -81,15 +85,37 @@ const items = new Map([
 ]);
 const itemAt = (path, flag) => items.get(path) ?? fail(`--${flag} "${path}": nothing at that path in "${room.name}".`);
 
-/** Every folder under `id`, itself included. */
-const subtree = (id) => [id, ...folders.filter((f) => parentOf(f) === id).flatMap((f) => subtree(String(f.id)))];
+/** Every folder under `id` before the run, itself included. */
+const subtreeBefore = (id) => [id, ...folders.filter((f) => parentOf(f) === id).flatMap((f) => subtreeBefore(String(f.id)))];
+
+const moves = args.move.map((arg) => {
+  const match = /^(.+)=([^=]*)$/.exec(arg);
+  if (!match) fail(`--move "${arg}": expected <path>=<folder path>, the folder empty for the top of the room.`);
+  const path = clean(match[1]);
+  const item = itemAt(path, "move");
+  const to = clean(match[2]);
+  const target = to ? itemAt(to, "move") : null;
+  if (target && target.kind !== "folder") fail(`--move "${arg}": "${to}" isn't a folder.`);
+  if (target && item.kind === "folder" && subtreeBefore(item.id).includes(target.id)) fail(`--move "${arg}": a folder can't be moved into itself.`);
+  return { path, to, item, targetId: target ? target.id : null };
+});
+const moved = new Map(moves.map((m) => [m.item.id, m.targetId]));
+/** An item's folder once the moves have run. */
+const parentAfter = (item) => (moved.has(item.id) ? moved.get(item.id) : item.parentId);
+const folderAfter = (f) => (moved.has(String(f.id)) ? moved.get(String(f.id)) : f.folder_id == null ? null : String(f.folder_id));
+
+/** Every folder under `id` once the moves have run, itself included. */
+const subtree = (id) => [id, ...folders.filter((f) => parentAfter({ id: String(f.id), parentId: parentOf(f) }) === id).flatMap((f) => subtree(String(f.id)))];
 
 const deletes = args.delete.map((p) => ({ path: clean(p), item: itemAt(clean(p), "delete") }));
 const deletedFolders = new Set(deletes.flatMap((d) => (d.item.kind === "folder" ? subtree(d.item.id) : [])));
-const deletedFiles = files.filter(
-  (f) => deletes.some((d) => d.item.kind === "file" && d.item.id === String(f.id)) || (f.folder_id != null && deletedFolders.has(String(f.folder_id))),
-);
+const deletedFiles = files.filter((f) => {
+  const folderId = folderAfter(f);
+  return deletes.some((d) => d.item.kind === "file" && d.item.id === String(f.id)) || (folderId != null && deletedFolders.has(folderId));
+});
+for (const m of moves) if (m.targetId && deletedFolders.has(m.targetId)) fail(`--move "${m.path}": "${m.to}" is being deleted.`);
 const gone = (item) => (item.kind === "folder" ? deletedFolders.has(item.id) : deletedFiles.some((f) => String(f.id) === item.id));
+for (const m of moves) if (gone(m.item)) fail(`--move "${m.path}": it's being deleted.`);
 
 const renames = args.rename.map((arg) => {
   const match = /^(.+)=([^=/]+)$/.exec(arg);
@@ -107,14 +133,16 @@ const finalName = (item) => renames.find((r) => r.item.id === item.id)?.name ?? 
 const siblings = new Map();
 for (const item of items.values()) {
   if (gone(item)) continue;
-  const key = `${item.kind}:${item.parentId ?? ""}:${finalName(item).toLowerCase()}`;
-  if (siblings.has(key)) fail(`"${finalName(item)}" would be the name of two ${item.kind}s in "${item.parentId ? pathOf(item.parentId) : room.name}".`);
+  const parentId = parentAfter(item);
+  const key = `${item.kind}:${parentId ?? ""}:${finalName(item).toLowerCase()}`;
+  if (siblings.has(key)) fail(`"${finalName(item)}" would be the name of two ${item.kind}s in "${parentId ? pathOf(parentId) : room.name}".`);
   siblings.set(key, item);
 }
 
+for (const m of moves) console.log(`[edit] move ${m.item.kind} "${m.path}" to "${m.to || room.name}"`);
 for (const d of deletes) {
   const under = new Set(d.item.kind === "folder" ? subtree(d.item.id) : []);
-  const inside = deletedFiles.filter((f) => f.folder_id != null && under.has(String(f.folder_id)));
+  const inside = deletedFiles.filter((f) => under.has(folderAfter(f)));
   const withSummaries = summaries.filter((s) => under.has(String(s.folder_id)));
   console.log(
     `[edit] delete ${d.item.kind} "${d.path}"` +
@@ -134,6 +162,11 @@ const event = (action, fileId, detail) => sql`
 `;
 const fileIds = deletedFiles.map((f) => String(f.id));
 await sql.transaction([
+  ...moves.map((m) =>
+    m.item.kind === "folder"
+      ? sql`update data_room_folders set parent_id = ${m.targetId} where room_id = ${args.room} and id = ${m.item.id}`
+      : sql`update data_room_files set folder_id = ${m.targetId} where room_id = ${args.room} and id = ${m.item.id} and deleted_at is null`,
+  ),
   ...(fileIds.length ? [sql`update data_room_files set deleted_at = now() where room_id = ${args.room} and id = any(${fileIds}::uuid[])`] : []),
   ...(deletedFolders.size
     ? [sql`delete from data_room_folders where room_id = ${args.room} and id = any(${[...deletedFolders]}::uuid[])`]
@@ -143,6 +176,7 @@ await sql.transaction([
       ? sql`update data_room_folders set name = ${r.name} where room_id = ${args.room} and id = ${r.item.id}`
       : sql`update data_room_files set name = ${r.name} where room_id = ${args.room} and id = ${r.item.id} and deleted_at is null`,
   ),
+  ...moves.map((m) => event("move", m.item.kind === "file" ? m.item.id : null, { kind: m.item.kind, name: m.item.name, to: m.targetId })),
   ...deletedFiles.map((f) => event("delete", String(f.id), { kind: "file", name: String(f.name) })),
   ...deletes.filter((d) => d.item.kind === "folder").map((d) => event("delete", null, { kind: "folder", name: d.item.name })),
   ...renames.map((r) => event("rename", r.item.kind === "file" ? r.item.id : null, { kind: r.item.kind, from: r.item.name, to: r.name })),
@@ -157,5 +191,5 @@ if (pathnames.length) {
   }
 }
 console.log(
-  `[edit] "${room.name}": ${deletes.length} deleted (${deletedFiles.length} file(s)), ${renames.length} renamed, on ${new URL(databaseUrl).hostname}.`,
+  `[edit] "${room.name}": ${moves.length} moved, ${deletes.length} deleted (${deletedFiles.length} file(s)), ${renames.length} renamed, on ${new URL(databaseUrl).hostname}.`,
 );
