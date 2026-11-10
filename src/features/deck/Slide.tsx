@@ -26,7 +26,9 @@ import { MacroArt } from "./art/MacroArt";
 import { MemeTV } from "./art/MemeTV";
 import { SiteMap } from "./art/SiteMap";
 import { UnitIcon } from "./art/UnitIcon";
+import chartStyles from "./charts/charts.module.css";
 import { DEMAND_GAP, DemandChart } from "./charts/DemandChart";
+import { RAMP_PARTS, RampChart } from "./charts/RampChart";
 import { ShortfallByYear, ShortfallChart } from "./charts/ShortfallChart";
 import { StateTileMap } from "./charts/StateTileMap";
 import { TokenChart } from "./charts/TokenChart";
@@ -692,6 +694,41 @@ function Shortfall({
           Cumulative net gap, GW. *2029 extends the forecast.
         </figcaption>
       </figure>
+    </div>
+  );
+}
+
+/** The consolidated model's quarters as stacked bars, over a key to their parts and the model's note. */
+function Ramp({
+  slide,
+  active,
+  compact,
+}: {
+  slide: Of<"ramp">;
+  active: boolean;
+  compact: boolean;
+}): ReactElement {
+  return (
+    <div className={styles.rampBody}>
+      <figure {...rise(2)} className={`${styles.rise} ${styles.figure}`}>
+        <RampChart quarters={slide.quarters} active={active} compact={compact} />
+        <figcaption className={`${styles.legend} ${chartStyles.rampKey}`}>
+          {[...RAMP_PARTS].reverse().map((part) => (
+            <span key={part.key} className={styles.rampKeyItem}>
+              <span
+                className={`${chartStyles.rampSwatch} ${styles.rampKeySwatch}`}
+                data-part={part.key}
+                aria-hidden="true"
+              />
+              {part.label}
+            </span>
+          ))}
+        </figcaption>
+        <p className={styles.caption}>{slide.caption}</p>
+      </figure>
+      <p {...rise(3)} className={`${styles.rise} ${styles.fine}`}>
+        {slide.note}
+      </p>
     </div>
   );
 }
@@ -2349,6 +2386,8 @@ function Body({
       return <Comparison slide={slide} />;
     case "finance":
       return <Finance slide={slide} playing={playing} />;
+    case "ramp":
+      return <Ramp slide={slide} active={active} compact={compact} />;
     case "raise":
       return <Raise slide={slide} />;
     case "team":

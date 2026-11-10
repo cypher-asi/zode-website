@@ -1,4 +1,5 @@
 import "server-only";
+import { REVENUE_RAMP } from "./revenueRamp";
 import { DEMAND_DETAILS, PUBLIC_SLIDES, type Slide } from "./slides";
 
 /**
@@ -6,6 +7,24 @@ import { DEMAND_DETAILS, PUBLIC_SLIDES, type Slide } from "./slides";
  * the close and the sources. Server-only, so the public deck's bundle never
  * carries it; see `deckSlides` in ./access.
  */
+
+const quarterRevenue = ({ revenue }: (typeof REVENUE_RAMP.quarters)[number]) =>
+  revenue.inference + revenue.merchant + revenue.offtake;
+const PEAK = REVENUE_RAMP.quarters.reduce((best, q) => (quarterRevenue(q) > quarterRevenue(best) ? q : best));
+
+/** The consolidated model by quarter, from ./revenueRamp, which scripts/write-revenue-ramp.mjs writes. */
+const RAMP: Slide = {
+  id: "revenue-ramp",
+  kind: "ramp",
+  section: "Revenue ramp",
+  eyebrow: "Revenue ramp",
+  title: `Revenue ramps to $${(quarterRevenue(PEAK) / 1e9).toFixed(1)}B a quarter by ${PEAK.quarter}.`,
+  ground: "paper",
+  quarters: REVENUE_RAMP.quarters,
+  caption:
+    "Revenue by quarter, ZODE Inc. consolidated with every project at 100%. Hover a bar for its revenue by inference, merchant and offtake, and where it goes.",
+  note: `Preliminary, from ZODE's master model of November 9, 2026 (${REVENUE_RAMP.model}, ZODE ASCENT data room), base case to December 2030, including 250 MW of generic future sites from 2029. Op costs are colocation rent and site and cluster operations. Debt service is interest and principal repaid; Q2 2027's includes the $10M Calgary acquisition loan the construction loan refinances. TopCo is ZODE Inc.'s staffing and G&A. Left over is before GPU hardware, refresh and site capital spending.`,
+};
 
 /**
  * From the ZODE ASCENT data room: ZODE_MasterModel_26.11.09.xlsx, base case to
@@ -102,6 +121,7 @@ const CITED = [...PUBLIC_SLIDES, RAISE, ...DEMAND_DETAILS].flatMap((slide) => sl
 
 export const FULL_SLIDES: readonly Slide[] = [
   ...PUBLIC_SLIDES,
+  RAMP,
   RAISE,
   CLOSE,
   {

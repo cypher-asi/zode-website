@@ -864,6 +864,28 @@
   color: var(--fg-2);
 }
 
+/* The revenue ramp: the chart takes the room over its key, the model's note at the foot. */
+.rampBody {
+  display: flex;
+  flex-direction: column;
+  gap: calc(1.2 * var(--u));
+}
+
+.rampBody > .figure {
+  flex: 1;
+}
+
+.rampKeyItem {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(0.5 * var(--u));
+}
+
+.rampKeySwatch {
+  width: calc(0.8 * var(--u));
+  height: calc(0.8 * var(--u));
+}
+
 .side {
   display: flex;
   flex-direction: column;
@@ -4889,6 +4911,15 @@ a.measureTitle:focus-visible {
 
 .slide[data-compact] .caption {
   margin-top: 10px;
+}
+
+.slide[data-compact] .rampBody {
+  gap: 12px;
+}
+
+.slide[data-compact] .rampKeySwatch {
+  width: 10px;
+  height: 10px;
 }
 
 /* Each key as running text, its citation in line, the swatch hung in the margin. */

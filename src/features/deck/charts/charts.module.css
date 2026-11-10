@@ -340,6 +340,170 @@
 }
 
 /*
+ * Revenue ramp (RampChart.tsx): each bar steps from the costs, in tints of the
+ * foreground mixed into the ground, up to what's left over in the foreground.
+ */
+/* The legend's swatches sit outside the chart, so its wrapper takes the same tints. */
+.ramp,
+.rampKey {
+  --part-power: color-mix(in srgb, var(--fg) 14%, var(--bg));
+  --part-opCosts: color-mix(in srgb, var(--fg) 30%, var(--bg));
+  --part-debtService: color-mix(in srgb, var(--fg) 48%, var(--bg));
+  --part-topco: color-mix(in srgb, var(--fg) 66%, var(--bg));
+  --part-left: var(--fg);
+}
+
+.rampPart[data-part="power"],
+.rampSwatch[data-part="power"] {
+  fill: var(--part-power);
+  background: var(--part-power);
+}
+
+.rampPart[data-part="opCosts"],
+.rampSwatch[data-part="opCosts"] {
+  fill: var(--part-opCosts);
+  background: var(--part-opCosts);
+}
+
+.rampPart[data-part="debtService"],
+.rampSwatch[data-part="debtService"] {
+  fill: var(--part-debtService);
+  background: var(--part-debtService);
+}
+
+.rampPart[data-part="topco"],
+.rampSwatch[data-part="topco"] {
+  fill: var(--part-topco);
+  background: var(--part-topco);
+}
+
+.rampPart[data-part="left"],
+.rampSwatch[data-part="left"] {
+  fill: var(--part-left);
+  background: var(--part-left);
+}
+
+/* A hairline of the ground between parts, so neighbouring tints stay apart. */
+.rampPart {
+  stroke: var(--bg);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.rampQuarter {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  fill: var(--fg-3);
+}
+
+.rampHit {
+  fill: transparent;
+  cursor: pointer;
+  outline: none;
+}
+
+.rampBar {
+  transition: opacity var(--duration-fast, 150ms) ease;
+}
+
+.ramp[data-shown] .rampBar:not([data-shown]) {
+  opacity: 0.35;
+}
+
+.rampQuarter[data-shown] {
+  fill: var(--fg);
+}
+
+.rampTipFrame {
+  overflow: visible;
+  pointer-events: none;
+}
+
+.rampTip {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--rule-strong);
+  background: var(--bg);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  color: var(--fg-2);
+}
+
+.rampTipHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0;
+  color: var(--fg);
+}
+
+.rampTipTotal {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.rampTipRows {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule);
+}
+
+.rampTipRows > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rampTipRows dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rampTipRows dd {
+  margin: 0;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.rampTipRows[data-left] {
+  color: var(--fg);
+  font-weight: 500;
+}
+
+.rampSwatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+}
+
+.chart[data-compact] .rampTip {
+  gap: 10px;
+  padding: 14px 16px;
+  font-size: 16px;
+}
+
+.chart[data-compact] .rampTipTotal {
+  font-size: 22px;
+}
+
+.chart[data-compact] .rampSwatch {
+  width: 12px;
+  height: 12px;
+}
+
+/*
  * The deck's scroll mode (`data-compact`) draws each chart about half size, so
  * its type is set larger against the viewBox to read at 11px and up.
  */
@@ -468,6 +632,19 @@
   }
 
   .chart:not([data-active]) .tokenBar {
+    scale: 1 0;
+    transition-duration: 0ms;
+  }
+
+  .rampBar {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    transition:
+      scale 700ms var(--ease-out) calc(250ms + var(--d, 0) * 60ms),
+      opacity var(--duration-fast, 150ms) ease;
+  }
+
+  .chart:not([data-active]) .rampBar {
     scale: 1 0;
     transition-duration: 0ms;
   }

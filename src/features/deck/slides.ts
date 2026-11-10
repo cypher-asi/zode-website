@@ -133,6 +133,22 @@ export interface RaiseStack {
   }[];
 }
 
+/** A quarter of the consolidated model on the revenue ramp, in whole USD; costs are positive. */
+export interface RampQuarter {
+  /** "Q3 2027". */
+  readonly quarter: string;
+  readonly revenue: { readonly inference: number; readonly merchant: number; readonly offtake: number };
+  readonly costs: {
+    /** Colocation rent, site and cluster operations. */
+    readonly opCosts: number;
+    readonly power: number;
+    /** Interest and principal repaid. */
+    readonly debtService: number;
+    /** ZODE Inc.'s staffing and G&A. */
+    readonly topco: number;
+  };
+}
+
 export type Slide =
   | (Base & { kind: "cover"; lede: string; meta: string; image: string })
   | (Base & {
@@ -243,6 +259,14 @@ export type Slide =
       }[];
       /** The costs summed, under the stack. */
       total: { label: string; value: string; detail: string };
+      note: string;
+    })
+  | (Base & {
+      kind: "ramp";
+      /** One stacked bar each: the quarter's revenue, split into where it goes. */
+      quarters: readonly RampQuarter[];
+      /** Under the chart, beside its key. */
+      caption: string;
       note: string;
     })
   | (Base & {
@@ -802,7 +826,7 @@ export const PUBLIC_SLIDES: readonly Slide[] = [
   },
 ];
 
-/** The public deck's last slide. Logging in comes back to it, which a member then reads as the raise. */
+/** The public deck's last slide. Logging in comes back to it, which a member then reads as the first of the data room's slides. */
 export const GATE: Slide = {
   id: "gate",
   kind: "gate",
