@@ -192,14 +192,6 @@ export function Deck({
   }
   const slide = slides[index];
   const controls = nearBottom || touched || overview || shareOpen;
-  const confidential = isConfidential(slide);
-
-  // Flags `<html>` for the header's Confidential tag (PinnedHeader), which sits outside the deck.
-  useEffect(() => {
-    const root = document.documentElement;
-    root.toggleAttribute("data-confidential", confidential);
-    return () => root.removeAttribute("data-confidential");
-  }, [confidential]);
 
   const go = useCallback(
     (target: number) => {
@@ -578,6 +570,7 @@ export function Deck({
                     branded={printing}
                     grid={printing || phone}
                     compact={phone}
+                    confidential={isConfidential(entry)}
                     policy={policy}
                   />
                 </section>
@@ -765,6 +758,7 @@ export function Deck({
                     total={total}
                     active
                     still
+                    confidential={isConfidential(entry)}
                     policy={policy}
                   />
                 </div>

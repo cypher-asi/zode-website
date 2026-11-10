@@ -2330,7 +2330,22 @@ function Team({ slide }: { slide: Of<"team"> }): ReactElement {
               {...rise(5.2 + i * 0.2)}
               className={`${styles.rise} ${styles.advisor}`}
             >
-              <p className={styles.advisorName}>{person.name}</p>
+              <p className={styles.advisorName}>
+                {person.name}
+                {person.linkedin && (
+                  <a
+                    className={styles.advisorLink}
+                    href={person.linkedin}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    aria-label={`${person.name} on LinkedIn`}
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d={SOCIAL_MARKS.linkedin} />
+                    </svg>
+                  </a>
+                )}
+              </p>
               <span className={`${styles.logos} ${styles.advisorLogo}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element -- the SVG logos scale with the slide */}
                 <img
@@ -2709,8 +2724,9 @@ function useFit(on: boolean) {
  * scaled to fit the screen (`useFit`). `policy` is the policy tracker's map
  * for the states slide.
  * `numbered` sets the page number in its foot; a slide off the sequence (the
- * demand slide's details) goes without. Memoized, so turning a slide redraws
- * only the slides whose state changed.
+ * demand slide's details) goes without. `confidential` tags its foot, left of
+ * the page number, for the slides behind the data room gate. Memoized, so
+ * turning a slide redraws only the slides whose state changed.
  */
 export const SlideView = memo(function SlideView({
   slide,
@@ -2724,6 +2740,7 @@ export const SlideView = memo(function SlideView({
   grid = true,
   compact = false,
   numbered = true,
+  confidential = false,
   policy,
 }: {
   slide: Slide;
@@ -2737,6 +2754,7 @@ export const SlideView = memo(function SlideView({
   grid?: boolean;
   compact?: boolean;
   numbered?: boolean;
+  confidential?: boolean;
   policy: PolicyMap | null;
 }): ReactElement {
   const head = hasHead(slide);
@@ -2793,6 +2811,19 @@ export const SlideView = memo(function SlideView({
           ) : null}
           <div className={styles.footEnd}>
             {slide.sources ? <FootSources ids={slide.sources} /> : null}
+            {confidential ? (
+              <span className={styles.confidential}>
+                <svg
+                  className={styles.lock}
+                  viewBox="0 0 10 12"
+                  aria-hidden="true"
+                >
+                  <rect x="1" y="5.5" width="8" height="5.75" rx="1" />
+                  <path d="M3 5.5V3.75a2 2 0 0 1 4 0V5.5" />
+                </svg>
+                Confidential
+              </span>
+            ) : null}
             {numbered ? (
               <span className={styles.number}>
                 {pad(index + 1)} / {pad(total)}

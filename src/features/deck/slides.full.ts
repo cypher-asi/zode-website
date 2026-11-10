@@ -112,11 +112,13 @@ export const TEAM: Extract<Slide, { kind: "team" }> = {
         name: "Ian Finder",
         company: { name: "NVIDIA", src: `${LOGO_DIR}/nvidia.svg`, aspect: 630.2 / 118.2, scale: 0.95 },
         feat: "Designed the Vera chip",
+        linkedin: "https://www.linkedin.com/in/ifinder/",
       },
       {
         name: "Emal Alwis",
         company: { name: "Tesla", src: `${LOGO_DIR}/tesla.svg`, aspect: 993.047 / 100, scale: 1.25 },
         feat: "Third engineer on Tesla FSD",
+        linkedin: "https://www.linkedin.com/in/emalwis/",
       },
       {
         name: "Nick Sammut",
@@ -127,16 +129,19 @@ export const TEAM: Extract<Slide, { kind: "team" }> = {
         name: "Dan Rosen",
         company: { name: "Ezra", src: `${LOGO_DIR}/ezra.svg`, aspect: 299 / 92, scale: 1.3 },
         feat: "$15B in distributed energy",
+        linkedin: "https://www.linkedin.com/in/danielrosen2/",
       },
       {
         name: "Jaspar Weir",
         company: { name: "TaskUs", src: `${LOGO_DIR}/taskus.svg`, aspect: 4581 / 944, scale: 1.35 },
         feat: "Built a 20,000-person company",
+        linkedin: "https://www.linkedin.com/in/jasparweir/",
       },
       {
         name: "Steven Lacy",
         company: { name: "Apple", src: `${LOGO_DIR}/apple.svg`, aspect: 1, scale: 1.35 },
         feat: "Cybersecurity task force",
+        linkedin: "https://www.linkedin.com/in/thestevelacy/",
       },
     ],
   },

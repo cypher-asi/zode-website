@@ -185,18 +185,6 @@ export function PinnedHeader(): ReactElement {
             </Link>
           </div>
         </div>
-        {/* Shown from `data-confidential` on `<html>`, which the deck sets on the slides behind its data room gate. */}
-        <div className={styles.confidentialSlot}>
-          <div className={styles.confidentialClip}>
-            <span className={styles.confidential}>
-              <svg className={styles.lock} viewBox="0 0 10 12" aria-hidden="true">
-                <rect x="1" y="5.5" width="8" height="5.75" rx="1" />
-                <path d="M3 5.5V3.75a2 2 0 0 1 4 0V5.5" />
-              </svg>
-              <span className={styles.confidentialLabel}>Confidential</span>
-            </span>
-          </div>
-        </div>
         <ActionMenu primary={route.primary} portal={route.portal} pathname={pathname} />
       </div>
       <LogoutNotice />

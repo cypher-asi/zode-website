@@ -227,6 +227,7 @@
 
 .eyebrow,
 .number,
+.confidential,
 .footLabel,
 .label,
 .meta,
@@ -410,6 +411,24 @@
 
 .number {
   flex: none;
+}
+
+/* The slides behind the data room gate: a lock and label in the number's type, just before it. */
+.confidential {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.6em;
+}
+
+.lock {
+  flex: none;
+  width: 0.85em;
+  height: 1em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linejoin: round;
 }
 
 .body {
@@ -4059,8 +4078,11 @@ a.measureTitle:focus-visible {
   box-shadow: 0 0 0 1px var(--rule);
 }
 
-/* Set as `.ventureName`, smaller. */
+/* Set as `.ventureName`, smaller; the LinkedIn mark after it as the founder's (`.social`). */
 .advisorName {
+  display: flex;
+  align-items: center;
+  gap: calc(0.45 * var(--u));
   margin: 0;
   font-family: var(--font-display);
   font-size: calc(1.05 * var(--u));
@@ -4068,6 +4090,30 @@ a.measureTitle:focus-visible {
   line-height: 1.2;
   letter-spacing: -0.02em;
   color: var(--fg);
+}
+
+.advisorLink {
+  display: flex;
+  flex: none;
+  color: var(--fg-2);
+  transition: color 200ms ease;
+}
+
+.advisorLink svg {
+  width: calc(0.75 * var(--u));
+  height: calc(0.75 * var(--u));
+  fill: currentColor;
+}
+
+.advisorLink:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .advisorLink:hover {
+    color: var(--fg);
+  }
 }
 
 /*
@@ -4657,6 +4703,7 @@ a.measureTitle:focus-visible {
   :is(
     .eyebrow,
     .number,
+    .confidential,
     .footLabel,
     .label,
     .meta,
@@ -6313,7 +6360,13 @@ a.measureTitle:focus-visible {
 }
 
 .slide[data-compact] .advisorName {
+  gap: 6px;
   font-size: 14px;
+}
+
+.slide[data-compact] .advisorLink svg {
+  width: 12px;
+  height: 12px;
 }
 
 .slide[data-compact] .advisorLogo {

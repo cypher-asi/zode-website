@@ -333,7 +333,8 @@ export type Slide =
       /** A card each in a row along the foot. */
       advisors: {
         title: string;
-        people: readonly { name: string; company: Logo; feat: string }[];
+        /** `linkedin` is drawn as the network's mark after the name, opening the profile in a new tab. */
+        people: readonly { name: string; company: Logo; feat: string; linkedin?: string }[];
       };
     })
   | (Base & { kind: "close"; lede: string; contact: string })
