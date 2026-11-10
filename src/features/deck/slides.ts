@@ -743,7 +743,7 @@ export const SLIDES: readonly Slide[] = [
     eyebrow: "Project finance",
     title: "Every cluster is its own financeable project.",
     ground: "paper",
-    basis: "One MW of critical IT load · 512 GPUs",
+    basis: "One MW of critical IT load · 64 nodes · 512 GPUs",
     rows: [
       {
         icon: "revenue",
@@ -752,15 +752,15 @@ export const SLIDES: readonly Slide[] = [
         purpose: "Revenue per year",
         total: "$49.1M",
         parts: [
-          { label: "Offtake", value: "$11.2M", share: 0.5, detail: "256 GPUs · $5.00/GPU-hr" },
-          { label: "Inference", value: "$37.9M", share: 0.5, detail: "256 GPUs · $16.90/GPU-hr" },
+          { label: "Offtake", value: "$11.2M", share: 0.5, detail: "32 nodes · 256 GPUs at $5.00/GPU-hr" },
+          { label: "Inference", value: "$37.9M", share: 0.5, detail: "32 nodes · 256 GPUs at $16.90/GPU-hr" },
         ],
       },
       {
         icon: "gpu",
         title: "GPU",
         kind: "cost",
-        purpose: "64 nodes · 8× B300 each",
+        purpose: "64 nodes · 512 B300 GPUs",
         total: "$35.2M",
         parts: [
           { label: "Equity", value: "$17.6M", share: 0.5, detail: "50% of cost" },
