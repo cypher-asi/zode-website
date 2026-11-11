@@ -21,14 +21,15 @@ import { useSelectedLayoutSegments } from "next/navigation";
 import { Select } from "@/components/ui/Select";
 import { Splitter } from "@/components/ui/Splitter";
 import { PortalLoading } from "@/features/portal/PortalLoading";
-import { deleteRecordAction, setActiveAction, setSiteFieldAction, setStageAction } from "./actions";
+import { deleteRecordAction, saveFieldAction, setActiveAction, setSiteFieldAction, setStageAction } from "./actions";
 import { Icon } from "./bits";
 import { companiesConfig, opportunitiesConfig, peopleConfig, sitesConfig, type ListConfig } from "./columns";
 import { DealTypeNav } from "./DealTypeNav";
 import { clearedColumns } from "./fields";
+import { OpportunityMenu } from "./OpportunityMenu";
 import { SiteMenu } from "./SiteMenu";
 import { StatusNav } from "./StatusNav";
-import { KIND_LABELS, recordHref, type OpportunityKind, type OpportunityRow, type RecordKind, type SiteRow } from "./types";
+import { KIND_LABELS, isOpportunityKind, recordHref, type OpportunityKind, type OpportunityRow, type RecordKind } from "./types";
 import { TypeNav } from "./TypeNav";
 import { goOnClick, useZrmData, useZrmNavigate, useZrmRoute } from "./ZrmProvider";
 import styles from "./zrm.module.css";
@@ -483,9 +484,14 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
     });
   };
   const sites = data.sites;
-  const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
-  const openSiteMenu = useCallback((row: SiteRow, x: number, y: number) => setMenu({ id: row.id, x, y }), []);
-  const closeSiteMenu = useCallback(
+  const [menu, setMenu] = useState<{ kind: RecordKind; id: string; x: number; y: number } | null>(null);
+  const openMenu = useCallback(
+    (row: ListRow, x: number, y: number) => {
+      if (kind) setMenu({ kind, id: row.id, x, y });
+    },
+    [kind],
+  );
+  const closeMenu = useCallback(
     (restoreFocus: boolean) => {
       setMenu(null);
       if (!restoreFocus || !menu) return;
@@ -493,13 +499,16 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
     },
     [menu],
   );
-  const menuSite = menu ? sites.find((site) => site.id === menu.id) : undefined;
+  const shownMenu = menu?.kind === kind ? menu : null;
+  const menuSite = shownMenu?.kind === "sites" ? sites.find((site) => site.id === shownMenu.id) : undefined;
+  const menuPipeline = shownMenu && isOpportunityKind(shownMenu.kind) ? shownMenu.kind : undefined;
+  const menuOpportunity = menuPipeline ? data[menuPipeline].find((o) => o.id === shownMenu!.id) : undefined;
 
-  /** Applies the menu's change to the row while it saves, so a site moves to its new status at once. */
-  const saveSite = (id: string, patch: Partial<SiteRow>, save: () => Promise<unknown>) => {
+  /** Applies the menu's change to the row while it saves, so it moves to its new section at once. */
+  const saveRow = (rowKind: RecordKind, id: string, patch: Readonly<Record<string, unknown>>, save: () => Promise<unknown>) => {
     setMenu(null);
     startTransition(async () => {
-      editRow({ kind: "sites", id, patch });
+      editRow({ kind: rowKind, id, patch });
       await save();
     });
   };
@@ -534,6 +543,8 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
           rows={data[kind]}
           config={configs[kind]}
           onMove={(row, stageId) => moveOpportunity(kind, row, stageId)}
+          onRowMenu={openMenu}
+          menuRowId={shownMenu?.id ?? null}
           {...common}
         />
       );
@@ -548,8 +559,8 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
           kind={kind}
           rows={sites}
           config={configs.sites}
-          onRowMenu={openSiteMenu}
-          menuRowId={menu?.id ?? null}
+          onRowMenu={openMenu}
+          menuRowId={shownMenu?.id ?? null}
           {...common}
         />
       );
@@ -584,27 +595,62 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
           </section>
         </>
       ) : null}
-      {kind === "sites" && menu && menuSite ? (
+      {shownMenu && menuSite ? (
         <SiteMenu
-          key={`${menu.id}:${menu.x}:${menu.y}`}
+          key={`${shownMenu.id}:${shownMenu.x}:${shownMenu.y}`}
           site={menuSite}
-          x={menu.x}
-          y={menu.y}
+          x={shownMenu.x}
+          y={shownMenu.y}
           statuses={data.statuses}
           onOpen={() => {
             setMenu(null);
             go(recordHref("sites", menuSite.id));
           }}
           onChange={(key, value) =>
-            saveSite(
+            saveRow(
+              "sites",
               menuSite.id,
               { ...clearedColumns("sites", key, value || null), [key]: key === "status_id" ? value : value || null },
               () => setSiteFieldAction(menuSite.id, key, value),
             )
           }
-          onPin={() => saveSite(menuSite.id, { active: !menuSite.active }, () => setActiveAction("sites", menuSite.id, !menuSite.active))}
+          onPin={() =>
+            saveRow("sites", menuSite.id, { active: !menuSite.active }, () => setActiveAction("sites", menuSite.id, !menuSite.active))
+          }
           onDelete={async () => (await deleteRecordAction("sites", menuSite.id)).error}
-          onClose={closeSiteMenu}
+          onClose={closeMenu}
+        />
+      ) : null}
+      {shownMenu && menuPipeline && menuOpportunity ? (
+        <OpportunityMenu
+          key={`${shownMenu.id}:${shownMenu.x}:${shownMenu.y}`}
+          kind={menuPipeline}
+          opportunity={menuOpportunity}
+          x={shownMenu.x}
+          y={shownMenu.y}
+          stages={data.stages}
+          onOpen={() => {
+            setMenu(null);
+            go(recordHref(menuPipeline, menuOpportunity.id));
+          }}
+          onChange={(key, value) => {
+            if (menuOpportunity[key] === value) {
+              setMenu(null);
+              return;
+            }
+            saveRow(menuPipeline, menuOpportunity.id, { [key]: value }, () =>
+              key === "stage_id"
+                ? setStageAction(menuPipeline, menuOpportunity.id, value)
+                : saveFieldAction(menuPipeline, menuOpportunity.id, key, value),
+            );
+          }}
+          onPin={() =>
+            saveRow(menuPipeline, menuOpportunity.id, { active: !menuOpportunity.active }, () =>
+              setActiveAction(menuPipeline, menuOpportunity.id, !menuOpportunity.active),
+            )
+          }
+          onDelete={async () => (await deleteRecordAction(menuPipeline, menuOpportunity.id)).error}
+          onClose={closeMenu}
         />
       ) : null}
     </div>
