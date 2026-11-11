@@ -5,7 +5,7 @@
  * year from the model's first month to December of `--through`:
  *
  *   node --env-file=.env.production.local scripts/write-revenue-ramp.mjs \
- *     --room <room id> --model "02 MODEL/ZODE_MasterModel_26.11.09.xlsx" \
+ *     --room <room id> --model "02 MODEL/ZODE_MasterModel_26.11.10.xlsx" \
  *     [--through 2030] [--file <local .xlsx>] [--dry-run]
  *
  * Each period is its critical IT live (MW of GPU clusters in service in its

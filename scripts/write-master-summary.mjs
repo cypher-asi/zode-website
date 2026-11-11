@@ -4,7 +4,7 @@
  * owned site's own figures into the diligence summary already in its folder:
  *
  *   node --env-file=.env.production.local scripts/write-master-summary.mjs \
- *     --room <room id> --model "02 MODEL/ZODE_MasterModel_26.11.09.xlsx" \
+ *     --room <room id> --model "02 MODEL/ZODE_MasterModel_26.11.10.xlsx" \
  *     --deployment "Toronto=03 ZODE TORONTO" \
  *     --deployment "Calgary=04 ZODE CALGARY" \
  *     --deployment "BigWatt=05 ZODE BIG WATT" \
@@ -524,11 +524,26 @@ function splitCosts(table) {
   });
   if (!close(revenue.total + operating.total, profit.total)) fail(`${topcoSheet.name}: revenue less operating costs doesn't total the Summary's gross profit.`);
 
+  // A Summary tab may list the project costs itself, and total them with TopCo's; each has to match what's consolidated here.
+  const isTotal = (row) => /^Total\b/.test(row.label);
+  const sameAs = (row, values) => table.years.every((_, i) => close(row.values[i], values[i]));
+  const listed = pnl.rows.slice(indexOf("Total revenue") + 1, indexOf("Gross profit"));
+  for (const row of listed) {
+    const match = isTotal(row) ? operating : costs.find((c) => c.label === row.label.replace(/\s*\([^)]*\)\s*$/, ""));
+    if (!match || !sameAs(row, match.values)) fail(`Summary: "${row.label}" isn't the project SPVs' cost from the ${topcoSheet.name} tab.`);
+  }
+
   const topcoFrom = indexOf("Gross profit") + 1;
-  const topco = pnl.rows.slice(topcoFrom, indexOf("EBITDA")).map((r) => ({ ...r, indent: true }));
+  const belowProfit = pnl.rows.slice(topcoFrom, indexOf("EBITDA"));
+  const topco = belowProfit.filter((r) => !isTotal(r)).map((r) => ({ ...r, indent: true }));
   if (!topco.length) fail("Summary: no TopCo costs between gross profit and EBITDA.");
-  pnl.rows.splice(topcoFrom, topco.length, parent("ZODE Inc. (TopCo) costs", topco), ...topco);
-  pnl.rows.splice(indexOf("Total revenue") + 1, 0, operating, ...costs);
+  const topcoCosts = parent("ZODE Inc. (TopCo) costs", topco);
+  const allCosts = table.years.map((_, i) => operating.values[i] + topcoCosts.values[i]);
+  for (const row of belowProfit.filter(isTotal)) {
+    if (!sameAs(row, allCosts)) fail(`Summary: "${row.label}" isn't the project SPVs' operating costs plus TopCo's.`);
+  }
+  pnl.rows.splice(topcoFrom, belowProfit.length, topcoCosts, ...topco);
+  pnl.rows.splice(indexOf("Total revenue") + 1, listed.length, operating, ...costs);
 }
 splitCosts(statement);
 const structureNotes = structure.between(structure.rowOf("Notes")).map((r) => numbered(structure.label(r)));
