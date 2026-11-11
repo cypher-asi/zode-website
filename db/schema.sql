@@ -965,7 +965,7 @@ alter table zrm_opportunities drop constraint if exists zrm_opportunities_deal_t
 -- such opportunities move there as debt, at the matching stage.
 update zrm_opportunities o set
   pipeline = 'fundraising',
-  deal_type = 'Debt / Private credit',
+  deal_type = 'Debt',
   stage_id = coalesce(
     (select f.id
      from zrm_stages s
@@ -977,9 +977,19 @@ update zrm_opportunities o set
   updated_at = now()
 where o.deal_type = 'Financing';
 
+-- Fundraising's "Debt / Private credit" split into Debt and Private credit. The
+-- firms filed under it are private credit funds, save Covalt, listed as debt.
+update zrm_opportunities o set
+  deal_type = case
+    when exists (select 1 from zrm_companies c where c.id = o.company_id and c.name = 'Covalt') then 'Debt'
+    else 'Private credit'
+  end,
+  updated_at = now()
+where o.pipeline = 'fundraising' and o.deal_type = 'Debt / Private credit';
+
 alter table zrm_opportunities add constraint zrm_opportunities_deal_type_check check (
   (pipeline = 'sales' and deal_type in ('Compute', 'Capacity', 'Hardware', 'Partnership'))
-  or (pipeline = 'fundraising' and deal_type in ('Venture equity', 'Growth equity', 'Debt / Private credit', 'Infrastructure'))
+  or (pipeline = 'fundraising' and deal_type in ('Venture equity', 'Growth equity', 'Debt', 'Private credit', 'Infrastructure'))
 );
 
 -- An opportunity's stage is one of its own pipeline's.

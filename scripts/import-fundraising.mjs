@@ -32,7 +32,7 @@ const US = "United States";
  * it's listed as; `aliases` are other names an existing company might have.
  */
 const FIRMS = [
-  ["Investor", "Debt / Private credit", {
+  ["Investor", "Private credit", {
     name: "Crayhill Capital Management",
     aliases: ["Crayhill"],
     website: "https://www.crayhill.com",
@@ -45,7 +45,7 @@ const FIRMS = [
     city: "New York", state: "NY", country: US,
     specialties: ["Asset-based finance", "Private credit", "Equipment finance", "Renewable energy"],
   }],
-  ["Investor", "Debt / Private credit", {
+  ["Investor", "Private credit", {
     name: "Eagle Point Credit Management",
     aliases: ["EaglePoint", "Eagle Point"],
     website: "https://www.eaglepointcredit.com",
@@ -58,7 +58,7 @@ const FIRMS = [
     city: "Greenwich", state: "CT", country: US,
     specialties: ["CLOs", "Portfolio debt", "Structured credit"],
   }],
-  ["Investor", "Debt / Private credit", {
+  ["Investor", "Private credit", {
     name: "Keyframe Capital Partners",
     aliases: ["Keyframe"],
     website: "https://www.keyframecapital.com",
@@ -86,7 +86,7 @@ const FIRMS = [
     ticker: "MQG",
     specialties: ["Infrastructure", "Digital infrastructure", "Energy"],
   }],
-  ["Investor", "Debt / Private credit", {
+  ["Investor", "Private credit", {
     name: "Blue Owl Capital",
     aliases: ["Blue Owl"],
     website: "https://www.blueowl.com",
@@ -100,7 +100,7 @@ const FIRMS = [
     ticker: "OWL",
     specialties: ["Private credit", "Digital infrastructure", "GPU financing", "Real assets"],
   }],
-  ["Investor", "Debt / Private credit", { name: "Covalt" }, null,
+  ["Investor", "Debt", { name: "Covalt" }, null,
     "Debt. Firm not confirmed: the only Covalt in public sources is a Paris loan-monitoring software company (covalt.eu), not a lender. Confirm who this is."],
   ["Investor", "Venture equity", {
     name: "Karman Ventures",
@@ -116,7 +116,7 @@ const FIRMS = [
     country: US,
     specialties: ["AI infrastructure", "Physical AI", "Energy", "Defense"],
   }, null, "Matched to Karman Ventures (karman.vc); confirm that's the right Karman."],
-  ["Investor", "Debt / Private credit", {
+  ["Investor", "Private credit", {
     name: "CurvePoint Capital",
     aliases: ["Curvepoint"],
     website: "https://curvepointcapital.com",
@@ -132,7 +132,7 @@ const FIRMS = [
   }],
   ["Investor", "Infrastructure", { name: "Denim" }, null,
     "Firm not confirmed: could be Denim Capital (denim.vc, a Boulder seed syndicate) or Denham Capital (denhamcapital.com, energy transition infrastructure equity and credit focused on power for data centers). Confirm, and set the deal type (Infrastructure is a placeholder)."],
-  ["Investor", "Debt / Private credit", {
+  ["Investor", "Private credit", {
     name: "Fiera Capital",
     aliases: ["Fiera"],
     website: "https://www.fiera.com",
@@ -150,7 +150,7 @@ const FIRMS = [
     title: "Head of U.S. Infrastructure Debt",
     linkedin_url: "https://www.linkedin.com/in/sergio-figueroa-sanz-0014b136",
   }],
-  ["Investor", "Debt / Private credit", {
+  ["Investor", "Private credit", {
     name: "Bracebridge Capital",
     aliases: ["BraceBridge"],
     website: "https://www.bracebridgecapital.com",
@@ -211,7 +211,7 @@ const FIRMS = [
     title: "General Partner",
     linkedin_url: "https://www.linkedin.com/in/nickgrossman",
   }, "The list names Nick; matched to Nick Grossman, a USV general partner."],
-  ["VC", "Debt / Private credit", {
+  ["VC", "Private credit", {
     name: "Upper90",
     aliases: ["Upper 90"],
     website: "https://upper90.io",

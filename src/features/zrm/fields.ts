@@ -90,7 +90,7 @@ const dealTerm = (field: FieldSpec, values: readonly DealType[]): FieldSpec => (
 export const SALES_DEAL_TYPES = ["Compute", "Capacity", "Hardware", "Partnership"] as const;
 
 /** What a fundraising opportunity raises. */
-export const FUNDRAISING_DEAL_TYPES = ["Venture equity", "Growth equity", "Debt / Private credit", "Infrastructure"] as const;
+export const FUNDRAISING_DEAL_TYPES = ["Venture equity", "Growth equity", "Debt", "Private credit", "Infrastructure"] as const;
 
 /** Each pipeline's deal types. The database checks the same (`zrm_opportunities_deal_type_check`). */
 export const OPPORTUNITY_DEAL_TYPES: Record<OpportunityKind, readonly OpportunityDealType[]> = {
