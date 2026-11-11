@@ -19,6 +19,7 @@ import { isEmail } from "@/lib/validation";
 import {
   createShareLinksAction,
   inviteMembersAction,
+  removeMemberAction,
   resendShareLinkAction,
   revokeShareLinkAction,
   shareLinkDetailAction,
@@ -313,6 +314,7 @@ function ShareDialog({
   const [mode, setMode] = useState<"member" | "link">("member");
   const [sendEmail, setSendEmail] = useState(true);
   const [linkResult, setLinkResult] = useState<ActionState>({});
+  const [peopleResult, setPeopleResult] = useState<ActionState>({});
   const [confirm, setConfirm] = useState<Omit<DialogProps, "onClose"> | null>(null);
   const origin = useSyncExternalStore(noSubscription, browserOrigin, serverOrigin);
   const [now] = useState(() => Date.now());
@@ -708,6 +710,8 @@ function ShareDialog({
               Manage members
             </Link>
           </div>
+          {peopleResult.error ? <p className={ui.error}>{peopleResult.error}</p> : null}
+          {peopleResult.ok ? <p className={ui.ok}>{peopleResult.ok}</p> : null}
           <ul className={styles.peopleList}>
             {members.map((member) => (
               <li key={member.id} className={styles.person}>
@@ -731,6 +735,27 @@ function ShareDialog({
                   </span>
                 )}
                 <span className={styles.personRole}>{roleLabel(member.role)}</span>
+                {member.status !== "active" ? (
+                  <button
+                    type="button"
+                    className={ui.button}
+                    onClick={() =>
+                      setConfirm({
+                        title: "Revoke invite?",
+                        description: `The link sent to ${member.email} stops working.`,
+                        confirmLabel: "Revoke",
+                        danger: true,
+                        onConfirm: async () => {
+                          const outcome = await removeMemberAction(roomId, member.id);
+                          setPeopleResult(outcome.error ? outcome : { ok: `Revoked ${member.email}'s invite.` });
+                          return outcome.error;
+                        },
+                      })
+                    }
+                  >
+                    Revoke
+                  </button>
+                ) : null}
               </li>
             ))}
           </ul>
