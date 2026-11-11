@@ -78,6 +78,22 @@ table,
   font-weight: bold;
   font-size: 8.4pt;
   letter-spacing: 0.14em;
+  text-align: right;
+}
+
+.masthead small {
+  display: block;
+  margin-top: 1.5pt;
+  font-size: 6.4pt;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+}
+
+.draft {
+  color: var(--gold-deep);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 h2 {
