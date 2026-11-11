@@ -157,14 +157,55 @@
   background: var(--color-surface-hover);
 }
 
-/* A group's heading in a sectioned list. */
+/* A group's heading in a sectioned list, which collapses and expands the group. */
 .sectionRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
   padding: 14px 8px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
   color: var(--color-text-secondary);
+  font: inherit;
   font-size: var(--text-2xs);
   font-weight: 600;
   letter-spacing: var(--caps-tracking);
+  text-align: left;
   text-transform: uppercase;
+  cursor: pointer;
+}
+
+.sectionRow:hover {
+  color: var(--color-text-primary);
+}
+
+.sectionRow:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+.sectionIcon {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 120ms ease;
+}
+
+.sectionRow[aria-expanded="true"] .sectionIcon {
+  transform: rotate(90deg);
+}
+
+.sectionCount {
+  font-weight: 500;
+  letter-spacing: normal;
+  opacity: 0.7;
 }
 
 .rows > .sectionRow:first-child,

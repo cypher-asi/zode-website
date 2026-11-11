@@ -9,6 +9,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type DragEvent,
   type KeyboardEvent,
@@ -46,6 +47,57 @@ interface ListRow {
 
 /** A dragged list row. Same-document only; the id is also on the row's `data-id`. */
 const DRAG_TYPE = "application/x-zode-zrm-row";
+
+/**
+ * The keys of a list's collapsed sections, remembered per browser. Kept in
+ * memory too, so collapsing works where storage is unavailable (private mode).
+ */
+const collapsedMemory = new Map<string, string>();
+const collapsedListeners = new Set<() => void>();
+
+function subscribeCollapsed(listener: () => void): () => void {
+  collapsedListeners.add(listener);
+  return () => collapsedListeners.delete(listener);
+}
+
+function readCollapsed(storageKey: string): string {
+  const remembered = collapsedMemory.get(storageKey);
+  if (remembered !== undefined) return remembered;
+  try {
+    return localStorage.getItem(storageKey) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function useCollapsedSections(kind: RecordKind): [ReadonlySet<string>, (key: string) => void] {
+  const storageKey = `zode:zrm:collapsed:${kind}`;
+  const raw = useSyncExternalStore(subscribeCollapsed, () => readCollapsed(storageKey), () => "");
+  const keys = useMemo(() => {
+    try {
+      const parsed: unknown = raw ? JSON.parse(raw) : [];
+      return new Set(Array.isArray(parsed) ? parsed.filter((key): key is string => typeof key === "string") : []);
+    } catch {
+      return new Set<string>();
+    }
+  }, [raw]);
+  const toggle = useCallback(
+    (key: string) => {
+      const next = new Set(keys);
+      if (!next.delete(key)) next.add(key);
+      const value = JSON.stringify([...next]);
+      collapsedMemory.set(storageKey, value);
+      try {
+        localStorage.setItem(storageKey, value);
+      } catch {
+        // Storage can be unavailable; the sections just aren't remembered across visits.
+      }
+      for (const listener of collapsedListeners) listener();
+    },
+    [keys, storageKey],
+  );
+  return [keys, toggle];
+}
 
 function compare(a: string | number | null, b: string | number | null): number {
   if (a === b) return 0;
@@ -200,6 +252,7 @@ function RecordList<T extends ListRow>({
   const deferredFilterValues = useDeferredValue(filterValues);
   const [sort, setSort] = useState<Sort | null>(null);
   const [dropKey, setDropKey] = useState<string | null>(null);
+  const [collapsed, toggleCollapsed] = useCollapsedSections(kind);
   const listRef = useRef<HTMLDivElement>(null);
   const endDrag = useCallback(() => setDropKey(null), []);
 
@@ -288,13 +341,18 @@ function RecordList<T extends ListRow>({
   const toggleSort = (key: string) =>
     setSort((current) => (current?.key !== key ? { key, dir: 1 } : current.dir === 1 ? { key, dir: -1 } : null));
 
-  /** Up and down move the selection through the list. */
+  const visible = useMemo(
+    () => runs.flatMap((run) => (run.label !== null && collapsed.has(run.key) ? [] : run.rows)),
+    [runs, collapsed],
+  );
+
+  /** Up and down move the selection through the rows of open sections. */
   const onKeyDown = (event: KeyboardEvent) => {
     const step = { ArrowDown: 1, ArrowUp: -1 }[event.key];
-    if (!step || shown.length === 0) return;
+    if (!step || visible.length === 0) return;
     event.preventDefault();
-    const at = shown.findIndex((row) => row.id === selectedId);
-    const next = shown[Math.min(shown.length - 1, Math.max(0, at === -1 ? 0 : at + step))]!;
+    const at = visible.findIndex((row) => row.id === selectedId);
+    const next = visible[Math.min(visible.length - 1, Math.max(0, at === -1 ? 0 : at + step))]!;
     go(recordHref(kind, next.id));
     listRef.current?.querySelector<HTMLElement>(`[data-id="${next.id}"]`)?.focus();
   };
@@ -360,10 +418,22 @@ function RecordList<T extends ListRow>({
         ) : (
           runs.map((run) => {
             const droppable = Boolean(onMove) && run.label !== null;
+            const closed = run.label !== null && collapsed.has(run.key);
             const body = (
               <>
-                {run.label !== null ? <div className={styles.sectionRow}>{run.label}</div> : null}
-                {run.rows.map((row) => (
+                {run.label !== null ? (
+                  <button
+                    type="button"
+                    className={styles.sectionRow}
+                    aria-expanded={!closed}
+                    onClick={() => toggleCollapsed(run.key)}
+                  >
+                    <Icon name="next" className={styles.sectionIcon} />
+                    <span>{run.label}</span>
+                    <span className={styles.sectionCount}>{run.rows.length}</span>
+                  </button>
+                ) : null}
+                {(closed ? [] : run.rows).map((row) => (
                   <Row
                     key={row.id}
                     kind={kind}
@@ -379,7 +449,7 @@ function RecordList<T extends ListRow>({
                     onDragEnd={endDrag}
                   />
                 ))}
-                {run.rows.length === 0 && run.label !== null ? <div className={styles.sectionEmpty} /> : null}
+                {run.rows.length === 0 && run.label !== null && !closed ? <div className={styles.sectionEmpty} /> : null}
                 {totaled && run.rows.length > 0 ? (
                   <div className={`${styles.row} ${styles.totalRow}`} style={columnsStyle}>
                     {config.columns.map((column) => (
