@@ -22,14 +22,15 @@ const deckUrl = (slide?: number) =>
 
 /**
  * The deck's share popover: copy a link to this slide or the whole deck,
- * hand it to the system share sheet where there is one, or print the deck to
- * PDF. It opens upward from the control bar.
+ * hand it to the system share sheet where there is one, or download the
+ * deck's PDF. It opens upward from the control bar.
  */
 export function ShareMenu({
   open,
   onOpenChange,
   slideNumber,
   slideTitle,
+  pdfHref,
   buttonClassName,
   iconClassName,
 }: {
@@ -37,6 +38,7 @@ export function ShareMenu({
   onOpenChange: (open: boolean) => void;
   slideNumber: number;
   slideTitle: string;
+  pdfHref: string;
   buttonClassName: string;
   iconClassName: string;
 }): ReactElement {
@@ -88,11 +90,6 @@ export function ShareMenu({
     } catch {
       // Dismissing the share sheet rejects; nothing to do.
     }
-  };
-
-  const print = () => {
-    onOpenChange(false);
-    window.print();
   };
 
   const onMenuKey = (event: KeyboardEvent<HTMLUListElement>) => {
@@ -153,10 +150,10 @@ export function ShareMenu({
           ) : null}
           <li role="none" className={styles.menuRule} />
           <li role="none">
-            <button type="button" role="menuitem" className={styles.menuItem} onClick={print}>
+            <a role="menuitem" className={styles.menuItem} href={pdfHref} download onClick={() => onOpenChange(false)}>
               Download PDF
               <span className={styles.cursor} aria-hidden="true" />
-            </button>
+            </a>
           </li>
         </ul>
       ) : null}

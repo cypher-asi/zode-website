@@ -678,6 +678,77 @@
   }
 }
 
+/* ---------- Download ---------- */
+
+/*
+ * Top right, left of the site header's button group (which publishes its
+ * width as `--header-action-width`, Back pill and all), at its height and in
+ * its type, outlined in the slide's tone with the same wipe-up hover.
+ */
+.download {
+  position: absolute;
+  top: calc(27px + env(safe-area-inset-top, 0px));
+  right: calc(
+    max(var(--content-edge), env(safe-area-inset-right, 0px)) +
+      var(--header-action-width, 0px) + 8px
+  );
+  z-index: 6;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  height: 32px;
+  padding: 0 14px 0 12px;
+  border: 1px solid var(--deck-fg);
+  border-radius: var(--radius-control);
+  background: linear-gradient(var(--deck-fg), var(--deck-fg)) no-repeat bottom /
+    100% 0%;
+  color: var(--deck-fg);
+  font-size: var(--caps-size);
+  font-weight: 500;
+  letter-spacing: var(--caps-tracking);
+  text-decoration: none;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition:
+    border-color var(--duration-slow) var(--ease-in-out),
+    background-size var(--duration-slow) var(--ease-in-out),
+    color 200ms ease 80ms;
+}
+
+@media (hover: hover) {
+  .download:hover {
+    background-size: 100% 100%;
+    color: var(--deck-bg);
+  }
+}
+
+.download:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  .download {
+    top: calc(19px + env(safe-area-inset-top, 0px));
+    height: 28px;
+    padding: 0 11px 0 9px;
+    font-size: var(--text-2xs);
+  }
+}
+
+/* Down to its arrow where the header's wordmark and button leave little room. */
+@media (max-width: 600px) {
+  .download {
+    width: 28px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .downloadLabel {
+    display: none;
+  }
+}
+
 /* ---------- Share menu ---------- */
 
 .shareAnchor {
@@ -725,6 +796,7 @@
   font: inherit;
   letter-spacing: inherit;
   text-align: left;
+  text-decoration: none;
   text-transform: inherit;
   cursor: pointer;
 }
@@ -926,6 +998,7 @@
   }
 
   .header,
+  .download,
   .grid,
   .bar,
   .overview,

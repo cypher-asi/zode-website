@@ -27,16 +27,18 @@ const LOCKED = FULL_SLIDES.slice(PUBLIC_SLIDES.length)
 
 const GATED: readonly Slide[] = [...PUBLIC_SLIDES, { ...GATE, locked: LOCKED }];
 
-/**
- * The whole deck for readers with data room access; for everyone else, the
- * public slides ending on the gate, which is also what a failed check gets.
- */
-export async function deckSlides(roomToken: string | undefined): Promise<readonly Slide[]> {
+/** Whether the reader gets the whole deck; a failed check gets the public one. */
+export async function seesFullDeck(roomToken: string | undefined): Promise<boolean> {
   try {
-    return (await hasDataRoomAccess(roomToken)) ? FULL_SLIDES : GATED;
+    return await hasDataRoomAccess(roomToken);
   } catch (error) {
     unstable_rethrow(error);
     console.error("[deck] access check failed; showing the public deck", error);
-    return GATED;
+    return false;
   }
+}
+
+/** The whole deck for readers with data room access; for everyone else, the public slides ending on the gate. */
+export async function deckSlides(roomToken: string | undefined): Promise<readonly Slide[]> {
+  return (await seesFullDeck(roomToken)) ? FULL_SLIDES : GATED;
 }

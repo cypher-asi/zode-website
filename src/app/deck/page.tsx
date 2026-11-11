@@ -38,9 +38,10 @@ export default function DeckPage({ searchParams }: { searchParams: SearchParams 
 
 /** The policy slide's map comes from the tracker tables; without them the slide says so and the rest of the deck stands. */
 async function DeckAtSlide({ searchParams }: { searchParams: SearchParams }) {
-  const { slide, room } = await searchParams;
+  const { slide, room: roomParam } = await searchParams;
+  const room = typeof roomParam === "string" ? roomParam : undefined;
   const [slides, policy] = await Promise.all([
-    deckSlides(typeof room === "string" ? room : undefined),
+    deckSlides(room),
     getPolicyMap().catch((error: unknown) => {
       console.error("[deck] policy tracker unavailable", error);
       return null;
@@ -49,5 +50,7 @@ async function DeckAtSlide({ searchParams }: { searchParams: SearchParams }) {
   const requested = typeof slide === "string" ? Number.parseInt(slide, 10) : 1;
   const initial = Number.isFinite(requested) ? Math.min(Math.max(requested, 1), slides.length) - 1 : 0;
 
-  return <Deck slides={slides} initialSlide={initial} policy={policy} />;
+  const pdfHref = room ? `/deck/download?${new URLSearchParams({ room })}` : "/deck/download";
+
+  return <Deck slides={slides} initialSlide={initial} policy={policy} pdfHref={pdfHref} />;
 }

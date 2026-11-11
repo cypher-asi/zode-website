@@ -110,8 +110,9 @@ function ArrowIcon({ flip = false }: { flip?: boolean }): ReactElement {
 
 /**
  * The investor deck, filling the window: a 16:9 stage under the site header,
- * a control bar that rises from the bottom edge, an overview of every slide
- * and a share menu. The page's ground follows the slide's, so the slide has
+ * a control bar that rises from the bottom edge, an overview of every slide,
+ * a share menu and a PDF download beside the header's button. The page's
+ * ground follows the slide's, so the slide has
  * no visible edge and the header reads its tone from `data-surface`. Every
  * slide stays mounted, inactive ones hidden and parked unrendered, so
  * printing (the PDF export) lays them all out one per page. On a portrait
@@ -137,12 +138,15 @@ export function Deck({
   slides,
   initialSlide,
   policy,
+  pdfHref,
 }: {
   /** The whole deck for readers with data room access; for everyone else, the public slides and the gate. */
   slides: readonly Slide[];
   initialSlide: number;
   /** The policy slide's map, or null when the tracker couldn't be read. */
   policy: PolicyMap | null;
+  /** The deck's PDF, which the server matches to the reader's access as it does the slides. */
+  pdfHref: string;
 }): ReactElement {
   const total = slides.length;
   const named = useMemo(() => namedFor(slides), [slides]);
@@ -532,6 +536,13 @@ export function Deck({
       {/* The page's one H1; each slide's title is an H2 under it. */}
       <h1 className={styles.srOnly}>ZODE investor presentation</h1>
 
+      <a className={styles.download} href={pdfHref} download aria-label="Download the deck as a PDF">
+        <svg className={styles.icon} viewBox="0 0 12 12" aria-hidden="true">
+          <path d="M6 1.5v6M3.5 5L6 7.5 8.5 5M2 10.5h8" />
+        </svg>
+        <span className={styles.downloadLabel}>Download</span>
+      </a>
+
       <div className={styles.viewport}>
         <div
           ref={stageRef}
@@ -706,6 +717,7 @@ export function Deck({
               onOpenChange={setShareOpen}
               slideNumber={index + 1}
               slideTitle={slide.title}
+              pdfHref={pdfHref}
               buttonClassName={styles.textButton}
               iconClassName={styles.icon}
             />
