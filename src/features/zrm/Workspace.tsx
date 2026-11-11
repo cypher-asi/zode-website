@@ -9,7 +9,6 @@ import {
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
   type CSSProperties,
   type DragEvent,
   type KeyboardEvent,
@@ -30,9 +29,11 @@ import { clearedColumns } from "./fields";
 import { OpportunityMenu } from "./OpportunityMenu";
 import { SiteMenu } from "./SiteMenu";
 import { StatusNav } from "./StatusNav";
+import { useStored } from "./stored";
 import { KIND_LABELS, isOpportunityKind, recordHref, type OpportunityKind, type OpportunityRow, type RecordKind } from "./types";
 import { TypeNav } from "./TypeNav";
 import { goOnClick, useZrmData, useZrmNavigate, useZrmRoute } from "./ZrmProvider";
+import { useListView, type ListView } from "./ZrmViewSwitch";
 import styles from "./zrm.module.css";
 
 interface Sort {
@@ -48,31 +49,9 @@ interface ListRow {
 /** A dragged list row. Same-document only; the id is also on the row's `data-id`. */
 const DRAG_TYPE = "application/x-zode-zrm-row";
 
-/**
- * The keys of a list's collapsed sections, remembered per browser. Kept in
- * memory too, so collapsing works where storage is unavailable (private mode).
- */
-const collapsedMemory = new Map<string, string>();
-const collapsedListeners = new Set<() => void>();
-
-function subscribeCollapsed(listener: () => void): () => void {
-  collapsedListeners.add(listener);
-  return () => collapsedListeners.delete(listener);
-}
-
-function readCollapsed(storageKey: string): string {
-  const remembered = collapsedMemory.get(storageKey);
-  if (remembered !== undefined) return remembered;
-  try {
-    return localStorage.getItem(storageKey) ?? "";
-  } catch {
-    return "";
-  }
-}
-
+/** The keys of a list's collapsed sections, remembered per browser. */
 function useCollapsedSections(kind: RecordKind): [ReadonlySet<string>, (key: string) => void] {
-  const storageKey = `zode:zrm:collapsed:${kind}`;
-  const raw = useSyncExternalStore(subscribeCollapsed, () => readCollapsed(storageKey), () => "");
+  const [raw, setRaw] = useStored(`zode:zrm:collapsed:${kind}`);
   const keys = useMemo(() => {
     try {
       const parsed: unknown = raw ? JSON.parse(raw) : [];
@@ -85,16 +64,9 @@ function useCollapsedSections(kind: RecordKind): [ReadonlySet<string>, (key: str
     (key: string) => {
       const next = new Set(keys);
       if (!next.delete(key)) next.add(key);
-      const value = JSON.stringify([...next]);
-      collapsedMemory.set(storageKey, value);
-      try {
-        localStorage.setItem(storageKey, value);
-      } catch {
-        // Storage can be unavailable; the sections just aren't remembered across visits.
-      }
-      for (const listener of collapsedListeners) listener();
+      setRaw(JSON.stringify([...next]));
     },
-    [keys, storageKey],
+    [keys, setRaw],
   );
   return [keys, toggle];
 }
@@ -120,6 +92,8 @@ interface RowProps<T> {
   /** The row can be dragged onto a section. */
   draggable?: boolean;
   onDragEnd?: () => void;
+  /** Drawn as the config's kanban card rather than in columns. */
+  card?: boolean;
 }
 
 /**
@@ -139,6 +113,7 @@ const Row = memo(function Row<T extends ListRow>({
   menuOpen,
   draggable,
   onDragEnd,
+  card,
 }: RowProps<T>): ReactElement {
   const href = recordHref(kind, row.id);
   const dragged = useRef(false);
@@ -198,13 +173,13 @@ const Row = memo(function Row<T extends ListRow>({
             }
           : undefined
       }
-      className={styles.row}
-      style={style}
+      className={card ? styles.card : styles.row}
+      style={card ? undefined : style}
       aria-current={selected ? "page" : undefined}
       aria-haspopup={onMenu ? "menu" : undefined}
       data-menu-open={menuOpen ? "" : undefined}
     >
-      {config.columns.map((column) => (
+      {card ? config.card?.(row) : config.columns.map((column) => (
         <span
           key={column.key}
           className={column.key === config.columns[0]!.key ? styles.lead : styles.cell}
@@ -234,6 +209,7 @@ function RecordList<T extends ListRow>({
   onRowMenu,
   menuRowId,
   onMove,
+  view = "list",
 }: {
   kind: RecordKind;
   rows: readonly T[];
@@ -245,6 +221,8 @@ function RecordList<T extends ListRow>({
   menuRowId?: string | null;
   /** Drops a row onto a section. Set for lists whose sections declare every group. */
   onMove?: (row: T, sectionKey: string) => void;
+  /** A kanban shows a column per section, of the config's cards, for configs with both. */
+  view?: ListView;
 }): ReactElement {
   const { go, prefetch } = useZrmNavigate();
   const [query, setQuery] = useState("");
@@ -264,7 +242,8 @@ function RecordList<T extends ListRow>({
     [config, rows],
   );
 
-  const sections = sort ? undefined : config.sections;
+  const kanban = view === "kanban" && config.card !== undefined && config.sections !== undefined;
+  const sections = sort && !kanban ? undefined : config.sections;
   const totaled = sections !== undefined && config.columns.some((column) => column.total);
 
   const shown = useMemo(() => {
@@ -342,9 +321,46 @@ function RecordList<T extends ListRow>({
     setSort((current) => (current?.key !== key ? { key, dir: 1 } : current.dir === 1 ? { key, dir: -1 } : null));
 
   const visible = useMemo(
-    () => runs.flatMap((run) => (run.label !== null && collapsed.has(run.key) ? [] : run.rows)),
-    [runs, collapsed],
+    () => runs.flatMap((run) => (!kanban && run.label !== null && collapsed.has(run.key) ? [] : run.rows)),
+    [runs, collapsed, kanban],
   );
+
+  /** A section or kanban column that takes a dragged row, moving it there. */
+  const dropTarget = (key: string) => ({
+    "data-drop": dropKey === key ? "" : undefined,
+    onDragOver: (event: DragEvent<HTMLDivElement>) => {
+      if (!event.dataTransfer.types.includes(DRAG_TYPE)) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      setDropKey(key);
+    },
+    onDragLeave: (event: DragEvent<HTMLDivElement>) => {
+      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+        setDropKey((current) => (current === key ? null : current));
+      }
+    },
+    onDrop: (event: DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      setDropKey(null);
+      const id = event.dataTransfer.getData(DRAG_TYPE);
+      const row = shown.find((item) => item.id === id);
+      if (row) onMove?.(row, key);
+    },
+  });
+
+  const rowProps = (row: T, droppable: boolean) => ({
+    kind,
+    row,
+    config,
+    style: columnsStyle,
+    selected: row.id === selectedId,
+    go,
+    prefetch,
+    onMenu: onRowMenu,
+    menuOpen: row.id === menuRowId,
+    draggable: droppable,
+    onDragEnd: endDrag,
+  });
 
   /** Up and down move the selection through the rows of open sections. */
   const onKeyDown = (event: KeyboardEvent) => {
@@ -389,115 +405,110 @@ function RecordList<T extends ListRow>({
         ))}
       </div>
 
-      <div className={styles.head} style={columnsStyle}>
-        {config.columns.map((column) => (
-          <span key={column.key} data-align={column.align} data-wide-only={column.wideOnly ? "" : undefined}>
-            {column.sortValue ? (
-              <button
-                type="button"
-                className={styles.sort}
-                onClick={() => toggleSort(column.key)}
-                aria-sort={sort?.key === column.key ? (sort.dir === 1 ? "ascending" : "descending") : undefined}
-                aria-label={`Sort by ${column.header}`}
-              >
-                {column.header}
-                {sort?.key === column.key ? <Icon name="sort" /> : null}
-              </button>
-            ) : (
-              column.header
-            )}
-          </span>
-        ))}
-      </div>
-
-      <div ref={listRef} className={styles.rows} onKeyDown={onKeyDown}>
-        {shown.length === 0 && !sections?.all?.length ? (
-          <p className={styles.empty}>
-            {rows.length === 0 ? `No ${plural} yet.` : `No ${plural} match.`}
-          </p>
-        ) : (
-          runs.map((run) => {
-            const droppable = Boolean(onMove) && run.label !== null;
-            const closed = run.label !== null && collapsed.has(run.key);
-            const body = (
-              <>
-                {run.label !== null ? (
+      {kanban ? (
+        <div ref={listRef} className={styles.board} onKeyDown={onKeyDown}>
+          {runs.map((run) => (
+            <section
+              key={run.key}
+              className={styles.column}
+              aria-label={run.label ?? undefined}
+              {...(onMove ? dropTarget(run.key) : {})}
+            >
+              <div className={styles.columnHead}>
+                <span>{run.label}</span>
+                <span className={styles.sectionCount}>{run.rows.length}</span>
+                {run.rows.length > 0 ? (
+                  <span className={styles.columnTotal}>
+                    {config.columns.filter((column) => column.total && column.align === "end").map((column) => column.total!(run.rows))}
+                  </span>
+                ) : null}
+              </div>
+              <div className={styles.columnCards}>
+                {run.rows.map((row) => (
+                  <Row key={row.id} {...rowProps(row, Boolean(onMove))} card />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className={styles.head} style={columnsStyle}>
+            {config.columns.map((column) => (
+              <span key={column.key} data-align={column.align} data-wide-only={column.wideOnly ? "" : undefined}>
+                {column.sortValue ? (
                   <button
                     type="button"
-                    className={styles.sectionRow}
-                    aria-expanded={!closed}
-                    onClick={() => toggleCollapsed(run.key)}
+                    className={styles.sort}
+                    onClick={() => toggleSort(column.key)}
+                    aria-sort={sort?.key === column.key ? (sort.dir === 1 ? "ascending" : "descending") : undefined}
+                    aria-label={`Sort by ${column.header}`}
                   >
-                    <Icon name="next" className={styles.sectionIcon} />
-                    <span>{run.label}</span>
-                    <span className={styles.sectionCount}>{run.rows.length}</span>
+                    {column.header}
+                    {sort?.key === column.key ? <Icon name="sort" /> : null}
                   </button>
-                ) : null}
-                {(closed ? [] : run.rows).map((row) => (
-                  <Row
-                    key={row.id}
-                    kind={kind}
-                    row={row}
-                    config={config}
-                    style={columnsStyle}
-                    selected={row.id === selectedId}
-                    go={go}
-                    prefetch={prefetch}
-                    onMenu={onRowMenu}
-                    menuOpen={row.id === menuRowId}
-                    draggable={droppable}
-                    onDragEnd={endDrag}
-                  />
-                ))}
-                {run.rows.length === 0 && run.label !== null && !closed ? <div className={styles.sectionEmpty} /> : null}
-                {totaled && run.rows.length > 0 ? (
-                  <div className={`${styles.row} ${styles.totalRow}`} style={columnsStyle}>
-                    {config.columns.map((column) => (
-                      <span
-                        key={column.key}
-                        className={column.key === config.columns[0]!.key ? styles.lead : styles.cell}
-                        data-align={column.align}
-                        data-numeric={column.align === "end" ? "" : undefined}
-                        data-wide-only={column.wideOnly ? "" : undefined}
+                ) : (
+                  column.header
+                )}
+              </span>
+            ))}
+          </div>
+
+          <div ref={listRef} className={styles.rows} onKeyDown={onKeyDown}>
+            {shown.length === 0 && !sections?.all?.length ? (
+              <p className={styles.empty}>
+                {rows.length === 0 ? `No ${plural} yet.` : `No ${plural} match.`}
+              </p>
+            ) : (
+              runs.map((run) => {
+                const droppable = Boolean(onMove) && run.label !== null;
+                const closed = run.label !== null && collapsed.has(run.key);
+                const body = (
+                  <>
+                    {run.label !== null ? (
+                      <button
+                        type="button"
+                        className={styles.sectionRow}
+                        aria-expanded={!closed}
+                        onClick={() => toggleCollapsed(run.key)}
                       >
-                        {column.total?.(run.rows)}
-                      </span>
+                        <Icon name="next" className={styles.sectionIcon} />
+                        <span>{run.label}</span>
+                        <span className={styles.sectionCount}>{run.rows.length}</span>
+                      </button>
+                    ) : null}
+                    {(closed ? [] : run.rows).map((row) => (
+                      <Row key={row.id} {...rowProps(row, droppable)} />
                     ))}
+                    {run.rows.length === 0 && run.label !== null && !closed ? <div className={styles.sectionEmpty} /> : null}
+                    {totaled && run.rows.length > 0 ? (
+                      <div className={`${styles.row} ${styles.totalRow}`} style={columnsStyle}>
+                        {config.columns.map((column) => (
+                          <span
+                            key={column.key}
+                            className={column.key === config.columns[0]!.key ? styles.lead : styles.cell}
+                            data-align={column.align}
+                            data-numeric={column.align === "end" ? "" : undefined}
+                            data-wide-only={column.wideOnly ? "" : undefined}
+                          >
+                            {column.total?.(run.rows)}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                  </>
+                );
+                if (!droppable) return <Fragment key={run.key}>{body}</Fragment>;
+                return (
+                  <div key={run.key} className={styles.section} {...dropTarget(run.key)}>
+                    {body}
                   </div>
-                ) : null}
-              </>
-            );
-            if (!droppable) return <Fragment key={run.key}>{body}</Fragment>;
-            return (
-              <div
-                key={run.key}
-                className={styles.section}
-                data-drop={dropKey === run.key ? "" : undefined}
-                onDragOver={(event: DragEvent<HTMLDivElement>) => {
-                  if (!event.dataTransfer.types.includes(DRAG_TYPE)) return;
-                  event.preventDefault();
-                  event.dataTransfer.dropEffect = "move";
-                  setDropKey(run.key);
-                }}
-                onDragLeave={(event: DragEvent<HTMLDivElement>) => {
-                  if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-                    setDropKey((current) => (current === run.key ? null : current));
-                  }
-                }}
-                onDrop={(event: DragEvent<HTMLDivElement>) => {
-                  event.preventDefault();
-                  setDropKey(null);
-                  const id = event.dataTransfer.getData(DRAG_TYPE);
-                  const row = shown.find((item) => item.id === id);
-                  if (row) onMove?.(row, run.key);
-                }}
-              >
-                {body}
-              </div>
-            );
-          })
-        )}
-      </div>
+                );
+              })
+            )}
+          </div>
+        </>
+      )}
 
       <div className={styles.footer}>
         <span>
@@ -538,6 +549,7 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
   }, [data.types, data.statuses, data.stages]);
 
   const kind = kinds.find((k) => k === segment);
+  const [view] = useListView(kind);
   /** The open list's filters, shared by its toolbar and the sidebar's types, and cleared on switching lists. */
   const [filters, setFilters] = useState<{ kind: RecordKind | undefined; values: Record<string, string> }>({ kind, values: {} });
   if (filters.kind !== kind) setFilters({ kind, values: {} });
@@ -615,6 +627,7 @@ export function Workspace({ children }: { children: ReactNode }): ReactElement {
           onMove={(row, stageId) => moveOpportunity(kind, row, stageId)}
           onRowMenu={openMenu}
           menuRowId={shownMenu?.id ?? null}
+          view={view}
           {...common}
         />
       );

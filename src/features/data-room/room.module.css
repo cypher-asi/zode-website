@@ -137,6 +137,7 @@
 }
 
 .tab[aria-current="page"],
+.tab[aria-pressed="true"],
 .chip {
   background: var(--color-bg);
   color: var(--color-text-primary);

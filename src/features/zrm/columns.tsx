@@ -69,6 +69,8 @@ export interface ListConfig<T> {
   summary?: (rows: readonly T[]) => string;
   filters?: readonly ListFilter<T>[];
   sections?: ListSections<T>;
+  /** A record as a kanban card, for lists with a kanban. */
+  card?: (row: T) => ReactNode;
 }
 
 type Types = ReadonlyMap<string, ZrmType>;
@@ -200,6 +202,15 @@ export function opportunitiesConfig(types: Types, kind: OpportunityKind, stages:
       of: (o) => ({ key: o.stage_id, label: o.stage_name, order: o.stage_position }),
       all: pipelineStages,
     },
+    card: (o) => (
+      <>
+        <Primary name={o.title} sub={[o.person_name, o.company_name].filter(Boolean).join(" · ")} active={o.active} />
+        <span className={styles.cardMeta}>
+          <Badge>{o.deal_type}</Badge>
+          <span>{formatMoney(o.value)}</span>
+        </span>
+      </>
+    ),
     columns: [
       {
         key: "title",

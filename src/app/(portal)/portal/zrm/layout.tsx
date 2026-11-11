@@ -8,6 +8,7 @@ import { Workspace } from "@/features/zrm/Workspace";
 import { ZrmNewButton } from "@/features/zrm/ZrmNewButton";
 import { ZrmProvider } from "@/features/zrm/ZrmProvider";
 import { ZrmTabs } from "@/features/zrm/ZrmTabs";
+import { ZrmViewSwitch } from "@/features/zrm/ZrmViewSwitch";
 
 export const metadata: Metadata = {
   title: "ZRM | ZODE",
@@ -59,6 +60,7 @@ async function Zrm({ children }: { children: ReactNode }): Promise<ReactElement>
             </div>
           </div>
           <div className={styles.headerActions}>
+            <ZrmViewSwitch />
             <ZrmTabs />
             <ZrmNewButton />
           </div>
