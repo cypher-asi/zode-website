@@ -17,6 +17,7 @@
     "deck:pdf": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/make-deck-pdf.mjs",
     "deck:chicago": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/make-chicago-deck.mjs",
     "memo:long-compute": "node scripts/make-long-compute-memo.mjs",
+    "memo:long-compute-leasing": "node scripts/make-long-compute-memo.mjs --memo leasing",
     "prebuild": "npm run fonts && npm run db:migrate",
     "build": "next build",
     "postbuild": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/make-deck-pdf.mjs --deploy",

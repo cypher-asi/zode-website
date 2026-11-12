@@ -1,15 +1,20 @@
 /**
- * Prints the Long Compute Fund I investment memo (scripts/memos/long-compute-fund-i)
- * to a three-page letter PDF, its figures computed from ZODE's master model:
+ * Prints the Long Compute Fund I investment memo to a letter PDF, its figures
+ * computed from ZODE's master model:
  *
- *   npm run memo:long-compute -- [--model ~/Downloads/CORE/ZODE_MasterModel_26.11.09_v2.xlsx] \
- *     [--out ~/Downloads/CORE/Long_Compute_Fund_I_Memo_v2.pdf] [--dry-run]
+ *   npm run memo:long-compute -- [--memo loan|leasing] \
+ *     [--model ~/Downloads/CORE/ZODE_MasterModel_26.11.09_v2.xlsx] [--out <pdf>] [--dry-run]
  *
+ * `loan` (scripts/memos/long-compute-fund-i, three pages) finances GPUs as loans
+ * with a kicker; `leasing` (scripts/memos/long-compute-fund-i-leasing, four pages)
+ * has each investor own its GPUs in a Deployment LLC that leases them to ZODE.
  * One MW of critical IT is costed from the model's Toronto and Zode Inc. inputs,
  * read by their labels in column B (a missing label fails the run), and sold
  * three ways: a contracted offtake, merchant and inference, at the memo's rates
  * below. The fund plan sizes each close to the GPUs it finances, and the proposed
- * loan (coupon, kicker) gives the fund's return per scenario. `--dry-run` prints the
+ * loan (coupon, kicker) gives the fund's return per scenario; the lease charges the
+ * same as base rent and participation, and its example deployments (Toronto,
+ * Calgary, South Dakota) are sized from their own sheets. `--dry-run` prints the
  * figures without opening a browser. Needs a local Chrome, Chromium or Brave; set
  * CHROME to its path if it isn't found. Fails if a page overflows or the PDF has
  * the wrong page count.
@@ -25,25 +30,42 @@ import { strFromU8, unzipSync } from "fflate";
 import { PDFDocument } from "pdf-lib";
 
 const ROOT = new URL("../", import.meta.url).pathname.replace(/\/$/, "");
-const MEMO = join(ROOT, "scripts/memos/long-compute-fund-i");
+// Both versions share the loan memo's stylesheet and logo.
+const ASSETS = join(ROOT, "scripts/memos/long-compute-fund-i");
+const MEMOS = {
+  loan: {
+    dir: ASSETS,
+    pages: 3,
+    title: "Long Compute Fund I · Investment Memo",
+    out: "~/Downloads/CORE/Long_Compute_Fund_I_Memo_v2.pdf",
+  },
+  leasing: {
+    dir: join(ROOT, "scripts/memos/long-compute-fund-i-leasing"),
+    pages: 4,
+    title: "Long Compute Fund I · Investment Memo · Leasing Structure",
+    out: "~/Downloads/CORE/Long_Compute_Fund_I_Leasing_Memo.pdf",
+  },
+};
 const PORT = 9335;
-const PAGES = 3;
 
 const { values: args } = parseArgs({
   options: {
+    memo: { type: "string", default: "loan" },
     model: { type: "string", default: "~/Downloads/CORE/ZODE_MasterModel_26.11.09_v2.xlsx" },
-    out: { type: "string", default: "~/Downloads/CORE/Long_Compute_Fund_I_Memo_v2.pdf" },
+    out: { type: "string" },
     "dry-run": { type: "boolean", default: false },
   },
 });
-const expand = (p) => resolve(p.replace(/^~(?=$|\/)/, homedir()));
-const MODEL = expand(args.model);
-const OUT = expand(args.out);
 
 const fail = (message) => {
   console.error(`[memo] ${message}`);
   process.exit(1);
 };
+
+const MEMO = MEMOS[args.memo] ?? fail(`No memo "${args.memo}"; use ${Object.keys(MEMOS).join(" or ")}.`);
+const expand = (p) => resolve(p.replace(/^~(?=$|\/)/, homedir()));
+const MODEL = expand(args.model);
+const OUT = expand(args.out ?? MEMO.out);
 
 // The memo's three ways to sell the hours; everything else comes from the model.
 const OFFTAKE = { price: 5, prepay: 0.275, termMonths: 36, billed: 1 };
@@ -94,15 +116,24 @@ function inputs(sheetName) {
     if (!rows.has(row)) rows.set(row, {});
     rows.get(row)[ref[1]] = value;
   }
-  return (label) => {
+  const lookup = (label) => {
     const row = [...rows.values()].find((r) => String(r.B ?? "").trim() === label);
     if (typeof row?.D !== "number") fail(`${modelName}: no number for "${label}" on ${sheetName}.`);
     return row.D;
   };
+  /** The sum of the inputs whose labels match, such as a site's capacity blocks. */
+  lookup.sum = (pattern) => {
+    const values = [...rows.values()].filter((r) => pattern.test(String(r.B ?? "").trim()) && typeof r.D === "number");
+    if (!values.length) fail(`${modelName}: no numbers labelled ${pattern} on ${sheetName}.`);
+    return values.reduce((a, r) => a + r.D, 0);
+  };
+  return lookup;
 }
 
 const toronto = inputs("Toronto");
 const topco = inputs("Zode Inc.");
+const calgary = inputs("Calgary");
+const bigWatt = inputs("BigWatt");
 
 const M = {
   gpus: toronto("GPUs per MW"),
@@ -330,6 +361,114 @@ const closes = CLOSES.map((close) => {
   return row;
 });
 
+/* ---------- The leasing structure: an investor's Deployment LLC per deployment ---------- */
+
+// The LLC owns the GPUs and net-leases them to the operator: base rent equal to the loan payment above for its
+// term, plus participation rent of the kicker's share of cluster cash after base rent, and it keeps the resale.
+// LCF takes an acquisition fee and a management fee on unreturned capital, and carry once the investor has its
+// preferred return and capital back; depreciation is allocated to the investor.
+const ACQ_FEE = 0.01;
+const MGMT_FEE = 0.015;
+const PREF = 0.08;
+const CARRY = 0.2;
+const TAX_RATE = 0.37;
+const equity = hardware * (1 + ACQ_FEE);
+const lifeYears = M.lifeMonths / 12;
+if (!Number.isInteger(lifeYears)) fail(`An operating life of ${M.lifeMonths} months isn't whole years.`);
+
+// Depreciation as a share of basis by year in service. US property takes 100% bonus depreciation; property used
+// predominantly outside the US must use ADS, five-year straight line with a half-year convention, no bonus.
+const SCHEDULES = { us: [1], nonUs: [0.1, 0.2, 0.2, 0.2, 0.2, 0.1] };
+
+/** Deductions by year for GPUs sold at the end of their life (half a year's in the year of sale), and the basis left. */
+function depreciation(schedule) {
+  const years = Array.from({ length: lifeYears }, (_, y) => (schedule[y] ?? 0) * (y === lifeYears - 1 && y < schedule.length - 1 ? 0.5 : 1));
+  return { years, left: 1 - years.reduce((a, b) => a + b, 0) };
+}
+
+const sum = (xs) => xs.reduce((a, b) => a + b, 0);
+
+function leasing(s) {
+  const base = s.cash.map((_, m) => (m < TERM_MONTHS ? loanPayment : 0));
+  const participation = s.cash.map((c, m) => KICKER * Math.max(0, c - base[m]));
+  const resale = M.resale * hardware;
+  const rent = s.cash.map((_, m) => base[m] + participation[m] + (m === s.cash.length - 1 ? resale : 0));
+
+  let capital = equity;
+  let owed = 0;
+  let back = null;
+  const fees = [];
+  const carry = [];
+  const investor = [];
+  rent.forEach((r, m) => {
+    owed += (capital * PREF) / 12;
+    const fee = (capital * MGMT_FEE) / 12;
+    let cash = r - fee;
+    if (cash < 0) fail(`Month ${m + 1}'s rent doesn't cover the management fee.`);
+    const pref = Math.min(cash, owed);
+    owed -= pref;
+    cash -= pref;
+    const returned = Math.min(cash, capital);
+    capital -= returned;
+    cash -= returned;
+    if (back === null && capital <= 0) back = m + 1;
+    fees.push(fee);
+    carry.push(CARRY * cash);
+    investor.push(pref + returned + cash * (1 - CARRY));
+  });
+
+  // Tax is settled at the end of each year in service, on rent less fees, carry and depreciation; at the sale the
+  // basis left is recovered, so resale above it is ordinary income (recapture). Assumes the losses are usable.
+  const afterTax = (schedule) => {
+    const { years, left } = depreciation(schedule);
+    const flows = [-equity, ...investor];
+    years.forEach((d, y) => {
+      const months = rent.slice(12 * y, 12 * (y + 1)).map((r, i) => r - fees[12 * y + i] - carry[12 * y + i]);
+      const income = sum(months) - d * equity - (y === lifeYears - 1 ? left * equity : 0);
+      flows[12 * (y + 1)] -= TAX_RATE * income;
+    });
+    return irr(flows);
+  };
+
+  return {
+    participation: sum(participation),
+    grossX: sum(rent) / hardware,
+    grossIrr: irr([-hardware, ...rent]),
+    fees: ACQ_FEE * hardware + sum(fees),
+    carry: sum(carry),
+    netX: sum(investor) / equity,
+    netIrr: irr([-equity, ...investor]),
+    back,
+    usIrr: afterTax(SCHEDULES.us),
+    nonUsIrr: afterTax(SCHEDULES.nonUs),
+  };
+}
+const leased = scenarios.slice(1).map(leasing);
+if (leased.some((l) => l.back === null)) fail("A lease never returns the investor's capital.");
+
+// The memo's example Deployment LLCs, each a first deployment at a site, sized from its own sheet.
+const SITES = [
+  { key: "TOR", us: false, mw: toronto("Toronto cluster (64 B300 nodes)"), gpusPerMw: toronto("GPUs per MW"), perGpu: toronto("Hardware cost per GPU, all-in") },
+  { key: "CAL", us: false, mw: calgary.sum(/^(Calgary|Olds) block \d+$/), gpusPerMw: calgary("GPUs per MW"), perGpu: calgary("Hardware cost per GPU, all-in") },
+  { key: "SD", us: true, mw: bigWatt("Tranche 1"), gpusPerMw: bigWatt("GPUs per MW"), perGpu: bigWatt("Hardware cost per GPU, all-in") },
+].map((site) => {
+  const gpus = site.mw * site.gpusPerMw;
+  const cost = gpus * site.perGpu;
+  const basis = cost * (1 + ACQ_FEE);
+  const { years, left } = depreciation(site.us ? SCHEDULES.us : SCHEDULES.nonUs);
+  return {
+    ...site,
+    gpus,
+    cost,
+    basis,
+    dep1: years[0] * basis,
+    depLater: sum(years.slice(1)) * basis,
+    left: left * basis,
+    resale: M.resale * cost,
+    gain: M.resale * cost - left * basis,
+  };
+});
+
 /* ---------- Figures for the page ---------- */
 
 const usd = (v, digits = 2) => `$${v.toFixed(digits)}`;
@@ -443,10 +582,58 @@ for (const s of split) {
   F[`${s.key}_BAR`] = (100 * (s.value / tokenValue)).toFixed(2);
 }
 
+const money = (v) => (v < 1 ? "None" : v >= 1e9 ? `$${(v / 1e9).toFixed(2)}B` : mm(v, v >= 1e7 ? 1 : 2));
+const signed = (v) => (v < 0 ? `(${money(-v)})` : money(v));
+const irrText = (v) => (v > 1 ? ">100%" : pct(v));
+F.ACQ_FEE = pct(ACQ_FEE);
+F.MGMT_FEE = pct(MGMT_FEE, 1);
+F.PREF = pct(PREF);
+F.CARRY = pct(CARRY);
+F.INVESTOR_SHARE = pct(1 - CARRY);
+F.TAX_RATE = pct(TAX_RATE);
+F.L_EQUITY = money(equity);
+F.L_ACQ = money(ACQ_FEE * hardware);
+F.L_MGMT1 = money(MGMT_FEE * equity);
+F.L_RESALE = money(M.resale * hardware);
+F.US_TAX1 = money(TAX_RATE * depreciation(SCHEDULES.us).years[0] * equity);
+F.NONUS_TAX1 = money(TAX_RATE * depreciation(SCHEDULES.nonUs).years[0] * equity);
+["MER", "I20", "I30", "I40"].forEach((n, i) => {
+  const l = leased[i];
+  F[`${n}_L_PART`] = money(l.participation);
+  F[`${n}_L_GROSS_X`] = times(l.grossX);
+  F[`${n}_L_GROSS_IRR`] = irrText(l.grossIrr);
+  F[`${n}_L_FEES`] = money(l.fees);
+  F[`${n}_L_CARRY`] = money(l.carry);
+  F[`${n}_L_NET_X`] = times(l.netX);
+  F[`${n}_L_NET_IRR`] = irrText(l.netIrr);
+  F[`${n}_L_BACK`] = String(l.back);
+  F[`${n}_L_US_IRR`] = irrText(l.usIrr);
+  F[`${n}_L_NONUS_IRR`] = irrText(l.nonUsIrr);
+});
+for (const s of SITES) {
+  F[`${s.key}_MW`] = String(s.mw);
+  F[`${s.key}_GPUS`] = s.gpus.toLocaleString("en-US");
+  F[`${s.key}_GPMW`] = String(s.gpusPerMw);
+  F[`${s.key}_COST`] = money(s.cost);
+  F[`${s.key}_ACQ`] = money(ACQ_FEE * s.cost);
+  F[`${s.key}_MGMT`] = money(MGMT_FEE * s.basis);
+  F[`${s.key}_BASIS`] = money(s.basis);
+  F[`${s.key}_DEP1`] = money(s.dep1);
+  F[`${s.key}_TAX1`] = money(TAX_RATE * s.dep1);
+  F[`${s.key}_DEPLATER`] = money(s.depLater);
+  F[`${s.key}_LEFT`] = money(s.left);
+  F[`${s.key}_RESALE`] = money(s.resale);
+  F[`${s.key}_GAIN`] = signed(s.gain);
+}
+
 if (args["dry-run"]) {
   console.table(scenarios.map(({ cash, ...s }) => ({ ...s, revenue1: s.revenue1 / 1e6, margin1: s.margin1 / 1e6, atRisk: s.atRisk / 1e6, prepay: s.prepay / 1e6 })));
   console.table(funded);
   console.table(closes);
+  if (args.memo === "leasing") {
+    console.table(leased);
+    console.table(SITES);
+  }
   console.log(F);
   process.exit(0);
 }
@@ -476,12 +663,12 @@ const profileDir = await mkdtemp(join(tmpdir(), "zode-memo-browser-"));
 let browser;
 
 try {
-  const html = (await readFile(join(MEMO, "memo.html"), "utf8")).replace(/\{\{(\w+)\}\}/g, (match, key) => {
+  const html = (await readFile(join(MEMO.dir, "memo.html"), "utf8")).replace(/\{\{(\w+)\}\}/g, (match, key) => {
     if (!(key in F)) throw new Error(`memo.html has a placeholder nothing fills: ${match}`);
     return F[key];
   });
-  await writeFile(join(work, "memo.css"), await readFile(join(MEMO, "memo.css"), "utf8"));
-  await copyFile(join(MEMO, "logo.png"), join(work, "logo.png"));
+  await writeFile(join(work, "memo.css"), await readFile(join(ASSETS, "memo.css"), "utf8"));
+  await copyFile(join(ASSETS, "logo.png"), join(work, "logo.png"));
   await writeFile(join(work, "index.html"), html);
 
   browser = spawn(
@@ -559,8 +746,8 @@ try {
   ws.close();
 
   const pdf = await PDFDocument.load(Buffer.from(data, "base64"));
-  if (pdf.getPageCount() !== PAGES) throw new Error(`The PDF has ${pdf.getPageCount()} pages, not ${PAGES}.`);
-  pdf.setTitle("Long Compute Fund I · Investment Memo");
+  if (pdf.getPageCount() !== MEMO.pages) throw new Error(`The PDF has ${pdf.getPageCount()} pages, not ${MEMO.pages}.`);
+  pdf.setTitle(MEMO.title);
   pdf.setAuthor("ZODE");
   await writeFile(OUT, await pdf.save());
   console.log(`Wrote ${OUT}`);

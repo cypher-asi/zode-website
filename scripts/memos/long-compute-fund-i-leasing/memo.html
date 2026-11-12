@@ -1,0 +1,998 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Long Compute Fund I · Investment Memo · Leasing Structure</title>
+    <link rel="stylesheet" href="memo.css" />
+  </head>
+  <body>
+    <section class="page">
+      <div class="body">
+        <div>
+          <header class="masthead">
+            <img src="logo.png" alt="The Long Compute Fund" />
+            <span>FUND I · INVESTMENT MEMO<small>Leasing structure · Draft for discussion purposes</small></span>
+          </header>
+          <div class="memo-head">
+            <b>To:</b><span>Prospective investors (qualified purchasers)</span>
+            <b>From:</b><span>ZODE, with Ezra</span>
+            <b>Subject:</b><span>The other side of the trade: own GPUs, lease them without an offtaker, keep the upside and the depreciation</span>
+            <b>Date:</b><span>November 12, 2026 · Confidential</span>
+          </div>
+          <div class="strip">
+            <div><span>Structure</span>LLC per investor per site</div>
+            <div><span>Exposure</span>Owned GPUs, no offtaker</div>
+            <div><span>Return</span>Rent + {{KICKER}} participation</div>
+            <div><span>Per MW</span>{{GPUS}} B300s, {{HARDWARE}}</div>
+            <div><span>Sites</span>Toronto, Calgary, S. Dakota</div>
+            <div><span>Tax</span>Depreciation to investor</div>
+            <div><span>Fees</span>[{{ACQ_FEE}} + {{MGMT_FEE}}; {{CARRY}} over {{PREF}}]</div>
+            <div><span>Minimum</span>[1 MW, {{L_EQUITY}}]</div>
+          </div>
+        </div>
+
+        <div class="lede">
+          <p>
+            <b>Thesis.</b> GPU and neocloud debt is not repricing because investors have stopped believing in AI
+            demand. Demand is still ahead of supply: the B300 rents for $7.68/GPU-hr, up 15% in a month, and NVIDIA
+            guides to roughly 70% growth next year.<sup>4, 5</sup> The debt is repricing because its holders are on the
+            wrong side of the trade. Neoclouds and their lenders have been structurally short compute: they sell the
+            hours forward at a fixed rate while carrying the hardware, the debt and the residual. Anthropic, OpenAI,
+            NVIDIA and the hyperscalers are long, and the value of the infrastructure is externalized to them. CoreWeave’s 2031 notes
+            trade at 81 cents to yield 15.4%; Meta sold 2031 notes the same week at 5.85%.<sup>1, 2</sup> Even
+            hyperscaler-leased SPV paper is marked down: Meta’s Hyperion bonds fell from above 109 to about 92.<sup>3</sup>
+            Long Compute Fund I takes the other side: its investors own GPUs, lease them without requiring an
+            offtaker, share in the upside a fixed-rate contract gives away, and take the depreciation.
+          </p>
+        </div>
+
+        <div>
+          <h2><span class="n">1</span>Who is long compute, and who is short it</h2>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 12%">Party</th>
+                <th style="width: 19%">Value, Nov 2026<sup>6</sup></th>
+                <th style="width: 31%">Position in compute</th>
+                <th style="width: 18%">How it is paid</th>
+                <th class="c" style="width: 10%">Carries the hardware</th>
+                <th class="c" style="width: 10%">Keeps the token upside</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="label">NVIDIA</td>
+                <td>$4.3T market cap</td>
+                <td><b class="yes">Long:</b> every buildout; up to $100B committed to OpenAI, $10B into Anthropic’s IPO<sup>5, 8</sup></td>
+                <td>Cash at delivery; 74% gross margin<sup>5</sup></td>
+                <td class="c no">No</td>
+                <td class="c yes">Via stakes</td>
+              </tr>
+              <tr>
+                <td class="label">Hyperscalers</td>
+                <td>$12.0T (MSFT, GOOG, AMZN, META)</td>
+                <td><b class="yes">Long:</b> ~$735B of 2026 capex guided;<sup>9</sup> leases moved off balance sheet (Hyperion: 4-year lease, bonds to 2049)<sup>3</sup></td>
+                <td>Cloud and token revenue</td>
+                <td class="c">Shifted to SPVs</td>
+                <td class="c yes">Yes</td>
+              </tr>
+              <tr>
+                <td class="label">OpenAI</td>
+                <td>$1.25T (Nov 6 round)<sup>7</sup></td>
+                <td><b class="yes">Long:</b> ~$720B of disclosed compute contracts, <b>58% of its valuation</b>, on ~$50B run-rate<sup>7</sup></td>
+                <td>Tokens and subscriptions</td>
+                <td class="c no">No</td>
+                <td class="c yes">Yes</td>
+              </tr>
+              <tr>
+                <td class="label">Anthropic</td>
+                <td>Up to $1.40T at IPO<sup>8</sup></td>
+                <td><b class="yes">Long:</b> $900.9B of compute and infrastructure commitments, <b>64% of its valuation</b><sup>8</sup></td>
+                <td>Tokens; $17B Q3 revenue</td>
+                <td class="c no">No</td>
+                <td class="c yes">Yes</td>
+              </tr>
+              <tr>
+                <td class="label">Neoclouds</td>
+                <td>CoreWeave $27.2B, about half lost in a month<sup>1, 6</sup></td>
+                <td><b class="no">Short:</b> sold the hours forward at fixed rates, yet owns the GPUs; CoreWeave carries $35B of debt<sup>1</sup></td>
+                <td>Fixed $/GPU-hr contracts</td>
+                <td class="c yes">Yes</td>
+                <td class="c no">No</td>
+              </tr>
+              <tr>
+                <td class="label">GPU and SPV lenders</td>
+                <td>CoreWeave 2031s at 81c; Hyperion ~92c; QTS Excalibur &lt;88c<sup>1, 3</sup></td>
+                <td><b class="no">Short:</b> lent against fixed-rate contracts; par at best, collateral that falls with spot</td>
+                <td>Fixed coupon</td>
+                <td class="c yes">Yes</td>
+                <td class="c no">No</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="take">
+          <b>A large share of the long side’s ~$19T is the compute it is net long, not only its growth.</b> The two
+          labs’ commitments alone equal 58–64% of their valuations. The short side owns the hardware and the debt, is
+          paid a fixed rate for it, and has sold the upside while keeping the downside.
+        </p>
+
+        <div>
+          <h2><span class="n">2</span>Three ways to sell one B300 MW today</h2>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 27%">Per MW: {{GPUS}} B300 GPUs, {{CAPEX}} installed<sup>11</sup></th>
+                <th class="r">Contracted offtake</th>
+                <th class="r">Merchant</th>
+                <th class="r">Inference $20</th>
+                <th class="r">Inference $30</th>
+                <th class="r">Inference $40</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="label">Rate, year 1 ($/GPU-hr)</td>
+                <td class="r">{{OFFTAKE_PRICE}}, {{OFFTAKE_YEARS}} yrs</td>
+                <td class="r">{{MERCHANT_PRICE}}</td>
+                <td class="r">$20.00</td>
+                <td class="r">$30.00</td>
+                <td class="r">$40.00</td>
+              </tr>
+              <tr>
+                <td class="label">Utilization (billed)</td>
+                <td class="r">100%</td>
+                <td class="r">{{MERCHANT_UTIL}}</td>
+                <td class="r">{{INFERENCE_UTIL}}</td>
+                <td class="r">{{INFERENCE_UTIL}}</td>
+                <td class="r">{{INFERENCE_UTIL}}</td>
+              </tr>
+              <tr>
+                <td class="label">Market reference</td>
+                <td class="rt muted">Reserved B300 median $5.02–5.75<sup>4</sup></td>
+                <td class="rt muted">Index $7.68; on demand $9.50<sup>4</sup></td>
+                <td class="rt muted" colspan="3">Open models on 8×B300 earn $21/GPU-hr at full load; tuned racks $32–65<sup>10</sup></td>
+              </tr>
+              <tr>
+                <td class="label">Year-1 revenue</td>
+                <td class="r">{{OFF_REV}}</td>
+                <td class="r">{{MER_REV}}</td>
+                <td class="r">{{I20_REV}}</td>
+                <td class="r">{{I30_REV}}</td>
+                <td class="r">{{I40_REV}}</td>
+              </tr>
+              <tr>
+                <td class="label">Year-1 cash margin, after fees and opex</td>
+                <td class="r">{{OFF_MARGIN}}</td>
+                <td class="r">{{MER_MARGIN}}</td>
+                <td class="r">{{I20_MARGIN}}</td>
+                <td class="r">{{I30_MARGIN}}</td>
+                <td class="r">{{I40_MARGIN}}</td>
+              </tr>
+              <tr>
+                <td class="label">Prepaid by the buyer ({{OFFTAKE_PREPAY}})</td>
+                <td class="r">{{OFF_PREPAY}}</td>
+                <td class="r">{{MER_PREPAY}}</td>
+                <td class="r">{{I20_PREPAY}}</td>
+                <td class="r">{{I30_PREPAY}}</td>
+                <td class="r">{{I40_PREPAY}}</td>
+              </tr>
+              <tr class="key">
+                <td>Payback of installed cost (months)</td>
+                <td class="r">{{OFF_PAYBACK}}</td>
+                <td class="r">{{MER_PAYBACK}}</td>
+                <td class="r">{{I20_PAYBACK}}</td>
+                <td class="r">{{I30_PAYBACK}}</td>
+                <td class="r">{{I40_PAYBACK}}</td>
+              </tr>
+              <tr>
+                <td class="label">Months the capital is at risk</td>
+                <td class="r"><span class="bar debt" style="width: {{OFF_BAR}}%"></span></td>
+                <td class="r"><span class="bar" style="width: {{MER_BAR}}%"></span></td>
+                <td class="r"><span class="bar" style="width: {{I20_BAR}}%"></span></td>
+                <td class="r"><span class="bar" style="width: {{I30_BAR}}%"></span></td>
+                <td class="r"><span class="bar" style="width: {{I40_BAR}}%"></span></td>
+              </tr>
+              <tr class="key">
+                <td>{{DEBT}} of GPU debt repaid from cash (months)</td>
+                <td class="r">{{OFF_DEBTFREE}}</td>
+                <td class="r">{{MER_DEBTFREE}}</td>
+                <td class="r">{{I20_DEBTFREE}}</td>
+                <td class="r">{{I30_DEBTFREE}}</td>
+                <td class="r">{{I40_DEBTFREE}}</td>
+              </tr>
+              <tr>
+                <td class="label">Year-1 debt service coverage</td>
+                <td class="r">{{OFF_DSCR}}</td>
+                <td class="r">{{MER_DSCR}}</td>
+                <td class="r">{{I20_DSCR}}</td>
+                <td class="r">{{I30_DSCR}}</td>
+                <td class="r">{{I40_DSCR}}</td>
+              </tr>
+              <tr>
+                <td class="label">Rate that just covers opex and debt</td>
+                <td class="rt">{{OFF_BREAKEVEN}} merchant if the buyer fails</td>
+                <td class="r">{{MER_BREAKEVEN}}</td>
+                <td class="r">{{I20_BREAKEVEN}}</td>
+                <td class="r">{{I30_BREAKEVEN}}</td>
+                <td class="r">{{I40_BREAKEVEN}}</td>
+              </tr>
+              <tr>
+                <td class="label">Price fall the debt can absorb</td>
+                <td class="r">{{OFF_CUSHION}}</td>
+                <td class="r">{{MER_CUSHION}}</td>
+                <td class="r">{{I20_CUSHION}}</td>
+                <td class="r">{{I30_CUSHION}}</td>
+                <td class="r">{{I40_CUSHION}}</td>
+              </tr>
+              <tr>
+                <td class="label">{{LIFE_YEARS}}-year cash on installed cost</td>
+                <td class="r">{{OFF_MULTIPLE}}</td>
+                <td class="r">{{MER_MULTIPLE}}</td>
+                <td class="r">{{I20_MULTIPLE}}</td>
+                <td class="r">{{I30_MULTIPLE}}</td>
+                <td class="r">{{I40_MULTIPLE}}</td>
+              </tr>
+              <tr>
+                <td class="label">Upside above the rate goes to</td>
+                <td class="r no">The buyer</td>
+                <td class="r yes">Cluster capital</td>
+                <td class="r yes">Cluster capital</td>
+                <td class="r yes">Cluster capital</td>
+                <td class="r yes">Cluster capital</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="take">
+          <b>Higher up the stack, the capital comes back faster, and that lowers risk for every party.</b> Contracted
+          offtake needs {{OFF_PAYBACK}} months to return its capital and {{OFF_DEBTFREE}} to clear its debt from cash, and
+          if the buyer fails the owner is selling merchant anyway. Inference at $30 returns the capital in
+          {{I30_PAYBACK}} months and the debt in {{I30_DEBTFREE}}; after that, a price collapse costs upside, not
+          principal. Speed of payback, not the paper, protects the lender, the equity and the buyer alike.
+        </p>
+      </div>
+      <div class="foot">
+        <div class="brands">ZODE EZRA</div>
+        <div class="fine"><span>Confidential. For qualified purchasers only. Not an offer to sell securities.</span><span>1</span></div>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="running"><span>Long Compute Fund I · Investment Memo · Leasing structure</span><span><b class="draft">Draft for discussion purposes</b> · November 12, 2026</span></div>
+      <div class="body">
+        <div>
+          <h2><span class="n">3</span>A contract does not take you out of the compute market</h2>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 22%">Protection (market-standard terms)</th>
+                <th style="width: 23%">What it appears to give</th>
+                <th>What happens if compute prices collapse</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="label">Take-or-pay, 3–5 yrs at $3.85–4.50</td>
+                <td>Fixed revenue whatever the market does</td>
+                <td>The buyer is usually a reseller or lab whose own revenue is spot-priced; it renegotiates or defaults exactly when spot falls</td>
+              </tr>
+              <tr>
+                <td class="label">25–30% prepaid</td>
+                <td>Credit support</td>
+                <td>Credited evenly against invoices: about 10 months of a 3-year term, refundable if terminated for cause</td>
+              </tr>
+              <tr>
+                <td class="label">SLA and acceptance terms</td>
+                <td>Routine service credits</td>
+                <td>Credits, take-or-pay reductions and acceptance tests become the buyer’s route out</td>
+              </tr>
+              <tr>
+                <td class="label">Tenor</td>
+                <td>Revenue matched to the debt</td>
+                <td>GPUs last {{LIFE_YEARS}} years and debt amortizes over {{AMORT}} months, so years 4–5 are merchant anyway; Hyperion pairs a 4-year lease with bonds to 2049<sup>3</sup></td>
+              </tr>
+              <tr>
+                <td class="label">Collateral: the GPUs</td>
+                <td>Recovery if the buyer fails</td>
+                <td>Resale value tracks the same spot price that caused the default</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="take">
+          <b>In the stress that matters, the spot price, the buyer’s credit and the collateral fall together.</b>
+          Contracted owners and lenders stay exposed to the compute market whatever the paper says. What they gave up
+          is the upside.
+        </p>
+
+        <div>
+          <h2><span class="n">4</span>Who gets what from one MW of tokens at {{TOKEN_PRICE}}/GPU-hr</h2>
+          <p style="margin-bottom: 3pt">
+            At {{TOKEN_PRICE}} a GPU-hour and {{INFERENCE_UTIL}} utilization, one MW produces {{TOKEN_HOURS}} GPU-hours
+            of tokens, worth <b>{{TOKEN_VALUE}} a year</b>. Under today’s contracted structure, a {{OFFTAKE_PRICE}}
+            take-or-pay with {{OFFTAKE_PREPAY}} prepaid and GPU debt at {{DEBT_HW_PCT}} of hardware, year 1 splits as
+            follows.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 19%">Party</th>
+                <th style="width: 19%">Capital provided</th>
+                <th class="r">$M a year</th>
+                <th class="r">Per GPU-hr</th>
+                <th class="r">Share</th>
+                <th class="bar-cell"></th>
+                <th style="width: 27%">Risk carried</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="label">Buyer (lab, hyperscaler, reseller)</td>
+                <td>{{PREPAY}} prepay ({{PREPAY_PCT}}), credited back over {{OFFTAKE_YEARS}} yrs</td>
+                <td class="r">{{OFFTAKER_YR}}</td>
+                <td class="r">{{OFFTAKER_HR}}</td>
+                <td class="r">{{OFFTAKER_SHARE}}</td>
+                <td class="bar-cell"><span class="bar" style="width: {{OFFTAKER_BAR}}%"></span></td>
+                <td>The contract rate; can resell or walk</td>
+              </tr>
+              <tr>
+                <td class="label">NVIDIA and server OEMs</td>
+                <td>None</td>
+                <td class="r">{{NVIDIA_YR}}</td>
+                <td class="r">{{NVIDIA_HR}}</td>
+                <td class="r">{{NVIDIA_SHARE}}</td>
+                <td class="bar-cell"><span class="bar" style="width: {{NVIDIA_BAR}}%"></span></td>
+                <td>None: {{HARDWARE}} paid at delivery (shown over {{LIFE_YEARS}} years, net of resale)</td>
+              </tr>
+              <tr>
+                <td class="label">Site and power</td>
+                <td>None</td>
+                <td class="r">{{SITE_YR}}</td>
+                <td class="r">{{SITE_HR}}</td>
+                <td class="r">{{SITE_SHARE}}</td>
+                <td class="bar-cell"><span class="bar" style="width: {{SITE_BAR}}%"></span></td>
+                <td>Lease, with a deposit</td>
+              </tr>
+              <tr>
+                <td class="label">Insurance, support, software</td>
+                <td>None</td>
+                <td class="r">{{OTHER_YR}}</td>
+                <td class="r">{{OTHER_HR}}</td>
+                <td class="r">{{OTHER_SHARE}}</td>
+                <td class="bar-cell"><span class="bar" style="width: {{OTHER_BAR}}%"></span></td>
+                <td>None</td>
+              </tr>
+              <tr class="key">
+                <td>Debt investor</td>
+                <td>{{DEBT}} ({{DEBT_PCT}}), the largest share</td>
+                <td class="r">{{DEBT_YR}}</td>
+                <td class="r">{{DEBT_HR}}</td>
+                <td class="r">{{DEBT_SHARE}}</td>
+                <td class="bar-cell"><span class="bar debt" style="width: {{DEBT_BAR}}%"></span></td>
+                <td>The asset and the buyer’s credit for {{AMORT}} months</td>
+              </tr>
+              <tr>
+                <td class="label">Owner equity (neocloud)</td>
+                <td>{{EQUITY_IN}} ({{EQUITY_PCT}})</td>
+                <td class="r">{{EQUITY_YR}}</td>
+                <td class="r">{{EQUITY_HR}}</td>
+                <td class="r">{{EQUITY_SHARE}}</td>
+                <td class="bar-cell"><span class="bar" style="width: {{EQUITY_BAR}}%"></span></td>
+                <td>First loss; years 4–5 at merchant</td>
+              </tr>
+              <tr class="total">
+                <td>Total</td>
+                <td>{{CAPEX}}</td>
+                <td class="r">{{TOKEN_VALUE}}</td>
+                <td class="r">{{TOKEN_PRICE}}.00</td>
+                <td class="r">100%</td>
+                <td></td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="take">
+          <b>The debt investor provides the largest share of the capital and receives {{DEBT_HR}} of every
+          {{TOKEN_PRICE}} GPU-hour, {{DEBT_SHARE}} of the value</b> ({{INTEREST_LIFE}} of interest over the loan’s
+          life), for carrying the asset and the buyer’s credit. The buyer keeps {{OFFTAKER_SHARE}} on capital it gets
+          back as invoice credits. That gap is what the market is repricing, and what the fund captures.
+        </p>
+
+        <div>
+          <h2><span class="n">5</span>What the fund does</h2>
+          <p>
+            The Long Compute Fund is the umbrella for separate accounts. Each investor’s Deployment LLC buys GPUs at a
+            ZODE site and leases them to ZODE, which runs the site, without requiring an offtaker. Base rent returns the
+            GPU cost at {{COUPON}} over {{TERM}} months; participation rent adds {{KICKER}} of the cluster’s cash after
+            it, so more of the buyer’s spread goes to the investor, who keeps the resale and depreciation. Target:
+            {{MER_L_NET_X}} ({{MER_L_NET_IRR}} IRR) net on merchant, before tax.
+          </p>
+        </div>
+
+        <div>
+          <h2><span class="n">6</span>Risks</h2>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 17%">Risk</th>
+                <th style="width: 41%">What we see</th>
+                <th>How it is handled</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="label">GPU-hour prices</td>
+                <td>H100 fell from $7+ (2024) to ~$2 before recovering to ~$3; B300 $6.65 to $7.68 in a month<sup>4</sup></td>
+                <td>Payback in {{I40_PAYBACK}}–{{MER_PAYBACK}} months; debt covered down to {{MER_BREAKEVEN}}/GPU-hr</td>
+              </tr>
+              <tr>
+                <td class="label">Token prices</td>
+                <td>Per-token prices at constant capability fall ~10x a year<sup>12</sup></td>
+                <td>Inference down {{DECLINE}} a year with a {{FLOOR}} floor; hours resold merchant</td>
+              </tr>
+              <tr>
+                <td class="label">Utilization</td>
+                <td>Merchant hours can sit idle between short contracts</td>
+                <td>{{MERCHANT_UTIL}} merchant and {{INFERENCE_UTIL}} inference; idle inference hours sell merchant</td>
+              </tr>
+              <tr>
+                <td class="label">Delivery and power</td>
+                <td>B300 nodes 12–18 weeks; InfiniBand 24–30; powered colocation scarce</td>
+                <td>ZODE’s already-powered buildings; network ordered at signing</td>
+              </tr>
+              <tr>
+                <td class="label">Obsolescence</td>
+                <td>A new NVIDIA generation roughly every two years; Vera Rubin now shipping<sup>5</sup></td>
+                <td>{{LIFE_YEARS}}-year life, {{RESALE}} resale; sites re-host the next generation</td>
+              </tr>
+              <tr>
+                <td class="label">Tax treatment</td>
+                <td>A lease recast as a financing; limits on using losses</td>
+                <td>LLC keeps the residual; see sections 10–11</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="notes">
+          <h3>Notes</h3>
+          <ol>
+            <li>FINRA TRACE via Kilambi, Nov 10, 2026: CoreWeave 9.75% notes due 2031 at 81.0, 15.41% yield, +1,064bp. CNBC, Nov 6 and 9, 2026: CDS ~1,155bp; $35B of debt; CoreWeave and Nebius down about half in a month.</li>
+            <li>Meta pricing term sheet, Nov 3, 2026: 5.85% notes due 2031 at +110bp (FourWeekMBA, Nov 7).</li>
+            <li>Private Credit Prep, Oct 6, 2026 (Hyperion: $27.3B, 6.581% to 2049, 4-year initial lease); FT via Dealroom (Hyperion under 92c, QTS Excalibur under 88c, Oracle Michigan 87c).</li>
+            <li>Silicon Data B300 Rental Price Index, $7.68 on Nov 10, 2026 ($6.65 on Oct 12). Ancapex, Nov 9: getdeploying medians $9.50 on demand, $5.75 reserved; AIMultiple reserved $5.02.</li>
+            <li>NVIDIA Q2 FY2027 results and Q3 outlook: 74.0% gross margin, ~70% FY2028 revenue growth; up to $100B committed to OpenAI.</li>
+            <li>Market caps on Nov 10, 2026 (Motley Fool): NVIDIA $4.3T, Microsoft $4.0T, Alphabet $3.5T, Amazon $2.9T, Meta $1.6T. CoreWeave $27.2B (TrainEarn.ai).</li>
+            <li>Bloomberg, Nov 6, 2026 ($1.25T). Disclosed contracts with Oracle, Microsoft, AWS, CoreWeave and Cerebras (Zan Digital, Oct 25, 2026). Run-rate per FT, Oct 8.</li>
+            <li>Anthropic S-1 via TechCrunch, Nov 10, 2026: $1.404T at the top of the range; $900.9B of commitments; $26B placement incl. $10B from NVIDIA.</li>
+            <li>Guidance as of Oct 22, 2026: Amazon ~$220B, Alphabet $195–205B, Microsoft ~$175B, Meta $135–145B.</li>
+            <li>Recurrence, Oct 26, 2026: 8×B300 at OpenRouter realized prices, $21.4/GPU-hr at full load; GB300 NVL72 $32–65.</li>
+            <li>ZODE cluster model, Nov 2026. Per MW of critical IT: {{GPUS}} GPUs at {{HW_PER_GPU}} all-in ({{NODE}} per 8-GPU node + {{NETWORK_PCT}} network and storage), {{SETUP}} setup, {{NRC}} site NRC and legal. Colocation {{RENT}}/kW-month; power {{POWER}}/kWh at {{LOAD}} load and {{PUE}} PUE; insurance and support {{INSURANCE}} of hardware; software {{SOFTWARE}}; contingency {{CONTINGENCY}}; fees {{MERCHANT_FEE}} and SLA credits {{SLA}}; inference team {{INFERENCE_TEAM}} a year. Merchant and inference rates fall {{DECLINE}} a year; offtake turns merchant after year {{OFFTAKE_YEARS}}. Debt {{BANK_PCT}} at {{BANK_RATE}} + {{MEZZ_PCT}} at {{MEZZ_RATE}} of hardware over {{AMORT}} months. Costs flat; before taxes and fund fees.</li>
+            <li>a16z, “LLMflation” (constant-capability token prices).</li>
+          </ol>
+        </div>
+      </div>
+      <div class="foot">
+        <div class="brands">ZODE EZRA</div>
+        <div class="fine"><span>Projections are illustrative, not guarantees. Bracketed items are to be confirmed.</span><span>2</span></div>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="running"><span>Long Compute Fund I · Investment Memo · Leasing structure</span><span><b class="draft">Draft for discussion purposes</b> · November 12, 2026</span></div>
+      <div class="body">
+        <div>
+          <h2><span class="n">7</span>The structure: one Deployment LLC per investor, per deployment</h2>
+          <svg class="diagram" viewBox="0 0 740 166" role="img" aria-label="The investor and LCF Carry LLC own the Deployment LLC; LCF Management LLC manages it; it leases its GPUs to ZODE, which pays rent">
+            <defs>
+              <marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M0,0 L8,4 L0,8 z" fill="#77736b" />
+              </marker>
+            </defs>
+            <path class="edge" d="M250,28 V60" />
+            <path class="edge" d="M490,28 V60" />
+            <path class="edge" d="M230,103 V134" />
+            <path class="edge" d="M110,136 V80 H198" />
+            <path class="edge" d="M510,103 V134" />
+            <path class="edge" d="M630,136 V80 H548" />
+            <g class="node"><rect x="170" y="2" width="160" height="26" rx="4" /><text x="250" y="15">Investor</text></g>
+            <g class="node"><rect x="410" y="2" width="160" height="26" rx="4" /><text x="490" y="15">LCF Carry LLC</text></g>
+            <g class="node key">
+              <rect class="stack" x="206" y="67" width="340" height="36" rx="4" />
+              <rect x="200" y="62" width="340" height="36" rx="4" />
+              <text x="370" y="74">Investor Deployment LLC</text>
+              <text class="sub" x="370" y="88">Owns the GPUs · one per investor, per deployment</text>
+            </g>
+            <g class="node"><rect x="40" y="136" width="220" height="26" rx="4" /><text x="150" y="149">LCF Management LLC</text></g>
+            <g class="node"><rect x="480" y="136" width="220" height="26" rx="4" /><text x="590" y="149">ZODE or another operator</text></g>
+            <g class="pill"><rect x="155" y="37" width="190" height="15" rx="7.5" /><text x="250" y="44.5">Provides 100% of capital · Class A</text></g>
+            <g class="pill"><rect x="408" y="37" width="164" height="15" rx="7.5" /><text x="490" y="44.5">Class B profits-only interest</text></g>
+            <g class="pill"><rect x="54" y="99" width="112" height="15" rx="7.5" /><text x="110" y="106.5">Manages the account</text></g>
+            <g class="pill"><rect x="130" y="112" width="200" height="15" rx="7.5" /><text x="230" y="119.5">Pays acquisition and management fees</text></g>
+            <g class="pill"><rect x="559" y="99" width="142" height="15" rx="7.5" /><text x="630" y="106.5">Base + participation rent</text></g>
+            <g class="pill"><rect x="464" y="112" width="92" height="15" rx="7.5" /><text x="510" y="119.5">Leases its GPUs</text></g>
+          </svg>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 17%">Party</th>
+                <th style="width: 47%">Ownership and role</th>
+                <th>What it receives</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="label">Investor</td>
+                <td>Provides all of the account’s equity and holds its Class A capital interest</td>
+                <td>Capital back, the {{PREF}} preferred return, {{INVESTOR_SHARE}} of remaining profit, and the depreciation</td>
+              </tr>
+              <tr>
+                <td class="label">Deployment LLC</td>
+                <td>Owns identified GPUs at one site, signs the equipment lease, keeps its own bank account and books</td>
+                <td>Base and participation rent, and the GPUs’ resale</td>
+              </tr>
+              <tr>
+                <td class="label">LCF Management LLC</td>
+                <td>Selects the equipment, negotiates the lease, manages deployment, financing, collections, reporting and resale</td>
+                <td>{{ACQ_FEE}} acquisition fee; {{MGMT_FEE}} a year on unreturned capital</td>
+              </tr>
+              <tr>
+                <td class="label">LCF Carry LLC</td>
+                <td>Holds a Class B profits-only interest in each account</td>
+                <td>{{CARRY}} of profit once the investor has its capital and preferred return</td>
+              </tr>
+              <tr>
+                <td class="label">ZODE or another operator</td>
+                <td>Leases and runs the GPUs in its sites; no offtaker required</td>
+                <td>Compute revenue, from which it pays rent and operating costs</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="take">
+          <b>One investor, one equipment vehicle, shared LCF management, account-level carry.</b> The same LCF
+          Management LLC and LCF Carry LLC serve every account; each investor’s GPUs, debts and tax items stay in its own
+          LLC and its own jurisdiction. Each LLC is taxed as a partnership and issues K-1s.<sup>14</sup> A large
+          deployment can be split across several investors’ LLCs, each owning identified nodes.
+        </p>
+
+        <div>
+          <table>
+            <caption>Example Deployment LLCs: the first deployment at each of ZODE’s three sites<sup>13</sup></caption>
+            <thead>
+              <tr>
+                <th style="width: 24%">Deployment LLC</th>
+                <th>Where</th>
+                <th class="r">MW</th>
+                <th class="r">B300 GPUs</th>
+                <th class="r">GPU cost</th>
+                <th class="r">Acquisition fee</th>
+                <th class="r">Year-1 mgmt fee</th>
+                <th class="r">In service</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="label">Toronto (CORE, Mississauga)</td>
+                <td>Ontario, Canada</td>
+                <td class="r">{{TOR_MW}}</td>
+                <td class="r">{{TOR_GPUS}}</td>
+                <td class="r">{{TOR_COST}}</td>
+                <td class="r">{{TOR_ACQ}}</td>
+                <td class="r">{{TOR_MGMT}}</td>
+                <td class="r">[Apr 2027]</td>
+              </tr>
+              <tr>
+                <td class="label">Calgary (Calgary and Olds)</td>
+                <td>Alberta, Canada</td>
+                <td class="r">{{CAL_MW}}</td>
+                <td class="r">{{CAL_GPUS}}</td>
+                <td class="r">{{CAL_COST}}</td>
+                <td class="r">{{CAL_ACQ}}</td>
+                <td class="r">{{CAL_MGMT}}</td>
+                <td class="r">[From Jul 2027]</td>
+              </tr>
+              <tr>
+                <td class="label">South Dakota (Big Watt, Pierre)</td>
+                <td>South Dakota, US</td>
+                <td class="r">{{SD_MW}}</td>
+                <td class="r">{{SD_GPUS}}</td>
+                <td class="r">{{SD_COST}}</td>
+                <td class="r">{{SD_ACQ}}</td>
+                <td class="r">{{SD_MGMT}}</td>
+                <td class="r">[From Jun 2027]</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div>
+          <h2><span class="n">8</span>The lease, and what one MW returns the investor</h2>
+          <div class="cols">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 24%">Term</th>
+                  <th>Per Deployment LLC (proposed)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="label">Lessor</td>
+                  <td>The investor’s Deployment LLC, with title to identified B300 nodes, network and storage: {{HARDWARE}} per MW, plus the {{ACQ_FEE}} acquisition fee</td>
+                </tr>
+                <tr>
+                  <td class="label">Base rent</td>
+                  <td>[{{LOAN_SERVICE}}] a year per MW for [{{TERM}}] months, returning the GPU cost at [{{COUPON}}]; paid after site costs, ahead of ZODE</td>
+                </tr>
+                <tr>
+                  <td class="label">Participation</td>
+                  <td>[{{KICKER}}] of the cluster’s cash after operating costs and base rent, for the GPUs’ {{LIFE_YEARS}}-year life</td>
+                </tr>
+                <tr>
+                  <td class="label">Net lease</td>
+                  <td>ZODE pays site, power, insurance, maintenance and operations</td>
+                </tr>
+                <tr>
+                  <td class="label">Residual</td>
+                  <td>The LLC keeps the GPUs and their resale; no bargain purchase option; [ZODE first offer at fair value]</td>
+                </tr>
+                <tr>
+                  <td class="label">Security</td>
+                  <td>[ZODE Inc.] guarantee of rent; pledged cluster accounts; cross-default across leases; right to repossess and re-lease</td>
+                </tr>
+              </tbody>
+            </table>
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 40%">Per MW, {{L_EQUITY}} invested</th>
+                  <th class="r">Merchant</th>
+                  <th class="r">Inf. $20</th>
+                  <th class="r">Inf. $30</th>
+                  <th class="r">Inf. $40</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="label">Year-1 base rent coverage</td>
+                  <td class="r">{{MER_FUND_COVER}}</td>
+                  <td class="r">{{I20_FUND_COVER}}</td>
+                  <td class="r">{{I30_FUND_COVER}}</td>
+                  <td class="r">{{I40_FUND_COVER}}</td>
+                </tr>
+                <tr>
+                  <td class="label">Participation rent</td>
+                  <td class="r">{{MER_L_PART}}</td>
+                  <td class="r">{{I20_L_PART}}</td>
+                  <td class="r">{{I30_L_PART}}</td>
+                  <td class="r">{{I40_L_PART}}</td>
+                </tr>
+                <tr>
+                  <td class="label">Gross multiple, incl. resale</td>
+                  <td class="r">{{MER_L_GROSS_X}}</td>
+                  <td class="r">{{I20_L_GROSS_X}}</td>
+                  <td class="r">{{I30_L_GROSS_X}}</td>
+                  <td class="r">{{I40_L_GROSS_X}}</td>
+                </tr>
+                <tr>
+                  <td class="label">LCF fees</td>
+                  <td class="r">{{MER_L_FEES}}</td>
+                  <td class="r">{{I20_L_FEES}}</td>
+                  <td class="r">{{I30_L_FEES}}</td>
+                  <td class="r">{{I40_L_FEES}}</td>
+                </tr>
+                <tr>
+                  <td class="label">LCF carry</td>
+                  <td class="r">{{MER_L_CARRY}}</td>
+                  <td class="r">{{I20_L_CARRY}}</td>
+                  <td class="r">{{I30_L_CARRY}}</td>
+                  <td class="r">{{I40_L_CARRY}}</td>
+                </tr>
+                <tr>
+                  <td class="label">Months to capital back</td>
+                  <td class="r">{{MER_L_BACK}}</td>
+                  <td class="r">{{I20_L_BACK}}</td>
+                  <td class="r">{{I30_L_BACK}}</td>
+                  <td class="r">{{I40_L_BACK}}</td>
+                </tr>
+                <tr>
+                  <td class="label">Investor IRR, net</td>
+                  <td class="r">{{MER_L_NET_IRR}}</td>
+                  <td class="r">{{I20_L_NET_IRR}}</td>
+                  <td class="r">{{I30_L_NET_IRR}}</td>
+                  <td class="r">{{I40_L_NET_IRR}}</td>
+                </tr>
+                <tr class="key">
+                  <td>Investor multiple, net</td>
+                  <td class="r">{{MER_L_NET_X}}</td>
+                  <td class="r">{{I20_L_NET_X}}</td>
+                  <td class="r">{{I30_L_NET_X}}</td>
+                  <td class="r">{{I40_L_NET_X}}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <p class="take">
+          <b>The lease prices the risk a lender is told to avoid, and the owner keeps the asset.</b> Merchant cash
+          covers base rent {{MER_FUND_COVER}} in year 1; participation rent and the {{L_RESALE}} resale lift the investor
+          to {{MER_L_NET_X}} net of LCF’s fees and carry on merchant and {{I40_L_NET_X}} on inference, before the
+          depreciation (section 10).
+        </p>
+
+        <div>
+          <h2><span class="n">9</span>Where the cash goes</h2>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 20%">From the LLC’s rent</th>
+                <th style="width: 20%">Paid to</th>
+                <th>Basis</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="label">First: costs</td>
+                <td>LCF Management LLC; lenders</td>
+                <td>LLC expenses, the {{MGMT_FEE}} management fee, debt service if any, and agreed reserves</td>
+              </tr>
+              <tr>
+                <td class="label">1. Preferred return</td>
+                <td>Investor</td>
+                <td>{{PREF}} a year, cumulative and noncompounding, on unreturned contributed capital: a distribution priority, not a guarantee</td>
+              </tr>
+              <tr>
+                <td class="label">2. Capital</td>
+                <td>Investor</td>
+                <td>Until the investor’s contributed cash is returned in full</td>
+              </tr>
+              <tr class="key">
+                <td>3. Profit</td>
+                <td>{{INVESTOR_SHARE}} investor, {{CARRY}} LCF Carry</td>
+                <td>No sponsor catch-up; carry on cumulative realized account results</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="take">
+          <b>Carry is paid on cash, not on marks or tax savings.</b> Unreturned capital is the actual cash outstanding:
+          bonus depreciation and the investor’s own tax savings do not reduce it, and estimated GPU values never trigger
+          carry. The {{ACQ_FEE}} acquisition fee is paid at purchase and added to the GPUs’ tax basis.
+        </p>
+      </div>
+      <div class="foot">
+        <div class="brands">ZODE EZRA</div>
+        <div class="fine"><span>Projections are illustrative, not guarantees. Bracketed items are to be confirmed.</span><span>3</span></div>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="running"><span>Long Compute Fund I · Investment Memo · Leasing structure</span><span><b class="draft">Draft for discussion purposes</b> · November 12, 2026</span></div>
+      <div class="body">
+        <div>
+          <h2><span class="n">10</span>Where the depreciation goes: US and non-US deployments</h2>
+          <p style="margin-bottom: 3pt">
+            Each LLC claims the depreciation on its GPUs, and the partnership agreement allocates it, with the economic
+            losses, to the investor’s Class A interest; LCF’s contingent carry does not take {{CARRY}} of the early
+            deductions.<sup>15</sup> Where the GPUs run decides the schedule. In the US, they take 100% bonus
+            depreciation in the year placed in service.<sup>16</sup> GPUs used predominantly outside the US must use the
+            alternative depreciation system (ADS): five-year straight line, half-year convention, no bonus.<sup>17</sup>
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 34%">Example Deployment LLC</th>
+                <th class="r">Toronto, ON</th>
+                <th class="r">Calgary, AB</th>
+                <th class="r">South Dakota, US</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="label">GPUs; depreciable basis incl. the acquisition fee</td>
+                <td class="r">{{TOR_GPUS}}; {{TOR_BASIS}}</td>
+                <td class="r">{{CAL_GPUS}}; {{CAL_BASIS}}</td>
+                <td class="r">{{SD_GPUS}}; {{SD_BASIS}}</td>
+              </tr>
+              <tr>
+                <td class="label">Method</td>
+                <td class="r">ADS, 5-yr straight line</td>
+                <td class="r">ADS, 5-yr straight line</td>
+                <td class="r">100% bonus</td>
+              </tr>
+              <tr class="key">
+                <td>Year-1 deduction</td>
+                <td class="r">{{TOR_DEP1}}</td>
+                <td class="r">{{CAL_DEP1}}</td>
+                <td class="r">{{SD_DEP1}}</td>
+              </tr>
+              <tr>
+                <td class="label">Year-1 tax value at [{{TAX_RATE}}]</td>
+                <td class="r">{{TOR_TAX1}}</td>
+                <td class="r">{{CAL_TAX1}}</td>
+                <td class="r">{{SD_TAX1}}</td>
+              </tr>
+              <tr>
+                <td class="label">Deductions in years 2–{{LIFE_YEARS}}</td>
+                <td class="r">{{TOR_DEPLATER}}</td>
+                <td class="r">{{CAL_DEPLATER}}</td>
+                <td class="r">{{SD_DEPLATER}}</td>
+              </tr>
+              <tr>
+                <td class="label">Basis left at resale, end of year {{LIFE_YEARS}}</td>
+                <td class="r">{{TOR_LEFT}}</td>
+                <td class="r">{{CAL_LEFT}}</td>
+                <td class="r">{{SD_LEFT}}</td>
+              </tr>
+              <tr>
+                <td class="label">Ordinary gain (loss) on {{RESALE}} resale</td>
+                <td class="r">{{TOR_GAIN}}</td>
+                <td class="r">{{CAL_GAIN}}</td>
+                <td class="r">{{SD_GAIN}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="cols" style="align-items: start">
+          <div>
+            <p>
+              <b>US deployments.</b> A taxpayer able to use the loss deducts the whole GPU cost in year 1: {{US_TAX1}}
+              of tax per MW at [{{TAX_RATE}}], against {{NONUS_TAX1}} under ADS. It is a deferral. On resale the
+              deductions are recaptured as ordinary income. The lessee must be a US taxpayer, or the GPUs become
+              tax-exempt use property and fall to ADS.<sup>17</sup>
+            </p>
+            <p>
+              <b>Non-US deployments.</b> Toronto and Calgary GPUs depreciate over six tax years for a US investor, and
+              the basis left at resale is an ordinary loss. [Canadian withholding on rent paid to the LLC, treaty relief
+              and foreign tax credits are to be confirmed.] A Canadian investor’s own LLC would instead claim Canadian
+              capital cost allowance [Class 50]. Non-US investors in a US deployment would usually hold through a
+              blocker corporation, which uses the depreciation itself.
+            </p>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 34%">Per MW, investor IRR</th>
+                <th class="r">Merchant</th>
+                <th class="r">Inf. $20</th>
+                <th class="r">Inf. $30</th>
+                <th class="r">Inf. $40</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="label">Before tax</td>
+                <td class="r">{{MER_L_NET_IRR}}</td>
+                <td class="r">{{I20_L_NET_IRR}}</td>
+                <td class="r">{{I30_L_NET_IRR}}</td>
+                <td class="r">{{I40_L_NET_IRR}}</td>
+              </tr>
+              <tr class="key">
+                <td>After tax, US (bonus)</td>
+                <td class="r">{{MER_L_US_IRR}}</td>
+                <td class="r">{{I20_L_US_IRR}}</td>
+                <td class="r">{{I30_L_US_IRR}}</td>
+                <td class="r">{{I40_L_US_IRR}}</td>
+              </tr>
+              <tr>
+                <td class="label">After tax, non-US (ADS)</td>
+                <td class="r">{{MER_L_NONUS_IRR}}</td>
+                <td class="r">{{I20_L_NONUS_IRR}}</td>
+                <td class="r">{{I30_L_NONUS_IRR}}</td>
+                <td class="r">{{I40_L_NONUS_IRR}}</td>
+              </tr>
+              <tr>
+                <td class="label" colspan="5" style="font-weight: normal; white-space: normal">At [{{TAX_RATE}}] federal, for an investor who can use the losses as they arise; before state and foreign tax.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div>
+          <h2><span class="n">11</span>Who can use the depreciation</h2>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 20%">Limit</th>
+                <th>What it means for the investor</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="label">Basis and at-risk</td>
+                <td>Losses are capped at the investor’s basis and amount at risk: its cash, plus recourse debt it is liable for; nonrecourse equipment debt does not count<sup>18</sup></td>
+              </tr>
+              <tr>
+                <td class="label">Passive activity</td>
+                <td>Equipment leasing is a rental activity, so for individuals and closely held corporations the losses offset passive income only, carry forward, and free up on sale; widely held C corporations are not limited<sup>18</sup></td>
+              </tr>
+              <tr>
+                <td class="label">Excess business loss</td>
+                <td>Noncorporate investors’ net business losses above the annual threshold carry forward as net operating losses<sup>18</sup></td>
+              </tr>
+              <tr>
+                <td class="label">Carry grant</td>
+                <td>A profits interest in predictable net-lease income falls outside the usual tax-free grant safe harbor; this shapes how LCF’s carry is set up, not whether the structure works<sup>19</sup></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div>
+          <h2><span class="n">12</span>How the accounts build LCF’s track record</h2>
+          <p>
+            Every account follows one investment process and one reporting standard, recording capital deployed,
+            equipment bought and rent collected; all fees, expenses, financing and distributions; and investor returns
+            after fees and carry, with realized proceeds kept apart from the estimated value of GPUs still held. Each
+            management agreement lets LCF keep and use accurate, anonymized performance data. The result is an LCF
+            managed-account track record, with investor-specific tax benefits shown separately, that a later pooled
+            fund can present with clear attribution and disclosure of differences in strategy, fees and leverage,
+            under the SEC marketing rule where it applies.<sup>20</sup>
+          </p>
+        </div>
+
+        <div>
+          <h2><span class="n">13</span>Proposed account terms</h2>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 18%">Term</th>
+                <th>Proposed</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="label">Vehicle</td>
+                <td>A Delaware LLC per investor per deployment, taxed as a partnership; Class A to the investor, Class B to LCF Carry LLC</td>
+              </tr>
+              <tr>
+                <td class="label">Investors and size</td>
+                <td>Qualified purchasers; minimum [one MW, {{L_EQUITY}}]; larger accounts take blocks of a deployment, up to all of it</td>
+              </tr>
+              <tr>
+                <td class="label">Fees and carry</td>
+                <td>[{{ACQ_FEE}}] of equipment cost at purchase; [{{MGMT_FEE}}] a year on unreturned capital; [{{CARRY}}] above an [{{PREF}}] preferred return and capital, no catch-up</td>
+              </tr>
+              <tr>
+                <td class="label">Distributions</td>
+                <td>Quarterly from rent, by the waterfall in section 9; capital is called as the account’s GPUs are ordered</td>
+              </tr>
+              <tr>
+                <td class="label">Leverage</td>
+                <td>None in the base case; optional equipment debt at the LLC, sized to rent coverage, ranking ahead of distributions</td>
+              </tr>
+              <tr>
+                <td class="label">Reporting</td>
+                <td>Quarterly account statements and K-1s; annual audit; GPU values from an independent appraiser, never used for carry</td>
+              </tr>
+              <tr>
+                <td class="label">Alignment</td>
+                <td>ZODE funds the site, guarantees the rent and keeps cluster cash only after base rent; ZODE and partners [co-invest 2%]</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="notes">
+          <ol start="13">
+            <li>ZODE master model, Nov 2026, per site: Toronto 1 MW at {{TOR_GPMW}} GPUs per MW; Calgary 30 MW in eight blocks at Calgary and Olds, {{CAL_GPMW}} GPUs per MW; South Dakota the first 30 MW tranche of the Big Watt master lease at {{SD_GPMW}} per MW; all at {{HW_PER_GPU}} per GPU. Per-MW returns use Toronto’s inputs (note 11), merchant at {{MERCHANT_PRICE}} and inference down {{DECLINE}} a year; IRRs monthly, annualized. Tax years are years in service; GPUs sold at the end of year {{LIFE_YEARS}}.</li>
+            <li>Treas. Reg. §301.7701-3; IRC §§701–704.</li>
+            <li>IRC §704(b) and Treas. Reg. §1.704-1(b) (substantial economic effect).</li>
+            <li>IRC §168(k), 100% for property acquired after January 19, 2025 (Pub. L. 119-21, 2025); the LLC may elect five-year MACRS instead.</li>
+            <li>IRC §168(g)(1)(A) and (h) (property used predominantly outside the US; tax-exempt use property); §168(k)(2)(D); Rev. Proc. 87-56, asset class 00.12 (ADS five years).</li>
+            <li>IRC §§465, 469, 461(l) and 1245.</li>
+            <li>Rev. Proc. 93-27 and 2001-43.</li>
+            <li>SEC Rule 206(4)-1 (Investment Adviser Marketing).</li>
+          </ol>
+        </div>
+      </div>
+      <div class="foot">
+        <div class="brands">ZODE EZRA</div>
+        <div class="fine"><span>Not tax advice; each investor should consult its own tax adviser. Bracketed items are to be confirmed.</span><span>4</span></div>
+      </div>
+    </section>
+  </body>
+</html>

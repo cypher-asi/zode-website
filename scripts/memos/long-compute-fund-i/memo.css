@@ -283,6 +283,68 @@ td.label {
   gap: 10pt;
 }
 
+.diagram {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0 0 2pt;
+  font-family: "Liberation Sans", Arial, sans-serif;
+}
+
+.diagram .node rect {
+  fill: var(--champagne);
+  stroke: var(--gold);
+  stroke-width: 0.8;
+}
+
+.diagram .node text {
+  font-size: 11px;
+  font-weight: bold;
+  fill: var(--ink);
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.diagram .node.key rect {
+  fill: var(--ink);
+  stroke: var(--ink);
+}
+
+.diagram .node.key rect.stack {
+  fill: var(--champagne);
+}
+
+.diagram .node.key text {
+  fill: var(--gold);
+}
+
+.diagram .node.key text.sub {
+  font-size: 8.5px;
+  font-weight: normal;
+  fill: var(--champagne);
+}
+
+.diagram .edge {
+  fill: none;
+  stroke: var(--stone);
+  stroke-width: 0.9;
+  marker-end: url(#arrow);
+}
+
+.diagram .pill rect {
+  fill: #fff;
+  stroke: var(--hairline);
+  stroke-width: 0.8;
+}
+
+.diagram .pill text {
+  font-size: 9px;
+  font-weight: bold;
+  fill: var(--gold-deep);
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
 .notes {
   margin-top: auto;
   font-size: 6.15pt;
