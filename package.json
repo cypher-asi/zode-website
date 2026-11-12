@@ -19,6 +19,7 @@
     "memo:long-compute": "node scripts/make-long-compute-memo.mjs",
     "prebuild": "npm run fonts && npm run db:migrate",
     "build": "next build",
+    "postbuild": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/make-deck-pdf.mjs --deploy",
     "start": "next start",
     "lint": "eslint && npm run lint:colors && npm run lint:brand",
     "lint:colors": "node scripts/check-colors.mjs",
@@ -58,6 +59,7 @@
     "world-atlas": "^2.0.2"
   },
   "devDependencies": {
+    "@sparticuz/chromium": "^153.0.0",
     "@types/d3-geo": "^3.1.1",
     "@types/geojson": "^7946.0.16",
     "@types/node": "^22",

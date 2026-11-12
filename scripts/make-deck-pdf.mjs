@@ -1,21 +1,29 @@
 /**
  * Prints the investor deck (/deck) to PDF twice: the public slides ending on
- * the gate, and with a data room's share token the whole deck. Run with the
- * site up (`npm run dev` or `npm start`) to write both to ~/Downloads:
+ * the gate, and the whole deck. Every production build runs it after
+ * `next build` (`postbuild`) with `--deploy`: it starts the site it just
+ * built, prints it, and uploads both to the private Blob store
+ * (BLOB_READ_WRITE_TOKEN, already set on the project), where /deck/download
+ * hands them out (src/features/deck/pdf.ts). So the PDFs always match the
+ * deck that's deployed; a failed print fails the build rather than leave
+ * them behind it. Preview builds skip it.
  *
- *   DECK_ROOM_TOKEN=<share token> npm run deck:pdf -- [--out ~/Downloads]
+ * The full deck is behind data room access. The server started here gets a
+ * random `DECK_PRINT_KEY`, and the print sends it back (access.ts), so no
+ * one's session or share link is involved and no deployed server knows a key.
  *
- * With `--upload` they go to the private Blob store instead
- * (BLOB_READ_WRITE_TOKEN), where /deck/download hands them out
- * (src/features/deck/pdf.ts). The Deck PDF workflow does this against
- * zode.org after every production deploy, so the PDFs follow the deck.
+ * Run by hand against the dev server (`npm run dev`) to write them to
+ * ~/Downloads; it prints the full deck too if the server and this share a
+ * DECK_PRINT_KEY (e.g. from .env.local):
  *
- * DECK_URL prints another origin. Drives a local Chrome, Chromium or Brave
- * over the DevTools protocol; set CHROME to its path if it isn't found.
- * Fails if a page count is off or the full print came out gated, so a
- * revoked token can't upload the public deck as the full one.
+ *   npm run deck:pdf -- [--out ~/Downloads]
+ *
+ * DECK_URL prints another origin. Locally it drives Chrome, Chromium or Brave
+ * (CHROME sets its path); on Vercel, the Chromium in @sparticuz/chromium.
+ * Fails if a page count is off or a version printed with the wrong slides.
  */
 import { spawn } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
@@ -23,11 +31,11 @@ import { delimiter, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { put } from "@vercel/blob";
 import { PDFDocument } from "pdf-lib";
-import { DECK_PDFS } from "../src/features/deck/pdf.ts";
+import { DECK_PDFS, DECK_PRINT_HEADER } from "../src/features/deck/pdf.ts";
 
-const DECK_URL = process.env.DECK_URL ?? "http://localhost:3000/deck";
-const ROOM_TOKEN = process.env.DECK_ROOM_TOKEN;
-const PORT = 9335;
+const ROOT = new URL("../", import.meta.url).pathname;
+const CDP_PORT = 9335;
+const SITE_PORT = 3939;
 /** The slides' layout is in units of the window, so print at a 16:9 one like the page. */
 const VIEWPORT = { width: 1600, height: 900 };
 /** Time for what slides fetch as they come near (the states slide's local pauses) once every one is open. */
@@ -36,13 +44,18 @@ const SETTLE_MS = 2500;
 const { values: args } = parseArgs({
   options: {
     out: { type: "string", default: "~/Downloads" },
-    upload: { type: "boolean", default: false },
+    deploy: { type: "boolean", default: false },
   },
 });
 const expand = (p) => resolve(p.replace(/^~(?=$|\/)/, homedir()));
 
-if (args.upload && !ROOM_TOKEN) throw new Error("Uploading needs DECK_ROOM_TOKEN, or the full deck would go stale.");
-if (args.upload && !process.env.BLOB_READ_WRITE_TOKEN) throw new Error("Uploading needs BLOB_READ_WRITE_TOKEN.");
+if (args.deploy && process.env.VERCEL_ENV !== "production") {
+  console.log("[deck:pdf] Not a production build, so the deck's PDFs stay as they are.");
+  process.exit(0);
+}
+if (args.deploy && !process.env.BLOB_READ_WRITE_TOKEN) throw new Error("[deck:pdf] Uploading needs BLOB_READ_WRITE_TOKEN.");
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const BROWSERS = ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "brave", "brave-browser"];
 const MAC_APPS = [
@@ -51,29 +64,50 @@ const MAC_APPS = [
   "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
 ];
 
-function findBrowser() {
-  if (process.env.CHROME) return process.env.CHROME;
+/** The browser and the flags it runs headless with. */
+async function findBrowser() {
+  if (process.env.VERCEL) {
+    const { default: chromium } = await import("@sparticuz/chromium");
+    return { path: await chromium.executablePath(), flags: chromium.args };
+  }
+  const flags = ["--headless=new", "--disable-gpu"];
+  if (process.env.CHROME) return { path: process.env.CHROME, flags };
   const dirs = (process.env.PATH ?? "").split(delimiter);
   const onPath = BROWSERS.flatMap((name) => dirs.map((dir) => join(dir, name)));
   const found = [...onPath, ...MAC_APPS].find((path) => existsSync(path));
   if (!found) throw new Error("No Chrome, Chromium or Brave found; set CHROME to its path.");
-  return found;
+  return { path: found, flags };
 }
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+/** The site this build made, with a key for the full deck that only it and this script know. */
+async function startSite(key) {
+  const site = spawn(
+    process.execPath,
+    [join(ROOT, "node_modules/next/dist/bin/next"), "start", "-p", String(SITE_PORT), "-H", "127.0.0.1"],
+    { env: { ...process.env, DECK_PRINT_KEY: key }, stdio: ["ignore", "ignore", "inherit"] },
+  );
+  const url = `http://127.0.0.1:${SITE_PORT}/deck`;
+  for (let i = 0; i < 150; i++) {
+    if (site.exitCode !== null) throw new Error(`The built site exited (${site.exitCode}) before it served the deck.`);
+    const ok = await fetch(url).then((res) => res.ok, () => false);
+    if (ok) return { site, url };
+    await sleep(200);
+  }
+  site.kill();
+  throw new Error("The built site didn't serve the deck within 30 seconds.");
+}
 
-const IMAGES_READY = "[...document.images].every((img) => img.complete)";
-/** The same, lazy images included, which a parked slide never asks for on its own. Only once hydrated, so React's markup still matches. */
+/** Every image loaded, lazy ones included, which a parked slide never asks for on its own. Only once hydrated, so React's markup still matches. */
 const ALL_IMAGES_READY = `(() => {
   for (const img of document.images) img.loading = "eager";
-  return ${IMAGES_READY};
+  return [...document.images].every((img) => img.complete);
 })()`;
 
 async function connect() {
   let targets = null;
   for (let i = 0; i < 50 && !targets; i++) {
     await sleep(200);
-    targets = await fetch(`http://127.0.0.1:${PORT}/json/list`)
+    targets = await fetch(`http://127.0.0.1:${CDP_PORT}/json/list`)
       .then((res) => res.json())
       .catch(() => null);
   }
@@ -104,20 +138,21 @@ async function connect() {
 }
 
 /** One version of the deck as PDF bytes, checked against what the page laid out. */
-async function printDeck({ send, evaluate }, version) {
-  const url = new URL(DECK_URL);
-  if (version === "full") url.searchParams.set("room", ROOM_TOKEN);
-
+async function printDeck({ send, evaluate }, url, version, key) {
+  // Asking not to be tracked keeps the print out of the site's analytics.
+  const headers = { DNT: "1", "Sec-GPC": "1" };
+  if (version === "full") headers[DECK_PRINT_HEADER] = key;
+  await send("Network.setExtraHTTPHeaders", { headers });
   await send("Emulation.setEmulatedMedia", { media: "screen" });
-  await send("Page.navigate", { url: url.toString() });
+  await send("Page.navigate", { url });
   let ready = false;
   for (let i = 0; i < 150 && !ready; i++) {
     await sleep(200);
-    ready = await evaluate(
-      `document.readyState === "complete" && !!document.querySelector("[data-slot]") && ${IMAGES_READY}`,
-    ).catch(() => false);
+    ready = await evaluate(`document.readyState === "complete" && !!document.querySelector("[data-slot]")`).catch(
+      () => false,
+    );
   }
-  if (!ready) throw new Error(`${DECK_URL} didn't finish loading; is the site running?`);
+  if (!ready) throw new Error(`${url} didn't finish loading; is the site running?`);
   await evaluate("document.fonts.ready.then(() => true)");
 
   // The deck lays out every slide for print on `beforeprint` (Deck.tsx), opening every parked one, once it has hydrated.
@@ -145,7 +180,7 @@ async function printDeck({ send, evaluate }, version) {
   if (gated !== (version === "public")) {
     throw new Error(
       version === "full"
-        ? "The full deck printed gated; DECK_ROOM_TOKEN isn't a live share link."
+        ? "The full deck printed gated; the server didn't take the print's DECK_PRINT_KEY."
         : "The public deck printed without its gate.",
     );
   }
@@ -164,18 +199,20 @@ async function printDeck({ send, evaluate }, version) {
   return { bytes: await pdf.save(), pages };
 }
 
+const key = args.deploy ? randomBytes(32).toString("base64url") : process.env.DECK_PRINT_KEY;
+const { site, url } = args.deploy
+  ? await startSite(key)
+  : { site: null, url: process.env.DECK_URL ?? "http://localhost:3000/deck" };
+const { path: browserPath, flags } = await findBrowser();
 const profileDir = await mkdtemp(join(tmpdir(), "zode-deck-"));
 const browser = spawn(
-  findBrowser(),
+  browserPath,
   [
-    "--headless=new",
-    "--disable-gpu",
+    ...flags,
     "--hide-scrollbars",
     "--no-first-run",
-    // Ubuntu's AppArmor refuses Chrome's sandbox to CI runners; the page printed is the site's own.
-    ...(process.env.CI ? ["--no-sandbox"] : []),
     `--window-size=${VIEWPORT.width},${VIEWPORT.height}`,
-    `--remote-debugging-port=${PORT}`,
+    `--remote-debugging-port=${CDP_PORT}`,
     `--user-data-dir=${profileDir}`,
     "about:blank",
   ],
@@ -185,21 +222,22 @@ const browser = spawn(
 try {
   const page = await connect();
   await page.send("Page.enable");
+  await page.send("Network.enable");
   await page.send("Emulation.setDeviceMetricsOverride", { ...VIEWPORT, deviceScaleFactor: 1, mobile: false });
 
-  const versions = ROOM_TOKEN ? ["public", "full"] : ["public"];
-  if (!ROOM_TOKEN) console.log("No DECK_ROOM_TOKEN, so printing the public deck only.");
+  const versions = key ? ["public", "full"] : ["public"];
+  if (!key) console.log("No DECK_PRINT_KEY, so printing the public deck only.");
   for (const version of versions) {
-    const { bytes, pages } = await printDeck(page, version);
+    const { bytes, pages } = await printDeck(page, url, version, key);
     const { pathname, filename } = DECK_PDFS[version];
-    if (args.upload) {
+    if (args.deploy) {
       await put(pathname, Buffer.from(bytes), {
         access: "private",
         addRandomSuffix: false,
         allowOverwrite: true,
         contentType: "application/pdf",
       });
-      console.log(`Uploaded the ${version} deck, ${pages} pages, to ${pathname}`);
+      console.log(`[deck:pdf] Uploaded the ${version} deck, ${pages} pages, to ${pathname}`);
     } else {
       const out = join(expand(args.out), filename);
       await writeFile(out, bytes);
@@ -212,4 +250,9 @@ try {
   browser.kill();
   await exited;
   await rm(profileDir, { recursive: true, force: true, maxRetries: 5 });
+  if (site) {
+    const stopped = new Promise((resolve) => site.once("exit", resolve));
+    site.kill();
+    await stopped;
+  }
 }
