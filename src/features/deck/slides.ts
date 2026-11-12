@@ -163,6 +163,8 @@ export interface RampPeriod {
 
 export type Slide =
   | (Base & { kind: "cover"; lede: string; meta: string; image: string })
+  /** The securities legends in full (disclaimer.ts). */
+  | (Base & { kind: "legal" })
   | (Base & {
       kind: "stats";
       stats: readonly (Stat & { art: MacroArtId })[];
@@ -360,6 +362,14 @@ export const PUBLIC_SLIDES: readonly Slide[] = [
     lede: "ZODE manufactures rapidly deployable data centers and sells the compute.",
     meta: "ZODE Inc.",
     image: "/images/future-home/zode-hero.jpg",
+    ground: "ink",
+  },
+  {
+    id: "legal",
+    kind: "legal",
+    section: "Legal",
+    eyebrow: "Legal",
+    title: "Important legal information.",
     ground: "ink",
   },
   {

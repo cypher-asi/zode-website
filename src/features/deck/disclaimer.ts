@@ -8,12 +8,12 @@ import { AS_OF } from "./research";
  * exemption, issuer or jurisdictions needs counsel to revisit this text.
  */
 
-/** Set in fine print on the cover, one line over the toggle that opens `DISCLAIMER`, which says it in full. */
+/** Over `DISCLAIMER` on the legal slide, the deck's second. */
 export const LEGAL_LEGEND = "For accredited investors only. Not an offer to sell securities.";
 
 /** Under the raise's terms, for readers who land on that slide by a shared link. */
 export const RAISE_NOTE =
-  "For accredited investors only, under Rule 506(c) and NI 45-106. Not an offer to sell securities; see the legal information on page 01.";
+  "For accredited investors only, under Rule 506(c) and NI 45-106. Not an offer to sell securities; see the legal information on page 02.";
 
 export const DISCLAIMER: readonly { heading: string; body: string }[] = [
   {

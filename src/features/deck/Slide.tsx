@@ -14,7 +14,6 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { NorthAmericaFlags } from "@/components/ui/NorthAmericaFlags";
-import { OverlayScrollbar } from "@/components/ui/OverlayScrollbar";
 import {
   CabinArt,
   VIEW as CABIN_VIEW,
@@ -146,113 +145,29 @@ function StatBlock({
 }
 
 /**
- * The cover's securities legend in fine print, and the full disclaimer
- * behind it: a button opens it in a panel over the cover's image, which its
- * close, Escape, the button again or turning the slide shuts, back on the
- * button. Printed, it takes the image's place, so the PDF's first page carries it
- * whole. Nothing around the panel may take a transform (`.rise`), or it would
- * position against that instead of the frame.
+ * The deck's second slide: the securities legend, then the disclaimer in
+ * full, in columns that fill the page. On a phone it's one column that
+ * scrolls between the head and foot.
  */
-function CoverDisclaimer({ active }: { active: boolean }): ReactElement {
-  const id = useId();
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLElement>(null);
-  const [open, setOpen] = useState(false);
-  const [shown, setShown] = useState(active);
-  if (shown !== active) {
-    setShown(active);
-    if (!active) setOpen(false);
-  }
-  const close = () => {
-    setOpen(false);
-    requestAnimationFrame(() =>
-      buttonRef.current?.focus({ preventScroll: true }),
-    );
-  };
-  useEffect(() => {
-    if (!open) return;
-    panelRef.current?.focus({ preventScroll: true });
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "Escape" || event.defaultPrevented) return;
-      event.preventDefault();
-      setOpen(false);
-      requestAnimationFrame(() =>
-        buttonRef.current?.focus({ preventScroll: true }),
-      );
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
-
+function Legal(): ReactElement {
   return (
-    <div className={styles.disclaimer}>
-      <p
-        {...rise(3)}
-        className={`${styles.rise} ${styles.fine} ${styles.legalLegend}`}
-      >
+    <div className={styles.legal}>
+      <p {...rise(2)} className={`${styles.rise} ${styles.legalLegend}`}>
         {LEGAL_LEGEND}
       </p>
-      <button
-        ref={buttonRef}
-        type="button"
-        {...rise(3.5)}
-        className={`${styles.rise} ${styles.sourcesToggle} ${styles.disclaimerToggle}`}
-        aria-expanded={open}
-        aria-controls={id}
-        onClick={() => (open ? close() : setOpen(true))}
-      >
-        Important legal information
-      </button>
-      <section
-        ref={panelRef}
-        id={id}
-        className={styles.disclaimerPanel}
-        data-open={open || undefined}
-        aria-labelledby={`${id}-title`}
-        tabIndex={-1}
-        data-deck-scroll=""
-      >
-        <header className={styles.disclaimerHead}>
-          <h3 id={`${id}-title`} className={styles.label}>
-            Important legal information
-          </h3>
-          <button
-            type="button"
-            className={styles.disclaimerClose}
-            onClick={close}
-            aria-label="Close"
-          >
-            <svg viewBox="0 0 12 12" aria-hidden="true">
-              <path d="M1 1l10 10M11 1L1 11" />
-            </svg>
-          </button>
-        </header>
-        <div className={styles.disclaimerFrame}>
-          <div id={`${id}-list`} className={styles.disclaimerList}>
-            {DISCLAIMER.map((section) => (
-              <section
-                key={section.heading}
-                className={styles.disclaimerSection}
-              >
-                <h4 className={styles.disclaimerHeading}>{section.heading}</h4>
-                <p className={styles.disclaimerBody}>{section.body}</p>
-              </section>
-            ))}
-          </div>
-          <OverlayScrollbar targetId={`${id}-list`} showOnHover />
-        </div>
-      </section>
+      <div {...rise(2.6)} className={`${styles.rise} ${styles.legalList}`}>
+        {DISCLAIMER.map((section) => (
+          <section key={section.heading} className={styles.legalSection}>
+            <h3 className={styles.legalHeading}>{section.heading}</h3>
+            <p className={styles.legalBody}>{section.body}</p>
+          </section>
+        ))}
+      </div>
     </div>
   );
 }
 
-function Cover({
-  slide,
-  active,
-}: {
-  slide: Of<"cover">;
-  active: boolean;
-}): ReactElement {
+function Cover({ slide }: { slide: Of<"cover"> }): ReactElement {
   return (
     <div className={styles.cover}>
       <div className={styles.coverText}>
@@ -273,7 +188,6 @@ function Cover({
             {slide.lede}
           </p>
         </div>
-        <CoverDisclaimer active={active} />
       </div>
       <div className={styles.coverImage} data-media data-surface="light">
         <Image
@@ -2567,7 +2481,9 @@ function Body({
 }): ReactNode {
   switch (slide.kind) {
     case "cover":
-      return <Cover slide={slide} active={active} />;
+      return <Cover slide={slide} />;
+    case "legal":
+      return <Legal />;
     case "stats":
       return (
         <Stats
@@ -2812,7 +2728,10 @@ export const SlideView = memo(function SlideView({
       ) : null}
       <div
         className={styles.main}
-        data-deck-scroll={(compact && slide.kind === "sources") || undefined}
+        data-deck-scroll={
+          (compact && (slide.kind === "sources" || slide.kind === "legal")) ||
+          undefined
+        }
       >
         <Body
           slide={slide}
