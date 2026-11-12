@@ -3,7 +3,7 @@
  * the gate, and the whole deck. Every production build runs it after
  * `next build` (`postbuild`) with `--deploy`: it starts the site it just
  * built, prints it, and uploads both to the private Blob store
- * (BLOB_READ_WRITE_TOKEN, already set on the project), where /deck/download
+ * (BLOB_READ_WRITE_TOKEN, already set on the project), where /deck/pdf
  * hands them out (src/features/deck/pdf.ts). So the PDFs always match the
  * deck that's deployed; a failed print fails the build rather than leave
  * them behind it. Preview builds skip it.

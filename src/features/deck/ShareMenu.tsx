@@ -150,7 +150,7 @@ export function ShareMenu({
           ) : null}
           <li role="none" className={styles.menuRule} />
           <li role="none">
-            <a role="menuitem" className={styles.menuItem} href={pdfHref} download onClick={() => onOpenChange(false)}>
+            <a role="menuitem" className={styles.menuItem} href={pdfHref} onClick={() => onOpenChange(false)}>
               Download PDF
               <span className={styles.cursor} aria-hidden="true" />
             </a>

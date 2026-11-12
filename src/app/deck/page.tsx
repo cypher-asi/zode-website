@@ -50,7 +50,7 @@ async function DeckAtSlide({ searchParams }: { searchParams: SearchParams }) {
   const requested = typeof slide === "string" ? Number.parseInt(slide, 10) : 1;
   const initial = Number.isFinite(requested) ? Math.min(Math.max(requested, 1), slides.length) - 1 : 0;
 
-  const pdfHref = room ? `/deck/download?${new URLSearchParams({ room })}` : "/deck/download";
+  const pdfHref = room ? `/deck/pdf?${new URLSearchParams({ room })}` : "/deck/pdf";
 
   return <Deck slides={slides} initialSlide={initial} policy={policy} pdfHref={pdfHref} />;
 }

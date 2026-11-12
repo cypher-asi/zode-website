@@ -536,7 +536,7 @@ export function Deck({
       {/* The page's one H1; each slide's title is an H2 under it. */}
       <h1 className={styles.srOnly}>ZODE investor presentation</h1>
 
-      <a className={styles.download} href={pdfHref} download aria-label="Download the deck as a PDF">
+      <a className={styles.download} href={pdfHref} aria-label="Download the deck as a PDF">
         <svg className={styles.icon} viewBox="0 0 12 12" aria-hidden="true">
           <path d="M6 1.5v6M3.5 5L6 7.5 8.5 5M2 10.5h8" />
         </svg>

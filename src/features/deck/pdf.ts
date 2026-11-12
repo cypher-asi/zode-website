@@ -1,7 +1,7 @@
 /**
  * The deck's PDFs, printed by every production build from the site it just
  * built (scripts/make-deck-pdf.mjs) into the private Blob store, and handed
- * out by /deck/download: the full deck to readers with data room access, the
+ * out by /deck/pdf: the full deck to readers with data room access, the
  * public slides and the gate to everyone else.
  */
 export const DECK_PDFS = {
