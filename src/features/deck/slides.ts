@@ -104,14 +104,25 @@ interface Base {
 
 export const LOGO_DIR = "/images/deck/logos";
 
+/**
+ * One layer of capital on the raise slide. `zode` layers are ZODE Inc.'s
+ * equity, paid from the seed, so not raised again.
+ */
+export interface RaiseLayer {
+  readonly label: string;
+  readonly kind: "equity" | "debt";
+  readonly source?: "zode";
+  /** In whole USD. */
+  readonly amount: number;
+  readonly terms: string;
+}
+
 /** A project's site company or compute company on the raise slide. */
 export interface RaiseEntity {
   /** What it holds, such as its GPUs. */
   readonly detail: string;
-  /** What third parties put in; a figure ZODE funds alone is `source: "zode"`. */
-  readonly value: string;
-  readonly basis: string;
-  readonly source?: "zode";
+  /** All of its capital, equity over debt as a stack's; the box shows their sum. */
+  readonly layers: readonly RaiseLayer[];
 }
 
 /** One row's capital stack on the raise slide. */
@@ -120,19 +131,8 @@ export interface RaiseStack {
   readonly label: string;
   /** What the row raises, in its details. */
   readonly raising: Stat;
-  /**
-   * Top to bottom: equity over debt, the most senior last; the stack's total
-   * is their sum. `zode` layers are ZODE Inc.'s equity, paid from the seed, so
-   * not raised here.
-   */
-  readonly layers: readonly {
-    label: string;
-    kind: "equity" | "debt";
-    source?: "zode";
-    /** In whole USD. */
-    amount: number;
-    terms: string;
-  }[];
+  /** Top to bottom: equity over debt, the most senior last; the stack's total is their sum. */
+  readonly layers: readonly RaiseLayer[];
 }
 
 /**

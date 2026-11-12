@@ -1776,7 +1776,7 @@ function Finance({
   );
 }
 
-/** A project's site or compute company, hung off its column's spine. */
+/** A project's site or compute company, hung off its column's spine: all its capital, then each layer of it. */
 function RaiseNode({
   label,
   entity,
@@ -1785,13 +1785,24 @@ function RaiseNode({
   entity: RaiseEntity;
 }): ReactElement {
   return (
-    <div className={styles.raiseNode} data-source={entity.source}>
+    <div className={styles.raiseNode}>
       <span className={`${styles.label} ${styles.raiseBand}`}>{label}</span>
-      <span className={styles.raiseNodeBody}>
-        <span className={styles.raiseNodeValue}>{entity.value}</span>
-        <span className={styles.fine}>{entity.basis}</span>
+      <div className={styles.raiseNodeBody}>
+        <span className={styles.raiseNodeValue}>{capital(entity.layers.reduce((sum, layer) => sum + layer.amount, 0))}</span>
         <span className={styles.raiseNodeDetail}>{entity.detail}</span>
-      </span>
+        <dl className={styles.raiseNodeLayers}>
+          {entity.layers.map((layer) => (
+            <div key={layer.label} className={styles.raiseNodeLayer} data-source={layer.source}>
+              <dt>
+                <span className={styles.raiseBarPart} data-kind={layer.kind} data-source={layer.source} aria-hidden="true" />
+                <span>{layer.label}</span>
+                <span className={styles.raiseDetailTerms}>{layer.terms}</span>
+              </dt>
+              <dd>{capital(layer.amount)}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
     </div>
   );
 }

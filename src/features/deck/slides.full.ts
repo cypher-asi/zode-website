@@ -370,9 +370,11 @@ const RAMP: Slide = {
 
 /**
  * From the ZODE ASCENT data room: ZODE_MasterModel_26.11.10.xlsx, base case to
- * December 2030 as the room's summaries cut it. Debt is what the site build and
- * the first GPU generation draw; Big Watt is its first 30 MW block, before the
- * blocks that follow it each quarter. Update with each new model.
+ * December 2030 as the room's summaries cut it. Each company's layers are all
+ * of its capital, and each row's stack is the sum of its companies'. Debt is
+ * what the site build and the first GPU generation draw; Big Watt is its first
+ * 30 MW block, before the blocks that follow it each quarter. Update with each
+ * new model.
  */
 const RAISE: Slide = {
   id: "raise",
@@ -392,18 +394,48 @@ const RAISE: Slide = {
     {
       name: "ZODE Toronto",
       tenure: "lease",
-      computeCo: { detail: "512 B300 GPUs · 1 MW", value: "$25.6M", basis: "ZODE-funded", source: "zode" },
+      computeCo: {
+        detail: "512 B300 GPUs · 1 MW",
+        layers: [
+          { label: "ZODE equity", kind: "equity", source: "zode", amount: 25_555_816, terms: "Seed" },
+          { label: "Bank debt", kind: "debt", amount: 13.44e6, terms: "30% · 10%" },
+          { label: "Mezz debt", kind: "debt", amount: 8.96e6, terms: "20% · 15%" },
+        ],
+      },
     },
     {
       name: "ZODE Calgary",
       tenure: "own",
-      propCo: { detail: "Buys and converts 30 MW", value: "$112M", basis: "Pref · + $10M ZODE" },
-      computeCo: { detail: "18,420 GPUs · 30 MW", value: "$547M", basis: "Pref · 15%" },
+      propCo: {
+        detail: "Buys and converts 30 MW",
+        layers: [
+          { label: "ZODE pref", kind: "equity", source: "zode", amount: 10e6, terms: "Seed · A · 12%" },
+          { label: "Class A pref", kind: "equity", amount: 10e6, terms: "12%" },
+          { label: "Class B pref", kind: "equity", amount: 102_195_609, terms: "12%" },
+          { label: "Construction", kind: "debt", amount: 84_786_240, terms: "40% LTC · 10%" },
+        ],
+      },
+      computeCo: {
+        detail: "18,420 GPUs · 30 MW",
+        layers: [
+          { label: "Pref equity", kind: "equity", amount: 546_776_643, terms: "15%" },
+          { label: "Bank debt", kind: "debt", amount: 483.525e6, terms: "30% · 13%" },
+          { label: "Mezz debt", kind: "debt", amount: 322.35e6, terms: "20% · 16%" },
+        ],
+      },
     },
     {
       name: "ZODE Big Watt",
       tenure: "lease",
-      computeCo: { detail: "15,360 GPUs · 30 MW", value: "$411M", basis: "Pref · + $10M ZODE" },
+      computeCo: {
+        detail: "15,360 GPUs · 30 MW",
+        layers: [
+          { label: "ZODE pref", kind: "equity", source: "zode", amount: 10e6, terms: "Seed" },
+          { label: "Pref equity", kind: "equity", amount: 411.2e6, terms: "10%" },
+          { label: "Prepayments", kind: "debt", amount: 605_491_200, terms: "Offtake · 30%" },
+          { label: "GPU debt", kind: "debt", amount: 536_908_800, terms: "Bank + mezz" },
+        ],
+      },
     },
   ],
   stacks: [
@@ -420,8 +452,8 @@ const RAISE: Slide = {
       layers: [
         { label: "ZODE pref", kind: "equity", source: "zode", amount: 10e6, terms: "Calgary A · 12%" },
         { label: "Class A pref", kind: "equity", amount: 10e6, terms: "12%" },
-        { label: "Class B pref", kind: "equity", amount: 102e6, terms: "12%" },
-        { label: "Construction loan", kind: "debt", amount: 85e6, terms: "40% LTC · 10%" },
+        { label: "Class B pref", kind: "equity", amount: 102_195_609, terms: "12%" },
+        { label: "Construction loan", kind: "debt", amount: 84_786_240, terms: "40% LTC · 10%" },
       ],
     },
     {
@@ -429,15 +461,15 @@ const RAISE: Slide = {
       label: "Compute Cos",
       raising: { value: "$958M", label: "Pref equity" },
       layers: [
-        { label: "ZODE equity", kind: "equity", source: "zode", amount: 25.6e6, terms: "Toronto" },
+        { label: "ZODE equity", kind: "equity", source: "zode", amount: 25_555_816, terms: "Toronto" },
         { label: "ZODE pref", kind: "equity", source: "zode", amount: 10e6, terms: "Big Watt" },
-        { label: "Pref equity", kind: "equity", amount: 958e6, terms: "Calgary 15% · Big Watt 10%" },
-        { label: "Prepayments", kind: "debt", amount: 605e6, terms: "Big Watt offtake · 30%" },
-        { label: "GPU debt", kind: "debt", amount: 1.37e9, terms: "30% bank + 20% mezz" },
+        { label: "Pref equity", kind: "equity", amount: 546_776_643 + 411.2e6, terms: "Calgary 15% · Big Watt 10%" },
+        { label: "Prepayments", kind: "debt", amount: 605_491_200, terms: "Big Watt offtake · 30%" },
+        { label: "GPU debt", kind: "debt", amount: 22.4e6 + 805.875e6 + 536_908_800, terms: "30% bank + 20% mezz" },
       ],
     },
   ],
-  note: "Preliminary, from ZODE's master model of November 10, 2026, base case to December 2030. Amounts are what third parties put in; ZODE Inc.'s equity in each project comes from the seed. Debt is what the site build and the first GPU generation draw, Big Watt's for its first 30 MW; GPU debt and prepayments together are capped at 85% of hardware.",
+  note: "Preliminary, from ZODE's master model of November 10, 2026, base case to December 2030. Each company's figure is all of its capital: equity, offtake prepayments and debt. ZODE Inc.'s equity in a project comes from the seed, so it's counted in the $55M, not raised again. Debt is what the site build and the first GPU generation draw, Big Watt's for its first 30 MW; Calgary's $10M acquisition loan is repaid by its construction loan, so it isn't counted twice. GPU debt and prepayments together are capped at 85% of hardware.",
 };
 
 const CLOSE: Slide = {
