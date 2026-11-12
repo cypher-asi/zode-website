@@ -171,12 +171,6 @@ function Cover({ slide }: { slide: Of<"cover"> }): ReactElement {
   return (
     <div className={styles.cover}>
       <div className={styles.coverText}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- the SVG wordmark scales with the slide */}
-        <img
-          className={styles.printMark}
-          src="/brand/zode-wordmark-white.svg"
-          alt="ZODE"
-        />
         <div className={styles.coverTitleBlock}>
           <h2
             {...rise(1)}
@@ -2662,8 +2656,9 @@ function useFit(on: boolean) {
  * settled instead, its entrances at their end and nothing looping, as a
  * thumbnail. `playing` runs its looping drawings, by default while it's
  * active and not still. `near` loads its images ahead, for the open slide
- * and its neighbours. `branded` adds the wordmark to its foot for print,
- * where the site header isn't on the page. `compact` makes it a phone page:
+ * and its neighbours. `branded` gives every slide, the close and gate too,
+ * the same foot for print: the section name, the page number and the
+ * wordmark, as the site header isn't on the page. `compact` makes it a phone page:
  * one column at the site's mobile type sizes, laid out `PHONE_W` wide and
  * scaled to fit the screen (`useFit`). `policy` is the policy tracker's map
  * for the states slide.
@@ -2702,7 +2697,12 @@ export const SlideView = memo(function SlideView({
   policy: PolicyMap | null;
 }): ReactElement {
   const head = hasHead(slide);
-  const foot = !NO_FOOT.has(slide.kind);
+  const foot = branded || !NO_FOOT.has(slide.kind);
+  const name = head
+    ? slide.eyebrow
+    : branded && slide.kind !== "cover"
+      ? slide.section
+      : null;
   const dark = slide.ground === "ink";
   const { slideRef, fitRef } = useFit(compact);
   const mark = branded ? (
@@ -2742,13 +2742,11 @@ export const SlideView = memo(function SlideView({
           policy={policy}
         />
       </div>
-      {!foot ? (
-        mark && <footer className={styles.foot}>{mark}</footer>
-      ) : (
+      {foot ? (
         <footer className={styles.foot} data-band="foot">
-          {head ? (
+          {name ? (
             <span className={styles.sectionName} data-band="name">
-              {slide.eyebrow}
+              {name}
             </span>
           ) : null}
           {slide.kind === "cover" ? (
@@ -2769,10 +2767,10 @@ export const SlideView = memo(function SlideView({
                 {pad(index + 1)} / {pad(total)}
               </span>
             ) : null}
-            {slide.kind === "cover" ? null : mark}
+            {mark}
           </div>
         </footer>
-      )}
+      ) : null}
     </>
   );
   return (

@@ -4168,22 +4168,11 @@ a.measureTitle:focus-visible {
   margin-block: auto;
 }
 
-/* The cover's wordmark, for the printed deck only: on screen the site header carries it. */
-.printMark {
-  display: none;
-}
-
 @media print {
-  .printMark {
-    display: block;
-    align-self: flex-start;
-    width: auto;
-    height: calc(1.6 * var(--u));
-  }
-
-  /* No pointer on paper: the sources set out in full across the foot, after their label. */
+  /* No pointer on paper: the sources set out in full across the foot, after their label. The number and wordmark keep the far end without them. */
   .footEnd {
     flex: 1;
+    justify-content: flex-end;
     min-width: 0;
   }
 
