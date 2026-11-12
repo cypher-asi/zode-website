@@ -7,13 +7,14 @@
  *
  * `loan` (scripts/memos/long-compute-fund-i, three pages) finances GPUs as loans
  * with a kicker; `leasing` (scripts/memos/long-compute-fund-i-leasing, four pages)
- * has each investor own its GPUs in a Deployment LLC that leases them to ZODE.
+ * has each investor own its GPUs in a Deployment LLC that leases them to ZODE
+ * for base rent over the loan's term, then a share of the cluster's cash.
  * One MW of critical IT is costed from the model's Toronto and Zode Inc. inputs,
  * read by their labels in column B (a missing label fails the run), and sold
  * three ways: a contracted offtake, merchant and inference, at the memo's rates
  * below. The fund plan sizes each close to the GPUs it finances, and the proposed
- * loan (coupon, kicker) gives the fund's return per scenario; the lease charges the
- * same as base rent and participation, and its example deployments (Toronto,
+ * loan (coupon, kicker) gives the fund's return per scenario; the lease's base rent
+ * and participation give the investor's, and its example deployments (Toronto,
  * Calgary, South Dakota) are sized from their own sheets. `--dry-run` prints the
  * figures without opening a browser. Needs a local Chrome, Chromium or Brave; set
  * CHROME to its path if it isn't found. Fails if a page overflows or the PDF has
@@ -363,10 +364,12 @@ const closes = CLOSES.map((close) => {
 
 /* ---------- The leasing structure: an investor's Deployment LLC per deployment ---------- */
 
-// The LLC owns the GPUs and net-leases them to the operator: base rent equal to the loan payment above for its
-// term, plus participation rent of the kicker's share of cluster cash after base rent, and it keeps the resale.
-// LCF takes an acquisition fee and a management fee on unreturned capital, and carry once the investor has its
-// preferred return and capital back; depreciation is allocated to the investor.
+// The LLC owns the GPUs and net-leases them to the operator: base rent returning the GPU cost at LEASE_RATE over
+// the loan's term, then participation rent of a share of the cluster's cash for the rest of the GPUs' life, and
+// it keeps the resale. LCF takes an acquisition fee and a management fee on unreturned capital, and carry once
+// the investor has its preferred return and capital back; depreciation is allocated to the investor.
+const LEASE_RATE = 0.15;
+const PARTICIPATION = 0.15;
 const ACQ_FEE = 0.01;
 const MGMT_FEE = 0.015;
 const PREF = 0.08;
@@ -388,9 +391,12 @@ function depreciation(schedule) {
 
 const sum = (xs) => xs.reduce((a, b) => a + b, 0);
 
-function leasing(s) {
-  const base = s.cash.map((_, m) => (m < TERM_MONTHS ? loanPayment : 0));
-  const participation = s.cash.map((c, m) => KICKER * Math.max(0, c - base[m]));
+const baseRent = (hardware * (LEASE_RATE / 12)) / (1 - (1 + LEASE_RATE / 12) ** -TERM_MONTHS);
+
+function leasing(s, kind) {
+  const base = s.cash.map((_, m) => (m < TERM_MONTHS ? baseRent : 0));
+  if (s.cash.some((c, m) => c < base[m])) fail(`The ${kind} cluster's cash falls short of base rent; it would rest on the guarantee.`);
+  const participation = s.cash.map((c, m) => (m < TERM_MONTHS ? 0 : PARTICIPATION * Math.max(0, c)));
   const resale = M.resale * hardware;
   const rent = s.cash.map((_, m) => base[m] + participation[m] + (m === s.cash.length - 1 ? resale : 0));
 
@@ -431,6 +437,7 @@ function leasing(s) {
   };
 
   return {
+    cover1: sum(s.cash.slice(0, 12)) / (12 * baseRent),
     participation: sum(participation),
     grossX: sum(rent) / hardware,
     grossIrr: irr([-hardware, ...rent]),
@@ -443,7 +450,7 @@ function leasing(s) {
     nonUsIrr: afterTax(SCHEDULES.nonUs),
   };
 }
-const leased = scenarios.slice(1).map(leasing);
+const leased = scenarios.slice(1).map((s) => leasing(s, s.kind));
 if (leased.some((l) => l.back === null)) fail("A lease never returns the investor's capital.");
 
 // The memo's example Deployment LLCs, each a first deployment at a site, sized from its own sheet.
@@ -585,6 +592,10 @@ for (const s of split) {
 const money = (v) => (v < 1 ? "None" : v >= 1e9 ? `$${(v / 1e9).toFixed(2)}B` : mm(v, v >= 1e7 ? 1 : 2));
 const signed = (v) => (v < 0 ? `(${money(-v)})` : money(v));
 const irrText = (v) => (v > 1 ? ">100%" : pct(v));
+F.LEASE_RATE = pct(LEASE_RATE);
+F.PARTICIPATION = pct(PARTICIPATION);
+F.BASE_RENT = money(12 * baseRent);
+F.PART_FROM = String(TERM_MONTHS + 1);
 F.ACQ_FEE = pct(ACQ_FEE);
 F.MGMT_FEE = pct(MGMT_FEE, 1);
 F.PREF = pct(PREF);
@@ -599,6 +610,7 @@ F.US_TAX1 = money(TAX_RATE * depreciation(SCHEDULES.us).years[0] * equity);
 F.NONUS_TAX1 = money(TAX_RATE * depreciation(SCHEDULES.nonUs).years[0] * equity);
 ["MER", "I20", "I30", "I40"].forEach((n, i) => {
   const l = leased[i];
+  F[`${n}_L_COVER`] = times(l.cover1);
   F[`${n}_L_PART`] = money(l.participation);
   F[`${n}_L_GROSS_X`] = times(l.grossX);
   F[`${n}_L_GROSS_IRR`] = irrText(l.grossIrr);
