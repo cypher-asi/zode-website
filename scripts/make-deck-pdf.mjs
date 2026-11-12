@@ -172,7 +172,7 @@ async function printDeck({ send, evaluate }, url, version, key) {
   if (!loaded) throw new Error("The deck's images didn't all load.");
   await evaluate("document.fonts.ready.then(() => true)");
 
-  // Each slide is a page, and so is each detail slide printed after its own.
+  // Each slide is a page; the detail slides that open from one on screen aren't printed.
   const { pages, gated } = await evaluate(`({
     pages: document.querySelector("[data-slot]").parentElement.querySelectorAll(":scope > section").length,
     gated: !!document.querySelector('[data-slot] [data-kind="gate"]'),

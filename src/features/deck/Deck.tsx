@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Fragment,
   startTransition,
   useCallback,
   useEffect,
@@ -17,7 +16,7 @@ import { flushSync } from "react-dom";
 import type { PolicyMap } from "./policyTypes";
 import { ShareMenu } from "./ShareMenu";
 import { PAGING_KEYS, SlideView, hasHead } from "./Slide";
-import { DEMAND_DETAILS, PUBLIC_SLIDES, type Slide } from "./slides";
+import { PUBLIC_SLIDES, type Slide } from "./slides";
 import styles from "./Deck.module.css";
 
 /**
@@ -556,59 +555,35 @@ export function Deck({
             const current = i === index;
             const shown = current || printing;
             return (
-              <Fragment key={entry.id}>
-                <section
-                  ref={(slot) => {
-                    slotRefs.current[i] = slot;
-                  }}
-                  className={styles.slot}
-                  data-slot={i}
-                  data-state={
-                    current ? "current" : i < index ? "before" : "after"
-                  }
-                  data-parked={!open.has(i) || undefined}
-                  aria-roledescription="slide"
-                  aria-label={`${i + 1} of ${total}: ${entry.title}`}
-                  aria-hidden={!shown}
-                  inert={!shown}
-                >
-                  <SlideView
-                    slide={entry}
-                    index={i}
-                    total={total}
-                    active={current || i === leaving || printing}
-                    near={printing || Math.abs(i - index) <= 1}
-                    branded={printing}
-                    grid={printing || phone}
-                    compact={phone}
-                    confidential={isConfidential(entry)}
-                    policy={policy}
-                  />
-                </section>
-                {/* Detail slides open in a modal on screen; printed, they follow their slide as pages. */}
-                {(printing && entry.kind === "demand"
-                  ? DEMAND_DETAILS
-                  : []
-                ).map((detail) => (
-                  <section
-                    key={detail.id}
-                    className={styles.slot}
-                    aria-hidden="true"
-                    inert
-                  >
-                    <SlideView
-                      slide={detail}
-                      index={i}
-                      total={total}
-                      active
-                      near
-                      branded
-                      numbered={false}
-                      policy={policy}
-                    />
-                  </section>
-                ))}
-              </Fragment>
+              <section
+                key={entry.id}
+                ref={(slot) => {
+                  slotRefs.current[i] = slot;
+                }}
+                className={styles.slot}
+                data-slot={i}
+                data-state={
+                  current ? "current" : i < index ? "before" : "after"
+                }
+                data-parked={!open.has(i) || undefined}
+                aria-roledescription="slide"
+                aria-label={`${i + 1} of ${total}: ${entry.title}`}
+                aria-hidden={!shown}
+                inert={!shown}
+              >
+                <SlideView
+                  slide={entry}
+                  index={i}
+                  total={total}
+                  active={current || i === leaving || printing}
+                  near={printing || Math.abs(i - index) <= 1}
+                  branded={printing}
+                  grid={printing || phone}
+                  compact={phone}
+                  confidential={isConfidential(entry)}
+                  policy={policy}
+                />
+              </section>
             );
           })}
         </div>
