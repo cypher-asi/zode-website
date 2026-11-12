@@ -3221,6 +3221,7 @@ a.measureTitle:focus-visible {
   padding-inline: calc(1 * var(--u));
   border-bottom: 1px solid var(--rule);
   font: inherit;
+  white-space: nowrap;
 }
 
 .raiseTopco,
@@ -3601,7 +3602,9 @@ a.measureTitle:focus-visible {
   border-top: 1px solid var(--rule);
 }
 
+/* The first to give way, so a long row never pushes its amount out of the box. */
 .raiseDetailTerms {
+  min-width: 0;
   overflow: hidden;
   font-family: var(--font-mono);
   font-size: calc(0.6 * var(--u));
@@ -4224,17 +4227,21 @@ a.measureTitle:focus-visible {
     box-shadow: none;
   }
 
-  /* Each row's layers set out beside its total. */
+  /* Each row's layers set out beside its total, in the room the empty project slots leave. */
   .raiseChart {
     grid-template-columns:
-      repeat(var(--slots), minmax(0, 1fr))
+      repeat(var(--projects), minmax(0, 1fr))
       calc(2.4 * var(--u))
-      calc(34 * var(--u));
+      calc(36 * var(--u));
   }
 
   .raiseStackBody {
     flex: none;
     border-right: 1px solid var(--rule);
+  }
+
+  .raiseStackBody > .raiseValue {
+    font-size: calc(1.7 * var(--u));
   }
 
   .raiseDetail {
@@ -4264,12 +4271,21 @@ a.measureTitle:focus-visible {
   }
 
   .raiseDetailRow {
-    font-size: calc(0.78 * var(--u));
+    gap: calc(0.6 * var(--u));
+    font-size: calc(0.74 * var(--u));
     line-height: 1.25;
   }
 
+  .raiseDetailRow > dt {
+    gap: calc(0.4 * var(--u));
+  }
+
+  .raiseDetailTerms {
+    font-size: calc(0.54 * var(--u));
+  }
+
   .raiseDetailValue {
-    font-size: calc(0.9 * var(--u));
+    font-size: calc(0.86 * var(--u));
   }
 
   .raiseDetailRow[data-sum] > dd {

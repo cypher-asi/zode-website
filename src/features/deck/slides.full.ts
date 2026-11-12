@@ -386,7 +386,7 @@ const RAISE: Slide = {
     value: "$55M",
     basis: "Seed SAFE · $300M post-money cap",
     detail: "Team, development and the common equity of each project",
-    uses: "$45.6M into the projects · $17.7M team and G&A through 2028",
+    uses: "$45.6M to the projects · $17.7M team and G&A to 2028",
   },
   projects: [
     {
@@ -418,7 +418,7 @@ const RAISE: Slide = {
       label: "Prop Cos",
       raising: { value: "$112M", label: "Pref equity" },
       layers: [
-        { label: "ZODE pref", kind: "equity", source: "zode", amount: 10e6, terms: "Calgary Class A · 12%" },
+        { label: "ZODE pref", kind: "equity", source: "zode", amount: 10e6, terms: "Calgary A · 12%" },
         { label: "Class A pref", kind: "equity", amount: 10e6, terms: "12%" },
         { label: "Class B pref", kind: "equity", amount: 102e6, terms: "12%" },
         { label: "Construction loan", kind: "debt", amount: 85e6, terms: "40% LTC · 10%" },
@@ -432,7 +432,7 @@ const RAISE: Slide = {
         { label: "ZODE equity", kind: "equity", source: "zode", amount: 25.6e6, terms: "Toronto" },
         { label: "ZODE pref", kind: "equity", source: "zode", amount: 10e6, terms: "Big Watt" },
         { label: "Pref equity", kind: "equity", amount: 958e6, terms: "Calgary 15% · Big Watt 10%" },
-        { label: "Customer prepayments", kind: "debt", amount: 605e6, terms: "Big Watt offtake · 30%" },
+        { label: "Prepayments", kind: "debt", amount: 605e6, terms: "Big Watt offtake · 30%" },
         { label: "GPU debt", kind: "debt", amount: 1.37e9, terms: "30% bank + 20% mezz" },
       ],
     },
