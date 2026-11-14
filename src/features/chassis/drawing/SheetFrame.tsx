@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { WORDMARK_PATH, WORDMARK_VIEWBOX } from "@/lib/brandMarks";
 import type { Project, Sheet } from "@/features/chassis/model/schema";
 import { INK, LW, Txt } from "./core";
 import { FILL } from "@/features/chassis/drawing/palette";
@@ -10,21 +11,18 @@ export const AREA = { x: 6, y: FRAME.y0 + FRAME.topH, w: 408, h: FRAME.y1 - FRAM
 
 const COLS = [6, 118, 297, 355, 414];
 
-export function Logo({ x, y, size = 8.5 }: { x: number; y: number; size?: number }) {
+/** The ZODE wordmark, `height` mm tall, centred on (x, y). */
+export function Logo({ x, y, height = 5.5 }: { x: number; y: number; height?: number }) {
+  const scale = height / WORDMARK_VIEWBOX.height;
+  const width = WORDMARK_VIEWBOX.width * scale;
   return (
-    <text
-      x={x}
-      y={y}
-      fontSize={size}
-      fontWeight={700}
-      textAnchor="middle"
-      dominantBaseline="middle"
-      letterSpacing={size * 0.08}
+    <path
+      d={WORDMARK_PATH}
       fill={INK}
-      style={{ fontFamily: "Arial Black, Inter, sans-serif", fontStyle: "italic", userSelect: "none" }}
-    >
-      ZODE
-    </text>
+      fillRule="evenodd"
+      transform={`translate(${x - width / 2} ${y - height / 2}) scale(${scale})`}
+      aria-label="ZODE"
+    />
   );
 }
 
