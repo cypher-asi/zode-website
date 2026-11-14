@@ -16,6 +16,9 @@ const COMPANY_COSTS = COSTS.filter(({ key }) => key !== "power" && key !== "opCo
 
 const CASH = { key: "cash", label: "Cash after debt service" } as const;
 
+/** The sites the model has yet to name, left out of a period's tooltip until they earn or spend. */
+const FUTURE_SITES: ReadonlySet<string> = new Set(["Future, owned", "Future, leased"]);
+
 /** Where a period's revenue goes, from the bar's foot up: costs and debt service, then the cash left on top. */
 export const RAMP_PARTS = [...COSTS, CASH] as const;
 
@@ -215,13 +218,15 @@ export function RampChart({
                 </tr>
               </thead>
               <tbody>
-                {q.sites.map(({ site, revenue, expenses }) => (
-                  <tr key={site}>
-                    <th scope="row">{site}</th>
-                    <td>{usd(revenue)}</td>
-                    <td>{usd(-expenses)}</td>
-                  </tr>
-                ))}
+                {q.sites
+                  .filter(({ site, revenue, expenses }) => !FUTURE_SITES.has(site) || revenue !== 0 || expenses !== 0)
+                  .map(({ site, revenue, expenses }) => (
+                    <tr key={site}>
+                      <th scope="row">{site}</th>
+                      <td>{usd(revenue)}</td>
+                      <td>{usd(-expenses)}</td>
+                    </tr>
+                  ))}
               </tbody>
               <tfoot>
                 <tr>
