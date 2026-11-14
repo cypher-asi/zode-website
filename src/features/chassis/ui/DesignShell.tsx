@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, type ReactElement, type ReactNode } from "react";
+import { SidebarDock, useDocked } from "@/features/portal/PortalFrame";
 import type { DesignData } from "../model/schema";
 import { useDesign } from "../store";
 import styles from "../chassis.module.css";
@@ -35,6 +36,7 @@ export function DesignShell({
   children: ReactNode;
 }): ReactElement {
   const loadedId = useDesign((s) => s.designId);
+  const docked = useDocked();
   const { render, stage, progress } = useDrawingSetPdf();
 
   useEffect(() => {
@@ -59,8 +61,10 @@ export function DesignShell({
     <DrawingSetContext value={{ render, progress }}>
       <div className={styles.app}>
         <DesignBar design={design} />
-        <div className={styles.body}>
-          <SheetNav designId={design.id} />
+        <div className={styles.body} data-docked={docked || undefined}>
+          <SidebarDock>
+            <SheetNav designId={design.id} docked={docked} />
+          </SidebarDock>
           <main className={styles.main}>{children}</main>
           <aside className={styles.inspector} aria-label="Inspector">
             <Inspector />
