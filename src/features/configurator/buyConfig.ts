@@ -33,7 +33,7 @@ export const ASSUMPTIONS = {
   /** Facility overhead with direct-to-chip liquid cooling and chiller trim. */
   pue: 1.3,
   /** Electrical, cooling and compute pods per ZODE, equipment only: excludes freight, install and engineering. */
-  zodeInfrastructure: 2_616_094,
+  zodeInfrastructure: 3_637_524,
   /** Non-revenue spare equipment, a share of node and IT cost. */
   spareShare: 0.01,
   /** Deployment and setup, once per cluster. */

@@ -28,13 +28,13 @@ const report = (label, actual, expected, tolerance = 0) => {
 // G-601: the BOM.
 report("Unique BOM IDs", d.bom.uniqueIds, 73);
 report("BOM lines", seedDesign.bom.items.length, 73);
-report("Area subtotals", d.bom.areaTotals, { compute: 1_007_624, cooling: 268_385, electrical: 579_385, outdoor: 760_700 });
-report("BOM total", d.bom.total, 2_616_094);
+report("Area subtotals", d.bom.areaTotals, { compute: 1_271_224, cooling: 444_200, electrical: 851_700, outdoor: 1_070_400 });
+report("BOM total", d.bom.total, 3_637_524);
 const bomChecks = d.checks.filter((c) => c.group === "BOM vs model");
 report("BOM quantities the model counts", bomChecks.length > 20, true);
 report("BOM quantities off the model", bomChecks.filter((c) => c.status !== "pass").map((c) => c.id), []);
-report("Shell breakdowns", d.shellTotals, { compute: 34_000, electrical: 36_385, cooling: 36_385 });
-report("Compute roof (S8)", d.bom.lines.find((l) => l.id === "S8")?.total, 16_000);
+report("Shell breakdowns", d.shellTotals, { compute: 71_100, electrical: 73_200, cooling: 73_200 });
+report("Compute roof (S8)", d.bom.lines.find((l) => l.id === "S8")?.total, 28_000);
 
 // G-105 / G-106: racks.
 for (const a of d.uAudit) {

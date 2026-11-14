@@ -214,16 +214,16 @@
     }
   ],
   "shellCost": [
-    { "n": "01", "label": "Steel cage / fabrication", "cost": { "compute": 5800, "electrical": 5800, "cooling": 5800 } },
-    { "n": "02", "label": "Corrosion protection", "cost": { "compute": 2300, "electrical": 2300, "cooling": 2300 } },
-    { "n": "03", "label": "Insulation / utility roofs / compute transit lid", "cost": { "compute": 6000, "electrical": 6000, "cooling": 6000 } },
-    { "n": "04", "label": "Service hardware / 20 or 6 sets", "cost": { "compute": 9450, "electrical": 2835, "cooling": 2835 } },
-    { "n": "05", "label": "Insulated floor / heavy-load reinforcement", "cost": { "compute": 1850, "electrical": 4350, "cooling": 4350 } },
-    { "n": "06", "label": "Two end access sets / seals", "cost": { "compute": 2600, "electrical": 2600, "cooling": 2600 } },
-    { "n": "07", "label": "Utility interfaces / glands", "cost": { "compute": 1500, "electrical": 1500, "cooling": 1500 } },
-    { "n": "08", "label": "Weatherproofing / flashings", "cost": { "compute": 900, "electrical": 900, "cooling": 900 } },
-    { "n": "09", "label": "Factory assembly / QC", "cost": { "compute": 2750, "electrical": 2750, "cooling": 2750 } },
-    { "n": "10", "label": "Scrap / consumables", "cost": { "compute": 850, "electrical": 850, "cooling": 850 } },
-    { "n": "11", "label": "Roof-load rails / posts reinforcement", "cost": { "compute": 0, "electrical": 6500, "cooling": 6500 } }
+    { "n": "01", "label": "Steel cage / fabrication", "cost": { "compute": 18500, "electrical": 18500, "cooling": 18500 } },
+    { "n": "02", "label": "Corrosion protection", "cost": { "compute": 4200, "electrical": 4200, "cooling": 4200 } },
+    { "n": "03", "label": "Insulation / utility roofs / compute transit lid", "cost": { "compute": 9800, "electrical": 9800, "cooling": 9800 } },
+    { "n": "04", "label": "Service hardware / 20 or 6 sets", "cost": { "compute": 16000, "electrical": 4800, "cooling": 4800 } },
+    { "n": "05", "label": "Insulated floor / heavy-load reinforcement", "cost": { "compute": 3600, "electrical": 7400, "cooling": 7400 } },
+    { "n": "06", "label": "Two end access sets / seals", "cost": { "compute": 5600, "electrical": 5600, "cooling": 5600 } },
+    { "n": "07", "label": "Utility interfaces / glands", "cost": { "compute": 2800, "electrical": 2800, "cooling": 2800 } },
+    { "n": "08", "label": "Weatherproofing / flashings", "cost": { "compute": 1600, "electrical": 1600, "cooling": 1600 } },
+    { "n": "09", "label": "Factory assembly / QC", "cost": { "compute": 7400, "electrical": 7400, "cooling": 7400 } },
+    { "n": "10", "label": "Scrap / consumables", "cost": { "compute": 1600, "electrical": 1600, "cooling": 1600 } },
+    { "n": "11", "label": "Roof-load rails / posts reinforcement", "cost": { "compute": 0, "electrical": 9500, "cooling": 9500 } }
   ]
 }

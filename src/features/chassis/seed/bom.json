@@ -676,6 +676,6 @@
       "unitCostOverride": null
     }
   ],
-  "basisNote": "Basis: A = unquoted allowance; P = rounded supplier listing; U = user-set CDU price. Factory shells and roof allowances included. Excluded: tenant IT / networking / storage / optics / network cables, full IT UPS, site foundations / utility works / installation, engineering / certification / tooling, freight, tax and contingency. Roof and coil performance remain selection gates.",
-  "totalNote": "cost allowances held pending supplier re-quote"
+  "basisNote": "Basis: A = allowance benchmarked to Nov 2026 US pricing, unquoted; P = rounded supplier listing; U = user-set CDU price. Factory shells and roof allowances included. Excluded: tenant IT / networking / storage / optics / network cables, full IT UPS, site foundations / utility works / installation, engineering / certification / tooling, freight, tax and contingency. Roof and coil performance remain selection gates.",
+  "totalNote": "allowances benchmarked Nov 2026; supplier quotes pending"
 }
