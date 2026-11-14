@@ -729,6 +729,13 @@
   background: var(--color-bg-elevated);
 }
 
+/* Its own bar in the toolbar's place: flush, as the toolbar sat. */
+.preview[data-bar] {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
 @media (max-width: 720px) {
   .toolbar {
     flex-wrap: wrap;

@@ -480,8 +480,11 @@ export interface RoomBrowserProps {
    * in it. `back` keeps its space at the top level too, so the toolbar doesn't shift.
    */
   toolbar: (trail: ReactNode, back: ReactNode) => ReactNode;
-  /** A file or the summary open in the files' place, under the same toolbar so its search keeps focus. */
-  open?: { name: string; folderId: string | null; content: ReactNode; onClose: () => void };
+  /**
+   * A file or the summary open in the files' place, under the same toolbar so its search keeps focus.
+   * Given as a function of the way back, the content draws its own bar in the toolbar's place.
+   */
+  open?: { name: string; folderId: string | null; content: ReactNode | ((back: ReactNode) => ReactNode); onClose: () => void };
   /** Beside the files and under the toolbar, which then runs across both, e.g. a folder tree. */
   pane?: ReactNode;
 }
@@ -781,31 +784,37 @@ export function RoomBrowser({
       ? "This folder is empty. Drop files here, or use Add."
       : "This folder is empty.";
 
+  const ownBar = typeof open?.content === "function";
+
   return (
     <div className={styles.browser}>
-      {toolbar(
-        <Trail
-          index={index}
-          rootName={rootName}
-          rootCrumb={rootCrumb}
-          titleAs={titleAs}
-          folderId={open ? open.folderId : folderId}
-          leaf={open?.name}
-          status={
-            !open && searching
-              ? `${entries.length.toLocaleString()} ${entries.length === 1 ? "match" : "matches"} for “${query.trim()}”`
-              : undefined
-          }
-          onOpenFolder={onOpenFolder}
-          stepProps={open ? undefined : dropProps}
-        />,
-        back,
-      )}
+      {ownBar
+        ? null
+        : toolbar(
+            <Trail
+              index={index}
+              rootName={rootName}
+              rootCrumb={rootCrumb}
+              titleAs={titleAs}
+              folderId={open ? open.folderId : folderId}
+              leaf={open?.name}
+              status={
+                !open && searching
+                  ? `${entries.length.toLocaleString()} ${entries.length === 1 ? "match" : "matches"} for “${query.trim()}”`
+                  : undefined
+              }
+              onOpenFolder={onOpenFolder}
+              stepProps={open ? undefined : dropProps}
+            />,
+            back,
+          )}
       <div className={styles.body}>
         {pane}
         <div className={styles.main}>
           {open ? (
-            <div className={styles.preview}>{open.content}</div>
+            <div className={styles.preview} data-bar={ownBar ? "" : undefined}>
+              {typeof open.content === "function" ? open.content(back) : open.content}
+            </div>
           ) : (
             <div className={styles.scroller} data-view={view} {...(searching ? {} : dropProps("here", folderId))}>
               {entries.length === 0 ? (

@@ -496,7 +496,9 @@ export function DataRoomApp({
                 ? {
                     name: openFile.name,
                     folderId: openFile.folderId && index.folders.has(openFile.folderId) ? openFile.folderId : null,
-                    content: <FilePreview key={openFile.id} url={fileUrl(openFile.id)} file={openFile} />,
+                    content: (back) => (
+                      <FilePreview key={openFile.id} url={fileUrl(openFile.id)} file={openFile} leading={back} />
+                    ),
                     onClose: closePreview,
                   }
                 : summary && summaryOpen

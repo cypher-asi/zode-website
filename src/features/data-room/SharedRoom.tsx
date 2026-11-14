@@ -254,7 +254,9 @@ export function SharedRoom({
             ? {
                 name: openFile.name,
                 folderId: openFolderId,
-                content: <FilePreview key={openFile.id} url={sharedFilePath(token, openFile.id)} file={openFile} />,
+                content: (back) => (
+                  <FilePreview key={openFile.id} url={sharedFilePath(token, openFile.id)} file={openFile} leading={back} />
+                ),
                 onClose: closePreview,
               }
             : summary && summaryOpen
