@@ -1,6 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import Link from "next/link";
 import { upload } from "@vercel/blob/client";
 import Image from "@tiptap/extension-image";
@@ -72,6 +81,7 @@ export function PostEditor({ post }: { post: Post }): ReactElement {
   const [dialog, setDialog] = useState<DialogState>(null);
   const imageInput = useRef<HTMLInputElement>(null);
   const coverInput = useRef<HTMLInputElement>(null);
+  const titleInput = useRef<HTMLTextAreaElement>(null);
   /** The paste and drop handlers are bound when the editor is created, before `editor` exists. */
   const editorRef = useRef<Editor | null>(null);
 
@@ -192,6 +202,19 @@ export function PostEditor({ post }: { post: Post }): ReactElement {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  /** `field-sizing: content` isn't in every browser, so the title is grown to fit its lines by hand too. */
+  useLayoutEffect(() => {
+    const field = titleInput.current;
+    if (!field) return;
+    const fit = () => {
+      field.style.height = "auto";
+      field.style.height = `${field.scrollHeight}px`;
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [title]);
+
   useEffect(() => {
     if (!dirty) return;
     const onLeave = (event: BeforeUnloadEvent) => event.preventDefault();
@@ -270,6 +293,7 @@ export function PostEditor({ post }: { post: Post }): ReactElement {
       <div className={styles.layout}>
         <div className={styles.writing}>
           <textarea
+            ref={titleInput}
             className={styles.title}
             value={title}
             placeholder="Title"
@@ -279,18 +303,6 @@ export function PostEditor({ post }: { post: Post }): ReactElement {
             onChange={(event) => {
               setTitle(event.target.value);
               if (!slugTouched && !published) setSlug(slugify(event.target.value));
-              touch();
-            }}
-          />
-          <textarea
-            className={styles.summary}
-            value={summary}
-            placeholder="A one or two sentence summary, shown in the list and in link previews"
-            aria-label="Summary"
-            rows={2}
-            maxLength={MAX_SUMMARY_LENGTH}
-            onChange={(event) => {
-              setSummary(event.target.value);
               touch();
             }}
           />
@@ -355,6 +367,22 @@ export function PostEditor({ post }: { post: Post }): ReactElement {
               />
             </span>
             {published ? <span className={styles.hint}>Changing it breaks links already shared.</span> : null}
+          </label>
+
+          <label className={ui.field}>
+            <span className={ui.label}>Summary</span>
+            <textarea
+              className={ui.textarea}
+              value={summary}
+              placeholder="One or two sentences"
+              rows={3}
+              maxLength={MAX_SUMMARY_LENGTH}
+              onChange={(event) => {
+                setSummary(event.target.value);
+                touch();
+              }}
+            />
+            <span className={styles.hint}>Shown in the post list and in link previews.</span>
           </label>
 
           {kind === "changelog" ? (
