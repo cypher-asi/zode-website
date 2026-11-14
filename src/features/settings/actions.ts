@@ -1,7 +1,7 @@
 "use server";
 
 import { list } from "@vercel/blob";
-import { refresh } from "next/cache";
+import { refresh, revalidateTag } from "next/cache";
 import {
   AVATAR_TYPES,
   MAX_AVATAR_BYTES,
@@ -12,6 +12,7 @@ import {
 } from "@/features/account/profile";
 import { getAccount, refreshProfileCookies } from "@/features/account/session";
 import { blobInfo, deleteBlobs } from "@/features/data-room/blob";
+import { POSTS_TAG, hasPublishedPosts } from "@/features/posts/posts";
 import { singleLine } from "@/lib/validation";
 
 export interface NameState {
@@ -42,6 +43,15 @@ async function deleteOtherAvatars(userId: string, keep: string | null): Promise<
   }
 }
 
+/** Expires the cached news and changelog pages when the user's byline is on them. */
+async function refreshBylines(userId: string): Promise<void> {
+  try {
+    if (await hasPublishedPosts(userId)) revalidateTag(POSTS_TAG, { expire: 0 });
+  } catch (error) {
+    console.error("[settings] couldn't refresh post bylines", userId, error);
+  }
+}
+
 export async function updateNameAction(_prevState: NameState, formData: FormData): Promise<NameState> {
   const account = await getAccount();
   if (!account) return { error: SIGNED_OUT };
@@ -56,7 +66,7 @@ export async function updateNameAction(_prevState: NameState, formData: FormData
     console.error("[settings] couldn't save name", error);
     return { error: SAVE_FAILED, name };
   }
-  await refreshProfileCookies();
+  await Promise.all([refreshProfileCookies(), refreshBylines(account.userId)]);
   refresh();
   return { saved: true, name };
 }
@@ -83,7 +93,7 @@ export async function setAvatarAction(pathname: string): Promise<AvatarResult> {
     return { error: SAVE_FAILED };
   }
   await deleteOtherAvatars(account.userId, pathname);
-  await refreshProfileCookies();
+  await Promise.all([refreshProfileCookies(), refreshBylines(account.userId)]);
   refresh();
   return {};
 }
@@ -99,7 +109,7 @@ export async function removeAvatarAction(): Promise<AvatarResult> {
     return { error: SAVE_FAILED };
   }
   await deleteOtherAvatars(account.userId, null);
-  await refreshProfileCookies();
+  await Promise.all([refreshProfileCookies(), refreshBylines(account.userId)]);
   refresh();
   return {};
 }

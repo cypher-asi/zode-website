@@ -15,7 +15,12 @@ export function Byline({ post, minutes }: { post: Post; minutes?: number }): Rea
   return (
     <p className={styles.byline}>
       <span className={styles.avatar} aria-hidden="true">
-        {initials(post.author.name)}
+        {post.author.image ? (
+          // eslint-disable-next-line @next/next/no-img-element -- served at its own size from /api/account/avatar
+          <img src={post.author.image} alt="" />
+        ) : (
+          initials(post.author.name)
+        )}
       </span>
       <span>
         {post.author.name}

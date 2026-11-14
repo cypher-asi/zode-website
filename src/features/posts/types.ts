@@ -41,6 +41,8 @@ export const MEDIA_PREFIX = "posts/";
 export interface Author {
   name: string;
   email: string;
+  /** The photo set in portal settings, or `null` for initials. */
+  image: string | null;
 }
 
 export interface Post {
