@@ -1,0 +1,194 @@
+{
+  "sheets": [
+    {
+      "id": "G-101",
+      "title": "COMPUTE POD",
+      "subtitle": "Ten racks with busways, network trays and cooling headers.",
+      "discipline": "G",
+      "scale": "1:20 / NTS",
+      "renderer": "computePod"
+    },
+    {
+      "id": "G-104",
+      "title": "COMPUTE POD - INTERIOR 3D",
+      "subtitle": "Eight compute racks and two central network and storage racks.",
+      "discipline": "G",
+      "scale": "3D / NTS",
+      "renderer": "computeInterior3d"
+    },
+    {
+      "id": "G-105",
+      "title": "RACK DIMENSIONS & TRANSPORT",
+      "subtitle": "48U rack elevations, component dimensions and transport height.",
+      "discipline": "G",
+      "scale": "AS SHOWN",
+      "renderer": "rackDimensions"
+    },
+    {
+      "id": "G-106",
+      "title": "RACK SPACE & POWER",
+      "subtitle": "Rack-unit allocation, PDU quantities and power capacity.",
+      "discipline": "G",
+      "scale": "NTS",
+      "renderer": "rackSpacePower",
+      "notes": [
+        {
+          "title": "IT PDUs",
+          "body": "R3: ten CPI paired packs. R9: ME metered model; outlet switching omitted. Retained 443 x 750 x 85 body reserve needs model confirmation. Ten E13 AUX panels are separate from IT PDUs."
+        }
+      ]
+    },
+    {
+      "id": "E-101",
+      "title": "COMPUTE POWER - SINGLE LINE",
+      "subtitle": "415Y/240 V A/B distribution with separate UPS-backed cooling.",
+      "discipline": "E",
+      "scale": "SCHEMATIC",
+      "renderer": "singleLine"
+    },
+    {
+      "id": "E-102",
+      "title": "ELECTRICAL POD",
+      "subtitle": "Indoor transformer, switchboard, cooling UPS and expansion space.",
+      "discipline": "E",
+      "scale": "1:20 / AS NOTED",
+      "renderer": "electricalPod"
+    },
+    {
+      "id": "M-101",
+      "title": "COOLING POD",
+      "subtitle": "Redundant pump pairs, heat exchanger and two buffer tanks.",
+      "discipline": "M",
+      "scale": "1:20 / AS NOTED",
+      "renderer": "coolingPod"
+    },
+    {
+      "id": "M-102",
+      "title": "COOLING LOOPS",
+      "subtitle": "Shared heat exchanger connects warm-loop heat to the chilled-water circuit.",
+      "discipline": "M",
+      "scale": "SCHEMATIC",
+      "renderer": "coolingLoops"
+    },
+    {
+      "id": "G-001",
+      "title": "THREE-POD SITE PLAN",
+      "subtitle": "Electrical, cooling and compute pods with separate chiller and generator.",
+      "discipline": "G",
+      "scale": "PLAN 1:50",
+      "renderer": "sitePlan"
+    },
+    {
+      "id": "G-002",
+      "title": "THREE PODS - EXTERIOR 3D",
+      "subtitle": "Two cooler roofs and one insulated compute roof, connected in a 60 ft row.",
+      "discipline": "G",
+      "scale": "3D / NTS",
+      "renderer": "exterior3d"
+    },
+    {
+      "id": "G-601",
+      "title": "EQUIPMENT BOM & COST",
+      "subtitle": "One equipment schedule for all three pods, roofs and external connections.",
+      "discipline": "G",
+      "scale": "USD / NTS",
+      "renderer": "bomCost"
+    },
+    {
+      "id": "G-107",
+      "title": "RACK & BUSWAY FIT",
+      "subtitle": "Custom 550 mm bay, overhead taps and rear connection space.",
+      "discipline": "G",
+      "scale": "AS SHOWN",
+      "renderer": "rackBuswayFit",
+      "notes": [
+        {
+          "title": "STANDARD EQUIPMENT FACE",
+          "body": "482.6 mm front panel / 19-inch mounting. Rail / bracket thickness and clear withdrawal opening need approval."
+        },
+        {
+          "title": "REFERENCE NODE BODY",
+          "body": "{node.w} W x {node.d} D x {node.h} H. 4U allocation = {u4} mm. Dashed outline: {cdu.w} W x {cdu.d} D CDU reserve."
+        },
+        {
+          "title": "REAR CONNECTION DEPTH",
+          "body": "Gross: {rearNode} node / {rearCdu} CDU. Ahead of PDU zones: only {aheadNode} node / {aheadCdu} CDU. Plugs and hose bends unverified."
+        },
+        {
+          "title": "REAR-ONLY 0U PDUs",
+          "body": "Two {pdu0.w} W x {pdu0.d} D bodies in {zone.w} W x {zone.d} D zones. Z100-2,058 body; Z100-2,150 zone. See enlarged detail."
+        },
+        {
+          "title": "CUSTOM REAR-DOOR DUTY",
+          "body": "{rdhxCompute} kW target per compute bay; {rdhxCentral} kW per central bay. A standard 600 mm door does not fit a {pitch} mm bay."
+        }
+      ]
+    },
+    {
+      "id": "G-103",
+      "title": "STRUCTURAL CHASSIS & SHELL COST",
+      "subtitle": "Chassis, insulation thickness and base-shell cost.",
+      "discipline": "G",
+      "scale": "1:20 / 1:2",
+      "renderer": "structuralChassis"
+    },
+    {
+      "id": "M-103",
+      "title": "DRY-COOLER ROOF",
+      "subtitle": "Twelve fans in two rows, internal angled coils and drainage deck.",
+      "discipline": "M",
+      "scale": "1:20 / 1:25",
+      "renderer": "dryCoolerRoof"
+    },
+    {
+      "id": "G-108",
+      "title": "COMPUTE ROOF & SERVICE CLEARANCES",
+      "subtitle": "Insulated service space for busways, fiber trays and cooling headers.",
+      "discipline": "G",
+      "scale": "SECTION 1:20",
+      "renderer": "roofClearances"
+    },
+    {
+      "id": "M-104",
+      "title": "COOLING CAPACITY CHECK",
+      "subtitle": "Heat balance and preliminary airflow, coil and coolant calculations.",
+      "discipline": "M",
+      "scale": "CALCULATIONS / NTS",
+      "renderer": "coolingCapacity"
+    },
+    {
+      "id": "M-105",
+      "title": "ROOF SNOW, ICE & DRAINAGE",
+      "subtitle": "Cold-weather drainage, fan protection and maintenance requirements.",
+      "discipline": "M",
+      "scale": "SECTION 1:20",
+      "renderer": "roofWinter",
+      "notes": [
+        {
+          "title": "SNOW / ICE LOAD",
+          "body": "Design frame, fan supports and guards for site snow, drift, ice, wind and maintenance loads. Transfer to rails / posts / foundations; no load credit from operating heat."
+        },
+        {
+          "title": "DRAINAGE",
+          "body": "Pitch collector pans at least 1:80; provide primary and visible emergency discharge paths to exterior collection. Trace / insulate exposed drains; keep discharge away from doors and switchgear."
+        },
+        {
+          "title": "FAN START / ICE",
+          "body": "Temperature, fan proving and vibration / imbalance trip. If obstructed or iced: stop and lock out affected fans; alarm and transfer heat to chiller / reduce IT. Inspect and de-ice before restart."
+        },
+        {
+          "title": "SERVICE ACCESS",
+          "body": "Use a maintenance lift at long sides; fans lift vertically and coils withdraw sideways. Do not stand on guards. Site access / fall protection and a snow-removal method must be engineered."
+        },
+        {
+          "title": "FREEZE SURVIVAL",
+          "body": "Select glycol for the actual minimum fluid temperature. Drain heat reserve 2 kW/roof is inside the existing <=35 kW essential-heat target. Prove generator load and heat-loss budget."
+        },
+        {
+          "title": "PRODUCT SELECTION",
+          "body": "Reference fan -25 to +50 C limits do not qualify -40 C operation. Specify the actual cold-start and hot-discharge limits. No automatic fan reversal or defrost cycle is assumed."
+        }
+      ]
+    }
+  ]
+}

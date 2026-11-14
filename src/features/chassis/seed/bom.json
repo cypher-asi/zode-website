@@ -1,0 +1,681 @@
+{
+  "areas": [
+    {
+      "id": "compute",
+      "label": "COMPUTE POD"
+    },
+    {
+      "id": "cooling",
+      "label": "COOLING POD"
+    },
+    {
+      "id": "electrical",
+      "label": "ELECTRICAL POD"
+    },
+    {
+      "id": "outdoor",
+      "label": "OUTDOOR PLANT & LINKS"
+    }
+  ],
+  "items": [
+    {
+      "id": "S2",
+      "area": "compute",
+      "group": "01 / SHELL AND RACKS",
+      "partId": "compute-shell",
+      "qty": 1,
+      "scope": "Compute shell / service panels / transport lid",
+      "unitCostOverride": null
+    },
+    {
+      "id": "S8",
+      "area": "compute",
+      "group": "01 / SHELL AND RACKS",
+      "partId": "compute-roof",
+      "qty": 1,
+      "scope": "Flat insulated service roof / compute only",
+      "unitCostOverride": null
+    },
+    {
+      "id": "R1",
+      "area": "compute",
+      "group": "01 / SHELL AND RACKS",
+      "partId": "rack-frame-550",
+      "qty": 8,
+      "scope": "Custom 550 mm compute rail frames",
+      "unitCostOverride": null
+    },
+    {
+      "id": "R10",
+      "area": "compute",
+      "group": "01 / SHELL AND RACKS",
+      "partId": "rack-frame-550-ns",
+      "qty": 2,
+      "scope": "Custom 550 mm network / storage frames",
+      "unitCostOverride": null
+    },
+    {
+      "id": "R8",
+      "area": "compute",
+      "group": "01 / SHELL AND RACKS",
+      "partId": "server-lift-kit",
+      "qty": 1,
+      "scope": "Server lift / service hood / hand tools",
+      "unitCostOverride": null
+    },
+    {
+      "id": "E5",
+      "area": "compute",
+      "group": "02 / RACK POWER",
+      "partId": "busway-1250a",
+      "qty": 1,
+      "scope": "2 x 1,250 A busways / 20 protected custom taps",
+      "unitCostOverride": null
+    },
+    {
+      "id": "R3",
+      "area": "compute",
+      "group": "02 / RACK POWER",
+      "partId": "cpi-e0-1192",
+      "qty": 20,
+      "scope": "100 A 0U PDUs / 10 CPI paired packs",
+      "unitCostOverride": null
+    },
+    {
+      "id": "R9",
+      "area": "compute",
+      "group": "02 / RACK POWER",
+      "partId": "apc-apdu11454me",
+      "qty": 36,
+      "scope": "60 A 2U metered PDUs / APDU11454ME",
+      "unitCostOverride": null
+    },
+    {
+      "id": "R7",
+      "area": "compute",
+      "group": "02 / RACK POWER",
+      "partId": "it-cord-kit",
+      "qty": 10,
+      "scope": "IT power cords / connector kits / 10 rack sets",
+      "unitCostOverride": null
+    },
+    {
+      "id": "R2",
+      "area": "compute",
+      "group": "03 / RACK COOLING AND CLIMATE",
+      "partId": "cdu-4u-chx200",
+      "qty": 8,
+      "scope": "4U CDUs / N+1 internal pumps / CHx200 class",
+      "unitCostOverride": null
+    },
+    {
+      "id": "R4",
+      "area": "compute",
+      "group": "03 / RACK COOLING AND CLIMATE",
+      "partId": "rdhx-550-45kw",
+      "qty": 8,
+      "scope": "Custom 550 mm RDHx / 45 kW target",
+      "unitCostOverride": null
+    },
+    {
+      "id": "R11",
+      "area": "compute",
+      "group": "03 / RACK COOLING AND CLIMATE",
+      "partId": "rdhx-550-60kw",
+      "qty": 2,
+      "scope": "Custom 550 mm central RDHx / 60 kW target",
+      "unitCostOverride": null
+    },
+    {
+      "id": "R5",
+      "area": "compute",
+      "group": "03 / RACK COOLING AND CLIMATE",
+      "partId": "rdhx-adapter-kit",
+      "qty": 10,
+      "scope": "10 RDHx adapters / hoses / dry-breaks",
+      "unitCostOverride": null
+    },
+    {
+      "id": "R6",
+      "area": "compute",
+      "group": "03 / RACK COOLING AND CLIMATE",
+      "partId": "cdu-manifold-kit",
+      "qty": 8,
+      "scope": "CDU secondary manifolds / node connection kits",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M7",
+      "area": "compute",
+      "group": "03 / RACK COOLING AND CLIMATE",
+      "partId": "compute-chw-headers",
+      "qty": 1,
+      "scope": "Compute CHW headers / 10 branch valve sets",
+      "unitCostOverride": null
+    },
+    {
+      "id": "B8",
+      "area": "compute",
+      "group": "03 / RACK COOLING AND CLIMATE",
+      "partId": "compute-dtc-headers",
+      "qty": 1,
+      "scope": "Compute DTC headers / 8 CDU primary drops",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M8",
+      "area": "compute",
+      "group": "03 / RACK COOLING AND CLIMATE",
+      "partId": "compute-hvac",
+      "qty": 1,
+      "scope": "Compute ventilation / heat / humidity control",
+      "unitCostOverride": null
+    },
+    {
+      "id": "S7",
+      "area": "cooling",
+      "group": "07 / ENCLOSURE / PUMPS / HEAT EXCHANGER",
+      "partId": "cooling-shell",
+      "qty": 1,
+      "scope": "Cooling shell / tank floor + roof load frame",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M12",
+      "area": "cooling",
+      "group": "07 / ENCLOSURE / PUMPS / HEAT EXCHANGER",
+      "partId": "pump-pw-11kw",
+      "qty": 2,
+      "scope": "P-W warm-loop pump + VFD / 11 kW reserve",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M13",
+      "area": "cooling",
+      "group": "07 / ENCLOSURE / PUMPS / HEAT EXCHANGER",
+      "partId": "pump-pc-22kw",
+      "qty": 2,
+      "scope": "P-C CHW pump + VFD / 22 kW reserve",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M6",
+      "area": "cooling",
+      "group": "07 / ENCLOSURE / PUMPS / HEAT EXCHANGER",
+      "partId": "hx-1",
+      "qty": 1,
+      "scope": "HX-1 warm-to-CHW trim heat exchanger",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M1",
+      "area": "cooling",
+      "group": "07 / ENCLOSURE / PUMPS / HEAT EXCHANGER",
+      "partId": "cooling-internal-headers",
+      "qty": 1,
+      "scope": "Internal headers / isolation / checks / strainers",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M10",
+      "area": "cooling",
+      "group": "07 / ENCLOSURE / PUMPS / HEAT EXCHANGER",
+      "partId": "min-flow-bypass",
+      "qty": 1,
+      "scope": "Mixing / minimum-flow bypass valve assemblies",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M14",
+      "area": "cooling",
+      "group": "08 / WATER STORAGE / TREATMENT / CONTROLS",
+      "partId": "buffer-tank-1000gal",
+      "qty": 2,
+      "scope": "TK-1/2 / 1,000 US gal insulated buffer vessels",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M4",
+      "area": "cooling",
+      "group": "08 / WATER STORAGE / TREATMENT / CONTROLS",
+      "partId": "et-w-200l",
+      "qty": 1,
+      "scope": "ET-W / 200 L expansion vessel / safety set",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M18",
+      "area": "cooling",
+      "group": "08 / WATER STORAGE / TREATMENT / CONTROLS",
+      "partId": "et-c-800l",
+      "qty": 1,
+      "scope": "ET-C / 800 L expansion vessel / safety set",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M15",
+      "area": "cooling",
+      "group": "08 / WATER STORAGE / TREATMENT / CONTROLS",
+      "partId": "air-dirt-separator",
+      "qty": 2,
+      "scope": "Air-dirt separation / side-stream filter sets",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M16",
+      "area": "cooling",
+      "group": "08 / WATER STORAGE / TREATMENT / CONTROLS",
+      "partId": "fill-dosing-cart",
+      "qty": 1,
+      "scope": "Closed fill / dosing / sampling cart and ports",
+      "unitCostOverride": null
+    },
+    {
+      "id": "C6",
+      "area": "cooling",
+      "group": "08 / WATER STORAGE / TREATMENT / CONTROLS",
+      "partId": "loop-sensors",
+      "qty": 1,
+      "scope": "Loop flow / dP / pressure / temperature sensors",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M17",
+      "area": "cooling",
+      "group": "08 / WATER STORAGE / TREATMENT / CONTROLS",
+      "partId": "cooling-pod-hvac",
+      "qty": 1,
+      "scope": "Cooling-pod heat / ventilation / spill containment",
+      "unitCostOverride": null
+    },
+    {
+      "id": "B10",
+      "area": "cooling",
+      "group": "08 / WATER STORAGE / TREATMENT / CONTROLS",
+      "partId": "pipe-supports",
+      "qty": 1,
+      "scope": "Pipe supports / pump bases / anti-vibration kits",
+      "unitCostOverride": null
+    },
+    {
+      "id": "B11",
+      "area": "cooling",
+      "group": "08 / WATER STORAGE / TREATMENT / CONTROLS",
+      "partId": "coolant-fill",
+      "qty": 1,
+      "scope": "Initial treated coolant / glycol fill / all loops",
+      "unitCostOverride": null
+    },
+    {
+      "id": "S1",
+      "area": "electrical",
+      "group": "04 / ENCLOSURE AND DISTRIBUTION",
+      "partId": "electrical-shell",
+      "qty": 1,
+      "scope": "Electrical shell / transformer + roof load frame",
+      "unitCostOverride": null
+    },
+    {
+      "id": "E1",
+      "area": "electrical",
+      "group": "04 / ENCLOSURE AND DISTRIBUTION",
+      "partId": "tx-2mva-dry",
+      "qty": 1,
+      "scope": "2 MVA indoor dry-type transformer / MV fused switch",
+      "unitCostOverride": null
+    },
+    {
+      "id": "E8",
+      "area": "electrical",
+      "group": "04 / ENCLOSURE AND DISTRIBUTION",
+      "partId": "tx-vent-fans",
+      "qty": 1,
+      "scope": "Transformer ventilation / 2 x 100% fans / baffles",
+      "unitCostOverride": null
+    },
+    {
+      "id": "S9",
+      "area": "electrical",
+      "group": "04 / ENCLOSURE AND DISTRIBUTION",
+      "partId": "roof-containment",
+      "qty": 1,
+      "scope": "Independent roof containment / exterior drains",
+      "unitCostOverride": null
+    },
+    {
+      "id": "B1",
+      "area": "electrical",
+      "group": "04 / ENCLOSURE AND DISTRIBUTION",
+      "partId": "lv-bus-link",
+      "qty": 1,
+      "scope": "Internal transformer-to-board LV bus link",
+      "unitCostOverride": null
+    },
+    {
+      "id": "E3",
+      "area": "electrical",
+      "group": "04 / ENCLOSURE AND DISTRIBUTION",
+      "partId": "lv-board-3200a",
+      "qty": 1,
+      "scope": "3,200 A front-access LV board / IT mains",
+      "unitCostOverride": null
+    },
+    {
+      "id": "E6",
+      "area": "electrical",
+      "group": "04 / ENCLOSURE AND DISTRIBUTION",
+      "partId": "aux-panel",
+      "qty": 1,
+      "scope": "Auxiliary panel / branch breakers / metering",
+      "unitCostOverride": null
+    },
+    {
+      "id": "E9",
+      "area": "electrical",
+      "group": "04 / ENCLOSURE AND DISTRIBUTION",
+      "partId": "chiller-feeder",
+      "qty": 1,
+      "scope": "Chiller feeder breaker / local disconnect",
+      "unitCostOverride": null
+    },
+    {
+      "id": "B4",
+      "area": "electrical",
+      "group": "04 / ENCLOSURE AND DISTRIBUTION",
+      "partId": "spd-earthing",
+      "qty": 1,
+      "scope": "Coordinated SPD / earthing and bond hardware",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M11",
+      "area": "electrical",
+      "group": "04 / ENCLOSURE AND DISTRIBUTION",
+      "partId": "electrical-hvac",
+      "qty": 1,
+      "scope": "Electrical HVAC / standby heat / ventilation",
+      "unitCostOverride": null
+    },
+    {
+      "id": "E12",
+      "area": "electrical",
+      "group": "05 / OUTAGE PROTECTION",
+      "partId": "ups-100kw",
+      "qty": 1,
+      "scope": "100 kW cooling UPS / 5 min battery package",
+      "unitCostOverride": null
+    },
+    {
+      "id": "E13",
+      "area": "electrical",
+      "group": "05 / OUTAGE PROTECTION",
+      "partId": "ups-distribution",
+      "qty": 1,
+      "scope": "UPS bypass / distribution / 10 rack AUX panels",
+      "unitCostOverride": null
+    },
+    {
+      "id": "E4",
+      "area": "electrical",
+      "group": "05 / OUTAGE PROTECTION",
+      "partId": "control-ups",
+      "qty": 1,
+      "scope": "Control UPS / battery / 30 min target",
+      "unitCostOverride": null
+    },
+    {
+      "id": "E10",
+      "area": "electrical",
+      "group": "05 / OUTAGE PROTECTION",
+      "partId": "pq-monitor",
+      "qty": 1,
+      "scope": "Power quality / phase / voltage monitoring",
+      "unitCostOverride": null
+    },
+    {
+      "id": "E11",
+      "area": "electrical",
+      "group": "05 / OUTAGE PROTECTION",
+      "partId": "it-inhibit",
+      "qty": 1,
+      "scope": "Hardwired IT inhibit / trip / staged restart",
+      "unitCostOverride": null
+    },
+    {
+      "id": "E14",
+      "area": "electrical",
+      "group": "05 / OUTAGE PROTECTION",
+      "partId": "heat-ats",
+      "qty": 1,
+      "scope": "Essential heat ATS / generator interfaces",
+      "unitCostOverride": null
+    },
+    {
+      "id": "C1",
+      "area": "electrical",
+      "group": "06 / THREE-POD SHARED SYSTEMS",
+      "partId": "bms-plc",
+      "qty": 1,
+      "scope": "BMS / PLC / HMI and field I/O",
+      "unitCostOverride": null
+    },
+    {
+      "id": "C2",
+      "area": "electrical",
+      "group": "06 / THREE-POD SHARED SYSTEMS",
+      "partId": "leak-detection",
+      "qty": 1,
+      "scope": "Leak detection / 3 pods / local isolation",
+      "unitCostOverride": null
+    },
+    {
+      "id": "C3",
+      "area": "electrical",
+      "group": "06 / THREE-POD SHARED SYSTEMS",
+      "partId": "fire-detection",
+      "qty": 1,
+      "scope": "Fire detection / alarms / cause-and-effect I/O",
+      "unitCostOverride": null
+    },
+    {
+      "id": "C4",
+      "area": "electrical",
+      "group": "06 / THREE-POD SHARED SYSTEMS",
+      "partId": "fire-suppression",
+      "qty": 1,
+      "scope": "Fire-suppression equipment allowance / 3 pods",
+      "unitCostOverride": null
+    },
+    {
+      "id": "C5",
+      "area": "electrical",
+      "group": "06 / THREE-POD SHARED SYSTEMS",
+      "partId": "lighting",
+      "qty": 1,
+      "scope": "Interior / emergency lights / sockets / 3 pods",
+      "unitCostOverride": null
+    },
+    {
+      "id": "E7",
+      "area": "electrical",
+      "group": "06 / THREE-POD SHARED SYSTEMS",
+      "partId": "epo",
+      "qty": 1,
+      "scope": "EPO / isolation / interlock interfaces",
+      "unitCostOverride": null
+    },
+    {
+      "id": "B3",
+      "area": "electrical",
+      "group": "06 / THREE-POD SHARED SYSTEMS",
+      "partId": "segregated-trays",
+      "qty": 1,
+      "scope": "Segregated trays / electrical support hardware",
+      "unitCostOverride": null
+    },
+    {
+      "id": "B5",
+      "area": "electrical",
+      "group": "06 / THREE-POD SHARED SYSTEMS",
+      "partId": "control-cable",
+      "qty": 1,
+      "scope": "Control cable / terminals / glands / links",
+      "unitCostOverride": null
+    },
+    {
+      "id": "B2",
+      "area": "outdoor",
+      "group": "09 / UTILITY AND FREEZE SURVIVAL",
+      "partId": "ab-power-links",
+      "qty": 1,
+      "scope": "Weather-rated A/B power links / 20 m each",
+      "unitCostOverride": null
+    },
+    {
+      "id": "E15",
+      "area": "outdoor",
+      "group": "09 / UTILITY AND FREEZE SURVIVAL",
+      "partId": "chiller-power-links",
+      "qty": 1,
+      "scope": "Chiller / dry-cooler power links / 20 m allowance",
+      "unitCostOverride": null
+    },
+    {
+      "id": "G1",
+      "area": "outdoor",
+      "group": "09 / UTILITY AND FREEZE SURVIVAL",
+      "partId": "genset-50kw",
+      "qty": 1,
+      "scope": "50 kW winter genset / cold kit / fuel package",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M9",
+      "area": "outdoor",
+      "group": "09 / UTILITY AND FREEZE SURVIVAL",
+      "partId": "trace-insulation",
+      "qty": 1,
+      "scope": "External trace / insulation / low-point drain sets",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M3F",
+      "area": "outdoor",
+      "group": "10 / HEAT REJECTION AND CONNECTIONS",
+      "partId": "cooler-frame",
+      "qty": 2,
+      "scope": "Rectangular cooler frame / seals / bypass baffles",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M3C",
+      "area": "outdoor",
+      "group": "10 / HEAT REJECTION AND CONNECTIONS",
+      "partId": "coil-bank",
+      "qty": 4,
+      "scope": "Custom coil banks / 3 removable cassettes each",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M3A",
+      "area": "outdoor",
+      "group": "10 / HEAT REJECTION AND CONNECTIONS",
+      "partId": "ec-fan-800",
+      "qty": 24,
+      "scope": "800 mm EC fan / guard / controller allowance",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M3V",
+      "area": "outdoor",
+      "group": "10 / HEAT REJECTION AND CONNECTIONS",
+      "partId": "roof-valves",
+      "qty": 2,
+      "scope": "Roof valves / local controls / connections",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M3D",
+      "area": "outdoor",
+      "group": "10 / HEAT REJECTION AND CONNECTIONS",
+      "partId": "drip-deck",
+      "qty": 2,
+      "scope": "Cooler drip deck / drains / service panels",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M3T",
+      "area": "outdoor",
+      "group": "10 / HEAT REJECTION AND CONNECTIONS",
+      "partId": "roof-factory-test",
+      "qty": 2,
+      "scope": "Roof factory assembly / pressure + airflow test",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M3L",
+      "area": "outdoor",
+      "group": "10 / HEAT REJECTION AND CONNECTIONS",
+      "partId": "roof-mounts",
+      "qty": 2,
+      "scope": "Roof mounts / vibration / lifting hardware",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M3S",
+      "area": "outdoor",
+      "group": "10 / HEAT REJECTION AND CONNECTIONS",
+      "partId": "roof-winter-kit",
+      "qty": 2,
+      "scope": "Roof winter kit / drain heat / ice-vibration trip",
+      "unitCostOverride": null
+    },
+    {
+      "id": "M5",
+      "area": "outdoor",
+      "group": "10 / HEAT REJECTION AND CONNECTIONS",
+      "partId": "chiller-1100kw",
+      "qty": 1,
+      "scope": "Chiller / 1.10 MW NET at +46 C selection target",
+      "unitCostOverride": null
+    },
+    {
+      "id": "S3",
+      "area": "outdoor",
+      "group": "10 / HEAT REJECTION AND CONNECTIONS",
+      "partId": "ground-supports",
+      "qty": 1,
+      "scope": "Chiller / genset ground supports and mounts",
+      "unitCostOverride": null
+    },
+    {
+      "id": "B6",
+      "area": "outdoor",
+      "group": "10 / HEAT REJECTION AND CONNECTIONS",
+      "partId": "roof-risers",
+      "qty": 1,
+      "scope": "Roof risers + chiller pipes / 30 m paired routes",
+      "unitCostOverride": null
+    },
+    {
+      "id": "B7",
+      "area": "outdoor",
+      "group": "10 / HEAT REJECTION AND CONNECTIONS",
+      "partId": "dtc-chw-links",
+      "qty": 1,
+      "scope": "DTC + CHW links / joints / 15 m route reserve",
+      "unitCostOverride": null
+    },
+    {
+      "id": "B12",
+      "area": "outdoor",
+      "group": "10 / HEAT REJECTION AND CONNECTIONS",
+      "partId": "cold-spares",
+      "qty": 1,
+      "scope": "Critical cold spares / seals / drives / fuses",
+      "unitCostOverride": null
+    }
+  ],
+  "basisNote": "Basis: A = unquoted allowance; P = rounded supplier listing; U = user-set CDU price. Factory shells and roof allowances included. Excluded: tenant IT / networking / storage / optics / network cables, full IT UPS, site foundations / utility works / installation, engineering / certification / tooling, freight, tax and contingency. Roof and coil performance remain selection gates.",
+  "totalNote": "cost allowances held pending supplier re-quote"
+}

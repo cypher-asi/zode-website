@@ -1,0 +1,75 @@
+{
+  "design": {
+    "dtcFraction": 0.7,
+    "roofMinKw": 350,
+    "roofFluid": "45/35 C fluid, 25 C air, actual freeze-rated glycol / site altitude",
+    "fluidCp": 3.5,
+    "fluidDeltaT": 10,
+    "airDensity": 1.2,
+    "airCp": 1.0,
+    "airDeltaT": 10,
+    "fanAirflowM3h": 11965,
+    "fanMaxKw": 0.73,
+    "roofFeederKw": 25,
+    "roofReserveFlowLps": 22,
+    "chillerNetKw": 1100,
+    "designAmbientC": 46,
+    "upsKw": 100,
+    "upsTargetKw": 75,
+    "upsMinutes": 5
+  },
+  "loops": [
+    { "id": "W", "title": "W / WARM LOOP - DIRECT-TO-CHIP COOLING", "at": [13, 46] },
+    { "id": "C", "title": "C / CHILLED-WATER LOOP - REAR DOORS + HX-1", "at": [13, 162] }
+  ],
+  "components": [
+    { "id": "PW", "loop": "W", "kind": "pumpPair", "bom": "M12", "qty": 2, "label": "P-W1 / P-W2", "lines": ["2 x 100% / duty + standby"], "pos": { "x": 23, "y": 69, "w": 63, "h": 33 } },
+    { "id": "GPU", "loop": "W", "kind": "box", "part": "gpu-node-4u", "label": "{nodeCount} GPU NODES / TCS", "pos": { "x": 106, "y": 53, "w": 65, "h": 8 } },
+    { "id": "CDU", "loop": "W", "kind": "box", "bom": "R2", "style": "light", "label": "{cduCount} IN-RACK CDUs", "lines": ["N+1 internal pumps"], "pos": { "x": 106, "y": 69, "w": 65, "h": 33 } },
+    { "id": "V3W", "loop": "W", "kind": "valve", "bom": "M3V", "label": "3W", "pos": { "x": 182, "y": 83, "w": 6, "h": 5 } },
+    { "id": "ROOFS", "loop": "W", "kind": "roofBranches", "bom": "M3C", "label": "M3 / TWO ROOF BRANCHES", "lines": ["IV + FLOW PROOF / BALANCE + IV"], "pos": { "x": 199, "y": 69, "w": 69, "h": 33 } },
+    {
+      "id": "HX",
+      "loop": "both",
+      "kind": "hx",
+      "bom": "M6",
+      "label": "HX-1 / SHARED HEAT EXCHANGER",
+      "lines": ["{dtcKw} kW", "warm-loop duty target", "SEPARATE FLUID CIRCUITS", "HEAT TRANSFERS; FLUIDS DO NOT MIX"],
+      "pos": { "x": 314, "y": 66, "w": 84, "h": 132 }
+    },
+    { "id": "ETW", "loop": "W", "kind": "box", "bom": "M4", "label": "ET-W / AIR-DIRT", "pos": { "x": 27, "y": 122, "w": 54, "h": 9 } },
+    { "id": "TK", "loop": "C", "kind": "box", "bom": "M14", "qty": 2, "style": "light", "label": "TK-1 + TK-2", "lines": ["2 x 3,785 L / series"], "pos": { "x": 23, "y": 168, "w": 65, "h": 30 } },
+    { "id": "PC", "loop": "C", "kind": "pumpPair", "bom": "M13", "qty": 2, "label": "P-C1 / P-C2", "lines": ["2 x 100% / duty + standby"], "pos": { "x": 111, "y": 165, "w": 64, "h": 33 } },
+    { "id": "M5", "loop": "C", "kind": "box", "bom": "M5", "style": "light", "label": "M5 / AIR-COOLED CHILLER", "lines": ["{chillerMw} MW NET target at +{ambientC} C"], "pos": { "x": 196, "y": 168, "w": 78, "h": 30 } },
+    { "id": "CV", "loop": "C", "kind": "valve", "bom": "M10", "label": "CV", "pos": { "x": 381, "y": 204.5, "w": 9, "h": 5 } },
+    { "id": "MINFLOW", "loop": "C", "kind": "box", "bom": "M10", "label": "MIN FLOW", "pos": { "x": 277, "y": 218, "w": 16, "h": 9 } },
+    { "id": "RDHX", "loop": "C", "kind": "box", "bom": "R4", "style": "light", "label": "{rackCount} REAR-DOOR EXCHANGERS", "lines": ["{rdhxKw} kW design heat load"], "pos": { "x": 306, "y": 216, "w": 76, "h": 21 } },
+    { "id": "ETC", "loop": "C", "kind": "box", "bom": "M18", "label": "ET-C / AIR-DIRT", "pos": { "x": 27, "y": 223, "w": 54, "h": 9 } }
+  ],
+  "edges": [
+    { "from": "PW", "to": "CDU", "loop": "W", "kind": "flow", "label": "SUPPLY", "labelAt": [96, 83.5], "points": [[86, 85.5], [106, 85.5]] },
+    { "from": "CDU", "to": "GPU", "loop": "W", "kind": "flow", "points": [[138.5, 69], [138.5, 61]] },
+    { "from": "CDU", "to": "V3W", "loop": "W", "kind": "flow", "label": "W RETURN", "labelAt": [176.5, 93], "points": [[171, 85.5], [182, 85.5]] },
+    { "from": "V3W", "to": "ROOFS", "loop": "W", "kind": "flow", "points": [[188, 85.5], [199, 85.5]] },
+    { "from": "V3W", "to": "HX", "loop": "W", "kind": "bypass", "label": "ROOF BYPASS / HOT-WEATHER PATH", "labelAt": [233, 56], "points": [[185, 83], [185, 59], [288, 59], [288, 85.5]] },
+    { "from": "ROOFS", "to": "HX", "loop": "W", "kind": "flow", "points": [[268, 85.5], [337, 85.5], [337, 125]] },
+    { "from": "HX", "to": "PW", "loop": "W", "kind": "flow", "label": "COOLED W RETURN TO P-W PUMPS", "labelAt": [170, 138.5], "points": [[337, 125], [337, 140], [15, 140], [15, 85.5], [23, 85.5]] },
+    { "from": "ETW", "to": "PW", "loop": "W", "kind": "flow", "points": [[27, 126.5], [15, 126.5]] },
+    { "from": "HX", "to": "HX", "loop": "W", "kind": "heat", "label": "HEAT", "labelAt": [356, 119], "points": [[344, 123], [368, 123]] },
+    { "from": "TK", "to": "PC", "loop": "C", "kind": "flow", "points": [[88, 183], [111, 183]] },
+    { "from": "PC", "to": "M5", "loop": "C", "kind": "flow", "points": [[175, 183], [196, 183]] },
+    { "from": "M5", "to": "CV", "loop": "C", "kind": "flow", "label": "CHILLED SUPPLY TO HX-1", "labelAt": [330, 205], "points": [[274, 183], [285, 183], [285, 207], [381, 207]] },
+    { "from": "CV", "to": "HX", "loop": "C", "kind": "flow", "points": [[390, 207], [404, 207], [404, 190], [398, 190]] },
+    { "from": "M5", "to": "RDHX", "loop": "C", "kind": "flow", "points": [[300, 207], [300, 226], [306, 226]] },
+    { "from": "M5", "to": "MINFLOW", "loop": "C", "kind": "flow", "points": [[285, 207], [285, 218]] },
+    { "from": "MINFLOW", "to": "TK", "loop": "C", "kind": "flow", "points": [[285, 227], [285, 239]] },
+    { "from": "RDHX", "to": "TK", "loop": "C", "kind": "flow", "points": [[344, 237], [344, 239]] },
+    { "from": "HX", "to": "TK", "loop": "C", "kind": "flow", "label": "C RETURN / BOTH LOADS -> BUFFER -> PUMPS -> CHILLER", "labelAt": [170, 237.5], "points": [[398, 110], [408, 110], [408, 239], [15, 239], [15, 183], [23, 183]] },
+    { "from": "ETC", "to": "TK", "loop": "C", "kind": "flow", "points": [[27, 227.5], [15, 227.5]] }
+  ],
+  "texts": [
+    { "at": [13, 147], "text": "HOT DAYS: bypass the roofs. HX-1 transfers warm-loop heat to the chilled-water circuit.", "bold": true },
+    { "at": [13, 153], "text": "M5 serves {dtcKw} kW DTC + {rdhxKw} kW rear-door heat; retain {chillerMw} MW net chiller target. Final HX / glycol duty requires selection." },
+    { "at": [13, 252], "text": "Solid arrows: fluid flow. Dotted HX arrow: heat transfer only. CV: modulating valve; 3W: roof bypass valve. Isolation / instrumentation simplified.", "size": 1.4 }
+  ]
+}

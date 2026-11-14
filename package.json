@@ -13,6 +13,7 @@
     "contracts:import": "node --env-file-if-exists=.env.local scripts/import-compute-deals.mjs",
     "bom:import": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import-bom.mjs",
     "policy:import": "node --env-file-if-exists=.env.local scripts/import-policy.mjs",
+    "chassis:import": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import-chassis.mjs",
     "deck:maps": "node scripts/fetch-site-maps.mjs",
     "deck:pdf": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/make-deck-pdf.mjs",
     "deck:chicago": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/make-chicago-deck.mjs",
@@ -27,6 +28,7 @@
     "lint:brand": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-brand-tokens.mjs",
     "check:model": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-compute-model.mjs",
     "check:factory": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-factory-sim.mjs",
+    "check:chassis": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-chassis.mjs",
     "brand:kit": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/make-brand-kit.mjs",
     "profile:pdf": "node scripts/make-company-profile.mjs"
   },

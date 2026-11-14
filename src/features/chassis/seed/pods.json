@@ -1,0 +1,229 @@
+{
+  "chassis": {
+    "length": 6058,
+    "width": 2438,
+    "wallCore": 100,
+    "wallFrame": 50,
+    "floorBuildUp": 200,
+    "transitHeight": 3400,
+    "deployedHeight": 5000,
+    "flatCeiling": 4624,
+    "transport": { "dunnage": 50, "trailerDeck": 508 },
+    "nominal": "20 ft"
+  },
+  "roofProfiles": [
+    {
+      "id": "dry-cooler",
+      "type": "dry-cooler",
+      "height": 1600,
+      "fanPart": "ec-fan-800",
+      "fanRows": 2,
+      "fanCols": 6,
+      "frame": 970,
+      "gap": 20,
+      "endMargin": 69,
+      "centerGap": 80,
+      "sideMargin": 209,
+      "boltCenters": 910,
+      "nozzleDia": 857,
+      "coil": { "length": 5520, "slant": 1093, "thick": 128, "banks": 2, "endZone": 269, "headerReserve": 200 },
+      "stack": {
+        "coilHigh": 1050,
+        "fanLow": 1200,
+        "coilBottom": 250,
+        "deckTop": 200,
+        "fanFlange": 1500,
+        "guardTop": 1600,
+        "drainSkin": [1370, 1400],
+        "fanAxialDepth": 250,
+        "fanAxialReserve": 300
+      },
+      "kits": [
+        { "part": "cooler-frame", "qty": 1 },
+        { "part": "coil-bank", "qty": 2 },
+        { "part": "roof-valves", "qty": 1 },
+        { "part": "drip-deck", "qty": 1 },
+        { "part": "roof-factory-test", "qty": 1 },
+        { "part": "roof-mounts", "qty": 1 },
+        { "part": "roof-winter-kit", "qty": 1 }
+      ]
+    },
+    {
+      "id": "insulated",
+      "type": "insulated",
+      "height": 1600,
+      "kits": [{ "part": "compute-roof", "qty": 1 }]
+    }
+  ],
+  "pods": [
+    {
+      "id": "electrical",
+      "name": "ELECTRICAL POD",
+      "short": "ELECTRICAL",
+      "shellBom": "S1",
+      "roof": { "profile": "dry-cooler", "tag": "DC-E", "label": "DC-E / 12 FANS / DUTY TBD*", "sub": "TRANSFORMER INSIDE" },
+      "partitions": [
+        { "x": 2500, "w": 100 },
+        { "x": 4550, "w": 100 }
+      ],
+      "placements": [
+        {
+          "id": "E1",
+          "bom": "E1",
+          "x": 80,
+          "y": 235,
+          "style": "light",
+          "label": ["E1 / 2 MVA DRY-TYPE", "MV SWITCH + TRANSFORMER", "{dims} reserve", "Isolated, ventilated enclosure"],
+          "siteLabel": "TX / MV"
+        },
+        {
+          "id": "E3",
+          "bom": "E3",
+          "x": 2672,
+          "y": 100,
+          "style": "dark",
+          "label": ["E3 / 3,200 A LV BOARD", "E6 AUX + E14 ATS", "{dims}*"],
+          "siteLabel": "LV / ATS"
+        },
+        {
+          "id": "lv-bay",
+          "x": 2672,
+          "y": 950,
+          "w": 1800,
+          "d": 1138,
+          "style": "dashed",
+          "label": ["LV SERVICE BAY", "{d} mm clear depth*", "Rear access door", "No water piping"]
+        },
+        {
+          "id": "E12-UPS",
+          "bom": "E12",
+          "x": 4705,
+          "y": 100,
+          "w": 500,
+          "d": 900,
+          "style": "dark",
+          "label": ["E12", "UPS", "100 kW"],
+          "siteLabel": "UPS"
+        },
+        {
+          "id": "E12-BAT",
+          "bom": "E12",
+          "x": 5225,
+          "y": 100,
+          "w": 500,
+          "d": 900,
+          "style": "light",
+          "label": ["E12", "BATTERY", "5 min*"]
+        },
+        {
+          "id": "future",
+          "x": 4705,
+          "y": 1250,
+          "w": 1050,
+          "d": 700,
+          "style": "dashed",
+          "label": ["FUTURE SPACE", "{w} x {d} x 2,300", "ATS / extra UPS*", "NO EQUIPMENT PRICED"]
+        }
+      ],
+      "annotations": [
+        { "x": 1255, "y": 120, "text": "E8 / INTAKE + EXHAUST / 2 x 100% FANS", "bold": true }
+      ],
+      "exteriorNote": "Rear access door / no water piping"
+    },
+    {
+      "id": "cooling",
+      "name": "COOLING POD",
+      "short": "COOLING",
+      "shellBom": "S7",
+      "roof": { "profile": "dry-cooler", "tag": "DC-C", "label": "DC-C / 12 FANS / DUTY TBD*", "sub": "PUMPS / HX / 2 TANKS" },
+      "placements": [
+        {
+          "id": "PW-SKID",
+          "bom": "M12",
+          "x": 130,
+          "y": 90,
+          "w": 780,
+          "d": 900,
+          "style": "light",
+          "label": ["", "", "", "P-W1 / P-W2", "DTC / 2 x 100%", "ISOLATE / CHECK / VFD"],
+          "siteLabel": "N+1 PUMPS"
+        },
+        { "id": "ET-W", "bom": "M4", "shape": "circle", "x": 520, "y": 400, "w": 700, "style": "dashed", "label": [] },
+        { "id": "P-W1", "bom": "M12", "shape": "circle", "x": 345, "y": 400, "w": 270, "label": [] },
+        { "id": "P-W2", "bom": "M12", "shape": "circle", "x": 695, "y": 400, "w": 270, "label": [] },
+        {
+          "id": "PC-SKID",
+          "bom": "M13",
+          "x": 1040,
+          "y": 90,
+          "w": 780,
+          "d": 900,
+          "style": "light",
+          "label": ["", "", "", "P-C1 / P-C2", "CHW / 2 x 100%", "ISOLATE / CHECK / VFD"]
+        },
+        { "id": "ET-C", "bom": "M18", "shape": "circle", "x": 1430, "y": 400, "w": 800, "style": "dashed", "label": [] },
+        { "id": "P-C1", "bom": "M13", "shape": "circle", "x": 1255, "y": 400, "w": 270, "label": [] },
+        { "id": "P-C2", "bom": "M13", "shape": "circle", "x": 1605, "y": 400, "w": 270, "label": [] },
+        { "id": "HX-1", "bom": "M6", "x": 1915, "y": 90, "style": "dark", "label": ["HX-1"] },
+        {
+          "id": "service-area",
+          "x": 130,
+          "y": 990,
+          "w": 2095,
+          "d": 1138,
+          "style": "dashed",
+          "label": ["PUMP SERVICE AREA", "{d} mm to inner wall", "Duty pump stays in service", "while standby pump is isolated"]
+        },
+        {
+          "id": "TK-1",
+          "bom": "M14",
+          "shape": "circle",
+          "x": 3100,
+          "y": 1069,
+          "style": "light",
+          "label": ["TK-1 / CHW BUFFER", "1,000 US gal / 3,785 L", "1,650 OD x 2,750 H reserve", "Baffled, 2-port, in series"],
+          "siteLabel": "3,785 L"
+        },
+        {
+          "id": "TK-2",
+          "bom": "M14",
+          "shape": "circle",
+          "x": 4878,
+          "y": 1069,
+          "style": "light",
+          "label": ["TK-2 / CHW BUFFER", "1,000 US gal / 3,785 L", "1,650 OD x 2,750 H reserve", "Baffled, 2-port, in series"],
+          "siteLabel": "3,785 L"
+        }
+      ],
+      "annotations": [
+        { "x": 520, "y": 30, "text": "ET-W above", "bold": false },
+        { "x": 1430, "y": 30, "text": "ET-C above", "bold": false }
+      ],
+      "exteriorNote": "TANK MANWAYS AND VALVES ACCESSED FROM OUTSIDE"
+    },
+    {
+      "id": "compute",
+      "name": "COMPUTE POD",
+      "short": "COMPUTE",
+      "shellBom": "S2",
+      "roof": { "profile": "insulated", "tag": "SERVICE PLENUM", "label": "RAISED SERVICE ROOF / NO COOLER", "sub": "10 RACKS / 8 + 2 CENTRAL" },
+      "servicePanelsPerFace": 10,
+      "placements": [],
+      "annotations": [],
+      "exteriorNote": "FRONT SERVICE PANELS / EQUIPMENT REMOVES TO OUTSIDE"
+    }
+  ],
+  "shellCost": [
+    { "n": "01", "label": "Steel cage / fabrication", "cost": { "compute": 5800, "electrical": 5800, "cooling": 5800 } },
+    { "n": "02", "label": "Corrosion protection", "cost": { "compute": 2300, "electrical": 2300, "cooling": 2300 } },
+    { "n": "03", "label": "Insulation / utility roofs / compute transit lid", "cost": { "compute": 6000, "electrical": 6000, "cooling": 6000 } },
+    { "n": "04", "label": "Service hardware / 20 or 6 sets", "cost": { "compute": 9450, "electrical": 2835, "cooling": 2835 } },
+    { "n": "05", "label": "Insulated floor / heavy-load reinforcement", "cost": { "compute": 1850, "electrical": 4350, "cooling": 4350 } },
+    { "n": "06", "label": "Two end access sets / seals", "cost": { "compute": 2600, "electrical": 2600, "cooling": 2600 } },
+    { "n": "07", "label": "Utility interfaces / glands", "cost": { "compute": 1500, "electrical": 1500, "cooling": 1500 } },
+    { "n": "08", "label": "Weatherproofing / flashings", "cost": { "compute": 900, "electrical": 900, "cooling": 900 } },
+    { "n": "09", "label": "Factory assembly / QC", "cost": { "compute": 2750, "electrical": 2750, "cooling": 2750 } },
+    { "n": "10", "label": "Scrap / consumables", "cost": { "compute": 850, "electrical": 850, "cooling": 850 } },
+    { "n": "11", "label": "Roof-load rails / posts reinforcement", "cost": { "compute": 0, "electrical": 6500, "cooling": 6500 } }
+  ]
+}

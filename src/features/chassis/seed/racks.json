@@ -1,0 +1,152 @@
+{
+  "bay": {
+    "pitch": 550,
+    "depth": 1295,
+    "height": 2258,
+    "units": 48,
+    "unitHeight": 44.45,
+    "endClearance": 129,
+    "frontZone": 243,
+    "rdhxDepth": 400,
+    "rearReturn": 200,
+    "equipmentFace": 482.6,
+    "frontOffset": 42,
+    "sideFrame": 10,
+    "rearPduClear": 185,
+    "zeroUZone": { "w": 70, "d": 150, "h": 2050 },
+    "auxReserve": { "w": 483, "d": 200, "h": 44.45 },
+    "manifoldBody": 30
+  },
+  "types": [
+    {
+      "id": "compute",
+      "label": "COMPUTE",
+      "role": "compute",
+      "kwCap": 110,
+      "frame": "rack-frame-550",
+      "rdhx": "rdhx-550-45kw",
+      "rdhxKw": 45,
+      "tapAmps": 225,
+      "slots": [
+        { "uStart": 1, "uHeight": 4, "kind": "cdu", "part": "cdu-4u-chx200", "label": "CDU / 4U" },
+        { "uStart": 5, "uHeight": 4, "kind": "node", "part": "gpu-node-4u", "label": "NODE 01" },
+        { "uStart": 9, "uHeight": 4, "kind": "node", "part": "gpu-node-4u", "label": "NODE 02" },
+        { "uStart": 13, "uHeight": 4, "kind": "node", "part": "gpu-node-4u", "label": "NODE 03" },
+        { "uStart": 17, "uHeight": 4, "kind": "node", "part": "gpu-node-4u", "label": "NODE 04" },
+        { "uStart": 21, "uHeight": 4, "kind": "node", "part": "gpu-node-4u", "label": "NODE 05" },
+        { "uStart": 25, "uHeight": 4, "kind": "node", "part": "gpu-node-4u", "label": "NODE 06" },
+        { "uStart": 29, "uHeight": 4, "kind": "node", "part": "gpu-node-4u", "label": "NODE 07" },
+        { "uStart": 33, "uHeight": 4, "kind": "node", "part": "gpu-node-4u", "label": "NODE 08" },
+        { "uStart": 37, "uHeight": 2, "kind": "pdu", "part": "apc-apdu11454me", "label": "A1 PDU", "bank": "A" },
+        { "uStart": 39, "uHeight": 2, "kind": "pdu", "part": "apc-apdu11454me", "label": "B1 PDU", "bank": "B" },
+        { "uStart": 41, "uHeight": 2, "kind": "pdu", "part": "apc-apdu11454me", "label": "A2 PDU", "bank": "A" },
+        { "uStart": 43, "uHeight": 2, "kind": "pdu", "part": "apc-apdu11454me", "label": "B2 PDU", "bank": "B" },
+        { "uStart": 45, "uHeight": 1, "kind": "aux", "part": "e13-aux-panel", "label": "UPS AUX" },
+        { "uStart": 46, "uHeight": 3, "kind": "spare", "label": "3U SPARE" }
+      ],
+      "zeroU": [
+        { "id": "A0", "part": "cpi-e0-1192", "bank": "A" },
+        { "id": "B0", "part": "cpi-e0-1192", "bank": "B" }
+      ],
+      "kits": [
+        { "part": "rdhx-adapter-kit", "qty": 1 },
+        { "part": "cdu-manifold-kit", "qty": 1 },
+        { "part": "it-cord-kit", "qty": 1 }
+      ]
+    },
+    {
+      "id": "central-a",
+      "label": "NETWORK + STORAGE",
+      "role": "central",
+      "kwCap": 60,
+      "frame": "rack-frame-550-ns",
+      "rdhx": "rdhx-550-60kw",
+      "rdhxKw": 60,
+      "tapAmps": 175,
+      "slots": [
+        { "uStart": 1, "uHeight": 4, "kind": "storage", "part": "storage-4u", "label": "4U storage*" },
+        { "uStart": 5, "uHeight": 2, "kind": "mgmt", "part": "mgmt-switch-2u", "label": "MGMT 1" },
+        { "uStart": 7, "uHeight": 2, "kind": "mgmt", "part": "mgmt-switch-2u", "label": "MGMT 2" },
+        { "uStart": 9, "uHeight": 1, "kind": "oob", "part": "oob-switch-1u", "label": "OOB 1" },
+        { "uStart": 10, "uHeight": 1, "kind": "oob", "part": "oob-switch-1u", "label": "OOB 2" },
+        { "uStart": 11, "uHeight": 8, "kind": "patch", "part": "patch-8u", "label": "8U patching" },
+        { "uStart": 19, "uHeight": 4, "kind": "network", "part": "leaf-switch-4u", "label": "LEAF 1" },
+        { "uStart": 23, "uHeight": 4, "kind": "network", "part": "leaf-switch-4u", "label": "LEAF 2" },
+        { "uStart": 27, "uHeight": 4, "kind": "network", "part": "leaf-switch-4u", "label": "LEAF 3" },
+        { "uStart": 31, "uHeight": 4, "kind": "network", "part": "leaf-switch-4u", "label": "LEAF 4" },
+        { "uStart": 35, "uHeight": 4, "kind": "network", "part": "spine-switch-4u", "label": "SPINE 1" },
+        { "uStart": 39, "uHeight": 4, "kind": "network", "part": "spine-switch-4u", "label": "SPINE 2" },
+        { "uStart": 43, "uHeight": 2, "kind": "pdu", "part": "apc-apdu11454me", "label": "A1 PDU", "bank": "A" },
+        { "uStart": 45, "uHeight": 2, "kind": "pdu", "part": "apc-apdu11454me", "label": "B1 PDU", "bank": "B" },
+        { "uStart": 47, "uHeight": 1, "kind": "aux", "part": "e13-aux-panel", "label": "UPS AUX" },
+        { "uStart": 48, "uHeight": 1, "kind": "spare", "label": "Spare" }
+      ],
+      "zeroU": [
+        { "id": "A0", "part": "cpi-e0-1192", "bank": "A" },
+        { "id": "B0", "part": "cpi-e0-1192", "bank": "B" }
+      ],
+      "kits": [
+        { "part": "rdhx-adapter-kit", "qty": 1 },
+        { "part": "it-cord-kit", "qty": 1 }
+      ]
+    },
+    {
+      "id": "central-b",
+      "label": "NETWORK + STORAGE",
+      "role": "central",
+      "kwCap": 60,
+      "frame": "rack-frame-550-ns",
+      "rdhx": "rdhx-550-60kw",
+      "rdhxKw": 60,
+      "tapAmps": 175,
+      "slots": [
+        { "uStart": 1, "uHeight": 4, "kind": "storage", "part": "storage-4u", "label": "4U storage*" },
+        { "uStart": 5, "uHeight": 2, "kind": "mgmt", "part": "mgmt-switch-2u", "label": "MGMT 1" },
+        { "uStart": 7, "uHeight": 2, "kind": "spare", "label": "Spare" },
+        { "uStart": 9, "uHeight": 1, "kind": "oob", "part": "oob-switch-1u", "label": "OOB 1" },
+        { "uStart": 10, "uHeight": 1, "kind": "oob", "part": "oob-switch-1u", "label": "OOB 2" },
+        { "uStart": 11, "uHeight": 8, "kind": "patch", "part": "patch-8u", "label": "8U patching" },
+        { "uStart": 19, "uHeight": 4, "kind": "network", "part": "leaf-switch-4u", "label": "LEAF 1" },
+        { "uStart": 23, "uHeight": 4, "kind": "network", "part": "leaf-switch-4u", "label": "LEAF 2" },
+        { "uStart": 27, "uHeight": 4, "kind": "network", "part": "leaf-switch-4u", "label": "LEAF 3" },
+        { "uStart": 31, "uHeight": 4, "kind": "network", "part": "leaf-switch-4u", "label": "LEAF 4" },
+        { "uStart": 35, "uHeight": 4, "kind": "network", "part": "spine-switch-4u", "label": "SPINE 1" },
+        { "uStart": 39, "uHeight": 4, "kind": "network", "part": "spine-switch-4u", "label": "SPINE 2" },
+        { "uStart": 43, "uHeight": 2, "kind": "pdu", "part": "apc-apdu11454me", "label": "A1 PDU", "bank": "A" },
+        { "uStart": 45, "uHeight": 2, "kind": "pdu", "part": "apc-apdu11454me", "label": "B1 PDU", "bank": "B" },
+        { "uStart": 47, "uHeight": 1, "kind": "aux", "part": "e13-aux-panel", "label": "UPS AUX" },
+        { "uStart": 48, "uHeight": 1, "kind": "spare", "label": "Spare" }
+      ],
+      "zeroU": [
+        { "id": "A0", "part": "cpi-e0-1192", "bank": "A" },
+        { "id": "B0", "part": "cpi-e0-1192", "bank": "B" }
+      ],
+      "kits": [
+        { "part": "rdhx-adapter-kit", "qty": 1 },
+        { "part": "it-cord-kit", "qty": 1 }
+      ]
+    }
+  ],
+  "racks": [
+    { "id": "C01", "type": "compute", "tap": "T01" },
+    { "id": "C02", "type": "compute", "tap": "T02" },
+    { "id": "C03", "type": "compute", "tap": "T03" },
+    { "id": "C04", "type": "compute", "tap": "T04" },
+    { "id": "NS01", "type": "central-a", "tap": "T05" },
+    { "id": "NS02", "type": "central-b", "tap": "T06" },
+    { "id": "C05", "type": "compute", "tap": "T07" },
+    { "id": "C06", "type": "compute", "tap": "T08" },
+    { "id": "C07", "type": "compute", "tap": "T09" },
+    { "id": "C08", "type": "compute", "tap": "T10" }
+  ],
+  "section": {
+    "busA": { "y": 400, "z": [3045, 3174], "w": 150 },
+    "busB": { "y": 950, "z": [3045, 3174], "w": 150 },
+    "tap": { "l": 500, "w": 300, "h": 254, "z": [2791, 3045], "withdrawal": 2674, "gap": 22 },
+    "feed": { "l": 440, "w": 350, "h": 450, "z": [2670, 3120], "gap": 13 },
+    "fiber": { "y": [1270, 1570], "trays": [[3070, 3170], [3320, 3420]] },
+    "wHeader": { "y": 1850, "od": 191.3, "z": [2820, 3065] },
+    "cHeader": { "y": 2080, "od": 164.3, "z": [2820, 3065] },
+    "leakTray": { "y": [1690, 2288], "z": [2650, 2675] }
+  }
+}

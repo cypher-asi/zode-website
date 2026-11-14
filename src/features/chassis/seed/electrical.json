@@ -1,0 +1,44 @@
+{
+  "system": {
+    "label": "415Y/240 V",
+    "vLL": 415,
+    "phases": 3,
+    "pf": 0.95,
+    "continuousFactor": 0.8,
+    "note": "415 V, 3-phase; PF 0.95 assumed. Continuous-current design allowances: 100 A inlet -> 80 A; 60 A inlet -> 48 A. Final regional listing / breaker ratings govern."
+  },
+  "switchboard": {
+    "id": "E3",
+    "bom": "E3",
+    "amps": 3200,
+    "label": "ELECTRICAL POD / E3 SWITCHBOARD - 3,200 A CLASS",
+    "lines": ["415Y/240 V from indoor E1 transformer; source neutral bonded at origin"]
+  },
+  "mains": [
+    { "id": "QFA", "bom": "E3", "busway": "A", "frameAmps": 1250, "label": "QFA / 1,250 A frame", "lines": ["Trip / ampacity: engineer selection"] },
+    { "id": "QFB", "bom": "E3", "busway": "B", "frameAmps": 1250, "label": "QFB / 1,250 A frame", "lines": ["Trip / ampacity: engineer selection"] }
+  ],
+  "busways": [
+    { "id": "A", "bom": "E5", "amps": 1250, "spd": "SPD-A / T2*", "label": "A BUSWAY / 1,250 A / 415Y/240 V" },
+    { "id": "B", "bom": "E5", "amps": 1250, "spd": "SPD-B / T2*", "label": "B BUSWAY / 1,250 A / 415Y/240 V" }
+  ],
+  "feeders": [
+    { "id": "E4", "bom": "E4", "label": "E4 / CONTROL UPS", "lines": ["Feeds E10/E11 / BMS controls"] },
+    { "id": "E6", "bom": "E6", "label": "E6 / UTILITY AUX + ROOF FANS", "lines": ["M8 HVAC / C5 lights / 2 roof feeders + lock-offs*"] }
+  ],
+  "originSpd": { "id": "B4", "bom": "B4", "label": "B4 / SPD", "lines": ["AT ORIGIN"] },
+  "coolingChain": [
+    { "id": "QAUX", "kind": "breaker", "bom": "E13", "label": "QAUX", "lines": ["Rating from UPS input"] },
+    {
+      "id": "E12",
+      "bom": "E12",
+      "label": "E12 / COOLING UPS + BATTERIES",
+      "lines": ["{upsKw} kW / {upsMin} min at <={upsTarget} kW target", "Chiller compressors are not on this UPS"]
+    },
+    { "id": "E13", "bom": "E13", "label": "E13 / PROTECTED COOLING DISTRIBUTION", "lines": ["Local breakers / isolators / coordinated SPD"] },
+    { "id": "AUX", "bom": "E13", "label": "{rackCount} AUX PANELS / ONE PER RACK", "lines": ["{auxPositions}", "{cduCount} CDUs + {rackCount} RDHx fan feeds", "Segregated CDU inputs; outlet ratings TBD"] },
+    { "id": "COOLPOD", "bom": "M12", "label": "COOLING POD / N+1 PUMP PAIRS", "lines": ["P-W1/2 + P-C1/2 / controls on UPS"] }
+  ],
+  "computeBoxLabel": "COMPUTE POD / {rackCount} RACKS IN PHYSICAL ORDER / {pduCount} IT PDUs",
+  "checksNote": "These are aggregate bank checks. Every phase, internal branch breaker, cord and connector also needs an approved load schedule. Full-load upstream A/B rail failover is NOT provided."
+}

@@ -30,6 +30,7 @@ export type AppId =
   | "leads"
   | "capacity"
   | "factory"
+  | "chassis"
   | "posts"
   | "analytics"
   | "subscribers"
@@ -170,6 +171,16 @@ const FACTORY: PortalApp = {
   links: FACTORY_FLOWS.map((flow): NavLink => ({ href: flow.href, label: flow.label, icon: flow.icon })),
 };
 
+/** ZODE pod chassis designs, drawn as live drawing sets, for the ZODE team. */
+const CHASSIS: PortalApp = {
+  id: "chassis",
+  label: "Chassis",
+  icon: "chassis",
+  href: "/portal/chassis",
+  team: true,
+  links: [{ href: "/portal/chassis", label: "All designs", icon: "chassis" }],
+};
+
 /** News and changelog for the public site, written by the ZODE team. */
 const POSTS: PortalApp = {
   id: "posts",
@@ -236,7 +247,7 @@ const ADMIN_APPS: readonly PortalApp[] = [
 
 /**
  * The apps the viewer can open, in rail order, with Settings last for the
- * rail's foot: Factory, ZRM, Leads, Capacity, Posts, Analytics, Team and everyone's contracts for the
+ * rail's foot: Factory, Chassis, ZRM, Leads, Capacity, Posts, Analytics, Team and everyone's contracts for the
  * ZODE team, the admin apps for super admins.
  */
 export function portalApps({ admin, team }: NavAccess): PortalApp[] {
@@ -283,7 +294,7 @@ export function portalApps({ admin, team }: NavAccess): PortalApp[] {
     ORDERS,
     contracts,
     deployments,
-    ...(team ? [FACTORY, ZRM, LEADS, CAPACITY, POSTS, ANALYTICS] : []),
+    ...(team ? [FACTORY, CHASSIS, ZRM, LEADS, CAPACITY, POSTS, ANALYTICS] : []),
     ...(admin ? ADMIN_APPS : []),
     settings,
   ];

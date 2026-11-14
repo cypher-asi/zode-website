@@ -26,6 +26,8 @@ const ALLOWED = new Map([
   ["src/features/home/network/Network.module.css", "map artwork"],
   ["src/features/data-room/DataRoomApp.module.css", "folder glyph"],
   ["src/features/cluster/scene/palette.ts", "fabric rail colours, shared by WebGL and the legend"],
+  ["src/features/chassis/drawing/palette.ts", "drawing paper and ink, printed and exported to PDF as drawn"],
+  ["src/features/chassis/three/colors.ts", "3D view materials, which WebGL can't read from CSS"],
 ]);
 
 const HEX = /#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4})\b/gi;

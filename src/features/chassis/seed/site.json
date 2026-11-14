@@ -1,0 +1,40 @@
+{
+  "row": {
+    "order": ["electrical", "cooling", "compute"],
+    "joint": 57,
+    "targetLength": 18288,
+    "targetLabel": "60 ft target block"
+  },
+  "equipment": [
+    {
+      "id": "M5",
+      "bom": "M5",
+      "x": 6136,
+      "y": 4419,
+      "l": 11498,
+      "w": 2236,
+      "h": 2500,
+      "fans": 10,
+      "label": "M5 / 1.10 MW NET CHILLER AT +46 C / RETAINED",
+      "lines": [],
+      "note": "{l_m} x {w_m} m reference footprint / actual selection and site clearance required"
+    },
+    {
+      "id": "G1",
+      "bom": "G1",
+      "x": 631,
+      "y": 4596,
+      "l": 3200,
+      "w": 1400,
+      "h": 2000,
+      "label": "G1 / 50 kW",
+      "lines": ["HEAT-ONLY GENSET"],
+      "note": "No IT / chiller generator backup"
+    }
+  ],
+  "links": [
+    { "id": "B2", "bom": "B2", "side": "front", "style": "solid", "label": "B2: A/B POWER + E13 UPS AUX / DRY FRONT SIDE" },
+    { "id": "B6", "bom": "B6", "side": "rear", "style": "dashdot", "label": "REAR: W LOOP TO ROOFS + COMPUTE" },
+    { "id": "B7", "bom": "B7", "side": "rear", "style": "dashed", "label": "C LOOP TO COMPUTE / EXTERIOR RISERS ONLY" }
+  ]
+}

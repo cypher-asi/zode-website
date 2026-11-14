@@ -1589,3 +1589,43 @@ create table if not exists policy_metrics (
   recorded_at timestamptz not null default now(),
   primary key (observed_on, metric)
 );
+
+-- ZODE pod chassis designs, edited in the portal's Chassis app by the ZODE
+-- team. A design is its drawing set's data: parts catalog, BOM, racks, pods,
+-- electrical, cooling and site (src/features/chassis/model/schema.ts), kept
+-- whole as JSON. Every save is a new version, so any version can be reopened,
+-- exported or sent to a deployment again; `version` is the latest. The REV in
+-- a drawing's title block is the design's own, set in its data.
+create table if not exists chassis_designs (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  version integer not null default 1 check (version > 0),
+  -- Set by scripts/import-chassis.mjs, so a seeded design is imported once.
+  seed_key text unique,
+  created_by bigint references users (id),
+  updated_by bigint references users (id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  archived_at timestamptz
+);
+
+create table if not exists chassis_design_versions (
+  design_id uuid not null references chassis_designs (id) on delete cascade,
+  version integer not null check (version > 0),
+  data jsonb not null,
+  note text,
+  created_by bigint references users (id),
+  created_at timestamptz not null default now(),
+  primary key (design_id, version)
+);
+
+-- A quote written from a chassis design version by the Chassis app's "Send
+-- to deployment": one per design per deployment, its items the version's BOM
+-- for one set of pods, under each pod's sections. Sending again rewrites it
+-- in place, items keeping their ids, so BOM lines picked from it stay linked.
+alter table deployment_quotes add column if not exists chassis_design_id uuid
+  references chassis_designs (id) on delete set null;
+alter table deployment_quotes add column if not exists chassis_version integer;
+
+create unique index if not exists deployment_quotes_chassis_idx
+  on deployment_quotes (deployment_id, chassis_design_id) where chassis_design_id is not null;

@@ -1,0 +1,57 @@
+/* Labels over the 3D views, in the sheet's ink (set on the Html wrapper). */
+
+.label,
+.pod,
+.podName,
+.dim,
+.equipment {
+  font-family: var(--font-sans);
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.label {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.pod {
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.pod > div + div {
+  font-weight: 400;
+}
+
+.podName {
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.dim {
+  font-size: 9.5px;
+  opacity: 0.75;
+}
+
+.equipment {
+  font-size: 9.5px;
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+.marker {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: var(--shadow-sm);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+}
