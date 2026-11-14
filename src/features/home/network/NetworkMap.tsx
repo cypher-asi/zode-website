@@ -101,8 +101,7 @@ export function NetworkMap({ view, land, borders, graticule, sites, links }: Pro
           <span>Distributed</span> <span>Edge Network</span>
         </h2>
         <p className={styles.helper}>
-          ZODEs deploy beside power and close to users, so inference runs milliseconds from the people it
-          serves.
+          ZODEs deploy beside power and near users, so inference runs milliseconds away.
         </p>
       </div>
 
