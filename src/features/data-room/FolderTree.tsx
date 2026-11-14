@@ -59,9 +59,9 @@ export interface FolderTreeProps {
 
 /**
  * The room as Windows Explorer's navigation pane shows a drive: its folders and
- * files as a tree under the room, opened with the chevrons. A row opens its
- * folder or file in the browser, and the path to whatever is open there
- * unfolds and stays marked.
+ * files as a tree under the room. A row opens its folder or file in the
+ * browser, a folder's row also folds or unfolds it and its chevron only that,
+ * and the path to whatever is open there unfolds and stays marked.
  */
 export function FolderTree({
   index,
@@ -76,6 +76,8 @@ export function FolderTree({
 }: FolderTreeProps): ReactElement {
   const chain = useMemo(() => (folderId ? [...ancestorsOf(index, folderId), folderId] : []), [index, folderId]);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set(chain));
+  /** The folder last folded by hand, which stays folded while it's the one on show. */
+  const [held, setHeld] = useState<string | null>(null);
   const [focusKey, setFocusKey] = useState<string | null>(null);
   const [dropKey, setDropKey] = useState<string | null>(null);
   const [context, setContext] = useState<ItemContext | null>(null);
@@ -95,7 +97,9 @@ export function FolderTree({
   const [seen, setSeen] = useState({ currentKey, chain });
   if (seen.currentKey !== currentKey || seen.chain !== chain) {
     setSeen({ currentKey, chain });
-    if (chain.some((id) => !expanded.has(id))) setExpanded(new Set([...expanded, ...chain]));
+    const unfold = held && currentKey === folderKey(held) ? chain.filter((id) => id !== held) : chain;
+    if (held && unfold.includes(held)) setHeld(null);
+    if (unfold.some((id) => !expanded.has(id))) setExpanded(new Set([...expanded, ...unfold]));
   }
 
   useEffect(() => {
@@ -147,6 +151,7 @@ export function FolderTree({
     if (next.has(id)) next.delete(id);
     else next.add(id);
     setExpanded(next);
+    setHeld(next.has(id) ? null : id);
   };
 
   const activate = (row: Row) => {
@@ -297,6 +302,7 @@ export function FolderTree({
             style={{ paddingLeft: 6 + row.depth * INDENT }}
             onClick={() => {
               setFocusKey(row.key);
+              if (row.kind === "folder" && row.hasChildren) toggle(row.id);
               activate(row);
             }}
             onFocus={() => setFocusKey(row.key)}
