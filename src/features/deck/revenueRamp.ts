@@ -20,6 +20,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 0, merchant: 0, offtake: 0 },
       costs: { power: 0, opCosts: 0, topco: 0, interest: 0, principal: 0 },
       cash: 0,
+      sites: [
+        { site: "Toronto", revenue: 0, expenses: 0 },
+        { site: "Calgary", revenue: 0, expenses: 0 },
+        { site: "Big Watt", revenue: 0, expenses: 0 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Q1 2027",
@@ -27,6 +34,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 0, merchant: 0, offtake: 0 },
       costs: { power: 0, opCosts: 412500, topco: 560600, interest: 200000, principal: 0 },
       cash: -1173100,
+      sites: [
+        { site: "Toronto", revenue: 0, expenses: 0 },
+        { site: "Calgary", revenue: 0, expenses: 412500 },
+        { site: "Big Watt", revenue: 0, expenses: 0 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Q2 2027",
@@ -34,6 +48,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 51164006, merchant: 4843930, offtake: 42048000 },
       costs: { power: 1998594, opCosts: 13769326, topco: 1328750, interest: 1073321, principal: 10933333 },
       cash: 68952612,
+      sites: [
+        { site: "Toronto", revenue: 13371264, expenses: 1961009 },
+        { site: "Calgary", revenue: 0, expenses: 412500 },
+        { site: "Big Watt", revenue: 84684672, expenses: 13394411 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Q3 2027",
@@ -41,6 +62,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 260883137, merchant: 51315379, offtake: 168192000 },
       costs: { power: 10112544, opCosts: 62413888, topco: 1328750, interest: 23152791, principal: 41672425 },
       cash: 341710118,
+      sites: [
+        { site: "Toronto", revenue: 13371264, expenses: 1961009 },
+        { site: "Calgary", revenue: 128280564, expenses: 16987779 },
+        { site: "Big Watt", revenue: 338738688, expenses: 53577644 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Q4 2027",
@@ -48,6 +76,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 511506824, merchant: 121022554, offtake: 294336000 },
       costs: { power: 19593054, opCosts: 117979530, topco: 1328750, interest: 50859281, principal: 95376100 },
       cash: 641728664,
+      sites: [
+        { site: "Toronto", revenue: 13371264, expenses: 1961009 },
+        { site: "Calgary", revenue: 320701410, expenses: 41850696 },
+        { site: "Big Watt", revenue: 592792704, expenses: 93760878 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Q1 2028",
@@ -55,6 +90,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 734860807, merchant: 175239245, offtake: 420480000 },
       costs: { power: 29007400, opCosts: 170835025, topco: 3299862, interest: 75753720, principal: 147960504 },
       cash: 903723540,
+      sites: [
+        { site: "Toronto", revenue: 13371264, expenses: 1987119 },
+        { site: "Calgary", revenue: 470362068, expenses: 61651675 },
+        { site: "Big Watt", revenue: 846846720, expenses: 136203630 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Q2 2028",
@@ -62,6 +104,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 859355448, merchant: 178143080, offtake: 546624000 },
       costs: { power: 34784247, opCosts: 206638690, topco: 3299862, interest: 90566301, principal: 185994388 },
       cash: 1062839040,
+      sites: [
+        { site: "Toronto", revenue: 10697011, expenses: 1826664 },
+        { site: "Calgary", revenue: 481052115, expenses: 63043193 },
+        { site: "Big Watt", revenue: 1092373402, expenses: 176553080 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Q3 2028",
@@ -69,6 +118,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 945321638, merchant: 168848790, offtake: 672768000 },
       costs: { power: 40326502, opCosts: 238480487, topco: 3299862, interest: 101655633, principal: 219551188 },
       cash: 1183624755,
+      sites: [
+        { site: "Toronto", revenue: 10697011, expenses: 1826664 },
+        { site: "Calgary", revenue: 455396002, expenses: 61101077 },
+        { site: "Big Watt", revenue: 1320845414, expenses: 215879248 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Q4 2028",
@@ -76,6 +132,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1023106917, merchant: 154907355, offtake: 798912000 },
       costs: { power: 45868757, opCosts: 269351227, topco: 3299862, interest: 111637592, principal: 253107988 },
       cash: 1293660846,
+      sites: [
+        { site: "Toronto", revenue: 10697011, expenses: 1826664 },
+        { site: "Calgary", revenue: 416911833, expenses: 58187902 },
+        { site: "Big Watt", revenue: 1549317427, expenses: 255205417 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Q1 2029",
@@ -83,6 +146,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1106346136, merchant: 144064017, offtake: 925056000 },
       costs: { power: 52953342, opCosts: 304966756, topco: 6183721, interest: 122503344, principal: 287724616 },
       cash: 1401134374,
+      sites: [
+        { site: "Toronto", revenue: 10697011, expenses: 1853558 },
+        { site: "Calgary", revenue: 386979701, expenses: 56414884 },
+        { site: "Big Watt", revenue: 1777789440, expenses: 299651657 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Q2 2029",
@@ -90,6 +160,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1199124422, merchant: 142514464, offtake: 1051200000 },
       costs: { power: 58661865, opCosts: 338583075, topco: 6183721, interest: 134369058, principal: 321281416 },
       cash: 1533759752,
+      sites: [
+        { site: "Toronto", revenue: 8557609, expenses: 1725193 },
+        { site: "Calgary", revenue: 384841692, expenses: 56253041 },
+        { site: "Big Watt", revenue: 1999439585, expenses: 339266705 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Q3 2029",
@@ -97,6 +174,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 3399730974, merchant: 1346061432, offtake: 1177344000 },
       costs: { power: 118737269, opCosts: 744538361, topco: 6183721, interest: 270037120, principal: 588171549 },
       cash: 4195468387,
+      sites: [
+        { site: "Toronto", revenue: 8557609, expenses: 1725193 },
+        { site: "Calgary", revenue: 364316802, expenses: 54699348 },
+        { site: "Big Watt", revenue: 2207445996, expenses: 378063129 },
+        { site: "Future, owned", revenue: 1671408000, expenses: 186939214 },
+        { site: "Future, leased", revenue: 1671408000, expenses: 241848745 },
+      ],
     },
     {
       period: "Q4 2029",
@@ -104,6 +188,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 3461959197, merchant: 1334908284, offtake: 1303488000 },
       costs: { power: 124445792, opCosts: 775295723, topco: 6183721, interest: 328840863, principal: 738395015 },
       cash: 4127194367,
+      sites: [
+        { site: "Toronto", revenue: 8557609, expenses: 1725193 },
+        { site: "Calgary", revenue: 333529466, expenses: 52368808 },
+        { site: "Big Watt", revenue: 2415452406, expenses: 416859554 },
+        { site: "Future, owned", revenue: 1671408000, expenses: 186939214 },
+        { site: "Future, leased", revenue: 1671408000, expenses: 241848745 },
+      ],
     },
     {
       period: "Q1 2030",
@@ -111,6 +202,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 3528550573, merchant: 1326233613, offtake: 1429632000 },
       costs: { power: 134058943, opCosts: 816035413, topco: 8418096, interest: 323671953, principal: 771951815 },
       cash: 4230279965,
+      sites: [
+        { site: "Toronto", revenue: 8557609, expenses: 1752893 },
+        { site: "Calgary", revenue: 309583761, expenses: 51063734 },
+        { site: "Big Watt", revenue: 2623458816, expenses: 463806199 },
+        { site: "Future, owned", revenue: 1671408000, expenses: 188457356 },
+        { site: "Future, leased", revenue: 1671408000, expenses: 245014173 },
+      ],
     },
     {
       period: "Q2 2030",
@@ -118,6 +216,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 3602773202, merchant: 1324993971, offtake: 1555776000 },
       costs: { power: 139938722, opCosts: 849111581, topco: 8418096, interest: 319945670, principal: 805508615 },
       cash: 4360620490,
+      sites: [
+        { site: "Toronto", revenue: 6846087, expenses: 1650202 },
+        { site: "Calgary", revenue: 307873354, expenses: 50934260 },
+        { site: "Big Watt", revenue: 2826007732, expenses: 502994311 },
+        { site: "Future, owned", revenue: 1671408000, expenses: 188457356 },
+        { site: "Future, leased", revenue: 1671408000, expenses: 245014173 },
+      ],
     },
     {
       period: "Q3 2030",
@@ -125,6 +230,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 5789625164, merchant: 2530028025, offtake: 1681920000 },
       costs: { power: 213015965, opCosts: 1293376638, topco: 8418096, interest: 465003678, principal: 1119065415 },
       cash: 6902693396,
+      sites: [
+        { site: "Toronto", revenue: 6846087, expenses: 1650202 },
+        { site: "Calgary", revenue: 291453441, expenses: 49691305 },
+        { site: "Big Watt", revenue: 3017641660, expenses: 541527524 },
+        { site: "Future, owned", revenue: 3342816000, expenses: 394549287 },
+        { site: "Future, leased", revenue: 3342816000, expenses: 518974286 },
+      ],
     },
     {
       period: "Q4 2030",
@@ -132,6 +244,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 5839407742, merchant: 2521105507, offtake: 1808064000 },
       costs: { power: 218895744, opCosts: 1324165640, topco: 8418096, interest: 518045979, principal: 1292622215 },
       cash: 6806429575,
+      sites: [
+        { site: "Toronto", revenue: 6846087, expenses: 1650202 },
+        { site: "Calgary", revenue: 266823573, expenses: 47826873 },
+        { site: "Big Watt", revenue: 3209275589, expenses: 580060736 },
+        { site: "Future, owned", revenue: 3342816000, expenses: 394549287 },
+        { site: "Future, leased", revenue: 3342816000, expenses: 518974286 },
+      ],
     },
   ],
   months: [
@@ -141,6 +260,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 0, merchant: 0, offtake: 0 },
       costs: { power: 0, opCosts: 0, topco: 0, interest: 0, principal: 0 },
       cash: 0,
+      sites: [
+        { site: "Toronto", revenue: 0, expenses: 0 },
+        { site: "Calgary", revenue: 0, expenses: 0 },
+        { site: "Big Watt", revenue: 0, expenses: 0 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Nov 2026",
@@ -148,6 +274,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 0, merchant: 0, offtake: 0 },
       costs: { power: 0, opCosts: 0, topco: 0, interest: 0, principal: 0 },
       cash: 0,
+      sites: [
+        { site: "Toronto", revenue: 0, expenses: 0 },
+        { site: "Calgary", revenue: 0, expenses: 0 },
+        { site: "Big Watt", revenue: 0, expenses: 0 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Dec 2026",
@@ -155,6 +288,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 0, merchant: 0, offtake: 0 },
       costs: { power: 0, opCosts: 0, topco: 0, interest: 0, principal: 0 },
       cash: 0,
+      sites: [
+        { site: "Toronto", revenue: 0, expenses: 0 },
+        { site: "Calgary", revenue: 0, expenses: 0 },
+        { site: "Big Watt", revenue: 0, expenses: 0 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Jan 2027",
@@ -162,6 +302,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 0, merchant: 0, offtake: 0 },
       costs: { power: 0, opCosts: 137500, topco: 186867, interest: 0, principal: 0 },
       cash: -324367,
+      sites: [
+        { site: "Toronto", revenue: 0, expenses: 0 },
+        { site: "Calgary", revenue: 0, expenses: 137500 },
+        { site: "Big Watt", revenue: 0, expenses: 0 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Feb 2027",
@@ -169,6 +316,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 0, merchant: 0, offtake: 0 },
       costs: { power: 0, opCosts: 137500, topco: 186867, interest: 100000, principal: 0 },
       cash: -424367,
+      sites: [
+        { site: "Toronto", revenue: 0, expenses: 0 },
+        { site: "Calgary", revenue: 0, expenses: 137500 },
+        { site: "Big Watt", revenue: 0, expenses: 0 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Mar 2027",
@@ -176,6 +330,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 0, merchant: 0, offtake: 0 },
       costs: { power: 0, opCosts: 137500, topco: 186867, interest: 100000, principal: 0 },
       cash: -424367,
+      sites: [
+        { site: "Toronto", revenue: 0, expenses: 0 },
+        { site: "Calgary", revenue: 0, expenses: 137500 },
+        { site: "Big Watt", revenue: 0, expenses: 0 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Apr 2027",
@@ -183,6 +344,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 2842445, merchant: 1614643, offtake: 0 },
       costs: { power: 68328, opCosts: 722842, topco: 442917, interest: 100000, principal: 10000000 },
       cash: -6876998,
+      sites: [
+        { site: "Toronto", revenue: 4457088, expenses: 653670 },
+        { site: "Calgary", revenue: 0, expenses: 137500 },
+        { site: "Big Watt", revenue: 0, expenses: 0 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "May 2027",
@@ -190,6 +358,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 2842445, merchant: 1614643, offtake: 0 },
       costs: { power: 68328, opCosts: 722842, topco: 442917, interest: 454485, principal: 466667 },
       cash: 2301850,
+      sites: [
+        { site: "Toronto", revenue: 4457088, expenses: 653670 },
+        { site: "Calgary", revenue: 0, expenses: 137500 },
+        { site: "Big Watt", revenue: 0, expenses: 0 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Jun 2027",
@@ -197,6 +372,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 45479117, merchant: 1614643, offtake: 42048000 },
       costs: { power: 1861938, opCosts: 12323643, topco: 442917, interest: 518835, principal: 466667 },
       cash: 73527760,
+      sites: [
+        { site: "Toronto", revenue: 4457088, expenses: 653670 },
+        { site: "Calgary", revenue: 0, expenses: 137500 },
+        { site: "Big Watt", revenue: 84684672, expenses: 13394411 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Jul 2027",
@@ -204,6 +386,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 59113969, merchant: 9359885, offtake: 42048000 },
       costs: { power: 2317458, opCosts: 14630669, topco: 442917, interest: 6502515, principal: 11652267 },
       cash: 74976028,
+      sites: [
+        { site: "Toronto", revenue: 4457088, expenses: 653670 },
+        { site: "Calgary", revenue: 21380094, expenses: 2900046 },
+        { site: "Big Watt", revenue: 84684672, expenses: 13394411 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Aug 2027",
@@ -211,6 +400,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 72748822, merchant: 17105126, offtake: 42048000 },
       costs: { power: 2772978, opCosts: 16937696, topco: 442917, interest: 7728649, principal: 13890808 },
       cash: 90128900,
+      sites: [
+        { site: "Toronto", revenue: 4457088, expenses: 653670 },
+        { site: "Calgary", revenue: 42760188, expenses: 5662593 },
+        { site: "Big Watt", revenue: 84684672, expenses: 13394411 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Sep 2027",
@@ -218,6 +414,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 129020346, merchant: 24850368, offtake: 84096000 },
       costs: { power: 5022108, opCosts: 30845523, topco: 442917, interest: 8921626, principal: 16129350 },
       cash: 176605190,
+      sites: [
+        { site: "Toronto", revenue: 4457088, expenses: 653670 },
+        { site: "Calgary", revenue: 64140282, expenses: 8425139 },
+        { site: "Big Watt", revenue: 169369344, expenses: 26788822 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Oct 2027",
@@ -225,6 +428,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 142655198, merchant: 32595610, offtake: 84096000 },
       costs: { power: 5477628, opCosts: 33152550, topco: 442917, interest: 15978428, principal: 29553492 },
       cash: 174741794,
+      sites: [
+        { site: "Toronto", revenue: 4457088, expenses: 653670 },
+        { site: "Calgary", revenue: 85520376, expenses: 11187686 },
+        { site: "Big Watt", revenue: 169369344, expenses: 26788822 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Nov 2027",
@@ -232,6 +442,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 156290051, merchant: 40340851, offtake: 84096000 },
       costs: { power: 5933148, opCosts: 35459576, topco: 442917, interest: 16966368, principal: 31792033 },
       cash: 190132860,
+      sites: [
+        { site: "Toronto", revenue: 4457088, expenses: 653670 },
+        { site: "Calgary", revenue: 106900470, expenses: 13950232 },
+        { site: "Big Watt", revenue: 169369344, expenses: 26788822 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Dec 2027",
@@ -239,6 +456,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 212561575, merchant: 48086093, offtake: 126144000 },
       costs: { power: 8182278, opCosts: 49367404, topco: 442917, interest: 17914485, principal: 34030575 },
       cash: 276854009,
+      sites: [
+        { site: "Toronto", revenue: 4457088, expenses: 653670 },
+        { site: "Calgary", revenue: 128280564, expenses: 16712779 },
+        { site: "Big Watt", revenue: 254054016, expenses: 40183233 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Jan 2028",
@@ -246,6 +470,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 226196428, merchant: 55831334, offtake: 126144000 },
       costs: { power: 8896932, opCosts: 52249410, topco: 1099954, interest: 24728777, principal: 47454717 },
       cash: 273741972,
+      sites: [
+        { site: "Toronto", revenue: 4457088, expenses: 662373 },
+        { site: "Calgary", revenue: 149660658, expenses: 19622880 },
+        { site: "Big Watt", revenue: 254054016, expenses: 40861089 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Feb 2028",
@@ -253,6 +484,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 233013854, merchant: 59703955, offtake: 126144000 },
       costs: { power: 9131525, opCosts: 53406335, topco: 1099954, interest: 25474207, principal: 49693258 },
       cash: 280056529,
+      sites: [
+        { site: "Toronto", revenue: 4457088, expenses: 662373 },
+        { site: "Calgary", revenue: 160350705, expenses: 21014398 },
+        { site: "Big Watt", revenue: 254054016, expenses: 40861089 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Mar 2028",
@@ -260,6 +498,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 275650526, merchant: 59703955, offtake: 168192000 },
       costs: { power: 10978943, opCosts: 65179280, topco: 1099954, interest: 25550736, principal: 50812529 },
       cash: 349925039,
+      sites: [
+        { site: "Toronto", revenue: 4457088, expenses: 662373 },
+        { site: "Calgary", revenue: 160350705, expenses: 21014398 },
+        { site: "Big Watt", revenue: 338738688, expenses: 54481452 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Apr 2028",
@@ -267,6 +512,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 275082037, merchant: 59381027, offtake: 168192000 },
       costs: { power: 10978943, opCosts: 65125795, topco: 1099954, interest: 30884271, principal: 61998129 },
       cash: 332567971,
+      sites: [
+        { site: "Toronto", revenue: 3565670, expenses: 608888 },
+        { site: "Calgary", revenue: 160350705, expenses: 21014398 },
+        { site: "Big Watt", revenue: 338738688, expenses: 54481452 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "May 2028",
@@ -274,6 +526,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 275082037, merchant: 59381027, offtake: 168192000 },
       costs: { power: 10978943, opCosts: 65125795, topco: 1099954, interest: 30188767, principal: 61998129 },
       cash: 333263475,
+      sites: [
+        { site: "Toronto", revenue: 3565670, expenses: 608888 },
+        { site: "Calgary", revenue: 160350705, expenses: 21014398 },
+        { site: "Big Watt", revenue: 338738688, expenses: 54481452 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Jun 2028",
@@ -281,6 +540,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 309191374, merchant: 59381027, offtake: 210240000 },
       costs: { power: 12826361, opCosts: 76387100, topco: 1099954, interest: 29493263, principal: 61998129 },
       cash: 397007593,
+      sites: [
+        { site: "Toronto", revenue: 3565670, expenses: 608888 },
+        { site: "Calgary", revenue: 160350705, expenses: 21014398 },
+        { site: "Big Watt", revenue: 414896026, expenses: 67590175 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Jul 2028",
@@ -288,6 +554,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 306464404, merchant: 57831978, offtake: 210240000 },
       costs: { power: 12826361, opCosts: 76063414, topco: 1099954, interest: 34703756, principal: 73183729 },
       cash: 376659167,
+      sites: [
+        { site: "Toronto", revenue: 3565670, expenses: 608888 },
+        { site: "Calgary", revenue: 156074686, expenses: 20690712 },
+        { site: "Big Watt", revenue: 414896026, expenses: 67590175 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Aug 2028",
@@ -295,6 +568,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 303737433, merchant: 56282930, offtake: 210240000 },
       costs: { power: 12826361, opCosts: 75739728, topco: 1099954, interest: 33885211, principal: 73183729 },
       cash: 373525380,
+      sites: [
+        { site: "Toronto", revenue: 3565670, expenses: 608888 },
+        { site: "Calgary", revenue: 151798667, expenses: 20367026 },
+        { site: "Big Watt", revenue: 414896026, expenses: 67590175 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Sep 2028",
@@ -302,6 +582,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 335119801, merchant: 54733882, offtake: 252288000 },
       costs: { power: 14673780, opCosts: 86677346, topco: 1099954, interest: 33066666, principal: 73183729 },
       cash: 433440207,
+      sites: [
+        { site: "Toronto", revenue: 3565670, expenses: 608888 },
+        { site: "Calgary", revenue: 147522649, expenses: 20043340 },
+        { site: "Big Watt", revenue: 491053363, expenses: 80698898 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Oct 2028",
@@ -309,6 +596,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 332392830, merchant: 53184833, offtake: 252288000 },
       costs: { power: 14673780, opCosts: 86353660, topco: 1099954, interest: 38154117, principal: 84369329 },
       cash: 413214823,
+      sites: [
+        { site: "Toronto", revenue: 3565670, expenses: 608888 },
+        { site: "Calgary", revenue: 143246630, expenses: 19719654 },
+        { site: "Big Watt", revenue: 491053363, expenses: 80698898 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Nov 2028",
@@ -316,6 +610,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 329665860, merchant: 51635785, offtake: 252288000 },
       costs: { power: 14673780, opCosts: 86029974, topco: 1099954, interest: 37212531, principal: 84369329 },
       cash: 410204077,
+      sites: [
+        { site: "Toronto", revenue: 3565670, expenses: 608888 },
+        { site: "Calgary", revenue: 138970611, expenses: 19395967 },
+        { site: "Big Watt", revenue: 491053363, expenses: 80698898 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Dec 2028",
@@ -323,6 +624,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 361048227, merchant: 50086737, offtake: 294336000 },
       costs: { power: 16521198, opCosts: 96967593, topco: 1099954, interest: 36270944, principal: 84369329 },
       cash: 470241946,
+      sites: [
+        { site: "Toronto", revenue: 3565670, expenses: 608888 },
+        { site: "Calgary", revenue: 134694592, expenses: 19072281 },
+        { site: "Big Watt", revenue: 567210701, expenses: 93807621 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Jan 2029",
@@ -330,6 +638,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 358321256, merchant: 48537688, offtake: 294336000 },
       costs: { power: 17016834, opCosts: 97950610, topco: 2061240, interest: 41235354, principal: 95908205 },
       cash: 447022702,
+      sites: [
+        { site: "Toronto", revenue: 3565670, expenses: 617853 },
+        { site: "Calgary", revenue: 130418573, expenses: 18912857 },
+        { site: "Big Watt", revenue: 567210701, expenses: 95436734 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Feb 2029",
@@ -337,6 +652,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 356957771, merchant: 47763164, offtake: 294336000 },
       costs: { power: 17016834, opCosts: 97788767, topco: 2061240, interest: 40959448, principal: 95908205 },
       cash: 445322441,
+      sites: [
+        { site: "Toronto", revenue: 3565670, expenses: 617853 },
+        { site: "Calgary", revenue: 128280564, expenses: 18751014 },
+        { site: "Big Watt", revenue: 567210701, expenses: 95436734 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Mar 2029",
@@ -344,6 +666,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 391067109, merchant: 47763164, offtake: 336384000 },
       costs: { power: 18919675, opCosts: 109227379, topco: 2061240, interest: 40308542, principal: 95908205 },
       cash: 508789231,
+      sites: [
+        { site: "Toronto", revenue: 3565670, expenses: 617853 },
+        { site: "Calgary", revenue: 128280564, expenses: 18751014 },
+        { site: "Big Watt", revenue: 643368038, expenses: 108778188 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Apr 2029",
@@ -351,6 +680,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 390612317, merchant: 47504821, offtake: 336384000 },
       costs: { power: 18919675, opCosts: 109184591, topco: 2061240, interest: 45563633, principal: 107093805 },
       cash: 491678194,
+      sites: [
+        { site: "Toronto", revenue: 2852536, expenses: 575064 },
+        { site: "Calgary", revenue: 128280564, expenses: 18751014 },
+        { site: "Big Watt", revenue: 643368038, expenses: 108778188 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "May 2029",
@@ -358,6 +694,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 390612317, merchant: 47504821, offtake: 336384000 },
       costs: { power: 18919675, opCosts: 109184591, topco: 2061240, interest: 44789686, principal: 107093805 },
       cash: 492452141,
+      sites: [
+        { site: "Toronto", revenue: 2852536, expenses: 575064 },
+        { site: "Calgary", revenue: 128280564, expenses: 18751014 },
+        { site: "Big Watt", revenue: 643368038, expenses: 108778188 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Jun 2029",
@@ -365,6 +708,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 417899788, merchant: 47504821, offtake: 378432000 },
       costs: { power: 20822516, opCosts: 120213892, topco: 2061240, interest: 44015739, principal: 107093805 },
       cash: 549629417,
+      sites: [
+        { site: "Toronto", revenue: 2852536, expenses: 575064 },
+        { site: "Calgary", revenue: 128280564, expenses: 18751014 },
+        { site: "Big Watt", revenue: 712703508, expenses: 121710329 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "Jul 2029",
@@ -372,6 +722,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1126329411, merchant: 449926383, offtake: 378432000 },
       costs: { power: 38944809, opCosts: 244761969, topco: 2061240, interest: 49147788, principal: 118279405 },
       cash: 1501492582,
+      sites: [
+        { site: "Toronto", revenue: 2852536, expenses: 575064 },
+        { site: "Calgary", revenue: 124859749, expenses: 18492065 },
+        { site: "Big Watt", revenue: 712703508, expenses: 121710329 },
+        { site: "Future, owned", revenue: 557136000, expenses: 62313071 },
+        { site: "Future, leased", revenue: 557136000, expenses: 80616248 },
+      ],
     },
     {
       period: "Aug 2029",
@@ -379,6 +736,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1124147835, merchant: 448687144, offtake: 378432000 },
       costs: { power: 38944809, opCosts: 244503020, topco: 2061240, interest: 111767466, principal: 234946072 },
       cash: 1319044371,
+      sites: [
+        { site: "Toronto", revenue: 2852536, expenses: 575064 },
+        { site: "Calgary", revenue: 121438934, expenses: 18233116 },
+        { site: "Big Watt", revenue: 712703508, expenses: 121710329 },
+        { site: "Future, owned", revenue: 557136000, expenses: 62313071 },
+        { site: "Future, leased", revenue: 557136000, expenses: 80616248 },
+      ],
     },
     {
       period: "Sep 2029",
@@ -386,6 +750,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1149253728, merchant: 447447905, offtake: 420480000 },
       costs: { power: 40847650, opCosts: 255273372, topco: 2061240, interest: 109121866, principal: 234946072 },
       cash: 1374931434,
+      sites: [
+        { site: "Toronto", revenue: 2852536, expenses: 575064 },
+        { site: "Calgary", revenue: 118018119, expenses: 17974167 },
+        { site: "Big Watt", revenue: 782038979, expenses: 134642471 },
+        { site: "Future, owned", revenue: 557136000, expenses: 62313071 },
+        { site: "Future, leased", revenue: 557136000, expenses: 80616248 },
+      ],
     },
     {
       period: "Oct 2029",
@@ -393,6 +764,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1147072152, merchant: 446208667, offtake: 420480000 },
       costs: { power: 40847650, opCosts: 255014423, topco: 2061240, interest: 112382263, principal: 246131672 },
       cash: 1357323571,
+      sites: [
+        { site: "Toronto", revenue: 2852536, expenses: 575064 },
+        { site: "Calgary", revenue: 114597304, expenses: 17715218 },
+        { site: "Big Watt", revenue: 782038979, expenses: 134642471 },
+        { site: "Future, owned", revenue: 557136000, expenses: 62313071 },
+        { site: "Future, leased", revenue: 557136000, expenses: 80616248 },
+      ],
     },
     {
       period: "Nov 2029",
@@ -400,6 +778,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1144890576, merchant: 444969428, offtake: 420480000 },
       costs: { power: 40847650, opCosts: 254755474, topco: 2061240, interest: 109613621, principal: 246131672 },
       cash: 1356930346,
+      sites: [
+        { site: "Toronto", revenue: 2852536, expenses: 575064 },
+        { site: "Calgary", revenue: 111176489, expenses: 17456269 },
+        { site: "Big Watt", revenue: 782038979, expenses: 134642471 },
+        { site: "Future, owned", revenue: 557136000, expenses: 62313071 },
+        { site: "Future, leased", revenue: 557136000, expenses: 80616248 },
+      ],
     },
     {
       period: "Dec 2029",
@@ -407,6 +792,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1169996469, merchant: 443730189, offtake: 462528000 },
       costs: { power: 42750491, opCosts: 265525826, topco: 2061240, interest: 106844979, principal: 246131672 },
       cash: 1412940450,
+      sites: [
+        { site: "Toronto", revenue: 2852536, expenses: 575064 },
+        { site: "Calgary", revenue: 107755674, expenses: 17197321 },
+        { site: "Big Watt", revenue: 851374449, expenses: 147574612 },
+        { site: "Future, owned", revenue: 557136000, expenses: 62313071 },
+        { site: "Future, leased", revenue: 557136000, expenses: 80616248 },
+      ],
     },
     {
       period: "Jan 2030",
@@ -414,6 +806,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1167814893, merchant: 442490951, offtake: 462528000 },
       costs: { power: 44033006, opCosts: 268360811, topco: 2806032, interest: 109982334, principal: 257317272 },
       cash: 1390334388,
+      sites: [
+        { site: "Toronto", revenue: 2852536, expenses: 584298 },
+        { site: "Calgary", revenue: 104334859, expenses: 17107561 },
+        { site: "Big Watt", revenue: 851374449, expenses: 150211449 },
+        { site: "Future, owned", revenue: 557136000, expenses: 62819119 },
+        { site: "Future, leased", revenue: 557136000, expenses: 81671391 },
+      ],
     },
     {
       period: "Feb 2030",
@@ -421,6 +820,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1166724105, merchant: 441871331, offtake: 462528000 },
       costs: { power: 44033006, opCosts: 268231337, topco: 2806032, interest: 108040651, principal: 257317272 },
       cash: 1390695139,
+      sites: [
+        { site: "Toronto", revenue: 2852536, expenses: 584298 },
+        { site: "Calgary", revenue: 102624451, expenses: 16978087 },
+        { site: "Big Watt", revenue: 851374449, expenses: 150211449 },
+        { site: "Future, owned", revenue: 557136000, expenses: 62819119 },
+        { site: "Future, leased", revenue: 557136000, expenses: 81671391 },
+      ],
     },
     {
       period: "Mar 2030",
@@ -428,6 +834,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1194011575, merchant: 441871331, offtake: 504576000 },
       costs: { power: 45992932, opCosts: 279443265, topco: 2806032, interest: 105648968, principal: 257317272 },
       cash: 1449250438,
+      sites: [
+        { site: "Toronto", revenue: 2852536, expenses: 584298 },
+        { site: "Calgary", revenue: 102624451, expenses: 16978087 },
+        { site: "Big Watt", revenue: 920709919, expenses: 163383302 },
+        { site: "Future, owned", revenue: 557136000, expenses: 62819119 },
+        { site: "Future, leased", revenue: 557136000, expenses: 81671391 },
+      ],
     },
     {
       period: "Apr 2030",
@@ -435,6 +848,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1193647742, merchant: 441664657, offtake: 504576000 },
       costs: { power: 45992932, opCosts: 279409034, topco: 2806032, interest: 109163281, principal: 268502872 },
       cash: 1434014248,
+      sites: [
+        { site: "Toronto", revenue: 2282029, expenses: 550067 },
+        { site: "Calgary", revenue: 102624451, expenses: 16978087 },
+        { site: "Big Watt", revenue: 920709919, expenses: 163383302 },
+        { site: "Future, owned", revenue: 557136000, expenses: 62819119 },
+        { site: "Future, leased", revenue: 557136000, expenses: 81671391 },
+      ],
     },
     {
       period: "May 2030",
@@ -442,6 +862,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1193647742, merchant: 441664657, offtake: 504576000 },
       costs: { power: 45992932, opCosts: 279409034, topco: 2806032, interest: 106648557, principal: 268502872 },
       cash: 1436528973,
+      sites: [
+        { site: "Toronto", revenue: 2282029, expenses: 550067 },
+        { site: "Calgary", revenue: 102624451, expenses: 16978087 },
+        { site: "Big Watt", revenue: 920709919, expenses: 163383302 },
+        { site: "Future, owned", revenue: 557136000, expenses: 62819119 },
+        { site: "Future, leased", revenue: 557136000, expenses: 81671391 },
+      ],
     },
     {
       period: "Jun 2030",
@@ -449,6 +876,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1215477718, merchant: 441664657, offtake: 546624000 },
       costs: { power: 47952858, opCosts: 290293512, topco: 2806032, interest: 104133832, principal: 268502872 },
       cash: 1490077269,
+      sites: [
+        { site: "Toronto", revenue: 2282029, expenses: 550067 },
+        { site: "Calgary", revenue: 102624451, expenses: 16978087 },
+        { site: "Big Watt", revenue: 984587895, expenses: 176227707 },
+        { site: "Future, owned", revenue: 557136000, expenses: 62819119 },
+        { site: "Future, leased", revenue: 557136000, expenses: 81671391 },
+      ],
     },
     {
       period: "Jul 2030",
@@ -456,6 +890,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1924343657, merchant: 844334066, offtake: 546624000 },
       costs: { power: 70352013, opCosts: 427704546, topco: 2806032, interest: 107525104, principal: 279688472 },
       cash: 2427225557,
+      sites: [
+        { site: "Toronto", revenue: 2282029, expenses: 550067 },
+        { site: "Calgary", revenue: 99887799, expenses: 16770927 },
+        { site: "Big Watt", revenue: 984587895, expenses: 176227707 },
+        { site: "Future, owned", revenue: 1114272000, expenses: 131516429 },
+        { site: "Future, leased", revenue: 1114272000, expenses: 172991429 },
+      ],
     },
     {
       period: "Aug 2030",
@@ -463,6 +904,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1922598396, merchant: 843342675, offtake: 546624000 },
       costs: { power: 70352013, opCosts: 427497387, topco: 2806032, interest: 181107337, principal: 419688472 },
       cash: 2211113830,
+      sites: [
+        { site: "Toronto", revenue: 2282029, expenses: 550067 },
+        { site: "Calgary", revenue: 97151147, expenses: 16563768 },
+        { site: "Big Watt", revenue: 984587895, expenses: 176227707 },
+        { site: "Future, owned", revenue: 1114272000, expenses: 131516429 },
+        { site: "Future, leased", revenue: 1114272000, expenses: 172991429 },
+      ],
     },
     {
       period: "Sep 2030",
@@ -470,6 +918,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1942683111, merchant: 842351284, offtake: 588672000 },
       costs: { power: 72311939, opCosts: 438174706, topco: 2806032, interest: 176371237, principal: 419688472 },
       cash: 2264354009,
+      sites: [
+        { site: "Toronto", revenue: 2282029, expenses: 550067 },
+        { site: "Calgary", revenue: 94414495, expenses: 16356609 },
+        { site: "Big Watt", revenue: 1048465871, expenses: 189072111 },
+        { site: "Future, owned", revenue: 1114272000, expenses: 131516429 },
+        { site: "Future, leased", revenue: 1114272000, expenses: 172991429 },
+      ],
     },
     {
       period: "Oct 2030",
@@ -477,6 +932,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1940937850, merchant: 841359893, offtake: 588672000 },
       costs: { power: 72311939, opCosts: 437967547, topco: 2806032, interest: 177541134, principal: 430874072 },
       cash: 2249469019,
+      sites: [
+        { site: "Toronto", revenue: 2282029, expenses: 550067 },
+        { site: "Calgary", revenue: 91677843, expenses: 16149450 },
+        { site: "Big Watt", revenue: 1048465871, expenses: 189072111 },
+        { site: "Future, owned", revenue: 1114272000, expenses: 131516429 },
+        { site: "Future, leased", revenue: 1114272000, expenses: 172991429 },
+      ],
     },
     {
       period: "Nov 2030",
@@ -484,6 +946,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1939192589, merchant: 840368502, offtake: 588672000 },
       costs: { power: 72311939, opCosts: 437760387, topco: 2806032, interest: 172681993, principal: 430874072 },
       cash: 2251798668,
+      sites: [
+        { site: "Toronto", revenue: 2282029, expenses: 550067 },
+        { site: "Calgary", revenue: 88941191, expenses: 15942291 },
+        { site: "Big Watt", revenue: 1048465871, expenses: 189072111 },
+        { site: "Future, owned", revenue: 1114272000, expenses: 131516429 },
+        { site: "Future, leased", revenue: 1114272000, expenses: 172991429 },
+      ],
     },
     {
       period: "Dec 2030",
@@ -491,6 +960,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 1959277304, merchant: 839377111, offtake: 630720000 },
       costs: { power: 74271865, opCosts: 448437706, topco: 2806032, interest: 167822852, principal: 430874072 },
       cash: 2305161888,
+      sites: [
+        { site: "Toronto", revenue: 2282029, expenses: 550067 },
+        { site: "Calgary", revenue: 86204539, expenses: 15735132 },
+        { site: "Big Watt", revenue: 1112343847, expenses: 201916515 },
+        { site: "Future, owned", revenue: 1114272000, expenses: 131516429 },
+        { site: "Future, leased", revenue: 1114272000, expenses: 172991429 },
+      ],
     },
   ],
   years: [
@@ -500,6 +976,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 0, merchant: 0, offtake: 0 },
       costs: { power: 0, opCosts: 0, topco: 0, interest: 0, principal: 0 },
       cash: 0,
+      sites: [
+        { site: "Toronto", revenue: 0, expenses: 0 },
+        { site: "Calgary", revenue: 0, expenses: 0 },
+        { site: "Big Watt", revenue: 0, expenses: 0 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "2027",
@@ -507,6 +990,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 823553968, merchant: 177181862, offtake: 504576000 },
       costs: { power: 31704192, opCosts: 194575245, topco: 4546850, interest: 75285392, principal: 147981858 },
       cash: 1051218293,
+      sites: [
+        { site: "Toronto", revenue: 40113792, expenses: 5883028 },
+        { site: "Calgary", revenue: 448981974, expenses: 59663475 },
+        { site: "Big Watt", revenue: 1016216064, expenses: 160732933 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "2028",
@@ -514,6 +1004,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 3562644810, merchant: 677138469, offtake: 2438784000 },
       costs: { power: 149986907, opCosts: 885305429, topco: 13199450, interest: 379613246, principal: 806614067 },
       cash: 4443848181,
+      sites: [
+        { site: "Toronto", revenue: 45462298, expenses: 7467112 },
+        { site: "Calgary", revenue: 1823722018, expenses: 243983848 },
+        { site: "Big Watt", revenue: 4809382963, expenses: 783841376 },
+        { site: "Future, owned", revenue: 0, expenses: 0 },
+        { site: "Future, leased", revenue: 0, expenses: 0 },
+      ],
     },
     {
       period: "2029",
@@ -521,6 +1018,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 9167160730, merchant: 2967548196, offtake: 4457088000 },
       costs: { power: 354798268, opCosts: 2163383915, topco: 24734884, interest: 855750385, principal: 1935572595 },
       cash: 11257556880,
+      sites: [
+        { site: "Toronto", revenue: 36369838, expenses: 7029138 },
+        { site: "Calgary", revenue: 1469667662, expenses: 219736082 },
+        { site: "Big Watt", revenue: 8400127427, expenses: 1433841045 },
+        { site: "Future, owned", revenue: 3342816000, expenses: 373878427 },
+        { site: "Future, leased", revenue: 3342816000, expenses: 483697491 },
+      ],
     },
     {
       period: "2030",
@@ -528,6 +1032,13 @@ export const REVENUE_RAMP: {
       revenue: { inference: 18760356680, merchant: 7702361117, offtake: 6475392000 },
       costs: { power: 705909374, opCosts: 4282689272, topco: 33672383, interest: 1626667281, principal: 3989148062 },
       cash: 22300023426,
+      sites: [
+        { site: "Toronto", revenue: 29095870, expenses: 6703500 },
+        { site: "Calgary", revenue: 1175734129, expenses: 199516172 },
+        { site: "Big Watt", revenue: 11676383797, expenses: 2088388771 },
+        { site: "Future, owned", revenue: 10028448000, expenses: 1166013285 },
+        { site: "Future, leased", revenue: 10028448000, expenses: 1527976918 },
+      ],
     },
   ],
 };

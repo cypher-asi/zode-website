@@ -486,6 +486,46 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Each site's revenue and expenses, a column each, and their total under a rule. */
+.rampTipSites {
+  width: 100%;
+  border-collapse: collapse;
+  border-top: 1px solid var(--rule);
+}
+
+.rampTipSites :is(th, td) {
+  padding: 1.5px 0;
+  font-weight: inherit;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.rampTipSites tr > :first-child {
+  padding-right: 12px;
+  text-align: left;
+}
+
+.rampTipSites tr > :not(:first-child) {
+  padding-left: 12px;
+}
+
+.rampTipSites td {
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.rampTipSites thead th {
+  padding-top: 8px;
+  padding-bottom: 3px;
+}
+
+.rampTipSites tfoot :is(th, td) {
+  padding-top: 5px;
+  border-top: 1px solid var(--rule);
+  color: var(--fg);
+  font-weight: 500;
+}
+
 .rampTipRows[data-net] {
   color: var(--fg);
   font-weight: 500;
@@ -505,6 +545,14 @@
 
 .chart[data-compact] .rampTipTotal {
   font-size: 22px;
+}
+
+.chart[data-compact] .rampTipSites tr > :first-child {
+  padding-right: 8px;
+}
+
+.chart[data-compact] .rampTipSites tr > :not(:first-child) {
+  padding-left: 8px;
 }
 
 .chart[data-compact] .rampSwatch {

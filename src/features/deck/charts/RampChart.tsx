@@ -11,6 +11,9 @@ const COSTS = [
   { key: "principal", label: "Debt repaid" },
 ] as const;
 
+/** The costs that aren't any one site's; power and op costs are the sites' expenses. */
+const COMPANY_COSTS = COSTS.filter(({ key }) => key !== "power" && key !== "opCosts");
+
 const CASH = { key: "cash", label: "Cash after debt service" } as const;
 
 /** Where a period's revenue goes, from the bar's foot up: costs and debt service, then the cash left on top. */
@@ -18,15 +21,9 @@ export const RAMP_PARTS = [...COSTS, CASH] as const;
 
 type PartKey = (typeof RAMP_PARTS)[number]["key"];
 
-const REVENUE = [
-  { key: "inference", label: "Inference" },
-  { key: "merchant", label: "Merchant" },
-  { key: "offtake", label: "Offtake" },
-] as const;
-
 /** The slide's wide chart, and a squarer one for the deck's scroll mode, where only the years are labelled. */
 const LAYOUTS = {
-  wide: { W: 1000, H: 440, pad: { top: 12, right: 4, bottom: 52, left: 52 }, tip: { w: 290, h: 290 } },
+  wide: { W: 1000, H: 440, pad: { top: 12, right: 4, bottom: 52, left: 52 }, tip: { w: 290, h: 340 } },
   compact: { W: 520, H: 420, pad: { top: 12, right: 2, bottom: 36, left: 46 }, tip: { w: 340, h: 372 } },
 } as const;
 
@@ -65,8 +62,8 @@ const VIEWS = {
 /**
  * The consolidated model by quarter, month or year, one bar each: its height
  * the period's revenue, stacked from power at the foot through op costs,
- * TopCo, interest and debt repaid to the cash it spins off at the top. Hovering, focusing or tapping a bar shows its revenue by how it's sold
- * and where it went.
+ * TopCo, interest and debt repaid to the cash it spins off at the top. Hovering, focusing or tapping a bar shows each site's revenue
+ * and expenses with their total, and where the revenue went.
  */
 export function RampChart({
   periods,
@@ -204,34 +201,49 @@ export function RampChart({
         <foreignObject x={tipX} y={PAD.top} width={TIP.w} height={TIP.h} className={styles.rampTipFrame}>
           <div className={styles.rampTip}>
             <p className={styles.rampTipHead}>
-              <span>{q.period}</span>
+              <span>
+                {q.period} · {mw(q.mw)}
+              </span>
               <span className={styles.rampTipTotal}>{usd(totalOf(q))}</span>
             </p>
-            <dl className={styles.rampTipRows}>
-              <div>
-                <dt>Live critical IT</dt>
-                <dd>{mw(q.mw)}</dd>
-              </div>
-            </dl>
-            <dl className={styles.rampTipRows}>
-              {REVENUE.map(({ key, label }) => (
-                <div key={key}>
-                  <dt>{label}</dt>
-                  <dd>{usd(q.revenue[key])}</dd>
-                </div>
-              ))}
-            </dl>
-            <dl className={styles.rampTipRows}>
-              {COSTS.map(({ key, label }) => (
-                <div key={key}>
-                  <dt>
-                    <span className={styles.rampSwatch} data-part={key} aria-hidden="true" />
-                    {label}
-                  </dt>
-                  <dd>{usd(-q.costs[key])}</dd>
-                </div>
-              ))}
-            </dl>
+            <table className={styles.rampTipSites}>
+              <thead>
+                <tr>
+                  <th scope="col">Site</th>
+                  <th scope="col">Revenue</th>
+                  <th scope="col">Expenses</th>
+                </tr>
+              </thead>
+              <tbody>
+                {q.sites.map(({ site, revenue, expenses }) => (
+                  <tr key={site}>
+                    <th scope="row">{site}</th>
+                    <td>{usd(revenue)}</td>
+                    <td>{usd(-expenses)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th scope="row">Total</th>
+                  <td>{usd(totalOf(q))}</td>
+                  <td>{usd(-q.sites.reduce((total, { expenses }) => total + expenses, 0))}</td>
+                </tr>
+              </tfoot>
+            </table>
+            {compact ? null : (
+              <dl className={styles.rampTipRows}>
+                {COMPANY_COSTS.map(({ key, label }) => (
+                  <div key={key}>
+                    <dt>
+                      <span className={styles.rampSwatch} data-part={key} aria-hidden="true" />
+                      {label}
+                    </dt>
+                    <dd>{usd(-q.costs[key])}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
             <dl className={styles.rampTipRows} data-net>
               <div>
                 <dt>

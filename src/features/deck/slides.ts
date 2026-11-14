@@ -159,6 +159,8 @@ export interface RampPeriod {
   };
   /** The model's EBITDA less interest paid and debt repaid, before capex; negative when short. */
   readonly cash: number;
+  /** Each site's revenue and expenses, its power and op costs; they add up to the period's revenue, power and op costs. */
+  readonly sites: readonly { readonly site: string; readonly revenue: number; readonly expenses: number }[];
 }
 
 export type Slide =

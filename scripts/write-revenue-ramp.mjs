@@ -105,67 +105,79 @@ const shared = zip["xl/sharedStrings.xml"]
 const rels = new Map(
   [...part("xl/_rels/workbook.xml.rels").matchAll(/<Relationship\b([^>]*)\/?>/g)].map((m) => [attr(m[1], "Id"), attr(m[1], "Target")]),
 );
-const sheetTarget = [...part("xl/workbook.xml").matchAll(/<sheet\b([^>]*)\/>/g)]
-  .map((m) => ({ name: attr(m[1], "name"), target: rels.get(attr(m[1], "r:id")) }))
-  .find((s) => s.name === "Zode Inc.")?.target;
-if (!sheetTarget) fail(`${modelName}: no "Zode Inc." sheet.`);
-
-// The sheet's cells by row, then column letter.
-const rows = new Map();
-for (const m of part(sheetTarget.startsWith("/") ? sheetTarget.slice(1) : `xl/${sheetTarget}`).matchAll(
-  /<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g,
-)) {
-  const ref = /\br="([A-Z]+)(\d+)"/.exec(m[1]);
-  if (!ref) continue;
-  const type = attr(m[1], "t");
-  const inner = m[2] ?? "";
-  const raw = /<v>([\s\S]*?)<\/v>/.exec(inner)?.[1];
-  let value;
-  if (type === "s") value = raw === undefined ? undefined : shared[Number(raw)];
-  else if (type === "inlineStr") value = texts(inner);
-  else if (type === "str" || type === "e") value = raw === undefined ? undefined : decode(raw);
-  else value = raw === undefined ? undefined : Number(raw);
-  if (value === undefined || value === "") continue;
-  const row = Number(ref[2]);
-  if (!rows.has(row)) rows.set(row, new Map());
-  rows.get(row).set(ref[1], value);
-}
-const numbers = [...rows.keys()].sort((a, b) => a - b);
-const label = (r) => String(rows.get(r)?.get("B") ?? "").trim();
-const cell = (r, col) => rows.get(r)?.get(col);
-const rowOf = (text, from = 0) =>
-  numbers.find((r) => r > from && label(r).toLowerCase().startsWith(text.toLowerCase())) ??
-  fail(`${modelName}: no "${text}" row on Zode Inc.${from ? ` after row ${from}` : ""}.`);
-
-// The monthly header: a "Total" in D, then a month's Excel date in each column after.
-const header = rowOf("Month", rowOf("MONTHLY: ZODE INC. CONSOLIDATED"));
-if (cell(header, "D") !== "Total") fail(`${modelName}: expected "Total" in D${header} on Zode Inc.`);
+const sheetTargets = new Map(
+  [...part("xl/workbook.xml").matchAll(/<sheet\b([^>]*)\/>/g)].map((m) => [attr(m[1], "name"), rels.get(attr(m[1], "r:id"))]),
+);
 const colIndex = (col) => [...col].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0);
-const columns = [...rows.get(header).keys()].filter((col) => colIndex(col) > 4).sort((a, b) => colIndex(a) - colIndex(b));
-const months = columns.map((col) => {
-  const serial = cell(header, col);
-  if (typeof serial !== "number") fail(`${modelName}: month heading ${col}${header} isn't a date.`);
-  return new Date(Date.UTC(1899, 11, 30) + Math.round(serial) * 86_400_000).toISOString().slice(0, 7);
-});
+
+/**
+ * A tab's monthly section, from the "Month" header after the row labelled
+ * `section`: its months (YYYY-MM), and `series` for a row's values by month
+ * after a given row.
+ */
+function monthlyOf(name, section) {
+  const target = sheetTargets.get(name) ?? fail(`${modelName}: no "${name}" sheet.`);
+  // The sheet's cells by row, then column letter.
+  const rows = new Map();
+  for (const m of part(target.startsWith("/") ? target.slice(1) : `xl/${target}`).matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
+    const ref = /\br="([A-Z]+)(\d+)"/.exec(m[1]);
+    if (!ref) continue;
+    const type = attr(m[1], "t");
+    const inner = m[2] ?? "";
+    const raw = /<v>([\s\S]*?)<\/v>/.exec(inner)?.[1];
+    let value;
+    if (type === "s") value = raw === undefined ? undefined : shared[Number(raw)];
+    else if (type === "inlineStr") value = texts(inner);
+    else if (type === "str" || type === "e") value = raw === undefined ? undefined : decode(raw);
+    else value = raw === undefined ? undefined : Number(raw);
+    if (value === undefined || value === "") continue;
+    const row = Number(ref[2]);
+    if (!rows.has(row)) rows.set(row, new Map());
+    rows.get(row).set(ref[1], value);
+  }
+  const numbers = [...rows.keys()].sort((a, b) => a - b);
+  const label = (r) => String(rows.get(r)?.get("B") ?? "").trim();
+  const cell = (r, col) => rows.get(r)?.get(col);
+  const rowOf = (text, from = 0) =>
+    numbers.find((r) => r > from && label(r).toLowerCase().startsWith(text.toLowerCase())) ??
+    fail(`${modelName}: no "${text}" row on ${name}${from ? ` after row ${from}` : ""}.`);
+
+  // The monthly header: a "Total" in D, then a month's Excel date in each column after.
+  const header = rowOf("Month", rowOf(section));
+  if (cell(header, "D") !== "Total") fail(`${modelName}: expected "Total" in D${header} on ${name}.`);
+  const columns = [...rows.get(header).keys()].filter((col) => colIndex(col) > 4).sort((a, b) => colIndex(a) - colIndex(b));
+  const months = columns.map((col) => {
+    const serial = cell(header, col);
+    if (typeof serial !== "number") fail(`${modelName}: month heading ${col}${header} on ${name} isn't a date.`);
+    return new Date(Date.UTC(1899, 11, 30) + Math.round(serial) * 86_400_000).toISOString().slice(0, 7);
+  });
+
+  /** A row's monthly values, once its months are seen to add up to its total; a level, such as MW, has none. */
+  function series(text, { level = false, from = header } = {}) {
+    const r = rowOf(text, from);
+    const values = columns.map((col) => {
+      const v = cell(r, col) ?? 0;
+      if (typeof v !== "number" || !Number.isFinite(v)) fail(`${modelName}: "${label(r)}" ${col}${r} on ${name} isn't a number.`);
+      return v;
+    });
+    if (level) return values;
+    const total = cell(r, "D");
+    const sum = values.reduce((a, b) => a + b, 0);
+    if (typeof total !== "number" || Math.abs(sum - total) > Math.max(1, Math.abs(total) * 1e-9)) {
+      fail(`${modelName}: "${label(r)}" on ${name} totals ${total}, not the sum of its months (${sum}).`);
+    }
+    return values;
+  }
+  /** Rows labelled "Revenue: <site>" after the header, by site. */
+  const labelled = (prefix) =>
+    numbers.filter((r) => r > header && label(r).startsWith(prefix)).map((r) => label(r).slice(prefix.length).trim());
+  return { months, series, rowOf, labelled };
+}
+
+const topco = monthlyOf("Zode Inc.", "MONTHLY: ZODE INC. CONSOLIDATED");
+const { months, series } = topco;
 const last = months.indexOf(`${THROUGH}-12`);
 if (last < 0) fail(`${modelName}: the monthly build has no Dec ${THROUGH}.`);
-
-/** A row's monthly values, once its months are seen to add up to its total; a level, such as MW, has none. */
-function series(text, { level = false } = {}) {
-  const r = rowOf(text, header);
-  const values = columns.map((col) => {
-    const v = cell(r, col) ?? 0;
-    if (typeof v !== "number" || !Number.isFinite(v)) fail(`${modelName}: "${label(r)}" ${col}${r} isn't a number.`);
-    return v;
-  });
-  if (level) return values;
-  const total = cell(r, "D");
-  const sum = values.reduce((a, b) => a + b, 0);
-  if (typeof total !== "number" || Math.abs(sum - total) > Math.max(1, Math.abs(total) * 1e-9)) {
-    fail(`${modelName}: "${label(r)}" totals ${total}, not the sum of its months (${sum}).`);
-  }
-  return values;
-}
 
 const revenue = series("Total revenue");
 const liveMw = series("MW of GPU clusters in service", { level: true });
@@ -191,6 +203,50 @@ months.forEach((month, i) => {
   if (Math.abs(ebitda - S.ebitda[i]) > 1) fail(`${modelName}: ${month} revenue less its costs is ${ebitda}, not its EBITDA of ${S.ebitda[i]}.`);
 });
 
+/**
+ * Each site as the Zode Inc. tab's "Revenue: <site>" rows name it, the tab
+ * (and part of it) that builds it, and its name on the deck. A site that owns
+ * its building has a site company too, its rent from the compute companies
+ * eliminated in the consolidation.
+ */
+const SITES = [
+  { label: "Toronto", name: "Toronto", tab: "Toronto" },
+  { label: "Calgary", name: "Calgary", tab: "Calgary", part: "PART B - COMPUTE COMPANIES", siteCo: "PART A - SITE COMPANY" },
+  { label: "BigWatt", name: "Big Watt", tab: "BigWatt" },
+  { label: "Future sites (owned)", name: "Future, owned", tab: "Future Sites", part: "PART A - OWNED SITES" },
+  { label: "Future sites (leased)", name: "Future, leased", tab: "Future Sites", part: "PART B - LEASED SITES" },
+];
+for (const label of topco.labelled("Revenue:")) {
+  if (!SITES.some((s) => s.label === label)) fail(`${modelName}: Zode Inc. has revenue from "${label}", which isn't one of the ramp's sites.`);
+}
+// A site's expenses are its operating costs, its revenue less its EBITDA; TopCo's and debt service aren't any one site's.
+const sites = SITES.map((site) => {
+  const consolidated = series(`Revenue: ${site.label}`);
+  const tab = monthlyOf(site.tab, "MONTHLY BUILD");
+  const build = tab.rowOf("MONTHLY BUILD");
+  const from = tab.rowOf("P&L", site.part ? tab.rowOf(site.part, build) : build);
+  const own = tab.series("Revenue", { from });
+  const compute = tab.series("EBITDA", { from });
+  const noi = site.siteCo ? tab.series("Site company EBITDA", { from: tab.rowOf(site.siteCo, build) }) : null;
+  const ebitda = compute.map((v, j) => v + (noi ? noi[j] : 0));
+  const at = (month) => tab.months.indexOf(month);
+  const revenueOf = months.map((month, i) => {
+    const j = at(month);
+    const value = j < 0 ? 0 : own[j];
+    if (Math.abs(value - consolidated[i]) > 1) fail(`${modelName}: ${site.tab} ${month} revenue is ${value}, not Zode Inc.'s ${consolidated[i]} for ${site.label}.`);
+    return value;
+  });
+  const expensesOf = months.map((month, i) => (at(month) < 0 ? 0 : revenueOf[i] - ebitda[at(month)]));
+  return { name: site.name, revenue: revenueOf, expenses: expensesOf };
+});
+months.forEach((month, i) => {
+  const siteRevenue = sites.reduce((total, s) => total + s.revenue[i], 0);
+  if (Math.abs(siteRevenue - revenue[i]) > 1) fail(`${modelName}: ${month} sites' revenue adds up to ${siteRevenue}, not its revenue of ${revenue[i]}.`);
+  const siteExpenses = sites.reduce((total, s) => total + s.expenses[i], 0);
+  const opCosts = -(S.power[i] + S.rent[i] + S.siteOps[i] + S.clusterOps[i]);
+  if (Math.abs(siteExpenses - opCosts) > 1) fail(`${modelName}: ${month} sites' expenses add up to ${siteExpenses}, not its power, rent and operations of ${opCosts}.`);
+});
+
 // Costs are negative in the workbook; the ramp carries them as positive amounts.
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const quarters = [];
@@ -204,10 +260,15 @@ const add = (periods, period, i) => {
       costs: { power: 0, opCosts: 0, topco: 0, interest: 0, principal: 0 },
       net: { cash: 0 },
       mw: 0,
+      sites: sites.map((s) => ({ site: s.name, revenue: 0, expenses: 0 })),
     });
   }
   const p = periods.at(-1);
   p.mw = liveMw[i];
+  sites.forEach((s, k) => {
+    p.sites[k].revenue += s.revenue[i];
+    p.sites[k].expenses += s.expenses[i];
+  });
   p.revenue.inference += S.inference[i];
   p.revenue.merchant += S.merchant[i];
   p.revenue.offtake += S.offtake[i];
@@ -228,6 +289,10 @@ for (const p of [...quarters, ...monthly, ...yearly]) {
   for (const group of [p.revenue, p.costs, p.net]) {
     for (const key of Object.keys(group)) group[key] = Math.round(group[key]) || 0;
   }
+  for (const s of p.sites) {
+    s.revenue = Math.round(s.revenue) || 0;
+    s.expenses = Math.round(s.expenses) || 0;
+  }
   p.mw = Math.round(p.mw * 10) / 10 || 0;
 }
 
@@ -247,7 +312,9 @@ const periodsOut = (periods) =>
   periods
     .map(
       (p) =>
-        `    {\n      period: "${p.period}",\n      mw: ${p.mw},\n      revenue: { inference: ${p.revenue.inference}, merchant: ${p.revenue.merchant}, offtake: ${p.revenue.offtake} },\n      costs: { power: ${p.costs.power}, opCosts: ${p.costs.opCosts}, topco: ${p.costs.topco}, interest: ${p.costs.interest}, principal: ${p.costs.principal} },\n      cash: ${p.net.cash},\n    },`,
+        `    {\n      period: "${p.period}",\n      mw: ${p.mw},\n      revenue: { inference: ${p.revenue.inference}, merchant: ${p.revenue.merchant}, offtake: ${p.revenue.offtake} },\n      costs: { power: ${p.costs.power}, opCosts: ${p.costs.opCosts}, topco: ${p.costs.topco}, interest: ${p.costs.interest}, principal: ${p.costs.principal} },\n      cash: ${p.net.cash},\n      sites: [\n${p.sites
+        .map((s) => `        { site: ${JSON.stringify(s.site)}, revenue: ${s.revenue}, expenses: ${s.expenses} },\n`)
+        .join("")}      ],\n    },`,
     )
     .join("\n");
 
