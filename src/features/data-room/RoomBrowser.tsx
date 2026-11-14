@@ -300,27 +300,39 @@ export function Trail({
   );
 }
 
-/** Rename only takes one item at a time. */
-const actionsFor = (count: number): TreeAction[] => (count > 1 ? ["move", "delete"] : ["rename", "move", "delete"]);
+/** Rename only takes one item at a time, and uploads go into one folder. */
+const actionsFor = (items: ItemRef[]): TreeAction[] =>
+  items.length > 1
+    ? ["move", "delete"]
+    : items[0]?.kind === "folder"
+      ? ["upload", "rename", "move", "delete"]
+      : ["rename", "move", "delete"];
 
 const actionLabel = (action: TreeAction, count: number): string => {
   const items = count > 1 ? ` ${count.toLocaleString()} items` : "";
-  return action === "rename" ? "Rename" : action === "move" ? `Move${items} to…` : `Delete${items}`;
+  return action === "upload"
+    ? "Upload files"
+    : action === "rename"
+      ? "Rename"
+      : action === "move"
+        ? `Move${items} to…`
+        : `Delete${items}`;
 };
 
-/** An admin's actions for `count` items, as a menu's entries. */
-function ActionItems({ count, onSelect }: { count: number; onSelect: (action: TreeAction) => void }): ReactElement {
+/** An admin's actions for `items`, as a menu's entries. */
+function ActionItems({ items, onSelect }: { items: ItemRef[]; onSelect: (action: TreeAction) => void }): ReactElement {
+  const actions = actionsFor(items);
   return (
     <>
-      {actionsFor(count).map((action) => (
-        <li key={action} role="none">
+      {actions.map((action, i) => (
+        <li key={action} role="none" data-sep={i > 0 && actions[i - 1] === "upload" ? "" : undefined}>
           <button
             type="button"
             role="menuitem"
             data-danger={action === "delete" ? "" : undefined}
             onClick={() => onSelect(action)}
           >
-            {actionLabel(action, count)}
+            {actionLabel(action, items.length)}
           </button>
         </li>
       ))}
@@ -358,7 +370,7 @@ export function itemContext(event: MouseEvent<HTMLElement>, items: ItemRef[]): I
 const EDGE = 4;
 
 /**
- * An admin's Rename, Move and Delete at the pointer, as Explorer's right-click
+ * An admin's Upload, Rename, Move and Delete at the pointer, as Explorer's right-click
  * menu. It's a popover, so it sits above scrolling panes, and the browser
  * dismisses it on Escape or a click elsewhere and hands focus back.
  */
@@ -420,7 +432,7 @@ export function ContextMenu({
       }}
     >
       <ActionItems
-        count={context.items.length}
+        items={context.items}
         onSelect={(action) => {
           ref.current?.hidePopover();
           onAction(action, context.items);
@@ -730,7 +742,7 @@ export function RoomBrowser({
         {open ? (
           <ul className={styles.menu} role="menu" aria-label={`Actions for ${entry.name}`}>
             <ActionItems
-              count={1}
+              items={[{ kind: entry.kind, id: entry.id }]}
               onSelect={(action) => {
                 setMenuKey(null);
                 admin.onAction(action, [{ kind: entry.kind, id: entry.id }]);

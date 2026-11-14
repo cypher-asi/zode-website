@@ -110,6 +110,8 @@ export function DataRoomApp({
   const [download, setDownload] = useState<ZipProgress | "preparing" | null>(null);
   const downloadAbort = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  /** The folder the file picker uploads into once files are chosen. */
+  const uploadTarget = useRef<string | null>(null);
   const uploads = useUploads(roomId);
   const docked = useDocked();
 
@@ -209,7 +211,9 @@ export function DataRoomApp({
   const runAction = (action: TreeAction, items: ItemRef[]) => {
     if (!items.length) return;
     const single = items.length === 1 ? items[0] : null;
-    if (action === "rename" && single) {
+    if (action === "upload" && single?.kind === "folder") {
+      pickFiles(single.id);
+    } else if (action === "rename" && single) {
       setDialog({
         title: `Rename ${single.kind}`,
         input: { label: "Name", initial: nameOf(single) },
@@ -259,6 +263,11 @@ export function DataRoomApp({
 
   const startUpload = (files: File[], target: string | null) => {
     if (files.length) uploads.start(files, target);
+  };
+
+  const pickFiles = (target: string | null) => {
+    uploadTarget.current = target;
+    fileInputRef.current?.click();
   };
 
   const move = async (items: ItemRef[], target: string | null) => {
@@ -347,7 +356,7 @@ export function DataRoomApp({
               <ToolMenu
                 label="Add"
                 items={[
-                  { id: "upload", label: "Upload files", onSelect: () => fileInputRef.current?.click() },
+                  { id: "upload", label: "Upload files", onSelect: () => pickFiles(folderId) },
                   { id: "folder", label: "New folder", onSelect: newFolder },
                 ]}
               >
@@ -360,7 +369,7 @@ export function DataRoomApp({
                 multiple
                 hidden
                 onChange={(event) => {
-                  startUpload([...(event.target.files ?? [])], folderId);
+                  startUpload([...(event.target.files ?? [])], uploadTarget.current);
                   event.target.value = "";
                 }}
               />
