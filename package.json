@@ -35,6 +35,8 @@
     "@pdf-lib/fontkit": "^1.1.1",
     "@react-email/components": "^1.0.12",
     "@react-email/render": "^2.1.0",
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.2",
     "@tiptap/extension-image": "^3.31.4",
     "@tiptap/extension-placeholder": "^3.31.4",
     "@tiptap/markdown": "^3.31.4",
@@ -46,6 +48,7 @@
     "d3-geo": "^3.1.1",
     "docx-preview": "^0.4.1",
     "fflate": "^0.8.3",
+    "jspdf": "^4.2.1",
     "next": "^16.4.3",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.4.299",
@@ -55,9 +58,12 @@
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
     "resend": "^6.32.1",
+    "svg2pdf.js": "^2.9.0",
     "three": "^0.184.0",
     "topojson-client": "^3.1.0",
-    "world-atlas": "^2.0.2"
+    "world-atlas": "^2.0.2",
+    "zod": "^4.6.7",
+    "zustand": "^5.1.0"
   },
   "devDependencies": {
     "@sparticuz/chromium": "^153.0.0",
