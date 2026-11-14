@@ -6,6 +6,12 @@ export const COMPUTE_ACTIONS = [
   { id: "rent", label: "Rent Compute", href: "/buy-compute?mode=rent" },
 ] as const satisfies readonly TerminalMenuItem[];
 
+export const THESIS_ACTION = {
+  id: "thesis",
+  label: "Read Thesis",
+  href: "/news/the-industrialization-of-intelligence",
+} as const satisfies TerminalMenuItem;
+
 /** Opens over the current page as a modal (see app/@modal), so it keeps the scroll position. */
 export const ENGINEER_ACTION = {
   id: "engineer",

@@ -13,7 +13,7 @@ import { PodTour } from "@/features/home/pod-tour/PodTour";
 import { Principles } from "@/features/home/principles/Principles";
 import { FullStack } from "@/features/home/stack/FullStack";
 import { Features } from "@/features/home/why-zode/Features";
-import { COMPUTE_ACTIONS } from "@/lib/navigation";
+import { COMPUTE_ACTIONS, THESIS_ACTION } from "@/lib/navigation";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
@@ -23,6 +23,7 @@ export const metadata: Metadata = {
 
 const HERO_ACTIONS: readonly TerminalMenuItem[] = [
   ...COMPUTE_ACTIONS,
+  THESIS_ACTION,
   { id: "learn", label: "Learn More", href: "#learn-more" },
 ];
 
