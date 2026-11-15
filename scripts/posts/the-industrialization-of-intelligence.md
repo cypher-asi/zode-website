@@ -46,6 +46,12 @@ None of this is because demand for compute has weakened. The B300 rental index r
 b300-index
 ```
 
+At those rates, how a megawatt's compute is sold matters more than almost anything else about it. The same 512 GPUs earn $22.4 million a year on a $5.00 contract, $29.2 million at merchant rates, and $75.8 million serving inference.
+
+```chart
+revenue-per-mw
+```
+
 A contract doesn't take its owner out of the compute market, either. Take-or-pay contracts are mostly signed with resellers and labs[12](https://www.sec.gov/Archives/edgar/data/1769628/000176962826000465/crwv-20260930.htm) whose own revenue moves with the spot price, and who renegotiate exactly when it falls. The GPUs that secure the debt resell at the same spot price that caused the default. In the stress that matters, the price, the buyer's credit and the collateral fall together. The short side kept the downside and gave away the upside.
 
 The lesson isn't that infrastructure is a bad business. It's that the value of compute has accrued to whoever is long it. ZODE intends to own the infrastructure and stay long the compute it produces.

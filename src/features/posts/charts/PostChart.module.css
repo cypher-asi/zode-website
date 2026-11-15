@@ -437,6 +437,120 @@ figure.figure {
   color: var(--color-text-tertiary);
 }
 
+.tipList {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--color-border);
+}
+
+.figure .tipListHeading {
+  margin: 0 0 3px;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.figure .tipList ul {
+  margin: 0;
+  padding-left: 1.1em;
+  list-style: disc;
+}
+
+.figure .tipList li {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.figure .tipList li + li {
+  margin-top: 2px;
+}
+
+.figure .tipList li::marker {
+  color: var(--color-text-tertiary);
+}
+
+/* Detailed line chart: shaded area, daily dots, a reference rate and the step-ups. */
+
+.plot[data-tall] {
+  height: 240px;
+}
+
+.line .area {
+  fill: var(--color-surface-tint);
+  stroke: none;
+}
+
+.dayDot {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--color-text-secondary);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.gridLine[data-reference] {
+  border-top: 1px solid var(--color-text-tertiary);
+}
+
+.referenceLabel {
+  position: absolute;
+  right: 0;
+  bottom: 4px;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.stepBand {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--color-surface-tint);
+  pointer-events: none;
+}
+
+.stepBandLabel {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.figure .axis[data-ticks] {
+  position: relative;
+  display: block;
+  height: 1.4em;
+}
+
+.axis[data-ticks] > span {
+  position: absolute;
+  top: 0;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.axis[data-ticks] > span:first-child {
+  transform: none;
+}
+
+.axis[data-ticks] > span:last-child {
+  transform: translateX(-100%);
+}
+
+.figure .footnote {
+  margin: 14px 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+}
+
 @keyframes tipIn {
   from {
     opacity: 0;

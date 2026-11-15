@@ -15,7 +15,17 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
-import { AGENT_KERNELS, B300_INDEX, COMPUTE_POSITION, CREDIT_REPRICING, ROADMAP, type Source } from "./data";
+import {
+  AGENT_KERNELS,
+  B300_INDEX,
+  COMPUTE_POSITION,
+  CREDIT_REPRICING,
+  GPU_HOURS_PER_MW,
+  PER_MW,
+  ROADMAP,
+  revenuePerMw,
+  type Source,
+} from "./data";
 import styles from "./PostChart.module.css";
 
 /*
@@ -36,6 +46,8 @@ interface Tip {
   title: string;
   rows: (readonly [string, string])[];
   note?: string;
+  /** Points under a heading, e.g. what a stage has to prove. */
+  list?: { heading: string; items: string[] };
 }
 
 /** Where a tooltip points, in client coordinates: a point on top of the mark, and the mark's bottom edge. */
@@ -327,17 +339,25 @@ function B300Index(): ReactElement {
   const tips = useContext(TipContext);
   const plot = useRef<HTMLDivElement>(null);
   const readings = B300_INDEX.readings;
-  const [lo, hi] = [6.5, 8];
+  const contract = PER_MW.rates[0].rate;
+  const [lo, hi] = [4.5, 8];
   const W = 600;
-  const H = 200;
+  const H = 240;
   const x = (i: number) => (i / (readings.length - 1)) * W;
   const y = (v: number) => H - ((v - lo) / (hi - lo)) * H;
   const top = (v: number) => `${((hi - v) / (hi - lo)) * 100}%`;
   const left = (i: number) => `${(i / (readings.length - 1)) * 100}%`;
   const points = readings.map(([, v], i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const area = `M0,${H} L${points.replaceAll(" ", " L")} L${W},${H} Z`;
   const [first, last] = [readings[0], readings[readings.length - 1]];
   const change = last[1] / first[1] - 1;
   const date = (iso: string) => monthDay.format(new Date(`${iso}T00:00:00Z`));
+  const indexOf = (iso: string) => readings.findIndex(([day]) => day === iso);
+  const steps = B300_INDEX.steps.map(({ from, to }) => {
+    const [a, b] = [indexOf(from), indexOf(to)];
+    return { a, b, delta: readings[b][1] - readings[a][1] };
+  });
+  const weekly = readings.map((_, i) => i).filter((i) => i % 7 === 0 && readings.length - 1 - i >= 4);
 
   const active = tips.active === null ? null : Number(tips.active);
 
@@ -345,18 +365,26 @@ function B300Index(): ReactElement {
     const box = plot.current?.getBoundingClientRect();
     if (!box) return;
     const [day, price] = readings[i];
+    const money = (n: number) => signed(n, `$${Math.abs(n).toFixed(2)}`);
+    const pct = (n: number) => signed(n, `${Math.abs(n * 100).toFixed(1)}%`);
     const rows: [string, string][] = [["Price", `$${price.toFixed(2)} / GPU-hr`]];
-    if (i > 0) {
-      const delta = price - readings[i - 1][1];
-      rows.push(["Day change", signed(delta, `$${Math.abs(delta).toFixed(2)}`)]);
-    }
-    const since = price / first[1] - 1;
-    if (i > 0) rows.push([`Since ${date(first[0])}`, signed(since, `${Math.abs(since * 100).toFixed(1)}%`)]);
+    if (i > 0) rows.push(["Day change", money(price - readings[i - 1][1])]);
+    if (i >= 7) rows.push(["7-day change", pct(price / readings[i - 7][1] - 1)]);
+    if (i > 0) rows.push([`Since ${date(first[0])}`, pct(price / first[1] - 1)]);
+    rows.push([`Over $${contract.toFixed(2)} contract`, `${money(price - contract)} (${pct(price / contract - 1)})`]);
+    rows.push(["Revenue per MW a year", `$${revenuePerMw(price).toFixed(1)}M`]);
+    const step = steps.find((s) => i > s.a && i <= s.b);
     const pointY = box.top + ((hi - price) / (hi - lo)) * box.height;
     tips.show(
       String(i),
       { x: box.left + (i / (readings.length - 1)) * box.width, top: pointY, bottom: pointY },
-      { title: fullDate.format(new Date(`${day}T00:00:00Z`)), rows },
+      {
+        title: fullDate.format(new Date(`${day}T00:00:00Z`)),
+        rows,
+        note: step
+          ? `Step up: ${money(step.delta)} from ${date(readings[step.a][0])} to ${date(readings[step.b][0])}.`
+          : `At ${GPU_HOURS_PER_MW.toLocaleString("en-US")} GPU-hours a year per MW, fully utilized.`,
+      },
     );
   }
 
@@ -395,15 +423,16 @@ function B300Index(): ReactElement {
   return (
     <Figure
       title="Meanwhile, the asset keeps getting more valuable"
-      subtitle={`B300 rental price, USD per GPU-hour: up ${percent(change)} in a month.`}
+      subtitle={`B300 rental price, USD per GPU-hour: up ${percent(change)} in a month, against the $${contract.toFixed(2)} a long-term contract locks in.`}
       sources={B300_INDEX.sources}
     >
       <div
         ref={plot}
         className={styles.plot}
+        data-tall=""
         tabIndex={0}
         role="img"
-        aria-label={`B300 rental index rose from $${first[1].toFixed(2)} on ${date(first[0])} to $${last[1].toFixed(2)} on ${date(last[0])}. Use the arrow keys to read each day.`}
+        aria-label={`B300 rental index rose from $${first[1].toFixed(2)} on ${date(first[0])} to $${last[1].toFixed(2)} on ${date(last[0])}, against a $${contract.toFixed(2)} contract rate. Use the arrow keys to read each day.`}
         aria-describedby={active === null ? undefined : tips.id}
         data-active={active === null ? undefined : ""}
         onPointerMove={onPointer}
@@ -417,15 +446,28 @@ function B300Index(): ReactElement {
         onBlur={() => tips.hide()}
         onKeyDown={onKeyDown}
       >
-        {[7, 7.5].map((v) => (
+        {steps.map((s) => (
+          <span key={s.a} className={styles.stepBand} style={{ left: left(s.a), width: `calc(${left(s.b)} - ${left(s.a)})` }}>
+            <span className={styles.stepBandLabel}>+${s.delta.toFixed(2)}</span>
+          </span>
+        ))}
+        {[5.5, 6, 6.5, 7, 7.5].map((v) => (
           <span key={v} className={styles.gridLine} style={{ top: top(v) }}>
             <span className={styles.gridLabel}>${v.toFixed(2)}</span>
           </span>
         ))}
+        <span className={styles.gridLine} data-reference="" style={{ top: top(contract) }}>
+          <span className={styles.gridLabel}>${contract.toFixed(2)}</span>
+          <span className={styles.referenceLabel}>Long-term contract rate</span>
+        </span>
         {active !== null ? <span className={styles.cursor} style={{ left: left(active) }} /> : null}
         <svg className={styles.line} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
+          <path className={styles.area} d={area} />
           <polyline points={points} />
         </svg>
+        {readings.map(([day, v], i) => (
+          <span key={day} className={styles.dayDot} style={{ left: left(i), top: top(v) }} />
+        ))}
         <span className={styles.point} style={{ left: "0%", top: top(first[1]) }} />
         <span className={styles.point} data-accent="" style={{ left: "100%", top: top(last[1]) }} />
         {active !== null ? (
@@ -442,10 +484,90 @@ function B300Index(): ReactElement {
           ${last[1].toFixed(2)}
         </span>
       </div>
-      <p className={styles.axis}>
-        <span>{date(first[0])}</span>
-        <span>{date(last[0])}</span>
+      <p className={styles.axis} data-ticks="">
+        {weekly.map((i) => (
+          <span key={i} style={{ left: left(i) }}>
+            {date(readings[i][0])}
+          </span>
+        ))}
+        <span style={{ left: "100%" }}>{date(last[0])}</span>
       </p>
+    </Figure>
+  );
+}
+
+/** One MW's revenue a year at each way of selling its GPU-hours, against what it costs and is worth. */
+function RevenuePerMw(): ReactElement {
+  const { cost, value } = PER_MW;
+  const max = 80;
+  const spot = B300_INDEX.readings[B300_INDEX.readings.length - 1][1];
+  const rows: Bar[] = PER_MW.rates.map((r, i) => {
+    const revenue = revenuePerMw(r.rate);
+    return {
+      label: r.name,
+      detail: `$${r.rate.toFixed(2)} per GPU-hour · ${r.detail}`,
+      value: revenue,
+      shown: `$${revenue.toFixed(1)}M`,
+      accent: i === PER_MW.rates.length - 1,
+      tip: {
+        title: `${r.name}: one MW for a year`,
+        rows: [
+          ["Rate", `$${r.rate.toFixed(2)} / GPU-hr`],
+          ["Revenue a year", `$${revenue.toFixed(1)}M`],
+          ["Against $41.2M cost", `${percent(revenue / cost.total)} a year`],
+          ["Revenue pays back cost in", `${((cost.total / revenue) * 12).toFixed(0)} months`],
+          ["Vs today's spot", `${signed(r.rate - spot, `$${Math.abs(r.rate - spot).toFixed(2)}`)} / GPU-hr`],
+        ],
+        note: `${PER_MW.gpus} B300 GPUs in ${PER_MW.nodes} nodes, fully utilized, ${GPU_HOURS_PER_MW.toLocaleString("en-US")} GPU-hours a year. Revenue before operating costs and debt service.`,
+      },
+    };
+  });
+  rows.push({
+    label: "Cost to build",
+    detail: "GPUs, data center and powered land",
+    value: cost.total,
+    shown: `$${cost.total.toFixed(1)}M`,
+    tip: {
+      title: "What one MW costs to build",
+      rows: [
+        ["GPUs", `$${cost.gpus.toFixed(1)}M`],
+        ["Data center conversion", `$${cost.building.toFixed(1)}M`],
+        ["Land and power", `$${cost.land.toFixed(1)}M`],
+        ["Total", `$${cost.total.toFixed(1)}M`],
+      ],
+      note: "Half equity, half debt secured on the assets. GPUs at $550K per node before tax and setup.",
+    },
+  });
+  rows.push({
+    label: "Market value",
+    detail: "Enterprise value per MW of listed neoclouds",
+    value: value[1],
+    shown: `$${value[0]}–${value[1]}M`,
+    tip: {
+      title: "What the market pays for one MW",
+      rows: [
+        ["Low", `$${value[0]}M`],
+        ["High", `$${value[1]}M`],
+        ["Over cost to build", `${(value[0] / cost.total).toFixed(1)}–${(value[1] / cost.total).toFixed(1)}×`],
+      ],
+      note: "CoreWeave, Nebius and IREN enterprise value per MW, October 13, 2026.",
+    },
+  });
+  return (
+    <Figure
+      title="What one megawatt earns, depending on how its compute is sold"
+      subtitle="Revenue a year from one MW of critical IT, against its cost to build and what the market values it at. USD."
+      sources={[
+        { label: "ZODE estimates", href: "/deck" },
+        { label: "Silicon Data B300 index", href: B300_INDEX.sources[0].href },
+        { label: "NeoCloud Stocks, Oct 13, 2026", href: "https://www.neocloudstocks.com/" },
+      ]}
+    >
+      <p className={styles.group}>Revenue a year</p>
+      <Bars rows={rows.slice(0, 3)} max={max} marker={{ at: cost.total, label: "Cost to build" }} />
+      <p className={styles.group}>Cost and value</p>
+      <Bars rows={rows.slice(3)} max={max} />
+      <p className={styles.footnote}>Preliminary, fully utilized. Targets, not results.</p>
     </Figure>
   );
 }
@@ -493,14 +615,23 @@ function Roadmap(): ReactElement {
       <ol className={styles.steps} data-has-active={active !== null || undefined}>
         {ROADMAP.map((step, i) => {
           const letter = String.fromCharCode(97 + i);
+          const [low, high] = [revenuePerMw(PER_MW.rates[0].rate), revenuePerMw(PER_MW.rates[2].rate)];
+          const scaled = (n: number) => (n * step.mw >= 1000 ? `$${((n * step.mw) / 1000).toFixed(1)}B` : `$${(n * step.mw).toFixed(1)}M`);
           const rows: [string, string][] = [["Capacity", step.label]];
           if (i > 0) rows.push(["Step up", `${+(step.mw / ROADMAP[i - 1].mw).toFixed(1)}× stage ${String.fromCharCode(96 + i)}`]);
-          if (i > 1) rows.push(["From the first MW", `${step.mw / ROADMAP[0].mw}×`]);
+          rows.push(["Revenue a year", `${scaled(low)}–${scaled(high)}`]);
+          rows.push(["Cost to build", scaled(PER_MW.cost.total)]);
+          rows.push(["Market value", `${scaled(PER_MW.value[0])}–${scaled(PER_MW.value[1])}`]);
           return (
             <li
               key={step.label}
               className={styles.step}
-              {...target(step.label, { title: `${letter}. ${step.stage}`, rows, note: step.detail })}
+              {...target(step.label, {
+                title: `${letter}. ${step.stage}`,
+                rows,
+                note: `${step.detail}. Revenue from all contracted to all inference, at the per-MW figures above.`,
+                list: { heading: "What would need to be true", items: step.proves },
+              })}
             >
               <span className={styles.stepCol}>
                 <span
@@ -528,6 +659,7 @@ const CHARTS: Record<string, () => ReactElement> = {
   "compute-position": ComputePosition,
   "credit-repricing": CreditRepricing,
   "b300-index": B300Index,
+  "revenue-per-mw": RevenuePerMw,
   "agent-kernels": AgentKernels,
   roadmap: Roadmap,
 };

@@ -142,7 +142,38 @@ export const B300_INDEX = {
     ["2026-11-13", 7.67],
   ] as const satisfies readonly (readonly [string, number])[],
   sources: [SRC.siliconData],
+  /** The runs where the index stepped up, first day before the move to the day it landed. */
+  steps: [
+    { from: "2026-10-21", to: "2026-10-23" },
+    { from: "2026-11-06", to: "2026-11-07" },
+  ],
 };
+
+/**
+ * One MW of critical IT as the deck's project-finance slide sizes it
+ * (features/deck/slides.full.ts): 64 B300 nodes, 512 GPUs, fully utilized.
+ * Rates are USD per GPU-hour; cost and value are millions of USD. Preliminary
+ * ZODE estimates, not results.
+ */
+export const PER_MW = {
+  gpus: 512,
+  nodes: 64,
+  rates: [
+    { name: "Contracted", rate: 5, detail: "5-year offtake at a fixed rate" },
+    { name: "Merchant", rate: 6.5, detail: "GPU-hours sold on the open market" },
+    { name: "Inference", rate: 16.9, detail: "Tokens on open models, net per GPU-hour" },
+  ],
+  /** GPUs $35.2M, data center conversion $5.0M, land and power $1.0M. */
+  cost: { total: 41.2, gpus: 35.2, building: 5, land: 1 },
+  /** Enterprise value per MW of CoreWeave, Nebius and IREN on October 13, 2026. */
+  value: [50, 75] as const,
+};
+
+/** GPU-hours one MW sells in a year, fully utilized. */
+export const GPU_HOURS_PER_MW = PER_MW.gpus * 24 * 365;
+
+/** Revenue a year from one MW at a GPU-hour rate, in millions of USD. */
+export const revenuePerMw = (rate: number): number => (GPU_HOURS_PER_MW * rate) / 1e6;
 
 /** Each kernel's speed against the baseline it was measured on, as a multiple. */
 export const AGENT_KERNELS = {
@@ -173,8 +204,49 @@ export const AGENT_KERNELS = {
 
 /** The stages ZODE has to prove, in megawatts of critical IT. */
 export const ROADMAP = [
-  { mw: 1, label: "1 MW", stage: "First site", detail: "Merchant compute and inference" },
-  { mw: 30, label: "30 MW", stage: "Own site", detail: "Bought and built with ZODE modules" },
-  { mw: 100, label: "100 MW+", stage: "Production", detail: "A repeatable build, financed without an offtaker" },
-  { mw: 1000, label: "1 GW+", stage: "Full stack", detail: "Our own models, harness and wafers" },
+  {
+    mw: 1,
+    label: "1 MW",
+    stage: "First site",
+    detail: "Merchant compute and inference",
+    proves: [
+      "Merchant rates hold well above our cost per GPU-hour",
+      "Inference earns more per GPU-hour than renting the GPU",
+      "The cluster stays busy without an anchor customer",
+    ],
+  },
+  {
+    mw: 30,
+    label: "30 MW",
+    stage: "Own site",
+    detail: "Bought and built with ZODE modules",
+    proves: [
+      "Powered land costs less than colocation over a GPU's life",
+      "ZODE modules deploy faster and cheaper per MW",
+      "Power routing yields more compute per MW",
+      "GPUs are financeable without an offtaker",
+    ],
+  },
+  {
+    mw: 100,
+    label: "100 MW+",
+    stage: "Production",
+    detail: "A repeatable build, financed without an offtaker",
+    proves: [
+      "Each site repeats the last at a falling cost per MW",
+      "Demand absorbs 100 MW without selling it forward",
+      "Each GPU generation finances the next",
+    ],
+  },
+  {
+    mw: 1000,
+    label: "1 GW+",
+    stage: "Full stack",
+    detail: "Our own models, harness and wafers",
+    proves: [
+      "Open models stay close to the frontier",
+      "Our own models earn more per MW than serving others'",
+      "Volume justifies custom silicon and wafer supply",
+    ],
+  },
 ];
