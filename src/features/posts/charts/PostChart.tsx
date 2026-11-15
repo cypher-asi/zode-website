@@ -336,6 +336,22 @@ const fullDate = new Intl.DateTimeFormat("en-US", {
 });
 
 function B300Index(): ReactElement {
+  const readings = B300_INDEX.readings;
+  const change = readings[readings.length - 1][1] / readings[0][1] - 1;
+  const contract = PER_MW.rates[0].rate;
+  return (
+    <Figure
+      title="Meanwhile, the asset keeps getting more valuable"
+      subtitle={`B300 rental price, USD per GPU-hour: up ${percent(change)} in a month, against the $${contract.toFixed(2)} a long-term contract locks in.`}
+      sources={B300_INDEX.sources}
+    >
+      <B300Plot />
+    </Figure>
+  );
+}
+
+/** The B300 line and its axis, inside its Figure so it reaches that figure's tooltip. */
+function B300Plot(): ReactElement {
   const tips = useContext(TipContext);
   const plot = useRef<HTMLDivElement>(null);
   const readings = B300_INDEX.readings;
@@ -350,7 +366,6 @@ function B300Index(): ReactElement {
   const points = readings.map(([, v], i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
   const area = `M0,${H} L${points.replaceAll(" ", " L")} L${W},${H} Z`;
   const [first, last] = [readings[0], readings[readings.length - 1]];
-  const change = last[1] / first[1] - 1;
   const date = (iso: string) => monthDay.format(new Date(`${iso}T00:00:00Z`));
   const indexOf = (iso: string) => readings.findIndex(([day]) => day === iso);
   const steps = B300_INDEX.steps.map(({ from, to }) => {
@@ -421,11 +436,7 @@ function B300Index(): ReactElement {
   }
 
   return (
-    <Figure
-      title="Meanwhile, the asset keeps getting more valuable"
-      subtitle={`B300 rental price, USD per GPU-hour: up ${percent(change)} in a month, against the $${contract.toFixed(2)} a long-term contract locks in.`}
-      sources={B300_INDEX.sources}
-    >
+    <>
       <div
         ref={plot}
         className={styles.plot}
@@ -492,7 +503,7 @@ function B300Index(): ReactElement {
         ))}
         <span style={{ left: "100%" }}>{date(last[0])}</span>
       </p>
-    </Figure>
+    </>
   );
 }
 
@@ -603,16 +614,24 @@ function AgentKernels(): ReactElement {
 }
 
 function Roadmap(): ReactElement {
-  const { active } = useContext(TipContext);
-  const target = useTipTarget();
-  const height = (mw: number) => `${((Math.log10(mw) + 1) / (Math.log10(1000) + 1)) * 100}%`;
   return (
     <Figure
       title="What we have to prove, in megawatts"
       subtitle="Each stage funds and de-risks the next. Log scale."
       sources={[]}
     >
-      <ol className={styles.steps} data-has-active={active !== null || undefined}>
+      <RoadmapSteps />
+    </Figure>
+  );
+}
+
+/** The roadmap's stages, inside its Figure so they reach that figure's tooltip. */
+function RoadmapSteps(): ReactElement {
+  const { active } = useContext(TipContext);
+  const target = useTipTarget();
+  const height = (mw: number) => `${((Math.log10(mw) + 1) / (Math.log10(1000) + 1)) * 100}%`;
+  return (
+    <ol className={styles.steps} data-has-active={active !== null || undefined}>
         {ROADMAP.map((step, i) => {
           const letter = String.fromCharCode(97 + i);
           const [low, high] = [revenuePerMw(PER_MW.rates[0].rate), revenuePerMw(PER_MW.rates[2].rate)];
@@ -651,7 +670,6 @@ function Roadmap(): ReactElement {
           );
         })}
       </ol>
-    </Figure>
   );
 }
 
