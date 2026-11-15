@@ -4,6 +4,7 @@
  * The foreground carries the data, and one mark per chart takes the accent.
  */
 figure.figure {
+  position: relative;
   margin: 2.2em 0;
   padding: 20px 22px;
   border: 1px solid var(--color-border);
@@ -319,5 +320,131 @@ figure.figure {
   .track[data-marker]::after {
     top: -2px;
     bottom: -2px;
+  }
+}
+
+/* Interaction: every mark opens a tooltip; the others dim while one is active. */
+
+.figure .row,
+.figure .step,
+.plot {
+  cursor: default;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.figure .row:focus-visible,
+.figure .step:focus-visible,
+.plot:focus-visible {
+  border-radius: var(--radius-control);
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 4px;
+}
+
+.bar,
+.stepBar,
+.rowLabel,
+.rowValue,
+.stepStage,
+.stepDetail {
+  transition: opacity var(--duration-base) ease;
+}
+
+.bars[data-has-active] .row:not([data-active]) :is(.bar, .rowLabel, .rowValue),
+.steps[data-has-active] .step:not([data-active]) :is(.stepBar, .stepStage, .stepDetail) {
+  opacity: 0.35;
+}
+
+.cursor {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--color-border-strong);
+  pointer-events: none;
+}
+
+.point[data-hover] {
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--color-bg);
+  pointer-events: none;
+}
+
+.tip {
+  position: absolute;
+  z-index: 2;
+  width: max-content;
+  min-width: 170px;
+  max-width: min(280px, 80%);
+  padding: 9px 11px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-inset);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-md);
+  color: var(--color-text-primary);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 10px));
+  animation: tipIn var(--duration-fast) var(--ease-out);
+}
+
+.tip[data-side="start"] {
+  transform: translate(-16px, calc(-100% - 10px));
+}
+
+.tip[data-side="end"] {
+  transform: translate(calc(-100% + 16px), calc(-100% - 10px));
+}
+
+.tip[data-below] {
+  transform: translate(-50%, 10px);
+}
+
+.tip[data-below][data-side="start"] {
+  transform: translate(-16px, 10px);
+}
+
+.tip[data-below][data-side="end"] {
+  transform: translate(calc(-100% + 16px), 10px);
+}
+
+.figure .tipTitle {
+  margin: 0 0 5px;
+  font-weight: 600;
+}
+
+.figure .tipRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.tipRow > :last-child {
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.figure .tipNote {
+  margin: 6px 0 0;
+  padding-top: 6px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-tertiary);
+}
+
+@keyframes tipIn {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tip {
+    animation: none;
   }
 }
