@@ -2,10 +2,9 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { after } from "next/server";
 import { teamAccount } from "@/features/zrm/access";
-import { deletePostBlobs, postBlobPrefix } from "./blob";
-import { POSTS_TAG, createDraft, deletePost, getPost, setStatus, slugTaken, updatePost } from "./posts";
+import { CypherError } from "./cypher";
+import { POSTS_TAG, createDraft, deletePost, getPost, setStatus, updatePost } from "./posts";
 import {
   MAX_BODY_LENGTH,
   MAX_SLUG_LENGTH,
@@ -14,6 +13,7 @@ import {
   MAX_VERSION_LENGTH,
   SLUG_RE,
   isPostKind,
+  postBlobPrefix,
   postHref,
   type Post,
   type PostDraft,
@@ -79,16 +79,15 @@ async function save(postId: string, raw: PostDraft, publishing: boolean): Promis
   if ("error" in draft) return draft;
 
   try {
-    if (await slugTaken(draft.kind, draft.slug, postId)) {
-      return { error: `Another ${draft.kind === "news" ? "news post" : "changelog entry"} already uses that slug.` };
-    }
-    let post = await updatePost(postId, draft, account.email);
-    if (post && publishing && post.status !== "published") post = await setStatus(postId, "published", account.email);
+    const post = await updatePost(postId, draft, account.email, { publish: publishing });
     if (!post) return NOT_FOUND;
 
     if (before.status === "published" || post.status === "published") revalidatePublic(before, post);
     return { savedAt: post.updatedAt.toISOString(), status: post.status };
   } catch (error) {
+    if (error instanceof CypherError && (error.code === "slug_taken" || error.code === "validation")) {
+      return { error: error.message };
+    }
     console.error("[posts] save failed", error);
     return FAILED;
   }
@@ -137,8 +136,5 @@ export async function deletePostAction(postId: string): Promise<SaveResult> {
   }
   if (!post) return NOT_FOUND;
   if (post.status === "published") revalidatePublic(post);
-  after(() =>
-    deletePostBlobs(postId).catch((error: unknown) => console.error("[posts] couldn't delete images", postId, error)),
-  );
   redirect("/portal/posts");
 }

@@ -1,5 +1,6 @@
 /**
- * Writes a news or changelog draft from a Markdown file:
+ * Writes a news or changelog draft from a Markdown file through the Cypher
+ * content API:
  *
  *   node --env-file=.env.production.local scripts/write-post.mjs \
  *     --file scripts/posts/the-industrialization-of-intelligence.md [--post <id>] [--as n3o@zero.tech] [--published] [--dry-run]
@@ -15,10 +16,12 @@
  * first publish date. The site caches published posts for up to an hour, so
  * the change shows after that, on the next deploy, or on Update in the portal.
  * Publish a new post from the portal, which dates it.
+ *
+ * Needs CYPHER_API_KEY, and CYPHER_API_URL and CYPHER_SITE unless the defaults
+ * (the Cypher deployment and `zode`) are right.
  */
 import { readFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
-import { neon } from "@neondatabase/serverless";
 
 const { values: args } = parseArgs({
   options: {
@@ -36,8 +39,23 @@ const fail = (message) => {
 };
 
 if (!args.file) fail("--file is required.");
-const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) fail("DATABASE_URL is not set.");
+const apiKey = process.env.CYPHER_API_KEY;
+if (!apiKey) fail("CYPHER_API_KEY is not set.");
+const apiUrl = (process.env.CYPHER_API_URL || "https://cypher-website-vercel.vercel.app").replace(/\/+$/, "");
+const site = process.env.CYPHER_SITE || "zode";
+
+/** The JSON of a call under this site's API, or `null` on a 404. */
+async function api(path, { method = "GET", body } = {}) {
+  const response = await fetch(`${apiUrl}/api/v1/sites/${site}${path}`, {
+    method,
+    headers: { Authorization: `Bearer ${apiKey}`, ...(body ? { "Content-Type": "application/json" } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (response.status === 404) return null;
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) fail(`${method} ${path}: ${payload?.error?.message ?? response.status}`);
+  return payload;
+}
 
 const source = await readFile(args.file.replace(/^~(?=$|\/)/, process.env.HOME ?? "~"), "utf8");
 const match = /^---\n([\s\S]*?)\n---\n/.exec(source);
@@ -57,18 +75,15 @@ if (!title || title.length > 160) fail("title is required, at most 160 character
 if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug ?? "")) fail("slug must be lowercase words joined by hyphens.");
 if (!body) fail("the body is empty.");
 
-const sql = neon(databaseUrl);
 const email = args.as.trim().toLowerCase();
-const [target] = args.post
-  ? await sql`select id, status, slug from posts where id = ${args.post}`
-  : await sql`select id, status, slug from posts where kind = ${kind} and slug = ${slug}`;
-if (args.post && !target) fail(`No post ${args.post}.`);
+const all = (await api("/posts?status=all"))?.posts ?? fail(`The API at ${apiUrl} doesn't know the site "${site}".`);
+const summaryOf = args.post ? all.find((post) => post.id === args.post) : all.find((post) => post.kind === kind && post.slug === slug);
+if (args.post && !summaryOf) fail(`No post ${args.post}.`);
+const target = summaryOf ? (await api(`/posts/${summaryOf.id}`)).post : undefined;
 const live = target?.status === "published";
 if (live && !args.published) fail(`${target.id} is published; pass --published to rewrite it, or edit it in the portal.`);
 if (!live && args.published) fail(`--published only rewrites a published post, and ${target ? target.id : slug} isn't one.`);
-const [clash] = (await sql`select id from posts where kind = ${kind} and slug = ${slug}`).filter(
-  (row) => row.id !== target?.id,
-);
+const clash = all.find((post) => post.kind === kind && post.slug === slug && post.id !== target?.id);
 if (clash) fail(`Another ${kind} post (${clash.id}) already has the slug "${slug}".`);
 
 const words = body.split(/\s+/).length;
@@ -83,26 +98,33 @@ if (args["dry-run"]) {
   process.exit(0);
 }
 
-let id = target?.id;
-if (!id) {
-  const [author] = await sql`
-    select author_user_id, author_name, author_email from posts where author_email = ${email}
-    order by created_at desc limit 1
-  `;
-  if (!author) fail(`${email} hasn't written a post to take the byline from; make one in the portal and pass --post.`);
-  [{ id }] = await sql`
-    insert into posts (kind, slug, author_user_id, author_name, author_email, updated_by_email)
-    values (${kind}, ${slug}, ${author.author_user_id}, ${author.author_name}, ${author.author_email}, ${email})
-    returning id
-  `;
+let post = target;
+if (!post) {
+  const byline = all
+    .filter((other) => other.author.email.toLowerCase() === email)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+  if (!byline) fail(`${email} hasn't written a post to take the byline from; make one in the portal and pass --post.`);
+  ({ post } = await api("/posts", { method: "POST", body: { kind, author: byline.author } }));
 }
 
-await sql`
-  update posts
-  set kind = ${kind}, slug = ${slug}, title = ${title}, summary = ${summary}, body_md = ${body},
-      updated_at = now(), updated_by_email = ${email}
-  where id = ${id} and status = ${live ? "published" : "draft"}
-`;
+const saved = await api(`/posts/${post.id}`, {
+  method: "PATCH",
+  body: {
+    draft: {
+      kind,
+      slug,
+      title,
+      summary,
+      bodyMd: body,
+      version: post.version ?? "",
+      coverPathname: post.coverPathname,
+    },
+    editorEmail: email,
+  },
+});
+if (!saved) fail(`${post.id} was deleted while writing it.`);
 console.log(
-  `[post] wrote ${live ? "published post" : "draft"} ${id} to ${new URL(databaseUrl).hostname}; preview at /portal/posts/${id}/preview.`,
+  `[post] wrote ${live ? "published post" : "draft"} ${post.id} to ${site} on ${new URL(apiUrl).hostname}, with ${
+    saved.post.sources.length
+  } sources; preview at /portal/posts/${post.id}/preview.`,
 );

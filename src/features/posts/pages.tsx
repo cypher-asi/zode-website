@@ -11,9 +11,10 @@ import { kindLabel, mediaUrl, postHref, type Post, type PostKind } from "./types
 import styles from "./Posts.module.css";
 
 /*
- * Published posts are cached on the server for an hour under POSTS_TAG, which
- * publishing and editing expire. Failures throw inside the cache, so they're
- * never cached, and turn into `null` outside it.
+ * Published posts come from the Cypher content API and are cached on the
+ * server for an hour under POSTS_TAG, which publishing and editing expire.
+ * DB_TAG covers the bylines, which come from this site's database. Failures
+ * throw inside the cache, so they're never cached, and turn into `null` outside it.
  */
 
 async function publishedPosts(kind: PostKind, withBody: boolean): Promise<Post[]> {
@@ -30,7 +31,7 @@ async function publishedPost(kind: PostKind, slug: string): Promise<Post | null>
   return getPublishedBySlug(kind, slug);
 }
 
-/** Published posts of a kind, or `null` when the database couldn't be reached. */
+/** Published posts of a kind, or `null` when the API couldn't be reached. */
 export function loadPublished(kind: PostKind, withBody = false): Promise<Post[] | null> {
   return publishedPosts(kind, withBody).catch((error: unknown) => {
     console.error(`[posts] failed to load ${kind}`, error);

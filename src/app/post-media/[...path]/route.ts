@@ -1,11 +1,14 @@
-import { readBlob } from "@/features/data-room/blob";
 import { notFoundResponse } from "@/features/data-room/http";
+import { cypherUrl } from "@/features/posts/cypher";
 import { MEDIA_PREFIX } from "@/features/posts/types";
 
 const IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
 
+const unavailable = () =>
+  new Response("Image storage is unavailable.", { status: 503, headers: { "Cache-Control": "no-store" } });
+
 /**
- * Serves the images in posts from the private Blob store, from this origin so
+ * Serves the images in posts from the Cypher content API, from this origin so
  * the site's CSP and COEP allow them. Pathnames carry a random suffix and never
  * change, so responses are cached for good.
  */
@@ -16,16 +19,23 @@ export async function GET(_request: Request, ctx: RouteContext<"/post-media/[...
     return notFoundResponse();
   }
 
-  let blob: Awaited<ReturnType<typeof readBlob>>;
+  let upstream: Response;
   try {
-    blob = await readBlob(pathname, null);
+    upstream = await fetch(cypherUrl(`/api/v1/media/${path.map(encodeURIComponent).join("/")}`), {
+      cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
+    });
   } catch (error) {
     console.error(`[posts] couldn't read ${pathname}`, error);
-    return new Response("Image storage is unavailable.", { status: 503, headers: { "Cache-Control": "no-store" } });
+    return unavailable();
   }
-  if (!blob || blob.statusCode !== 200) return notFoundResponse();
+  if (upstream.status === 404) return notFoundResponse();
+  if (!upstream.ok || !upstream.body) {
+    console.error(`[posts] couldn't read ${pathname}`, upstream.status);
+    return unavailable();
+  }
 
-  const contentType = blob.blob.contentType;
+  const contentType = upstream.headers.get("content-type") ?? "";
   if (!IMAGE_TYPES.has(contentType)) return notFoundResponse();
 
   const headers = new Headers({
@@ -33,7 +43,7 @@ export async function GET(_request: Request, ctx: RouteContext<"/post-media/[...
     "Cache-Control": "public, max-age=31536000, immutable",
     "X-Content-Type-Options": "nosniff",
   });
-  const length = blob.headers.get("content-length");
+  const length = upstream.headers.get("content-length");
   if (length) headers.set("Content-Length", length);
-  return new Response(blob.stream, { headers });
+  return new Response(upstream.body, { headers });
 }

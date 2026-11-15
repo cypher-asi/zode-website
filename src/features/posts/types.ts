@@ -48,6 +48,9 @@ export const mediaUrl = (pathname: string): string => `/post-media/${pathname}`;
 
 export const MEDIA_PREFIX = "posts/";
 
+/** Every image uploaded for a post is stored under this prefix. */
+export const postBlobPrefix = (postId: string): string => `${MEDIA_PREFIX}${postId}/`;
+
 export interface Author {
   name: string;
   email: string;
