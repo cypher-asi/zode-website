@@ -66,10 +66,11 @@
   align-items: start;
 }
 
+/* The column reads like `.article` in Posts.module.css: the same width, header, cover and spacing. */
 .writing {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 40px;
   max-width: 760px;
   min-width: 0;
 }
@@ -85,10 +86,10 @@
   resize: none;
   field-sizing: content;
   font-family: var(--font-display);
-  font-size: var(--h2-size);
+  font-size: var(--h1-size);
   font-weight: 300;
-  letter-spacing: var(--h2-tracking);
-  line-height: var(--h2-leading);
+  letter-spacing: var(--h1-tracking);
+  line-height: var(--h1-leading);
 }
 
 .title:focus {
@@ -99,19 +100,26 @@
   color: var(--color-text-faint);
 }
 
+/* A second row of the sticky bar, so nothing sits between the title and the body. */
 .toolbar {
-  position: sticky;
-  z-index: 1;
-  top: 33px;
   display: flex;
+  flex-basis: 100%;
   flex-wrap: wrap;
   align-items: center;
   gap: 2px;
-  margin-top: 8px;
+  margin: 4px -6px -8px;
+}
+
+.selectionMenu {
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 2px;
   padding: 4px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-inset);
   background: var(--color-bg);
+  box-shadow: var(--shadow-md);
 }
 
 .tool {
@@ -181,8 +189,37 @@
 /* The ProseMirror root; it also carries the `.prose` class from PostBody, so the editor reads like the post. */
 .surface {
   min-height: 420px;
-  padding: 8px 0 80px;
+  padding-bottom: 80px;
   outline: none;
+}
+
+/* A `chart` block: its name in a small editable line, with the chart drawn under it. */
+.chartBlock pre {
+  width: fit-content;
+  padding: 2px 8px;
+  border-style: dashed;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+}
+
+/* TipTap puts the editable name in a block inside the `code`, so the label sits beside it as a flex item. */
+.chartBlock code {
+  display: flex;
+  gap: 0.6ch;
+}
+
+.chartBlock code::before {
+  content: "chart:";
+}
+
+.chartPreview {
+  margin-top: 10px;
+  user-select: none;
+}
+
+.chartMissing {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
 }
 
 .surface :global(.is-editor-empty:first-child)::before {
@@ -200,7 +237,7 @@
 
 .settings {
   position: sticky;
-  top: 50px;
+  top: 83px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -240,12 +277,6 @@
     height: 40px;
     font-size: var(--text-md);
   }
-}
-
-.cover {
-  display: block;
-  width: 100%;
-  border-radius: var(--radius-inset);
 }
 
 .coverActions {
@@ -289,9 +320,5 @@
     top: -22px;
     margin: -22px -18px 0;
     padding: 12px 18px;
-  }
-
-  .toolbar {
-    top: 0;
   }
 }

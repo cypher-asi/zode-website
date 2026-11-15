@@ -56,6 +56,31 @@
   text-decoration-color: currentColor;
 }
 
+/* A numbered note: a `<sup>` around its link on the site, a span inside the link in the editor. */
+.prose a:has(> .note) {
+  text-decoration: none;
+}
+
+.prose .note {
+  margin-left: 0.1em;
+  font-size: 0.7em;
+  font-weight: 500;
+  line-height: 0;
+  vertical-align: super;
+}
+
+.prose .note,
+.prose .note a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color var(--duration-base) ease;
+}
+
+.prose .note:hover,
+.prose .note a:hover {
+  color: var(--color-text-primary);
+}
+
 .prose strong {
   font-weight: 600;
 }

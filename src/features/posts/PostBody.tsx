@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import Markdown, { type Components, type ExtraProps } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { PostChart } from "./charts/PostChart";
+import { isNoteText } from "./types";
 import styles from "./PostBody.module.css";
 
 const isExternal = (href: string | undefined): boolean => Boolean(href && /^https?:\/\//i.test(href));
@@ -32,8 +33,14 @@ const components: Components = {
     const chart = chartName(props.node);
     return chart === undefined ? <pre {...dom(props)} /> : <PostChart name={chart} />;
   },
-  a: (props) =>
-    isExternal(props.href) ? <a {...dom(props)} target="_blank" rel="noreferrer noopener" /> : <a {...dom(props)} />,
+  a: (props) => {
+    const link = isExternal(props.href) ? (
+      <a {...dom(props)} target="_blank" rel="noreferrer noopener" />
+    ) : (
+      <a {...dom(props)} />
+    );
+    return isNoteText(props.children) ? <sup className={styles.note}>{link}</sup> : link;
+  },
   // eslint-disable-next-line @next/next/no-img-element -- uploads are served at their own size from /post-media
   img: (props) => <img {...dom(props)} alt={props.alt ?? ""} loading="lazy" decoding="async" />,
 };

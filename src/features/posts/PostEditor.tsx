@@ -15,7 +15,9 @@ import { upload } from "@vercel/blob/client";
 import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Markdown } from "@tiptap/markdown";
+import { TextSelection } from "@tiptap/pm/state";
 import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/react";
+import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
 import { Select } from "@/components/ui/Select";
 import { Dialog } from "@/features/data-room/Dialog";
@@ -29,6 +31,7 @@ import {
   POST_KINDS,
   mediaUrl,
   postHref,
+  readingMinutes,
   slugify,
   type Post,
   type PostDraft,
@@ -36,6 +39,9 @@ import {
   type PostStatus,
   type SaveResult,
 } from "./types";
+import { ChartCodeBlock, NoteLinks } from "./editorExtensions";
+import { Byline, PostMeta } from "./PostMeta";
+import article from "./Posts.module.css";
 import prose from "./PostBody.module.css";
 import styles from "./PostEditor.module.css";
 
@@ -112,8 +118,11 @@ export function PostEditor({ post }: { post: Post }): ReactElement {
       StarterKit.configure({
         heading: { levels: [2, 3] },
         underline: false,
+        codeBlock: false,
         link: { openOnClick: false, autolink: true, defaultProtocol: "https" },
       }),
+      ChartCodeBlock,
+      NoteLinks,
       Image.configure({ allowBase64: false }),
       Placeholder.configure({ placeholder: "Write your post…" }),
       Markdown,
@@ -222,8 +231,15 @@ export function PostEditor({ post }: { post: Post }): ReactElement {
     return () => window.removeEventListener("beforeunload", onLeave);
   }, [dirty]);
 
+  const minutes = useEditorState({
+    editor,
+    selector: ({ editor: e }) => readingMinutes(e ? e.getText() : post.bodyMd),
+  });
+
   const published = status === "published";
   const liveHref = publishedSlug ? postHref(kind, publishedSlug) : null;
+  /** The date the site shows: first published, or for a draft, last saved. */
+  const shownDate = (published ? post.publishedAt : null) ?? savedAt ?? post.updatedAt;
 
   return (
     <div className={styles.editor}>
@@ -282,6 +298,13 @@ export function PostEditor({ post }: { post: Post }): ReactElement {
             </button>
           </>
         )}
+        {editor ? (
+          <Toolbar
+            editor={editor}
+            onLink={() => setDialog({ kind: "link" })}
+            onImage={() => imageInput.current?.click()}
+          />
+        ) : null}
       </div>
 
       {error ? (
@@ -292,28 +315,30 @@ export function PostEditor({ post }: { post: Post }): ReactElement {
 
       <div className={styles.layout}>
         <div className={styles.writing}>
-          <textarea
-            ref={titleInput}
-            className={styles.title}
-            value={title}
-            placeholder="Title"
-            aria-label="Title"
-            rows={1}
-            maxLength={MAX_TITLE_LENGTH}
-            onChange={(event) => {
-              setTitle(event.target.value);
-              if (!slugTouched && !published) setSlug(slugify(event.target.value));
-              touch();
-            }}
-          />
-          {editor ? (
-            <Toolbar
-              editor={editor}
-              onLink={() => setDialog({ kind: "link" })}
-              onImage={() => imageInput.current?.click()}
+          <header className={article.articleHeader}>
+            <PostMeta date={shownDate} kind={kind} version={kind === "changelog" ? version : null} linked={false} />
+            <textarea
+              ref={titleInput}
+              className={styles.title}
+              value={title}
+              placeholder="Title"
+              aria-label="Title"
+              rows={1}
+              maxLength={MAX_TITLE_LENGTH}
+              onChange={(event) => {
+                setTitle(event.target.value);
+                if (!slugTouched && !published) setSlug(slugify(event.target.value));
+                touch();
+              }}
             />
+            <Byline author={post.author} minutes={minutes ?? undefined} />
+          </header>
+          {cover ? (
+            // eslint-disable-next-line @next/next/no-img-element -- uploads are served at their own size from /post-media
+            <img className={article.cover} src={mediaUrl(cover)} alt="" />
           ) : null}
           <EditorContent editor={editor} className={styles.body} />
+          {editor ? <SelectionMenu editor={editor} onLink={() => setDialog({ kind: "link" })} /> : null}
           <input
             ref={imageInput}
             type="file"
@@ -403,10 +428,6 @@ export function PostEditor({ post }: { post: Post }): ReactElement {
 
           <div className={ui.field}>
             <span className={ui.label}>Cover image</span>
-            {cover ? (
-              // eslint-disable-next-line @next/next/no-img-element -- uploads are served at their own size from /post-media
-              <img className={styles.cover} src={mediaUrl(cover)} alt="" />
-            ) : null}
             <span className={styles.coverActions}>
               <button type="button" className={ui.button} onClick={() => coverInput.current?.click()}>
                 {cover ? "Replace" : "Upload"}
@@ -499,8 +520,8 @@ export function PostEditor({ post }: { post: Post }): ReactElement {
   );
 }
 
-function Toolbar({ editor, onLink, onImage }: { editor: Editor; onLink: () => void; onImage: () => void }): ReactElement {
-  const state = useEditorState({
+function useToolState(editor: Editor) {
+  return useEditorState({
     editor,
     selector: ({ editor: e }) => ({
       bold: e.isActive("bold"),
@@ -518,29 +539,29 @@ function Toolbar({ editor, onLink, onImage }: { editor: Editor; onLink: () => vo
       canRedo: e.can().redo(),
     }),
   });
+}
 
-  const tool = (label: string, active: boolean, onClick: () => void, glyph: ReactNode, disabled = false) => (
-    <button
-      type="button"
-      className={styles.tool}
-      aria-label={label}
-      title={label}
-      aria-pressed={active}
-      disabled={disabled}
-      onMouseDown={(event) => event.preventDefault()}
-      onClick={onClick}
-    >
-      {glyph}
-    </button>
-  );
+/** Holding the mouse down on a tool would otherwise move focus, and the selection, out of the editor. */
+const tool = (label: string, active: boolean, onClick: () => void, glyph: ReactNode, disabled = false) => (
+  <button
+    type="button"
+    className={styles.tool}
+    aria-label={label}
+    title={label}
+    aria-pressed={active}
+    disabled={disabled}
+    onMouseDown={(event) => event.preventDefault()}
+    onClick={onClick}
+  >
+    {glyph}
+  </button>
+);
 
+function InlineTools({ editor, onLink }: { editor: Editor; onLink: () => void }): ReactElement {
+  const state = useToolState(editor);
   const chain = () => editor.chain().focus();
-
   return (
-    <div className={styles.toolbar} role="toolbar" aria-label="Formatting">
-      {tool("Heading", state.h2, () => chain().toggleHeading({ level: 2 }).run(), <b>H2</b>)}
-      {tool("Subheading", state.h3, () => chain().toggleHeading({ level: 3 }).run(), <b>H3</b>)}
-      <span className={styles.divider} />
+    <>
       {tool("Bold", state.bold, () => chain().toggleBold().run(), <b>B</b>)}
       {tool("Italic", state.italic, () => chain().toggleItalic().run(), <i>I</i>)}
       {tool("Strikethrough", state.strike, () => chain().toggleStrike().run(), <s>S</s>)}
@@ -553,6 +574,35 @@ function Toolbar({ editor, onLink, onImage }: { editor: Editor; onLink: () => vo
           <path d="M8.5 11.5a3 3 0 0 0 4.24 0l2.5-2.5a3 3 0 0 0-4.24-4.24l-.75.75M11.5 8.5a3 3 0 0 0-4.24 0l-2.5 2.5a3 3 0 0 0 4.24 4.24l.75-.75" />
         </svg>,
       )}
+    </>
+  );
+}
+
+/** Inline formatting over a text selection, so most edits happen in place in the article. */
+function SelectionMenu({ editor, onLink }: { editor: Editor; onLink: () => void }): ReactElement {
+  return (
+    <BubbleMenu
+      editor={editor}
+      className={styles.selectionMenu}
+      shouldShow={({ editor: e, view, state, from, to }) =>
+        view.hasFocus() && state.selection instanceof TextSelection && from !== to && !e.isActive("codeBlock")
+      }
+    >
+      <InlineTools editor={editor} onLink={onLink} />
+    </BubbleMenu>
+  );
+}
+
+function Toolbar({ editor, onLink, onImage }: { editor: Editor; onLink: () => void; onImage: () => void }): ReactElement {
+  const state = useToolState(editor);
+  const chain = () => editor.chain().focus();
+
+  return (
+    <div className={styles.toolbar} role="toolbar" aria-label="Formatting">
+      {tool("Heading", state.h2, () => chain().toggleHeading({ level: 2 }).run(), <b>H2</b>)}
+      {tool("Subheading", state.h3, () => chain().toggleHeading({ level: 3 }).run(), <b>H3</b>)}
+      <span className={styles.divider} />
+      <InlineTools editor={editor} onLink={onLink} />
       <span className={styles.divider} />
       {tool(
         "Bulleted list",

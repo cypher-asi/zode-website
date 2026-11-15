@@ -33,6 +33,16 @@ export function slugify(text: string): string {
     .replace(/-+$/, "");
 }
 
+const WORDS_PER_MINUTE = 230;
+
+export function readingMinutes(markdown: string): number {
+  const words = markdown.replace(/[#>*_`~[\]()!-]/g, " ").split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.round(words / WORDS_PER_MINUTE));
+}
+
+/** A link whose whole text is a number, like `[3](https://…)`, is a note citing its source. */
+export const isNoteText = (text: unknown): boolean => typeof text === "string" && /^\d{1,3}$/.test(text);
+
 /** Where an uploaded post image is served from, given its Blob pathname. */
 export const mediaUrl = (pathname: string): string => `/post-media/${pathname}`;
 

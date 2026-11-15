@@ -39,6 +39,7 @@
     "@react-email/render": "^2.1.0",
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",
+    "@tiptap/extension-code-block": "^3.31.4",
     "@tiptap/extension-image": "^3.31.4",
     "@tiptap/extension-placeholder": "^3.31.4",
     "@tiptap/markdown": "^3.31.4",

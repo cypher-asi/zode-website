@@ -149,10 +149,3 @@ export async function deletePost(id: string): Promise<Post | null> {
   const [row] = await db()`delete from posts where id = ${id} returning *`;
   return row ? toPost(row) : null;
 }
-
-const WORDS_PER_MINUTE = 230;
-
-export function readingMinutes(markdown: string): number {
-  const words = markdown.replace(/[#>*_`~[\]()!-]/g, " ").split(/\s+/).filter(Boolean).length;
-  return Math.max(1, Math.round(words / WORDS_PER_MINUTE));
-}

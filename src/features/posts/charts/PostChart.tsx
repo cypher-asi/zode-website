@@ -244,6 +244,8 @@ const CHARTS: Record<string, () => ReactElement> = {
 };
 
 /** The chart a post names, or nothing for a name this build doesn't know. */
+export const isChart = (name: string): boolean => Object.hasOwn(CHARTS, name);
+
 export function PostChart({ name }: { name: string }): ReactElement | null {
   const Chart = Object.hasOwn(CHARTS, name) ? CHARTS[name] : undefined;
   return Chart ? <Chart /> : null;

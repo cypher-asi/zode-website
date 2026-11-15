@@ -2,7 +2,7 @@
  * Writes a news or changelog draft from a Markdown file:
  *
  *   node --env-file=.env.production.local scripts/write-post.mjs \
- *     --file scripts/posts/the-industrialization-of-intelligence.md [--post <id>] [--as n3o@zero.tech] [--dry-run]
+ *     --file scripts/posts/the-industrialization-of-intelligence.md [--post <id>] [--as n3o@zero.tech] [--published] [--dry-run]
  *
  * The file opens with a front matter block of `title`, `slug` and `summary`
  * (and `kind`, news by default), then the body. `--post` names the draft to
@@ -10,8 +10,11 @@
  * with the file's slug is rewritten, or a new one is made, credited to the
  * account behind `--as` (taken from a post it already wrote).
  *
- * A published post is never touched, so this can't change what the site
- * shows. Publish from the portal, which dates the post.
+ * A published post is left alone unless `--published` is passed, which
+ * rewrites its title, summary and body in place and keeps it live under its
+ * first publish date. The site caches published posts for up to an hour, so
+ * the change shows after that, on the next deploy, or on Update in the portal.
+ * Publish a new post from the portal, which dates it.
  */
 import { readFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
@@ -22,6 +25,7 @@ const { values: args } = parseArgs({
     file: { type: "string" },
     post: { type: "string" },
     as: { type: "string", default: "n3o@zero.tech" },
+    published: { type: "boolean", default: false },
     "dry-run": { type: "boolean", default: false },
   },
 });
@@ -59,14 +63,20 @@ const [target] = args.post
   ? await sql`select id, status, slug from posts where id = ${args.post}`
   : await sql`select id, status, slug from posts where kind = ${kind} and slug = ${slug}`;
 if (args.post && !target) fail(`No post ${args.post}.`);
-if (target?.status === "published") fail(`${target.id} is published; edit it in the portal instead.`);
+const live = target?.status === "published";
+if (live && !args.published) fail(`${target.id} is published; pass --published to rewrite it, or edit it in the portal.`);
+if (!live && args.published) fail(`--published only rewrites a published post, and ${target ? target.id : slug} isn't one.`);
 const [clash] = (await sql`select id from posts where kind = ${kind} and slug = ${slug}`).filter(
   (row) => row.id !== target?.id,
 );
 if (clash) fail(`Another ${kind} post (${clash.id}) already has the slug "${slug}".`);
 
 const words = body.split(/\s+/).length;
-console.log(`[post] ${kind}/${slug}: "${title}", ${words} words, ${target ? `into draft ${target.id}` : "as a new draft"}.`);
+console.log(
+  `[post] ${kind}/${slug}: "${title}", ${words} words, ${
+    live ? `into published post ${target.id}` : target ? `into draft ${target.id}` : "as a new draft"
+  }.`,
+);
 
 if (args["dry-run"]) {
   console.log("[post] dry run: nothing written.");
@@ -91,6 +101,8 @@ await sql`
   update posts
   set kind = ${kind}, slug = ${slug}, title = ${title}, summary = ${summary}, body_md = ${body},
       updated_at = now(), updated_by_email = ${email}
-  where id = ${id} and status = 'draft'
+  where id = ${id} and status = ${live ? "published" : "draft"}
 `;
-console.log(`[post] wrote draft ${id} to ${new URL(databaseUrl).hostname}; preview at /portal/posts/${id}/preview.`);
+console.log(
+  `[post] wrote ${live ? "published post" : "draft"} ${id} to ${new URL(databaseUrl).hostname}; preview at /portal/posts/${id}/preview.`,
+);

@@ -1,34 +1,9 @@
 import type { ReactElement, ReactNode } from "react";
 import Link from "next/link";
-import { initials } from "@/features/account/initials";
 import { PostBody } from "./PostBody";
-import { readingMinutes } from "./posts";
-import { kindLabel, mediaUrl, postHref, type Post } from "./types";
+import { Byline, PostMeta, postDate, shownDate } from "./PostMeta";
+import { mediaUrl, postHref, readingMinutes, type Post } from "./types";
 import styles from "./Posts.module.css";
-
-export const postDate = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "UTC" });
-
-/** When a post went out, or for a draft, when it was last edited. */
-export const shownDate = (post: Post): Date => post.publishedAt ?? post.updatedAt;
-
-export function Byline({ post, minutes }: { post: Post; minutes?: number }): ReactElement {
-  return (
-    <p className={styles.byline}>
-      <span className={styles.avatar} aria-hidden="true">
-        {post.author.image ? (
-          // eslint-disable-next-line @next/next/no-img-element -- served at its own size from /api/account/avatar
-          <img src={post.author.image} alt="" />
-        ) : (
-          initials(post.author.name)
-        )}
-      </span>
-      <span>
-        {post.author.name}
-        {minutes ? <> · {minutes} min read</> : null}
-      </span>
-    </p>
-  );
-}
 
 /** One post in full: date and kind, title, byline, cover and body, in the narrow column of cursor.com/blog. */
 export function PostArticle({
@@ -44,21 +19,9 @@ export function PostArticle({
     <article className={styles.article}>
       {banner}
       <header className={styles.articleHeader}>
-        <p className={styles.meta}>
-          <time dateTime={shownDate(post).toISOString()}>{postDate.format(shownDate(post))}</time>
-          <span aria-hidden="true">·</span>
-          <Link className={styles.metaLink} href={`/${post.kind}`}>
-            {kindLabel(post.kind)}
-          </Link>
-          {post.version ? (
-            <>
-              <span aria-hidden="true">·</span>
-              <span className={styles.version}>v{post.version}</span>
-            </>
-          ) : null}
-        </p>
+        <PostMeta date={shownDate(post)} kind={post.kind} version={post.version} />
         <h1 className={styles.articleTitle}>{post.title || "Untitled"}</h1>
-        <Byline post={post} minutes={readingMinutes(post.bodyMd)} />
+        <Byline author={post.author} minutes={readingMinutes(post.bodyMd)} />
       </header>
       {post.coverPathname ? (
         // eslint-disable-next-line @next/next/no-img-element -- uploads are served at their own size from /post-media
@@ -111,7 +74,7 @@ export function ChangelogList({ posts }: { posts: Post[] }): ReactElement {
             <h2 className={styles.releaseTitle}>
               <Link href={postHref(post.kind, post.slug)}>{post.title}</Link>
             </h2>
-            <Byline post={post} />
+            <Byline author={post.author} />
             <PostBody markdown={post.bodyMd} />
           </div>
         </li>
