@@ -22,7 +22,7 @@ const SRC = {
     href: "https://www.bloomberg.com/news/articles/2026-11-06/openai-completes-11-billion-portion-of-funding-at-1-25-trillion-value",
   },
   openaiCommitments: {
-    label: "Bernstein via Investing.com, Nov 8, 2026",
+    label: "Bernstein via Investing.com, Nov 7, 2026",
     href: "https://www.investing.com/news/stock-market-news/what-are-the-ai-lab-compute-commitments-5010113",
   },
   coreweave10q: {
@@ -30,8 +30,8 @@ const SRC = {
     href: "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000465/crwv-20260930.htm",
   },
   coreweaveCap: {
-    label: "Motley Fool, Nov 10, 2026",
-    href: "https://www.fool.com/investing/2026/11/03/coreweaves-bond-yield-is-a-warning-for-ai-debt/",
+    label: "S&P Global via Stock Analysis, Nov 13, 2026",
+    href: "https://stockanalysis.com/stocks/crwv/market-cap/",
   },
   nebiusQ3: {
     label: "Nebius Q3 2026 results",
@@ -81,7 +81,7 @@ export const COMPUTE_POSITION = {
   ],
   short: [
     { name: "Nebius", contracted: 38.7, value: 42.4, note: "$38.7B of contracts, $42.4B market cap" },
-    { name: "CoreWeave", contracted: 132.3, value: 26.88, note: "$132.3B of contracts, $26.9B market cap" },
+    { name: "CoreWeave", contracted: 132.3, value: 29.55, note: "$132.3B of contracts, $29.6B market cap" },
   ],
   sources: [
     SRC.anthropicS1,
