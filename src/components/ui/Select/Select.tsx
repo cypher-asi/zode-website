@@ -19,6 +19,16 @@ export interface SelectOption {
   detail?: string;
 }
 
+/** An on/off setting listed under the options, flipped in place without closing the panel. */
+export interface SelectToggle {
+  id: string;
+  label: string;
+  /** A muted second line under the label. */
+  detail?: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}
+
 export interface SelectProps {
   options: readonly SelectOption[];
   /** Controlled value; pair with `onChange`. */
@@ -26,6 +36,8 @@ export interface SelectProps {
   /** Starting value when uncontrolled. Changing it later resets the choice, e.g. after "Clear filters". */
   defaultValue?: string;
   onChange?: (value: string) => void;
+  /** Settings shown below the options, after a divider, e.g. whether an invite requires the MNDA. */
+  toggles?: readonly SelectToggle[];
   /** Muted text on the trigger while the value matches no option, e.g. a controlled `""` before anything's picked. */
   placeholder?: string;
   /** Submits the value with the surrounding form through a hidden input. */
@@ -53,18 +65,21 @@ const GAP = 4;
 const EDGE = 8;
 const MAX_HEIGHT = 320;
 const TYPEAHEAD_MS = 600;
+const NO_TOGGLES: readonly SelectToggle[] = [];
 
 /**
  * A select-style picker drawn by us rather than the OS: an input-styled
  * trigger that opens a listbox in the top layer (Popover API), so it isn't
  * clipped by scroll containers, stacks above modal dialogs, and gets light
- * dismiss and Escape for free.
+ * dismiss and Escape for free. Toggles, when given, follow the options and
+ * are reached the same way, by pointer or the arrow keys.
  */
 export function Select({
   options,
   value,
   defaultValue,
   onChange,
+  toggles = NO_TOGGLES,
   placeholder,
   name,
   size = "md",
@@ -98,11 +113,13 @@ export function Select({
   const current = value ?? inner;
   const selectedIndex = options.findIndex((option) => option.value === current);
   const selected = options[selectedIndex];
-  const hasDetail = options.some((option) => option.detail);
+  const hasDetail = options.some((option) => option.detail) || toggles.some((toggle) => toggle.detail);
+  /** Options first, then toggles: the indexes the keyboard and pointer move through. */
+  const itemCount = options.length + toggles.length;
 
   /*
    * Placed from the trigger alone, before the panel is shown and can be
-   * measured: it opens below unless the options won't fit there and there's
+   * measured: it opens below unless the items won't fit there and there's
    * more room above, and the max height keeps it inside the viewport.
    */
   const place = useCallback(() => {
@@ -114,7 +131,7 @@ export function Select({
     const { clientWidth: vw, clientHeight: vh } = document.documentElement;
     const below = vh - rect.bottom - GAP - EDGE;
     const above = rect.top - GAP - EDGE;
-    const wanted = Math.min(MAX_HEIGHT, options.length * (hasDetail ? 56 : 34) + 10);
+    const wanted = Math.min(MAX_HEIGHT, itemCount * (hasDetail ? 56 : 34) + (toggles.length ? 9 : 0) + 10);
     const up = below < wanted && above > below;
 
     const s = panel.style;
@@ -132,7 +149,7 @@ export function Select({
       s.maxWidth = `${vw - rect.left - EDGE}px`;
     }
     panel.dataset.side = up ? "top" : "bottom";
-  }, [align, hasDetail, options.length]);
+  }, [align, hasDetail, itemCount, toggles.length]);
 
   useEffect(() => {
     if (!open) return;
@@ -155,7 +172,13 @@ export function Select({
     setActive(index);
   };
 
+  /** Picks an option and closes, or flips a toggle and stays open so more can change. */
   const choose = (index: number) => {
+    const toggle = toggles[index - options.length];
+    if (toggle) {
+      toggle.onChange(!toggle.checked);
+      return;
+    }
     const option = options[index];
     if (!option) return;
     if (value === undefined) setInner(option.value);
@@ -181,7 +204,7 @@ export function Select({
   };
 
   const onPanelKey = (event: KeyboardEvent<HTMLDivElement>) => {
-    const last = options.length - 1;
+    const last = itemCount - 1;
     switch (event.key) {
       case "ArrowDown":
         highlight(active >= last ? 0 : active + 1);
@@ -228,6 +251,16 @@ export function Select({
     if (isOpen) event.currentTarget.focus({ preventScroll: true });
   };
 
+  const item = (index: number) => ({
+    id: optionId(index),
+    role: "option" as const,
+    "data-active": index === active || undefined,
+    onPointerMove: () => {
+      if (index !== active) setActive(index);
+    },
+    onClick: () => choose(index),
+  });
+
   return (
     <div className={className ? `${styles.root} ${className}` : styles.root}>
       <button
@@ -272,23 +305,26 @@ export function Select({
         }}
       >
         {options.map((option, index) => (
-          <div
-            key={option.value}
-            id={optionId(index)}
-            className={styles.option}
-            role="option"
-            aria-selected={index === selectedIndex}
-            data-active={index === active || undefined}
-            onPointerMove={() => {
-              if (index !== active) setActive(index);
-            }}
-            onClick={() => choose(index)}
-          >
+          <div key={option.value} {...item(index)} className={styles.option} aria-selected={index === selectedIndex}>
             <svg className={styles.check} viewBox="0 0 16 16" aria-hidden="true">
               <path d="M3.5 8.5l3 3 6-7" />
             </svg>
             <span className={styles.label}>{option.label}</span>
             {option.detail ? <span className={styles.detail}>{option.detail}</span> : null}
+          </div>
+        ))}
+        {toggles.length ? <div className={styles.divider} aria-hidden="true" /> : null}
+        {toggles.map((toggle, i) => (
+          <div
+            key={toggle.id}
+            {...item(options.length + i)}
+            className={styles.toggle}
+            aria-selected={false}
+            aria-checked={toggle.checked}
+          >
+            <span className={styles.label}>{toggle.label}</span>
+            <span className={styles.switch} data-on={toggle.checked || undefined} aria-hidden="true" />
+            {toggle.detail ? <span className={styles.detail}>{toggle.detail}</span> : null}
           </div>
         ))}
       </div>

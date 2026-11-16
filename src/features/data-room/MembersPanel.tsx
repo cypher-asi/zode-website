@@ -82,27 +82,6 @@ export function MembersPanel({ roomId, roomName, members, selfEmail }: MembersPa
             <InfoTip rows={memberHistory(member)} label={`Invite details for ${member.email}`} />
           </span>
         </div>
-        {member.status !== "active" ? (
-          <label
-            className={styles.mndaToggle}
-            title="Whether they must sign ZODE's mutual NDA before they can join. Changing it sends nothing."
-          >
-            <input
-              type="checkbox"
-              checked={requiresMnda}
-              disabled={pending}
-              aria-label={`Require the MNDA for ${member.email}`}
-              onChange={(event) => {
-                const required = event.target.checked;
-                startTransition(async () => {
-                  setMnda([member.id, required]);
-                  setRowState(await setInviteMndaAction(roomId, member.id, required));
-                });
-              }}
-            />
-            <span>Require MNDA</span>
-          </label>
-        ) : null}
         <Select
           size="sm"
           align="end"
@@ -117,6 +96,24 @@ export function MembersPanel({ roomId, roomName, members, selfEmail }: MembersPa
               setRowState(await changeRoleAction(roomId, member.id, role));
             });
           }}
+          toggles={
+            member.status !== "active"
+              ? [
+                  {
+                    id: "mnda",
+                    label: "Require MNDA",
+                    detail: "Sign ZODE's mutual NDA before joining. Changing it sends nothing.",
+                    checked: requiresMnda,
+                    onChange: (required) => {
+                      startTransition(async () => {
+                        setMnda([member.id, required]);
+                        setRowState(await setInviteMndaAction(roomId, member.id, required));
+                      });
+                    },
+                  },
+                ]
+              : undefined
+          }
         />
         <div className={styles.memberActions}>
           {member.status !== "active" ? (
