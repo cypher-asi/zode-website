@@ -169,6 +169,7 @@ export type AuditAction =
   | "invite"
   | "invite_resend"
   | "invite_revoke"
+  | "invite_mnda_change"
   | "accept"
   | "mnda_sign"
   | "role_change"
@@ -191,6 +192,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   invite: "Invited",
   invite_resend: "Resent invite",
   invite_revoke: "Revoked invite",
+  invite_mnda_change: "Changed MNDA requirement",
   accept: "Joined",
   mnda_sign: "Signed MNDA",
   role_change: "Changed role",

@@ -32,6 +32,9 @@ export interface IssuedInvite {
   expiresAt: Date;
 }
 
+/** What it takes to put an invite's account in the room: everything but its link. */
+export type InviteBinding = Pick<IssuedInvite, "memberId" | "email" | "role" | "requiresMnda">;
+
 /**
  * Invites `email` (or refreshes a pending invite with a new token, role and
  * MNDA requirement). Returns `null` when that email is already an active member.
@@ -78,6 +81,31 @@ export async function reissueInvite(roomId: string, memberId: string, invitedBy:
         requiresMnda: Boolean(row.requires_mnda),
         token,
         expiresAt,
+      }
+    : null;
+}
+
+/**
+ * Turns a pending invite's MNDA requirement on or off; its link and expiry stay
+ * as they are. Returns the invite as it now stands, or `null` once it's been
+ * accepted or removed, so a change can't race the invitee joining.
+ */
+export async function setInviteMnda(
+  roomId: string,
+  memberId: string,
+  requiresMnda: boolean,
+): Promise<InviteBinding | null> {
+  const [row] = await db()`
+    update data_room_members set requires_mnda = ${requiresMnda}
+    where room_id = ${roomId} and id = ${memberId} and accepted_at is null
+    returning id, email, role, requires_mnda
+  `;
+  return row
+    ? {
+        memberId: String(row.id),
+        email: String(row.email),
+        role: row.role as RoomRole,
+        requiresMnda: Boolean(row.requires_mnda),
       }
     : null;
 }
@@ -190,7 +218,7 @@ export async function acceptInvite(ref: InviteRef, account: Account): Promise<Ac
  */
 export async function shareWithAccount(
   roomId: string,
-  invite: IssuedInvite,
+  invite: InviteBinding,
 ): Promise<Extract<AcceptResult, { ok: true }> | null> {
   const [account] = await db()`
     select user_id from account_directory where lower(email) = ${invite.email} order by last_seen_at desc limit 1

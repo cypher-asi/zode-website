@@ -3,7 +3,7 @@
 import { useOptimistic, useState, useTransition, type ReactElement } from "react";
 import { InfoTip } from "@/components/ui/InfoTip";
 import { Select } from "@/components/ui/Select";
-import { changeRoleAction, removeMemberAction, resendInviteAction } from "./actions";
+import { changeRoleAction, removeMemberAction, resendInviteAction, setInviteMndaAction } from "./actions";
 import { Dialog, type DialogProps } from "./Dialog";
 import { ROLES, memberHistory, type ActionState, type RoomMember, type RoomRole } from "./types";
 import styles from "./admin.module.css";
@@ -33,6 +33,10 @@ export function MembersPanel({ roomId, roomName, members, selfEmail }: MembersPa
     {},
     (state, [id, role]) => ({ ...state, [id]: role }),
   );
+  const [mndas, setMnda] = useOptimistic<Partial<Record<string, boolean>>, [string, boolean]>(
+    {},
+    (state, [id, required]) => ({ ...state, [id]: required }),
+  );
   const [dialog, setDialog] = useState<Omit<DialogProps, "onClose"> | null>(null);
 
   const run = (action: () => Promise<ActionState>) =>
@@ -45,6 +49,7 @@ export function MembersPanel({ roomId, roomName, members, selfEmail }: MembersPa
 
   const row = (member: RoomMember) => {
     const self = member.email === selfEmail;
+    const requiresMnda = mndas[member.id] ?? member.requiresMnda;
     return (
       <li key={member.id} className={styles.member}>
         <span className={styles.avatar} aria-hidden="true">
@@ -59,7 +64,7 @@ export function MembersPanel({ roomId, roomName, members, selfEmail }: MembersPa
             <span className={styles.status} data-status={member.status}>
               {STATUS_LABELS[member.status]}
             </span>
-            {member.status !== "active" && member.requiresMnda ? (
+            {member.status !== "active" && requiresMnda ? (
               <span className={styles.status} data-status="mnda">
                 MNDA required
               </span>
@@ -77,6 +82,27 @@ export function MembersPanel({ roomId, roomName, members, selfEmail }: MembersPa
             <InfoTip rows={memberHistory(member)} label={`Invite details for ${member.email}`} />
           </span>
         </div>
+        {member.status !== "active" ? (
+          <label
+            className={styles.mndaToggle}
+            title="Whether they must sign ZODE's mutual NDA before they can join. Changing it sends nothing."
+          >
+            <input
+              type="checkbox"
+              checked={requiresMnda}
+              disabled={pending}
+              aria-label={`Require the MNDA for ${member.email}`}
+              onChange={(event) => {
+                const required = event.target.checked;
+                startTransition(async () => {
+                  setMnda([member.id, required]);
+                  setRowState(await setInviteMndaAction(roomId, member.id, required));
+                });
+              }}
+            />
+            <span>Require MNDA</span>
+          </label>
+        ) : null}
         <Select
           size="sm"
           align="end"

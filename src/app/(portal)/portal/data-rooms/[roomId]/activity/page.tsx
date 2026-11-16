@@ -72,6 +72,11 @@ function describe(event: AuditEvent): { subject: string; detail: string } {
       return { subject: String(d.entity ?? ""), detail: `Agreement ${String(d.mndaId ?? "")}` };
     case "invite_resend":
       return { subject: String(d.email ?? ""), detail: d.shared ? "Shared with their account" : "" };
+    case "invite_mnda_change":
+      return {
+        subject: String(d.email ?? ""),
+        detail: `${d.requiresMnda ? "Now required" : "No longer required"}${d.shared ? ", shared with their account" : ""}`,
+      };
     case "invite_revoke":
     case "remove":
       return { subject: String(d.email ?? ""), detail: d.role ? roleName(d.role) : "" };

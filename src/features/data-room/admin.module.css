@@ -162,6 +162,36 @@
   width: 96px;
 }
 
+/* A pending invite's MNDA requirement, beside its role. */
+.mndaToggle {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.mndaToggle input {
+  margin: 0;
+  accent-color: var(--color-text-primary);
+  cursor: inherit;
+}
+
+.mndaToggle:has(input:disabled) {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.mndaToggle:has(input:focus-visible) {
+  border-radius: var(--radius-control);
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
 .memberActions {
   display: flex;
   gap: 6px;

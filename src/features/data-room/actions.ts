@@ -24,6 +24,7 @@ import {
   issueInvite,
   reissueInvite,
   roomUrl,
+  setInviteMnda,
   shareWithAccount,
   type AcceptResult,
   type IssuedInvite,
@@ -635,6 +636,34 @@ export async function resendInviteAction(roomId: string, memberId: string): Prom
   });
   refresh();
   return { ok: joined ? `Shared with ${invite.email}.` : `Sent a new link to ${invite.email}.` };
+}
+
+/**
+ * Turns a pending invite's MNDA requirement on or off without sending anything.
+ * Turned off for an address that already has an account, the room is shared
+ * with it at once, as a new invite without the requirement would be.
+ */
+export async function setInviteMndaAction(roomId: string, memberId: string, requiresMnda: boolean): Promise<ActionState> {
+  const access = await roomAccess(roomId, "admin");
+  if (!access) return NO_ACCESS;
+  if (typeof requiresMnda !== "boolean") return { error: "Choose whether the MNDA is required." };
+  const member = await getMember(roomId, memberId);
+  if (!member || member.active) return { error: "That invite was already accepted or removed." };
+
+  const invite = await setInviteMnda(roomId, member.id, requiresMnda);
+  if (!invite) return { error: "That invite was already accepted or removed." };
+  const joined = requiresMnda ? null : await shareWithAccount(roomId, invite);
+  await recordEvent({
+    roomId,
+    account: access.account,
+    action: "invite_mnda_change",
+    detail: { email: invite.email, requiresMnda, ...(joined && !joined.alreadyMember ? { shared: true } : {}) },
+  });
+  refresh();
+  if (joined) {
+    return { ok: joined.alreadyMember ? `${invite.email} already has access.` : `Shared with ${invite.email}.` };
+  }
+  return { ok: requiresMnda ? `${invite.email} must now sign the MNDA to join.` : `MNDA no longer required for ${invite.email}.` };
 }
 
 export async function changeRoleAction(roomId: string, memberId: string, role: RoomRole): Promise<ActionState> {
