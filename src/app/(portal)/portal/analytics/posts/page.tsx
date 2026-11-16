@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense, type ReactElement } from "react";
 import Link from "next/link";
-import { hrefWith, type SearchParams } from "@/features/analytics/filters";
+import { DIMENSIONS, hrefWith, type Dimension, type Filters, type SearchParams } from "@/features/analytics/filters";
 import { formatValue } from "@/features/analytics/format";
 import { HowWeMeasure } from "@/features/analytics/HowWeMeasure";
 import { loadPostStats, type PostStats } from "@/features/analytics/queries";
@@ -43,15 +43,20 @@ export default function AnalyticsPostsPage({ searchParams }: { searchParams: Pro
 }
 
 async function Posts({ searchParams }: { searchParams: Promise<SearchParams> }): Promise<ReactElement> {
-  const { filters } = await openReport(searchParams, PATH);
+  const { filters: requested } = await openReport(searchParams, PATH);
+  // Each row is a page of its own, so a page filter carried over from another report would zero the table.
+  const dims = Object.fromEntries(
+    Object.entries(requested.dims).filter(([dim]) => !DIMENSIONS[dim as Dimension].page),
+  ) as Filters["dims"];
+  const filters: Filters = { ...requested, dims };
 
-  let stats: PostStats[] | undefined;
-  try {
-    stats = await loadPostStats(filters);
-  } catch (error) {
-    console.error("[analytics] posts failed", error);
-  }
-  const posts = await loadAllPosts();
+  const [stats, posts] = await Promise.all([
+    loadPostStats(filters).catch((error: unknown): PostStats[] | undefined => {
+      console.error("[analytics] posts failed", error);
+      return undefined;
+    }),
+    loadAllPosts(),
+  ]);
 
   if (!stats) {
     return (

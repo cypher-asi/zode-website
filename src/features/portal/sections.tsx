@@ -11,7 +11,7 @@ import { roomKindLabel, type PendingInvite, type RoomSummary } from "@/features/
 import { StatusButton } from "@/features/leads/StatusButton";
 import { customerOrderStatus, leadSource, leadType, statusLabel, type Lead } from "@/features/leads/types";
 import { SUBSCRIBER_STATUSES, mailingList, type Subscriber } from "@/features/mailing-list/types";
-import { kindLabel, type Post } from "@/features/posts/types";
+import { kindLabel, postHref, type Post } from "@/features/posts/types";
 import { RoleButton } from "@/features/users/RoleButton";
 import { ROLE_LABELS, type User } from "@/features/users/types";
 import { PortalIcon } from "./icons";
@@ -272,7 +272,7 @@ export function PostList({ posts, views }: { posts: Post[]; views?: Map<string, 
                   ? `Published ${date.format(post.publishedAt)}`
                   : `Edited ${date.format(post.updatedAt)}`}
                 {views && post.status === "published"
-                  ? ` · ${plural(views.get(`/${post.kind}/${post.slug}`) ?? 0, "view")} in 30 days`
+                  ? ` · ${plural(views.get(postHref(post.kind, post.slug)) ?? 0, "view")} in 30 days`
                   : null}
               </span>
             </span>

@@ -80,9 +80,8 @@ async function postViews(): Promise<Map<string, number> | undefined> {
 
 async function Posts({ kind }: { kind: PostKind | null }): Promise<ReactElement> {
   await requireTeam(kind ? `/portal/posts/${kind}` : "/portal/posts");
-  const posts = await loadAllPosts();
+  const [posts, views] = await Promise.all([loadAllPosts(), postViews()]);
   const shown = posts && kind ? posts.filter((post) => post.kind === kind) : posts;
-  const views = await postViews();
   return shown === null ? (
     <Empty>Posts couldn&apos;t be loaded right now. Please try again shortly.</Empty>
   ) : shown.length ? (
