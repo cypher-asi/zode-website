@@ -1,7 +1,7 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { DB_TAG, db } from "@/lib/db";
-import { BOUNCE_ENGAGED_MS, REALTIME_MINUTES, TIME_ZONE } from "./definitions";
+import { BOUNCE_ENGAGED_MS, READ_SCROLL_PCT, REALTIME_MINUTES, TIME_ZONE } from "./definitions";
 import { bucketFor, DIMENSIONS, lastDays, NONE, type Bucket, type Dimension, type Filters, type Period } from "./filters";
 import { GOALS_TAG, listGoals, type Goal } from "./goals";
 
@@ -334,6 +334,56 @@ export async function loadPages(
       bounceRate: row.bounce_rate === null ? null : Number(row.bounce_rate),
     })),
   };
+}
+
+export interface PostStats {
+  /** The post's public path, e.g. `/news/launch`. */
+  path: string;
+  visitors: number;
+  pageviews: number;
+  engagedTime: number;
+  scrollDepth: number;
+  /** Share of views scrolled past READ_SCROLL_PCT, or `null` without views. */
+  readRate: number | null;
+  /** Newsletter sign-ups sent from the post's page. */
+  signups: number;
+}
+
+const POST_ROUTES = ["/news/[slug]", "/changelog/[slug]"];
+
+/**
+ * Readership of the public posts, one row per path: every post when `paths`
+ * is left out, else just those. Sign-ups are newsletter_subscribed events
+ * recorded on the post's page.
+ */
+export async function loadPostStats(filters: Filters, paths?: string[], period: Period = filters.period): Promise<PostStats[]> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(DB_TAG);
+  const q = new Query();
+  const which = paths ? `e.path = any(${q.p(paths)}::text[])` : `e.route = any(${q.p(POST_ROUTES)}::text[])`;
+  const rows = await q.rows<Record<string, string | number | null>>(`
+    select e.path,
+      count(distinct e.visitor_id) filter (where e.kind = 'pageview')::int as visitors,
+      count(*) filter (where e.kind = 'pageview')::int as pageviews,
+      avg(e.engaged_ms) filter (where e.kind = 'pageview')::float as engaged_time,
+      avg(e.scroll_pct) filter (where e.kind = 'pageview')::float as scroll_depth,
+      avg((e.scroll_pct >= ${READ_SCROLL_PCT})::int) filter (where e.kind = 'pageview')::float as read_rate,
+      count(*) filter (where e.kind = 'event' and e.name = 'newsletter_subscribed')::int as signups
+    from analytics_events e
+    where ${scope(q, filters, period)} and ${which}
+    group by e.path
+    order by pageviews desc, e.path
+  `);
+  return rows.map((row) => ({
+    path: String(row.path),
+    visitors: Number(row.visitors),
+    pageviews: Number(row.pageviews),
+    engagedTime: Number(row.engaged_time ?? 0),
+    scrollDepth: Number(row.scroll_depth ?? 0),
+    readRate: row.read_rate === null ? null : Number(row.read_rate),
+    signups: Number(row.signups),
+  }));
 }
 
 export interface BreakdownRow {

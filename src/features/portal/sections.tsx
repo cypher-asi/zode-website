@@ -251,8 +251,8 @@ export function OrderList({ orders }: { orders: OrderSummary[] }): ReactElement 
   );
 }
 
-/** News and changelog posts for the ZODE team; each row opens the editor. */
-export function PostList({ posts }: { posts: Post[] }): ReactElement {
+/** News and changelog posts for the ZODE team; each row opens the editor. `views` is keyed by public path. */
+export function PostList({ posts, views }: { posts: Post[]; views?: Map<string, number> }): ReactElement {
   return (
     <ul className={styles.list}>
       {posts.map((post) => (
@@ -271,6 +271,9 @@ export function PostList({ posts }: { posts: Post[] }): ReactElement {
                 {post.publishedAt && post.status === "published"
                   ? `Published ${date.format(post.publishedAt)}`
                   : `Edited ${date.format(post.updatedAt)}`}
+                {views && post.status === "published"
+                  ? ` · ${plural(views.get(`/${post.kind}/${post.slug}`) ?? 0, "view")} in 30 days`
+                  : null}
               </span>
             </span>
             <span className={styles.rowEnd}>

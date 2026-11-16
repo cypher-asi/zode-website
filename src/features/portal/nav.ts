@@ -205,6 +205,7 @@ const ANALYTICS: PortalApp = {
   links: [
     { href: "/portal/analytics", label: "Overview", icon: "analytics" },
     { href: "/portal/analytics/pages", label: "Pages", icon: "paper" },
+    { href: "/portal/analytics/posts", label: "Posts", icon: "posts" },
     { href: "/portal/analytics/sources", label: "Sources", icon: "site" },
     { href: "/portal/analytics/audience", label: "Audience", icon: "users" },
     { href: "/portal/analytics/events", label: "Events & goals", icon: "target" },

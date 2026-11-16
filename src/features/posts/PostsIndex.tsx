@@ -1,5 +1,7 @@
 import "server-only";
 import { Suspense, type ReactElement } from "react";
+import { lastDays } from "@/features/analytics/filters";
+import { loadPostStats } from "@/features/analytics/queries";
 import ui from "@/features/data-room/ui.module.css";
 import { loadAllPosts } from "@/features/portal/data";
 import { PortalLoading } from "@/features/portal/PortalLoading";
@@ -65,14 +67,26 @@ export function PostsIndex({ kind }: { kind: PostKind | null }): ReactElement {
   );
 }
 
+/** Each published post's views over the last 30 days, by path; a failure just leaves them out of the list. */
+async function postViews(): Promise<Map<string, number> | undefined> {
+  try {
+    const rows = await loadPostStats(lastDays(30));
+    return new Map(rows.map((row) => [row.path, row.pageviews]));
+  } catch (error) {
+    console.error("[posts] couldn't load views", error);
+    return undefined;
+  }
+}
+
 async function Posts({ kind }: { kind: PostKind | null }): Promise<ReactElement> {
   await requireTeam(kind ? `/portal/posts/${kind}` : "/portal/posts");
   const posts = await loadAllPosts();
   const shown = posts && kind ? posts.filter((post) => post.kind === kind) : posts;
+  const views = await postViews();
   return shown === null ? (
     <Empty>Posts couldn&apos;t be loaded right now. Please try again shortly.</Empty>
   ) : shown.length ? (
-    <PostList posts={shown} />
+    <PostList posts={shown} views={views} />
   ) : (
     <Empty>
       {kind === "news"

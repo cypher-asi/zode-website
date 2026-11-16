@@ -24,6 +24,9 @@ export const REALTIME_MINUTES = 5;
 /** One page's engaged time is capped here, so a tab left open in the foreground doesn't skew averages. */
 export const MAX_ENGAGED_MS = 4 * 60 * 60 * 1000;
 
+/** A post's view counts as a read once it's scrolled this far down. */
+export const READ_SCROLL_PCT = 75;
+
 export type MetricId =
   | "visitors"
   | "sessions"
@@ -36,7 +39,9 @@ export type MetricId =
   | "entries"
   | "exits"
   | "conversions"
-  | "conversion_rate";
+  | "conversion_rate"
+  | "read_rate"
+  | "signups";
 
 export interface MetricDefinition {
   label: string;
@@ -94,5 +99,13 @@ export const METRIC_DEFINITIONS: Record<MetricId, MetricDefinition> = {
   conversion_rate: {
     label: "Conversion rate",
     description: "Converted sessions divided by all sessions in the range.",
+  },
+  read_rate: {
+    label: "Read rate",
+    description: `Share of a post's views that scrolled at least ${READ_SCROLL_PCT}% of the way down.`,
+  },
+  signups: {
+    label: "Sign-ups",
+    description: "Newsletter sign-ups sent from the post's own page.",
   },
 };

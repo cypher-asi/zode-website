@@ -771,6 +771,28 @@ th[aria-sort="descending"] .sortLink::after {
   font-size: var(--text-sm);
 }
 
+/* A published post's readership, under its editor. */
+.postAnalytics {
+  composes: panels;
+  margin-top: 32px;
+}
+
+.postAnalyticsMore {
+  margin: 12px 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+}
+
+.postAnalyticsMore a {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.postAnalyticsMore a:hover {
+  color: var(--color-text-primary);
+}
+
 /* How we measure: every figure's definition, folded away under the reports. */
 .measure {
   margin-top: 28px;
