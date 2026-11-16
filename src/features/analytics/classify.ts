@@ -31,10 +31,12 @@ const SECRET_ROUTES: readonly (readonly [RegExp, string])[] = [
   [/^\/(team\/invite|invite|data-rooms\/invite|mailing-list\/confirm|shared\/deployments)\/[^/]+$/, "/$1/[token]"],
 ];
 
-/** The app's dynamic routes, so every post or record is counted under one page. */
+/**
+ * The app's dynamic routes, so every record is counted under one page. News
+ * posts and changelog entries aren't listed: each is a page of its own, so its
+ * route is its path.
+ */
 const DYNAMIC_ROUTES: readonly (readonly [RegExp, string])[] = [
-  [/^\/news\/[^/]+$/, "/news/[slug]"],
-  [/^\/changelog\/[^/]+$/, "/changelog/[slug]"],
   [/^\/portal\/data-rooms\/[^/]+(\/[^/]+)?$/, "/portal/data-rooms/[roomId]$1"],
   [/^\/portal\/deployments\/(?!all$|new$)[^/]+(\/edit)?$/, "/portal/deployments/[id]$1"],
   [/^\/portal\/posts\/(?!news$|changelog$)[^/]+(\/preview)?$/, "/portal/posts/[postId]$1"],

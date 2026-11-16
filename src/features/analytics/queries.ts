@@ -349,7 +349,8 @@ export interface PostStats {
   signups: number;
 }
 
-const POST_ROUTES = ["/news/[slug]", "/changelog/[slug]"];
+/** A post's public path: one segment under /news or /changelog. */
+const POST_PATH_PATTERN = "^/(news|changelog)/[^/]+$";
 
 /**
  * Readership of the public posts, one row per path: every post when `paths`
@@ -361,7 +362,7 @@ export async function loadPostStats(filters: Filters, paths?: string[], period: 
   cacheLife("minutes");
   cacheTag(DB_TAG);
   const q = new Query();
-  const which = paths ? `e.path = any(${q.p(paths)}::text[])` : `e.route = any(${q.p(POST_ROUTES)}::text[])`;
+  const which = paths ? `e.path = any(${q.p(paths)}::text[])` : `e.path ~ ${q.p(POST_PATH_PATTERN)}`;
   const rows = await q.rows<Record<string, string | number | null>>(`
     select e.path,
       count(distinct e.visitor_id) filter (where e.kind = 'pageview')::int as visitors,

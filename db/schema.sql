@@ -1519,6 +1519,13 @@ select g.label, 'event', g.match from (
 ) as g (label, match)
 where not exists (select 1 from analytics_goals);
 
+-- News posts and changelog entries were once grouped under /news/[slug] and
+-- /changelog/[slug]; each is its own page, so its route is its path. Runs on
+-- every migrate but only touches rows still carrying the old route.
+update analytics_events
+set route = path
+where route in ('/news/[slug]', '/changelog/[slug]');
+
 -- Data center policy tracker, behind the deck's states slide: every statewide
 -- bill or order, local pause and state grid approval gate the team follows.
 -- Loaded from the dated snapshots in db/policy/ by `npm run policy:import`,
