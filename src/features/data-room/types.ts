@@ -74,6 +74,14 @@ export type PreviewFile = Pick<RoomFile, "name" | "sizeBytes" | "createdAt">;
  */
 export const MAX_ARCHIVE_BYTES = 1024 ** 3;
 
+/**
+ * Largest zip the browser builds before a download is split into parts. Past
+ * 4 GiB a zip needs Zip64 records, and stock `unzip` rejects one written as a
+ * stream ("possible zip bomb"); under it, with room to spare for a renamed
+ * file, every zip tool opens it.
+ */
+export const MAX_ZIP_PART_BYTES = 4 * 1024 ** 3 - 64 * 1024 ** 2;
+
 /** What the browser needs to zip a selection itself, fetching each file straight from Blob. */
 export interface ZipManifest {
   /** The zip's file name. */

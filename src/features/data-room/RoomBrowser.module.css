@@ -209,6 +209,87 @@
   stroke-linejoin: round;
 }
 
+/* A download split into zips, under the toolbar: why it's split, then a button per part. */
+.parts {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.partsNote {
+  flex: 1 1 320px;
+  margin: 0;
+}
+
+.partList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Sized as a toolbar tool, but keeps its label on a phone, where a tool is only its icon. */
+.part {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-card);
+  background: transparent;
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.part:hover {
+  background: var(--color-surface-hover);
+}
+
+.partsClose {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-inset);
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.partsClose:hover {
+  background: var(--color-surface-hover);
+}
+
+.parts svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.partsError {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--color-danger);
+}
+
 /* As in Explorer and Finder, the listing runs from the left edge across the window. */
 .browser {
   --column: 12px;

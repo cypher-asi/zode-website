@@ -6,13 +6,14 @@ import { copyText } from "@/features/profile/ProfileClient";
 import { formatBytes } from "./fileKinds";
 import { FolderTree } from "./FolderTree";
 import { Icon } from "./icons";
-import { checkedBytes, refsOf, RoomBrowser, useStoredView, ViewMenu } from "./RoomBrowser";
+import { PartDownloads, usePartDownloads } from "./PartDownloads";
+import { checkedFiles, refsOf, RoomBrowser, useStoredView, ViewMenu } from "./RoomBrowser";
 import browser from "./RoomBrowser.module.css";
 import { useShareVisit } from "./shareTracker";
-import { indexTree, summaryKey } from "./tree";
+import { filePath, indexTree, summaryKey } from "./tree";
 import { MAX_ARCHIVE_BYTES, sharedFilePath, sharedRoomPath, type RoomTree } from "./types";
 import { FilePreview, SummaryPanel, type RoomSummaries } from "./Viewer";
-import { downloadRoomZip, postRoomArchive, type ZipProgress, type ZipSelection } from "./zipDownload";
+import { downloadRoomZip, planZipParts, postRoomArchive, type ZipProgress, type ZipSelection } from "./zipDownload";
 import styles from "./SharedRoom.module.css";
 
 const VIEW_KEY = "zode:shared-room:view";
@@ -54,6 +55,7 @@ export function SharedRoom({
   const [notice, setNotice] = useState<string | null>(null);
   const [download, setDownload] = useState<ZipProgress | "preparing" | null>(null);
   const downloadAbort = useRef<AbortController | null>(null);
+  const partDownloads = usePartDownloads();
 
   useEffect(() => {
     if (!copied) return;
@@ -76,8 +78,9 @@ export function SharedRoom({
 
   const someSelected = checked.size > 0;
 
+  /** Downloads the checked items, or with nothing checked the whole room: a lone file as itself, the rest as one zip, or as several when one would pass 4 GB. */
   const downloadSelected = async () => {
-    if (download || !tree.files.length) return;
+    if (download || partDownloads.busy || !tree.files.length) return;
     const everything = !someSelected;
     const rootItems = [
       ...(index.childFolders.get(null) ?? []).map((folder) => ({ kind: "folder" as const, id: folder.id })),
@@ -89,7 +92,16 @@ export function SharedRoom({
       window.location.assign(`${sharedFilePath(token, items[0].id)}?download=1`);
       return;
     }
-    const bytes = everything ? tree.files.reduce((sum, file) => sum + file.sizeBytes, 0) : checkedBytes(tree, index, checked);
+    const manifestUrl = `/api/shared/data-rooms/${encodeURIComponent(token)}/manifest`;
+    const files = everything ? tree.files : checkedFiles(tree, index, checked);
+    const parts = planZipParts(files.map((file) => ({ id: file.id, path: filePath(index, file), size: file.sizeBytes })));
+    if (parts.length > 1) {
+      setNotice(null);
+      partDownloads.open({ roomName, manifestUrl, parts });
+      return;
+    }
+    partDownloads.close();
+    const bytes = files.reduce((sum, file) => sum + file.sizeBytes, 0);
     const selection: ZipSelection = everything
       ? { all: true }
       : {
@@ -102,7 +114,7 @@ export function SharedRoom({
     setDownload("preparing");
     try {
       const result = await downloadRoomZip({
-        manifestUrl: `/api/shared/data-rooms/${encodeURIComponent(token)}/manifest`,
+        manifestUrl,
         roomName,
         selection,
         signal: controller.signal,
@@ -177,7 +189,7 @@ export function SharedRoom({
               type="button"
               className={browser.tool}
               onClick={downloadSelected}
-              disabled={!tree.files.length}
+              disabled={!tree.files.length || partDownloads.busy}
               aria-label={someSelected ? "Download selected" : "Download all"}
             >
               <Icon name="download" />
@@ -200,6 +212,8 @@ export function SharedRoom({
           </button>
         </p>
       ) : null}
+
+      <PartDownloads downloads={partDownloads} />
     </>
   );
 

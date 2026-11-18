@@ -15,14 +15,15 @@ import { Dialog, type DialogProps } from "./Dialog";
 import { formatBytes } from "./fileKinds";
 import { FolderTree } from "./FolderTree";
 import { Icon } from "./icons";
-import { checkedBytes, refsOf, RoomBrowser, ToolMenu, useStoredView, ViewMenu } from "./RoomBrowser";
+import { PartDownloads, usePartDownloads } from "./PartDownloads";
+import { checkedBytes, checkedFiles, refsOf, RoomBrowser, ToolMenu, useStoredView, ViewMenu } from "./RoomBrowser";
 import browser from "./RoomBrowser.module.css";
-import { ancestorsOf, folderPath, indexTree, summaryKey, type TreeAction, type TreeIndex } from "./tree";
+import { ancestorsOf, filePath, folderPath, indexTree, summaryKey, type TreeAction, type TreeIndex } from "./tree";
 import { MAX_ARCHIVE_BYTES, type RoomFile, type RoomTree } from "./types";
 import { UploadList } from "./UploadList";
 import { useUploads } from "./useUploads";
 import { FilePreview, SummaryPanel, type RoomSummaries } from "./Viewer";
-import { downloadRoomZip, postRoomArchive, type ZipProgress, type ZipSelection } from "./zipDownload";
+import { downloadRoomZip, planZipParts, postRoomArchive, type ZipProgress, type ZipSelection } from "./zipDownload";
 import styles from "./DataRoomApp.module.css";
 
 const VIEW_KEY = "zode:data-room:view";
@@ -109,6 +110,7 @@ export function DataRoomApp({
   /** The zip being saved: `preparing` until its first bytes arrive. */
   const [download, setDownload] = useState<ZipProgress | "preparing" | null>(null);
   const downloadAbort = useRef<AbortController | null>(null);
+  const partDownloads = usePartDownloads();
   const fileInputRef = useRef<HTMLInputElement>(null);
   /** The folder the file picker uploads into once files are chosen. */
   const uploadTarget = useRef<string | null>(null);
@@ -276,9 +278,9 @@ export function DataRoomApp({
     else setChecked(new Set());
   };
 
-  /** Downloads the checked items, or with nothing checked the whole room, as one zip; a lone file downloads as itself. */
+  /** Downloads the checked items, or with nothing checked the whole room: a lone file as itself, the rest as one zip, or as several when one would pass 4 GB. */
   const downloadSelected = async () => {
-    if (download) return;
+    if (download || partDownloads.busy) return;
     const everything = !checked.size;
     const items = everything ? rootRefs : checkedRefs;
     if (!items.length) return;
@@ -286,7 +288,16 @@ export function DataRoomApp({
       window.location.assign(`/api/data-rooms/${roomId}/files/${items[0].id}?download=1`);
       return;
     }
-    const bytes = everything ? totalBytes : checkedBytes(tree, index, checked);
+    const manifestUrl = `/api/data-rooms/${roomId}/manifest`;
+    const files = everything ? tree.files : checkedFiles(tree, index, checked);
+    const parts = planZipParts(files.map((file) => ({ id: file.id, path: filePath(index, file), size: file.sizeBytes })));
+    if (parts.length > 1) {
+      setNotice(null);
+      partDownloads.open({ roomName, manifestUrl, parts });
+      return;
+    }
+    partDownloads.close();
+    const bytes = files.reduce((sum, file) => sum + file.sizeBytes, 0);
     const selection: ZipSelection = everything
       ? { all: true }
       : {
@@ -300,7 +311,7 @@ export function DataRoomApp({
     setDownload("preparing");
     try {
       const result = await downloadRoomZip({
-        manifestUrl: `/api/data-rooms/${roomId}/manifest`,
+        manifestUrl,
         roomName,
         selection,
         signal: controller.signal,
@@ -392,7 +403,7 @@ export function DataRoomApp({
               type="button"
               className={browser.tool}
               onClick={downloadSelected}
-              disabled={!rootRefs.length}
+              disabled={!rootRefs.length || partDownloads.busy}
               aria-label={checked.size ? "Download selected" : "Download all"}
             >
               <Icon name="download" />
@@ -411,6 +422,8 @@ export function DataRoomApp({
           </button>
         </p>
       ) : null}
+
+      <PartDownloads downloads={partDownloads} />
 
       {checked.size && !openFile && !summaryOpen && !bankingOpen ? (
         <div className={styles.selection}>

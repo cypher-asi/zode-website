@@ -120,15 +120,18 @@ const parentPath = (index: TreeIndex, folderId: string | null): string =>
 /** Icon views large enough that a photo is worth fetching; list and details stay glyphs. */
 const showsThumb = (view: ViewMode): boolean => view === "icons-md" || view === "icons-lg" || view === "icons-xl" || view === "tiles";
 
+/** The files a zip of `checked` would hold: those checked and those under a checked folder, each once. */
+export function checkedFiles(tree: RoomTree, index: TreeIndex, checked: Set<string>): RoomFile[] {
+  return tree.files.filter(
+    (file) =>
+      checked.has(fileKey(file.id)) ||
+      (file.folderId !== null && [...ancestorsOf(index, file.folderId), file.folderId].some((id) => checked.has(folderKey(id)))),
+  );
+}
+
 /** Bytes a zip of `checked` would hold, counting each file once. */
 export function checkedBytes(tree: RoomTree, index: TreeIndex, checked: Set<string>): number {
-  return tree.files
-    .filter(
-      (file) =>
-        checked.has(fileKey(file.id)) ||
-        (file.folderId !== null && [...ancestorsOf(index, file.folderId), file.folderId].some((id) => checked.has(folderKey(id)))),
-    )
-    .reduce((sum, file) => sum + file.sizeBytes, 0);
+  return checkedFiles(tree, index, checked).reduce((sum, file) => sum + file.sizeBytes, 0);
 }
 
 export interface ToolMenuItem {

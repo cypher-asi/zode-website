@@ -39,6 +39,13 @@ export function ancestorsOf(index: TreeIndex, folderId: string | null): string[]
   return chain;
 }
 
+/** A file's path from the top of the room, "Folder/Subfolder/name.pdf", as a zip of the room stores it. */
+export function filePath(index: TreeIndex, file: RoomFile): string {
+  const folderId = file.folderId && index.folders.has(file.folderId) ? file.folderId : null;
+  const folders = folderId ? [...ancestorsOf(index, folderId), folderId] : [];
+  return [...folders.map((id) => index.folders.get(id)?.name ?? ""), file.name].join("/");
+}
+
 /** "Folder / Subfolder" for display, or "All files" at the root. */
 export function folderPath(index: TreeIndex, folderId: string | null): string {
   if (!folderId || !index.folders.has(folderId)) return "All files";
